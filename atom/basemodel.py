@@ -618,7 +618,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if is_multioutput(self.task):
             if target is not None:
                 return y_true.loc[:, target], y_pred.loc[:, target]
-        elif y_pred.ndim > 1:
+        elif self.task.startswith("bin") and y_pred.ndim > 1:
             return y_true, y_pred.iloc[:, 1]
 
         return y_true, y_pred

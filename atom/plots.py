@@ -742,11 +742,11 @@ class BasePlot:
             Existing figure or newly created.
 
         """
-        if self._fig and self._fig.is_canvas:
-            return self._fig.next_subplot
+        if BasePlot._fig and BasePlot._fig.is_canvas:
+            return BasePlot._fig.next_subplot
         else:
-            self._fig = BaseFigure(palette=self.palette, **kwargs)
-            return self._fig.next_subplot
+            BasePlot._fig = BaseFigure(palette=self.palette, **kwargs)
+            return BasePlot._fig.next_subplot
 
     def _draw_line(
         self,
@@ -787,24 +787,25 @@ class BasePlot:
         return go.Scatter(
             line=dict(
                 width=self.line_width,
-                color=self._fig.get_color(parent),
-                dash=self._fig.get_dashes(child) if child else None,
+                color=BasePlot._fig.get_color(parent),
+                dash=BasePlot._fig.get_dashes(child) if child else None,
             ),
             marker=dict(
-                symbol=self._fig.get_marker(child),
+                symbol=BasePlot._fig.get_marker(child),
                 size=self.marker_size,
-                color=self._fig.get_color(parent),
+                color=BasePlot._fig.get_color(parent),
                 line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
             ),
             hovertemplate=kwargs.pop("hovertemplate", hover),
             name=kwargs.pop("name", child if child else parent),
             legendgroup=kwargs.pop("legendgroup", parent),
             legendgrouptitle=legendgrouptitle if child else None,
-            showlegend=self._fig.showlegend(f"{parent}-{child}", legend),
+            showlegend=BasePlot._fig.showlegend(f"{parent}-{child}", legend),
             **kwargs,
         )
 
-    def _draw_straight_line(self, y: SCALAR | str, xaxis: str, yaxis: str):
+    @staticmethod
+    def _draw_straight_line(y: SCALAR | str, xaxis: str, yaxis: str):
         """Draw a line across the axis.
 
         The line can be either horizontal or diagonal. The line should
@@ -824,7 +825,7 @@ class BasePlot:
             Name of the y-axis to draw in.
 
         """
-        self._fig.figure.add_shape(
+        BasePlot._fig.figure.add_shape(
             type="line",
             x0=0,
             x1=1,
@@ -886,8 +887,8 @@ class BasePlot:
         else:
             name = kwargs.get("plotname")
 
-        fig = fig or self._fig.figure
-        if self._fig.backend == "plotly":
+        fig = fig or BasePlot._fig.figure
+        if BasePlot._fig.backend == "plotly":
             if ax:
                 fig.update_layout(
                     {
@@ -904,11 +905,11 @@ class BasePlot:
                     }
                 )
 
-                if self._fig.is_canvas and (title := kwargs.get("title")):
+                if BasePlot._fig.is_canvas and (title := kwargs.get("title")):
                     # Add a subtitle to a plot in the canvas
                     default_title = {
-                        "x": self._fig.pos[ax[0][5:] or "1"][0],
-                        "y": self._fig.pos[ax[0][5:] or "1"][1] + 0.005,
+                        "x": BasePlot._fig.pos[ax[0][5:] or "1"][0],
+                        "y": BasePlot._fig.pos[ax[0][5:] or "1"][1] + 0.005,
                         "xref": "paper",
                         "yref": "paper",
                         "xanchor": "center",
@@ -924,7 +925,7 @@ class BasePlot:
 
                     fig.update_layout(dict(annotations=fig.layout.annotations + (title,)))
 
-            if not self._fig.is_canvas and kwargs.get("plotname"):
+            if not BasePlot._fig.is_canvas and kwargs.get("plotname"):
                 default_title = dict(
                     x=0.5,
                     y=1,
@@ -1002,7 +1003,7 @@ class BasePlot:
 
                 # Log plot to mlflow run of every model visualized
                 if getattr(self, "experiment", None) and self.log_plots:
-                    for m in set(self._fig.used_models):
+                    for m in set(BasePlot._fig.used_models):
                         MlflowClient().log_figure(
                             run_id=m._run.info.run_id,
                             figure=fig,
@@ -1035,7 +1036,7 @@ class BasePlot:
 
             # Log plot to mlflow run of every model visualized
             if self.experiment and self.log_plots:
-                for m in set(self._fig.used_models):
+                for m in set(BasePlot._fig.used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
                         figure=fig,
@@ -1117,7 +1118,7 @@ class BasePlot:
             Plot object.
 
         """
-        self._fig = BaseFigure(
+        BasePlot._fig = BaseFigure(
             rows=rows,
             cols=cols,
             horizontal_spacing=horizontal_spacing,
@@ -1127,9 +1128,9 @@ class BasePlot:
         )
 
         try:
-            yield self._fig.figure
+            yield BasePlot._fig.figure
         finally:
-            self._fig.is_canvas = False  # Close the canvas
+            BasePlot._fig.is_canvas = False  # Close the canvas
             self._plot(
                 groupclick="togglegroup",
                 title=title,
@@ -1281,10 +1282,10 @@ class FeatureSelectorPlot(BasePlot):
         variance = np.array(self.pca.explained_variance_ratio_)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         # Create color scheme: first normal and then fully transparent
-        color = self._fig.get_color("components")
+        color = BasePlot._fig.get_color("components")
         opacity = [0.2] * self.pca._comps + [0] * (len(variance) - self.pca._comps)
 
         fig.add_trace(
@@ -1299,7 +1300,7 @@ class FeatureSelectorPlot(BasePlot):
                 hovertemplate="%{x}<extra></extra>",
                 name=f"Variance retained: {variance[:self.pca._comps].sum():.3f}",
                 legendgroup="components",
-                showlegend=self._fig.showlegend("components", legend),
+                showlegend=BasePlot._fig.showlegend("components", legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
@@ -1398,13 +1399,13 @@ class FeatureSelectorPlot(BasePlot):
         sizes[self.pca._comps - 1] = self.marker_size * 1.5
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         fig.add_trace(
             go.Scatter(
                 x=tuple(range(1, self.pca.n_features_in_ + 1)),
                 y=np.cumsum(self.pca.explained_variance_ratio_),
                 mode="lines+markers",
-                line=dict(width=self.line_width, color=self._fig.get_color("pca")),
+                line=dict(width=self.line_width, color=BasePlot._fig.get_color("pca")),
                 marker=dict(
                     symbol=symbols,
                     size=sizes,
@@ -1528,7 +1529,7 @@ class FeatureSelectorPlot(BasePlot):
         symbols[self.rfecv.n_features_ - self.rfecv.min_features_to_select] = "star"
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         mean = self.rfecv.cv_results_["mean_test_score"]
         std = self.rfecv.cv_results_["std_test_score"]
@@ -1538,7 +1539,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=list(x),
                 y=mean,
                 mode="lines+markers",
-                line=dict(width=self.line_width, color=self._fig.get_color("rfecv")),
+                line=dict(width=self.line_width, color=BasePlot._fig.get_color("rfecv")),
                 marker=dict(
                     symbol=symbols,
                     size=sizes,
@@ -1547,7 +1548,7 @@ class FeatureSelectorPlot(BasePlot):
                 ),
                 name=ylabel,
                 legendgroup="rfecv",
-                showlegend=self._fig.showlegend("rfecv", legend),
+                showlegend=BasePlot._fig.showlegend("rfecv", legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
@@ -1560,7 +1561,7 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean + std,
                     mode="lines",
-                    line=dict(width=1, color=self._fig.get_color("rfecv")),
+                    line=dict(width=1, color=BasePlot._fig.get_color("rfecv")),
                     hovertemplate="%{y}<extra>upper bound</extra>",
                     legendgroup="rfecv",
                     showlegend=False,
@@ -1571,9 +1572,9 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean - std,
                     mode="lines",
-                    line=dict(width=1, color=self._fig.get_color("rfecv")),
+                    line=dict(width=1, color=BasePlot._fig.get_color("rfecv")),
                     fill="tonexty",
-                    fillcolor=f"rgba{self._fig.get_color('rfecv')[3:-1]}, 0.2)",
+                    fillcolor=f"rgba{BasePlot._fig.get_color('rfecv')[3:-1]}, 0.2)",
                     hovertemplate="%{y}<extra>lower bound</extra>",
                     legendgroup="rfecv",
                     showlegend=False,
@@ -1704,7 +1705,7 @@ class DataPlot(BasePlot):
         mask[np.triu_indices_from(mask, k=1)] = True
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(
+        xaxis, yaxis = BasePlot._fig.get_axes(
             x=(0, 0.87),
             coloraxis=dict(
                 colorscale="rdbu_r",
@@ -1872,7 +1873,7 @@ class DataPlot(BasePlot):
         cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         if len(columns) == 1 and columns[0] in cat_columns:
             series = self.dataset[columns[0]].value_counts(ascending=True)
@@ -1885,7 +1886,7 @@ class DataPlot(BasePlot):
                     f"Value should be >0, got {show}."
                 )
 
-            color = self._fig.get_color()
+            color = BasePlot._fig.get_color()
             fig.add_trace(
                 go.Bar(
                     x=series,
@@ -1897,7 +1898,7 @@ class DataPlot(BasePlot):
                     ),
                     hovertemplate="%{x}<extra></extra>",
                     name=f"{columns[0]}: {len(series)} classes",
-                    showlegend=self._fig.showlegend("dist", legend),
+                    showlegend=BasePlot._fig.showlegend("dist", legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -1922,14 +1923,14 @@ class DataPlot(BasePlot):
                         x=self.dataset[col],
                         histnorm="probability density",
                         marker=dict(
-                            color=f"rgba({self._fig.get_color(col)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=self._fig.get_color(col)),
+                            color=f"rgba({BasePlot._fig.get_color(col)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_color(col)),
                         ),
                         nbinsx=40,
                         name="dist",
                         legendgroup=col,
                         legendgrouptitle=dict(text=col, font_size=self.label_fontsize),
-                        showlegend=self._fig.showlegend(f"{col}-dist", legend),
+                        showlegend=BasePlot._fig.showlegend(f"{col}-dist", legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -2139,7 +2140,7 @@ class DataPlot(BasePlot):
             ).sort_values(ascending=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         fig.add_trace(
             go.Bar(
@@ -2147,13 +2148,13 @@ class DataPlot(BasePlot):
                 y=data.index,
                 orientation="h",
                 marker=dict(
-                    color=f"rgba({self._fig.get_color(ngram)[4:-1]}, 0.2)",
-                    line=dict(width=2, color=self._fig.get_color(ngram)),
+                    color=f"rgba({BasePlot._fig.get_color(ngram)[4:-1]}, 0.2)",
+                    line=dict(width=2, color=BasePlot._fig.get_color(ngram)),
                 ),
                 hovertemplate="%{x}<extra></extra>",
                 name=f"Total {ngram}: {len(series)}",
                 legendgroup=ngram,
-                showlegend=self._fig.showlegend(ngram, legend),
+                showlegend=BasePlot._fig.showlegend(ngram, legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
@@ -2260,7 +2261,7 @@ class DataPlot(BasePlot):
         columns = self.branch._get_columns(columns)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         percentiles = np.linspace(0, 100, 101)
         for col in columns:
@@ -2382,7 +2383,7 @@ class DataPlot(BasePlot):
         )
 
         fig = self._get_figure()
-        color = self._fig.get_color()
+        color = BasePlot._fig.get_color()
         for i in range(len(columns)**2):
             x, y = i // len(columns), i % len(columns)
 
@@ -2396,7 +2397,7 @@ class DataPlot(BasePlot):
             x_pos = y * (size + 2 * offset)
             y_pos = (len(columns) - x - 1) * (size + 2 * offset)
 
-            xaxis, yaxis = self._fig.get_axes(
+            xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(x_pos, rnd(x_pos + size)),
                 y=(y_pos, rnd(y_pos + size)),
                 coloraxis=dict(
@@ -2578,7 +2579,7 @@ class DataPlot(BasePlot):
         )
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         fig.add_trace(
             go.Image(
@@ -2739,7 +2740,7 @@ class HTPlot(BasePlot):
         x_max = np.nanmax(np.array(values))
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m, val in zip(models, values):
             for met in metric:
                 fig.add_trace(
@@ -2754,7 +2755,7 @@ class HTPlot(BasePlot):
                     )
                 )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             ylim=(0, 1),
@@ -2871,7 +2872,7 @@ class HTPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             importances = FanovaImportanceEvaluator(seed=self.random_state).evaluate(
                 study=m.study,
@@ -2884,13 +2885,13 @@ class HTPlot(BasePlot):
                     y=list(importances.keys()),
                     orientation="h",
                     marker=dict(
-                        color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=self._fig.get_color(m.name)),
+                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     ),
                     hovertemplate="%{x}<extra></extra>",
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=self._fig.showlegend(m.name, legend),
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -2903,7 +2904,7 @@ class HTPlot(BasePlot):
             }
         )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Normalized hyperparameter importance",
@@ -3025,12 +3026,12 @@ class HTPlot(BasePlot):
                 x_pos = y * size
                 y_pos = (length - x - 1) * size
 
-                xaxis, yaxis = self._fig.get_axes(
+                xaxis, yaxis = BasePlot._fig.get_axes(
                     x=(x_pos, rnd(x_pos + size)),
                     y=(y_pos, rnd(y_pos + size)),
                     coloraxis=dict(
                         axes="99",
-                        colorscale=PALETTE.get(self._fig.get_color(m.name), "Blues"),
+                        colorscale=PALETTE.get(BasePlot._fig.get_color(m.name), "Blues"),
                         cmin=np.nanmin(
                             m.trials.apply(lambda x: lst(x["score"])[met], axis=1)
                         ),
@@ -3051,7 +3052,7 @@ class HTPlot(BasePlot):
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=self._fig.get_color(m.name),
+                            color=BasePlot._fig.get_color(m.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
                         customdata=list(
@@ -3110,7 +3111,7 @@ class HTPlot(BasePlot):
                     ylabel=params[x + 1] if y == 0 else None,
                 )
 
-        self._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3261,9 +3262,9 @@ class HTPlot(BasePlot):
                 )
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(
+        xaxis, yaxis = BasePlot._fig.get_axes(
             coloraxis=dict(
-                colorscale=PALETTE.get(self._fig.get_color(m.name), "Blues"),
+                colorscale=PALETTE.get(BasePlot._fig.get_color(m.name), "Blues"),
                 cmin=min(dims[0]["values"]),
                 cmax=max(dims[0]["values"]),
                 title=self._metric[met].name,
@@ -3284,7 +3285,7 @@ class HTPlot(BasePlot):
             )
         )
 
-        self._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
@@ -3402,7 +3403,7 @@ class HTPlot(BasePlot):
                 x_pos = y * (size + 2 * offset)
                 y_pos = (length - x - 1) * (size + 2 * offset)
 
-                xaxis, yaxis = self._fig.get_axes(
+                xaxis, yaxis = BasePlot._fig.get_axes(
                     x=(x_pos, rnd(x_pos + size)),
                     y=(y_pos, rnd(y_pos + size)),
                 )
@@ -3436,7 +3437,7 @@ class HTPlot(BasePlot):
                     ylabel=self._metric[x + 1].name if y == 0 else None,
                 )
 
-        self._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3554,7 +3555,7 @@ class HTPlot(BasePlot):
             x_pos = y * (x_size + 2 * x_offset)
             y_pos = (len(metric) - x - 1) * (y_size + 2 * y_offset)
 
-            xaxis, yaxis = self._fig.get_axes(
+            xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(x_pos, rnd(x_pos + x_size)),
                 y=(y_pos, rnd(y_pos + y_size)),
             )
@@ -3588,7 +3589,7 @@ class HTPlot(BasePlot):
                 ylabel=self._metric[x].name if y == 0 else None,
             )
 
-        self._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3691,8 +3692,8 @@ class HTPlot(BasePlot):
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(y=(0.31, 1.0))
-        xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
+        xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
         for m in models:
             for met in metric:
                 y = m.trials["score"].apply(lambda value: lst(value)[met])
@@ -3747,7 +3748,7 @@ class HTPlot(BasePlot):
             ylabel="d",
         )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -3893,8 +3894,8 @@ class PredictionPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(y=(0.31, 1.0))
-        xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
+        xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
         for m in models:
             for ds in dataset:
                 y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
@@ -3921,8 +3922,8 @@ class PredictionPlot(BasePlot):
                         x=y_pred,
                         xbins=dict(start=0, end=1, size=1. / n_bins),
                         marker=dict(
-                            color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=self._fig.get_color(m.name)),
+                            color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                         ),
                         name=m.name,
                         legendgroup=m.name,
@@ -3949,7 +3950,7 @@ class PredictionPlot(BasePlot):
             xlim=(0, 1),
         )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -4093,7 +4094,7 @@ class PredictionPlot(BasePlot):
             cm = confusion_matrix(y_true, y_pred)
             if len(models) == 1:  # Create matrix heatmap
                 ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
-                xaxis, yaxis = self._fig.get_axes(
+                xaxis, yaxis = BasePlot._fig.get_axes(
                     x=(0, 0.87),
                     coloraxis=dict(
                         colorscale="Blues",
@@ -4134,9 +4135,9 @@ class PredictionPlot(BasePlot):
                 )
 
             else:
-                xaxis, yaxis = self._fig.get_axes()
+                xaxis, yaxis = BasePlot._fig.get_axes()
 
-                color = self._fig.get_color(m.name)
+                color = BasePlot._fig.get_color(m.name)
                 fig.add_trace(
                     go.Bar(
                         x=cm.ravel(),
@@ -4149,7 +4150,7 @@ class PredictionPlot(BasePlot):
                         hovertemplate="%{x}<extra></extra>",
                         name=m.name,
                         legendgroup=m.name,
-                        showlegend=self._fig.showlegend(m.name, legend),
+                        showlegend=BasePlot._fig.showlegend(m.name, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -4157,7 +4158,7 @@ class PredictionPlot(BasePlot):
 
                 fig.update_layout(bargroupgap=0.05)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Predicted label" if len(models) == 1 else "Count",
@@ -4264,7 +4265,7 @@ class PredictionPlot(BasePlot):
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             for ds in dataset:
                 # Get fpr-fnr pairs for different thresholds
@@ -4283,7 +4284,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="FPR",
@@ -4389,7 +4390,7 @@ class PredictionPlot(BasePlot):
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             y_true, y_pred = m._get_pred(ds, target)
 
@@ -4398,10 +4399,10 @@ class PredictionPlot(BasePlot):
                     x=y_true,
                     y=y_pred,
                     mode="markers",
-                    line=dict(width=2, color=self._fig.get_color(m.name)),
+                    line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=self._fig.showlegend(m.name, legend),
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -4417,7 +4418,7 @@ class PredictionPlot(BasePlot):
                     x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
                     y=model.predict(x[:, np.newaxis]),
                     mode="lines",
-                    line=dict(width=2, color=self._fig.get_color(m.name)),
+                    line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     hovertemplate="(%{x}, %{y})<extra></extra>",
                     legendgroup=m.name,
                     showlegend=False,
@@ -4428,7 +4429,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -4528,7 +4529,7 @@ class PredictionPlot(BasePlot):
         dataset = self._get_set(dataset, max_one=False, allow_holdout=False)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             if not m.evals:
                 raise ValueError(
@@ -4550,7 +4551,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Iterations",
@@ -4650,7 +4651,7 @@ class PredictionPlot(BasePlot):
         show = self._get_show(show, models)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             if (fi := m.feature_importance) is None:
                 raise ValueError(
@@ -4665,13 +4666,13 @@ class PredictionPlot(BasePlot):
                     y=fi.index,
                     orientation="h",
                     marker=dict(
-                        color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=self._fig.get_color(m.name)),
+                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     ),
                     hovertemplate="%{x}<extra></extra>",
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=self._fig.showlegend(m.name, legend),
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -4687,7 +4688,7 @@ class PredictionPlot(BasePlot):
         # Unique number of features over all branches
         n_fxs = len(set([fx for m in models for fx in m.features]))
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Normalized feature importance",
@@ -4794,7 +4795,7 @@ class PredictionPlot(BasePlot):
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             for ds in dataset:
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
@@ -4814,7 +4815,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Fraction of sample",
@@ -4914,7 +4915,7 @@ class PredictionPlot(BasePlot):
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         for met in metric:
             x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
@@ -4948,7 +4949,7 @@ class PredictionPlot(BasePlot):
                                 x=x[group],
                                 y=np.add(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=self._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
                                 hovertemplate="%{y}<extra>upper bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -4959,9 +4960,9 @@ class PredictionPlot(BasePlot):
                                 x=x[group],
                                 y=np.subtract(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=self._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
                                 fill="tonexty",
-                                fillcolor=f"rgba{self._fig.get_color(group)[3:-1]}, 0.2)",
+                                fillcolor=f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)",
                                 hovertemplate="%{y}<extra>lower bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -4971,7 +4972,7 @@ class PredictionPlot(BasePlot):
                         ]
                     )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -5078,7 +5079,7 @@ class PredictionPlot(BasePlot):
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             for ds in dataset:
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
@@ -5099,7 +5100,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y=1, xaxis=xaxis, yaxis=yaxis)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Fraction of sample",
@@ -5222,9 +5223,9 @@ class PredictionPlot(BasePlot):
 
         # Colorbar is only needed when a model has feature_importance
         if all(m.feature_importance is None for m in models):
-            xaxis, yaxis = self._fig.get_axes()
+            xaxis, yaxis = BasePlot._fig.get_axes()
         else:
-            xaxis, yaxis = self._fig.get_axes(
+            xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(0, 0.87),
                 coloraxis=dict(
                     colorscale="Reds",
@@ -5278,7 +5279,7 @@ class PredictionPlot(BasePlot):
             if m.feature_importance is not None:
                 color = m.feature_importance.loc[fxs]
             else:
-                color = self._fig.get_color("parshap")
+                color = BasePlot._fig.get_color("parshap")
 
             fig.add_trace(
                 go.Scatter(
@@ -5301,7 +5302,7 @@ class PredictionPlot(BasePlot):
                     ),
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=self._fig.showlegend(m.name, legend),
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -5309,7 +5310,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Training set",
@@ -5468,7 +5469,7 @@ class PredictionPlot(BasePlot):
         axes, names = [], []
         fig = self._get_figure()
         for m in models:
-            color = self._fig.get_color(m.name)
+            color = BasePlot._fig.get_color(m.name)
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
@@ -5509,7 +5510,7 @@ class PredictionPlot(BasePlot):
                     # Determine the position for the axes
                     x_pos = i % len(cols) * (size + 2 * offset)
 
-                    xaxis, yaxis = self._fig.get_axes(x=(x_pos, rnd(x_pos + size)))
+                    xaxis, yaxis = BasePlot._fig.get_axes(x=(x_pos, rnd(x_pos + size)))
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
@@ -5543,7 +5544,7 @@ class PredictionPlot(BasePlot):
                             y0=0,
                             y1=0.05,
                             yref=f"{axes[0][1]} domain",
-                            line=dict(width=1, color=self._fig.get_color(m.name)),
+                            line=dict(width=1, color=BasePlot._fig.get_color(m.name)),
                             opacity=0.6,
                             layer="below",
                         )
@@ -5558,7 +5559,7 @@ class PredictionPlot(BasePlot):
                                 line=dict(width=2, color=color),
                                 name=m.name,
                                 legendgroup=m.name,
-                                showlegend=self._fig.showlegend(m.name, legend),
+                                showlegend=BasePlot._fig.showlegend(m.name, legend),
                                 xaxis=ax[0],
                                 yaxis=axes[0][1],
                             )
@@ -5581,7 +5582,7 @@ class PredictionPlot(BasePlot):
                                     line=dict(width=0.5, color=color),
                                     name=m.name,
                                     legendgroup=m.name,
-                                    showlegend=self._fig.showlegend(m.name, legend),
+                                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                                     xaxis=ax[0],
                                     yaxis=axes[0][1],
                                 )
@@ -5599,7 +5600,7 @@ class PredictionPlot(BasePlot):
                             ),
                             hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                             hoverongaps=False,
-                            colorscale=PALETTE.get(self._fig.get_color(m.name), "Teal"),
+                            colorscale=PALETTE.get(BasePlot._fig.get_color(m.name), "Teal"),
                             showscale=False,
                             showlegend=False,
                             xaxis=ax[0],
@@ -5613,7 +5614,7 @@ class PredictionPlot(BasePlot):
                     ylabel=(fx[1] if len(fx) > 1 else "Score") if i == 0 else None,
                 )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             groupclick="togglegroup",
             title=title,
@@ -5724,7 +5725,7 @@ class PredictionPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models:
             # If permutations are already calculated and n_repeats is
@@ -5748,11 +5749,11 @@ class PredictionPlot(BasePlot):
                 go.Box(
                     x=m.permutations["importances"].ravel(),
                     y=list(np.array([[fx] * n_repeats for fx in m.features]).ravel()),
-                    marker_color=self._fig.get_color(m.name),
+                    marker_color=BasePlot._fig.get_color(m.name),
                     boxpoints="outliers",
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=self._fig.showlegend(m.name, legend),
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -5769,7 +5770,7 @@ class PredictionPlot(BasePlot):
         # Unique number of features over all branches
         n_fxs = len(set([fx for m in models for fx in m.features]))
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Score",
@@ -5925,7 +5926,7 @@ class PredictionPlot(BasePlot):
         from schemdraw.util import Point
 
         fig = self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_pipeline")
+        check_canvas(BasePlot._fig.is_canvas, "plot_pipeline")
 
         # Define branches to plot (if called from model, it's only one)
         branches = []
@@ -5954,7 +5955,7 @@ class PredictionPlot(BasePlot):
         # Define colors per branch
         for branch in branches:
             if color_branches or (color_branches is None and len(branches) > 1):
-                color = next(self._fig.palette)
+                color = next(BasePlot._fig.palette)
 
                 # Convert back to format accepted by matplotlib
                 branch["color"] = unconvert_from_RGB_255(unlabel_rgb(color))
@@ -6093,7 +6094,7 @@ class PredictionPlot(BasePlot):
         d.draw(ax=plt.gca(), showframe=False, show=False)
         plt.axis("off")
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=plt.gca(),
             title=title,
@@ -6198,7 +6199,7 @@ class PredictionPlot(BasePlot):
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             for ds in dataset:
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
@@ -6221,7 +6222,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(sum(m.y_test) / len(m.y_test), xaxis=xaxis, yaxis=yaxis)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Recall",
@@ -6331,7 +6332,7 @@ class PredictionPlot(BasePlot):
         col = lst(self.target)[col]
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             y_true, y_pred = getattr(m, f"y_{ds}"), getattr(m, f"predict_proba_{ds}")
             for value in np.unique(m.dataset[col]):
@@ -6351,22 +6352,22 @@ class PredictionPlot(BasePlot):
                         mode="lines",
                         line=dict(
                             width=2,
-                            color=self._fig.get_color(m.name),
-                            dash=self._fig.get_dashes(ds),
+                            color=BasePlot._fig.get_color(m.name),
+                            dash=BasePlot._fig.get_dashes(ds),
                         ),
                         fill="tonexty",
-                        fillcolor=f"rgba{self._fig.get_color(m.name)[3:-1]}, 0.2)",
-                        fillpattern=dict(shape=self._fig.get_shapes(value)),
+                        fillcolor=f"rgba{BasePlot._fig.get_color(m.name)[3:-1]}, 0.2)",
+                        fillpattern=dict(shape=BasePlot._fig.get_shapes(value)),
                         name=f"{col}={value}",
                         legendgroup=m.name,
                         legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
-                        showlegend=self._fig.showlegend(f"{m.name}-{value}", legend),
+                        showlegend=BasePlot._fig.showlegend(f"{m.name}-{value}", legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="toggleitem",
@@ -6472,18 +6473,18 @@ class PredictionPlot(BasePlot):
         ds = self._get_set(dataset, max_one=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(x=(0, 0.69))
-        xaxis2, yaxis2 = self._fig.get_axes(x=(0.71, 1.0))
+        xaxis, yaxis = BasePlot._fig.get_axes(x=(0, 0.69))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(x=(0.71, 1.0))
         for m in models:
             fig.add_trace(
                 go.Scatter(
                     x=(x := getattr(m, f"predict_{ds}")),
                     y=(res := np.subtract(x, getattr(m, f"y_{ds}"))),
                     mode="markers",
-                    line=dict(width=2, color=self._fig.get_color(m.name)),
+                    line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=self._fig.showlegend(m.name, legend),
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -6494,8 +6495,8 @@ class PredictionPlot(BasePlot):
                     y=res,
                     bingroup="residuals",
                     marker=dict(
-                        color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=self._fig.get_color(m.name)),
+                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     ),
                     name=m.name,
                     legendgroup=m.name,
@@ -6515,7 +6516,7 @@ class PredictionPlot(BasePlot):
             title=title,
         )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -6662,11 +6663,11 @@ class PredictionPlot(BasePlot):
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         for met in metric:
             if isinstance(met, str):
-                color = self._fig.get_color(met)
+                color = BasePlot._fig.get_color(met)
                 fig.add_trace(
                     go.Bar(
                         x=[getattr(m, met) for m in models],
@@ -6679,14 +6680,14 @@ class PredictionPlot(BasePlot):
                         hovertemplate=f"%{{x}}<extra>{met}</extra>",
                         name=met,
                         legendgroup=met,
-                        showlegend=self._fig.showlegend(met, legend),
+                        showlegend=BasePlot._fig.showlegend(met, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
             else:
                 name = self._metric[met].name
-                color = self._fig.get_color()
+                color = BasePlot._fig.get_color()
 
                 if all(m.score_bootstrap for m in models):
                     x = np.array([m.bootstrap.iloc[:, met] for m in models]).ravel()
@@ -6699,7 +6700,7 @@ class PredictionPlot(BasePlot):
                             boxpoints="outliers",
                             name=name,
                             legendgroup=name,
-                            showlegend=self._fig.showlegend(name, legend),
+                            showlegend=BasePlot._fig.showlegend(name, legend),
                             xaxis=xaxis,
                             yaxis=yaxis,
                         )
@@ -6721,7 +6722,7 @@ class PredictionPlot(BasePlot):
                             hovertemplate="%{x}<extra></extra>",
                             name=name,
                             legendgroup=name,
-                            showlegend=self._fig.showlegend(name, legend),
+                            showlegend=BasePlot._fig.showlegend(name, legend),
                             xaxis=xaxis,
                             yaxis=yaxis,
                         )
@@ -6736,7 +6737,7 @@ class PredictionPlot(BasePlot):
             }
         )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel=self._metric[metric].name if isinstance(metric, INT) else "time (s)",
@@ -6842,7 +6843,7 @@ class PredictionPlot(BasePlot):
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
             for ds in dataset:
                 # Get False (True) Positive Rate as arrays
@@ -6863,7 +6864,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlim=(-0.03, 1.03),
@@ -6963,7 +6964,7 @@ class PredictionPlot(BasePlot):
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         for met in metric:
             x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
@@ -6997,7 +6998,7 @@ class PredictionPlot(BasePlot):
                                 x=x[group],
                                 y=np.add(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=self._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
                                 hovertemplate="%{y}<extra>upper bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -7008,9 +7009,9 @@ class PredictionPlot(BasePlot):
                                 x=x[group],
                                 y=np.subtract(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=self._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
                                 fill="tonexty",
-                                fillcolor=f"rgba{self._fig.get_color(group)[3:-1]}, 0.2)",
+                                fillcolor=f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)",
                                 hovertemplate="%{y}<extra>lower bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -7022,7 +7023,7 @@ class PredictionPlot(BasePlot):
 
         fig.update_layout({f"xaxis{yaxis[1:]}": dict(dtick=1, autorange="reversed")})
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -7154,7 +7155,7 @@ class PredictionPlot(BasePlot):
             metrics = [get_custom_scorer(m)._score_func for m in metrics]
 
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes()
+        xaxis, yaxis = BasePlot._fig.get_axes()
 
         steps = np.linspace(0, 1, steps)
         for m in models:
@@ -7172,7 +7173,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        self._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Threshold",
@@ -7297,11 +7298,11 @@ class ShapPlot(BasePlot):
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_bar")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_bar")
 
         shap.plots.bar(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7412,11 +7413,11 @@ class ShapPlot(BasePlot):
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_beeswarm")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_beeswarm")
 
         shap.plots.beeswarm(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7537,7 +7538,7 @@ class ShapPlot(BasePlot):
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_decision")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_decision")
 
         shap.decision_plot(
             base_value=explanation.base_values,
@@ -7548,7 +7549,7 @@ class ShapPlot(BasePlot):
             show=False,
         )
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7658,7 +7659,7 @@ class ShapPlot(BasePlot):
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(create_figure=False, backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_force")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_force")
 
         plot = shap.force_plot(
             base_value=explanation.base_values,
@@ -7669,7 +7670,7 @@ class ShapPlot(BasePlot):
         )
 
         if kwargs.get("matplotlib"):
-            self._fig.used_models.append(models)
+            BasePlot._fig.used_models.append(models)
             return self._plot(
                 fig=plt.gcf(),
                 ax=plt.gca(),
@@ -7793,11 +7794,11 @@ class ShapPlot(BasePlot):
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_heatmap")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_heatmap")
 
         shap.plots.heatmap(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7913,11 +7914,11 @@ class ShapPlot(BasePlot):
         explanation = explanation[:, models.columns.get_loc(column)]
 
         self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_scatter")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_scatter")
 
         shap.plots.scatter(explanation, color=explanation, ax=plt.gca(), show=False)
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -8042,11 +8043,11 @@ class ShapPlot(BasePlot):
         explanation.data = explanation.data[0]
 
         self._get_figure(backend="matplotlib")
-        check_canvas(self._fig.is_canvas, "plot_shap_waterfall")
+        check_canvas(BasePlot._fig.is_canvas, "plot_shap_waterfall")
 
         shap.plots.waterfall(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             title=title,

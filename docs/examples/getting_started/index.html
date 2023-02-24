@@ -2823,6 +2823,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../ray_backend/" class="md-nav__link">
+        Ray backend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../regression/" class="md-nav__link">
         Regression
       </a>
@@ -3235,7 +3249,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight-ipynb .m { color: var(--jp-mirror-editor-number-color) } /* Literal.Number */
 .highlight-ipynb .s { color: var(--jp-mirror-editor-string-color) } /* Literal.String */
 .highlight-ipynb .ow { color: var(--jp-mirror-editor-operator-color); font-weight: bold } /* Operator.Word */
-.highlight-ipynb .pm { color: var(--jp-mirror-editor-punctuation-color) } /* Punctuation.Marker */
 .highlight-ipynb .w { color: var(--jp-mirror-editor-variable-color) } /* Text.Whitespace */
 .highlight-ipynb .mb { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Bin */
 .highlight-ipynb .mf { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Float */
@@ -4178,11 +4191,10 @@ Shape: (1000, 22)
 Train set size: 800
 Test set size: 200
 -------------------------------------
-Memory: 433.89 kB
+Memory: 433.78 kB
 Scaled: False
-Missing values: 2232 (10.1%)
+Missing values: 2231 (10.1%)
 Categorical features: 5 (23.8%)
-Outlier values: 3.0 (0.0%)
 
 </pre>
 </div>
@@ -4242,25 +4254,26 @@ atom.encode(strategy="LeaveOneOut", max_onehot=8)</div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Fitting Imputer...
 Imputing missing values...
- --&gt; Imputing 1 missing values with median (12.0) in feature MinTemp.
- --&gt; Imputing 10 missing values with median (0.0) in feature Rainfall.
- --&gt; Imputing 424 missing values with median (4.8) in feature Evaporation.
- --&gt; Imputing 470 missing values with median (8.4) in feature Sunshine.
- --&gt; Imputing 72 missing values with most_frequent (SE) in feature WindGustDir.
- --&gt; Imputing 72 missing values with median (37.0) in feature WindGustSpeed.
- --&gt; Imputing 68 missing values with most_frequent (N) in feature WindDir9am.
- --&gt; Imputing 29 missing values with most_frequent (W) in feature WindDir3pm.
- --&gt; Imputing 8 missing values with median (13.0) in feature WindSpeed9am.
- --&gt; Imputing 20 missing values with median (19.0) in feature WindSpeed3pm.
- --&gt; Imputing 11 missing values with median (70.0) in feature Humidity9am.
- --&gt; Imputing 27 missing values with median (52.0) in feature Humidity3pm.
- --&gt; Imputing 112 missing values with median (1017.4) in feature Pressure9am.
- --&gt; Imputing 113 missing values with median (1014.9) in feature Pressure3pm.
- --&gt; Imputing 370 missing values with median (5.0) in feature Cloud9am.
- --&gt; Imputing 387 missing values with median (5.0) in feature Cloud3pm.
- --&gt; Imputing 5 missing values with median (16.8) in feature Temp9am.
- --&gt; Imputing 23 missing values with median (21.0) in feature Temp3pm.
- --&gt; Imputing 10 missing values with most_frequent (No) in feature RainToday.
+ --&gt; Imputing 5 missing values with median (11.7) in feature MinTemp.
+ --&gt; Imputing 2 missing values with median (22.25) in feature MaxTemp.
+ --&gt; Imputing 12 missing values with median (0.0) in feature Rainfall.
+ --&gt; Imputing 417 missing values with median (4.2) in feature Evaporation.
+ --&gt; Imputing 469 missing values with median (8.4) in feature Sunshine.
+ --&gt; Imputing 68 missing values with most_frequent (W) in feature WindGustDir.
+ --&gt; Imputing 68 missing values with median (37.0) in feature WindGustSpeed.
+ --&gt; Imputing 64 missing values with most_frequent (N) in feature WindDir9am.
+ --&gt; Imputing 32 missing values with most_frequent (SE) in feature WindDir3pm.
+ --&gt; Imputing 13 missing values with median (13.0) in feature WindSpeed9am.
+ --&gt; Imputing 23 missing values with median (19.0) in feature WindSpeed3pm.
+ --&gt; Imputing 17 missing values with median (69.0) in feature Humidity9am.
+ --&gt; Imputing 28 missing values with median (52.0) in feature Humidity3pm.
+ --&gt; Imputing 100 missing values with median (1017.6) in feature Pressure9am.
+ --&gt; Imputing 98 missing values with median (1015.3) in feature Pressure3pm.
+ --&gt; Imputing 379 missing values with median (5.0) in feature Cloud9am.
+ --&gt; Imputing 399 missing values with median (5.0) in feature Cloud3pm.
+ --&gt; Imputing 7 missing values with median (16.5) in feature Temp9am.
+ --&gt; Imputing 18 missing values with median (21.1) in feature Temp3pm.
+ --&gt; Imputing 12 missing values with most_frequent (No) in feature RainToday.
 Fitting Encoder...
 Encoding categorical columns...
  --&gt; LeaveOneOut-encoding feature Location. Contains 49 classes.
@@ -4331,65 +4344,65 @@ Metric: roc_auc
 Running hyperparameter tuning for LinearDiscriminantAnalysis...
 | trial |  solver | shrinkage | roc_auc | best_roc_auc | time_trial | time_ht |    state |
 | ----- | ------- | --------- | ------- | ------------ | ---------- | ------- | -------- |
-| 0     |   eigen |      None |  0.8322 |       0.8322 |     0.152s |  0.152s | COMPLETE |
-| 1     |    lsqr |       1.0 |  0.7342 |       0.8322 |     0.146s |  0.298s | COMPLETE |
-| 2     |    lsqr |       0.7 |  0.8683 |       0.8683 |     0.143s |  0.441s | COMPLETE |
-| 3     |   eigen |       0.9 |  0.9182 |       0.9182 |     0.144s |  0.586s | COMPLETE |
-| 4     |   eigen |      None |  0.8322 |       0.9182 |     0.003s |  0.589s | COMPLETE |
-| 5     |     svd |       --- |  0.7723 |       0.9182 |     0.146s |  0.735s | COMPLETE |
-| 6     |     svd |       --- |  0.7723 |       0.9182 |     0.002s |  0.737s | COMPLETE |
-| 7     |     svd |       --- |  0.7723 |       0.9182 |     0.002s |  0.739s | COMPLETE |
-| 8     |   eigen |       0.6 |  0.8656 |       0.9182 |     0.144s |  0.883s | COMPLETE |
-| 9     |    lsqr |       0.5 |  0.8354 |       0.9182 |     0.141s |  1.024s | COMPLETE |
+| 0     |   eigen |      auto |  0.8686 |       0.8686 |     1.863s |  1.863s | COMPLETE |
+| 1     |    lsqr |       0.8 |  0.8607 |       0.8686 |     1.575s |  3.439s | COMPLETE |
+| 2     |   eigen |      auto |  0.8686 |       0.8686 |     0.003s |  3.442s | COMPLETE |
+| 3     |     svd |       --- |  0.8428 |       0.8686 |     1.494s |  4.936s | COMPLETE |
+| 4     |    lsqr |       0.5 |  0.7998 |       0.8686 |     1.475s |  6.411s | COMPLETE |
+| 5     |     svd |       --- |  0.8428 |       0.8686 |     0.000s |  6.411s | COMPLETE |
+| 6     |    lsqr |      auto |  0.8147 |       0.8686 |     1.528s |  7.939s | COMPLETE |
+| 7     |     svd |       --- |  0.8428 |       0.8686 |     0.000s |  7.939s | COMPLETE |
+| 8     |     svd |       --- |  0.8428 |       0.8686 |     0.008s |  7.947s | COMPLETE |
+| 9     |    lsqr |       1.0 |  0.8214 |       0.8686 |     1.518s |  9.465s | COMPLETE |
 Hyperparameter tuning ---------------------------
-Best trial --&gt; 3
+Best trial --&gt; 0
 Best parameters:
  --&gt; solver: eigen
- --&gt; shrinkage: 0.9
-Best evaluation --&gt; roc_auc: 0.9182
-Time elapsed: 1.024s
+ --&gt; shrinkage: auto
+Best evaluation --&gt; roc_auc: 0.8686
+Time elapsed: 9.465s
 Fit ---------------------------------------------
-Train evaluation --&gt; roc_auc: 0.816
-Test evaluation --&gt; roc_auc: 0.8364
-Time elapsed: 0.014s
+Train evaluation --&gt; roc_auc: 0.8867
+Test evaluation --&gt; roc_auc: 0.9118
+Time elapsed: 0.112s
 -------------------------------------------------
-Total time: 1.038s
+Total time: 9.577s
 
 
 Running hyperparameter tuning for AdaBoost...
 | trial | n_estimators | learning_rate | algorithm | roc_auc | best_roc_auc | time_trial | time_ht |    state |
 | ----- | ------------ | ------------- | --------- | ------- | ------------ | ---------- | ------- | -------- |
-| 0     |          110 |        0.0293 |   SAMME.R |  0.7373 |       0.7373 |     0.336s |  0.336s | COMPLETE |
-| 1     |          420 |        7.7286 |     SAMME |    0.62 |       0.7373 |     0.786s |  1.122s | COMPLETE |
-| 2     |          170 |        0.0909 |     SAMME |  0.8359 |       0.8359 |     0.403s |  1.525s | COMPLETE |
-| 3     |          240 |        1.1147 |   SAMME.R |  0.7657 |       0.8359 |     0.545s |  2.071s | COMPLETE |
-| 4     |          260 |        0.6667 |     SAMME |  0.7673 |       0.8359 |     0.555s |  2.625s | COMPLETE |
-| 5     |          180 |        0.0458 |   SAMME.R |  0.7367 |       0.8359 |     0.453s |  3.079s | COMPLETE |
-| 6     |          300 |        0.3081 |     SAMME |  0.8322 |       0.8359 |     0.616s |  3.694s | COMPLETE |
-| 7     |          340 |        1.1667 |   SAMME.R |   0.664 |       0.8359 |     0.733s |  4.427s | COMPLETE |
-| 8     |          160 |        7.0415 |   SAMME.R |  0.6733 |       0.8359 |     0.425s |  4.852s | COMPLETE |
-| 9     |          290 |        0.5055 |   SAMME.R |  0.7035 |       0.8359 |     0.644s |  5.496s | COMPLETE |
+| 0     |          240 |        0.1504 |     SAMME |  0.8736 |       0.8736 |     2.840s |  2.840s | COMPLETE |
+| 1     |          360 |        0.0183 |   SAMME.R |  0.8063 |       0.8736 |     3.375s |  6.215s | COMPLETE |
+| 2     |          490 |        0.6449 |   SAMME.R |  0.8147 |       0.8736 |     4.000s | 10.215s | COMPLETE |
+| 3     |          100 |        0.6744 |     SAMME |  0.7949 |       0.8736 |     1.304s | 11.519s | COMPLETE |
+| 4     |          270 |        0.0344 |   SAMME.R |  0.7845 |       0.8736 |     2.595s | 14.115s | COMPLETE |
+| 5     |          360 |        1.5914 |   SAMME.R |  0.7563 |       0.8736 |     3.225s | 17.340s | COMPLETE |
+| 6     |          400 |        0.0799 |   SAMME.R |  0.7664 |       0.8736 |     3.543s | 20.883s | COMPLETE |
+| 7     |          450 |        0.0244 |   SAMME.R |  0.8151 |       0.8736 |     4.176s | 25.059s | COMPLETE |
+| 8     |          310 |        0.2973 |   SAMME.R |  0.7478 |       0.8736 |     2.866s | 27.926s | COMPLETE |
+| 9     |          290 |        1.6933 |     SAMME |  0.8609 |       0.8736 |     2.736s | 30.662s | COMPLETE |
 Hyperparameter tuning ---------------------------
-Best trial --&gt; 2
+Best trial --&gt; 0
 Best parameters:
- --&gt; n_estimators: 170
- --&gt; learning_rate: 0.0909
+ --&gt; n_estimators: 240
+ --&gt; learning_rate: 0.1504
  --&gt; algorithm: SAMME
-Best evaluation --&gt; roc_auc: 0.8359
-Time elapsed: 5.496s
+Best evaluation --&gt; roc_auc: 0.8736
+Time elapsed: 30.662s
 Fit ---------------------------------------------
-Train evaluation --&gt; roc_auc: 0.8902
-Test evaluation --&gt; roc_auc: 0.81
-Time elapsed: 0.309s
+Train evaluation --&gt; roc_auc: 0.896
+Test evaluation --&gt; roc_auc: 0.8754
+Time elapsed: 1.918s
 -------------------------------------------------
-Total time: 5.805s
+Total time: 32.580s
 
 
 Final results ==================== &gt;&gt;
-Total time: 7.029s
+Total time: 43.206s
 -------------------------------------
-LinearDiscriminantAnalysis --&gt; roc_auc: 0.8364 !
-AdaBoost                   --&gt; roc_auc: 0.81
+LinearDiscriminantAnalysis --&gt; roc_auc: 0.9118 !
+AdaBoost                   --&gt; roc_auc: 0.8754
 </pre>
 </div>
 </div>
@@ -4477,27 +4490,27 @@ AdaBoost                   --&gt; roc_auc: 0.81
   <tbody>
     <tr>
       <th>LDA</th>
-      <td>0.775</td>
-      <td>0.6305</td>
-      <td>0.7334</td>
-      <td>0.5631</td>
-      <td>0.3919</td>
-      <td>0.4240</td>
-      <td>0.4915</td>
-      <td>0.6591</td>
-      <td>0.8364</td>
+      <td>0.855</td>
+      <td>0.761</td>
+      <td>0.7431</td>
+      <td>0.6329</td>
+      <td>0.4630</td>
+      <td>0.5623</td>
+      <td>0.7812</td>
+      <td>0.5319</td>
+      <td>0.9118</td>
     </tr>
     <tr>
       <th>AdaB</th>
-      <td>0.815</td>
-      <td>0.5364</td>
-      <td>0.6122</td>
-      <td>0.3729</td>
-      <td>0.2292</td>
-      <td>0.3529</td>
-      <td>0.7333</td>
-      <td>0.2500</td>
-      <td>0.8100</td>
+      <td>0.850</td>
+      <td>0.731</td>
+      <td>0.6956</td>
+      <td>0.5588</td>
+      <td>0.3878</td>
+      <td>0.5411</td>
+      <td>0.9048</td>
+      <td>0.4043</td>
+      <td>0.8754</td>
     </tr>
   </tbody>
 </table>

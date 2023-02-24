@@ -2856,6 +2856,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/ray_backend/" class="md-nav__link">
+        Ray backend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/regression/" class="md-nav__link">
         Regression
       </a>
@@ -3087,7 +3101,7 @@
 
 <h1 id="plot_calibration">plot_calibration</h1>
 <hr />
-<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, dataset="test", n_bins=10, target=0, title=None, legend="upper left", figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3775>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
+<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, dataset="test", n_bins=10, target=0, title=None, legend="upper left", figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3776>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
 <p>Well calibrated classifiers are probabilistic classifiers for
 which the output of the <code>predict_proba</code> method can be directly
 interpreted as a confidence level. For instance a well
@@ -3104,7 +3118,7 @@ This plot is available only for models with a <code>predict_proba</code>
 method in a binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the [calibrate][adaboost-calibrate] method to calibrate
+<p>Use the <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-calibrate">calibrate</a> method to calibrate
 the winning model.</p>
 </div>
 <table class="table_params">

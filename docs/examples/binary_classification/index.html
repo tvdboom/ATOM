@@ -2868,6 +2868,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../ray_backend/" class="md-nav__link">
+        Ray backend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../regression/" class="md-nav__link">
         Regression
       </a>
@@ -3309,7 +3323,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight-ipynb .m { color: var(--jp-mirror-editor-number-color) } /* Literal.Number */
 .highlight-ipynb .s { color: var(--jp-mirror-editor-string-color) } /* Literal.String */
 .highlight-ipynb .ow { color: var(--jp-mirror-editor-operator-color); font-weight: bold } /* Operator.Word */
-.highlight-ipynb .pm { color: var(--jp-mirror-editor-punctuation-color) } /* Punctuation.Marker */
 .highlight-ipynb .w { color: var(--jp-mirror-editor-variable-color) } /* Text.Whitespace */
 .highlight-ipynb .mb { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Bin */
 .highlight-ipynb .mf { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Float */
@@ -4496,16 +4509,18 @@ atom = ATOMClassifier(X, "RainTomorrow", n_rows=0.05, n_jobs=8, verbose=2)</div>
 <pre>&lt;&lt; ================== ATOM ================== &gt;&gt;
 Algorithm task: binary classification.
 Parallel processing with 8 cores.
+Parallelization backend: loky
 
 Dataset stats ==================== &gt;&gt;
 Shape: (7109, 22)
 Train set size: 5688
 Test set size: 1421
 -------------------------------------
-Memory: 3.09 MB
+Memory: 3.08 MB
 Scaled: False
-Missing values: 15957 (10.2%)
+Missing values: 15681 (10.0%)
 Categorical features: 5 (23.8%)
+Duplicate samples: 2 (0.0%)
 
 </pre>
 </div>
@@ -4565,27 +4580,27 @@ atom.impute(strat_num="median", strat_cat="drop", max_nan_rows=0.8)</div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Fitting Imputer...
 Imputing missing values...
- --&gt; Dropping 4 samples for containing more than 16 missing values.
- --&gt; Imputing 18 missing values with median (11.9) in feature MinTemp.
- --&gt; Imputing 16 missing values with median (22.5) in feature MaxTemp.
- --&gt; Imputing 63 missing values with median (0.0) in feature Rainfall.
- --&gt; Imputing 3088 missing values with median (4.6) in feature Evaporation.
- --&gt; Imputing 3488 missing values with median (8.4) in feature Sunshine.
- --&gt; Dropping 444 samples due to missing values in feature WindGustDir.
- --&gt; Imputing 442 missing values with median (39.0) in feature WindGustSpeed.
- --&gt; Dropping 470 samples due to missing values in feature WindDir9am.
- --&gt; Dropping 158 samples due to missing values in feature WindDir3pm.
- --&gt; Imputing 49 missing values with median (13.0) in feature WindSpeed9am.
- --&gt; Imputing 102 missing values with median (19.0) in feature WindSpeed3pm.
- --&gt; Imputing 88 missing values with median (70.0) in feature Humidity9am.
- --&gt; Imputing 151 missing values with median (52.0) in feature Humidity3pm.
- --&gt; Imputing 717 missing values with median (1017.6) in feature Pressure9am.
- --&gt; Imputing 703 missing values with median (1015.25) in feature Pressure3pm.
- --&gt; Imputing 2765 missing values with median (5.0) in feature Cloud9am.
- --&gt; Imputing 2916 missing values with median (5.0) in feature Cloud3pm.
- --&gt; Imputing 38 missing values with median (16.6) in feature Temp9am.
- --&gt; Imputing 107 missing values with median (21.0) in feature Temp3pm.
- --&gt; Dropping 63 samples due to missing values in feature RainToday.
+ --&gt; Dropping 11 samples for containing more than 16 missing values.
+ --&gt; Imputing 23 missing values with median (11.9) in feature MinTemp.
+ --&gt; Imputing 23 missing values with median (22.4) in feature MaxTemp.
+ --&gt; Imputing 69 missing values with median (0.0) in feature Rainfall.
+ --&gt; Imputing 2986 missing values with median (4.8) in feature Evaporation.
+ --&gt; Imputing 3358 missing values with median (8.4) in feature Sunshine.
+ --&gt; Dropping 474 samples due to missing values in feature WindGustDir.
+ --&gt; Imputing 471 missing values with median (39.0) in feature WindGustSpeed.
+ --&gt; Dropping 490 samples due to missing values in feature WindDir9am.
+ --&gt; Dropping 179 samples due to missing values in feature WindDir3pm.
+ --&gt; Imputing 50 missing values with median (13.0) in feature WindSpeed9am.
+ --&gt; Imputing 121 missing values with median (19.0) in feature WindSpeed3pm.
+ --&gt; Imputing 73 missing values with median (69.0) in feature Humidity9am.
+ --&gt; Imputing 176 missing values with median (52.0) in feature Humidity3pm.
+ --&gt; Imputing 695 missing values with median (1017.6) in feature Pressure9am.
+ --&gt; Imputing 697 missing values with median (1015.1) in feature Pressure3pm.
+ --&gt; Imputing 2605 missing values with median (5.0) in feature Cloud9am.
+ --&gt; Imputing 2756 missing values with median (5.0) in feature Cloud3pm.
+ --&gt; Imputing 36 missing values with median (16.6) in feature Temp9am.
+ --&gt; Imputing 131 missing values with median (20.9) in feature Temp3pm.
+ --&gt; Dropping 69 samples due to missing values in feature RainToday.
 </pre>
 </div>
 </div>
@@ -4714,32 +4729,32 @@ Metric: f1
 Results for ExtraTrees:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 1.0
-Test evaluation --&gt; f1: 0.5097
-Time elapsed: 1.005s
+Test evaluation --&gt; f1: 0.5688
+Time elapsed: 9.395s
 Bootstrap ---------------------------------------
-Evaluation --&gt; f1: 0.5056 ± 0.0133
-Time elapsed: 0.795s
+Evaluation --&gt; f1: 0.5463 ± 0.0135
+Time elapsed: 4.742s
 -------------------------------------------------
-Total time: 1.801s
+Total time: 14.138s
 
 
 Results for RandomForest:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 1.0
-Test evaluation --&gt; f1: 0.5446
-Time elapsed: 0.233s
+Test evaluation --&gt; f1: 0.5969
+Time elapsed: 1.368s
 Bootstrap ---------------------------------------
-Evaluation --&gt; f1: 0.526 ± 0.0221
-Time elapsed: 0.892s
+Evaluation --&gt; f1: 0.576 ± 0.0117
+Time elapsed: 5.341s
 -------------------------------------------------
-Total time: 1.125s
+Total time: 6.709s
 
 
 Final results ==================== &gt;&gt;
-Total time: 2.926s
+Total time: 20.861s
 -------------------------------------
-ExtraTrees   --&gt; f1: 0.5056 ± 0.0133 ~
-RandomForest --&gt; f1: 0.526 ± 0.0221 ~ !
+ExtraTrees   --&gt; f1: 0.5463 ± 0.0135 ~
+RandomForest --&gt; f1: 0.576 ± 0.0117 ~ !
 </pre>
 </div>
 </div>
@@ -4838,20 +4853,20 @@ atom.results</div>
     <tr>
       <th>ET</th>
       <td>1.0</td>
-      <td>0.5097</td>
-      <td>1.005312</td>
-      <td>0.505645</td>
-      <td>0.795414</td>
-      <td>1.800726</td>
+      <td>0.5688</td>
+      <td>9.395485</td>
+      <td>0.546307</td>
+      <td>4.742292</td>
+      <td>14.137777</td>
     </tr>
     <tr>
       <th>RF</th>
       <td>1.0</td>
-      <td>0.5446</td>
-      <td>0.232734</td>
-      <td>0.525974</td>
-      <td>0.892079</td>
-      <td>1.124813</td>
+      <td>0.5969</td>
+      <td>1.367760</td>
+      <td>0.575995</td>
+      <td>5.341101</td>
+      <td>6.708861</td>
     </tr>
   </tbody>
 </table>
@@ -4924,7 +4939,7 @@ atom.plot_results(title="RF vs ET performance")</div>
 
 
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
-<div>                            <div id="a90d40db-3b43-4036-a1e2-fe93351ca3e8" class="plotly-graph-div" style="height:500px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("a90d40db-3b43-4036-a1e2-fe93351ca3e8")) {                    Plotly.newPlot(                        "a90d40db-3b43-4036-a1e2-fe93351ca3e8",                        [{"boxpoints":"outliers","legendgroup":"f1","marker":{"color":"rgb(0, 98, 98)"},"name":"f1","showlegend":true,"x":[0.5025125628140703,0.5245098039215687,0.4987654320987655,0.49000000000000005,0.5124378109452736,0.5242718446601942,0.5446009389671361,0.5458715596330275,0.5238095238095238,0.4913151364764268],"xaxis":"x","y":["ET","ET","ET","ET","ET","RF","RF","RF","RF","RF"],"yaxis":"y","type":"box","orientation":"h"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,1.0],"anchor":"y","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"bargroupgap":0.05,"boxmode":"group","title":{"pad":{"t":15,"b":15},"font":{"size":24},"text":"RF vs ET performance","x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"toggleitem","bgcolor":"rgba(255, 255, 255, 0.5)","x":0.99,"y":0.01,"xanchor":"right","yanchor":"bottom"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":49,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
+<div>                            <div id="c9c4273e-0cd1-455c-ac59-f0e384abb10c" class="plotly-graph-div" style="height:500px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("c9c4273e-0cd1-455c-ac59-f0e384abb10c")) {                    Plotly.newPlot(                        "c9c4273e-0cd1-455c-ac59-f0e384abb10c",                        [{"boxpoints":"outliers","legendgroup":"f1","marker":{"color":"rgb(0, 98, 98)"},"name":"f1","showlegend":true,"x":[0.5305164319248827,0.5505882352941176,0.5668202764976958,0.5433255269320844,0.5402843601895735,0.588495575221239,0.5637583892617449,0.5649202733485194,0.5758928571428571,0.5869074492099323],"xaxis":"x","y":["ET","ET","ET","ET","ET","RF","RF","RF","RF","RF"],"yaxis":"y","type":"box","orientation":"h"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,1.0],"anchor":"y","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"bargroupgap":0.05,"boxmode":"group","title":{"pad":{"t":15,"b":15},"font":{"size":24},"text":"RF vs ET performance","x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"toggleitem","bgcolor":"rgba(255, 255, 255, 0.5)","x":0.99,"y":0.01,"xanchor":"right","yanchor":"bottom"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":49,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
 </div>
 
 </div>
@@ -4977,99 +4992,67 @@ atom.evaluate()</div>
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
-<pre>
-<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
-<span class="ansi-red-intense-fg ansi-bold">TypeError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-intense-fg ansi-bold">In [9], line 2</span>
-<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Print the results of some common metrics</span>
-<span class="ansi-green-intense-fg ansi-bold">----&gt; 2</span> <span class="ansi-yellow-bg">atom</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">evaluate</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\atom\utils.py:2607</span>, in <span class="ansi-cyan-fg">crash.&lt;locals&gt;.wrapper</span><span class="ansi-blue-intense-fg ansi-bold">(*args, **kwargs)</span>
-<span class="ansi-green-fg">   2605</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> ex
-<span class="ansi-green-fg">   2606</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 2607</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> f(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs)
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\venv310\lib\site-packages\typeguard\__init__.py:1033</span>, in <span class="ansi-cyan-fg">typechecked.&lt;locals&gt;.wrapper</span><span class="ansi-blue-intense-fg ansi-bold">(*args, **kwargs)</span>
-<span class="ansi-green-fg">   1031</span> memo <span style="color: rgb(98,98,98)">=</span> _CallMemo(python_func, _localns, args<span style="color: rgb(98,98,98)">=</span>args, kwargs<span style="color: rgb(98,98,98)">=</span>kwargs)
-<span class="ansi-green-fg">   1032</span> check_argument_types(memo)
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 1033</span> retval <span style="color: rgb(98,98,98)">=</span> func(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs)
-<span class="ansi-green-fg">   1034</span> <span class="ansi-bold" style="color: rgb(0,135,0)">try</span>:
-<span class="ansi-green-fg">   1035</span>     check_return_type(retval, memo)
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
 
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\atom\baserunner.py:889</span>, in <span class="ansi-cyan-fg">BaseRunner.evaluate</span><span class="ansi-blue-intense-fg ansi-bold">(self, metric, dataset, threshold, sample_weight)</span>
-<span class="ansi-green-fg">    857</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Get all models&#39; scores for the provided metrics.</span>
-<span class="ansi-green-fg">    858</span> 
-<span class="ansi-green-fg">    859</span> <span style="color: rgb(175,0,0)">Parameters</span>
-<span class="ansi-green-intense-fg ansi-bold">   (...)</span>
-<span class="ansi-green-fg">    884</span> 
-<span class="ansi-green-fg">    885</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
-<span class="ansi-green-fg">    886</span> check_is_fitted(<span style="color: rgb(0,135,0)">self</span>, attributes<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">_models</span><span style="color: rgb(175,0,0)">&#34;</span>)
-<span class="ansi-green-fg">    888</span> <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> pd<span style="color: rgb(98,98,98)">.</span>DataFrame(
-<span class="ansi-green-intense-fg ansi-bold">--&gt; 889</span>     [
-<span class="ansi-green-fg">    890</span>         m<span style="color: rgb(98,98,98)">.</span>evaluate(metric, dataset, threshold, sample_weight)
-<span class="ansi-green-fg">    891</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> m <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_models<span style="color: rgb(98,98,98)">.</span>values()
-<span class="ansi-green-fg">    892</span>     ]
-<span class="ansi-green-fg">    893</span> )
-
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\atom\baserunner.py:890</span>, in <span class="ansi-cyan-fg">&lt;listcomp&gt;</span><span class="ansi-blue-intense-fg ansi-bold">(.0)</span>
-<span class="ansi-green-fg">    857</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Get all models&#39; scores for the provided metrics.</span>
-<span class="ansi-green-fg">    858</span> 
-<span class="ansi-green-fg">    859</span> <span style="color: rgb(175,0,0)">Parameters</span>
-<span class="ansi-green-intense-fg ansi-bold">   (...)</span>
-<span class="ansi-green-fg">    884</span> 
-<span class="ansi-green-fg">    885</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
-<span class="ansi-green-fg">    886</span> check_is_fitted(<span style="color: rgb(0,135,0)">self</span>, attributes<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">_models</span><span style="color: rgb(175,0,0)">&#34;</span>)
-<span class="ansi-green-fg">    888</span> <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> pd<span style="color: rgb(98,98,98)">.</span>DataFrame(
-<span class="ansi-green-fg">    889</span>     [
-<span class="ansi-green-intense-fg ansi-bold">--&gt; 890</span>         <span class="ansi-yellow-bg">m</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">evaluate</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">metric</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">dataset</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">threshold</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">sample_weight</span><span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">    891</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> m <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_models<span style="color: rgb(98,98,98)">.</span>values()
-<span class="ansi-green-fg">    892</span>     ]
-<span class="ansi-green-fg">    893</span> )
-
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\atom\utils.py:2607</span>, in <span class="ansi-cyan-fg">crash.&lt;locals&gt;.wrapper</span><span class="ansi-blue-intense-fg ansi-bold">(*args, **kwargs)</span>
-<span class="ansi-green-fg">   2605</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> ex
-<span class="ansi-green-fg">   2606</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 2607</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> f(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs)
-
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\venv310\lib\site-packages\typeguard\__init__.py:1031</span>, in <span class="ansi-cyan-fg">typechecked.&lt;locals&gt;.wrapper</span><span class="ansi-blue-intense-fg ansi-bold">(*args, **kwargs)</span>
-<span class="ansi-green-fg">   1030</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 1031</span>     memo <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">_CallMemo</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">python_func</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">_localns</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   1032</span>     check_argument_types(memo)
-<span class="ansi-green-fg">   1033</span>     retval <span style="color: rgb(98,98,98)">=</span> func(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs)
-
-File <span class="ansi-green-intense-fg ansi-bold">~\Documents\Python\ATOM\venv310\lib\site-packages\typeguard\__init__.py:198</span>, in <span class="ansi-cyan-fg">_CallMemo.__init__</span><span class="ansi-blue-intense-fg ansi-bold">(self, func, frame_locals, args, kwargs, forward_refs_policy)</span>
-<span class="ansi-green-fg">    195</span> signature <span style="color: rgb(98,98,98)">=</span> inspect<span style="color: rgb(98,98,98)">.</span>signature(func)
-<span class="ansi-green-fg">    197</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> args <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span> <span class="ansi-bold" style="color: rgb(175,0,255)">and</span> kwargs <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-<span class="ansi-green-intense-fg ansi-bold">--&gt; 198</span>     <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>arguments <span style="color: rgb(98,98,98)">=</span> signature<span style="color: rgb(98,98,98)">.</span>bind(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs)<span style="color: rgb(98,98,98)">.</span>arguments
-<span class="ansi-green-fg">    199</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">    200</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">assert</span> frame_locals <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">frame must be specified if args or kwargs is None</span><span style="color: rgb(175,0,0)">&#39;</span>
-
-File <span class="ansi-green-intense-fg ansi-bold">~\AppData\Local\Programs\Python\Python310\lib\inspect.py:3179</span>, in <span class="ansi-cyan-fg">Signature.bind</span><span class="ansi-blue-intense-fg ansi-bold">(self, *args, **kwargs)</span>
-<span class="ansi-green-fg">   3174</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">bind</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">/</span>, <span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
-<span class="ansi-green-fg">   3175</span>     <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Get a BoundArguments object, that maps the passed `args`</span>
-<span class="ansi-green-fg">   3176</span> <span style="color: rgb(175,0,0)">    and `kwargs` to the function&#39;s signature.  Raises `TypeError`</span>
-<span class="ansi-green-fg">   3177</span> <span style="color: rgb(175,0,0)">    if the passed arguments can not be bound.</span>
-<span class="ansi-green-fg">   3178</span> <span style="color: rgb(175,0,0)">    &#34;&#34;&#34;</span>
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 3179</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">_bind</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
-
-File <span class="ansi-green-intense-fg ansi-bold">~\AppData\Local\Programs\Python\Python310\lib\inspect.py:3105</span>, in <span class="ansi-cyan-fg">Signature._bind</span><span class="ansi-blue-intense-fg ansi-bold">(self, args, kwargs, partial)</span>
-<span class="ansi-green-fg">   3101</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">   3102</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> param<span style="color: rgb(98,98,98)">.</span>kind <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> (_VAR_KEYWORD, _KEYWORD_ONLY):
-<span class="ansi-green-fg">   3103</span>         <span style="color: rgb(95,135,135)"># Looks like we have no parameter for this positional</span>
-<span class="ansi-green-fg">   3104</span>         <span style="color: rgb(95,135,135)"># argument</span>
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 3105</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">TypeError</span>(
-<span class="ansi-green-fg">   3106</span>             <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">too many positional arguments</span><span style="color: rgb(175,0,0)">&#39;</span>) <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> <span style="color: rgb(0,135,0)">None</span>
-<span class="ansi-green-fg">   3108</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> param<span style="color: rgb(98,98,98)">.</span>kind <span style="color: rgb(98,98,98)">==</span> _VAR_POSITIONAL:
-<span class="ansi-green-fg">   3109</span>         <span style="color: rgb(95,135,135)"># We have an &#39;*args&#39;-like argument, let&#39;s fill it with</span>
-<span class="ansi-green-fg">   3110</span>         <span style="color: rgb(95,135,135)"># all positional arguments we have left and move on to</span>
-<span class="ansi-green-fg">   3111</span>         <span style="color: rgb(95,135,135)"># the next phase</span>
-<span class="ansi-green-fg">   3112</span>         values <span style="color: rgb(98,98,98)">=</span> [arg_val]
-
-<span class="ansi-red-intense-fg ansi-bold">TypeError</span>: too many positional arguments</pre>
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>accuracy</th>
+      <th>average_precision</th>
+      <th>balanced_accuracy</th>
+      <th>f1</th>
+      <th>jaccard</th>
+      <th>matthews_corrcoef</th>
+      <th>precision</th>
+      <th>recall</th>
+      <th>roc_auc</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>ET</th>
+      <td>0.8427</td>
+      <td>0.6813</td>
+      <td>0.6911</td>
+      <td>0.5403</td>
+      <td>0.3701</td>
+      <td>0.4828</td>
+      <td>0.7550</td>
+      <td>0.4207</td>
+      <td>0.8613</td>
+    </tr>
+    <tr>
+      <th>RF</th>
+      <td>0.8516</td>
+      <td>0.6871</td>
+      <td>0.7180</td>
+      <td>0.5869</td>
+      <td>0.4153</td>
+      <td>0.5212</td>
+      <td>0.7558</td>
+      <td>0.4797</td>
+      <td>0.8652</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 </div>
 
@@ -5078,13 +5061,15 @@ File <span class="ansi-green-intense-fg ansi-bold">~\AppData\Local\Programs\Pyth
 </div>
 
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -5111,14 +5096,37 @@ print(f"The winner is the {atom.winner.name} model!!")</div>
 </div>
 </div>
 
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>The winner is the RF model!!
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -5145,14 +5153,38 @@ atom.winner.plot_probabilities()</div>
 </div>
 </div>
 
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<div>                            <div id="a36e3b1f-cdbb-4326-ac79-a2586a6e7c7e" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("a36e3b1f-cdbb-4326-ac79-a2586a6e7c7e")) {                    Plotly.newPlot(                        "a36e3b1f-cdbb-4326-ac79-a2586a6e7c7e",                        [{"fill":"tonexty","fillcolor":"rgba(0, 98, 98, 0.2)","fillpattern":{"shape":""},"legendgroup":"RF","legendgrouptitle":{"font":{"size":16},"text":"RF"},"line":{"color":"rgb(0, 98, 98)","width":2},"mode":"lines","name":"RainTomorrow=0","showlegend":true,"x":[0.0,0.010101010101010102,0.020202020202020204,0.030303030303030304,0.04040404040404041,0.05050505050505051,0.06060606060606061,0.07070707070707072,0.08080808080808081,0.09090909090909091,0.10101010101010102,0.11111111111111112,0.12121212121212122,0.13131313131313133,0.14141414141414144,0.15151515151515152,0.16161616161616163,0.17171717171717174,0.18181818181818182,0.19191919191919193,0.20202020202020204,0.21212121212121213,0.22222222222222224,0.23232323232323235,0.24242424242424243,0.25252525252525254,0.26262626262626265,0.27272727272727276,0.2828282828282829,0.29292929292929293,0.30303030303030304,0.31313131313131315,0.32323232323232326,0.33333333333333337,0.3434343434343435,0.3535353535353536,0.36363636363636365,0.37373737373737376,0.38383838383838387,0.393939393939394,0.4040404040404041,0.4141414141414142,0.42424242424242425,0.43434343434343436,0.4444444444444445,0.4545454545454546,0.4646464646464647,0.4747474747474748,0.48484848484848486,0.494949494949495,0.5050505050505051,0.5151515151515152,0.5252525252525253,0.5353535353535354,0.5454545454545455,0.5555555555555556,0.5656565656565657,0.5757575757575758,0.5858585858585859,0.595959595959596,0.6060606060606061,0.6161616161616162,0.6262626262626263,0.6363636363636365,0.6464646464646465,0.6565656565656566,0.6666666666666667,0.6767676767676768,0.686868686868687,0.696969696969697,0.7070707070707072,0.7171717171717172,0.7272727272727273,0.7373737373737375,0.7474747474747475,0.7575757575757577,0.7676767676767677,0.7777777777777778,0.787878787878788,0.797979797979798,0.8080808080808082,0.8181818181818182,0.8282828282828284,0.8383838383838385,0.8484848484848485,0.8585858585858587,0.8686868686868687,0.8787878787878789,0.888888888888889,0.8989898989898991,0.9090909090909092,0.9191919191919192,0.9292929292929294,0.9393939393939394,0.9494949494949496,0.9595959595959597,0.9696969696969697,0.9797979797979799,0.98989898989899,1.0],"xaxis":"x","y":[3.0933689063475573,3.5579862850448816,3.9285991866078875,4.176306867946532,4.288536269256913,4.269940676345758,4.1396135415703865,3.9258168419930044,3.6599344704108883,3.371223943638619,3.0833456187060007,2.8129179020357085,2.5697597389434694,2.358176917155678,2.1786194193084634,2.02919117959044,1.9067250758778036,1.8073651345075599,1.7267755781191196,1.660192888880494,1.6025385249050115,1.54872514386165,1.4941553900321678,1.4352866321796072,1.3700720496308434,1.2981153634388398,1.2204798433013844,1.1392233448381313,1.05682875386417,0.9757189534939114,0.897981726642871,0.8253182761781456,0.7591263453144552,0.7005839377433689,0.6506287921856995,0.6098106508928158,0.5780824799749964,0.5546475764148895,0.5379679126231703,0.5259723260817694,0.5164144524374739,0.5072624005979143,0.4969875578841436,0.48466573622473386,0.46988804987670535,0.45256002467727796,0.4327053706871094,0.41036869614351373,0.3856454627302735,0.35879703611334723,0.3303712359238004,0.3012572115104722,0.2726420421479381,0.24587705798230516,0.2222855855177291,0.20295037665864796,0.18851908650777527,0.17906697314377107,0.17405394540573696,0.17239921273051123,0.1726677852411491,0.1733275566706943,0.17301048974605118,0.17071084396519684,0.16587946360817285,0.15841333165729987,0.14857373096404533,0.13687862971988693,0.12400319638390378,0.11069861509178927,0.09772085121841993,0.085758454674432,0.07535985647006689,0.06687431058340534,0.06042488142753736,0.05592288101998652,0.05311663663474557,0.051653813630086004,0.05113394536043157,0.051137830549875266,0.051237366633419615,0.05100344219751991,0.05003203998946364,0.04799715972619033,0.044719386714712483,0.04022252656982395,0.03474837580433914,0.028714231288953732,0.02262189589373659,0.016947689011280978,0.012049583098347368,0.008117828048597283,0.005175957434518472,0.0031204374597477093,0.0017774248298854816,0.0009560044070347473,0.0004853023469668028,0.00023242186768467345,0.00010498096461505306,0.00004470871658505219],"yaxis":"y","type":"scatter"},{"fill":"tonexty","fillcolor":"rgba(0, 98, 98, 0.2)","fillpattern":{"shape":"/"},"legendgroup":"RF","legendgrouptitle":{"font":{"size":16},"text":"RF"},"line":{"color":"rgb(0, 98, 98)","width":2},"mode":"lines","name":"RainTomorrow=1","showlegend":true,"x":[0.0,0.010101010101010102,0.020202020202020204,0.030303030303030304,0.04040404040404041,0.05050505050505051,0.06060606060606061,0.07070707070707072,0.08080808080808081,0.09090909090909091,0.10101010101010102,0.11111111111111112,0.12121212121212122,0.13131313131313133,0.14141414141414144,0.15151515151515152,0.16161616161616163,0.17171717171717174,0.18181818181818182,0.19191919191919193,0.20202020202020204,0.21212121212121213,0.22222222222222224,0.23232323232323235,0.24242424242424243,0.25252525252525254,0.26262626262626265,0.27272727272727276,0.2828282828282829,0.29292929292929293,0.30303030303030304,0.31313131313131315,0.32323232323232326,0.33333333333333337,0.3434343434343435,0.3535353535353536,0.36363636363636365,0.37373737373737376,0.38383838383838387,0.393939393939394,0.4040404040404041,0.4141414141414142,0.42424242424242425,0.43434343434343436,0.4444444444444445,0.4545454545454546,0.4646464646464647,0.4747474747474748,0.48484848484848486,0.494949494949495,0.5050505050505051,0.5151515151515152,0.5252525252525253,0.5353535353535354,0.5454545454545455,0.5555555555555556,0.5656565656565657,0.5757575757575758,0.5858585858585859,0.595959595959596,0.6060606060606061,0.6161616161616162,0.6262626262626263,0.6363636363636365,0.6464646464646465,0.6565656565656566,0.6666666666666667,0.6767676767676768,0.686868686868687,0.696969696969697,0.7070707070707072,0.7171717171717172,0.7272727272727273,0.7373737373737375,0.7474747474747475,0.7575757575757577,0.7676767676767677,0.7777777777777778,0.787878787878788,0.797979797979798,0.8080808080808082,0.8181818181818182,0.8282828282828284,0.8383838383838385,0.8484848484848485,0.8585858585858587,0.8686868686868687,0.8787878787878789,0.888888888888889,0.8989898989898991,0.9090909090909092,0.9191919191919192,0.9292929292929294,0.9393939393939394,0.9494949494949496,0.9595959595959597,0.9696969696969697,0.9797979797979799,0.98989898989899,1.0],"xaxis":"x","y":[0.3578196795805163,0.39903613801665105,0.44114568514060254,0.4836832769782436,0.526195418378348,0.5682607702730456,0.6095085467995134,0.649633362622719,0.6884054303684506,0.7256753337641916,0.7613729932109744,0.7955008743145477,0.8281219413983371,0.8593432989051414,0.8892968611346839,0.9181187077215955,0.9459289788759886,0.9728142029645707,0.9988138006857528,1.0239121630432009,1.0480371671206254,1.0710653159381236,1.0928329369926684,1.1131521418580925,1.1318296406603363,1.1486861188883777,1.1635737945212932,1.1763900153660203,1.1870853134553874,1.1956651358688235,1.2021854043871603,1.2067429762697262,1.2094628362762962,1.2104843178518117,1.209948745630727,1.2079905895494394,1.2047335672110475,1.2002922308343695,1.1947785767791534,1.188312286134287,1.1810325005334548,1.1731086771836539,1.1647481124969332,1.1561981687715996,1.1477420117321315,1.139687644756075,1.1323510538962325,1.1260351971422102,1.1210072433868978,1.1174767947495294,1.115577768720398,1.115356191083087,1.1167654265675893,1.119669460776384,1.1238538740416184,1.1290432463511015,1.13492301577845,1.1411633629729412,1.1474425534628354,1.1534673382274343,1.158988453394055,1.1638099040109624,1.167791477235819,1.1708447120599317,1.1729232649262737,1.1740091762061446,1.1740969057469361,1.1731771369348678,1.1712222461134816,1.1681750226552354,1.163941752315061,1.1583902073415644,1.151352494787833,1.142632173198502,1.132014621974048,1.1192793846321236,1.1042131308731518,1.0866219901012575,1.0663422718564912,1.0432489554945534,1.0172617372470631,0.988348798509153,0.9565287432837905,0.9218713014344564,0.8844973894056856,0.8445789716293394,0.8023389109704677,0.75805069227607,0.7120376157417723,0.664670849687823,0.6163656536766163,0.5675751567692635,0.5187812974506649,0.4704828688909871,0.4231810116246363,0.37736288967125065,0.33348461019590886,0.29195464745858907,0.2531190762493785,0.21724980100253127],"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,1.0],"anchor":"y","title":{"font":{"size":16},"text":"Probability"},"range":[0,1],"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","title":{"font":{"size":16},"text":"Probability density"},"automargin":true},"title":{"pad":{"t":15,"b":15},"font":{"size":24},"x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"toggleitem","bgcolor":"rgba(255, 255, 255, 0.5)","x":0.99,"y":0.99,"xanchor":"right","yanchor":"top"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":35,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -5178,6 +5210,30 @@ atom.winner.plot_threshold(metric=["f1", "accuracy", "ap"], steps=50)
     </div>
 
 </div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<div>                            <div id="119e99f6-c7db-45bc-9742-ef27728365f5" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("119e99f6-c7db-45bc-9742-ef27728365f5")) {                    Plotly.newPlot(                        "119e99f6-c7db-45bc-9742-ef27728365f5",                        [{"hovertemplate":"(%{x}, %{y})<extra>RF - f1_score</extra>","legendgroup":"RF","legendgrouptitle":{"font":{"size":16},"text":"RF"},"line":{"color":"rgb(0, 98, 98)","width":2},"marker":{"color":"rgb(0, 98, 98)","line":{"color":"rgba(255, 255, 255, 0.9)","width":1},"size":8,"symbol":"circle"},"name":"f1_score","showlegend":true,"x":[0.0,0.02040816326530612,0.04081632653061224,0.061224489795918366,0.08163265306122448,0.1020408163265306,0.12244897959183673,0.14285714285714285,0.16326530612244897,0.18367346938775508,0.2040816326530612,0.22448979591836732,0.24489795918367346,0.26530612244897955,0.2857142857142857,0.3061224489795918,0.32653061224489793,0.3469387755102041,0.36734693877551017,0.3877551020408163,0.4081632653061224,0.42857142857142855,0.44897959183673464,0.4693877551020408,0.4897959183673469,0.5102040816326531,0.5306122448979591,0.5510204081632653,0.5714285714285714,0.5918367346938775,0.6122448979591836,0.6326530612244897,0.6530612244897959,0.673469387755102,0.6938775510204082,0.7142857142857142,0.7346938775510203,0.7551020408163265,0.7755102040816326,0.7959183673469387,0.8163265306122448,0.836734693877551,0.8571428571428571,0.8775510204081632,0.8979591836734693,0.9183673469387754,0.9387755102040816,0.9591836734693877,0.9795918367346939,1.0],"xaxis":"x","y":[0.3603723404255319,0.4018058690744921,0.4370860927152318,0.47368421052631576,0.495164410058027,0.5195071868583162,0.5347826086956522,0.5508571428571428,0.5690276110444178,0.5760598503740648,0.5908496732026144,0.6065573770491803,0.6242774566473989,0.6334841628959277,0.629746835443038,0.6214876033057851,0.6348122866894198,0.6373239436619718,0.6304347826086957,0.6245353159851301,0.6165703275529866,0.6099009900990099,0.5945945945945945,0.5872340425531916,0.5903083700440529,0.5785876993166287,0.5714285714285714,0.557142857142857,0.5330073349633251,0.5087281795511222,0.4923076923076924,0.45744680851063824,0.44141689373297,0.41666666666666663,0.4034090909090909,0.36842105263157887,0.34029850746268653,0.31610942249240126,0.2795031055900621,0.2315112540192926,0.19672131147540983,0.1610738255033557,0.13698630136986298,0.11805555555555554,0.0642857142857143,0.04332129963898917,0.0218978102189781,0.0,0.0,0.0],"yaxis":"y","type":"scatter"},{"hovertemplate":"(%{x}, %{y})<extra>RF - accuracy_score</extra>","legendgroup":"RF","legendgrouptitle":{"font":{"size":16},"text":"RF"},"line":{"color":"rgb(0, 98, 98)","dash":"dashdot","width":2},"marker":{"color":"rgb(0, 98, 98)","line":{"color":"rgba(255, 255, 255, 0.9)","width":1},"size":8,"symbol":"x"},"name":"accuracy_score","showlegend":true,"x":[0.0,0.02040816326530612,0.04081632653061224,0.061224489795918366,0.08163265306122448,0.1020408163265306,0.12244897959183673,0.14285714285714285,0.16326530612244897,0.18367346938775508,0.2040816326530612,0.22448979591836732,0.24489795918367346,0.26530612244897955,0.2857142857142857,0.3061224489795918,0.32653061224489793,0.3469387755102041,0.36734693877551017,0.3877551020408163,0.4081632653061224,0.42857142857142855,0.44897959183673464,0.4693877551020408,0.4897959183673469,0.5102040816326531,0.5306122448979591,0.5510204081632653,0.5714285714285714,0.5918367346938775,0.6122448979591836,0.6326530612244897,0.6530612244897959,0.673469387755102,0.6938775510204082,0.7142857142857142,0.7346938775510203,0.7551020408163265,0.7755102040816326,0.7959183673469387,0.8163265306122448,0.836734693877551,0.8571428571428571,0.8775510204081632,0.8979591836734693,0.9183673469387754,0.9387755102040816,0.9591836734693877,0.9795918367346939,1.0],"xaxis":"x","y":[0.2197891321978913,0.35523114355231145,0.44849959448499593,0.5296025952960259,0.5766423357664233,0.6204379562043796,0.6528791565287916,0.681265206812652,0.7088402270884022,0.7242497972424979,0.7461476074614761,0.7664233576642335,0.7891321978913219,0.8029197080291971,0.8102189781021898,0.8142741281427412,0.8264395782643957,0.8329278183292782,0.8345498783454988,0.8361719383617194,0.8386050283860503,0.8402270884022709,0.8418491484184915,0.8426601784266018,0.8491484184914841,0.8499594484995945,0.851581508515815,0.8491484184914841,0.8450932684509327,0.8402270884022709,0.8394160583941606,0.8345498783454988,0.8337388483373885,0.829683698296837,0.829683698296837,0.8248175182481752,0.8207623682076237,0.8175182481751825,0.8118410381184104,0.8061638280616383,0.8012976480129764,0.797242497972425,0.7956204379562044,0.7939983779399837,0.7875101378751014,0.7850770478507705,0.7826439578264396,0.7802108678021087,0.7802108678021087,0.7802108678021087],"yaxis":"y","type":"scatter"},{"hovertemplate":"(%{x}, %{y})<extra>RF - average_precision_score</extra>","legendgroup":"RF","legendgrouptitle":{"font":{"size":16},"text":"RF"},"line":{"color":"rgb(0, 98, 98)","dash":"dash","width":2},"marker":{"color":"rgb(0, 98, 98)","line":{"color":"rgba(255, 255, 255, 0.9)","width":1},"size":8,"symbol":"diamond"},"name":"average_precision_score","showlegend":true,"x":[0.0,0.02040816326530612,0.04081632653061224,0.061224489795918366,0.08163265306122448,0.1020408163265306,0.12244897959183673,0.14285714285714285,0.16326530612244897,0.18367346938775508,0.2040816326530612,0.22448979591836732,0.24489795918367346,0.26530612244897955,0.2857142857142857,0.3061224489795918,0.32653061224489793,0.3469387755102041,0.36734693877551017,0.3877551020408163,0.4081632653061224,0.42857142857142855,0.44897959183673464,0.4693877551020408,0.4897959183673469,0.5102040816326531,0.5306122448979591,0.5510204081632653,0.5714285714285714,0.5918367346938775,0.6122448979591836,0.6326530612244897,0.6530612244897959,0.673469387755102,0.6938775510204082,0.7142857142857142,0.7346938775510203,0.7551020408163265,0.7755102040816326,0.7959183673469387,0.8163265306122448,0.836734693877551,0.8571428571428571,0.8775510204081632,0.8979591836734693,0.9183673469387754,0.9387755102040816,0.9591836734693877,0.9795918367346939,1.0],"xaxis":"x","y":[0.2197891321978913,0.25188215461694585,0.2801497946972396,0.3106000758813881,0.3291120534015798,0.35058086156237167,0.36435321254902964,0.3791670479425343,0.39637516735195405,0.4032586373123412,0.4180192749059498,0.434230228744012,0.45354337639289843,0.46460198178624124,0.4631840533582156,0.4577965212319635,0.474209031975617,0.48002737713729715,0.4762484061446064,0.4736020139665023,0.4709313657770437,0.4688773277401499,0.463133577112622,0.4609979595742845,0.4731783383407605,0.4710538281086669,0.47291083803594913,0.46391147446476666,0.4490776469173768,0.43238056299709543,0.42770655456048523,0.4099597221206831,0.4062866609505511,0.3921805059106935,0.3918538536561359,0.3749725016526406,0.3608874512558994,0.3496476369243934,0.3298089528769912,0.31014924747787626,0.29313567931729123,0.27904519921111615,0.2738549491855711,0.26873224936628926,0.24570019422821965,0.23706317355144355,0.22842615287466742,0.2197891321978913,0.2197891321978913,0.2197891321978913],"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,1.0],"anchor":"y","title":{"font":{"size":16},"text":"Threshold"},"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","title":{"font":{"size":16},"text":"Score"},"automargin":true},"title":{"pad":{"t":15,"b":15},"font":{"size":24},"x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"toggleitem","bgcolor":"rgba(255, 255, 255, 0.5)","x":0.01,"y":0.01,"xanchor":"left","yanchor":"bottom"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":35,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
+</div>
+
+</div>
+
+</div>
+
 </div>
 
 </div>

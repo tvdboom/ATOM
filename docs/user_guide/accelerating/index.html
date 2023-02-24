@@ -2908,6 +2908,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/ray_backend/" class="md-nav__link">
+        Ray backend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/regression/" class="md-nav__link">
         Regression
       </a>
@@ -3251,14 +3265,14 @@ take hours to run on a single processor. However, if you offload those
 tasks to a GPU, you can reduce training time to minutes instead.</p>
 <p>Training transformers and models in atom using a GPU is as easy as
 initializing the instance with parameter <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code>. The
-[<code>device</code>][atomclassifier-device] parameter accepts any string that
+<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a> parameter accepts any string that
 follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector. Examples are:</p>
 <ul>
 <li>device="cpu" (use CPU)</li>
 <li>device="gpu" (use default GPU)</li>
 <li>device="gpu:1" (use second GPU)</li>
 </ul>
-<p>Use the [<code>engine</code>][atomclassifier-engine] parameter to choose between the
+<p>Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a> parameter to choose between the
 cuML and sklearnex execution engines. The <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a>, <a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> and
 <a class="autorefs autorefs-internal" href="../../API/models/catb/#catboost">CatBoost</a> models come with their own GPU engine. Setting device="gpu"
 is sufficient to accelerate them with GPU, regardless of the engine parameter.</p>
@@ -3337,7 +3351,7 @@ type.</p>
 </ul>
 <h2 id="parallel-execution">Parallel execution</h2>
 <p>Another way to accelerate your pipelines is executing processes in parallel.
-Use the [<code>backend</code>][atomclassifier-backend] parameter to select one of several
+Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend"><code>backend</code></a> parameter to select one of several
 parallelization backends.</p>
 <ul>
 <li><strong>loky:</strong> Used by default, can induce some communication and memory overhead
@@ -3353,7 +3367,8 @@ parallelization backends.</p>
 <li><strong>ray:</strong> <a href="https://www.ray.io/">Ray</a> is an open-source unified compute framework
   that makes it easy to scale AI and Python workloads. Read more about Ray <a href="https://docs.ray.io/en/latest/ray-core/walkthrough.html">here</a>.
   Selecting the ray backend also parallelizes the data using <a href="https://modin.readthedocs.io/en/stable/">modin</a>, a
-  multi-threading, drop-in replacement for pandas, that uses Ray as backend.</li>
+  multi-threading, drop-in replacement for pandas, that uses Ray as backend.
+  See <a class="autorefs autorefs-internal" href="../../examples/multilabel_classification/#example-ray-backend">here</a> an example use case.</li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -3369,11 +3384,12 @@ datasets (&lt;1M rows).</p>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The [<code>njobs</code>][atomclassifier-n_jobs] parameter sets the number of cores
+<p>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-n_jobs"><code>njobs</code></a> parameter sets the number of cores
 for the individual models as well as for parallel training. You won't
 gain much training two models in parallel with 2 cores, when the models
 also parallelize computations internally. Instead, use parallel training
-for models that can't parallelize their training (no <code>n_jobs</code> parameter).</p>
+for models that can't parallelize their training (their constructor doesn't
+have the <code>n_jobs</code> parameter).</p>
 </div>
 
 
