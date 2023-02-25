@@ -4943,6 +4943,7 @@ class PredictionPlot(BasePlot):
 
                 # Add error bands
                 if m.bootstrap is not None:
+                    fillcolor = f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)"
                     fig.add_traces(
                         [
                             go.Scatter(
@@ -4962,7 +4963,7 @@ class PredictionPlot(BasePlot):
                                 mode="lines",
                                 line=dict(width=1, color=BasePlot._fig.get_color(group)),
                                 fill="tonexty",
-                                fillcolor=f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)",
+                                fillcolor=fillcolor,
                                 hovertemplate="%{y}<extra>lower bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -5589,6 +5590,7 @@ class PredictionPlot(BasePlot):
                             )
 
                 else:
+                    colorscale = PALETTE.get(BasePlot._fig.get_color(m.name), "Teal")
                     fig.add_trace(
                         go.Contour(
                             x=pred["values"][0],
@@ -5600,7 +5602,7 @@ class PredictionPlot(BasePlot):
                             ),
                             hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                             hoverongaps=False,
-                            colorscale=PALETTE.get(BasePlot._fig.get_color(m.name), "Teal"),
+                            colorscale=colorscale,
                             showscale=False,
                             showlegend=False,
                             xaxis=ax[0],
@@ -6992,6 +6994,7 @@ class PredictionPlot(BasePlot):
 
                 # Add error bands
                 if m.bootstrap is not None:
+                    fillcolor = f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)"
                     fig.add_traces(
                         [
                             go.Scatter(
@@ -7011,7 +7014,7 @@ class PredictionPlot(BasePlot):
                                 mode="lines",
                                 line=dict(width=1, color=BasePlot._fig.get_color(group)),
                                 fill="tonexty",
-                                fillcolor=f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)",
+                                fillcolor=fillcolor,
                                 hovertemplate="%{y}<extra>lower bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,

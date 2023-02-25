@@ -48,7 +48,7 @@ dependencies = [
 full = [
     "catboost>=1.0.4",
     "explainerdashboard>=0.4.0",
-    "evalml>=0.68.0",
+    "evalml<0.68.0",
     "gradio>=3.3.1",
     "lightgbm>=3.3.2",
     "pandas-profiling>=3.5.0",
