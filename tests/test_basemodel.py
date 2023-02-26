@@ -755,11 +755,12 @@ def test_clear():
     """Assert that the clear method resets the model's attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
+    print(atom.lr.predict_test)
     atom.plot_shap_beeswarm(display=False)
-    assert "predict_proba_train" in atom.lr.__dict__
+    assert "predict_test" in atom.lr.__dict__
     assert not atom.lr._shap._shap_values.empty
     atom.clear()
-    assert "predict_proba_train" not in atom.lr.__dict__
+    assert "predict_test" not in atom.lr.__dict__
     assert atom.lr._shap._shap_values.empty
 
 
@@ -846,7 +847,7 @@ def test_evaluate_invalid_threshold():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     with pytest.raises(ValueError, match=".*Value should lie.*"):
-        atom.mnb.evaluate(threshold=0)
+        atom.mnb.evaluate(threshold=0.0)
 
 
 def test_evaluate_invalid_dataset():

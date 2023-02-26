@@ -1351,7 +1351,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         strategy: str = "LeaveOneOut",
         *,
         max_onehot: INT | None = 10,
-        ordinal: dict[INT | str, SEQUENCE] | None = None,
+        ordinal: dict[str, SEQUENCE] | None = None,
         rare_to_value: SCALAR | None = None,
         value: str = "rare",
         **kwargs,

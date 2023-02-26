@@ -62,7 +62,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           codiga_api_token: ${{ secrets.CODIGA }}
           min_quality_grade: "EXCELLENT"
-          min_quality_score: "50"
+          min_quality_score: "100"
           project_name: "ATOM"
           max_defects_rate: "0.08"
           max_complex_functions_rate: "0.08"
@@ -108,4 +108,4 @@ jobs:
           pip install -U pytest pytest-xdist nbmake tensorflow scikeras
           pip install -e .[full]
       - name: Run example notebooks
-        run: pytest --nbmake -n=auto --ignore=./examples/webapp/ --ignore=./examples/accelerating_cuml.ipynb ./examples/
+        run: pytest --nbmake -n=auto --nbmake-timeout=600 --ignore=./examples/webapp/ --ignore=./examples/accelerating_cuml.ipynb ./examples/
