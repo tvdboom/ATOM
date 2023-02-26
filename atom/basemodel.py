@@ -556,10 +556,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     ]
                 )
 
-            # Annotate if model overfitted when train 20% > test
+            # Annotate if model overfitted when train 20% > test on main metric
             score_train = lst(self.score_train)[0]
             score_test = lst(self.score_test)[0]
-            if score_train - 0.2 * score_train > score_test:
+            if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
                 out += " ~"
 
         except AttributeError:  # Fails when model failed but errors="keep"

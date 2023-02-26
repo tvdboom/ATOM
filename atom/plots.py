@@ -6390,6 +6390,7 @@ class PredictionPlot(BasePlot):
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
@@ -6417,6 +6418,9 @@ class PredictionPlot(BasePlot):
         dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multioutput tasks][].
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -6473,15 +6477,18 @@ class PredictionPlot(BasePlot):
 
         """
         ds = self._get_set(dataset, max_one=True)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(x=(0, 0.69))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(x=(0.71, 1.0))
         for m in models:
+            y_true, y_pred = m._get_pred(ds, target)
+
             fig.add_trace(
                 go.Scatter(
-                    x=(x := getattr(m, f"predict_{ds}")),
-                    y=(res := np.subtract(x, getattr(m, f"y_{ds}"))),
+                    x=y_true,
+                    y=(res := np.subtract(y_true, y_pred)),
                     mode="markers",
                     line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
                     name=m.name,

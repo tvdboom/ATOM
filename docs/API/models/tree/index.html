@@ -2862,6 +2862,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multioutput_regression/" class="md-nav__link">
+        Multioutput regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3288,11 +3302,11 @@ the corresponding run also changes.</div><a id='decisiontree-study'></a><strong>
 <p>For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, the best trial is the trial that
 performed best on the main metric. Use the property's <code>@setter</code>
 to change the best trial. See <a class="autorefs autorefs-internal" href="../../../examples/hyperparameter_tuning/#example-hyperparameter-tuning">here</a>
-an example.</div><a id='decisiontree-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#decisiontree-best_trial">best trial</a>.</div><a id='decisiontree-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#decisiontree-best_trial">best trial</a>.</div><a id='decisiontree-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='decisiontree-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='decisiontree-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='decisiontree-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='decisiontree-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='decisiontree-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='decisiontree-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
+an example.</div><a id='decisiontree-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the [best trial][decisiontree-best_trial].</div><a id='decisiontree-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the [best trial][decisiontree-best_trial].</div><a id='decisiontree-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='decisiontree-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='decisiontree-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='decisiontree-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='decisiontree-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='decisiontree-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='decisiontree-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
 <p>The dataframe has shape=(n_bootstrap, metric) and shows the
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
-<a class="autorefs autorefs-internal" href="#decisiontree-score_bootstrap">score_bootstrap</a>.</div><a id='decisiontree-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='decisiontree-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='decisiontree-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='decisiontree-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
+[score_bootstrap][decisiontree-score_bootstrap].</div><a id='decisiontree-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='decisiontree-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='decisiontree-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='decisiontree-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
 <p>The sum of importances for all features is 1. The scores are
 extracted from the estimator's <code>scores_</code>, <code>coef_</code> or
 <code>feature_importances_</code> attribute, checked in that order.
@@ -3373,7 +3387,7 @@ attributes that are never used, saving time and memory.</p>
 <p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-methods">prediction methods</a> can be called directly
 from the model. The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#decisiontree-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
+<p><tr><td>[bootstrapping][decisiontree-bootstrapping]</td><td>Apply a bootstrap algorithm.</td></tr><tr><td>[calibrate][decisiontree-calibrate]</td><td>Calibrate the model.</td></tr><tr><td>[clear][decisiontree-clear]</td><td>Reset attributes and clear cache from the model.</td></tr><tr><td>[create_app][decisiontree-create_app]</td><td>Create an interactive app to test model predictions.</td></tr><tr><td>[create_dashboard][decisiontree-create_dashboard]</td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td>[cross_validate][decisiontree-cross_validate]</td><td>Evaluate the model using cross-validation.</td></tr><tr><td>[evaluate][decisiontree-evaluate]</td><td>Get the model's scores for the provided metrics.</td></tr><tr><td>[export_pipeline][decisiontree-export_pipeline]</td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td>[fit][decisiontree-fit]</td><td>Fit and validate the model.</td></tr><tr><td>[full_train][decisiontree-full_train]</td><td>Train the estimator on the complete dataset.</td></tr><tr><td>[get_best_threshold][decisiontree-get_best_threshold]</td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td>[hyperparameter_tuning][decisiontree-hyperparameter_tuning]</td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td>[inverse_transform][decisiontree-inverse_transform]</td><td>Inversely transform new data through the pipeline.</td></tr><tr><td>[save_estimator][decisiontree-save_estimator]</td><td>Save the estimator to a pickle file.</td></tr><tr><td>[serve][decisiontree-serve]</td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td>[register][decisiontree-register]</td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td>[transform][decisiontree-transform]</td><td>Transform new data through the pipeline.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='decisiontree-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1186>[source]</a></span></div>Apply a bootstrap algorithm.</p>
@@ -3407,13 +3421,13 @@ another, independent set for testing.
 <p><a id='decisiontree-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2252>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
-memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
+memory before [saving][atomclassifier-save] the instance. The
 affected attributes are:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
-<li><a class="autorefs autorefs-internal" href="#decisiontree-create_app">App instance</a></li>
-<li><a class="autorefs autorefs-internal" href="#decisiontree-create_dashboard">Dashboard instance</a></li>
+<li>[App instance][decisiontree-create_app]</li>
+<li>[Dashboard instance][decisiontree-create_dashboard]</li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">prediction attributes</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
@@ -3479,7 +3493,7 @@ Overview of the results.
 <p><a id='decisiontree-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2505>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the <a class="autorefs autorefs-internal" href="#decisiontree-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
+<p>Use the [self-get_best_threshold][decisiontree-get_best_threshold] or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
 method to determine a suitable value for the <code>threshold</code>
 parameter.</p>
 </div>
@@ -3500,7 +3514,7 @@ to class labels. Only used when:</p>
 </ul>
 <p>For multilabel classification tasks, it's possible to provide
 a sequence of thresholds (one per target column, as returned
-by the <a class="autorefs autorefs-internal" href="#decisiontree-get_best_threshold">get_best_threshold</a> method).
+by the [get_best_threshold][decisiontree-get_best_threshold] method).
 If float, the same threshold is applied to all target columns.</p>
 <p></div><a id='evaluate-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
 Sample weights corresponding to y in <code>dataset</code>.</p>

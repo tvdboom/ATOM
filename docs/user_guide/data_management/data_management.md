@@ -236,6 +236,9 @@ underlying estimator is the first parameter are accepted. Set the attribute to
     to disable the meta-estimator wrapper.
     * Set the `native_multioutput` parameter in [ATOMModel][] equal to True
     to ignore the meta-estimator for [custom models][].
+    * Check out the [multilabel classification][example-multilabel-calssification]
+    and [multioutput regression][example-multioutput-regression] examples.
+    
 
 <br>
 

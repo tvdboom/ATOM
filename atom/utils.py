@@ -2378,7 +2378,7 @@ def transform_one(
         use_cols = inc or [c for c in X.columns if c not in exc]
 
         # Convert to pandas and assign proper column names
-        if not isinstance(out, DATAFRAME):
+        if not isinstance(out, DATAFRAME_TYPES):
             if hasattr(transformer, "get_feature_names"):
                 columns = transformer.get_feature_names()
             elif hasattr(transformer, "get_feature_names_out"):

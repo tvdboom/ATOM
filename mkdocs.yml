@@ -264,6 +264,7 @@ nav:
         - In-training validation: examples/in_training_validation.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multilabel classification: examples/multilabel_classification.ipynb
+        - Multioutput regression: examples/multioutput_regression.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb
         - NLP: examples/nlp.ipynb
         - Pruning: examples/pruning.ipynb

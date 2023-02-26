@@ -2821,6 +2821,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multioutput_regression/" class="md-nav__link">
+        Multioutput regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3120,7 +3134,7 @@
 Also removes rows and columns with too many missing values. Use
 the <code>missing</code> attribute to customize what are considered "missing
 values".</p>
-<p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-impute">impute</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#imputing-missing-values">user guide</a>.</p>
+<p>This class can be accessed from atom through the [impute][atomclassifier-impute] method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#imputing-missing-values">user guide</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='imputer-strat_num'></a><strong>strat_num: str, int or float, default="drop"</strong><br><div markdown class='param'>
 Imputing strategy for numerical columns. Choose from:</p>
@@ -3288,7 +3302,7 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#imputer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#imputer-transform">transform</a></td><td>Impute the missing values.</td></tr></p>
+<p><tr><td>[fit][imputer-fit]</td><td>Fit to data.</td></tr><tr><td>[fit_transform][imputer-fit_transform]</td><td>Fit to data, then transform it.</td></tr><tr><td>[get_params][imputer-get_params]</td><td>Get parameters for this estimator.</td></tr><tr><td>[inverse_transform][imputer-inverse_transform]</td><td>Does nothing.</td></tr><tr><td>[log][imputer-log]</td><td>Print message and save to log file.</td></tr><tr><td>[save][imputer-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[set_params][imputer-set_params]</td><td>Set the parameters of this estimator.</td></tr><tr><td>[transform][imputer-transform]</td><td>Impute the missing values.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='imputer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2089>[source]</a></span></div>Fit to data.</p>
@@ -3381,7 +3395,7 @@ Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a> method.
+add the data to the [load][atomclassifier-load] method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>

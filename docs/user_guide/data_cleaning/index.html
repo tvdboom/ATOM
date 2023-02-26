@@ -2861,6 +2861,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/multioutput_regression/" class="md-nav__link">
+        Multioutput regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3211,7 +3225,7 @@ call, e.g. <code class="language-python highlight"><span class="n">atom</span><s
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Like the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add">add</a> method, the data cleaning methods
+<p>Like the [add][atomclassifier-add] method, the data cleaning methods
 accept the <code>columns</code> parameter to only transform a subset of the
 dataset's features, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span></code>.</p>
 </div>
@@ -3225,7 +3239,7 @@ non-fraud, and a very few cases are fraud. This leaves us with a very
 unbalanced ratio of fraud vs non-fraud cases. The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/balancer/#balancer">Balancer</a> class
 can oversample the minority class or undersample the majority class
 using any of the transformers implemented in the <a href="https://imbalanced-learn.org/stable/index.html">imblearn</a>
-package. It can be  accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-balance">balance</a>
+package. It can be  accessed from atom through the [balance][atomclassifier-balance]
 method.</p>
 <p><br></p>
 <h2 id="standard-data-cleaning">Standard data cleaning</h2>
@@ -3233,7 +3247,7 @@ method.</p>
 dataset before modelling. These are general rules that apply almost
 on every use-case and every task. The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a> class is a convenient
 tool to apply such steps. It can be accessed from atom through the
-<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clean">clean</a> method. Use the class' parameters to
+[clean][atomclassifier-clean] method. Use the class' parameters to
 choose which transformations to perform. The available steps are:</p>
 <ul>
 <li>Drop columns with specific data types.</li>
@@ -3253,7 +3267,7 @@ similar to constructing histograms for continuous data. However,
 histograms focus on counting features which fall into particular bins,
 whereas discretization focuses on assigning feature values to these
 bins. The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/discretizer/#discretizer">Discretizer</a> class can be used to bin continuous data into
-intervals. It can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-discretize">discretize</a>
+intervals. It can be accessed from atom through the [discretize][atomclassifier-discretize]
 method.</p>
 <p><br></p>
 <h2 id="encoding-categorical-features">Encoding categorical features</h2>
@@ -3265,7 +3279,7 @@ Regardless of what the value is used for, the challenge is determining
 how to use this data in the analysis. The majority of sklearn's models
 don't support direct manipulation of this kind of data. Use the
 <a class="autorefs autorefs-internal" href="../../API/data_cleaning/encoder/#encoder">Encoder</a> class to encode categorical features to numerical values.
-It can be  accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-encode">encode</a>
+It can be  accessed from atom through the [encode][atomclassifier-encode]
 method.</p>
 <p>There are many strategies to encode categorical columns. The Encoder
 class applies one strategy or another depending on the number of
@@ -3288,7 +3302,7 @@ however are incompatible with ATOM's models which assume that all
 values in an array are numerical, and that all have and hold meaning.
 The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/imputer/#imputer">Imputer</a> class handles missing values in the dataset by either
 dropping or imputing the value. It can be accessed from atom through
-the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> method.</p>
+the [impute][atomclassifier-impute] method.</p>
 <p><br></p>
 <h2 id="normalizing-the-feature-set">Normalizing the feature set</h2>
 <p>Use the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/normalizer/#normalizer">Normalizer</a> class to transform the feature set to follow
@@ -3296,7 +3310,7 @@ a Normal (Gaussian)-like distribution. In general, data must be
 transformed when using models that assume normality in the residuals.
 Examples of such models are <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">LogisticRegression</a>, <a class="autorefs autorefs-internal" href="../../API/models/lda/#lineardiscriminantanalysis">LinearDiscriminantAnalysis</a>
 and <a class="autorefs autorefs-internal" href="../../API/models/gnb/#gaussiannb">GaussianNB</a>. The class can be accessed from atom
-through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-normalize">normalize</a> method.</p>
+through the [normalize][atomclassifier-normalize] method.</p>
 <p><br></p>
 <h2 id="handling-outliers">Handling outliers</h2>
 <p>When modelling, it is important to clean the data sample to ensure that
@@ -3306,7 +3320,7 @@ and unlike the other data. These are called outliers. Often, machine
 learning modelling and model skill in general can be improved by 
 understanding and even removing these outlier samples. The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a>
 class offers 7 different strategies to detect outliers (described
-hereunder). It can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-prune">prune</a>
+hereunder). It can be accessed from atom through the [prune][atomclassifier-prune]
 method.</p>
 <p><strong>z-score</strong><br>
 The z-score of a value in the dataset is defined as the number of standard
@@ -3366,7 +3380,7 @@ learning estimators; they might behave badly if the individual features
 do not more or less look like standard normally distributed data (e.g.
 Gaussian with zero mean and unit variance). The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a> class let you
 quickly scale atom's dataset using one of sklearn's scalers. It can be
-accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-scale">scale</a> method. </p>
+accessed from atom through the [scale][atomclassifier-scale] method. </p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>All strategies can utilize GPU speed-up. Click <a class="autorefs autorefs-internal" href="../accelerating/#gpu-acceleration">here</a>
