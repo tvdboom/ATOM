@@ -15,7 +15,7 @@ from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import Aesthetics, BaseFigure, BasePlot
-from atom.utils import INT, NotFittedError
+from atom.utils import NotFittedError
 
 from .conftest import (
     X10, X10_str, X_bin, X_class, X_label, X_reg, X_sparse, X_text, y10, y_bin,
@@ -103,7 +103,7 @@ def test_palette_setter_invalid_name():
 
 def test_title_fontsize():
     """Assert that the title_fontsize getter works."""
-    assert isinstance(BasePlot().title_fontsize, INT)
+    assert isinstance(BasePlot().title_fontsize, int)
 
 
 def test_title_fontsize_setter():
@@ -114,7 +114,7 @@ def test_title_fontsize_setter():
 
 def test_label_fontsize():
     """Assert that the label_fontsize getter works."""
-    assert isinstance(BasePlot().label_fontsize, INT)
+    assert isinstance(BasePlot().label_fontsize, int)
 
 
 def test_label_fontsize_setter():
@@ -125,7 +125,7 @@ def test_label_fontsize_setter():
 
 def test_tick_fontsize():
     """Assert that the tick_fontsize getter works."""
-    assert isinstance(BasePlot().tick_fontsize, INT)
+    assert isinstance(BasePlot().tick_fontsize, int)
 
 
 def test_tick_fontsize_setter():
@@ -136,7 +136,7 @@ def test_tick_fontsize_setter():
 
 def test_line_width():
     """Assert that the line_width getter works."""
-    assert isinstance(BasePlot().tick_fontsize, INT)
+    assert isinstance(BasePlot().tick_fontsize, int)
 
 
 def test_line_width_setter():
@@ -147,7 +147,7 @@ def test_line_width_setter():
 
 def test_marker_size():
     """Assert that the marker_size getter works."""
-    assert isinstance(BasePlot().marker_size, INT)
+    assert isinstance(BasePlot().marker_size, int)
 
 
 def test_marker_size_setter():

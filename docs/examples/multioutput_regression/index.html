@@ -3337,7 +3337,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight-ipynb .m { color: var(--jp-mirror-editor-number-color) } /* Literal.Number */
 .highlight-ipynb .s { color: var(--jp-mirror-editor-string-color) } /* Literal.String */
 .highlight-ipynb .ow { color: var(--jp-mirror-editor-operator-color); font-weight: bold } /* Operator.Word */
-.highlight-ipynb .pm { color: var(--jp-mirror-editor-punctuation-color) } /* Punctuation.Marker */
 .highlight-ipynb .w { color: var(--jp-mirror-editor-variable-color) } /* Text.Whitespace */
 .highlight-ipynb .mb { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Bin */
 .highlight-ipynb .mf { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Float */
@@ -4313,11 +4312,11 @@ X, y = make_regression(n_samples=1000, n_features=10, n_informative=5, n_targets
         </div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create the neural network</span>
 <span class="k">class</span> <span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">KerasRegressor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multioutput multilayer perceptron.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Multioutput multilayer perceptron.&quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_keras_build_fn</span><span class="p">(</span><span class="n">n_inputs</span><span class="p">,</span> <span class="n">n_outputs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the model&#39;s architecture.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Create the model&#39;s architecture.&quot;&quot;&quot;</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">input_dim</span><span class="o">=</span><span class="n">n_inputs</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="s2">&quot;he_uniform&quot;</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">))</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">))</span>
@@ -5196,7 +5195,7 @@ atom.plot_residuals(target=2)</div>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2022, by Mavs.
+      Copyright &copy; 2023, by Mavs.
     </div>
   
   

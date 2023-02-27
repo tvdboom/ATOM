@@ -1187,7 +1187,7 @@ def flt(x: Any) -> Any:
         Object.
 
     """
-    return x[0] if isinstance(x, SEQUENCE) and len(x) == 1 else x
+    return x[0] if isinstance(x, SEQUENCE_TYPES) and len(x) == 1 else x
 
 
 def lst(x: Any) -> SEQUENCE:
@@ -1349,7 +1349,7 @@ def get_cols(elem: PANDAS) -> list[SERIES]:
         Columns in elem.
 
     """
-    if isinstance(elem, SERIES):
+    if isinstance(elem, SERIES_TYPES):
         return [elem]
     else:
         return [elem[col] for col in elem]
@@ -1832,7 +1832,7 @@ def check_is_fitted(
 
         """
         if attr:
-            if isinstance(value := getattr(estimator, attr), PANDAS):
+            if isinstance(value := getattr(estimator, attr), PANDAS_TYPES):
                 return value.empty
             else:
                 return not value
@@ -1978,7 +1978,7 @@ def infer_task(y: PANDAS, goal: str = "class") -> str:
             return "multilabel classification"
         else:
             return "multiclass-multioutput classification"
-    elif isinstance(y.iloc[0], SEQUENCE):
+    elif isinstance(y.iloc[0], SEQUENCE_TYPES):
         return "multilabel classification"
     elif y.nunique() == 1:
         raise ValueError(f"Only found 1 target value: {y.unique()[0]}")

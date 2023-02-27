@@ -1315,7 +1315,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 bins = self.bins
 
             if self.strategy.lower() != "custom":
-                if isinstance(bins, SEQUENCE):
+                if isinstance(bins, SEQUENCE_TYPES):
                     try:
                         bins = bins[i]  # Fetch the i-th bin for the i-th column
                     except IndexError:
@@ -1346,7 +1346,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
 
             else:
-                if not isinstance(bins, SEQUENCE):
+                if not isinstance(bins, SEQUENCE_TYPES):
                     raise TypeError(
                         f"Invalid type for the bins parameter, got {bins}. Only "
                         "a sequence of bin edges is accepted when strategy='custom'."

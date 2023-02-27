@@ -2313,7 +2313,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
             y_pred = self.inverse_transform(y=self.predict([X], verbose=0), verbose=0)
-            if isinstance(y_pred, DATAFRAME):
+            if isinstance(y_pred, DATAFRAME_TYPES):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])
@@ -2706,7 +2706,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         # Assign a mlflow run to the new estimator
         if self._run:
-            print("sii")
             self._run = mlflow.start_run(run_name=f"{self.name}_full_train")
             mlflow.end_run()
 

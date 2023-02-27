@@ -60,7 +60,7 @@ additional libraries. You can install all the optional dependencies using
 * **[evalml](https://evalml.alteryx.com/en/stable/)** (<0.68.0)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.3.1)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
-* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.5.0)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.0.0)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.6.0)

@@ -3250,7 +3250,7 @@ class HTPlot(BasePlot):
         for d in [dims[0]] + sorted(dims[1:], key=lambda x: params.index(x["label"])):
             if "ticktext" in d:
                 # Skip processing for logarithmic params
-                if all(isinstance(i, INT) for i in d["values"]):
+                if all(isinstance(i, INT_TYPES) for i in d["values"]):
                     # Order categorical values
                     mapping = [d["ticktext"][i] for i in d["values"]]
                     d["ticktext"] = sort_mixed_types(d["ticktext"])
@@ -6746,10 +6746,15 @@ class PredictionPlot(BasePlot):
             }
         )
 
+        if isinstance(metric, INT_TYPES):
+            xlabel = self._metric[metric].name
+        else:
+            xlabel = "time (s)"
+
         BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel=self._metric[metric].name if isinstance(metric, INT) else "time (s)",
+            xlabel=xlabel,
             title=title,
             legend=legend,
             figsize=figsize or (900, 400 + len(models) * 50),

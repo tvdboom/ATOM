@@ -3084,7 +3084,7 @@ an optimal pipeline like well known AutoML tools such as
 the user find the optimal pipeline himself. One of the goals of this
 package is to help data scientists produce explainable pipelines, and
 using an AutoML black box function would impede that. That said, it is
-possible to integrate a EvalML pipeline with atom through the [automl][atomclassifier-automl]
+possible to integrate a EvalML pipeline with atom through the <a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier-automl">automl</a>
 method.</p>
 </details>
 <details class="faq">
@@ -3137,7 +3137,7 @@ utility.</p>
 <details class="faq">
 <summary>Can I merge a sklearn pipeline with atom?</summary>
 <p>Yes. Like any other transformer, it is possible to add a sklearn
-pipeline to atom using the [add][atomclassifier-add] method. Every
+pipeline to atom using the <a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier-add">add</a> method. Every
 transformer in the pipeline is merged independently. The pipeline is
 not allowed to end with a model since atom manages its own models.
 If that is the case, add the pipeline using <code>atom.add(pipeline[:-1])</code>.</p>
@@ -3163,7 +3163,7 @@ pre-processing step, which means losing the ability to inspect how a
 transformer changed the dataset. For this reason, it is not possible to
 apply cross-validation until after a model has been trained. After a
 model has been trained, the pipeline is defined, and cross-validation
-can be applied using the [cross_validate][adaboost-cross_validate]
+can be applied using the <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost-cross_validate">cross_validate</a>
 method. See <a class="autorefs autorefs-internal" href="../user_guide/training/#multi-metric-runs">here</a> an example using cross-validation.</p>
 </details>
 <details class="faq">
@@ -3240,7 +3240,7 @@ directly to a model.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2022, by Mavs.
+      Copyright &copy; 2023, by Mavs.
     </div>
   
   

@@ -42,8 +42,8 @@ CUSTOM_URLS = dict(
     automlsearch="https://evalml.alteryx.com/en/stable/autoapi/evalml/automl/index.html#evalml.automl.AutoMLSearch",
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
     pipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
-    profiling="https://github.com/ydataai/pandas-profiling",
-    profilereport="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html",
+    profiling="https://github.com/ydataai/ydata-profiling",
+    profilereport="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html",
     # BaseModel
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",

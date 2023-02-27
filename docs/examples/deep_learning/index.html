@@ -3337,7 +3337,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight-ipynb .m { color: var(--jp-mirror-editor-number-color) } /* Literal.Number */
 .highlight-ipynb .s { color: var(--jp-mirror-editor-string-color) } /* Literal.String */
 .highlight-ipynb .ow { color: var(--jp-mirror-editor-operator-color); font-weight: bold } /* Operator.Word */
-.highlight-ipynb .pm { color: var(--jp-mirror-editor-punctuation-color) } /* Punctuation.Marker */
 .highlight-ipynb .w { color: var(--jp-mirror-editor-variable-color) } /* Text.Whitespace */
 .highlight-ipynb .mb { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Bin */
 .highlight-ipynb .mf { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Float */
@@ -4335,18 +4334,18 @@ data = (X_train, y_train), (X_test, y_test)</div>
         </div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create the convolutional neural network</span>
 <span class="k">class</span> <span class="nc">ConvNN</span><span class="p">(</span><span class="n">KerasClassifier</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convolutional neural network model.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Convolutional neural network model.&quot;&quot;&quot;</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">feature_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the 2d input to the image&#39;s format (len(X), 28, 28, 1).&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Convert the 2d input to the image&#39;s format (len(X), 28, 28, 1).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">FunctionTransformer</span><span class="p">(</span>
             <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">X</span><span class="p">:</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_keras_build_fn</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the model&#39;s architecture.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Create the model&#39;s architecture.&quot;&quot;&quot;</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
             <span class="n">Conv2D</span><span class="p">(</span>
@@ -5287,7 +5286,7 @@ atom.cnn.plot_hyperparameters()</div>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2022, by Mavs.
+      Copyright &copy; 2023, by Mavs.
     </div>
   
   

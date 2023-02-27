@@ -486,7 +486,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     ):
         """Create an Exploratory Data Analysis report.
 
-        ATOM uses the [pandas-profiling][profiling] package for the EDA.
+        ATOM uses the [ydata-profiling][profiling] package for the EDA.
         The report is rendered directly in the notebook. The created
         [ProfileReport][] instance can be accessed through the `report`
         attribute.
@@ -512,8 +512,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             instance.
 
         """
-        check_dependency("pandas-profiling")
-        from pandas_profiling import ProfileReport
+        check_dependency("ydata-profiling")
+        from ydata_profiling import ProfileReport
 
         self.log("Creating profile report...", 1)
 

@@ -18,9 +18,9 @@ from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
-    DATAFRAME, FEATURES, INDEX, INT, INT_TYPES, PANDAS, SEQUENCE, SERIES,
-    SERIES_TYPES, TARGET, CustomDict, bk, custom_transform, flt, get_cols, lst,
-    merge, to_pandas,
+    DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
+    SEQUENCE, SERIES, SERIES_TYPES, TARGET, CustomDict, bk, custom_transform,
+    flt, get_cols, lst, merge, to_pandas,
 )
 
 
@@ -702,7 +702,7 @@ class Branch:
         if only_columns:
             return get_column(target)
         elif isinstance(target, tuple):
-            if not isinstance(self.y, DATAFRAME):
+            if not isinstance(self.y, DATAFRAME_TYPES):
                 raise ValueError(
                     f"Invalid value for the target parameter, got {target}. "
                     "A tuple is only accepted for multioutput tasks."
