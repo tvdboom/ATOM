@@ -23,7 +23,6 @@ from nltk.collocations import (
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
-from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
@@ -243,7 +242,6 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         *,
@@ -281,7 +279,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         # Encountered regex occurrences
         self.drops = pd.DataFrame()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
@@ -588,7 +586,6 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         *,
@@ -605,7 +602,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Normalize the text.
 
@@ -849,7 +846,6 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         bigram_freq: SCALAR | None = None,
@@ -868,7 +864,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.trigrams = None
         self.quadgrams = None
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Tokenize the text.
 
@@ -1132,7 +1128,6 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         strategy: str = "bow",
@@ -1152,7 +1147,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Vectorizer:
         """Fit to data.
 
@@ -1208,7 +1203,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Vectorize the text.
 

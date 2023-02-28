@@ -154,7 +154,9 @@ def test_stemming():
 
 def test_lemmatization():
     """Assert that lemmatization is applied."""
-    assert TextNormalizer().transform([["better"]])["corpus"][0] == ["well"]
+    normalizer = TextNormalizer(stopwords=False, lemmatize=True)
+    X = normalizer.transform([["start running better old friend"]])
+    assert X["corpus"][0] == ["start", "run", "well", "old", "friend"]
 
 
 # Test Vectorizer ================================================== >>

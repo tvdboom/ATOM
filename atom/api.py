@@ -12,14 +12,12 @@ from __future__ import annotations
 from logging import Logger
 
 from sklearn.base import clone
-from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils import INT, SCALAR, SEQUENCE, TARGET, Predictor
 
 
-@typechecked
 def ATOMModel(
     estimator: Predictor,
     name: str | None = None,
@@ -390,7 +388,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
     def __init__(
         self,
         *arrays,
@@ -690,7 +687,6 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
     def __init__(
         self,
         *arrays,

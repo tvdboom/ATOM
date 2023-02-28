@@ -14,7 +14,6 @@ from copy import copy
 from functools import cached_property
 
 import pandas as pd
-from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
@@ -92,7 +91,6 @@ class Branch:
         return self._name
 
     @name.setter
-    @typechecked
     def name(self, value: str):
         if not value:
             raise ValueError("A branch can't have an empty name!")
@@ -236,7 +234,6 @@ class Branch:
         return self._data
 
     @dataset.setter
-    @typechecked
     def dataset(self, value: FEATURES):
         self._data = self._check_setter("dataset", value)
 
@@ -246,7 +243,6 @@ class Branch:
         return self._data.loc[self._idx[1], :]
 
     @train.setter
-    @typechecked
     def train(self, value: FEATURES):
         df = self._check_setter("train", value)
         self._data = bk.concat([df, self.test])
@@ -258,7 +254,6 @@ class Branch:
         return self._data.loc[self._idx[2], :]
 
     @test.setter
-    @typechecked
     def test(self, value: FEATURES):
         df = self._check_setter("test", value)
         self._data = bk.concat([self.train, df])
@@ -281,7 +276,6 @@ class Branch:
         return self._data.drop(self.target, axis=1)
 
     @X.setter
-    @typechecked
     def X(self, value: FEATURES):
         df = self._check_setter("X", value)
         self._data = merge(df, self.y)
@@ -292,7 +286,6 @@ class Branch:
         return self._data[self.target]
 
     @y.setter
-    @typechecked
     def y(self, value: TARGET):
         series = self._check_setter("y", value)
         self._data = merge(self._data.drop(self.target, axis=1), series)
@@ -303,7 +296,6 @@ class Branch:
         return self.train.drop(self.target, axis=1)
 
     @X_train.setter
-    @typechecked
     def X_train(self, value: FEATURES):
         df = self._check_setter("X_train", value)
         self._data = bk.concat([merge(df, self.train[self.target]), self.test])
@@ -314,7 +306,6 @@ class Branch:
         return self.train[self.target]
 
     @y_train.setter
-    @typechecked
     def y_train(self, value: TARGET):
         series = self._check_setter("y_train", value)
         self._data = bk.concat([merge(self.X_train, series), self.test])
@@ -325,7 +316,6 @@ class Branch:
         return self.test.drop(self.target, axis=1)
 
     @X_test.setter
-    @typechecked
     def X_test(self, value: FEATURES):
         df = self._check_setter("X_test", value)
         self._data = bk.concat([self.train, merge(df, self.test[self.target])])
@@ -336,7 +326,6 @@ class Branch:
         return self.test[self.target]
 
     @y_test.setter
-    @typechecked
     def y_test(self, value: TARGET):
         series = self._check_setter("y_test", value)
         self._data = bk.concat([self.train, merge(self.X_test, series)])

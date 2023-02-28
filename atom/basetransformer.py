@@ -27,7 +27,6 @@ import ray
 import sklearnex
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
-from typeguard import typechecked
 
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
@@ -84,7 +83,6 @@ class BaseTransformer:
         return self._n_jobs
 
     @n_jobs.setter
-    @typechecked
     def n_jobs(self, value: INT):
         # Check number of cores for multiprocessing
         n_cores = multiprocessing.cpu_count()
@@ -107,7 +105,6 @@ class BaseTransformer:
         return self._device
 
     @device.setter
-    @typechecked
     def device(self, value: str):
         self._device = value
         if "gpu" in value.lower():
@@ -119,7 +116,6 @@ class BaseTransformer:
         return self._engine
 
     @engine.setter
-    @typechecked
     def engine(self, value: str):
         if value == "sklearnex":
             sklearnex.set_config("auto" if "cpu" in self.device else self.device)
@@ -148,7 +144,6 @@ class BaseTransformer:
         return self._backend
 
     @backend.setter
-    @typechecked
     def backend(self, value: str):
         if value not in (opts := ("loky", "multiprocessing", "threading", "ray")):
             raise ValueError(
@@ -183,7 +178,6 @@ class BaseTransformer:
         return self._verbose
 
     @verbose.setter
-    @typechecked
     def verbose(self, value: INT):
         if value < 0 or value > 2:
             raise ValueError(
@@ -198,7 +192,6 @@ class BaseTransformer:
         return self._warnings
 
     @warnings.setter
-    @typechecked
     def warnings(self, value: bool | str):
         if isinstance(value, bool):
             self._warnings = "default" if value else "ignore"
@@ -222,7 +215,6 @@ class BaseTransformer:
         return self._logger
 
     @logger.setter
-    @typechecked
     def logger(self, value: str | Logger | None):
         external_loggers = ["mlflow", "optuna", "ray", "modin", "featuretools", "gradio"]
 
@@ -258,7 +250,6 @@ class BaseTransformer:
         return self._experiment
 
     @experiment.setter
-    @typechecked
     def experiment(self, value: str | None):
         self._experiment = value
         if value:
@@ -271,7 +262,6 @@ class BaseTransformer:
         return self._random_state
 
     @random_state.setter
-    @typechecked
     def random_state(self, value: INT | None):
         if value and value < 0:
             raise ValueError(
@@ -325,7 +315,6 @@ class BaseTransformer:
             return getattr(import_module(f"sklearn.{module}"), name)
 
     @staticmethod
-    @typechecked
     def _prepare_input(
         X: FEATURES | None = None,
         y: TARGET | None = None,
@@ -383,12 +372,12 @@ class BaseTransformer:
                 raise ValueError("Duplicate column names found in X.")
 
         # Prepare target column
-        if isinstance(y, (dict, *SEQUENCE_TYPES, DATAFRAME_TYPES)):
+        if isinstance(y, (dict, *SEQUENCE_TYPES, *DATAFRAME_TYPES)):
             if isinstance(y, dict):
                 if n_cols(y := to_df(y, index=getattr(X, "index", None))) == 1:
                     y = y.iloc[:, 0]  # If y is one-dimensional, get series
 
-            elif isinstance(y, (SEQUENCE_TYPES, DATAFRAME_TYPES)):
+            elif isinstance(y, (*SEQUENCE_TYPES, *DATAFRAME_TYPES)):
                 # If X and y have different number of rows, try multioutput
                 if X is not None and len(X) != len(y):
                     try:
@@ -853,7 +842,7 @@ class BaseTransformer:
 
         return sets
 
-    @composed(crash, typechecked)
+    @crash
     def log(self, msg: SCALAR | str, level: INT = 0, severity: str = "info"):
         """Print message and save to log file.
 
@@ -888,7 +877,7 @@ class BaseTransformer:
             for text in str(msg).split("\n"):
                 getattr(getLogger(self.__class__.__name__), severity)(str(text))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def save(self, filename: str = "auto", *, save_data: bool = True):
         """Save the instance to a pickle file.
 

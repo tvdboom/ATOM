@@ -42,7 +42,6 @@ from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
 from starlette.requests import Request
-from typeguard import typechecked
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
@@ -780,7 +779,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return result
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def hyperparameter_tuning(self, n_trials: INT, reset: bool = False):
         """Run the hyperparameter tuning algorithm.
 
@@ -1073,7 +1072,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self.log(f"Best evaluation --> {'   '.join(out)}", 1)
         self.log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: DATAFRAME | None = None, y: SERIES | None = None):
         """Fit and validate the model.
 
@@ -1183,7 +1182,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self._time_fit += (dt.now() - t_init).total_seconds()
         self.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def bootstrapping(self, n_bootstrap: INT, reset: bool = False):
         """Apply a bootstrap algorithm.
 
@@ -1258,7 +1257,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._name
 
     @name.setter
-    @typechecked
     def name(self, value: str):
         """Change the model's name."""
         # Drop the acronym if provided by the user
@@ -1308,7 +1306,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._best_trial
 
     @best_trial.setter
-    @typechecked
     def best_trial(self, value: INT):
         """Change the selected best trial."""
         if value not in self.trials.index:
@@ -1998,7 +1995,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return metric(self.estimator, X, y, sample_weight)
 
     @available_if(estimator_has_attr("decision_function"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def decision_function(
         self,
         X: INT | str | slice | SEQUENCE | FEATURES,
@@ -2033,7 +2030,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         return self._prediction(X, verbose=verbose, method="decision_function")
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict(
         self,
         X: INT | str | slice | SEQUENCE | FEATURES,
@@ -2068,7 +2065,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._prediction(X, verbose=verbose, method="predict")
 
     @available_if(estimator_has_attr("predict_log_proba"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_log_proba(
         self,
         X: INT | str | slice | SEQUENCE | FEATURES,
@@ -2103,7 +2100,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
 
     @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_proba(
         self,
         X: INT | str | slice | SEQUENCE | FEATURES,
@@ -2139,7 +2136,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._prediction(X, verbose=verbose, method="predict_proba")
 
     @available_if(estimator_has_attr("score"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def score(
         self,
         X: INT | str | slice | SEQUENCE | FEATURES,
@@ -2344,7 +2341,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         )
 
     @available_if(has_task("multioutput", inverse=True))
-    @composed(crash, typechecked, method_to_log)
+    @composed(crash, method_to_log)
     def create_dashboard(
         self,
         dataset: str = "test",
@@ -2502,7 +2499,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return df
 
-    @composed(crash, typechecked)
+    @crash
     def evaluate(
         self,
         metric: str | Callable | SEQUENCE | None = None,
@@ -2621,7 +2618,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return scores
 
-    @composed(crash, typechecked)
+    @crash
     def export_pipeline(
         self,
         *,
@@ -2669,7 +2666,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         return export_pipeline(self.pipeline, self, memory=memory, verbose=verbose)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def full_train(self, *, include_holdout: bool = False):
         """Train the estimator on the complete dataset.
 
@@ -2712,7 +2709,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self.fit(X, y)
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, typechecked)
+    @crash
     def get_best_threshold(self, dataset: str = "train") -> FLOAT | list[FLOAT]:
         """Get the threshold that maximizes the [ROC][] curve.
 
@@ -2752,7 +2749,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return flt(results)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -2813,7 +2810,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return variable_return(X, y)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def register(self, name: str | None = None, stage: str = "Staging"):
         """Register the model in [mlflow's model registry][registry].
 
@@ -2853,7 +2850,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             f"successfully registered in stage {stage}.", 1
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def save_estimator(self, filename: str = "auto"):
         """Save the estimator to a pickle file.
 
@@ -2871,7 +2868,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         self.log(f"{self._fullname} estimator successfully saved.", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def serve(self, method: str = "predict", host: str = "127.0.0.1", port: INT = 8000):
         """Serve the model as rest API endpoint for inference.
 
@@ -2943,7 +2940,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         self.log(f"Serving model {self._fullname} on {host}:{port}...", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
         X: FEATURES | None = None,

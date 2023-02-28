@@ -19,7 +19,6 @@ from sklearn.multioutput import (
 )
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
-from typeguard import typechecked
 
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
@@ -194,7 +193,6 @@ class BaseRunner(BaseTracker):
             return self._multioutput
 
     @multioutput.setter
-    @typechecked
     def multioutput(self, value: str | Predictor | None):
         """Assign a new multioutput meta-estimator."""
         if value is None:
@@ -501,7 +499,7 @@ class BaseRunner(BaseTracker):
         for model in self._models:
             model.clear()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def delete(
         self,
         models: INT | str | slice | Model | SEQUENCE | None = None
@@ -528,7 +526,7 @@ class BaseRunner(BaseTracker):
                 self._delete_models(m.name)
                 self.log(f" --> Model {m.name} successfully deleted.", 1)
 
-    @composed(crash, typechecked)
+    @crash
     def evaluate(
         self,
         metric: str | Callable | SEQUENCE | None = None,
@@ -586,7 +584,7 @@ class BaseRunner(BaseTracker):
 
         return pd.DataFrame(evaluations)
 
-    @composed(crash, typechecked)
+    @crash
     def export_pipeline(
         self,
         model: str | Model | None = None,
@@ -650,7 +648,7 @@ class BaseRunner(BaseTracker):
         return export_pipeline(pipeline, model, memory, verbose)
 
     @available_if(has_task("class"))
-    @composed(crash, typechecked)
+    @crash
     def get_class_weight(self, dataset: str = "train") -> CustomDict:
         """Return class weights for a balanced data set.
 
@@ -690,7 +688,7 @@ class BaseRunner(BaseTracker):
         return CustomDict(weights)
 
     @available_if(has_task("class"))
-    @composed(crash, typechecked)
+    @crash
     def get_sample_weight(self, dataset: str = "train") -> SERIES:
         """Return sample weights for a balanced data set.
 
@@ -719,7 +717,7 @@ class BaseRunner(BaseTracker):
         weights = compute_sample_weight("balanced", y=getattr(self, dataset.lower()))
         return bk.Series(weights, name="sample_weight").round(3)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def merge(self, other: Any, /, suffix: str = "2"):
         """Merge another instance of the same class into this one.
 
@@ -781,7 +779,7 @@ class BaseRunner(BaseTracker):
         if hasattr(self, "missing"):
             self.missing.extend([x for x in other.missing if x not in self.missing])
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def stacking(
         self,
         models: slice | SEQUENCE | None = None,
@@ -860,7 +858,7 @@ class BaseRunner(BaseTracker):
 
         self[name].fit()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def voting(
         self,
         models: slice | SEQUENCE | None = None,

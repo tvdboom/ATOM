@@ -52,7 +52,8 @@ from sklearn.utils import _print_elapsed_time
 __version__ = "5.1.0"
 
 # Group of variable types for isinstance
-# TODO: From Python 3.10, isinstance accepts union operator (change by then)
+# TODO: From Python 3.10, add typeguard.typechecked back
+# TODO: From Python 3.10, isinstance accepts pipe operator (change by then)
 INT_TYPES = (int, np.integer)
 FLOAT_TYPES = (float, np.floating)
 SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
@@ -1931,7 +1932,7 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
 
         # Some scorers use default kwargs
         default_kwargs = ("precision", "recall", "f1", "jaccard")
-        if any(name in scorer._score_func.__name__ for name in default_kwargs):
+        if any(scorer._score_func.__name__.startswith(name) for name in default_kwargs):
             if not scorer._kwargs:
                 scorer._kwargs = {"average": "binary"}
 

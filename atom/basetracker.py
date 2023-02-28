@@ -9,8 +9,6 @@ Description: Module containing the BaseTracker class.
 
 from dataclasses import dataclass
 
-from typeguard import typechecked
-
 
 @dataclass
 class TrackingParams:
@@ -40,7 +38,6 @@ class BaseTracker:
         return self._tracking_params.log_ht
 
     @log_ht.setter
-    @typechecked
     def log_ht(self, value: bool):
         self._tracking_params.log_ht = value
 
@@ -50,7 +47,6 @@ class BaseTracker:
         return self._tracking_params.log_model
 
     @log_model.setter
-    @typechecked
     def log_model(self, value: bool):
         self._tracking_params.log_model = value
 
@@ -60,7 +56,6 @@ class BaseTracker:
         return self._tracking_params.log_plots
 
     @log_plots.setter
-    @typechecked
     def log_plots(self, value: bool):
         self._tracking_params.log_plots = value
 
@@ -70,7 +65,6 @@ class BaseTracker:
         return self._tracking_params.log_data
 
     @log_data.setter
-    @typechecked
     def log_data(self, value: bool):
         self._tracking_params.log_data = value
 
@@ -80,6 +74,5 @@ class BaseTracker:
         return self._tracking_params.log_pipeline
 
     @log_pipeline.setter
-    @typechecked
     def log_pipeline(self, value: bool):
         self._tracking_params.log_pipeline = value

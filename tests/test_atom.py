@@ -266,7 +266,7 @@ def test_distribution(distributions):
     assert isinstance(df, pd.DataFrame)
 
 
-@patch("pandas_profiling.ProfileReport")
+@patch("ydata_profiling.ProfileReport")
 def test_eda(cls):
     """Assert that the eda method creates a report."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

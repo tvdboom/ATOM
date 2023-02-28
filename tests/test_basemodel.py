@@ -209,8 +209,10 @@ def test_ht_with_pipeline():
 
 def test_ht_with_multioutput():
     """Assert that the hyperparameter tuning works with multioutput tasks."""
-    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("SGD", est_params={"max_iter": 5})
+    atom.multioutput = None
+    atom.run("MLP", est_params={"max_iter": 5}, errors="raise")
 
 
 def test_sample_weight_fit():

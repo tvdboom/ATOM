@@ -28,7 +28,6 @@ from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
 )
 from sklearn.model_selection import cross_val_score
-from typeguard import typechecked
 from zoofs import (
     DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
     HarrisHawkOptimization, ParticleSwarmOptimization,
@@ -211,7 +210,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.encoding_type = encoding_type
         self.drop_columns = drop_columns
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Extract the new features.
 
@@ -523,7 +522,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._dfs = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureGenerator:
         """Fit to data.
 
@@ -634,7 +633,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Generate new features.
 
@@ -688,8 +687,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Select the n_features with the highest fitness
             df = df.drop_duplicates()
-            if self.n_features and len(df) > self.n_features:
-                df = df.nlargest(self.n_features, columns="fitness")
+            df = df.nlargest(self.n_features or len(df), columns="fitness")
 
             # If there are not enough features remaining, notify the user
             if len(df) != self.n_features:
@@ -878,7 +876,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
         self.groups = defaultdict(list)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Group features.
 
@@ -1328,7 +1326,7 @@ class FeatureSelector(
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
@@ -1743,7 +1741,7 @@ class FeatureSelector(
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Transform the data.
 

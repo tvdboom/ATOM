@@ -45,7 +45,6 @@ packages are necessary for its correct functioning.
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2021.6.3)
 * **[scipy](https://www.scipy.org/)** (>=1.8.1)
-* **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.13)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.24)
 
 

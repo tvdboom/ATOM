@@ -40,7 +40,6 @@ dependencies = [
     "scikit-learn>=1.2.0",
     "scikit-learn-intelex>=2021.6.3",
     "scipy>=1.8.1",
-    "typeguard>=2.13",
     "zoofs>=0.1.24",
 ]
 

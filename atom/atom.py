@@ -20,7 +20,6 @@ import pandas as pd
 from scipy import stats
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.utils.metaestimators import available_if
-from typeguard import typechecked
 
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
@@ -154,7 +153,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     # Utility properties =========================================== >>
 
     @BaseRunner.branch.setter
-    @typechecked
     def branch(self, name: str):
         """Change branch or create a new one."""
         if name in self._branches:
@@ -202,7 +200,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return self._missing
 
     @missing.setter
-    @typechecked
     def missing(self, value: SEQUENCE):
         self._missing = list(set(list(value) + [None, np.nan, np.inf, -np.inf]))
 
@@ -394,7 +391,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 )
                 break  # Avoid non-linear pipelines
 
-    @composed(crash, typechecked)
+    @crash
     def distribution(
         self,
         distributions: str | SEQUENCE | None = None,
@@ -475,7 +472,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return df
 
-    @composed(crash, typechecked)
+    @crash
     def eda(
         self,
         dataset: str = "dataset",
@@ -515,7 +512,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         check_dependency("ydata-profiling")
         from ydata_profiling import ProfileReport
 
-        self.log("Creating profile report...", 1)
+        self.log("Creating EDA report...", 1)
 
         n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
         self.report = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
@@ -528,7 +525,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self.report.to_notebook_iframe()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -588,7 +585,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return variable_return(X, y)
 
     @classmethod
-    @typechecked
     def load(
         cls,
         filename: str,
@@ -734,7 +730,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def save_data(self, filename: str = "auto", *, dataset: str = "dataset"):
         """Save the data in the current branch to a `.csv` file.
 
@@ -755,7 +751,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         getattr(self, dataset).to_csv(filename, index=False)
         self.log("Data set successfully saved.", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def shrink(
         self,
         *,
@@ -934,7 +930,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         self.log(str(self))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
         X: FEATURES | None = None,
@@ -1094,7 +1090,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             ignore_index=True,
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def add(
         self,
         transformer: Transformer,
@@ -1176,7 +1172,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 f"Adding {transformer.__class__.__name__} to the pipeline...", 1)
             self._add_transformer(transformer, columns, train_only, **fit_params)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def apply(
         self,
         func: Callable,
@@ -1230,7 +1226,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     # Data cleaning transformers =================================== >>
 
     @available_if(has_task("class"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def balance(self, strategy: str = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
 
@@ -1269,7 +1265,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         # Attach the estimator attribute to atom's branch
         setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def clean(
         self,
         *,
@@ -1313,7 +1309,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._add_transformer(cleaner, columns=columns)
         self.mapping.update(cleaner.mapping)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def discretize(
         self,
         strategy: str = "quantile",
@@ -1345,7 +1341,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(discretizer, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def encode(
         self,
         strategy: str = "LeaveOneOut",
@@ -1398,7 +1394,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.branch._mapping.update(encoder.mapping)
         self.branch._mapping.reorder(self.columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def impute(
         self,
         strat_num: SCALAR | str = "drop",
@@ -1436,7 +1432,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(imputer, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def normalize(self, strategy: str = "yeojohnson", **kwargs):
         """Transform the data to follow a Normal/Gaussian distribution.
 
@@ -1466,7 +1462,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if hasattr(normalizer, attr):
                 setattr(self.branch, attr, getattr(normalizer, attr))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def prune(
         self,
         strategy: str | SEQUENCE = "zscore",
@@ -1510,7 +1506,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if strat.lower() != "zscore":
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def scale(self, strategy: str = "standard", include_binary: bool = False, **kwargs):
         """Scale the data.
 
@@ -1537,7 +1533,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # NLP transformers ============================================= >>
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def textclean(
         self,
         *,
@@ -1590,7 +1586,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         setattr(self.branch, "drops", getattr(textcleaner, "drops"))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def textnormalize(
         self,
         *,
@@ -1623,7 +1619,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(normalizer, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def tokenize(
         self,
         bigram_freq: SCALAR | None = None,
@@ -1656,7 +1652,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.branch.trigrams = tokenizer.trigrams
         self.branch.quadgrams = tokenizer.quadgrams
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def vectorize(self, strategy: str = "bow", *, return_sparse: bool = True, **kwargs):
         """Vectorize the corpus.
 
@@ -1689,7 +1685,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Feature engineering transformers ============================= >>
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_extraction(
         self,
         features: str | SEQUENCE = ["day", "month", "year"],
@@ -1722,7 +1718,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(feature_extractor, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_generation(
         self,
         strategy: str = "dfs",
@@ -1755,7 +1751,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             self.branch.gfg = feature_generator.gfg
             self.branch.genetic_features = feature_generator.genetic_features
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_grouping(
         self,
         group: str | SEQUENCE,
@@ -1789,7 +1785,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._add_transformer(feature_grouper, columns=columns)
         self.branch.groups = feature_grouper.groups
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_selection(
         self,
         strategy: str | None = None,
@@ -1930,7 +1926,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._models.extend(trainer._models)
         self._metric = trainer._metric
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def run(
         self,
         models: str | Predictor | SEQUENCE | None = None,
@@ -1983,7 +1979,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def successive_halving(
         self,
         models: str | Predictor | SEQUENCE,
@@ -2044,7 +2040,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def train_sizing(
         self,
         models: str | Callable | Predictor | SEQUENCE,

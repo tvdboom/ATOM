@@ -16,7 +16,6 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
-from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils import (
@@ -464,7 +463,6 @@ class DirectClassifier(Direct):
 
     """
 
-    @typechecked
     def __init__(
         self,
         models: str | Predictor | SEQUENCE | None = None,
@@ -699,7 +697,6 @@ class DirectRegressor(Direct):
 
     """
 
-    @typechecked
     def __init__(
         self,
         models: str | Predictor | SEQUENCE | None = None,
@@ -964,7 +961,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     """
 
-    @typechecked
     def __init__(
         self,
         models: str | Predictor | SEQUENCE | None = None,
@@ -1231,7 +1227,6 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     """
 
-    @typechecked
     def __init__(
         self,
         models: str | Predictor | SEQUENCE | None = None,
@@ -1558,7 +1553,6 @@ class TrainSizingClassifier(TrainSizing):
 
     """
 
-    @typechecked
     def __init__(
         self,
         models: str | Predictor | SEQUENCE | None = None,
@@ -1885,7 +1879,6 @@ class TrainSizingRegressor(TrainSizing):
 
     """
 
-    @typechecked
     def __init__(
         self,
         models: str | Predictor | SEQUENCE | None = None,

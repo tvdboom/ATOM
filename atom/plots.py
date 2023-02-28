@@ -43,7 +43,6 @@ from sklearn.metrics import (
 )
 from sklearn.utils import _safe_indexing
 from sklearn.utils.metaestimators import available_if
-from typeguard import typechecked
 
 from atom.utils import (
     FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
@@ -425,7 +424,6 @@ class BasePlot:
         return self._aesthetics
 
     @aesthetics.setter
-    @typechecked
     def aesthetics(self, value: dict):
         self.palette = value.get("palette", self.palette)
         self.title_fontsize = value.get("title_fontsize", self.title_fontsize)
@@ -445,7 +443,6 @@ class BasePlot:
         return self._aesthetics.palette
 
     @palette.setter
-    @typechecked
     def palette(self, value: str | SEQUENCE):
         if isinstance(value, str) and not hasattr(px.colors.qualitative, value):
             raise ValueError(
@@ -462,7 +459,6 @@ class BasePlot:
         return self._aesthetics.title_fontsize
 
     @title_fontsize.setter
-    @typechecked
     def title_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
@@ -478,7 +474,6 @@ class BasePlot:
         return self._aesthetics.label_fontsize
 
     @label_fontsize.setter
-    @typechecked
     def label_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
@@ -494,7 +489,6 @@ class BasePlot:
         return self._aesthetics.tick_fontsize
 
     @tick_fontsize.setter
-    @typechecked
     def tick_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
@@ -510,7 +504,6 @@ class BasePlot:
         return self._aesthetics.line_width
 
     @line_width.setter
-    @typechecked
     def line_width(self, value: INT):
         if value <= 0:
             raise ValueError(
@@ -526,7 +519,6 @@ class BasePlot:
         return self._aesthetics.marker_size
 
     @marker_size.setter
-    @typechecked
     def marker_size(self, value: INT):
         if value <= 0:
             raise ValueError(
@@ -1048,7 +1040,7 @@ class BasePlot:
             if kwargs.get("display") is None:
                 return fig
 
-    @composed(contextmanager, crash, typechecked)
+    @composed(contextmanager, crash)
     def canvas(
         self,
         rows: INT = 1,
@@ -1191,7 +1183,7 @@ class FeatureSelectorPlot(BasePlot):
     """
 
     @available_if(has_attr("pca"))
-    @composed(crash, typechecked)
+    @crash
     def plot_components(
         self,
         show: INT | None = None,
@@ -1321,7 +1313,7 @@ class FeatureSelectorPlot(BasePlot):
         )
 
     @available_if(has_attr("pca"))
-    @composed(crash, typechecked)
+    @crash
     def plot_pca(
         self,
         *,
@@ -1442,7 +1434,7 @@ class FeatureSelectorPlot(BasePlot):
         )
 
     @available_if(has_attr("rfecv"))
-    @composed(crash, typechecked)
+    @crash
     def plot_rfecv(
         self,
         *,
@@ -1611,7 +1603,7 @@ class DataPlot(BasePlot):
 
     """
 
-    @composed(crash, typechecked)
+    @crash
     def plot_correlation(
         self,
         columns: slice | SEQUENCE | None = None,
@@ -1749,7 +1741,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_distribution(
         self,
         columns: INT | str | slice | SEQUENCE = 0,
@@ -1986,7 +1978,7 @@ class DataPlot(BasePlot):
                 display=display,
             )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_ngrams(
         self,
         ngram: INT | str = "bigram",
@@ -2171,7 +2163,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_qq(
         self,
         columns: INT | str | slice | SEQUENCE = 0,
@@ -2301,7 +2293,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_relationships(
         self,
         columns: slice | SEQUENCE = (0, 1, 2),
@@ -2468,7 +2460,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_wordcloud(
         self,
         index: INT | str | slice | SEQUENCE | None = None,
@@ -2619,7 +2611,7 @@ class HTPlot(BasePlot):
 
     """
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_edf(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -2769,7 +2761,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_hyperparameter_importance(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -2917,7 +2909,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_hyperparameters(
         self,
         models: INT | str | Model | None = None,
@@ -3121,7 +3113,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_parallel_coordinate(
         self,
         models: INT | str | Model | None = None,
@@ -3296,7 +3288,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_pareto_front(
         self,
         models: INT | str | Model | None = None,
@@ -3447,7 +3439,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_slice(
         self,
         models: INT | str | Model | None = None,
@@ -3599,7 +3591,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_trials(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -3774,7 +3766,7 @@ class PredictionPlot(BasePlot):
     """
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_calibration(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -3965,7 +3957,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task("class"))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_confusion_matrix(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4172,7 +4164,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_det(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4298,7 +4290,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task("reg"))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_errors(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4443,7 +4435,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(ensembles=False), typechecked)
+    @composed(crash, plot_from_model(ensembles=False))
     def plot_evals(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4564,7 +4556,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_feature_importance(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4702,7 +4694,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_gains(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4830,7 +4822,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(ensembles=False), typechecked)
+    @composed(crash, plot_from_model(ensembles=False))
     def plot_learning_curve(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4988,7 +4980,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_lift(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -5115,7 +5107,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_parshap(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -5324,7 +5316,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_partial_dependence(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -5627,7 +5619,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_permutation_importance(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -5785,7 +5777,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(check_fitted=False), typechecked)
+    @composed(crash, plot_from_model(check_fitted=False))
     def plot_pipeline(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6108,7 +6100,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_prc(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6238,7 +6230,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task("class"))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_probabilities(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6385,7 +6377,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task("reg"))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_residuals(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6539,7 +6531,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_results(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6746,15 +6738,10 @@ class PredictionPlot(BasePlot):
             }
         )
 
-        if isinstance(metric, INT_TYPES):
-            xlabel = self._metric[metric].name
-        else:
-            xlabel = "time (s)"
-
         BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel=xlabel,
+            xlabel="time (s)" if all(isinstance(m, str) for m in metric) else "Score",
             title=title,
             legend=legend,
             figsize=figsize or (900, 400 + len(models) * 50),
@@ -6764,7 +6751,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_roc(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6893,7 +6880,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(ensembles=False), typechecked)
+    @composed(crash, plot_from_model(ensembles=False))
     def plot_successive_halving(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -7053,7 +7040,7 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model)
     def plot_threshold(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -7212,7 +7199,7 @@ class ShapPlot(BasePlot):
 
     """
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_bar(
         self,
         models: INT | str | Model | None = None,
@@ -7329,7 +7316,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_beeswarm(
         self,
         models: INT | str | Model | None = None,
@@ -7443,7 +7430,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_decision(
         self,
         models: INT | str | Model | None = None,
@@ -7576,7 +7563,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_force(
         self,
         models: INT | str | Model | None = None,
@@ -7707,7 +7694,7 @@ class ShapPlot(BasePlot):
                 shap.initjs()
                 display(plot)
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_heatmap(
         self,
         models: INT | str | Model | None = None,
@@ -7825,7 +7812,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_scatter(
         self,
         models: INT | str | Model | None = None,
@@ -7946,7 +7933,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True), typechecked)
+    @composed(crash, plot_from_model(max_one=True))
     def plot_shap_waterfall(
         self,
         models: INT | str | Model | None = None,
