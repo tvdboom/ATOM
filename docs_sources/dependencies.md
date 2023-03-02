@@ -44,7 +44,7 @@ packages are necessary for its correct functioning.
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.3.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41.0)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.1)
-* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.0.2)
+* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.0.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
