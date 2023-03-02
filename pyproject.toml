@@ -40,7 +40,7 @@ dependencies = [
     "shap>=0.41.0",
     "scikit-learn>=1.2.1",
     "scikit-learn-intelex>=2023.0.1",
-    "scipy>=1.10.1",
+    "scipy>=1.9.3",
     "zoofs>=0.1.26",
 ]
 
