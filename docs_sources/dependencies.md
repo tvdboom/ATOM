@@ -33,7 +33,7 @@ packages are necessary for its correct functioning.
 * **[ipython](https://ipython.org/)** (>=8.11.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.23.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.2.0)
-* **[matplotlib](https://matplotlib.org/)** (>=3.7.0)
+* **[matplotlib](https://matplotlib.org/)** (>=3.6.3)
 * **[mlflow](https://mlflow.org/)** (>=2.2.0)
 * **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.18.1)
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
