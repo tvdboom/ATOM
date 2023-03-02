@@ -12,6 +12,7 @@ import multiprocessing
 import os
 from logging import Logger
 from unittest.mock import patch
+
 import mlflow
 import numpy as np
 import pandas as pd

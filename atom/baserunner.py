@@ -274,7 +274,19 @@ class BaseRunner(BaseTracker):
         """
 
         def frac(m: Model) -> FLOAT:
-            """Return the fraction of the train set used for the model."""
+            """Return the fraction of the train set used.
+
+            Parameters
+            ----------
+            m: Model
+                Used model.
+
+            Returns
+            -------
+            float
+                Calculated fraction.
+
+            """
             if (n_models := len(m.branch.train) / m._train_idx) == int(n_models):
                 return round(1.0 / n_models, 2)
             else:

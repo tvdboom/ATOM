@@ -19,16 +19,18 @@ from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
+
 import dagshub
 import dill as pickle
 import mlflow
 import numpy as np
 import ray
+import requests
 import sklearnex
+from dagshub.auth.token_auth import HTTPBearerAuth
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
-import requests
-from dagshub.auth.token_auth import HTTPBearerAuth
+
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
     SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk, composed, crash,
