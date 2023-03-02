@@ -3139,13 +3139,26 @@ external libraries are redirected to the same file handler.</p>
 <p><br></p>
 <h2 id="tracking">Tracking</h2>
 <p>ATOM uses <a href="https://www.mlflow.org/docs/latest/tracking.html">mlflow tracking</a>
-as a backend API and UI for logging the models in its pipeline. Start
+as a backend API and UI for logging the models and its pipeline. Start
 tracking your experiments assigning a name to the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-experiment"><code>experiment</code></a> parameter. Every model is tracked using a
 separate run. When no backend is configured, the data is stored locally
 at <code>./mlruns</code>. To configure the backend, use <a href="https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri">mlflow.set_tracking_uri</a>
 in your notebook or IDE before initializing atom. This does not affect
 the currently active run (if one exists), but takes effect for successive
 runs.</p>
+<p>ATOM has a build-in integration with <a href="https://dagshub.com/">DAGsHub</a>, a
+web platform based on open source tools, optimized for data science and
+oriented towards the open source community. To store your mlflow experiments
+in a DAGsHub repo, type <code>dagshub:&lt;experiment_name&gt;</code> in the <code>experiment</code>
+parameter (instead of just the experiment's name). If the repo does not
+exist, a new public repo is created.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are logged into your DAGsHub account when running atom's
+constructor, a page on your web browser is automatically opened to
+give access permissions. If not, read <a href="https://dagshub.com/docs/integration_guide/mlflow_tracking/#3-set-up-your-credentials">here</a>
+how to set up your DAGsHub credentials.</p>
+</div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>When using ATOM on <a href="https://databricks.com/">Databricks</a>, the

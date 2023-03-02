@@ -1602,7 +1602,7 @@ def get_best_score(item: Model | SERIES, metric: int = 0) -> FLOAT:
         return lst(item.score_test)[metric]
 
 
-def time_to_str(t: int):
+def time_to_str(t: SCALAR) -> str:
     """Convert time to a nice string representation.
 
     The resulting string is of format 00h:00m:00s or 1.000s if
@@ -1610,7 +1610,7 @@ def time_to_str(t: int):
 
     Parameters
     ----------
-    t: int
+    t: int or float
         Time to convert (in seconds).
 
     Returns
@@ -1619,9 +1619,9 @@ def time_to_str(t: int):
         Time representation.
 
     """
-    h = t // 3600
-    m = t % 3600 // 60
-    s = t % 3600 % 60
+    h = int(t) // 3600
+    m = int(t) % 3600 // 60
+    s = int(t) % 3600 % 60
     if not h and not m:  # Only seconds
         return f"{s:.3f}s"
     elif not h:  # Also minutes

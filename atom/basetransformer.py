@@ -19,7 +19,7 @@ from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
-
+import dagshub
 import dill as pickle
 import mlflow
 import numpy as np
@@ -27,7 +27,8 @@ import ray
 import sklearnex
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
-
+import requests
+from dagshub.auth.token_auth import HTTPBearerAuth
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
     SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk, composed, crash,
@@ -216,7 +217,7 @@ class BaseTransformer:
 
     @logger.setter
     def logger(self, value: str | Logger | None):
-        external_loggers = ["mlflow", "optuna", "ray", "modin", "featuretools", "gradio"]
+        external_loggers = ["dagshub", "mlflow", "optuna", "ray", "modin", "featuretools"]
 
         # Clear existing handlers for external loggers
         for name in external_loggers:
@@ -253,6 +254,26 @@ class BaseTransformer:
     def experiment(self, value: str | None):
         self._experiment = value
         if value:
+            if value.lower().startswith("dagshub:"):
+                value = value[8:]  # Drop dagshub:
+
+                token = dagshub.auth.get_token()
+                os.environ["MLFLOW_TRACKING_USERNAME"] = token
+                os.environ["MLFLOW_TRACKING_PASSWORD"] = token
+
+                # Fetch username from dagshub api
+                username = requests.get(
+                    url="https://dagshub.com/api/v1/user",
+                    auth=HTTPBearerAuth(token),
+                ).json()["username"]
+
+                if f"{username}/{value}" not in os.getenv("MLFLOW_TRACKING_URI", ""):
+                    dagshub.init(repo_name=value, repo_owner=username)
+                    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+
+            elif "dagshub" in mlflow.get_tracking_uri():
+                mlflow.set_tracking_uri("")  # Reset URI to ./mlruns
+
             mlflow.sklearn.autolog(disable=True)
             mlflow.set_experiment(value)
 

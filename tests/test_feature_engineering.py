@@ -509,7 +509,7 @@ def test_rfecv_strategy_before_pipeline_classification():
     selector = FeatureSelector(
         strategy="rfecv",
         solver="Tree_class",
-        n_features=28,
+        n_features=None,
         cv=2,
         random_state=1,
     )

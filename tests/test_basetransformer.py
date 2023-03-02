@@ -12,7 +12,7 @@ import multiprocessing
 import os
 from logging import Logger
 from unittest.mock import patch
-
+import mlflow
 import numpy as np
 import pandas as pd
 import pytest
@@ -154,6 +154,24 @@ def test_experiment_creation(mlflow):
     base = BaseTransformer(experiment="test")
     assert base.experiment == "test"
     mlflow.assert_called_once()
+
+
+@patch("mlflow.set_experiment")
+@patch("dagshub.auth.get_token")
+@patch("requests.get")
+@patch("dagshub.init")
+def test_experiment_dagshub(dagshub, request, token, _):
+    """Assert that the experiment can be stored in dagshub."""
+    token.return_value = "token"
+    request.return_value.text = dict(username="user1")
+
+    BaseTransformer(experiment="dagshub:test")
+    dagshub.assert_called_once()
+    assert "dagshub" in mlflow.get_tracking_uri()
+
+    # Reset to default URI
+    BaseTransformer(experiment="test")
+    assert "dagshub" not in mlflow.get_tracking_uri()
 
 
 def test_random_state_setter():

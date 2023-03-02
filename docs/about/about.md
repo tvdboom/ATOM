@@ -136,7 +136,113 @@ ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by provid
 core project contributors with a set of developer tools free of charge.
 
 <div align="center" markdown>
-  [![JetBrains](img/jetbrains.png){ width="200" height="200" }](https://www.jetbrains.com)
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  [![PyCharm](img/pycharm.png){ width="200" height="200" }](https://www.jetbrains.com/pycharm/)
+  [![JetBrains](img/jetbrains.png){ .icon width="200" height="200" }](https://www.jetbrains.com)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  [![PyCharm](img/pycharm.png){ .icon width="200" height="200" }](https://www.jetbrains.com/pycharm/)
+</div>
+
+<br>
+
+## Integrations
+
+<br>
+
+<div class="row">
+  <div class="column">
+    <div class="logo">
+      <a href="../API/models/catb" draggable="false">
+        <img src="../img/logos/catboost.png" alt="catboost" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/logging/#tracking" draggable="false">
+        <img src="../img/logos/dagshub.png" alt="dagshub" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../API/ATOM/atomclassifier/#atomclassifier-automl" draggable="false">
+        <img src="../img/logos/evalml.png" alt="evalml" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/feature_engineering/#generating-new-features" draggable="false">
+        <img src="../img/logos/featuretools.png" alt="featuretools" draggable="false">
+      </a>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="column">
+    <div class="logo">
+      <a href="../API/models/lgb" draggable="false">
+        <img src="../img/logos/lightgbm.png" alt="lightgbm" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/logging/#tracking" draggable="false">
+          <img src="../img/logos/mlflow.png" alt="mlflow" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/accelerating/#parallel-context" draggable="false">
+        <img src="../img/logos/modin.png" alt="modin" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/training/#hyperparameter-tuning" draggable="false">
+        <img src="../img/logos/optuna.png" alt="optuna" draggable="false">
+      </a>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/plots" draggable="false">
+        <img src="../img/logos/plotly.png" alt="plotly" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/accelerating/#gpu-acceleration" draggable="false">
+        <img src="../img/logos/rapids.png" alt="rapids" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/accelerating/#parallel-execution" draggable="false">
+        <img src="../img/logos/ray.png" alt="ray" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/models" draggable="false">
+        <img src="../img/logos/sklearn.png" alt="scikit-learn" draggable="false">
+      </a>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="column">
+    <div class="logo">
+      <a href="../API/models/xgb" draggable="false">
+        <img src="../img/logos/xgboost.png" alt="xgboost" draggable="false">
+      </a>
+    </div>
+  </div>
 </div>

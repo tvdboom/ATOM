@@ -27,6 +27,7 @@ packages are necessary for its correct functioning.
 
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.4.1)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.5)
+* **[dagshub](https://github.com/DagsHub/client)** (>=0.2.12)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.0)
 * **[ipython](https://ipython.org/)** (>=8.9.0)
@@ -40,7 +41,7 @@ packages are necessary for its correct functioning.
 * **[optuna](https://optuna.org/)** (>=3.0.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[plotly](https://plotly.com/python/)** (>=5.10.0)
-* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.2.0)
+* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.3.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2021.6.3)
@@ -59,10 +60,10 @@ additional libraries. You can install all the optional dependencies using
 * **[evalml](https://evalml.alteryx.com/en/stable/)** (<0.68.0)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.3.1)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
-* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.0.0)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.6.0)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.0.0)
 
 
 ### Development
