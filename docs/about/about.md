@@ -16,8 +16,8 @@ to generating insights in just a few lines of code. Click
 ## What can I do with it?
 
 ATOM is an end-to-end solution for machine learning pipelines. It supports
-the user from raw data ingestion to the final results' analysis. Click on
-the icons to read more about its main functionalities.
+the user from raw data ingestion to the final results' analysis and model
+deployment. Click on the icons to read more about its main functionalities.
 
 <div class="row">
   <div class="column">

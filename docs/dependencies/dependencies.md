@@ -34,7 +34,7 @@ packages are necessary for its correct functioning.
 * **[featuretools](https://www.featuretools.com/)** (>=1.14.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0, <1.2.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.5.0, <3.6.0)
-* **[mlflow](https://mlflow.org/)** (>=2.0.1)
+* **[mlflow](https://mlflow.org/)** (>=2.2.0)
 * **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.18.0)
 * **[nltk](https://www.nltk.org/)** (>=3.7)
 * **[numpy](https://numpy.org/)** (>=1.22)
@@ -57,7 +57,7 @@ additional libraries. You can install all the optional dependencies using
 
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.0.4)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.0)
-* **[evalml](https://evalml.alteryx.com/en/stable/)** (<0.68.0)
+* **[evalml](https://evalml.alteryx.com/en/stable/)** (>=0.68.0)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.3.1)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)

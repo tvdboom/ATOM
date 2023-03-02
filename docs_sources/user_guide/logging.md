@@ -34,15 +34,13 @@ parameter (instead of just the experiment's name). If the repo does not
 exist, a new public repo is created.
 
 !!! note
-    If you are logged into your DAGsHub account when running atom's
-    constructor, a page on your web browser is automatically opened to
-    give access permissions. If not, read [here](https://dagshub.com/docs/integration_guide/mlflow_tracking/#3-set-up-your-credentials)
-    how to set up your DAGsHub credentials.
-
-!!! info
-    When using ATOM on [Databricks](https://databricks.com/), the
-    experiment's name should include the complete path to the storage,
-    e.g. `/Users/username@domain.com/experiment_name`.
+    * If you are logged into your DAGsHub account when running atom's
+      constructor, a page on your web browser is automatically opened to
+      give access permissions. If not, read [here](https://dagshub.com/docs/integration_guide/mlflow_tracking/#3-set-up-your-credentials)
+      how to set up your DAGsHub credentials.
+    * When using ATOM on [Databricks](https://databricks.com/), the
+      experiment's name should include the complete path to the storage,
+      e.g. `/Users/username@domain.com/experiment_name`.
 
 The following elements are tracked:
 

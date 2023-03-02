@@ -16,11 +16,25 @@ jobs:
         python-version: "3.10"
     - name: Install dependencies
       run: pip install -U pdm
-    - name: Build distribution
+    - name: Build
       run: |
         rm -rf dist/*
         pdm build
-    - name: Release distribution to PyPI
+    - name: Release to PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.PYPI_PWD }}
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out source repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all commits/branches
+    - name: Install dependencies
+      run: pip install -U mike
+    - name: Update documentation
+      run: |
+        echo "Deploying documentation for release ATOM ${GITHUB_REF_NAME::-2}"
+        mike deploy --push -update-aliases ${GITHUB_REF_NAME::-2} latest
