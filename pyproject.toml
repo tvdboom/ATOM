@@ -20,7 +20,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "category-encoders>=2.6.0",
+    "category-encoders>=2.5.1",
     "dill>=0.3.6",
     "dagshub>=0.2.12",
     "gplearn>=0.4.2",
