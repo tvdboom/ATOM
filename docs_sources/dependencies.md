@@ -37,7 +37,7 @@ packages are necessary for its correct functioning.
 * **[mlflow](https://mlflow.org/)** (>=2.2.0)
 * **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.18.1)
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
-* **[numpy](https://numpy.org/)** (>=1.24.2)
+* **[numpy](https://numpy.org/)** (>=1.23.5)
 * **[optuna](https://optuna.org/)** (>=3.1.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.5.3)
 * **[plotly](https://plotly.com/python/)** (>=5.13.1)
