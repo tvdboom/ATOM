@@ -1621,7 +1621,7 @@ def time_to_str(t: SCALAR) -> str:
     """
     h = int(t) // 3600
     m = int(t) % 3600 // 60
-    s = int(t) % 3600 % 60
+    s = t % 3600 % 60
     if not h and not m:  # Only seconds
         return f"{s:.3f}s"
     elif not h:  # Also minutes
