@@ -21,6 +21,7 @@ classifiers = [
 ]
 dependencies = [
     "category-encoders>=2.5.1",
+    "dagshub<=0.2.10",
     "dill>=0.3.6",
     "gplearn>=0.4.2",
     "imbalanced-learn>=0.10.1",
@@ -45,7 +46,6 @@ dependencies = [
 [project.optional-dependencies]
 full = [
     "catboost>=1.1.1",
-    "dagshub>=0.2.12",
     "explainerdashboard>=0.4.2",
     "evalml>=0.68.0",
     "gradio>=3.19.1",
