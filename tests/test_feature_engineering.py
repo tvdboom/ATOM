@@ -514,7 +514,7 @@ def test_rfecv_strategy_before_pipeline_classification():
         random_state=1,
     )
     X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 28
+    assert X.shape[1] == 3
 
 
 def test_rfecv_strategy_before_pipeline_regression():

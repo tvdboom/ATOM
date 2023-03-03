@@ -86,6 +86,7 @@ using `pip install atom-ml[dev]`.
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.0.0)
 * **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.2.0)
 * **[scikeras](https://github.com/adriangb/scikeras)** (>=0.10.0)
+* **[tensorflow](https://www.tensorflow.org/learn)** (>=2.11.0)
 
 **Documentation**
 
