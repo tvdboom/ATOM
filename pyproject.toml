@@ -46,16 +46,17 @@ dependencies = [
 
 [project.optional-dependencies]
 full = [
-    "catboost>=1.0.4",
-    "explainerdashboard>=0.4.0",
-    "evalml<0.68.0",
-    "gradio>=3.3.1",
-    "lightgbm>=3.3.2",
+    "catboost>=1.1.1",
+    "explainerdashboard>=0.4.2",
+    "evalml>=0.68.0",
+    "gradio>=3.19.1",
+    "lightgbm>=3.3.5",
+    "schemdraw>=0.15",
+    "wordcloud>=1.8.2",
+    "xgboost>=1.7.4",
     "ydata-profiling>=4.0.0",
-    "schemdraw>=0.14",
-    "wordcloud>=1.8.1",
-    "xgboost>=1.6.0",
 ]
+
 [tool.pdm.dev-dependencies]
 dev = [
     # Linting
@@ -68,7 +69,6 @@ dev = [
     "pytest-cov>=3.0.0",
     "pytest-xdist>=3.1.0",
     "scikeras>=0.10.0",
-    "tensorflow>=2.11.0",
     # Documentation
     "mike>=1.1.2",  # For versioning
     "mkdocs>=1.2.3",
