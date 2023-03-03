@@ -30,6 +30,7 @@ packages are necessary for its correct functioning.
 * **[dagshub](https://github.com/DagsHub/client)** (>=0.2.12)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.10.1)
+* **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.23.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.2.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.6.3)
