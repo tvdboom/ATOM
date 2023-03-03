@@ -69,7 +69,6 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.2.0",
     "scikeras>=0.10.0",
-    "tensorflow>=2.11.0",
     # Documentation
     "mike>=1.1.2",  # For versioning
     "mkdocs>=1.4.2",

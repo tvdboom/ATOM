@@ -13,16 +13,18 @@ import importlib
 import json
 import os
 import warnings
+from dataclasses import dataclass
 from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     isroutine, signature,
 )
-from dataclasses import dataclass
 from typing import Any, Callable, Optional
-from atom.basetransformer import BaseTransformer
+
 import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
+
+from atom.basetransformer import BaseTransformer
 
 
 # Variables ======================================================== >>

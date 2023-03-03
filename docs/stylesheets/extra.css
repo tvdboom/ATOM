@@ -37,7 +37,7 @@
     width: 70%;
     position: relative;
 }
-.icon:hover, .logo:hover {
+.icon:hover, .column .logo:hover {
     transform: scale(1.1);
 }
 
