@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.1/examples/multilabel_classification/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/examples/multilabel_classification/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
@@ -3134,7 +3134,7 @@
               <article class="md-content__inner md-typeset">
                 
 
-    <a href="/ATOM/v5.1/examples/multilabel_classification/multilabel_classification.ipynb" title="Download Notebook" class="md-content__button md-icon">
+    <a href="/ATOM/examples/multilabel_classification/multilabel_classification.ipynb" title="Download Notebook" class="md-content__button md-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7Z"/></svg>
     </a>
 
@@ -5149,10 +5149,10 @@ atom.plot_roc(target=2)</div>
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># For plots where the target parameter also specifies the class, use the format (column, class)</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># When the target parameter also specifies the class, use format (column, class)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">plot_probabilities</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;MLP&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </pre></div>
-<div id="cell-13" class="clipboard-copy-txt"># For plots where the target parameter also specifies the class, use the format (column, class)
+<div id="cell-13" class="clipboard-copy-txt"># When the target parameter also specifies the class, use format (column, class)
 atom.plot_probabilities(models="MLP", target=(2, 1))</div>
     
         </div>
@@ -5213,7 +5213,8 @@ atom.plot_probabilities(models="MLP", target=(2, 1))</div>
 </pre></div>
 <div id="cell-14" class="clipboard-copy-txt">with atom.canvas(figsize=(900, 600)):
     atom.plot_calibration(target=0)
-    atom.plot_calibration(target=1)</div>
+    atom.plot_calibration(target=1)
+</div>
     
         </div>
     </div>
