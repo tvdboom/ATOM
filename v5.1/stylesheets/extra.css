@@ -1,0 +1,176 @@
+/* Reset ATOM fontweight in header */
+.md-ellipsis {
+    font-weight: normal;
+}
+
+
+/* Prevent the selection of >>>, ... and output in code blocks */
+.language-pycon .gp, .language-pycon .go {
+    user-select: none;
+}
+
+
+/* Table format for about page*/
+.md-typeset__table {
+   min-width: 100%;
+}
+.md-typeset table:not([class]) {
+    display: table;
+}
+.row {
+    margin-top: 30px;
+}
+.row::after {  /* Clear floats after image containers */
+    content: "";
+    clear: both;
+    display: table;
+}
+.column {
+    float: left;
+    width: 25%;
+    padding: 2px;
+    text-align: center;
+}
+
+/* Shared properties between icons and logos */
+.column .icon, .column .logo {
+    width: 70%;
+    position: relative;
+}
+.icon:hover, .column .logo:hover {
+    transform: scale(1.1);
+}
+
+.column .logo a img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.column .icon a img {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+.column .icon a:hover {
+    color: #009485;
+}
+.column .icon a:active {
+    color: #009485;
+}
+.column .icon a:visited {
+    color: #009485;
+}
+.column .icon a:link {
+    color: #009485;
+}
+
+
+/* Signature layout */
+.sign {
+    font-size: 1.1em;
+    overflow-x: auto;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1%;
+    margin-bottom: 1em;
+}
+
+/* Parameter table layout */
+.table_params {
+    width: 100%;
+    font-size: 0.9em;
+    border: 1px solid #F5F5F5;
+    overflow-wrap: break-word;
+    margin-bottom: -1em;
+}
+.td_title {
+    width: 15%;
+    background: #F5F5F5;
+    vertical-align: top;
+    padding: 1.2em 2% 0 2%;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.td_params {
+    width: 85%;
+    background: white;
+    padding: 1.2em 2% 0 2%;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.td_params .param {
+    margin: 0 0 1.2em 1.2em;
+}
+.td_params .param ul {
+    margin-top: -0.3em;
+}
+.td_params .param li {
+    margin-top: -0.3em;
+}
+
+
+[data-md-color-scheme="slate"] .sign {
+    background: #343d55;
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .td_title {
+    background: #343d55;
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .td_params {
+    background: #333543;
+    color: #dfe1f2;
+}
+
+/* Change table display for small screens */
+@media screen and (max-width: 725px) {
+  .td_title {
+      width: 5%;
+      writing-mode: vertical-rl;
+      font-size: 0.9em;
+      padding-top: 15px;
+      padding-left: 0.9em;
+  }
+  .td_params {
+      width: 95%;
+  }
+}
+
+
+
+
+/* Examples notebooks layout for dark mode */
+[data-md-color-scheme="slate"] .highlight-ipynb {
+    background: #343d55;
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .p {
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .c1 {
+    color: #009485;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .kn {
+    color: #90ee90;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .kc {
+    color: #90ee90;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .mi {
+    color: #90ee90;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .s2 {
+    color: #FF7F7F;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .o {
+    color: #b19cd9;
+}
+[data-md-color-scheme="slate"] .dataframe th {
+    color: #dfe1f2;
+    background: #355876;
+}
+[data-md-color-scheme="slate"] .dataframe td {
+    color: #dfe1f2;
+    background: #355876;
+}
