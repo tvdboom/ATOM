@@ -46,8 +46,8 @@ dependencies = [
 [project.optional-dependencies]
 full = [
     "catboost>=1.1.1",
-    "explainerdashboard>=0.4.2",
     "evalml>=0.68.0",
+    "explainerdashboard>=0.4.2",
     "gradio>=3.19.1",
     "lightgbm>=3.3.5",
     "schemdraw>=0.15",

@@ -21,9 +21,10 @@ jobs:
         rm -rf dist/*
         pdm build
     - name: Release to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/${GITHUB_REF_NAME}"
       with:
         password: ${{ secrets.PYPI_PWD }}
+        verbose: true
 
   documentation:
     runs-on: ubuntu-latest
@@ -39,4 +40,4 @@ jobs:
     - name: Update documentation
       run: |
         echo "Deploying documentation for release ATOM ${GITHUB_REF_NAME::-2}"
-        mike deploy --push -update-aliases ${GITHUB_REF_NAME::-2} latest
+        mike deploy --push --update-aliases ${GITHUB_REF_NAME::-2} latest
