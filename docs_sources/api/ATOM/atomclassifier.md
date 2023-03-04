@@ -22,7 +22,7 @@ The class contains some magic methods to help you access some of its
 elements faster. Note that methods that apply on the pipeline can return
 different results per branch.
 
-* **\__repr__:** Prints an overview of atom's branches, models, metric and errors.
+* **\__repr__:** Prints an overview of atom's branches, models and metric.
 * **\__len__:** Returns the length of the dataset.
 * **\__iter__:** Iterate over the pipeline's transformers.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
@@ -87,7 +87,6 @@ in the instance after [training][].
             - branch
             - models
             - metric
-            - errors
             - winners
             - winner
             - results
@@ -124,6 +123,8 @@ more in the [user guide][aesthetics].
             - title_fontsize
             - label_fontsize
             - tick_fontsize
+            - line_width
+            - marker_size
 
 <br>
 
@@ -143,14 +144,16 @@ of utility methods to handle the data and manage the pipeline.
         - clear
         - delete
         - distribution
+        - eda
         - evaluate
         - export_pipeline
         - get_class_weight
+        - get_sample_weight
         - inverse_transform
+        - load
         - log
         - merge
         - update_layout
-        - report
         - reset
         - reset_aesthetics
         - save
@@ -172,7 +175,7 @@ attributes of the data cleaning classes are attached to atom after
 running. Read more in the [user guide][data-cleaning].
 
 !!! tip
-    Use the [report][atomclassifier-report] method to examine the data and
+    Use the [eda][atomclassifier-eda] method to examine the data and
     help you determine suitable parameters for the data cleaning methods.
 
 :: methods:

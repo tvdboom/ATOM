@@ -13,15 +13,18 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.multioutput import (
+    ClassifierChain, MultiOutputRegressor, RegressorChain,
+)
 
-from atom import ATOMClassifier, ATOMLoader, ATOMRegressor
+from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
 
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
-    y_bin, y_class, y_idx, y_reg,
+    X10, X_bin, X_class, X_label, X_reg, bin_test, bin_train, y10, y_bin,
+    y_class, y_label, y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -35,7 +38,7 @@ def test_getstate_and_setstate():
 
     sys.modules["sklearn"].__version__ = "1.0.0"  # Fake version
     with pytest.warns(Warning, match=".*while the version in this environment.*"):
-        ATOMLoader("atom")
+        ATOMClassifier.load("atom")
 
 
 def test_getattr_branch():
@@ -94,14 +97,6 @@ def test_setattr_normal():
     assert atom.attr == "test"
 
 
-def test_delattr_branch():
-    """Assert that branches can be deleted through del."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    del atom.master
-    assert list(atom._branches) == ["b2"]
-
-
 def test_delattr_models():
     """Assert that models can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -113,8 +108,8 @@ def test_delattr_models():
 def test_delattr_normal():
     """Assert that attributes can be deleted normally."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    del atom._models
-    assert not hasattr(atom, "_models")
+    del atom.index
+    assert not hasattr(atom, "index")
 
 
 def test_contains():
@@ -192,12 +187,58 @@ def test_branch_property():
     assert isinstance(atom.branch, Branch)
 
 
-def test_branch_deleter():
-    """Assert that the current branch can be deleted through del."""
+def test_delete_last_branch():
+    """Assert that an error is raised when the last branch is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(PermissionError, match=".*last branch.*"):
+        del atom.branch
+
+
+def test_delete_depending_models():
+    """Assert that dependent models are deleted with the branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.run("LR")
+    del atom.branch
+    assert not atom.models
+
+
+def test_delete_current():
+    """Assert that we can delete the current branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
     del atom.branch
-    assert list(atom._branches) == ["master"]
+    assert "b2" not in atom._branches
+
+
+def test_multioutput_None():
+    """Assert that the multioutput estimator is ignored when None."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.multioutput = None
+    atom.run("RF", est_params={"n_estimators": 5})  # RF has native support for multilabel
+    assert atom.rf.estimator.__class__.__name__ == "RandomForestClassifier"
+
+
+def test_multioutput_auto():
+    """Assert that the multioutput estimator can use auto to set default."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.multioutput = None
+    assert atom.multioutput is None
+
+    with pytest.raises(ValueError, match=".*multioutput attribute.*"):
+        atom.multioutput = "invalid"
+
+    atom.multioutput = "auto"
+    assert atom.multioutput == ClassifierChain
+
+
+@pytest.mark.parametrize("multioutput", [MultiOutputRegressor, RegressorChain(None)])
+def test_multioutput_regression(multioutput):
+    """Assert that the multioutput estimator works for regression tasks."""
+    atom = ATOMRegressor(X_reg, y=y_multireg, random_state=1)
+    atom.multioutput = multioutput
+    atom.run("OLS")
+    assert atom.models == "OLS"
 
 
 def test_models_property():
@@ -207,12 +248,6 @@ def test_models_property():
     assert atom.models == ["LR", "Tree"]
 
 
-def test_models_property_no_run():
-    """Assert that the models property doesn't crash for unfitted trainers."""
-    trainer = DirectClassifier(["LR", "Tree"], random_state=1)
-    assert trainer.models == ["LR", "Tree"]
-
-
 def test_metric_property():
     """Assert that the metric property returns the metric names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -220,43 +255,26 @@ def test_metric_property():
     assert atom.metric == "f1"
 
 
-def test_metric_property_no_run():
-    """Assert that the metric property doesn't crash for unfitted trainers."""
-    trainer = DirectClassifier("lr", metric="r2", random_state=1)
-    assert trainer.metric == "r2"
-
-
-def test_errors_property():
-    """Assert that the errors property returns the model's errors."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models=["Tree", "LGB"],
-        n_trials=1,
-        ht_params={"distributions": {"LGB": ["invalid"]}},
-    )
-    assert "LGB" in atom.errors
-
-
 def test_winners_property():
     """Assert that the winners property returns the best models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"])
-    assert atom.winners == [atom.lr, atom.tree, atom.lgb]
+    atom.run(["LR", "Tree", "LDA"])
+    assert atom.winners == [atom.lr, atom.lda, atom.tree]
 
 
 def test_winner_property():
     """Assert that the winner property returns the best model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"])
+    atom.run(["LR", "Tree", "LDA"])
     assert atom.winner is atom.lr
 
 
 def test_winner_deleter():
     """Assert that the winning model can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"])
+    atom.run(["LR", "Tree", "LDA"])
     del atom.winner
-    assert atom.models == ["Tree", "LGB"]
+    assert atom.models == ["Tree", "LDA"]
 
 
 def test_results_property():
@@ -291,167 +309,12 @@ def test_results_property_train_sizing():
 
 # Test utility methods ============================================= >>
 
-def test_get_og_branches():
-    """Assert that the method returns all original branches."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.branch = "b3"
-    atom.scale()
-    assert len(atom._get_og_branches()) == 2  # master and b2
-    atom.reset()
-    atom.scale()
-    assert len(atom._get_og_branches()) == 1  # Just og
-
-
-def test_get_rows_is_None():
-    """Assert that all indices are returned."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert len(atom._get_rows(index=None, return_test=True)) < len(X_idx)
-    assert len(atom._get_rows(index=None, return_test=False)) == len(X_idx)
-
-
-def test_get_rows_is_slice():
-    """Assert that a slice of rows is returned."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert len(atom._get_rows(index=slice(20, 100, 2))) == 40
-
-
-def test_get_rows_by_exact_match():
-    """Assert that a row can be selected by name."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert atom._get_rows(index="index_23") == ["index_23"]
-
-
-def test_get_rows_by_int():
-    """Assert that rows can be retrieved by their index position."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=".*out of range.*"):
-        atom._get_rows(index=1000)
-    assert atom._get_rows(index=100) == [atom.X.index[100]]
-
-
-def test_get_rows_by_str():
-    """Assert that rows can be retrieved by name or regex."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert len(atom._get_rows(index="index_34+index_58")) == 2
-    assert len(atom._get_rows(index=["index_34+index_58", "index_57"])) == 3
-    assert len(atom._get_rows(index="index_3.*")) == 111
-    assert len(atom._get_rows(index="!index_3")) == len(X_idx) - 1
-    assert len(atom._get_rows(index="!index_3.*")) == len(X_idx) - 111
-    with pytest.raises(ValueError, match=".*any row that matches.*"):
-        atom._get_rows(index="invalid")
-
-
-def test_get_rows_invalid_type():
-    """Assert that an error is raised when the type is invalid."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(TypeError, match=".*Invalid type for the index.*"):
-        atom._get_rows(index=[3.2])
-
-
-def test_get_rows_none_selected():
-    """Assert that an error is raised when no rows are selected."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=".*has to be selected.*"):
-        atom._get_rows(index=slice(1000, 2000))
-
-
-def test_get_rows_include_or_exclude():
-    """Assert that an error is raised when rows are included and excluded."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=".*either include or exclude rows.*"):
-        atom._get_rows(index=["index_34", "!index_36"])
-
-
-def test_get_columns_is_None():
-    """Assert that all columns are returned."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert len(atom._get_columns(columns=None)) == 5
-    assert len(atom._get_columns(columns=None, only_numerical=True)) == 4
-    assert len(atom._get_columns(columns=None, include_target=False)) == 4
-
-
-def test_get_columns_by_slice():
-    """Assert that a slice of columns is returned."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert len(atom._get_columns(columns=slice(2, 6))) == 4
-
-
-def test_get_columns_by_int():
-    """Assert that columns can be retrieved by index."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*out of range for a dataset.*"):
-        atom._get_columns(columns=40)
-    assert atom._get_columns(columns=0) == ["mean radius"]
-
-
-def test_get_columns_by_str():
-    """Assert that columns can be retrieved by name or regex."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert len(atom._get_columns(columns="mean radius+mean texture")) == 2
-    assert len(atom._get_columns(columns=["mean radius+mean texture", "mean area"])) == 3
-    assert len(atom._get_columns(columns="mean .*")) == 10
-    assert len(atom._get_columns(columns="!mean radius")) == X_bin.shape[1]
-    assert len(atom._get_columns(columns="!mean .*")) == X_bin.shape[1] - 9
-    with pytest.raises(ValueError, match=".*any column that matches.*"):
-        atom._get_columns(columns="invalid")
-
-
-def test_get_columns_by_type():
-    """Assert that columns can be retrieved by type."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert len(atom._get_columns(columns="number")) == 4
-    assert len(atom._get_columns(columns="!number")) == 1
-
-
-def test_get_columns_invalid_type():
-    """Assert that an error is raised when the type is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(TypeError, match=".*Invalid type for the columns.*"):
-        atom._get_columns(columns=[3.2])
-
-
-def test_get_columns_exclude():
-    """Assert that columns can be excluded using `!`."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*not find any column.*"):
-        atom._get_columns(columns="!invalid")
-    assert len(atom._get_columns(columns="!mean radius")) == 30
-    assert len(atom._get_columns(columns=["!mean radius", "!mean texture"])) == 29
-
-
-def test_get_columns_none_selected():
-    """Assert that an error is raised when no columns are selected."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*At least one column.*"):
-        atom._get_columns(columns="datetime")
-
-
-def test_get_columns_include_or_exclude():
-    """Assert that an error is raised when cols are included and excluded."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*either include or exclude columns.*"):
-        atom._get_columns(columns=["mean radius", "!mean texture"])
-
-
-def test_get_columns_return_inc_exc():
-    """Assert that included and excluded columns can be returned."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert isinstance(atom._get_columns(columns="number", return_inc_exc=True), tuple)
-
-
-def test_get_columns_remove_duplicates():
-    """Assert that duplicate columns are ignored."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom._get_columns(columns=[0, 1, 0]) == ["mean radius", "mean texture"]
-
-
 def test_get_models_is_None():
     """Assert that all models are returned by default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom._get_models(models=None) == []
     atom.run(["LR1", "LR2"])
-    assert atom._get_models(models=None) == ["LR1", "LR2"]
+    assert atom._get_models(models=None) == [atom.lr1, atom.lr2]
 
 
 def test_get_models_by_int():
@@ -460,7 +323,7 @@ def test_get_models_by_int():
     with pytest.raises(ValueError, match=".*out of range for a pipeline.*"):
         atom._get_models(models=0)
     atom.run(["LR1", "LR2"])
-    assert atom._get_models(models=1) == ["LR2"]
+    assert atom._get_models(models=1) == [atom.lr2]
 
 
 def test_get_models_by_slice():
@@ -474,18 +337,18 @@ def test_get_models_winner():
     """Assert that the winner is returned when used as name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR1", "LR2"])
-    assert atom._get_models(models="winner") == ["LR1"]
+    assert atom._get_models(models="winner") == [atom.lr1]
 
 
 def test_get_models_by_str():
     """Assert that models can be retrieved by name or regex."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["GNB", "LR1", "LR2"])
-    assert len(atom._get_models(models="gnb+lr1")) == 2
-    assert len(atom._get_models(models=["gnb+lr1", "lr2"])) == 3
-    assert len(atom._get_models(models="lr.*")) == 2
-    assert len(atom._get_models(models="!lr1")) == 2
-    assert len(atom._get_models(models="!lr.*")) == 1
+    assert atom._get_models(models="gnb+lr1") == [atom.gnb, atom.lr1]
+    assert atom._get_models(models=["gnb+lr1", "lr2"]) == [atom.gnb, atom.lr1, atom.lr2]
+    assert atom._get_models(models="lr.*") == [atom.lr1, atom.lr2]
+    assert atom._get_models(models="!lr1") == [atom.gnb, atom.lr2]
+    assert atom._get_models(models="!lr.*") == [atom.gnb]
     with pytest.raises(ValueError, match=".*any model that matches.*"):
         atom._get_models(models="invalid")
 
@@ -503,15 +366,15 @@ def test_get_models_exclude():
     with pytest.raises(ValueError, match=".*not find any model.*"):
         atom._get_models(models="!invalid")
     atom.run(["LR1", "LR2"])
-    assert atom._get_models(models="!lr1") == ["LR2"]
-    assert atom._get_models(models="!.*2$") == ["LR1"]
+    assert atom._get_models(models="!lr1") == [atom.lr2]
+    assert atom._get_models(models="!.*2$") == [atom.lr1]
 
 
 def test_get_models_by_model():
     """Assert that a model can be called using a Model instance."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert atom._get_models(models=atom.lr) == ["LR"]
+    assert atom._get_models(models=atom.lr) == [atom.lr]
 
 
 def test_get_models_wrong_type():
@@ -538,11 +401,21 @@ def test_get_models_remove_ensembles():
     assert "Vote" not in atom._get_models(models=None, ensembles=False)
 
 
+def test_get_models_invalid_branch():
+    """Assert that an error is raised when the branch is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    atom.branch = "2"
+    atom.run("LDA")
+    with pytest.raises(ValueError, match=".*must have been fitted.*"):
+        atom._get_models(models=None, branch=atom.branch)
+
+
 def test_get_models_remove_duplicates():
     """Assert that duplicate models are returned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR1", "LR2"])
-    assert atom._get_models(["LR1", "LR1"]) == ["LR1"]
+    assert atom._get_models(["LR1", "LR1"]) == [atom.lr1]
 
 
 def test_available_models():
@@ -557,15 +430,14 @@ def test_available_models():
 def test_clear():
     """Assert that the clear method resets all model's attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.lgb.plot_shap_beeswarm(display=False)
-    assert atom.lr._pred[9] is not None
-    assert atom.lr._scores
-    assert not atom.lgb._shap._shap_values.empty
+    atom.run(["LR", "LDA"])
+    print(atom.lr.predict_train)
+    atom.lda.plot_shap_beeswarm(display=False)
+    assert "predict_train" in atom.lr.__dict__
+    assert not atom.lda._shap._shap_values.empty
     atom.clear()
-    assert atom.lr._pred == [None] * 12
-    assert not atom.lr._scores
-    assert atom.lgb._shap._shap_values.empty
+    assert "predict_train" not in atom.lr.__dict__
+    assert atom.lda._shap._shap_values.empty
 
 
 def test_delete_default():
@@ -578,28 +450,7 @@ def test_delete_default():
     assert atom.results.empty
 
 
-def test_delete_models_is_str():
-    """Assert that for a string, a single model is deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree"])
-    atom.delete("winner")
-    assert atom.models == "Tree"
-    assert atom.winner is atom.Tree
-    assert len(atom.results) == 1
-    assert not hasattr(atom, "LR")
-
-
-def test_delete_models_is_sequence():
-    """Assert that for a sequence, multiple models are deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "RF"])
-    atom.delete(["Tree", "RF"])
-    assert atom.models == "LR"
-    assert atom.winner is atom.LR
-    assert len(atom.results) == 1
-
-
-@pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
+@pytest.mark.parametrize("metric", ["ap", "f1"])
 def test_evaluate(metric):
     """Assert that the evaluate method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -651,24 +502,56 @@ def test_export_pipeline_memory(func):
     func.assert_called_once()
 
 
-def test_class_weights_invalid_dataset():
-    """Assert that an error is raised if invalid value for dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.get_class_weight, "invalid")
-
-
-def test_get_class_weights_regression():
+def test_get_class_weight_regression():
     """Assert that an error is raised when called from regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(PermissionError, atom.get_class_weight)
+    with pytest.raises(AttributeError):
+        atom.get_class_weight()
 
 
-@pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
-def test_get_class_weights(dataset):
+def test_class_weight_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=".*the dataset parameter.*"):
+        atom.get_class_weight("invalid")
+
+
+def test_get_class_weight():
     """Assert that the get_class_weight method returns a dict of the classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    class_weight = atom.get_class_weight(dataset)
-    assert list(class_weight) == [0, 1, 2]
+    assert list(atom.get_class_weight()) == [0, 1, 2]
+
+
+def test_get_class_weight_multioutput():
+    """Assert that the get_class_weight method works for multioutput."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert list(atom.get_class_weight()) == ["a", "b", "c"]
+
+
+def test_get_sample_weights_regression():
+    """Assert that an error is raised when called from regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    with pytest.raises(AttributeError):
+        atom.get_sample_weight()
+
+
+def test_sample_weight_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=".*the dataset parameter.*"):
+        atom.get_sample_weight("invalid")
+
+
+def test_get_sample_weight():
+    """Assert that the get_sample_weight method returns a series."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert len(atom.get_sample_weight()) == len(atom.train)
+
+
+def test_get_sample_weight_multioutput():
+    """Assert that the get_sample_weight method works for multioutput."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert len(atom.get_sample_weight()) == len(atom.train)
 
 
 def test_merge_invalid_class():
@@ -714,7 +597,7 @@ def test_merge():
     atom_2.missing = ["missing"]
     atom_2.run("LR")
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == ["master", "b2"]
+    assert list(atom_1._branches) == [atom_1.master, atom_1.b2]
     assert atom_1.models == ["Tree", "LR"]
     assert atom_1.missing[-1] == "missing"
 
@@ -726,26 +609,24 @@ def test_merge_with_suffix():
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2.run(["Tree", "LDA"], n_trials=1, ht_params={"distributions": {"LDA": "test"}})
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == ["master", "master2"]
+    assert list(atom_1._branches) == [atom_1.master, atom_1.master2]
     assert atom_1.models == ["Tree", "Tree2"]
-    assert list(atom_1._errors) == ["LDA", "LDA2"]
 
 
 def test_stacking():
     """Assert that the stacking method creates a Stack model."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.stacking)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking()
     assert hasattr(atom, "stack")
     assert "Stack" in atom.models
-    assert atom.stack._run
 
 
 def test_stacking_non_ensembles():
     """Assert that stacking ignores other ensembles."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.voting()
     atom.stacking()
     assert len(atom.stack.estimator.estimators) == 2  # No voting
@@ -772,26 +653,15 @@ def test_stacking_custom_models():
     """Assert that stacking can be created selecting the models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.stacking)
-    atom.run(["LR", "LDA", "LGB"])
+    atom.run(["LR", "LDA", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(models=["LDA", "LGB"])
-    assert list(atom.stack._models) == ["LDA", "LGB"]
-
-
-def test_stacking_models_from_branch():
-    """Assert that only the models from the current branch are passed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.branch = "b2"
-    atom.balance()
-    atom.run(["RF", "ET"])
-    atom.stacking()
-    assert list(atom.stack._models) == ["RF", "ET"]
+    assert list(atom.stack._models) == [atom.lda, atom.lgb]
 
 
 def test_stacking_different_name():
     """Assert that the acronym is added in front of the new name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(name="stack_1")
     atom.stacking(name="_2")
     assert hasattr(atom, "Stack_1") and hasattr(atom, "Stack_2")
@@ -800,7 +670,7 @@ def test_stacking_different_name():
 def test_stacking_unknown_predefined_final_estimator():
     """Assert that an error is raised when the final estimator is unknown."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     with pytest.raises(ValueError, match=".*Unknown model.*"):
         atom.stacking(final_estimator="invalid")
 
@@ -808,7 +678,7 @@ def test_stacking_unknown_predefined_final_estimator():
 def test_stacking_invalid_predefined_final_estimator():
     """Assert that an error is raised when the final estimator is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     with pytest.raises(ValueError, match=".*can not perform.*"):
         atom.stacking(final_estimator="OLS")
 
@@ -816,20 +686,19 @@ def test_stacking_invalid_predefined_final_estimator():
 def test_stacking_predefined_final_estimator():
     """Assert that the final estimator accepts predefined models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(final_estimator="LDA")
     assert isinstance(atom.stack.estimator.final_estimator_, LDA)
 
 
 def test_voting():
     """Assert that the voting method creates a Vote model."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.voting)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.voting(name="2")
     assert hasattr(atom, "Vote2")
     assert "Vote2" in atom.models
-    assert atom.vote2._run
 
 
 def test_voting_invalid_name():

@@ -7,22 +7,30 @@ Description: Module containing utility constants, classes and functions.
 
 """
 
+from __future__ import annotations
+
 import pprint
 import sys
+import tempfile
+import warnings
 from collections import OrderedDict, deque
 from collections.abc import MutableMapping
-from copy import copy
+from copy import copy, deepcopy
 from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
+from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
-from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
+from logging import getLogger
+from types import GeneratorType
+from typing import Any, Callable, Protocol, Union
 
 import mlflow
+import modin.pandas as md
 import numpy as np
 import pandas as pd
+import pandas as bk
 import plotly.graph_objects as go
 from IPython.display import display
 from matplotlib.colors import to_rgba
@@ -31,34 +39,43 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from scipy import sparse
 from shap import Explainer, Explanation
-from sklearn.inspection._partial_dependence import (
-    _grid_from_X, _partial_dependence_brute,
-)
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import _print_elapsed_time, _safe_indexing
+from sklearn.utils import _print_elapsed_time
 
 
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.0.1"
+__version__ = "5.1.0"
 
 # Group of variable types for isinstance
-SEQUENCE = (list, tuple, np.ndarray, pd.Series)
+# TODO: From Python 3.10, add typeguard.typechecked back
+# TODO: From Python 3.10, isinstance accepts pipe operator (change by then)
+INT_TYPES = (int, np.integer)
+FLOAT_TYPES = (float, np.floating)
+SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
+INDEX_TYPES = (pd.Index, md.Index, pd.MultiIndex, md.MultiIndex)
+SERIES_TYPES = (pd.Series, md.Series)
+DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
+PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
+SEQUENCE_TYPES = (list, tuple, np.ndarray, *INDEX_TYPES, *SERIES_TYPES)
 
 # Groups of variable types for type hinting
-INT = Union[int, np.integer]
-FLOAT = Union[float, np.floating]
-SCALAR = Union[INT, FLOAT]
-SEQUENCE_TYPES = Union[SEQUENCE]
-PANDAS_TYPES = Union[pd.Series, pd.DataFrame]
-X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
-Y_TYPES = Union[INT, str, dict, SEQUENCE_TYPES]
+INT = Union[INT_TYPES]
+FLOAT = Union[FLOAT_TYPES]
+SCALAR = Union[SCALAR_TYPES]
+INDEX = Union[INDEX_TYPES]
+SERIES = Union[SERIES_TYPES]
+DATAFRAME = Union[DATAFRAME_TYPES]
+PANDAS = Union[PANDAS_TYPES]
+SEQUENCE = Union[SEQUENCE_TYPES]
+FEATURES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, DATAFRAME]
+TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
-# Attributes shared between atom and pd.DataFrame
+# Attributes shared between atom and a pd.DataFrame
 DF_ATTRS = (
     "size",
     "head",
@@ -197,14 +214,14 @@ class CatBMetric:
             Total weight.
 
         """
-        if self.task.startswith("bin"):
+        if is_binary(self.task):
             # Convert CatBoost predictions to probabilities
             e = np.exp(approxes[0])
             y_pred = e / (1 + e)
             if self.scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = (y_pred > 0.5).astype(int)
 
-        elif self.task.startswith("multi"):
+        elif self.task.startswith("multiclass"):
             y_pred = np.array(approxes).T
             if self.scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = np.argmax(y_pred, axis=1)
@@ -242,7 +259,7 @@ class LGBMetric:
         y_true: np.ndarray,
         y_pred: np.ndarray,
         weight: np.ndarray,
-    ) -> Tuple[str, FLOAT, bool]:
+    ) -> tuple[str, FLOAT, bool]:
         """Evaluates metric value.
 
         Parameters
@@ -269,9 +286,9 @@ class LGBMetric:
 
         """
         if self.scorer.__class__.__name__ == "_PredictScorer":
-            if self.task.startswith("bin"):
+            if is_binary(self.task):
                 y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.startswith("multi"):
+            elif self.task.startswith("multiclass"):
                 y_pred = y_pred.reshape(len(np.unique(y_true)), len(y_true)).T
                 y_pred = np.argmax(y_pred, axis=1)
 
@@ -306,9 +323,9 @@ class XGBMetric:
 
     def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> FLOAT:
         if self.scorer.__class__.__name__ == "_PredictScorer":
-            if self.task.startswith("bin"):
+            if is_binary(self.task):
                 y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.startswith("multi"):
+            elif self.task.startswith("multiclass"):
                 y_pred = np.argmax(y_pred, axis=1)
 
         score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
@@ -333,12 +350,7 @@ class Table:
 
     """
 
-    def __init__(
-        self,
-        headers: SEQUENCE_TYPES,
-        spaces: SEQUENCE_TYPES,
-        default_pos: str = "right",
-    ):
+    def __init__(self, headers: SEQUENCE, spaces: SEQUENCE, default_pos: str = "right"):
         assert len(headers) == len(spaces)
 
         self.headers = []
@@ -354,7 +366,7 @@ class Table:
         self.spaces = spaces
 
     @staticmethod
-    def to_cell(text: Union[SCALAR, str], position: str, space: int) -> str:
+    def to_cell(text: SCALAR | str, position: str, space: INT) -> str:
         """Get the string format for one cell.
 
         Parameters
@@ -447,10 +459,9 @@ class TrialsCallback:
 
     """
 
-    def __init__(self, model: Model, n_jobs: int):
-        self.model = model
+    def __init__(self, model: Model, n_jobs: INT):
+        self.T = model
         self.n_jobs = n_jobs
-        self.T = self.model.T  # Parent runner
 
         if self.n_jobs == 1:
             self._table = self.create_table()
@@ -464,17 +475,17 @@ class TrialsCallback:
         else:
             score = trial.values or [np.NaN] * len(self.T._metric)
 
-        if trial.state.name == "PRUNED" and self.model.acronym == "XGB":
+        if trial.state.name == "PRUNED" and self.T.acronym == "XGB":
             # XGBoost's eval_metric minimizes the function
             score = np.negative(score)
 
-        params = self.model._trial_to_est(trial.user_attrs["params"])
+        params = self.T._trial_to_est(trial.user_attrs["params"])
         estimator = trial.user_attrs.get("estimator", None)
 
         # Add row to the trials attribute
         time_trial = (dt.now() - trial.datetime_start).total_seconds()
-        time_ht = self.model._trials["time_trial"].sum() + time_trial
-        self.model._trials.loc[trial.number] = pd.Series(
+        time_ht = self.T._trials["time_trial"].sum() + time_trial
+        self.T._trials.loc[trial.number] = pd.Series(
             {
                 "params": dict(params),  # To dict because of how pandas prints it
                 "estimator": estimator,
@@ -486,38 +497,41 @@ class TrialsCallback:
         )
 
         # Save trials to experiment as nested runs
-        if self.model._run and self.T.log_ht:
-            run_name = f"{self.model.name} - {trial.number}"
-            with mlflow.start_run(run_name=run_name, nested=True):
-                mlflow.set_tag("name", self.model.name)
-                mlflow.set_tag("model", self.model._fullname)
-                mlflow.set_tag("branch", self.model.branch.name)
-                mlflow.set_tag("trial_state", trial.state.name)
-                mlflow.set_tags(self.model._ht.get("tags", {}))
+        if self.T.experiment and self.T.log_ht:
+            with mlflow.start_run(run_id=self.T._run.info.run_id):
+                run_name = f"{self.T.name} - {trial.number}"
+                with mlflow.start_run(run_name=run_name, nested=True):
+                    mlflow.set_tag("name", self.T.name)
+                    mlflow.set_tag("model", self.T._fullname)
+                    mlflow.set_tag("branch", self.T.branch.name)
+                    mlflow.set_tag("trial_state", trial.state.name)
+                    mlflow.set_tags(self.T._ht.get("tags", {}))
 
-                # Mlflow only accepts params with char length <250
-                pars = estimator.get_params() if estimator else params
-                mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
-
-                mlflow.log_metric("time_trial", time_trial)
-                for i, name in enumerate(self.T._metric):
-                    mlflow.log_metric(f"{name}_validation", score[i])
-
-                if estimator and self.T.log_model:
-                    mlflow.sklearn.log_model(
-                        sk_model=estimator,
-                        artifact_path=estimator.__class__.__name__,
-                        signature=infer_signature(
-                            model_input=self.model.X,
-                            model_output=estimator.predict(self.model.X.iloc[[0], :]),
-                        ),
-                        input_example=self.model.X.iloc[[0], :],
+                    # Mlflow only accepts params with char length <=250
+                    pars = estimator.get_params() if estimator else params
+                    mlflow.log_params(
+                        {k: v for k, v in pars.items() if len(str(v)) <= 250}
                     )
+
+                    mlflow.log_metric("time_trial", time_trial)
+                    for i, name in enumerate(self.T._metric.keys()):
+                        mlflow.log_metric(f"{name}_validation", score[i])
+
+                    if estimator and self.T.log_model:
+                        mlflow.sklearn.log_model(
+                            sk_model=estimator,
+                            artifact_path=estimator.__class__.__name__,
+                            signature=infer_signature(
+                                model_input=pd.DataFrame(self.T.X),
+                                model_output=estimator.predict(self.T.X.iloc[[0], :]),
+                            ),
+                            input_example=pd.DataFrame(self.T.X.iloc[[0], :]),
+                        )
 
         if self.n_jobs == 1:
             sequence = {"trial": trial.number, **trial.user_attrs["params"]}
-            for i, m in enumerate(self.T._metric.values()):
-                best_score = rnd(max([lst(s)[i] for s in self.model.trials["score"]]))
+            for i, m in enumerate(self.T._metric):
+                best_score = rnd(np.nanmax([lst(s)[i] for s in self.T.trials["score"]]))
                 sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
             sequence["time_trial"] = time_to_str(time_trial)
             sequence["time_ht"] = time_to_str(time_ht)
@@ -534,18 +548,18 @@ class TrialsCallback:
             Object to display the trial overview.
 
         """
-        headers = [("trial", "left")] + list(self.model._ht["distributions"])
-        for m in self.T._metric.values():
+        headers = [("trial", "left")] + list(self.T._ht["distributions"])
+        for m in self.T._metric:
             headers.extend([m.name, "best_" + m.name])
         headers.extend(["time_trial", "time_ht", "state"])
 
         # Define the width op every column in the table
         spaces = [len(str(headers[0][0]))]
-        for name, dist in self.model._ht["distributions"].items():
+        for name, dist in self.T._ht["distributions"].items():
             # If the distribution is categorical, take the mean of the widths
             # Else take the max of 7 (minimum width) and the width of the name
             if hasattr(dist, "choices"):
-                options = np.mean([len(str(x)) for x in dist.choices], dtype=int)
+                options = np.mean([len(str(x)) for x in dist.choices], axis=0, dtype=int)
             else:
                 options = 0
 
@@ -554,7 +568,7 @@ class TrialsCallback:
         spaces.extend(
             [
                 max(7, len(column))
-                for column in headers[1 + len(self.model._ht["distributions"]):-1]
+                for column in headers[1 + len(self.T._ht["distributions"]):-1]
             ]
         )
 
@@ -570,36 +584,38 @@ class PlotCallback:
 
     Parameters
     ----------
-    *args
-        Model from which the callback is called.
+    name: str
+        Model's name.
+
+    metric: list of str
+        Name(s) of the metrics to plot.
+
+    aesthetics: Aesthetics
+        Properties that define the plot's aesthetics.
 
     """
 
     max_len = 15  # Maximum trials to show at once in the plot
 
-    def __init__(self, *args):
-        self.M = args[0]
-        self.T = self.M.T
-
-        self.y1 = {i: deque(maxlen=self.max_len) for i in range(len(self.T._metric))}
-        self.y2 = {i: deque(maxlen=self.max_len) for i in range(len(self.T._metric))}
+    def __init__(self, name: str, metric: list[str], aesthetics: Any):
+        self.y1 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
+        self.y2 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
 
         traces = []
-        colors = cycle(self.T.palette)
-        for met in self.T._metric:
+        colors = cycle(aesthetics.palette)
+        for met in metric:
             color = next(colors)
             traces.extend(
                 [
                     go.Scatter(
                         mode="lines+markers",
-                        line=dict(width=self.T.line_width, color=color),
+                        line=dict(width=aesthetics.line_width, color=color),
                         marker=dict(
                             symbol="circle",
-                            size=self.T.marker_size,
+                            size=aesthetics.marker_size,
                             line=dict(width=1, color="white"),
                             opacity=1,
                         ),
-                        # hovertemplate=f"(%{{x}}, %{{y}})<extra>{met}</extra>",
                         name=met,
                         legendgroup=met,
                         xaxis="x2",
@@ -607,11 +623,11 @@ class PlotCallback:
                     ),
                     go.Scatter(
                         mode="lines+markers",
-                        line=dict(width=self.T.line_width, color=color),
+                        line=dict(width=aesthetics.line_width, color=color),
                         marker=dict(
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                             symbol="circle",
-                            size=self.T.marker_size,
+                            size=aesthetics.marker_size,
                             opacity=1,
                         ),
                         name=met,
@@ -629,41 +645,41 @@ class PlotCallback:
                 xaxis1=dict(domain=(0, 1), anchor="y1", showticklabels=False),
                 yaxis1=dict(
                     domain=(0.31, 1.0),
-                    title=dict(text="Score", font_size=self.T.label_fontsize),
+                    title=dict(text="Score", font_size=aesthetics.label_fontsize),
                     anchor="x1",
                 ),
                 xaxis2=dict(
                     domain=(0, 1),
-                    title=dict(text="Trial", font_size=self.T.label_fontsize),
+                    title=dict(text="Trial", font_size=aesthetics.label_fontsize),
                     anchor="y2",
                 ),
                 yaxis2=dict(
                     domain=(0, 0.29),
-                    title=dict(text="d", font_size=self.T.label_fontsize),
+                    title=dict(text="d", font_size=aesthetics.label_fontsize),
                     anchor="x2",
                 ),
                 title=dict(
-                    text=f"Hyperparameter tuning for {self.M._fullname}",
+                    text=f"Hyperparameter tuning for {name}",
                     x=0.5,
                     y=1,
                     pad=dict(t=15, b=15),
                     xanchor="center",
                     yanchor="top",
                     xref="paper",
-                    font_size=self.T.title_fontsize,
+                    font_size=aesthetics.title_fontsize,
                 ),
                 legend=dict(
                     x=0.99,
                     y=0.99,
                     xanchor="right",
                     yanchor="top",
-                    font_size=self.T.label_fontsize,
+                    font_size=aesthetics.label_fontsize,
                     bgcolor="rgba(255, 255, 255, 0.5)",
                 ),
                 hovermode="x unified",
-                hoverlabel=dict(font_size=self.T.label_fontsize),
-                font_size=self.T.tick_fontsize,
-                margin=dict(l=0, b=0, r=0, t=25 + self.T.title_fontsize, pad=0),
+                hoverlabel=dict(font_size=aesthetics.label_fontsize),
+                font_size=aesthetics.tick_fontsize,
+                margin=dict(l=0, b=0, r=0, t=25 + aesthetics.title_fontsize, pad=0),
                 width=900,
                 height=800,
             )
@@ -685,7 +701,7 @@ class PlotCallback:
         """
         x = range(x_min := max(0, trial.number - self.max_len), x_min + self.max_len)
 
-        for i, score in enumerate(lst(self.M.trials["score"][trial.number])):
+        for i, score in enumerate(lst(trial.value or trial.values)):
             self.y1[i].append(score)
             if self.y2[i]:
                 self.y2[i].append(abs(self.y1[i][-1] - self.y1[i][-2]))
@@ -702,24 +718,40 @@ class PlotCallback:
 class ShapExplanation:
     """SHAP Explanation wrapper to avoid recalculating shap values.
 
-    Calculating shap values can take much time and computational
-    resources. This class 'remembers' all calculated shap values
-    and reuses them when appropriate.
+    Calculating shap or interaction values is computationally expensive.
+    This class 'remembers' all calculated values and reuses them when
+    needed.
 
     Parameters
     ----------
-    T: model subclass
-        Model from which the instance is created.
+    model: Predictor
+        Estimator to get the shap values from.
+
+    branch: Branch
+        Data to get the shap values from.
+
+    random_state: int or None, default=None
+        Random seed for reproducibility.
 
     """
 
-    def __init__(self, *args):
-        self.T = args[0]
+    def __init__(
+        self,
+        estimator: Predictor,
+        task: str,
+        branch: Any,
+        random_state: INT | None = None,
+    ):
+        self.estimator = estimator
+        self.task = task
+        self.branch = branch
+        self.random_state = random_state
 
         self._explainer = None
         self._explanation = None
-        self._shap_values = pd.Series(dtype="object")
         self._expected_value = None
+        self._shap_values = pd.Series(dtype="object")
+        self._interaction_values = pd.Series(dtype="object")
 
     @property
     def attr(self) -> str:
@@ -731,7 +763,9 @@ class ShapExplanation:
             Name of the prediction method.
 
         """
-        return get_attr(self.T.estimator)
+        for attr in ("predict_proba", "decision_function", "predict"):
+            if hasattr(self.estimator, attr):
+                return attr
 
     @property
     def explainer(self) -> Explainer:
@@ -744,40 +778,35 @@ class ShapExplanation:
 
         """
         if self._explainer is None:
+            # Pass masker as np.array and feature names separately for modin frames
+            kwargs = dict(
+                masker=self.branch.X_train.to_numpy(),
+                feature_names=list(self.branch.features),
+                seed=self.random_state,
+            )
             try:  # Fails when model does not fit standard explainers (e.g. ensembles)
-                self._explainer = Explainer(self.T.estimator, self.T.X_train)
+                self._explainer = Explainer(self.estimator, **kwargs)
             except TypeError:
                 # If method is provided as first arg, selects always Permutation
-                self._explainer = Explainer(
-                    model=getattr(self.T.estimator, self.attr),
-                    masker=self.T.X_train,
-                )
+                self._explainer = Explainer(getattr(self.estimator, self.attr), **kwargs)
 
         return self._explainer
 
     def get_explanation(
         self,
-        df: pd.DataFrame,
-        target: int = 1,
-        column: Optional[str] = None,
-        only_one: bool = False,
+        df: DATAFRAME,
+        target: tuple,
     ) -> Explanation:
         """Get an Explanation object.
 
         Parameters
         ----------
-        df: pd.DataFrame
+        df: dataframe
             Data set to look at (subset of the complete dataset).
 
-        target: int, default=1
-            Index of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        column: str or None, default=None
-            Column to look at. If None, look at all features.
-
-        only_one: bool, default=False
-            Whether only one row is accepted.
+        target: tuple
+            Indices of the target column and the class in the target
+            column to look at.
 
         Returns
         -------
@@ -786,140 +815,188 @@ class ShapExplanation:
 
         """
         # Get rows that still need to be calculated
-        calculate = df.loc[[i for i in df.index if i not in self._shap_values.index]]
+        calculate = df.loc[~df.index.isin(self._shap_values.index)]
         if not calculate.empty:
             kwargs = {}
 
             # Minimum of 2 * n_features + 1 evals required (default=500)
             if "max_evals" in sign(self.explainer.__call__):
-                kwargs["max_evals"] = 2 * self.T.n_features + 1
+                kwargs["max_evals"] = "auto"
 
             # Additivity check fails sometimes for no apparent reason
             if "check_additivity" in sign(self.explainer.__call__):
                 kwargs["check_additivity"] = False
 
-            # Calculate the new shap values
-            self._explanation = self.explainer(calculate, **kwargs)
+            with warnings.catch_warnings():
+                # Avoid warning feature names mismatch in sklearn due to passing np.array
+                warnings.filterwarnings("ignore", message="X does not have valid.*")
+
+                # Calculate the new shap values
+                try:
+                    self._explanation = self.explainer(calculate.to_numpy(), **kwargs)
+                except (ValueError, AssertionError):
+                    raise ValueError(
+                        "Failed to get shap's explainer for estimator "
+                        f"{self.estimator} with task {self.task}."
+                    )
 
             # Remember shap values in the _shap_values attribute
-            for i, idx in enumerate(calculate.index):
-                self._shap_values.at[idx] = self._explanation.values[i]
+            values = pd.Series(
+                data=list(self._explanation.values),
+                index=calculate.index,
+                dtype="object",
+            )
+            self._shap_values = pd.concat([self._shap_values, values])
 
         # Don't use attribute to not save plot-specific changes
+        # Shallow copy to not copy the data in the branch
         explanation = copy(self._explanation)
 
         # Update the explanation object
         explanation.values = np.stack(self._shap_values.loc[df.index].values)
-        explanation.base_values = explanation.base_values[0]
-        explanation.data = self.T.X.loc[df.index, :].to_numpy()
+        explanation.base_values = self._explanation.base_values[0]
+        explanation.data = self.branch.X.loc[df.index].to_numpy()
 
-        # Select the target values from the array
-        if explanation.values.ndim > 2:
-            explanation.values = explanation.values[:, :, target]
-        if only_one:  # Attributes should be 1-dimensional
-            explanation.values = explanation.values[0]
-            explanation.data = explanation.data[0]
-
-            # For some models like LGB it's a scalar already
-            if isinstance(explanation.base_values, np.ndarray):
-                explanation.base_values = explanation.base_values[target]
-
-        if column is None:
-            return explanation
-        else:
-            return explanation[:, df.columns.get_loc(column)]
-
-    def get_shap_values(
-        self,
-        df: pd.DataFrame,
-        target: int = 1,
-        return_all_classes: bool = False,
-    ) -> Union[FLOAT, SEQUENCE_TYPES]:
-        """Get shap values from the Explanation object.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data set to look at.
-
-        target: int, default=1
-            Index of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        return_all_classes: bool, default=False
-            Whether to return one or all classes.
-
-        Returns
-        -------
-        float or sequence
-            Shap values.
-
-        """
-        values = self.get_explanation(df, target).values
-        if return_all_classes:
-            if self.T.T.task.startswith("bin") and len(values) != self.T.y.nunique():
-                values = [np.array(1 - values), values]
-
-        return values
-
-    def get_interaction_values(self, df: pd.DataFrame) -> np.ndarray:
-        """Get shap interaction values from the Explanation object.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data set to get the interaction values from.
-
-        Returns
-        -------
-        np.ndarray
-            Interaction values.
-
-        """
-        return self.explainer.shap_interaction_values(df)
-
-    def get_expected_value(
-        self,
-        target: int = 1,
-        return_all_classes: bool = False,
-    ) -> Union[FLOAT, SEQUENCE_TYPES]:
-        """Get the expected value of the training set.
-
-        The expected value is either retrieved from the explainer's
-        `expected_value` attribute or calculated as the mean of all
-        predictions.
-
-        Parameters
-        ----------
-        target: int, default=1
-            Index of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        return_all_classes: bool, default=False
-            Whether to return one or all classes.
-
-        Returns
-        -------
-        float or sequence
-            Expected value.
-
-        """
-        if self._expected_value is None:
-            # Some explainers like Permutation don't have expected_value attr
-            if hasattr(self.explainer, "expected_value"):
-                self._expected_value = self.explainer.expected_value
+        if is_multioutput(self.task):
+            if explanation.values.shape[-1] == self.branch.y.shape[1]:
+                # One explanation per column
+                explanation.values = explanation.values[:, :, target[0]]
+                explanation.base_values = explanation.base_values[target[0]]
             else:
-                # The expected value is the average of the model output
-                self._expected_value = np.mean(getattr(self.T, f"{self.attr}_train"))
+                # For native multilabel or multiclass-multioutput, the values
+                # have shape[-1]=n_targets x max(n_cls)
+                n_classes = explanation.values.shape[-1] // self.branch.y.shape[1]
 
-        if not return_all_classes and isinstance(self._expected_value, SEQUENCE):
-            if len(self._expected_value) == self.T.y.nunique():
-                return self._expected_value[target]  # Return target expected value
-        elif return_all_classes and isinstance(self._expected_value, float):
-            # For binary tasks, shap returns the expected value of positive class
-            return [1 - self._expected_value, self._expected_value]
+                select = target[0] * n_classes + target[1]
+                explanation.values = explanation.values[:, :, select]
+                explanation.base_values = explanation.base_values[select]
+        elif explanation.values.ndim > 2 and len(target) == 2:
+            explanation.values = explanation.values[:, :, target[1]]
+            explanation.base_values = explanation.base_values[target[1]]
 
-        return self._expected_value
+        return explanation
+
+
+class ClassMap:
+    """List for classes with mapping from attribute.
+
+    This class works similar to a list, where all elements should
+    have a certain attribute. You can access the class by index or
+    by attribute. The access is case-insensitive.
+
+    """
+
+    @staticmethod
+    def _conv(key):
+        return key.lower() if isinstance(key, str) else key
+
+    def _get_data(self, key):
+        if isinstance(key, INT_TYPES) and key not in self.keys():
+            try:
+                return self.__data[key]
+            except IndexError:
+                raise KeyError(key)
+        else:
+            for data in self.__data:
+                if self._conv(getattr(data, self.__key)) == self._conv(key):
+                    return data
+
+        raise KeyError(key)
+
+    def _check(self, elem):
+        if not hasattr(elem, self.__key):
+            raise ValueError(f"Element {elem} has no attribute {self.__key}.")
+        else:
+            return elem
+
+    def __init__(self, *args, key: str = "name"):
+        """Assign key and data.
+
+        Mimics a list's initialization and accepts an extra argument
+        to specify the attribute to use as key.
+
+        """
+
+        self.__key = key
+        self.__data = []
+        for elem in args:
+            if isinstance(elem, GeneratorType):
+                self.__data.extend(self._check(e) for e in elem)
+            else:
+                self.__data.append(self._check(elem))
+
+    def __getitem__(self, key):
+        if isinstance(key, SEQUENCE_TYPES):
+            return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
+        elif isinstance(key, slice):
+            return self.__class__(*self.__data[key], key=self.__key)
+        else:
+            return self._get_data(key)
+
+    def __setitem__(self, key, value):
+        if isinstance(key, INT_TYPES):
+            self.__data[key] = self._check(value)
+        else:
+            try:
+                self.__data = [e if self[key] == e else value for e in self.__data]
+            except KeyError:
+                assert key == getattr(value, self.__key)
+                self.append(value)
+
+    def __delitem__(self, key):
+        del self.__data[self._get_data(key)]
+
+    def __iter__(self):
+        yield from self.__data
+
+    def __len__(self):
+        return len(self.__data)
+
+    def __contains__(self, key):
+        return key in self.__data or self._conv(key) in self.keys_lower()
+
+    def __repr__(self):
+        return self.__data.__repr__()
+
+    def __reversed__(self):
+        yield from reversed(list(self.__data))
+
+    def __eq__(self, other):
+        return self.__data == other
+
+    def __add__(self, other):
+        self.__data += other
+        return self
+
+    def __bool__(self):
+        return bool(self.__data)
+
+    def keys(self) -> list:
+        return [getattr(x, self.__key) for x in self.__data]
+
+    def keys_lower(self) -> list:
+        return list(map(self._conv, self.keys()))
+
+    def append(self, value):
+        self.__data.append(self._check(value))
+
+    def extend(self, value):
+        self.__data.extend(list(map(self._check, value)))
+
+    def remove(self, value):
+        if value in self.__data:
+            self.__data.remove(value)
+        else:
+            self.__data.remove(self._get_data(value))
+
+    def clear(self):
+        self.__data = []
+
+    def index(self, key):
+        if key in self.__data:
+            return self.__data.index(key)
+        else:
+            return self.__data.index(self._get_data(key))
 
 
 class CustomDict(MutableMapping):
@@ -933,7 +1010,6 @@ class CustomDict(MutableMapping):
     - It allows getting an item from an index position.
     - It can insert key value pairs at a specific position.
     - Replace method to change a key or value if key exists.
-    - Min method to return all elements except one.
 
     """
 
@@ -942,9 +1018,11 @@ class CustomDict(MutableMapping):
         return key.lower() if isinstance(key, str) else key
 
     def _get_key(self, key):
-        if isinstance(key, (int, np.integer)) and key not in self.__keys:
+        # Get key from index
+        if isinstance(key, INT_TYPES) and key not in self.__keys:
             return self.__keys[key]
         else:
+            # Get key from name
             for k in self.__keys:
                 if self._conv(k) == self._conv(key):
                     return k
@@ -952,7 +1030,7 @@ class CustomDict(MutableMapping):
         raise KeyError(key)
 
     def __init__(self, iterable_or_mapping=None, **kwargs):
-        """Class initializer.
+        """Creates keys and data.
 
         Mimics a dictionary's initialization and accepts the same
         arguments. You have to pass an ordered iterable or mapping
@@ -977,17 +1055,12 @@ class CustomDict(MutableMapping):
             self.__data[self._conv(key)] = value
 
     def __getitem__(self, key):
-        if isinstance(key, list):
+        if isinstance(key, SEQUENCE_TYPES):
             return self.__class__({self._get_key(k): self[k] for k in key})
         elif isinstance(key, slice):
             return self.__class__({k: self[k] for k in self.__keys[key]})
-        elif self._conv(key) in self.__data:
-            return self.__data[self._conv(key)]  # From key
         else:
-            try:
-                return self.__data[self._conv(self.__keys[key])]  # From index
-            except (TypeError, IndexError):
-                raise KeyError(key)
+            return self.__data[self._conv(self._get_key(key))]
 
     def __setitem__(self, key, value):
         if key not in self:
@@ -1000,7 +1073,7 @@ class CustomDict(MutableMapping):
         del self.__data[self._conv(key)]
 
     def __iter__(self):
-        yield from self.keys()
+        yield from self.__keys
 
     def __len__(self):
         return len(self.__keys)
@@ -1013,6 +1086,9 @@ class CustomDict(MutableMapping):
 
     def __reversed__(self):
         yield from reversed(list(self.keys()))
+
+    def __bool__(self):
+        return bool(self.__keys)
 
     def keys(self):
         yield from self.__keys
@@ -1082,6 +1158,10 @@ class CustomDict(MutableMapping):
     def index(self, key):
         return self.__keys.index(self._get_key(key))
 
+    def reorder(self, keys):
+        self.__keys = [k for k in keys if k in self.__keys]
+        self.__data = {k: self[k] for k in self.__keys}
+
     def replace_key(self, key, new_key):
         if key in self:
             self.insert(self.__keys.index(self._get_key(key)), new_key, self[key])
@@ -1091,20 +1171,15 @@ class CustomDict(MutableMapping):
         if key in self:
             self[key] = value
 
-    def min(self, key):
-        return self.__class__(
-            {k: v for k, v in self.items() if self._conv(k) != self._conv(key)}
-        )
-
 
 # Functions ======================================================== >>
 
-def flt(item: Any) -> Any:
+def flt(x: Any) -> Any:
     """Return item from sequence with just that item.
 
     Parameters
     ----------
-    item: Any
+    x: Any
         Item or sequence.
 
     Returns
@@ -1113,15 +1188,15 @@ def flt(item: Any) -> Any:
         Object.
 
     """
-    return item[0] if isinstance(item, SEQUENCE) and len(item) == 1 else item
+    return x[0] if isinstance(x, SEQUENCE_TYPES) and len(x) == 1 else x
 
 
-def lst(item: Any) -> SEQUENCE_TYPES:
+def lst(x: Any) -> SEQUENCE:
     """Make a sequence from an item if not a sequence already.
 
     Parameters
     ----------
-    item: Any
+    x: Any
         Item or sequence.
 
     Returns
@@ -1130,17 +1205,17 @@ def lst(item: Any) -> SEQUENCE_TYPES:
         Item as sequence with length 1 or provided sequence.
 
     """
-    return item if isinstance(item, (dict, CustomDict, *SEQUENCE)) else [item]
+    return x if isinstance(x, (dict, CustomDict, ClassMap, *SEQUENCE_TYPES)) else [x]
 
 
-def it(item: Any) -> Any:
+def it(x: Any) -> Any:
     """Convert rounded floats to int.
 
     If the provided item is not numerical, return as is.
 
     Parameters
     ----------
-    item: Any
+    x: Any
         Item to check for rounding.
 
     Returns
@@ -1150,21 +1225,21 @@ def it(item: Any) -> Any:
 
     """
     try:
-        is_equal = int(item) == float(item)
+        is_equal = int(x) == float(x)
     except ValueError:  # Item may not be numerical
-        return item
+        return x
 
-    return int(item) if is_equal else float(item)
+    return int(x) if is_equal else float(x)
 
 
-def rnd(item: Any, decimals: int = 4) -> Any:
+def rnd(x: Any, decimals: INT = 4) -> Any:
     """Round a float to the `decimals` position.
 
     If the value is not a float, return as is.
 
     Parameters
     ----------
-    item: Any
+    x: Any
         Numerical item to round.
 
     decimals: int, default=4
@@ -1176,7 +1251,7 @@ def rnd(item: Any, decimals: int = 4) -> Any:
         Rounded float or non-numerical item.
 
     """
-    return round(item, decimals) if np.issubdtype(type(item), np.floating) else item
+    return round(x, decimals) if np.issubdtype(type(x), np.floating) else x
 
 
 def divide(a: SCALAR, b: SCALAR) -> SCALAR:
@@ -1239,45 +1314,68 @@ def sign(obj: Callable) -> OrderedDict:
     return signature(obj).parameters
 
 
-def merge(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
-    """Add a target column to the feature set.
+def merge(*args) -> DATAFRAME:
+    """Concatenate pandas objects column-wise.
+
+    Empty objects are ignored.
 
     Parameters
     ----------
-    X: pd.DataFrame
-        Feature set.
-
-    y: pd.Series
-        Target column.
+    *args
+        Objects to concatenate.
 
     Returns
     -------
-    pd.DataFrame
-        Complete dataset.
+    dataframe
+        Concatenated dataframe.
 
     """
-    return X.merge(y.to_frame(), left_index=True, right_index=True)
+    if len(args := [elem for elem in args if not elem.empty]) == 1:
+        return args[0]
+    else:
+        return bk.concat([*args], axis=1)
+
+
+def get_cols(elem: PANDAS) -> list[SERIES]:
+    """Get a list of columns in dataframe / series.
+
+    Parameters
+    ----------
+    elem: series or dataframe
+        Element to get the columns from.
+
+    Returns
+    -------
+    list of series
+        Columns in elem.
+
+    """
+    if isinstance(elem, SERIES_TYPES):
+        return [elem]
+    else:
+        return [elem[col] for col in elem]
 
 
 def variable_return(
-    X: Optional[pd.DataFrame], y: Optional[pd.Series]
-) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+    X: DATAFRAME | None,
+    y: SERIES | None,
+) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
     """Return one or two arguments depending on which is None.
 
-    This utility is used to mnake methods return only the provided
+    This utility is used to make methods return only the provided
     data set.
 
     Parameters
     ----------
-    X: pd.DataFrame or None
+    X: dataframe or None
         Feature set.
 
-    y: pd.Series or None
+    y: series or None
         Target column.
 
     Returns
     -------
-    pd.DataFrame, pd.Series or tuple
+    dataframe, series or tuple
         Data sets that are not None.
 
     """
@@ -1289,14 +1387,14 @@ def variable_return(
         return X, y
 
 
-def is_sparse(df: pd.DataFrame) -> bool:
+def is_sparse(df: DATAFRAME) -> bool:
     """Check if the dataframe is sparse.
 
     A data set is considered sparse if any of its columns is sparse.
 
     Parameters
     ----------
-    df: pd.DataFrame
+    df: dataframe
         Data set to check.
 
     Returns
@@ -1305,7 +1403,24 @@ def is_sparse(df: pd.DataFrame) -> bool:
         Whether the data set is sparse.
 
     """
-    return any(pd.api.types.is_sparse(df[col]) for col in df)
+    return any(bk.api.types.is_sparse(df[col]) for col in df)
+
+
+def check_dependency(name: str):
+    """Raise an error if a package is not installed.
+
+    Parameters
+    ----------
+    name: str
+        Name of the package to check.
+
+    """
+    if not find_spec(name.replace("-", "_")):
+        raise ModuleNotFoundError(
+            f"Unable to import the {name} package. Install it using "
+            f"`pip install {name}` or install all of atom's optional "
+            "dependencies with `pip install atom-ml[full]`."
+        )
 
 
 def check_canvas(is_canvas: bool, method: str):
@@ -1327,7 +1442,35 @@ def check_canvas(is_canvas: bool, method: str):
         )
 
 
-def check_predict_proba(models: SEQUENCE_TYPES, method: str):
+def check_hyperparams(models: Model | SEQUENCE, method: str) -> list[Model]:
+    """Check if the models ran hyperparameter tuning.
+
+    If no models did, raise an exception.
+
+    Parameters
+    ----------
+    models: model or sequence
+        Models to check.
+
+    method: str
+        Name of the method from which the check is called.
+
+    Returns
+    -------
+    list of models
+        Models that ran hyperparameter tuning.
+
+    """
+    if not (models := list(filter(lambda x: x.trials is not None, lst(models)))):
+        raise ValueError(
+            f"The {method} method is only available "
+            "for models that ran hyperparameter tuning."
+        )
+
+    return models
+
+
+def check_predict_proba(models: SEQUENCE, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
     Parameters
@@ -1339,7 +1482,7 @@ def check_predict_proba(models: SEQUENCE_TYPES, method: str):
         Name of the method from which the check is called.
 
     """
-    for m in [m for m in models if m.name != "Vote"]:
+    for m in models:
         if not hasattr(m.estimator, "predict_proba"):
             raise AttributeError(
                 f"The {method} method is only available for "
@@ -1347,7 +1490,7 @@ def check_predict_proba(models: SEQUENCE_TYPES, method: str):
             )
 
 
-def check_scaling(df: pd.DataFrame) -> bool:
+def check_scaling(df: DATAFRAME, pipeline: Any | None = None) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
@@ -1355,10 +1498,17 @@ def check_scaling(df: pd.DataFrame) -> bool:
     standard deviation of all columns lies between 0.85 and 1.15.
     Binary columns are excluded from the calculation.
 
+    Additionally, if a pipeline is provided and there's a scaler in
+    the pipeline, it also returns False.
+
     Parameters
     ----------
-    df: pd.DataFrame
+    df: dataframe
         Data set to check.
+
+    pipeline: Pipeline or None, default=None
+        Pipeline in which to check for a scaler (any estimator whose
+        name contains the word scaler).
 
     Returns
     -------
@@ -1366,37 +1516,28 @@ def check_scaling(df: pd.DataFrame) -> bool:
         Whether the data set is scaled.
 
     """
-    # Remove binary columns
+    has_scaler = False
+    if pipeline is not None:
+        est_names = [est.__class__.__name__.lower() for est in pipeline]
+        has_scaler = any("scaler" in name for name in est_names)
+
+    # Remove binary columns (thus also sparse columns)
     df = df[[c for c in df if ~np.isin(df[c].unique(), [0, 1]).all()]]
 
-    mean = df.mean(numeric_only=True).mean()
-    std = df.std(numeric_only=True).mean()
-    return -0.05 < mean < 0.05 and 0.85 < std < 1.15
+    if df.empty:  # All columns are binary -> no scaling needed
+        return True
+    else:
+        mean = df.mean(numeric_only=True).mean()
+        std = df.std(numeric_only=True).mean()
+        return has_scaler or (-0.05 < mean < 0.05 and 0.85 < std < 1.15)
 
 
-def get_attr(estimator: Estimator) -> str:
-    """Get the main estimator's prediction method.
-
-    Get predict_proba, decision_function or predict in that order
-    when available.
-
-    Returns
-    -------
-    str
-        Name of the prediction method.
-
-    """
-    for attr in ("predict_proba", "decision_function", "predict"):
-        if hasattr(estimator, attr):
-            return attr
-
-
-def get_versions(models: CustomDict) -> dict:
+def get_versions(models: ClassMap) -> dict:
     """Get the versions of ATOM and the models' packages.
 
     Parameters
     ----------
-    models: CustomDict
+    models: ClassMap
         Models for which to check the version.
 
     Returns
@@ -1406,26 +1547,26 @@ def get_versions(models: CustomDict) -> dict:
 
     """
     versions = {"atom": __version__}
-    for name, model in models.items():
+    for model in models:
         module = model.estimator.__module__.split(".")[0]
         versions[module] = sys.modules.get(module, import_module(module)).__version__
 
     return versions
 
 
-def get_corpus(df: pd.DataFrame) -> pd.Series:
+def get_corpus(df: DATAFRAME) -> SERIES:
     """Get text column from a dataframe.
 
     The text column should be called `corpus` (case insensitive).
 
     Parameters
     ----------
-    df: pd.DataFrame
+    df: dataframe
         Data set from which to get the corpus.
 
     Returns
     -------
-    pd.Series
+    series
         Column with text values.
 
     """
@@ -1435,38 +1576,7 @@ def get_corpus(df: pd.DataFrame) -> pd.Series:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
-def get_pl_name(name: str, steps: Tuple[str, Estimator], counter: int = 1) -> str:
-    """Get the estimator name for a pipeline.
-
-    This utility checks if there already exists an estimator with
-    that name. If so, add a counter at the end of the name.
-
-    Parameters
-    ----------
-    name: str
-        Name of the estimator.
-
-    steps: tuple
-        Current steps in the pipeline.
-
-    counter: int, default=1
-        Numerical counter to add to the step's name.
-
-    Returns
-    -------
-    str
-        New name for the pipeline's step.
-
-    """
-    og_name = name
-    while name.lower() in [elem[0] for elem in steps]:
-        counter += 1
-        name = og_name + str(counter)
-
-    return name.lower()
-
-
-def get_best_score(item: Union[Model, pd.Series], metric: int = 0) -> FLOAT:
+def get_best_score(item: Model | SERIES, metric: int = 0) -> FLOAT:
     """Returns the best score for a model.
 
     The best score is the `score_bootstrap` or `score_test`, checked
@@ -1474,7 +1584,7 @@ def get_best_score(item: Union[Model, pd.Series], metric: int = 0) -> FLOAT:
 
     Parameters
     ----------
-    item: model or pd.Series
+    item: model or series
         Model or row from the results dataframe to get the score from.
 
     metric: int, default=0
@@ -1492,7 +1602,7 @@ def get_best_score(item: Union[Model, pd.Series], metric: int = 0) -> FLOAT:
         return lst(item.score_test)[metric]
 
 
-def time_to_str(t: int):
+def time_to_str(t: SCALAR) -> str:
     """Convert time to a nice string representation.
 
     The resulting string is of format 00h:00m:00s or 1.000s if
@@ -1500,7 +1610,7 @@ def time_to_str(t: int):
 
     Parameters
     ----------
-    t: int
+    t: int or float
         Time to convert (in seconds).
 
     Returns
@@ -1509,8 +1619,8 @@ def time_to_str(t: int):
         Time representation.
 
     """
-    h = t // 3600
-    m = t % 3600 // 60
+    h = int(t) // 3600
+    m = int(t) % 3600 // 60
     s = t % 3600 % 60
     if not h and not m:  # Only seconds
         return f"{s:.3f}s"
@@ -1520,13 +1630,34 @@ def time_to_str(t: int):
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
+def n_cols(data: FEATURES | TARGET | None) -> int:
+    """Get the number of columns in a dataset.
+
+    Parameters
+    ----------
+    data: sequence or dataframe-like
+        Dataset to check.
+
+    Returns
+    -------
+    int or None
+        Number of columns.
+
+    """
+    if data is not None:
+        if (array := np.array(data, dtype="object")).ndim > 1:
+            return array.shape[1]
+        else:
+            return array.ndim  # Can be 0 when input is a dict
+
+
 def to_df(
-    data: Optional[X_TYPES],
-    index: Optional[Union[SEQUENCE_TYPES, pd.Index, pd.MultiIndex]] = None,
-    columns: Optional[SEQUENCE_TYPES] = None,
-    dtypes: Optional[Union[str, dict, np.dtype]] = None,
-) -> Optional[pd.DataFrame]:
-    """Convert a dataset to pd.Dataframe.
+    data: FEATURES | None,
+    index: SEQUENCE = None,
+    columns: SEQUENCE | None = None,
+    dtype: str | dict | np.dtype | None = None,
+) -> DATAFRAME | None:
+    """Convert a dataset to a dataframe.
 
     Parameters
     ----------
@@ -1534,56 +1665,55 @@ def to_df(
         Dataset to convert to a dataframe.  If None or already a
         dataframe, return unchanged.
 
-    index: sequence, pd.Index, pd.Multiindex or None, default=None
+    index: sequence, index or None, default=None
         Values for the index.
 
     columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    dtypes: str, dict, np.dtype or None, default=None
+    dtype: str, dict, np.dtype or None, default=None
         Data types for the output columns. If None, the types are
         inferred from the data.
 
     Returns
     -------
-    pd.DataFrame or None
-        Transformed dataframe.
+    dataframe or None
+        Dataset as dataframe of type given by the backend.
 
     """
-    # Get number of columns (list/tuple have no shape and sp.matrix has no index)
-    n_cols = lambda data: data.shape[1] if hasattr(data, "shape") else len(data[0])
-
-    if data is not None and not isinstance(data, pd.DataFrame):
+    if data is not None and not isinstance(data, bk.DataFrame):
         # Assign default column names (dict already has column names)
-        if not isinstance(data, dict) and columns is None:
+        if not isinstance(data, (dict, DATAFRAME_TYPES)) and columns is None:
             columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
-        if sparse.issparse(data):
+        if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
+            data = data.to_pandas()  # Convert cuML to pandas
+        elif sparse.issparse(data):
             # Create dataframe from sparse matrix
-            data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+            data = bk.DataFrame.sparse.from_spmatrix(data, index, columns)
         else:
-            data = pd.DataFrame(data, index, columns)
+            data = bk.DataFrame(data, index, columns)
 
-        if dtypes is not None:
-            data = data.astype(dtypes)
+        if dtype is not None:
+            data = data.astype(dtype)
 
     return data
 
 
 def to_series(
-    data: Optional[SEQUENCE_TYPES],
-    index: Optional[Union[SEQUENCE_TYPES, pd.Index, pd.MultiIndex]] = None,
+    data: SEQUENCE | None,
+    index: SEQUENCE | None = None,
     name: str = "target",
-    dtype: Optional[Union[str, np.dtype]] = None,
-) -> Optional[pd.Series]:
-    """Convert a sequence to pd.Series.
+    dtype: str | np.dtype | None = None,
+) -> SERIES | None:
+    """Convert a sequence to a series.
 
     Parameters
     ----------
     data: sequence or None
         Data to convert. If None, return unchanged.
 
-    index: sequence, pd.Index, pd.Multiindex or None, default=None
+    index: sequence, index or None, default=None
         Values for the index.
 
     name: str, default="target"
@@ -1595,68 +1725,70 @@ def to_series(
 
     Returns
     -------
-    pd.Series or None
-        Transformed series.
+    series or None
+        Sequence as series of type given by the backend.
 
     """
-    if data is not None and not isinstance(data, pd.Series):
-        data = pd.Series(data, index=index, name=name, dtype=dtype)
+    if data is not None and not isinstance(data, bk.Series):
+        if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
+            data = data.to_pandas()  # Convert cuML to pandas
+        else:
+            # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
+            data = bk.Series(
+                data=np.array(data, dtype="object").ravel().tolist(),
+                index=index,
+                name=getattr(data, "name", name),
+                dtype=dtype,
+            )
 
     return data
 
 
-def prepare_logger(
-    logger: Optional[Union[str, Logger]], class_name: str,
-) -> Optional[Logger]:
-    """Create a new logger and corresponding `.log` file.
+def to_pandas(
+    data: SEQUENCE | None,
+    index: SEQUENCE | None = None,
+    columns: SEQUENCE | None = None,
+    name: str = "target",
+    dtype: str | dict | np.dtype | None = None,
+) -> PANDAS | None:
+    """Convert a sequence or dataset to a dataframe or series object.
+
+    If the data is 1-dimensional, convert to series, else to a dataframe.
 
     Parameters
     ----------
-    logger: str, Logger or None
-        - If None: Doesn't create a logging file.
-        - If str: Name of the log file. Use "auto" for automatic name.
-        - Else: Python `logging.Logger` instance.
+    data: sequence or None
+        Data to convert. If None, return unchanged.
 
-    class_name: str
-        Name of the class from which the function is called.
-        Used for default name creation when log="auto".
+    index: sequence, index or None, default=None
+        Values for the index.
+
+    columns: sequence or None, default=None
+        Name of the columns. Use None for automatic naming.
+
+    name: str, default="target"
+        Name of the series.
+
+    dtype: str, dict, np.dtype or None, default=None
+        Data type for the output series. If None, the type is
+        inferred from the data.
 
     Returns
     -------
-    Logger or None
-        Logger object.
+    series, dataframe or None
+        Data as pandas object.
 
     """
-    if not logger:  # Empty string or None
-        return None
-    elif isinstance(logger, str):
-        # Prepare the FileHandler's name
-        if not logger.endswith(".log"):
-            logger += ".log"
-        if logger == "auto.log" or logger.endswith("/auto.log"):
-            current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
-            logger = logger.replace("auto", class_name + "_" + current)
-
-        # Define file handler and set formatter
-        file_handler = FileHandler(logger)
-        formatter = Formatter("%(asctime)s - %(levelname)s: %(message)s")
-        file_handler.setFormatter(formatter)
-
-        # Define logger
-        logger = getLogger(class_name + "_logger")
-        logger.setLevel(DEBUG)
-        logger.propagate = False
-        if logger.hasHandlers():  # Remove existing handlers
-            logger.handlers.clear()
-        logger.addHandler(file_handler)  # Add file handler to logger
-
-    return logger
+    if n_cols(data) == 1:
+        return to_series(data, index=index, name=name, dtype=dtype)
+    else:
+        return to_df(data, index=index, columns=columns, dtype=dtype)
 
 
 def check_is_fitted(
     estimator: Estimator,
     exception: bool = True,
-    attributes: Optional[Union[str, SEQUENCE_TYPES]] = None,
+    attributes: str | SEQUENCE | None = None,
 ) -> bool:
     """Check whether an estimator is fitted.
 
@@ -1701,7 +1833,7 @@ def check_is_fitted(
 
         """
         if attr:
-            if isinstance(value := getattr(estimator, attr), (pd.DataFrame, pd.Series)):
+            if isinstance(value := getattr(estimator, attr), PANDAS_TYPES):
                 return value.empty
             else:
                 return not value
@@ -1711,8 +1843,8 @@ def check_is_fitted(
         is_fitted = estimator._is_fitted
     elif attributes is None:
         # Check for attributes from a fitted object
-        for v in vars(estimator):
-            if v.endswith("_") and not v.startswith("__"):
+        for k, v in vars(estimator).items():
+            if k.endswith("_") and not k.startswith("__") and v is not None:
                 is_fitted = True
                 break
     elif not all(check_attr(attr) for attr in lst(attributes)):
@@ -1731,33 +1863,7 @@ def check_is_fitted(
     return True
 
 
-def create_acronym(fullname: str) -> str:
-    """Create an acronym for an estimator.
-
-    The acronym consists of the capital letters in the name if
-    there are at least two. If not, the entire name is used.
-
-    Parameters
-    ----------
-    fullname: str
-        Estimator's __name__.
-
-    Returns
-    -------
-    str
-        Created acronym.
-
-    """
-    from atom.models import MODELS
-
-    acronym = "".join([c for c in fullname if c.isupper()])
-    if len(acronym) < 2 or acronym.lower() in MODELS:
-        return fullname
-    else:
-        return acronym
-
-
-def get_custom_scorer(metric: Union[str, Callable, Scorer]) -> Scorer:
+def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -1826,7 +1932,7 @@ def get_custom_scorer(metric: Union[str, Callable, Scorer]) -> Scorer:
 
         # Some scorers use default kwargs
         default_kwargs = ("precision", "recall", "f1", "jaccard")
-        if any(name in scorer._score_func.__name__ for name in default_kwargs):
+        if any(scorer._score_func.__name__.startswith(name) for name in default_kwargs):
             if not scorer._kwargs:
                 scorer._kwargs = {"average": "binary"}
 
@@ -1842,7 +1948,7 @@ def get_custom_scorer(metric: Union[str, Callable, Scorer]) -> Scorer:
     return scorer
 
 
-def infer_task(y: pd.Series, goal: str = "class") -> str:
+def infer_task(y: PANDAS, goal: str = "class") -> str:
     """Infer the task corresponding to a target column.
 
     If goal is provided, only look at number of unique values to
@@ -1850,8 +1956,8 @@ def infer_task(y: pd.Series, goal: str = "class") -> str:
 
     Parameters
     ----------
-    y: pd.Series
-        Target column from which to infer the task.
+    y: series or dataframe
+        Target column(s).
 
     goal: str, default="class"
         Classification or regression goal.
@@ -1863,9 +1969,19 @@ def infer_task(y: pd.Series, goal: str = "class") -> str:
 
     """
     if goal == "reg":
-        return "regression"
+        if y.ndim == 1:
+            return "regression"
+        else:
+            return "multioutput regression"
 
-    if y.nunique() == 1:
+    if y.ndim > 1:
+        if all(y[col].nunique() == 2 for col in y):
+            return "multilabel classification"
+        else:
+            return "multiclass-multioutput classification"
+    elif isinstance(y.iloc[0], SEQUENCE_TYPES):
+        return "multilabel classification"
+    elif y.nunique() == 1:
         raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
     elif y.nunique() == 2:
         return "binary classification"
@@ -1873,59 +1989,20 @@ def infer_task(y: pd.Series, goal: str = "class") -> str:
         return "multiclass classification"
 
 
-def partial_dependence(
-    estimator: Predictor, X: pd.DataFrame, features: Union[int, SEQUENCE_TYPES]
-) -> Tuple[np.ndarray, np.ndarray, list]:
-    """Calculate the partial dependence of features.
+def is_binary(task) -> bool:
+    """Return whether the task is binary or multilabel."""
+    return task in ("binary classification", "multilabel classification")
 
-    Partial dependence of a feature (or a set of features) corresponds
-    to the average response of an estimator for each possible value of
-    the feature. Code from sklearn's _partial_dependence.py. Note that
-    this implementation always uses method="brute", grid_resolution=100
-    and percentiles=(0.05, 0.95).
 
-    Parameters
-    ----------
-    estimator: Predictor
-        Model estimator to use.
-
-    X: pd.DataFrame
-        Feature set used to generate a grid of values for the target
-        features (where the partial dependence is evaluated), and
-        also to generate values for the complement features.
-
-    features: int or sequence
-        The feature or pair of interacting features for which the
-        partial dependency should be computed.
-
-    Returns
-    -------
-    np.array
-        Average of the predictions.
-
-    np.array
-        All predictions.
-
-    list
-        Values used for the predictions.
-
-    """
-    grid, values = _grid_from_X(_safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
-
-    avg_pred, pred = _partial_dependence_brute(estimator, grid, features, X, "auto")
-
-    # Reshape to (n_targets, n_values_feature,)
-    avg_pred = avg_pred.reshape(-1, *[val.shape[0] for val in values])
-
-    # Reshape to (n_targets, n_rows, n_values_feature)
-    pred = pred.reshape(-1, X.shape[0], *[val.shape[0] for val in values])
-
-    return avg_pred, pred, values
+def is_multioutput(task) -> bool:
+    """Return whether the task is binary or multilabel."""
+    return any(t in task for t in ("multilabel", "multioutput"))
 
 
 def get_feature_importance(
-    est: Predictor, attributes: Optional[SEQUENCE_TYPES] = None
-) -> Optional[np.ndarray]:
+    est: Predictor,
+    attributes: SEQUENCE | None = None,
+) -> np.ndarray | None:
     """Return the feature importance from an estimator.
 
     Gets the feature importance from the provided attribute. For
@@ -1947,37 +2024,113 @@ def get_feature_importance(
         Estimator's feature importances.
 
     """
+    norm = lambda x: np.linalg.norm(x, axis=np.argmin(x.shape), ord=1)
+
     data = None
     if not attributes:
         attributes = ("scores_", "coef_", "feature_importances_")
 
     try:
-        data = getattr(est, next(attr for attr in attributes if hasattr(est, attr)))
+        data = getattr(est, next(x for x in attributes if hasattr(est, x)))
     except StopIteration:
         # Get the mean value for meta-estimators
         if hasattr(est, "estimators_"):
             if all(hasattr(x, "feature_importances_") for x in est.estimators_):
-                data = np.mean(
-                    [fi.feature_importances_ for fi in est.estimators_],
-                    axis=0,
-                )
+                data = [fi.feature_importances_ for fi in est.estimators_]
             elif all(hasattr(x, "coef_") for x in est.estimators_):
-                data = np.mean([fi.coef_ for fi in est.estimators_], axis=0)
+                data = [norm(fi.coef_) for fi in est.estimators_]
+            else:
+                # For ensembles that mix attributes
+                raise ValueError(
+                    "Failed to calculate the feature importance for meta-estimator "
+                    f"{est.__class__.__name__}. The underlying estimators have a mix "
+                    f"of feature_importances_ and coef_ attributes."
+                )
 
-    if data is not None:
-        if data.ndim == 1:
-            data = np.abs(data)
-        else:
-            data = np.linalg.norm(data, axis=np.argmin(data.shape), ord=1)
+            # Trim each coef to the number of features in the 1st estimator
+            # ClassifierChain adds features to subsequent estimators
+            min_length = min(map(len, data))
+            data = np.mean([c[:min_length] for c in data], axis=0)
 
+    if data is None:
         return data
+    else:
+        return np.abs(data.flatten())
+
+
+def export_pipeline(pipeline: pd.Series, model: Model | None, memory, verbose) -> Any:
+    """Export a pipeline to a sklearn-like object.
+
+    Optionally, you can add a model as final estimator.
+
+    Parameters
+    ----------
+    pipeline: pd.Series
+        Transformers to add to the pipeline.
+
+    model: str, Model or None, default=None
+        Model for which to export the pipeline. If the model used
+        [automated feature scaling][], the [Scaler][] is added to
+        the pipeline. If None, the pipeline in the current branch
+        is exported.
+
+    memory: bool, str, Memory or None, default=None
+        Used to cache the fitted transformers of the pipeline.
+            - If None or False: No caching is performed.
+            - If True: A default temp directory is used.
+            - If str: Path to the caching directory.
+            - If Memory: Object with the joblib.Memory interface.
+
+    verbose: int or None, default=None
+        Verbosity level of the transformers in the pipeline. If
+        None, it leaves them to their original verbosity. Note
+        that this is not the pipeline's own verbose parameter.
+        To change that, use the `set_params` method.
+
+    Returns
+    -------
+    Pipeline
+        Current branch as a sklearn-like Pipeline object.
+
+    """
+    from atom.pipeline import Pipeline
+
+    steps = []
+    for transformer in pipeline:
+        est = deepcopy(transformer)  # Not clone to keep fitted
+
+        # Set the new verbosity (if possible)
+        if verbose is not None and hasattr(est, "verbose"):
+            est.verbose = verbose
+
+        # Check if there already exists an estimator with that
+        # name. If so, add a counter at the end of the name
+        counter = 1
+        name = est.__class__.__name__.lower()
+        while name in (elem[0] for elem in steps):
+            counter += 1
+            name = est.__class__.__name__.lower() + str(counter)
+
+        steps.append((name, est))
+
+    if model:
+        steps.append((model.name, deepcopy(model.estimator)))
+
+    if not memory:  # None or False
+        memory = None
+    elif memory is True:
+        memory = tempfile.gettempdir()
+
+    return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn's
 
 
 # Pipeline functions =============================================== >>
 
 def name_cols(
-    array: np.ndarray, original_df: pd.DataFrame, col_names: List[str]
-) -> List[str]:
+    array: np.ndarray,
+    original_df: DATAFRAME,
+    col_names: list[str],
+) -> list[str]:
     """Get the column names after a transformation.
 
     If the number of columns is unchanged, the original
@@ -1989,7 +2142,7 @@ def name_cols(
     array: np.array
         Transformed dataset.
 
-    original_df: pd.DataFrame
+    original_df: dataframe
         Original dataset.
 
     col_names: list of str
@@ -2028,10 +2181,10 @@ def name_cols(
 
 def reorder_cols(
     transformer: Transformer,
-    df: pd.DataFrame,
-    original_df: pd.DataFrame,
-    col_names: List[str],
-) -> pd.DataFrame:
+    df: DATAFRAME,
+    original_df: DATAFRAME,
+    col_names: list[str],
+) -> DATAFRAME:
     """Reorder th   e columns to their original order.
 
     This function is necessary in case only a subset of the
@@ -2043,10 +2196,10 @@ def reorder_cols(
     transformer: Transformer
         Instance that transformed `df`.
 
-    df: pd.DataFrame
+    df: dataframe
         Dataset to reorder.
 
-    original_df: pd.DataFrame
+    original_df: dataframe
         Original dataset (states the order).
 
     col_names: list of str
@@ -2054,7 +2207,7 @@ def reorder_cols(
 
     Returns
     -------
-    pd.DataFrame
+    dataframe
         Dataset with reordered columns.
 
     """
@@ -2107,9 +2260,9 @@ def reorder_cols(
 
 def fit_one(
     transformer: Transformer,
-    X: Optional[X_TYPES] = None,
-    y: Optional[Y_TYPES] = None,
-    message: Optional[str] = None,
+    X: FEATURES | None = None,
+    y: TARGET | None = None,
+    message: str | None = None,
     **fit_params,
 ):
     """Fit the data using one estimator.
@@ -2123,13 +2276,15 @@ def fit_one(
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence or None, default=None
+    y: int, str, dict, sequence, dataframe or None, default=None
         Target column corresponding to X.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
     message: str or None
         Short message. If None, nothing will be printed.
@@ -2139,7 +2294,7 @@ def fit_one(
 
     """
     X = to_df(X, index=getattr(y, "index", None))
-    y = to_series(y, index=getattr(X, "index", None))
+    y = to_pandas(y, index=getattr(X, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
@@ -2169,10 +2324,10 @@ def fit_one(
 
 def transform_one(
     transformer: Transformer,
-    X: Optional[X_TYPES] = None,
-    y: Optional[Y_TYPES] = None,
+    X: FEATURES | None = None,
+    y: TARGET | None = None,
     method: str = "transform",
-) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
+) -> tuple[DATAFRAME | None, SERIES | None]:
     """Transform the data using one estimator.
 
     Parameters
@@ -2184,28 +2339,30 @@ def transform_one(
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence or None, default=None
+    y: int, str, dict, sequence, dataframe or None, default=None
         Target column corresponding to X.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
     method: str, default="transform"
         Method to apply: transform or inverse_transform.
 
     Returns
     -------
-    pd.DataFrame or None
+    dataframe or None
         Feature set. Returns None if not provided.
 
-    pd.Series or None
+    series or None
         Target column. Returns None if not provided.
 
     """
 
-    def prepare_df(out: X_TYPES) -> pd.DataFrame:
+    def prepare_df(out: FEATURES) -> DATAFRAME:
         """Convert to df and set correct column names and order.
 
         Parameters
@@ -2215,14 +2372,14 @@ def transform_one(
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Final dataset.
 
         """
         use_cols = inc or [c for c in X.columns if c not in exc]
 
         # Convert to pandas and assign proper column names
-        if not isinstance(out, pd.DataFrame):
+        if not isinstance(out, DATAFRAME_TYPES):
             if hasattr(transformer, "get_feature_names"):
                 columns = transformer.get_feature_names()
             elif hasattr(transformer, "get_feature_names_out"):
@@ -2238,13 +2395,17 @@ def transform_one(
         else:
             return out
 
-    X = to_df(X, index=getattr(y, "index", None))
-    y = to_series(y, index=getattr(X, "index", None))
+    X = to_df(
+        data=X,
+        index=getattr(y, "index", None),
+        columns=getattr(transformer, "feature_names_in_", None),
+    )
+    y = to_pandas(y, index=getattr(X, "index", None))
 
     args = []
     if "X" in (params := sign(getattr(transformer, method))):
         if X is not None:
-            inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+            inc, exc = getattr(transformer, "_cols", (list(X.columns), []))
             if inc or exc:  # Skip if inc=[] (happens when columns=-1)
                 args.append(X[inc or [c for c in X.columns if c not in exc]])
 
@@ -2261,30 +2422,39 @@ def transform_one(
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
-    output = getattr(transformer, method)(*args)
-
     # Transform can return X, y or both
-    if isinstance(output, tuple):
-        new_X = prepare_df(output[0])
-        new_y = to_series(output[1], index=new_X.index, name=y.name)
+    if isinstance(out := getattr(transformer, method)(*args), tuple):
+        new_X = prepare_df(out[0])
+        new_y = to_pandas(
+            data=out[1],
+            index=new_X.index,
+            name=getattr(y, "name", None),
+            columns=getattr(y, "columns", None),
+        )
+    elif "X" in params and X is not None and (inc != [] or exc != []):
+        # X in -> X out
+        new_X = prepare_df(out)
+        new_y = y if y is None else y.set_axis(new_X.index)
     else:
-        if output.ndim > 1:
-            new_X = prepare_df(output)
-            new_y = y if y is None else y.set_axis(new_X.index)
-        else:
-            new_y = to_series(output, index=y.index, name=y.name)
-            new_X = X if X is None else X.set_index(new_y.index)
+        # X not in -> output must be y
+        new_y = to_pandas(
+            data=out,
+            index=y.index,
+            name=getattr(y, "name", None),
+            columns=getattr(y, "columns", None),
+        )
+        new_X = X if X is None else X.set_index(new_y.index)
 
     return new_X, new_y
 
 
 def fit_transform_one(
     transformer: Transformer,
-    X: Optional[X_TYPES] = None,
-    y: Optional[Y_TYPES] = None,
-    message: Optional[str] = None,
+    X: FEATURES | None = None,
+    y: TARGET | None = None,
+    message: str | None = None,
     **fit_params,
-) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
+) -> tuple[DATAFRAME | None, SERIES | None]:
     """Fit and transform the data using one estimator.
 
     Parameters
@@ -2296,13 +2466,15 @@ def fit_transform_one(
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence or None, default=None
+    y: int, str, dict, sequence, dataframe or None, default=None
         Target column corresponding to X.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
     message: str or None
         Short message. If None, nothing will be printed.
@@ -2312,10 +2484,10 @@ def fit_transform_one(
 
     Returns
     -------
-    pd.DataFrame or None
+    dataframe or None
         Feature set. Returns None if not provided.
 
-    pd.Series or None
+    series or None
         Target column. Returns None if not provided.
 
     Transformer
@@ -2331,10 +2503,10 @@ def fit_transform_one(
 def custom_transform(
     transformer: Transformer,
     branch: Any,
-    data: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-    verbose: Optional[int] = None,
+    data: tuple[DATAFRAME, SERIES] | None = None,
+    verbose: int | None = None,
     method: str = "transform",
-) -> Tuple[pd.DataFrame, pd.Series]:
+) -> tuple[DATAFRAME, SERIES]:
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -2363,16 +2535,16 @@ def custom_transform(
 
     Returns
     -------
-    pd.DataFrame
+    dataframe
         Feature set.
 
-    pd.Series
+    series
         Target column.
 
     """
     # Select provided data or from the branch
     if data:
-        X_og, y_og = to_df(data[0]), to_series(data[1])
+        X_og, y_og = to_df(data[0]), to_pandas(data[1])
     else:
         if transformer._train_only:
             X_og, y_og = branch.X_train, branch.y_train
@@ -2399,16 +2571,12 @@ def custom_transform(
         else:
             branch._data = merge(X, branch.y if y is None else y)
 
-            # Since rows can be removed from train and test, reassign indices
-            branch._idx[0] = [idx for idx in branch._idx[0] if idx in X.index]
-            branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
+            # Since y can change number of columns, reassign index
+            branch._idx[0] = len(get_cols(y))
 
-        if branch.T.index is False:
-            branch._data = branch.dataset.reset_index(drop=True)
-            branch._idx = [
-                branch._data.index[:len(branch._idx[0])],
-                branch._data.index[-len(branch._idx[1]):],
-            ]
+            # Since rows can be removed from train and test, reassign indices
+            branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
+            branch._idx[2] = [idx for idx in branch._idx[2] if idx in X.index]
 
     # Back to the original verbosity
     if verbose is not None and hasattr(transformer, "verbose"):
@@ -2419,7 +2587,7 @@ def custom_transform(
 
 # Patches ========================================================== >>
 
-def score(f):
+def score(f: Callable) -> Callable:
     """Patch decorator for sklearn's _score function.
 
     Monkey patch for sklearn.model_selection._validation._score
@@ -2440,21 +2608,24 @@ def score(f):
 
 # Decorators ======================================================= >>
 
-def has_task(task: str) -> Callable:
-    """Check that the instance has a specific task.
+def has_task(task: str | list[str], inverse: bool = False) -> Callable:
+    """Check that the instance is from specific task.
 
     Parameters
     ----------
-    task: str
-        Task to check.
+    task: str or list of str
+        Task(s) to check.
+
+    inverse: bool, default=False
+        If True, checks that the parameter is not part of the task.
 
     """
 
-    def check(self) -> bool:
-        if hasattr(self, "task"):
-            return task in self.task
+    def check(self: Any) -> bool:
+        if inverse:
+            return not any(t in self.task for t in lst(task))
         else:
-            return task in self.T.task
+            return any(t in self.task for t in lst(task))
 
     return check
 
@@ -2469,7 +2640,7 @@ def has_attr(attr: str) -> Callable:
 
     """
 
-    def check(self) -> bool:
+    def check(self: Any) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(self, attr)
         return True
@@ -2487,7 +2658,7 @@ def estimator_has_attr(attr: str) -> Callable:
 
     """
 
-    def check(self):
+    def check(self: Any) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(self.estimator, attr)
         return True
@@ -2505,7 +2676,7 @@ def composed(*decs) -> Callable:
 
     """
 
-    def decorator(f):
+    def decorator(f: Callable) -> Callable:
         for dec in reversed(decs):
             f = dec(f)
         return f
@@ -2523,10 +2694,8 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
     """
 
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
-
-        if logger is not None:
+    def wrapper(*args, **kwargs) -> Any:
+        if args[0].logger is not None:
             try:  # Run the function
                 return f(*args, **kwargs)
 
@@ -2534,6 +2703,7 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
                 # If exception is not same as last, write to log
                 if ex is not cache["last_exception"]:
                     cache["last_exception"] = ex
+                    logger = getLogger(args[0].__class__.__name__)
                     logger.exception("Exception encountered:")
 
                 raise ex
@@ -2547,11 +2717,9 @@ def method_to_log(f: Callable) -> Callable:
     """Save called functions to log file."""
 
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        # Get logger for calls from models
-        logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
-
-        if logger is not None:
+    def wrapper(*args, **kwargs) -> Any:
+        if args[0].logger is not None:
+            logger = getLogger(args[0].__class__.__name__)
             if f.__name__ != "__init__":
                 logger.info("")
             logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
@@ -2561,52 +2729,104 @@ def method_to_log(f: Callable) -> Callable:
     return wrapper
 
 
-def plot_from_model(f: Callable) -> Callable:
-    """If a plot is called from a model, adapt the `models` parameter."""
+def plot_from_model(
+    func: Callable | None = None,
+    max_one: bool = False,
+    ensembles: bool = True,
+    check_fitted: bool = True,
+) -> Callable:
+    """If a plot is called from a model, adapt the `models` parameter.
 
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if hasattr(args[0], "T"):
-            return f(args[0].T, args[0].name, *args[1:], **kwargs)
-        else:
-            return f(*args, **kwargs)
+    Parameters
+    ----------
+    func: callable or None
+        Function to decorate. When the decorator is called with no
+        optional arguments, the function is passed as the first argument
+        and decorate returns the decorated function like.
+
+    max_one: bool, default=False
+        Whether one or multiple models are allowed. If True, return
+        the model instead of a list of models.
+
+    ensembles: bool, default=True
+        If False, drop ensemble models from selection.
+
+    check_fitted: bool, default=True
+        Raise an exception if the runner isn't fitted (has no models).
+
+    """
+
+    @wraps(func)
+    def wrapper(f: Callable) -> Callable:
+
+        @wraps(f)
+        def wrapped_f(*args, **kwargs) -> Any:
+            if hasattr(args[0], "_get_models"):
+                # Called from runner, get models for `models` parameter
+                if check_fitted:
+                    check_is_fitted(args[0], attributes="_models")
+
+                if len(args) > 1:
+                    models = args[1]
+                    args = [args[0]] + list(args[2:])  # Remove models from args
+                elif "models" in kwargs:
+                    models = kwargs.pop("models")
+                else:
+                    models = None
+
+                models = args[0]._get_models(models, ensembles=ensembles)
+                if max_one:
+                    if len(models) > 1:
+                        raise ValueError(f"The {f.__name__} plot only accepts one model.")
+                    else:
+                        models = models[0]
+
+                return f(args[0], models, *args[1:], **kwargs)
+            else:
+                # Called from model, send model directly to `models` parameter
+                return f(args[0], args[0] if max_one else [args[0]], *args[1:], **kwargs)
+
+        return wrapped_f
+
+    if func:
+        return wrapper(func)
 
     return wrapper
 
 
 # Custom scorers =================================================== >>
 
-def true_negatives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> int:
-    return int(confusion_matrix(y_true, y_pred).ravel()[0])
+def true_negatives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+    return confusion_matrix(y_true, y_pred).ravel()[0]
 
 
-def false_positives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> int:
-    return int(confusion_matrix(y_true, y_pred).ravel()[1])
+def false_positives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+    return confusion_matrix(y_true, y_pred).ravel()[1]
 
 
-def false_negatives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> int:
-    return int(confusion_matrix(y_true, y_pred).ravel()[2])
+def false_negatives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+    return confusion_matrix(y_true, y_pred).ravel()[2]
 
 
-def true_positives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> int:
-    return int(confusion_matrix(y_true, y_pred).ravel()[3])
+def true_positives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+    return confusion_matrix(y_true, y_pred).ravel()[3]
 
 
-def false_positive_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> float:
+def false_positive_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
-    return float(fp / (fp + tn))
+    return fp / (fp + tn)
 
 
-def true_positive_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> float:
+def true_positive_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    return float(tp / (tp + fn))
+    return tp / (tp + fn)
 
 
-def true_negative_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> float:
+def true_negative_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
-    return float(tn / (tn + fp))
+    return tn / (tn + fp)
 
 
-def false_negative_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> float:
+def false_negative_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    return float(fn / (fn + tp))
+    return fn / (fn + tp)

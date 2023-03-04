@@ -18,8 +18,10 @@ Description: Module containing all available models. The models are
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
-        accepts_multioutput: bool
-            Whether the model has native support for multi-output tasks.
+        native_multioutput: bool
+            Whether the model has native support for multioutput tasks.
+            Note that non-native models also work with multioutput
+            datasets making use of the `multioutput` meta-estimator.
 
         has_validation: str or None
             Whether the model allows in-training validation. If str,
@@ -117,10 +119,9 @@ Additionally, ATOM implements two ensemble models:
 
 """
 
-from typing import Optional, Tuple, Union
+from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 from optuna.distributions import CategoricalDistribution as Categorical
 from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
@@ -133,22 +134,42 @@ from optuna.trial import Trial
 from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
-    CatBMetric, CustomDict, LGBMetric, Predictor, XGBMetric, create_acronym,
+    DATAFRAME, SERIES, CatBMetric, ClassMap, CustomDict, LGBMetric, Predictor,
+    XGBMetric, sign,
 )
 
 
 class CustomModel(BaseModel):
-    """Custom model. Estimator provided by user."""
+    """Model with estimator provided by user."""
 
-    def __init__(self, *args, **kwargs):
-        self.est = kwargs["estimator"]  # Estimator provided by the user
+    def __init__(self, **kwargs):
+        if callable(est := kwargs.pop("estimator")):  # Estimator provided by the user
+            self._est = est
+            self._params = {}
+        else:
+            self._est = est.__class__
+            self._params = est.get_params()  # Store the provided parameters
 
-        # If no acronym is provided, use capital letters in the class' name
-        self.acronym = getattr(self.est, "acronym", create_acronym(self._fullname))
+        if hasattr(est, "name"):
+            name = est.name
+        else:
+            # If no name is provided, use the name of the class
+            name = self._fullname
+            if len(n := list(filter(str.isupper, name))) >= 2 and n not in MODELS:
+                name = "".join(n)
 
-        self.needs_scaling = getattr(self.est, "needs_scaling", False)
-        self.has_validation = getattr(self.est, "has_validation", None)
-        super().__init__(*args)
+        self.acronym = getattr(est, "acronym", name)
+        if not name.startswith(self.acronym):
+            raise ValueError(
+                f"The name ({name}) and acronym ({self.acronym}) of model "
+                f"{self._fullname} do not match. The name should start with "
+                f"the model's acronym."
+            )
+
+        self.needs_scaling = getattr(est, "needs_scaling", False)
+        self.native_multioutput = getattr(est, "native_multioutput", False)
+        self.has_validation = getattr(est, "has_validation", None)
+        super().__init__(name=name, **kwargs)
 
     @property
     def _fullname(self) -> str:
@@ -158,10 +179,7 @@ class CustomModel(BaseModel):
     @property
     def _est_class(self):
         """Return the estimator's class."""
-        if callable(self.est):
-            return self.est
-        else:
-            return self.est.__class__
+        return self._est
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -172,10 +190,7 @@ class CustomModel(BaseModel):
             Estimator instance.
 
         """
-        if callable(self.est):
-            return super()._get_est(**params)
-        else:
-            return self.est.set_params(**params)
+        return super()._get_est(**{**self._params, **params})
 
 
 class AdaBoost(BaseModel):
@@ -202,7 +217,6 @@ class AdaBoost(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -238,6 +252,7 @@ class AdaBoost(BaseModel):
     acronym = "AdaB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -258,7 +273,7 @@ class AdaBoost(BaseModel):
             learning_rate=Float(0.01, 10, log=True),
         )
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist["algorithm"] = Categorical(["SAMME.R", "SAMME"])
         else:
             dist["loss"] = Categorical(["linear", "square", "exponential"])
@@ -288,7 +303,6 @@ class AutomaticRelevanceDetermination(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -324,6 +338,7 @@ class AutomaticRelevanceDetermination(BaseModel):
     acronym = "ARD"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -375,7 +390,6 @@ class Bagging(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -411,6 +425,7 @@ class Bagging(BaseModel):
     acronym = "Bag"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -457,7 +472,6 @@ class BayesianRidge(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -493,6 +507,7 @@ class BayesianRidge(BaseModel):
     acronym = "BR"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -540,7 +555,6 @@ class BernoulliNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -575,6 +589,7 @@ class BernoulliNB(BaseModel):
     acronym = "BNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -631,7 +646,6 @@ class CatBoost(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -667,6 +681,7 @@ class CatBoost(BaseModel):
     acronym = "CatB"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["catboost"]
 
@@ -711,28 +726,28 @@ class CatBoost(BaseModel):
 
         """
         eval_metric = None
-        if hasattr(self.T, "_metric") and not self._gpu:
-            eval_metric = CatBMetric(self.T._metric[0], task=self.T.task)
+        if getattr(self, "_metric", None) and not self._gpu:
+            eval_metric = CatBMetric(self._metric[0], task=self.task)
 
         return self._est_class(
             eval_metric=params.pop("eval_metric", eval_metric),
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
-            thread_count=params.pop("n_jobs", self.T.n_jobs),
+            thread_count=params.pop("n_jobs", self.n_jobs),
             task_type=params.pop("task_type", "GPU" if self._gpu else "CPU"),
-            devices=str(self.T._device_id),
+            devices=str(self._device_id),
             verbose=params.pop("verbose", False),
-            random_state=params.pop("random_state", self.T.random_state),
+            random_state=params.pop("random_state", self.random_state),
             **params,
         )
 
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
+        trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
 
@@ -744,12 +759,12 @@ class CatBoost(BaseModel):
         data: tuple
             Training data of the form (X, y).
 
+        est_params_fit: dict
+            Additional parameters for the estimator's fit method.
+
         validation: tuple or None
             Validation data of the form (X, y). If None, no validation
             is performed.
-
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
 
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
@@ -763,7 +778,7 @@ class CatBoost(BaseModel):
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
-        if trial and len(self.T._metric) == 1 and not self._gpu:
+        if trial and len(self._metric) == 1 and not self._gpu:
             callbacks.append(cb := CatBoostPruningCallback(trial, "CatBMetric"))
 
         # gpu implementation fails if callbacks!=None
@@ -772,12 +787,12 @@ class CatBoost(BaseModel):
         if not self._gpu:
             if validation:
                 # Create evals attribute with train and validation scores
-                m = self.T._metric[0].name
+                m = self._metric[0].name
                 evals = estimator.evals_result_
                 self._evals[f"{m}_train"] = evals["learn"]["CatBMetric"]
                 self._evals[f"{m}_test"] = evals["validation"]["CatBMetric"]
 
-            if trial and len(self.T._metric) == 1 and cb._pruned:
+            if trial and len(self._metric) == 1 and cb._pruned:
                 # Hacky solution to add the pruned step to the output
                 steps = estimator.get_params()[self.has_validation]
                 p = trial.storage.get_trial_user_attrs(trial.number)["params"]
@@ -830,7 +845,6 @@ class CategoricalNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> import numpy as np
@@ -867,6 +881,7 @@ class CategoricalNB(BaseModel):
     acronym = "CatNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -910,7 +925,6 @@ class ComplementNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -946,6 +960,7 @@ class ComplementNB(BaseModel):
     acronym = "CNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -989,7 +1004,6 @@ class DecisionTree(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1025,6 +1039,7 @@ class DecisionTree(BaseModel):
     acronym = "Tree"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1042,7 +1057,7 @@ class DecisionTree(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
@@ -1082,7 +1097,6 @@ class Dummy(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1118,6 +1132,7 @@ class Dummy(BaseModel):
     acronym = "Dummy"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1155,7 +1170,7 @@ class Dummy(BaseModel):
 
         """
         dist = CustomDict()
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist["strategy"] = Categorical(
                 ["most_frequent", "prior", "stratified", "uniform"]
             )
@@ -1185,7 +1200,6 @@ class ElasticNet(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -1221,6 +1235,7 @@ class ElasticNet(BaseModel):
     acronym = "EN"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -1269,7 +1284,6 @@ class ExtraTree(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1305,6 +1319,7 @@ class ExtraTree(BaseModel):
     acronym = "ETree"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1343,7 +1358,7 @@ class ExtraTree(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error"]
@@ -1382,7 +1397,6 @@ class ExtraTrees(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1418,6 +1432,7 @@ class ExtraTrees(BaseModel):
     acronym = "ET"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1456,7 +1471,7 @@ class ExtraTrees(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error"]
@@ -1495,7 +1510,6 @@ class GaussianNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1531,6 +1545,7 @@ class GaussianNB(BaseModel):
     acronym = "GNB"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -1573,7 +1588,6 @@ class GaussianProcess(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1609,6 +1623,7 @@ class GaussianProcess(BaseModel):
     acronym = "GP"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1647,7 +1662,6 @@ class GradientBoosting(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1683,6 +1697,7 @@ class GradientBoosting(BaseModel):
     acronym = "GBM"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1734,9 +1749,9 @@ class GradientBoosting(BaseModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.T.task.startswith("multi"):
+        if self.task.startswith("multiclass"):
             dist.pop("loss")  # Multiclass only supports log_loss
-        elif self.T.task.startswith("reg"):
+        elif self.goal.startswith("reg"):
             dist["loss"] = Categorical(
                 ["squared_error", "absolute_error", "huber", "quantile"]
             )
@@ -1766,7 +1781,6 @@ class HuberRegression(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -1802,6 +1816,7 @@ class HuberRegression(BaseModel):
     acronym = "Huber"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1851,7 +1866,6 @@ class HistGradientBoosting(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1887,6 +1901,7 @@ class HistGradientBoosting(BaseModel):
     acronym = "hGBM"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1917,7 +1932,7 @@ class HistGradientBoosting(BaseModel):
             l2_regularization=Float(0, 1.0, step=0.1),
         )
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist.pop("loss")
 
         return dist
@@ -1946,7 +1961,6 @@ class KNearestNeighbors(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1982,6 +1996,7 @@ class KNearestNeighbors(BaseModel):
     acronym = "KNN"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -2009,7 +2024,7 @@ class KNearestNeighbors(BaseModel):
 
         if self._gpu:
             dist.pop("algorithm")  # Only 'brute' is supported
-            if self.T.engine == "cuml":
+            if self.engine == "cuml":
                 dist.pop("weights")  # Only 'uniform' is supported
                 dist.pop("leaf_size")
                 dist.pop("p")
@@ -2036,7 +2051,6 @@ class Lasso(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -2072,6 +2086,7 @@ class Lasso(BaseModel):
     acronym = "Lasso"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -2118,7 +2133,6 @@ class LeastAngleRegression(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -2154,6 +2168,7 @@ class LeastAngleRegression(BaseModel):
     acronym = "Lars"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -2192,7 +2207,6 @@ class LightGBM(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2228,6 +2242,7 @@ class LightGBM(BaseModel):
     acronym = "LGB"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["lightgbm"]
 
@@ -2244,20 +2259,20 @@ class LightGBM(BaseModel):
 
         """
         return self._est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             device=params.pop("device", "gpu" if self._gpu else "cpu"),
-            gpu_device_id=params.pop("gpu_device_id", self.T._device_id or -1),
-            random_state=params.pop("random_state", self.T.random_state),
+            gpu_device_id=params.pop("gpu_device_id", self._device_id or -1),
+            random_state=params.pop("random_state", self.random_state),
             **params,
         )
 
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
+        trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
 
@@ -2269,12 +2284,12 @@ class LightGBM(BaseModel):
         data: tuple
             Training data of the form (X, y).
 
+        est_params_fit: dict
+            Additional parameters for the estimator's fit method.
+
         validation: tuple or None
             Validation data of the form (X, y). If None, no validation
             is performed.
-
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
 
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
@@ -2287,16 +2302,16 @@ class LightGBM(BaseModel):
         """
         from lightgbm.callback import log_evaluation
 
-        m = self.T._metric[0].name
+        m = self._metric[0].name
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", []) + [log_evaluation(-1)]
-        if trial and len(self.T._metric) == 1:
+        if trial and len(self._metric) == 1:
             callbacks.append(LightGBMPruningCallback(trial, m, "valid_1"))
 
         eval_metric = None
-        if hasattr(self.T, "_metric"):
-            eval_metric = LGBMetric(self.T._metric[0], task=self.T.task)
+        if getattr(self, "_metric", None):
+            eval_metric = LGBMetric(self._metric[0], task=self.task)
 
         try:
             estimator.fit(
@@ -2370,7 +2385,6 @@ class LinearDiscriminantAnalysis(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2406,6 +2420,7 @@ class LinearDiscriminantAnalysis(BaseModel):
     acronym = "LDA"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -2472,7 +2487,6 @@ class LinearSVM(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2508,6 +2522,7 @@ class LinearSVM(BaseModel):
     acronym = "lSVM"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -2530,7 +2545,7 @@ class LinearSVM(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             if self._get_param("loss", params) == "hinge":
                 # l1 regularization can't be combined with hinge
                 params.replace_value("penalty", "l2")
@@ -2559,7 +2574,7 @@ class LinearSVM(BaseModel):
             Estimator instance.
 
         """
-        if self.T.engine == "cuml" and self.T.goal == "class":
+        if self.engine == "cuml" and self.goal == "class":
             return self._est_class(probability=params.pop("probability", True), **params)
         else:
             return super()._get_est(**params)
@@ -2574,7 +2589,7 @@ class LinearSVM(BaseModel):
 
         """
         dist = CustomDict()
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist["penalty"] = Categorical(["l1", "l2"])
             dist["loss"] = Categorical(["hinge", "squared_hinge"])
         else:
@@ -2585,7 +2600,7 @@ class LinearSVM(BaseModel):
         dist["C"] = Float(1e-3, 100, log=True)
         dist["dual"] = Categorical([True, False])
 
-        if self.T.engine == "cuml":
+        if self.engine == "cuml":
             dist.pop("dual")
 
         return dist
@@ -2615,7 +2630,6 @@ class LogisticRegression(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2651,6 +2665,7 @@ class LogisticRegression(BaseModel):
     acronym = "LR"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -2676,7 +2691,7 @@ class LogisticRegression(BaseModel):
         # Limitations on penalty + solver combinations
         penalty = self._get_param("penalty", params)
         solver = self._get_param("solver", params)
-        cond_1 = penalty == "none" and solver == "liblinear"
+        cond_1 = penalty is None and solver == "liblinear"
         cond_2 = penalty == "l1" and solver not in ("liblinear", "saga")
         cond_3 = penalty == "elasticnet" and solver != "saga"
 
@@ -2686,7 +2701,7 @@ class LogisticRegression(BaseModel):
         if self._get_param("penalty", params) != "elasticnet":
             params.pop("l1_ratio", None)
 
-        if self._get_param("penalty", params) == "none":
+        if self._get_param("penalty", params) is None:
             params.pop("C", None)
 
         return params
@@ -2701,7 +2716,7 @@ class LogisticRegression(BaseModel):
 
         """
         dist = CustomDict(
-            penalty=Categorical(["l1", "l2", "elasticnet", "none"]),
+            penalty=Categorical([None, "l1", "l2", "elasticnet"]),
             C=Float(1e-3, 100, log=True),
             solver=Categorical(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
             max_iter=Int(100, 1000, step=10),
@@ -2711,7 +2726,7 @@ class LogisticRegression(BaseModel):
         if self._gpu:
             dist.pop("solver")
             dist.pop("penalty")  # Only 'l2' is supported
-        elif self.T.engine == "sklearnex":
+        elif self.engine == "sklearnex":
             dist["solver"] = Categorical(["lbfgs", "newton-cg"])
 
         return dist
@@ -2734,6 +2749,11 @@ class MultiLayerPerceptron(BaseModel):
 
     Read more in sklearn's [documentation][mlpdocs].
 
+    !!! tip
+        MultiLayerPerceptron does support [multilabel][] tasks
+        natively. Set the `multioutput` attribute to None to avoid
+        the meta-estimator.
+
     See Also
     --------
     atom.models:PassiveAggressive
@@ -2742,7 +2762,6 @@ class MultiLayerPerceptron(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2778,6 +2797,7 @@ class MultiLayerPerceptron(BaseModel):
     acronym = "MLP"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -2799,6 +2819,13 @@ class MultiLayerPerceptron(BaseModel):
 
         """
         params = super()._get_parameters(trial)
+
+        # Drop layers when a previous layer has 0 neurons
+        drop = False
+        for param in [p for p in sorted(params) if p.startswith("hidden_layer")]:
+            if params[param] == 0 or drop:
+                drop = True
+                params.pop(param)
 
         if self._get_param("solver", params) != "sgd":
             params.pop("learning_rate", None)
@@ -2826,10 +2853,7 @@ class MultiLayerPerceptron(BaseModel):
 
         hidden_layer_sizes = []
         for param in [p for p in sorted(params) if p.startswith("hidden_layer")]:
-            if params[param] > 0:
-                hidden_layer_sizes.append(params.pop(param))
-            else:
-                params.pop(param)
+            hidden_layer_sizes.append(params.pop(param))
 
         if hidden_layer_sizes:
             params.insert(0, "hidden_layer_sizes", tuple(hidden_layer_sizes))
@@ -2886,7 +2910,6 @@ class MultinomialNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2922,6 +2945,7 @@ class MultinomialNB(BaseModel):
     acronym = "MNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -2967,7 +2991,6 @@ class OrdinaryLeastSquares(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -3003,6 +3026,8 @@ class OrdinaryLeastSquares(BaseModel):
     acronym = "OLS"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3031,7 +3056,6 @@ class OrthogonalMatchingPursuit(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -3065,6 +3089,7 @@ class OrthogonalMatchingPursuit(BaseModel):
     acronym = "OMP"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -3095,7 +3120,6 @@ class PassiveAggressive(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3131,6 +3155,7 @@ class PassiveAggressive(BaseModel):
     acronym = "PA"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -3148,13 +3173,14 @@ class PassiveAggressive(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             loss = ["hinge", "squared_hinge"]
         else:
             loss = ["epsilon_insensitive", "squared_epsilon_insensitive"]
 
         return CustomDict(
             C=Float(1e-3, 100, log=True),
+            max_iter=Int(500, 1500, step=50),
             loss=Categorical(loss),
             average=Categorical([True, False]),
         )
@@ -3188,7 +3214,6 @@ class Perceptron(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3224,6 +3249,7 @@ class Perceptron(BaseModel):
     acronym = "Perc"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -3293,7 +3319,6 @@ class QuadraticDiscriminantAnalysis(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3329,6 +3354,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     acronym = "QDA"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -3377,7 +3403,6 @@ class RadiusNearestNeighbors(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3418,6 +3443,7 @@ class RadiusNearestNeighbors(BaseModel):
     acronym = "RNN"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -3476,7 +3502,6 @@ class RandomForest(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3512,6 +3537,7 @@ class RandomForest(BaseModel):
     acronym = "RF"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3550,10 +3576,10 @@ class RandomForest(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
-            if self.T.engine == "cuml":
+            if self.engine == "cuml":
                 criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
             else:
                 criterion = ["squared_error", "absolute_error", "poisson"]
@@ -3570,10 +3596,10 @@ class RandomForest(BaseModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.T.engine == "sklearnex":
+        if self.engine == "sklearnex":
             dist.pop("criterion")
             dist.pop("ccp_alpha")
-        elif self.T.engine == "cuml":
+        elif self.engine == "cuml":
             dist.replace_key("criterion", "split_criterion")
             dist["max_depth"] = Int(1, 17)
             dist["max_features"] = Categorical(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
@@ -3600,6 +3626,10 @@ class Ridge(BaseModel):
         Engines `sklearnex` and `cuml` are only available for regression
         tasks.
 
+    !!! tip
+        Ridge does support [multilabel][] tasks natively. Set the
+        `multioutput` attribute to None to avoid the meta-estimator.
+
     See Also
     --------
     atom.models:BayesianRidge
@@ -3608,7 +3638,6 @@ class Ridge(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -3644,6 +3673,7 @@ class Ridge(BaseModel):
     acronym = "Ridge"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3666,9 +3696,9 @@ class Ridge(BaseModel):
             ),
         )
 
-        if self.T.engine == "sklearnex":
+        if self.engine == "sklearnex":
             dist.pop("solver")  # Only supports 'auto'
-        elif self.T.engine == "cuml":
+        elif self.engine == "cuml":
             dist["solver"] = Categorical(["eig", "svd", "cd"])
 
         return dist
@@ -3698,7 +3728,6 @@ class StochasticGradientDescent(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3734,6 +3763,7 @@ class StochasticGradientDescent(BaseModel):
     acronym = "SGD"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -3786,8 +3816,8 @@ class StochasticGradientDescent(BaseModel):
         ]
 
         return CustomDict(
-            loss=Categorical(loss if self.T.goal == "class" else loss[-4:]),
-            penalty=Categorical(["none", "l1", "l2", "elasticnet"]),
+            loss=Categorical(loss if self.goal == "class" else loss[-4:]),
+            penalty=Categorical([None, "l1", "l2", "elasticnet"]),
             alpha=Float(1e-4, 1.0, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),
@@ -3823,7 +3853,6 @@ class SupportVectorMachine(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3859,6 +3888,7 @@ class SupportVectorMachine(BaseModel):
     acronym = "SVM"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3881,7 +3911,7 @@ class SupportVectorMachine(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             params.pop("epsilon", None)
 
         kernel = self._get_param("kernel", params)
@@ -3907,10 +3937,10 @@ class SupportVectorMachine(BaseModel):
             Estimator instance.
 
         """
-        if self.T.engine == "cuml" and self.T.goal == "class":
+        if self.engine == "cuml" and self.goal == "class":
             return self._est_class(
                 probability=params.pop("probability", True),
-                random_state=params.pop("random_state", self.T.random_state),
+                random_state=params.pop("random_state", self.random_state),
                 **params)
         else:
             return super()._get_est(**params)
@@ -3934,7 +3964,7 @@ class SupportVectorMachine(BaseModel):
             shrinking=Categorical([True, False]),
         )
 
-        if self.T.engine == "cuml":
+        if self.engine == "cuml":
             dist.pop("epsilon")
             dist.pop("shrinking")
 
@@ -3964,7 +3994,6 @@ class XGBoost(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -4000,6 +4029,7 @@ class XGBoost(BaseModel):
     acronym = "XGB"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["xgboost"]
 
@@ -4016,26 +4046,26 @@ class XGBoost(BaseModel):
 
         """
         eval_metric = None
-        if hasattr(self.T, "_metric"):
-            eval_metric = XGBMetric(self.T._metric[0], task=self.T.task)
+        if getattr(self, "_metric", None):
+            eval_metric = XGBMetric(self._metric[0], task=self.task)
 
         return self._est_class(
             eval_metric=params.pop("eval_metric", eval_metric),
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
-            gpu_id=self.T._device_id,
+            gpu_id=self._device_id,
             verbosity=params.pop("verbosity", 0),
-            random_state=params.pop("random_state", self.T.random_state),
+            random_state=params.pop("random_state", self.random_state),
             **params,
         )
 
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
+        trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
 
@@ -4047,12 +4077,12 @@ class XGBoost(BaseModel):
         data: tuple
             Training data of the form (X, y).
 
+        est_params_fit: dict
+            Additional parameters for the estimator's fit method.
+
         validation: tuple or None
             Validation data of the form (X, y). If None, no validation
             is performed.
-
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
 
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
@@ -4063,11 +4093,11 @@ class XGBoost(BaseModel):
             Fitted instance.
 
         """
-        m = self.T._metric[0].name
+        m = self._metric[0].name
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
-        if trial and len(self.T._metric) == 1:
+        if trial and len(self._metric) == 1:
             callbacks.append(XGBoostPruningCallback(trial, f"validation_1-{m}"))
 
         try:
@@ -4123,26 +4153,32 @@ class XGBoost(BaseModel):
 # Ensembles ======================================================== >>
 
 class Stacking(BaseModel):
-    """Stacking ensemble."""
+    """Stacking ensemble.
+
+    Parameters
+    ----------
+    models: ClassMap
+        Models from which to build the ensemble.
+
+    **kwargs
+        Additional keyword arguments for the estimator.
+
+    """
 
     acronym = "Stack"
     needs_scaling = False
     has_validation = None
+    native_multioutput = False
     supports_engines = []
 
     _module = "atom.ensembles"
     _estimators = CustomDict({"class": "StackingClassifier", "reg": "StackingRegressor"})
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self._models = kwargs.pop("models")
-        self._est_params = kwargs
-
-        if any(m.branch is not self.branch for m in self._models.values()):
-            raise ValueError(
-                "Invalid value for the models parameter. All "
-                "models must have been fitted on the current branch."
-            )
+    def __init__(self, models: ClassMap, **kwargs):
+        self._models = models
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
+        super().__init__(**kw_model)
+        self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -4154,7 +4190,7 @@ class Stacking(BaseModel):
 
         """
         estimators = []
-        for m in self._models.values():
+        for m in self._models:
             if m.scaler:
                 name = f"pipeline_{m.name}"
                 est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
@@ -4166,35 +4202,41 @@ class Stacking(BaseModel):
 
         return self._est_class(
             estimators=estimators,
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
         )
 
 
 class Voting(BaseModel):
-    """Voting ensemble."""
+    """Voting ensemble.
+
+    Parameters
+    ----------
+    models: ClassMap
+        Models from which to build the ensemble.
+
+    **kwargs
+        Additional keyword arguments for the estimator.
+
+    """
 
     acronym = "Vote"
     needs_scaling = False
     has_validation = None
+    native_multioutput = False
     supports_engines = []
 
     _module = "atom.ensembles"
     _estimators = CustomDict({"class": "VotingClassifier", "reg": "VotingRegressor"})
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self._models = kwargs.pop("models")
-        self._est_params = kwargs
-
-        if any(m.branch is not self.branch for m in self._models.values()):
-            raise ValueError(
-                "Invalid value for the models parameter. All "
-                "models must have been fitted on the current branch."
-            )
+    def __init__(self, models: ClassMap, **kwargs):
+        self._models = models
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
+        super().__init__(**kw_model)
+        self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
         if self._est_params.get("voting") == "soft":
-            for m in self._models.values():
+            for m in self._models:
                 if not hasattr(m.estimator, "predict_proba"):
                     raise ValueError(
                         "Invalid value for the voting parameter. If "
@@ -4212,7 +4254,7 @@ class Voting(BaseModel):
 
         """
         estimators = []
-        for m in self._models.values():
+        for m in self._models:
             if m.scaler:
                 name = f"pipeline_{m.name}"
                 est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
@@ -4224,7 +4266,7 @@ class Voting(BaseModel):
 
         return self._est_class(
             estimators=estimators,
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
         )
 
@@ -4232,52 +4274,50 @@ class Voting(BaseModel):
 # Variables ======================================================== >>
 
 # List of available models
-MODELS = CustomDict(
-    AdaB=AdaBoost,
-    ARD=AutomaticRelevanceDetermination,
-    Bag=Bagging,
-    BR=BayesianRidge,
-    BNB=BernoulliNB,
-    CatB=CatBoost,
-    CatNB=CategoricalNB,
-    CNB=ComplementNB,
-    Tree=DecisionTree,
-    Dummy=Dummy,
-    EN=ElasticNet,
-    ETree=ExtraTree,
-    ET=ExtraTrees,
-    GNB=GaussianNB,
-    GP=GaussianProcess,
-    GBM=GradientBoosting,
-    Huber=HuberRegression,
-    hGBM=HistGradientBoosting,
-    KNN=KNearestNeighbors,
-    Lasso=Lasso,
-    Lars=LeastAngleRegression,
-    LGB=LightGBM,
-    LDA=LinearDiscriminantAnalysis,
-    lSVM=LinearSVM,
-    LR=LogisticRegression,
-    MLP=MultiLayerPerceptron,
-    MNB=MultinomialNB,
-    OLS=OrdinaryLeastSquares,
-    OMP=OrthogonalMatchingPursuit,
-    PA=PassiveAggressive,
-    Perc=Perceptron,
-    QDA=QuadraticDiscriminantAnalysis,
-    RNN=RadiusNearestNeighbors,
-    RF=RandomForest,
-    Ridge=Ridge,
-    SGD=StochasticGradientDescent,
-    SVM=SupportVectorMachine,
-    XGB=XGBoost,
+MODELS = ClassMap(
+    AdaBoost,
+    AutomaticRelevanceDetermination,
+    Bagging,
+    BayesianRidge,
+    BernoulliNB,
+    CatBoost,
+    CategoricalNB,
+    ComplementNB,
+    DecisionTree,
+    Dummy,
+    ElasticNet,
+    ExtraTree,
+    ExtraTrees,
+    GaussianNB,
+    GaussianProcess,
+    GradientBoosting,
+    HuberRegression,
+    HistGradientBoosting,
+    KNearestNeighbors,
+    Lasso,
+    LeastAngleRegression,
+    LightGBM,
+    LinearDiscriminantAnalysis,
+    LinearSVM,
+    LogisticRegression,
+    MultiLayerPerceptron,
+    MultinomialNB,
+    OrdinaryLeastSquares,
+    OrthogonalMatchingPursuit,
+    PassiveAggressive,
+    Perceptron,
+    QuadraticDiscriminantAnalysis,
+    RadiusNearestNeighbors,
+    RandomForest,
+    Ridge,
+    StochasticGradientDescent,
+    SupportVectorMachine,
+    XGBoost,
+    key="acronym",
 )
 
 # List of available ensembles
-ENSEMBLES = CustomDict(Stack=Stacking, Vote=Voting)
+ENSEMBLES = ClassMap(Stacking, Voting, key="acronym")
 
 # List of all models + ensembles
-MODELS_ENSEMBLES = CustomDict(**MODELS, **ENSEMBLES)
-
-# Model types as list of all model classes
-MODEL_TYPES = Union[tuple(MODELS_ENSEMBLES.values())]
+MODELS_ENSEMBLES = ClassMap(*MODELS, *ENSEMBLES, key="acronym")

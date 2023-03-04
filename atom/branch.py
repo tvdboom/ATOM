@@ -7,16 +7,19 @@ Description: Module containing the Branch class.
 
 """
 
+from __future__ import annotations
+
+import re
 from copy import copy
-from typing import Optional, Tuple, Union
+from functools import cached_property
 
 import pandas as pd
-from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
-    PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash,
-    custom_transform, merge, method_to_log, to_df, to_series,
+    DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
+    SEQUENCE, SERIES, SERIES_TYPES, TARGET, CustomDict, bk, custom_transform,
+    flt, get_cols, lst, merge, to_pandas,
 )
 
 
@@ -33,77 +36,54 @@ class Branch:
 
     Parameters
     ----------
-    *args
-        Class from which the branch is created and name of the branch.
+    name: str
+        Name of the branch.
+
+    data: dataframe or None, default=None
+        Complete dataset.
+
+    index: list or None, default=None
+        A list containing the number of target columns, the indices of
+        the train set and the indices of the test set.
+
+    holdout: dataframe or None, default=None
+        Holdout dataset.
 
     parent: Branch or None, default=None
         Branch from which to split. If None, create an empty branch.
 
-    Attributes
-    ----------
-    name: str
-        Name of the branch.
-
     """
 
-    def __init__(self, *args, parent=None):
-        self.T = args[0]
-
-        self._name = args[1]
-        self._parent = self.T._current
-        self._pipeline = pd.Series(data=[], name=self.name, dtype="object")
+    def __init__(
+        self,
+        name: str,
+        data: DATAFRAME | None = None,
+        index: list[INT, INDEX, INDEX] | None = None,
+        holdout: DATAFRAME | None = None,
+        parent: Branch | None = None,
+    ):
+        self._data = data
+        self._idx = index
+        self._holdout = holdout
+        self._pipeline = pd.Series(data=[], dtype="object")
         self._mapping = CustomDict()
 
-        self._data = None
-        self._idx = None
-        self._holdout = None
-
-        # If a parent branch is provided, copy its attrs to this one
-        # _holdout is always reset since it wouldn't recalculate if
-        # changes were made to the pipeline
+        # If a parent branch is provided, transfer its attrs to this one
         if parent:
-            self._parent = parent.name
-
-            # Copy the branch attrs and point to the rest
+            # Copy the data attrs (except holdout) and point to the rest
             for attr in ("_data", "_idx", "_pipeline", "_mapping"):
                 setattr(self, attr, copy(getattr(parent, attr)))
             for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
                     setattr(self, attr, getattr(parent, attr))
 
-    def __delete__(self, instance):
-        if len(self.T._branches.min("og")) == 1:
-            raise PermissionError("Can't delete the last branch!")
-        else:
-            # Delete all depending models
-            if depending_models := instance._get_depending_models():
-                self.T.delete(depending_models)
-
-            # If this is the last og branch, create a new one
-            if self.T._get_og_branches() == [instance]:
-                self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
-
-            # Reset the current branch
-            if instance.name == self.T._current:
-                self.T._current = list(self.T._branches.min("og"))[0]
-
-            self.T._branches.pop(instance.name)
-            self.T.log(f"Branch {instance.name} successfully deleted.", 1)
-            self.T.log(f"Switched to branch {self.T._current}.", 1)
+        self.name = name  # Name at end to change pipeline's name
 
     def __repr__(self) -> str:
-        out = f"Branch: {self.name}"
+        return f"Branch({self.name})"
 
-        # Add the transformers with their parameters
-        out += f"\n --> Pipeline: {None if self.pipeline.empty else ''}"
-        for est in self.pipeline:
-            out += f"\n   --> {est.__class__.__name__}"
-
-        # Add the models linked to the branch
-        dependent = self._get_depending_models()
-        out += f"\n --> Models: {', '.join(dependent) if dependent else None}"
-
-        return out
+    def __bool__(self):
+        return self._data is not None
 
     @property
     def name(self) -> str:
@@ -111,34 +91,24 @@ class Branch:
         return self._name
 
     @name.setter
-    @typechecked
     def name(self, value: str):
         if not value:
             raise ValueError("A branch can't have an empty name!")
-        elif value in self.T._branches:
-            raise ValueError(f"Branch {self.T._branches[value].name} already exists!")
         else:
-            for model in MODELS_ENSEMBLES.values():
-                if value.lower().startswith(model.acronym.lower()):
+            for model in MODELS_ENSEMBLES:
+                if re.match(model.acronym, value, re.I):
                     raise ValueError(
-                        "Invalid name for the branch. The name of a branch may "
+                        "Invalid name for the branch. The name of a branch can "
                         f"not begin with a model's acronym, and {model.acronym} "
                         f"is the acronym of the {model._fullname} model."
                     )
 
         self._name = value
         self.pipeline.name = value
-        self.T._branches[value] = self.T._branches.pop(self.T._current)
-        self.T.log(f"Branch {self.T._current} is renamed to {value}.", 1)
-        self.T._current = value
 
     # Data properties ============================================== >>
 
-    def _check_setter(
-        self,
-        name: str,
-        value: Union[SEQUENCE_TYPES, X_TYPES],
-    ) -> PANDAS_TYPES:
+    def _check_setter(self, name: str, value: SEQUENCE | FEATURES) -> PANDAS:
         """Check the property setter.
 
         Convert the property to a pandas object and compare with the
@@ -154,13 +124,28 @@ class Branch:
 
         Returns
         -------
-        pd.Series or pd.DataFrame
+        series or dataframe
             Data set.
 
         """
 
-        def counter(name, dim):
-            """Return the counter dimension of the provided data set."""
+        def counter(name: str, dim: str) -> str:
+            """Return the opposite dimension of the provided data set.
+
+            Parameters
+            ----------
+            name: str
+                Name of the data set.
+
+            dim: str
+                Dimension to look at. Either side or under.
+
+            Returns
+            -------
+            str
+                Name of the opposite dimension.
+
+            """
             if name == "dataset":
                 return name
             if dim == "side":
@@ -174,36 +159,19 @@ class Branch:
                 if "test" in name:
                     return name.replace("test", "train")
 
-        if self._get_depending_models():
-            raise PermissionError(
-                "It's not allowed to change the data in the branch "
-                "after it has been used to train models. Create a "
-                "new branch to continue the pipeline."
-            )
-
         # Define the data attrs side and under
-        side_name = counter(name, "side")
-        if side_name:
+        if side_name := counter(name, "side"):
             side = getattr(self, side_name)
-        under_name = counter(name, "under")
-        if under_name:
+        if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-            # Convert (if necessary) to pandas
-        if "y" in name:
-            value = to_series(
-                data=value,
-                index=side.index if side_name else None,
-                name=under.name if under_name else "target",
-                dtype=under.dtype if under_name else None,
-            )
-        else:
-            value = to_df(
-                data=value,
-                index=side.index if side_name else None,
-                columns=under.columns if under_name else None,
-                dtypes=under.dtypes if under_name else None,
-            )
+        value = to_pandas(
+            data=value,
+            index=side.index if side_name else None,
+            name=getattr(under, "name", None) if under_name else None,
+            columns=getattr(under, "columns", None) if under_name else None,
+            dtype=under.dtypes if under_name else None,
+        )
 
         if side_name:  # Check for equal rows
             if len(value) != len(side):
@@ -218,7 +186,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if "y" in name:
+            if isinstance(value, SERIES_TYPES):
                 if value.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -249,11 +217,6 @@ class Branch:
         """
         return self._pipeline
 
-    @pipeline.setter
-    @typechecked
-    def pipeline(self, value: pd.Series):
-        self._pipeline = value
-
     @property
     def mapping(self) -> CustomDict:
         """Encoded values and their respective mapped values.
@@ -265,131 +228,115 @@ class Branch:
         """
         return self._mapping
 
-    @mapping.setter
-    @typechecked
-    def mapping(self, value: CustomDict):
-        self._mapping = value
-
     @property
-    def dataset(self) -> pd.DataFrame:
+    def dataset(self) -> DATAFRAME:
         """Complete data set."""
         return self._data
 
     @dataset.setter
-    @typechecked
-    def dataset(self, value: X_TYPES):
+    def dataset(self, value: FEATURES):
         self._data = self._check_setter("dataset", value)
 
     @property
-    def train(self) -> pd.DataFrame:
+    def train(self) -> DATAFRAME:
         """Training set."""
-        return self._data.loc[self._idx[0], :]
-
-    @train.setter
-    @typechecked
-    def train(self, value: X_TYPES):
-        df = self._check_setter("train", value)
-        self._data = self.T._set_index(pd.concat([df, self.test]))
-        self._idx[0] = self._data.index[:len(df)]
-
-    @property
-    def test(self) -> pd.DataFrame:
-        """Test set."""
         return self._data.loc[self._idx[1], :]
 
-    @test.setter
-    @typechecked
-    def test(self, value: X_TYPES):
-        df = self._check_setter("test", value)
-        self._data = self.T._set_index(pd.concat([self.train, df]))
-        self._idx[1] = self._data.index[-len(df):]
+    @train.setter
+    def train(self, value: FEATURES):
+        df = self._check_setter("train", value)
+        self._data = bk.concat([df, self.test])
+        self._idx[1] = self._data.index[:len(df)]
 
     @property
-    def holdout(self) -> Optional[pd.DataFrame]:
+    def test(self) -> DATAFRAME:
+        """Test set."""
+        return self._data.loc[self._idx[2], :]
+
+    @test.setter
+    def test(self, value: FEATURES):
+        df = self._check_setter("test", value)
+        self._data = bk.concat([self.train, df])
+        self._idx[2] = self._data.index[-len(df):]
+
+    @cached_property
+    def holdout(self) -> DATAFRAME | None:
         """Holdout set."""
-        if self.T.holdout is not None and self._holdout is None:
-            X, y = self.T.holdout.iloc[:, :-1], self.T.holdout.iloc[:, -1]
+        if self._holdout is not None:
+            X, y = self._holdout.iloc[:, :-self._idx[0]], self._holdout[self.target]
             for transformer in self.pipeline:
                 if not transformer._train_only:
                     X, y = custom_transform(transformer, self, (X, y), verbose=0)
 
-            self._holdout = merge(X, y)
-
-        return self._holdout
+            return merge(X, y)
 
     @property
-    def X(self) -> pd.DataFrame:
+    def X(self) -> DATAFRAME:
         """Feature set."""
         return self._data.drop(self.target, axis=1)
 
     @X.setter
-    @typechecked
-    def X(self, value: X_TYPES):
+    def X(self, value: FEATURES):
         df = self._check_setter("X", value)
         self._data = merge(df, self.y)
 
     @property
-    def y(self) -> pd.Series:
-        """Target column."""
+    def y(self) -> PANDAS:
+        """Target column(s)."""
         return self._data[self.target]
 
     @y.setter
-    @typechecked
-    def y(self, value: SEQUENCE_TYPES):
+    def y(self, value: TARGET):
         series = self._check_setter("y", value)
         self._data = merge(self._data.drop(self.target, axis=1), series)
 
     @property
-    def X_train(self) -> pd.DataFrame:
+    def X_train(self) -> DATAFRAME:
         """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
     @X_train.setter
-    @typechecked
-    def X_train(self, value: X_TYPES):
+    def X_train(self, value: FEATURES):
         df = self._check_setter("X_train", value)
-        self._data = pd.concat([merge(df, self.train[self.target]), self.test])
+        self._data = bk.concat([merge(df, self.train[self.target]), self.test])
 
     @property
-    def y_train(self) -> pd.Series:
-        """Target column of the training set."""
+    def y_train(self) -> PANDAS:
+        """Target column(s) of the training set."""
         return self.train[self.target]
 
     @y_train.setter
-    @typechecked
-    def y_train(self, value: SEQUENCE_TYPES):
+    def y_train(self, value: TARGET):
         series = self._check_setter("y_train", value)
-        self._data = pd.concat([merge(self.X_train, series), self.test])
+        self._data = bk.concat([merge(self.X_train, series), self.test])
 
     @property
-    def X_test(self) -> pd.DataFrame:
+    def X_test(self) -> DATAFRAME:
         """Features of the test set."""
         return self.test.drop(self.target, axis=1)
 
     @X_test.setter
-    @typechecked
-    def X_test(self, value: X_TYPES):
+    def X_test(self, value: FEATURES):
         df = self._check_setter("X_test", value)
-        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
+        self._data = bk.concat([self.train, merge(df, self.test[self.target])])
 
     @property
-    def y_test(self) -> pd.Series:
-        """Target column of the test set."""
+    def y_test(self) -> PANDAS:
+        """Target column(s) of the test set."""
         return self.test[self.target]
 
     @y_test.setter
-    @typechecked
-    def y_test(self, value: SEQUENCE_TYPES):
+    def y_test(self, value: TARGET):
         series = self._check_setter("y_test", value)
-        self._data = pd.concat([self.train, merge(self.X_test, series)])
+        self._data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self) -> Tuple[int, int]:
-        """Shape of the dataset (n_rows, n_cols)."""
+    def shape(self) -> tuple[int, int]:
+        """Shape of the dataset (n_rows, n_columns)."""
         return self._data.shape
 
     @property
-    def columns(self) -> pd.Series:
+    def columns(self) -> SERIES:
         """Name of all the columns."""
         return self._data.columns
 
@@ -399,9 +346,9 @@ class Branch:
         return len(self.columns)
 
     @property
-    def features(self) -> pd.Series:
+    def features(self) -> SERIES:
         """Name of the features."""
-        return self.columns[:-1]
+        return self.columns[:-self._idx[0]]
 
     @property
     def n_features(self) -> int:
@@ -409,48 +356,355 @@ class Branch:
         return len(self.features)
 
     @property
-    def target(self) -> str:
-        """Name of the target column."""
-        return self.columns[-1]
+    def target(self) -> str | list[str]:
+        """Name of the target column(s)."""
+        return flt(list(self.columns[-self._idx[0]:]))
 
     # Utility methods ============================================== >>
 
-    def _get_attrs(self):
-        """Get properties and attributes to call from parent.
+    def _get_rows(
+        self,
+        index: INT | str | slice | SEQUENCE | None,
+        return_test: bool = True,
+    ) -> list:
+        """Get a subset of the rows in the dataset.
+
+        Rows can be selected by name, index or regex pattern. If a
+        string is provided, use `+` to select multiple rows and `!`
+        to exclude them. Rows cannot be included and excluded in the
+        same call.
+
+        Parameters
+        ----------
+        index: int, str, slice, sequence or None, default=None
+            Names or indices of the rows to select. If None, returns
+            the complete dataset or the test set.
+
+        return_test: bool, default=True
+            Whether to return the test or the complete dataset when no
+            index is provided.
 
         Returns
         -------
         list
-            Properties and attributes.
+            Indices of the included rows.
 
         """
-        attrs = []
-        for p in dir(self):
-            if (
-                p in vars(self) and p not in ("T", "name", "_data", "idx", "_holdout")
-                or isinstance(getattr(Branch, p, None), property)
-            ):
-                attrs.append(p)
 
-        return attrs
+        def get_match(idx: str, ex: ValueError | None = None):
+            """Try to find a match by regex.
 
-    def _get_depending_models(self):
-        """Return the models that are dependent on this branch.
+            Parameters
+            ----------
+            idx: str
+                Regex pattern to match with indices.
+
+            ex: ValueError or None
+                Exception to raise if failed (from previous call).
+
+            """
+            nonlocal inc, exc
+
+            array = inc
+            if idx.startswith("!") and idx not in indices:
+                array = exc
+                idx = idx[1:]
+
+            # Find rows using regex matches
+            if matches := [i for i in indices if re.fullmatch(idx, str(i))]:
+                array.extend(matches)
+            else:
+                raise ex or ValueError(
+                    "Invalid value for the index parameter. "
+                    f"Could not find any row that matches {idx}."
+                )
+
+        indices = list(self.dataset.index)
+        # Note that this call caches the holdout calculation!
+        if self.holdout is not None:
+            indices += list(self.holdout.index)
+
+        inc, exc = [], []
+        if index is None:
+            inc = list(self._idx[2]) if return_test else list(self.X.index)
+        elif isinstance(index, slice):
+            inc = indices[index]
+        else:
+            for idx in lst(index):
+                if isinstance(idx, (*INT_TYPES, str)) and idx in indices:
+                    inc.append(idx)
+                elif isinstance(idx, INT_TYPES):
+                    if -len(indices) <= idx <= len(indices):
+                        inc.append(indices[idx])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for the index parameter. Value {index} is "
+                            f"out of range for a dataset with {len(indices)} rows."
+                        )
+                elif isinstance(idx, str):
+                    try:
+                        get_match(idx)
+                    except ValueError as ex:
+                        for i in idx.split("+"):
+                            get_match(i, ex)
+                else:
+                    raise TypeError(
+                        f"Invalid type for the index parameter, got {type(idx)}. "
+                        "Use a row's name or position to select it."
+                    )
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the index parameter, got "
+                f"{index}. At least one row has to be selected."
+            )
+        elif inc and exc:
+            raise ValueError(
+                "Invalid value for the index parameter. You can either "
+                "include or exclude rows, not combinations of these."
+            )
+
+        if exc:
+            # If rows were excluded with `!`, select all but those
+            inc = [idx for idx in indices if idx not in exc]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
+
+    def _get_columns(
+        self,
+        columns: INT | str | slice | SEQUENCE | None = None,
+        include_target: bool = True,
+        return_inc_exc: bool = False,
+        only_numerical: bool = False,
+    ) -> list[str] | tuple[list[str] | list[str]]:
+        """Get a subset of the columns.
+
+        Columns can be selected by name, index or regex pattern. If a
+        string is provided, use `+` to select multiple columns and `!`
+        to exclude them. Columns cannot be included and excluded in
+        the same call.
+
+        Parameters
+        ----------
+        columns: int, str, slice, sequence or None
+            Names, indices or dtypes of the columns to select. If None,
+            it returns all columns in the dataframe.
+
+        include_target: bool, default=True
+            Whether to include the target column in the dataframe to
+            select from.
+
+        return_inc_exc: bool, default=False
+            Whether to return only included columns or the tuple
+            (included, excluded).
+
+        only_numerical: bool, default=False
+            Whether to return only numerical columns.
 
         Returns
         -------
         list
-            Depending models.
+            Names of the included columns.
+
+        list
+            Names of the excluded columns. Only returned if
+            return_inc_exc=True.
 
         """
-        return [m.name for m in self.T._models.values() if m.branch is self]
 
-    @composed(crash, method_to_log)
-    def status(self):
-        """Get an overview of the pipeline and models in the branch.
+        def get_match(col: str, ex: ValueError | None = None):
+            """Try to find a match by regex.
 
-        This method prints the same information as the \__repr__ and
-        also saves it to the logger.
+            Parameters
+            ----------
+            col: str
+                Regex pattern to match with the column names.
+
+            ex: ValueError or None
+                Exception to raise if failed (from previous call).
+
+            """
+            nonlocal inc, exc
+
+            array = inc
+            if col.startswith("!") and col not in df.columns:
+                array = exc
+                col = col[1:]
+
+            # Find columns using regex matches
+            if matches := [c for c in df.columns if re.fullmatch(col, str(c))]:
+                array.extend(matches)
+            else:
+                # Find columns by type
+                try:
+                    array.extend(list(df.select_dtypes(col).columns))
+                except TypeError:
+                    raise ex or ValueError(
+                        "Invalid value for the columns parameter. "
+                        f"Could not find any column that matches {col}."
+                    )
+
+        # Select dataframe from which to get the columns
+        df = self.dataset if include_target else self.X
+
+        inc, exc = [], []
+        if columns is None:
+            if only_numerical:
+                return list(df.select_dtypes(include=["number"]).columns)
+            else:
+                return list(df.columns)
+        elif isinstance(columns, slice):
+            inc = list(df.columns[columns])
+        else:
+            for col in lst(columns):
+                if isinstance(col, INT_TYPES):
+                    try:
+                        inc.append(df.columns[col])
+                    except IndexError:
+                        raise ValueError(
+                            f"Invalid value for the columns parameter. Value {col} "
+                            f"is out of range for a dataset with {df.shape[1]} columns."
+                        )
+                elif isinstance(col, str):
+                    try:
+                        get_match(col)
+                    except ValueError as ex:
+                        for c in col.split("+"):
+                            get_match(c, ex)
+                else:
+                    raise TypeError(
+                        f"Invalid type for the columns parameter, got {type(col)}. "
+                        "Use a column's name or position to select it."
+                    )
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the columns parameter, got "
+                f"{columns}. At least one column has to be selected."
+            )
+        elif inc and exc:
+            raise ValueError(
+                "Invalid value for the columns parameter. You can either "
+                "include or exclude columns, not combinations of these."
+            )
+        elif return_inc_exc:
+            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
+
+        if exc:
+            # If columns were excluded with `!`, select all but those
+            inc = [col for col in df.columns if col not in exc]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
+
+    def _get_target(
+        self,
+        target: INT | str | tuple,
+        only_columns: bool = False,
+    ) -> str | tuple[INT, INT]:
+        """Get a target column and/or class in target column.
+
+        Parameters
+        ----------
+        target: int, str or tuple
+            Target column or class to retrieve. For multioutput tasks,
+            use a tuple of the form (column, class) to select a class
+            in a specific target column.
+
+        only_columns: bool, default=False
+            Whether to only look at target columns or also to target
+            classes (for multilabel and multiclass-multioutput tasks).
+
+        Returns
+        -------
+        str or tuple
+            Name of the selected target column (if only_columns=True)
+            or tuple of the form (column, class).
 
         """
-        self.T.log(str(self))
+
+        def get_column(target: INT | str) -> str:
+            """Get the target column.
+
+            Parameters
+            ----------
+            target: int or str
+                Name or position of the target column.
+
+            Returns
+            -------
+            str
+                Target column.
+
+            """
+            if isinstance(target, str):
+                if target not in self.target:
+                    raise ValueError(
+                        "Invalid value for the target parameter. Value "
+                        f"{target} is not one of the target columns."
+                    )
+                else:
+                    return target
+            else:
+                if not 0 <= target < len(self.target):
+                    raise ValueError(
+                        "Invalid value for the target parameter. There are "
+                        f"{len(self.target)} target columns, got {target}."
+                    )
+                else:
+                    return lst(self.target)[target]
+
+        def get_class(target: INT | str, column: int = 0) -> int:
+            """Get the class in the target column.
+
+            Parameters
+            ----------
+            target: int or str
+                Name or position of the target column.
+
+            column: int, default=0
+                Column to get the class from. For multioutput tasks.
+
+            Returns
+            -------
+            int
+                Class' index.
+
+            """
+            if isinstance(target, str):
+                try:
+                    return self.mapping[lst(self.target)[column]][target]
+                except (TypeError, KeyError):
+                    raise ValueError(
+                        f"Invalid value for the target parameter. Value {target} "
+                        "not found in the mapping of the target column."
+                    )
+            else:
+                n_classes = get_cols(self.y)[column].nunique(dropna=False)
+                if not 0 <= target < n_classes:
+                    raise ValueError(
+                        "Invalid value for the target parameter. "
+                        f"There are {n_classes} classes, got {target}."
+                    )
+                else:
+                    return target
+
+        if only_columns:
+            return get_column(target)
+        elif isinstance(target, tuple):
+            if not isinstance(self.y, DATAFRAME_TYPES):
+                raise ValueError(
+                    f"Invalid value for the target parameter, got {target}. "
+                    "A tuple is only accepted for multioutput tasks."
+                )
+            elif len(target) == 1:
+                return self.target.index(get_column(target[0])), 0
+            elif len(target) == 2:
+                column = self.target.index(get_column(target[0]))
+                return column, get_class(target[1], column)
+            else:
+                raise ValueError(
+                    "Invalid value for the target parameter. "
+                    f"Expected a tuple of length 2, got len={len(target)}."
+                )
+        else:
+            return 0, get_class(target)

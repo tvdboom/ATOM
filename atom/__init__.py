@@ -7,5 +7,5 @@ Description: Import API and version.
 
 """
 
-from atom.api import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
+from atom.api import ATOMClassifier, ATOMModel, ATOMRegressor
 from atom.utils import __version__

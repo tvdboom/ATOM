@@ -154,7 +154,9 @@ def test_stemming():
 
 def test_lemmatization():
     """Assert that lemmatization is applied."""
-    assert TextNormalizer().transform([["better"]])["corpus"][0] == ["well"]
+    normalizer = TextNormalizer(stopwords=False, lemmatize=True)
+    X = normalizer.transform([["start running better old friend"]])
+    assert X["corpus"][0] == ["start", "run", "well", "old", "friend"]
 
 
 # Test Vectorizer ================================================== >>
@@ -190,7 +192,8 @@ def test_hashing():
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
 def test_gpu():
     """Assert that the gpu implementation calls the get method of matrix."""
-    Vectorizer(device="gpu", engine="cuml").fit_transform(X_text)
+    vectorizer = Vectorizer(device="gpu", engine="cuml")
+    pytest.raises(ValueError, vectorizer.fit_transform, X_text)
 
 
 def test_return_sparse():

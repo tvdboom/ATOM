@@ -57,7 +57,6 @@ in the instance after [training][].
         include:
             - models
             - metric
-            - errors
             - winners
             - winner
             - results
@@ -94,6 +93,8 @@ more in the [user guide][aesthetics].
             - title_fontsize
             - label_fontsize
             - tick_fontsize
+            - line_width
+            - marker_size
 
 <br>
 

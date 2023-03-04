@@ -31,7 +31,7 @@ def test_infer_task():
     trainer.run(class_train, class_test)
     assert trainer.task == "multiclass classification"
 
-    trainer = DirectRegressor("LGB")
+    trainer = DirectRegressor("LGB", est_params={"n_estimators": 5})
     trainer.run(reg_train, reg_test)
     assert trainer.task == "regression"
 
@@ -50,10 +50,18 @@ def test_sh_skip_runs_too_large():
 
 def test_models_are_restored():
     """Assert that the models attributes are all restored after fitting."""
-    sh = SuccessiveHalvingRegressor(["Tree", "RF", "AdaB", "LGB"], random_state=1)
+    sh = SuccessiveHalvingRegressor(
+        models=["Tree", "AdaB", "RF", "LGB"],
+        est_params={
+            "AdaB": {"n_estimators": 5},
+            "RF": {"n_estimators": 5},
+            "LGB": {"n_estimators": 5},
+        },
+        random_state=1,
+    )
     sh.run(reg_train, reg_test)
     assert "Tree" not in sh._models  # Original model is deleted
-    assert all(m in sh.models for m in ("Tree4", "RF2", "AdaB1"))
+    assert all(m in sh.models for m in ("Tree4", "RF2", "LGB1"))
 
 
 def test_ts_int_train_sizes():

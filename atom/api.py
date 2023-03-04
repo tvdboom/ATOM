@@ -7,171 +7,25 @@ Description: Module containing the API classes.
 
 """
 
-from copy import deepcopy
-from logging import Logger
-from typing import Any, Optional, Union
+from __future__ import annotations
 
-import dill as pickle
+from logging import Logger
+
 from sklearn.base import clone
-from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
-from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, Predictor, custom_transform,
-)
+from atom.utils import INT, SCALAR, SEQUENCE, TARGET, Predictor
 
 
-# Functions ======================================================== >>
-
-@typechecked
-def ATOMLoader(
-    filename: str,
-    data: Optional[SEQUENCE_TYPES] = None,
-    *,
-    transform_data: bool = True,
-    verbose: Optional[INT] = None,
-) -> Any:
-    """Load a class instance from a pickle file.
-
-    If the file is an atom instance that was saved using
-    `save_data=False`, it's possible to load new data into it
-    and apply all data transformations.
-
-    Parameters
-    ----------
-    filename: str
-        Name of the pickle file to load.
-
-    data: sequence of indexables or None, default=None
-        Original dataset. Only use this parameter if the file is an
-        atom instance that was saved using `save_data=False`. Allowed
-        formats are:
-
-        - X
-        - X, y
-        - train, test
-        - train, test, holdout
-        - X_train, X_test, y_train, y_test
-        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-        - (X_train, y_train), (X_test, y_test)
-        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
-
-        **X, train, test: dataframe-like**<br>
-        Feature set with shape=(n_samples, n_features).
-
-        **y: int, str or sequence**<br>
-        Target column corresponding to X.
-
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
-
-    transform_data: bool, default=True
-        If False, the `data` is left as provided. If True, it is
-        transformed through all the steps in the instance's pipeline.
-        This parameter is ignored if the loaded pickle is not an atom
-        instance.
-
-    verbose: int or None, default=None
-        Verbosity level of the transformations applied on the new
-        data. If None, use the verbosity from the loaded instance.
-        This parameter is ignored if `transform_data=False`.
-
-    Returns
-    -------
-    class instance
-        Unpickled instance.
-
-    Examples
-    --------
-
-    ```pycon
-    >>> from atom import ATOMClassifier, ATOMLoader
-    >>> from sklearn.datasets import load_breast_cancer
-
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.scale()
-    >>> atom.run(["LR", "RF", "SGD"], metric="AP")
-    >>> atom.save("atom", save_data=False)  # Save atom to a pickle file
-
-    # Load the class and add the data to the new instance
-    >>> atom_2 = ATOMLoader("atom", data=(X, y), verbose=2)
-
-    Transforming data for branch master:
-    Scaling features...
-    ATOMClassifier successfully loaded.
-
-    >>> print(atom_2.results)
-
-          score_train   score_test time_fit    time
-    LR       0.998179     0.998570   0.016s  0.016s
-    RF       1.000000     0.995568   0.141s  0.141s
-    SGD      0.998773     0.994313   0.016s  0.016s
-
-    ```
-
-    """
-    with open(filename, "rb") as f:
-        cls = pickle.load(f)
-
-    # Reassign the transformer attributes (warnings random_state, etc...)
-    if issubclass(cls.__class__, BaseTransformer):
-        BaseTransformer.__init__(
-            cls, **{x: getattr(cls, x) for x in BaseTransformer.attrs if hasattr(cls, x)}
-        )
-
-    if data is not None:
-        if not hasattr(cls, "_branches"):
-            raise TypeError(
-                "Data is provided but the class is not an "
-                f"atom instance, got {cls.__class__.__name__}."
-            )
-        elif any(branch._data is not None for branch in cls._branches.values()):
-            raise ValueError(
-                f"The loaded {cls.__class__.__name__} instance already contains data!"
-            )
-
-        # Prepare the provided data
-        data, idx, cls.holdout = cls._get_data(data, use_n_rows=transform_data)
-
-        # Apply transformations per branch
-        step = {}  # Current step in the pipeline per branch
-        for b1, v1 in cls._branches.items():
-            branch = cls._branches[b1]
-
-            # Provide the input data if not already filled from another branch
-            if branch._data is None:
-                branch._data, branch._idx = data, idx
-
-            if transform_data:
-                if len(cls._branches) > 2 and not v1.pipeline.empty:
-                    cls.log(f"Transforming data for branch {b1}:", 1)
-
-                for i, est1 in enumerate(v1.pipeline):
-                    # Skip if the transformation was already applied
-                    if step.get(b1, -1) < i:
-                        custom_transform(est1, branch, verbose=verbose)
-
-                        for b2, v2 in cls._branches.items():
-                            if b1 != b2 and v2.pipeline.get(i) is est1:
-                                # Update the data and step for the other branch
-                                cls._branches[b2]._data = deepcopy(branch._data)
-                                cls._branches[b2]._idx = deepcopy(branch._idx)
-                                step[b2] = i
-
-    cls.log(f"{cls.__class__.__name__} successfully loaded.", 1)
-
-    return cls
-
-
-@typechecked
 def ATOMModel(
     estimator: Predictor,
+    name: str | None = None,
     *,
-    acronym: Optional[str] = None,
+    acronym: str | None = None,
     needs_scaling: bool = False,
-    has_validation: Optional[str] = None,
+    native_multioutput: bool = False,
+    has_validation: str | None = None,
 ) -> Predictor:
     """Convert an estimator to a model that can be ingested by atom.
 
@@ -186,13 +40,24 @@ def ATOMModel(
     estimator: Predictor
         Custom estimator. Should implement a `fit` and `predict` method.
 
+    name: str or None, default=None
+        Name for the model. This is the value used to call the
+        model from atom. The value should start with the model's
+        `acronym` when specified. If None, the capital letters of the
+        estimator's name are used (only if two or more, else it uses
+        the entire name).
+
     acronym: str or None, default=None
-        Model's acronym. Used to call the model from atom. If None, the
-        capital letters in the estimator's \__name__ are used (only if
-        two or more, else it uses the entire \__name__).
+        Model's acronym. If None, it uses the model's `name`. Specify
+        this parameter when you want to train multiple custom models
+        that share the same estimator.
 
     needs_scaling: bool, default=False
-        Whether the model needs scaled features.
+        Whether the model should use [automated feature scaling][].
+
+    native_multioutput: bool, default=False
+        Whether the model has native support for [multioutput tasks][].
+        If True, the model won't use the `multioutput` meta-estimator.
 
     has_validation: str or None, default=None
         Whether the model allows [in-training validation][]. If str,
@@ -206,14 +71,13 @@ def ATOMModel(
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor, ATOMModel
     >>> from sklearn.linear_model import RANSACRegressor
 
     >>> ransac =  ATOMModel(
     ...      estimator=RANSACRegressor(),
-    ...      acronym="RANSAC",
+    ...      name="RANSAC",
     ...      needs_scaling=False,
     ...  )
 
@@ -224,6 +88,7 @@ def ATOMModel(
     Models: RANSAC
     Metric: r2
 
+
     Results for RANSACRegressor:
     Fit ---------------------------------------------
     Train evaluation --> r2: -2.1784
@@ -231,6 +96,7 @@ def ATOMModel(
     Time elapsed: 0.072s
     -------------------------------------------------
     Total time: 0.072s
+
 
     Final results ==================== >>
     Total time: 0.072s
@@ -240,17 +106,19 @@ def ATOMModel(
     ```
 
     """
-    estimator = clone(estimator)
+    if not callable(estimator):
+        estimator = clone(estimator)
 
+    if name:
+        estimator.name = name
     if acronym:
         estimator.acronym = acronym
     estimator.needs_scaling = needs_scaling
+    estimator.native_multioutput = native_multioutput
     estimator.has_validation = has_validation
 
     return estimator
 
-
-# Classes ========================================================== >>
 
 class ATOMClassifier(BaseTransformer, ATOM):
     """Main class for binary and multiclass classification tasks.
@@ -287,14 +155,19 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
-    y: int, str or sequence, default=-1
+    y: int, str, dict, sequence or dataframe, default=-1
         Target column corresponding to X.
 
+        - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
@@ -369,6 +242,19 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - "sklearnex"
         - "cuml" (only if device="gpu")
 
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
+
+        Selecting the ray backend also parallelizes the data using
+        [modin][], a multi-threading, drop-in replacement for pandas,
+        that uses Ray as backend.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -403,7 +289,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -503,30 +388,31 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
     def __init__(
         self,
         *arrays,
-        y: Y_TYPES = -1,
-        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
+        y: TARGET = -1,
+        index: bool | INT | str | SEQUENCE = False,
         shuffle: bool = True,
-        stratify: Union[bool, INT, str, SEQUENCE_TYPES] = True,
+        stratify: bool | INT | str | SEQUENCE = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
-        holdout_size: Optional[SCALAR] = None,
+        holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
             device=device,
             engine=engine,
+            backend=backend,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -583,14 +469,19 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
-    y: int, str or sequence, default=-1
+    y: int, str, dict, sequence or dataframe, default=-1
         Target column corresponding to X.
 
+        - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
@@ -654,6 +545,19 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - "sklearnex"
         - "cuml" (only if device="gpu")
 
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
+
+        Selecting the ray backend also parallelizes the data using
+        [modin][], a multi-threading, drop-in replacement for pandas,
+        that uses Ray as backend.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -688,7 +592,6 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import load_diabetes
@@ -784,29 +687,30 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
     def __init__(
         self,
         *arrays,
-        y: Y_TYPES = -1,
-        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
+        y: TARGET = -1,
+        index: bool | INT | str | SEQUENCE = False,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
-        holdout_size: Optional[SCALAR] = None,
+        holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
             device=device,
             engine=engine,
+            backend=backend,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

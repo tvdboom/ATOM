@@ -13,7 +13,6 @@ import re
 import unicodedata
 from logging import Logger
 from string import punctuation
-from typing import List, Optional, Tuple, Union
 
 import nltk
 import pandas as pd
@@ -24,13 +23,13 @@ from nltk.collocations import (
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
-from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
-    composed, crash, get_corpus, is_sparse, method_to_log, to_df,
+    DATAFRAME, FEATURES, INT, SCALAR, SEQUENCE, TARGET, CustomDict,
+    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
+    method_to_log, to_df,
 )
 
 
@@ -243,25 +242,24 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         *,
         decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
-        regex_email: Optional[str] = None,
+        regex_email: str | None = None,
         drop_url: bool = True,
-        regex_url: Optional[str] = None,
+        regex_url: str | None = None,
         drop_html: bool = True,
-        regex_html: Optional[str] = None,
+        regex_html: str | None = None,
         drop_emoji: bool = True,
-        regex_emoji: Optional[str] = None,
+        regex_emoji: str | None = None,
         drop_number: bool = True,
-        regex_number: Optional[str] = None,
+        regex_number: str | None = None,
         drop_punctuation: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -281,39 +279,66 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         # Encountered regex occurrences
         self.drops = pd.DataFrame()
 
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    @composed(crash, method_to_log)
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
 
-        def to_ascii(row):
-            """Convert unicode string to ascii."""
+        def to_ascii(elem: str) -> str:
+            """Convert unicode string to ascii.
+
+            Parameters
+            ----------
+            elem: str
+                Elements of the corpus.
+
+            Returns
+            -------
+            str
+                ASCII string.
+
+            """
             try:
-                row.encode("ASCII", errors="strict")  # Returns bytes object
+                elem.encode("ASCII", errors="strict")  # Returns bytes object
             except UnicodeEncodeError:
-                norm = unicodedata.normalize("NFKD", row)
+                norm = unicodedata.normalize("NFKD", elem)
                 return "".join([c for c in norm if not unicodedata.combining(c)])
             else:
-                return row  # Return unchanged if encoding was successful
+                return elem  # Return unchanged if encoding was successful
 
-        def drop_regex(search):
-            """Find and remove a regex expression from the text."""
+        def drop_regex(search: str) -> tuple[int, int]:
+            """Find and remove a regex expression from the text.
+
+            Parameters
+            ----------
+            search: str
+                Regex pattern to search for.
+
+            Returns
+            -------
+            int
+                Number of occurrences.
+
+            int
+                Number of documents (rows) with occurrences.
+
+            """
             counts, docs = 0, 0
             for i, row in X[corpus].items():
                 for j, elem in enumerate([row] if isinstance(row, str) else row):
@@ -331,7 +356,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             return counts, docs
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
         # Create a pd.Series for every type of drop
@@ -343,16 +368,16 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.decode:
             if isinstance(X[corpus].iat[0], str):
-                X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
+                X[corpus] = X[corpus].apply(lambda elem: to_ascii(elem))
             else:
-                X[corpus] = X[corpus].apply(lambda row: [to_ascii(str(w)) for w in row])
+                X[corpus] = X[corpus].apply(lambda elem: [to_ascii(str(w)) for w in elem])
         self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
             if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
-                X[corpus] = X[corpus].apply(lambda row: [str(w).lower() for w in row])
+                X[corpus] = X[corpus].apply(lambda elem: [str(w).lower() for w in elem])
         self.log(" --> Converting text to lower case.", 2)
 
         if self.drop_email:
@@ -561,16 +586,15 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         *,
-        stopwords: Union[bool, str] = True,
-        custom_stopwords: Optional[SEQUENCE_TYPES] = None,
-        stem: Union[bool, str] = False,
+        stopwords: bool | str = True,
+        custom_stopwords: SEQUENCE | None = None,
+        stem: bool | str = False,
         lemmatize: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -578,29 +602,41 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    @composed(crash, method_to_log)
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Normalize the text.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
 
-        def pos(tag):
-            """Get part of speech from a tag."""
+        def pos(tag: str) -> wordnet.ADJ | wordnet.ADV | wordnet.VERB | wordnet.NOUN:
+            """Get part of speech from a tag.
+
+            Parameters
+            ----------
+            tag: str
+                Wordnet tag corresponding to a word.
+
+            Returns
+            -------
+            ADJ, ADV, VERB or NOUN
+                Part of speech of word.
+
+            """
             if tag in ("JJ", "JJR", "JJS"):
                 return wordnet.ADJ
             elif tag in ("RB", "RBR", "RBS"):
@@ -610,7 +646,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             else:  # "NN", "NNS", "NNP", "NNPS"
                 return wordnet.NOUN
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
         self.log("Normalizing the corpus...", 1)
@@ -810,15 +846,14 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        quadgram_freq: Optional[SCALAR] = None,
+        bigram_freq: SCALAR | None = None,
+        trigram_freq: SCALAR | None = None,
+        quadgram_freq: SCALAR | None = None,
         *,
         verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
@@ -829,28 +864,28 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.trigrams = None
         self.quadgrams = None
 
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    @composed(crash, method_to_log)
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Tokenize the text.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
 
-        def replace_ngrams(row: List[str], ngram: Tuple[str]) -> List[str]:
+        def replace_ngrams(row: list[str], ngram: tuple[str]) -> list[str]:
             """Replace a ngram with one word unified by underscores.
 
             Parameters
@@ -877,7 +912,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
             return row[2:-2].split(sep)
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
         self.log("Tokenizing the corpus...", 1)
@@ -1093,7 +1128,6 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     _train_only = False
 
-    @typechecked
     def __init__(
         self,
         strategy: str = "bow",
@@ -1102,7 +1136,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: str = "sklearn",
         verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        logger: str | Logger | None = None,
         **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -1113,18 +1147,18 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Vectorizer:
+    @composed(crash, method_to_log)
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1169,28 +1203,28 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    @composed(crash, method_to_log)
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Vectorize the text.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
         corpus = get_corpus(X)
 
         self.log("Vectorizing the corpus...", 1)
@@ -1226,4 +1260,4 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        return pd.concat([X, to_df(matrix, X.index, columns)], axis=1)
+        return merge(X, to_df(matrix, X.index, columns))

@@ -7,15 +7,19 @@ Description: Module containing the ATOM class.
 
 """
 
-from platform import machine, platform, python_build, python_version
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
 
+from collections import defaultdict
+from copy import deepcopy
+from platform import machine, platform, python_build, python_version
+from typing import Callable
+
+import dill as pickle
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.utils.metaestimators import available_if
-from typeguard import typechecked
 
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
@@ -27,7 +31,7 @@ from atom.data_cleaning import (
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
-from atom.models import MODELS, MODELS_ENSEMBLES
+from atom.models import MODELS
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 from atom.plots import (
     DataPlot, FeatureSelectorPlot, HTPlot, PredictionPlot, ShapPlot,
@@ -37,11 +41,12 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
-    Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
-    check_scaling, composed, crash, custom_transform, divide, fit_one, flt,
-    get_custom_scorer, has_task, infer_task, is_sparse, lst, method_to_log,
-    sign, variable_return,
+    DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
+    ClassMap, Predictor, Runner, Transformer, __version__, bk,
+    check_dependency, check_is_fitted, check_scaling, composed, crash,
+    custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
+    infer_task, is_multioutput, is_sparse, lst, method_to_log, sign,
+    variable_return,
 )
 
 
@@ -64,16 +69,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         arrays,
         *,
-        y: Y_TYPES = -1,
-        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
+        y: TARGET = -1,
+        index: bool | INT | str | SEQUENCE = False,
         shuffle: bool = True,
-        stratify: Union[bool, INT, str, SEQUENCE_TYPES] = True,
+        stratify: bool | INT | str | SEQUENCE = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
-        holdout_size: Optional[SCALAR] = None,
+        holdout_size: SCALAR | None = None,
     ):
-        super().__init__()
-
         self.index = index
         self.shuffle = shuffle
         self.stratify = stratify
@@ -81,31 +84,40 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.test_size = test_size
         self.holdout_size = holdout_size
 
+        self._multioutput = "auto"
         self._missing = [
-            None, np.nan, np.inf, -np.inf, "", "?", "NA", "nan", "NaN", "None", "inf"
+            None, np.nan, np.inf, -np.inf, "", "?", "NA",
+            "nan", "NaN", "none", "None", "inf", "-inf"
         ]
 
-        self._current = "master"  # Keeps track of the branch the user is in
-        self._branches = CustomDict({self._current: Branch(self, self._current)})
-
-        self._models = CustomDict()
-        self._metric = CustomDict()
-        self._errors = CustomDict()
+        self._models = ClassMap()
+        self._metric = ClassMap()
 
         self.log("<< ================== ATOM ================== >>", 1)
 
-        # Prepare the provided data
-        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays, y=y)
+        self._og = None
+        self._current = Branch("master")
+        self._branches = ClassMap(self._current)
+
+        self.branch._data, self.branch._idx, holdout = self._get_data(arrays, y=y)
+        self.holdout = self.branch._holdout = holdout
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
 
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
+        elif self.backend not in ("loky", "ray"):
+            self.log(
+                "Leaving n_jobs=1 ignores all parallelization. Set n_jobs>1 to make use "
+                f"of the {self.backend} parallelization backend.", 1, severity="warning"
+            )
         if "gpu" in self.device.lower():
             self.log("GPU training enabled.", 1)
         if self.engine != "sklearn":
-            self.log(f"Backend engine: {self.engine}.", 1)
+            self.log(f"Execution engine: {self.engine}.", 1)
+        if self.backend == "ray" or self.n_jobs > 1:
+            self.log(f"Parallelization backend: {self.backend}", 1)
         if self.experiment:
             self.log(f"Mlflow experiment: {self.experiment}.", 1)
 
@@ -117,21 +129,21 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.log(f"Python build: {python_build()}", 3)
         self.log(f"ATOM version: {__version__}", 3)
 
-        self.log("", 1)  # Add empty rows around stats for cleaner look
+        # Add empty rows around stats for cleaner look
+        self.log("", 1)
         self.stats(1)
         self.log("", 1)
 
     def __repr__(self) -> str:
         out = f"{self.__class__.__name__}"
         out += "\n --> Branches:"
-        if len(self._branches.min("og")) == 1:
-            out += f" {self._current}"
+        if len(branches := self._branches) == 1:
+            out += f" {self._current.name}"
         else:
-            for branch in self._branches.min("og"):
-                out += f"\n   --> {branch}{' !' if branch == self._current else ''}"
+            for branch in branches:
+                out += f"\n   --> {branch.name}{' !' if branch is self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
-        out += f"\n --> Errors: {len(self.errors)}"
 
         return out
 
@@ -141,46 +153,38 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     # Utility properties =========================================== >>
 
     @BaseRunner.branch.setter
-    @typechecked
     def branch(self, name: str):
         """Change branch or create a new one."""
-        if name in self._branches and name.lower() != "og":
+        if name in self._branches:
             if self.branch is self._branches[name]:
                 self.log(f"Already on branch {self.branch.name}.", 1)
             else:
-                self._current = self._branches[name].name
-                self.log(f"Switched to branch {self._current}.", 1)
+                self._current = self._branches[name]
+                self.log(f"Switched to branch {self._current.name}.", 1)
         else:
             # Branch can be created from current or another one
             if "_from_" in name:
                 new, parent = name.split("_from_")
+
+                # Check if the parent branch exists
+                if parent not in self._branches:
+                    raise ValueError(
+                        "The selected branch to split from does not exist! Use "
+                        "atom.status() for an overview of the available branches."
+                    )
+                else:
+                    parent = self._branches[parent]
+
             else:
                 new, parent = name, self._current
 
-            # Check if the new name is valid
-            if not new:
-                raise ValueError("A branch can't have an empty name!")
-            elif new in self._branches:  # Can happen when using _from_
+            # Check if the new branch is not in existing
+            if new in self._branches:  # Can happen when using _from_
                 raise ValueError(f"Branch {self._branches[new].name} already exists!")
-            else:
-                for model in MODELS_ENSEMBLES.values():
-                    if new.lower().startswith(model.acronym.lower()):
-                        raise ValueError(
-                            "Invalid name for the branch. The name of a branch may "
-                            f"not begin with a model's acronym, and {model.acronym} "
-                            f"is the acronym of the {model._fullname} model."
-                        )
 
-            # Check if the parent branch exists
-            if parent not in self._branches:
-                raise ValueError(
-                    "The selected branch to split from does not exist! Use "
-                    "atom.status() for an overview of the available branches."
-                )
-
-            self._branches[new] = Branch(self, new, parent=self._branches[parent])
-            self._current = new
-            self.log(f"New branch {self._current} successfully created.", 1)
+            self._current = Branch(name=new, parent=parent)
+            self._branches.append(self._current)
+            self.log(f"New branch {new} successfully created.", 1)
 
     @property
     def missing(self) -> list:
@@ -196,8 +200,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return self._missing
 
     @missing.setter
-    @typechecked
-    def missing(self, value: SEQUENCE_TYPES):
+    def missing(self, value: SEQUENCE):
         self._missing = list(set(list(value) + [None, np.nan, np.inf, -np.inf]))
 
     @property
@@ -205,21 +208,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """Whether the feature set is scaled.
 
         A data set is considered scaled when it has mean=0 and std=1,
-        or when atom has a scaler in the pipeline. Returns None for
-        [sparse datasets][].
+        or when there is a scaler in the pipeline. Binary columns (only
+        0s and 1s) are excluded from the calculation.
 
         """
-        if not is_sparse(self.X):
-            est_names = [est.__class__.__name__.lower() for est in self.pipeline]
-            return check_scaling(self.X) or any("scaler" in name for name in est_names)
+        return check_scaling(self.X, pipeline=self.pipeline)
 
     @property
-    def duplicates(self) -> pd.Series:
+    def duplicates(self) -> SERIES:
         """Number of duplicate rows in the dataset."""
         return self.dataset.duplicated().sum()
 
     @property
-    def nans(self) -> pd.Series:
+    def nans(self) -> SERIES | None:
         """Columns with the number of missing values in them."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing, np.NaN)
@@ -227,7 +228,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return nans[nans > 0]
 
     @property
-    def n_nans(self) -> int:
+    def n_nans(self) -> int | None:
         """Number of samples containing missing values."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing, np.NaN)
@@ -235,7 +236,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return len(nans[nans > 0])
 
     @property
-    def numerical(self) -> pd.Series:
+    def numerical(self) -> SERIES:
         """Names of the numerical features in the dataset."""
         return self.X.select_dtypes(include=["number"]).columns
 
@@ -245,7 +246,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.numerical)
 
     @property
-    def categorical(self) -> pd.Series:
+    def categorical(self) -> SERIES:
         """Names of the categorical features in the dataset."""
         return self.X.select_dtypes(include=["object", "category"]).columns
 
@@ -255,38 +256,46 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.categorical)
 
     @property
-    def outliers(self) -> pd.Series:
+    def outliers(self) -> pd.series | None:
         """Columns in training set with amount of outlier values."""
         if not is_sparse(self.X):
-            num_and_target = self.dataset.select_dtypes(include=["number"]).columns
-            z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
-            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
-            return srs[srs > 0]
+            z_scores = self.train.select_dtypes(include=["number"]).apply(stats.zscore)
+            z_scores = (z_scores.abs() > 3).sum(axis=0)
+            return z_scores[z_scores > 0]
 
     @property
-    def n_outliers(self) -> int:
+    def n_outliers(self) -> int | None:
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
-            num_and_target = self.dataset.select_dtypes(include=["number"]).columns
-            z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
-            return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
+            z_scores = self.train.select_dtypes(include=["number"]).apply(stats.zscore)
+            return (z_scores.abs() > 3).any(axis=1).sum()
 
     @property
-    def classes(self) -> pd.DataFrame:
+    def classes(self) -> pd.DataFrame | None:
         """Distribution of target classes per data set."""
-        return pd.DataFrame(
-            {
-                "dataset": self.y.value_counts(sort=False, dropna=False),
-                "train": self.y_train.value_counts(sort=False, dropna=False),
-                "test": self.y_test.value_counts(sort=False, dropna=False),
-            },
-            index=self.mapping.get(self.target, self.y.sort_values().unique()),
-        ).fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
+        if self.goal.startswith("class"):
+            index = []
+            data = defaultdict(list)
+
+            for col in lst(self.target):
+                for ds in ("dataset", "train", "test"):
+                    values, counts = np.unique(getattr(self, ds)[col], return_counts=True)
+                    data[ds].extend(list(counts))
+                index.extend([(col, i) for i in values])
+
+            df = pd.DataFrame(data, index=pd.MultiIndex.from_tuples(index))
+
+            # Non-multioutput has single level index (for simplicity)
+            if not is_multioutput(self.task):
+                df.index = df.index.droplevel(0)
+
+            return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
-    def n_classes(self) -> int:
-        """Number of classes in the target column."""
-        return self.y.nunique(dropna=False)
+    def n_classes(self) -> int | SERIES | None:
+        """Number of classes in the target column(s)."""
+        if self.goal.startswith("class"):
+            return self.y.nunique(dropna=False)
 
     # Utility methods =============================================== >>
 
@@ -315,6 +324,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Additional keyword arguments for the AutoMLSearch instance.
 
         """
+        check_dependency("evalml")
         from evalml import AutoMLSearch
 
         self.log("Searching for optimal pipeline...", 1)
@@ -324,9 +334,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             kwargs["objective"] = self._metric[0].name
         elif kwargs.get("objective"):
             if not self._metric:
-                self._metric = CustomDict(
-                    {(s := get_custom_scorer(kwargs["objective"])).name: s}
-                )
+                self._metric = ClassMap(get_custom_scorer(kwargs["objective"]))
             elif kwargs["objective"] != self._metric[0].name:
                 raise ValueError(
                     "Invalid value for the objective parameter! The metric "
@@ -357,29 +365,38 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 self._add_transformer(est)
                 self.log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
             else:
-                for key, value in MODELS.items():
-                    m = value(self)
-                    if m._est_class.__name__ == est._component_obj.__class__.__name__:
-                        m._estimator = est._component_obj
+                est_name = est._component_obj.__class__.__name__
+                for m in MODELS:
+                    if m._estimators.get(self.goal) == est_name:
+                        model = m(
+                            goal=self.goal,
+                            metric=self._metric,
+                            multioutput=self.multioutput,
+                            og=self.og,
+                            branch=self.branch,
+                            **{x: getattr(self, x) for x in BaseTransformer.attrs},
+                        )
+                        model._estimator = est._component_obj
                         break
 
                 # Save metric scores on train and test set
-                for metric in self._metric.values():
-                    m._get_score(metric, "train")
-                    m._get_score(metric, "test")
+                for metric in self._metric:
+                    model._get_score(metric, "train")
+                    model._get_score(metric, "test")
 
-                self._models.update({m.name: m})
+                self._models.append(model)
                 self.log(
-                    f" --> Adding model {m._fullname} ({m.name}) to the pipeline...", 2
+                    f" --> Adding model {model._fullname} "
+                    f"({model.name}) to the pipeline...", 2
                 )
                 break  # Avoid non-linear pipelines
 
-    @composed(crash, typechecked)
+    @crash
     def distribution(
         self,
-        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        distributions: str | SEQUENCE | None = None,
         *,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
     ) -> pd.DataFrame:
         """Get statistics on column distributions.
 
@@ -430,7 +447,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         else:
             distributions = lst(distributions)
 
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = self.branch._get_columns(columns, only_numerical=True)
 
         df = pd.DataFrame(
             index=pd.MultiIndex.from_product(
@@ -455,78 +472,21 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return df
 
-    @composed(crash, method_to_log, typechecked)
-    def inverse_transform(
-        self,
-        X: Optional[X_TYPES] = None,
-        /,
-        y: Optional[Y_TYPES] = None,
-        *,
-        verbose: Optional[INT] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
-        """Inversely transform new data through the pipeline.
-
-        Transformers that are only applied on the training set are
-        skipped. The rest should all implement a `inverse_transform`
-        method. If only `X` or only `y` is provided, it ignores
-        transformers that require the other parameter. This can be
-        used to transform only the target column.
-
-        Parameters
-        ----------
-        X: dataframe-like or None, default=None
-            Transformed feature set with shape=(n_samples, n_features).
-            If None, X is ignored in the transformers.
-
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
-                - If None: y is ignored in the transformers.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
-
-        verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        pd.DataFrame
-            Original feature set. Only returned if provided.
-
-        y: pd.Series
-            Original target column. Only returned if provided.
-
-        """
-        X, y = self._prepare_input(X, y)
-
-        for transformer in reversed(self.pipeline):
-            if not transformer._train_only:
-                X, y = custom_transform(
-                    transformer=transformer,
-                    branch=self.branch,
-                    data=(X, y),
-                    verbose=verbose,
-                    method="inverse_transform",
-                )
-
-        return variable_return(X, y)
-
-    @composed(crash, typechecked)
-    def report(
+    @crash
+    def eda(
         self,
         dataset: str = "dataset",
         *,
-        n_rows: Optional[SCALAR] = None,
-        filename: Optional[str] = None,
+        n_rows: SCALAR | None = None,
+        filename: str | None = None,
         **kwargs,
     ):
-        """Create an extensive profile analysis report of the data.
+        """Create an Exploratory Data Analysis report.
 
-        ATOM uses the [pandas-profiling][profiling] package for the
-        analysis. The report is rendered directly in the notebook. The
-        created [ProfileReport][] instance can be accessed through the
-        `profile` attribute.
+        ATOM uses the [ydata-profiling][profiling] package for the EDA.
+        The report is rendered directly in the notebook. The created
+        [ProfileReport][] instance can be accessed through the `report`
+        attribute.
 
         !!! warning
             This method can be slow for large datasets.
@@ -549,20 +509,207 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             instance.
 
         """
-        from pandas_profiling import ProfileReport
+        check_dependency("ydata-profiling")
+        from ydata_profiling import ProfileReport
 
-        self.log("Creating profile report...", 1)
+        self.log("Creating EDA report...", 1)
 
         n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
-        self.profile = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
+        self.report = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
 
         if filename:
             if not filename.endswith(".html"):
                 filename += ".html"
-            self.profile.to_file(filename)
+            self.report.to_file(filename)
             self.log("Report successfully saved.", 1)
 
-        self.profile.to_notebook_iframe()
+        self.report.to_notebook_iframe()
+
+    @composed(crash, method_to_log)
+    def inverse_transform(
+        self,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+        *,
+        verbose: INT | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, SERIES]:
+        """Inversely transform new data through the pipeline.
+
+        Transformers that are only applied on the training set are
+        skipped. The rest should all implement a `inverse_transform`
+        method. If only `X` or only `y` is provided, it ignores
+        transformers that require the other parameter. This can be
+        used to transform only the target column.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Transformed feature set with shape=(n_samples, n_features).
+            If None, X is ignored in the transformers.
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        dataframe
+            Original feature set. Only returned if provided.
+
+        series
+            Original target column. Only returned if provided.
+
+        """
+        X, y = self._prepare_input(X, y, columns=self.og.features)
+
+        for transformer in reversed(self.pipeline):
+            if not transformer._train_only:
+                X, y = custom_transform(
+                    transformer=transformer,
+                    branch=self.branch,
+                    data=(X, y),
+                    verbose=verbose,
+                    method="inverse_transform",
+                )
+
+        return variable_return(X, y)
+
+    @classmethod
+    def load(
+        cls,
+        filename: str,
+        data: SEQUENCE | None = None,
+        *,
+        transform_data: bool = True,
+        verbose: INT | None = None,
+    ):
+        """Loads an atom instance from a pickle file.
+
+        If the instance was [saved][self-save] using `save_data=False`,
+        it's possible to load new data into it and apply all data
+        transformations.
+
+        !!! note
+            The loaded instance's current branch is the same branch as it
+            was when saved.
+
+        Parameters
+        ----------
+        filename: str
+            Name of the pickle file.
+
+        data: sequence of indexables or None, default=None
+            Original dataset. Only use this parameter if the loaded file
+            was saved using `save_data=False`. Allowed formats are:
+
+            - X
+            - X, y
+            - train, test
+            - train, test, holdout
+            - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+            - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
+
+            **X, train, test: dataframe-like**<br>
+            Feature set with shape=(n_samples, n_features).
+
+            **y: int, str or sequence**<br>
+            Target column corresponding to X.
+
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        transform_data: bool, default=True
+            If False, the `data` is left as provided. If True, it's
+            transformed through all the steps in the loaded instance's
+            pipeline.
+
+        verbose: int or None, default=None
+            Verbosity level of the transformations applied on the new
+            data. If None, use the verbosity from the loaded instance.
+            This parameter is ignored if `transform_data=False`.
+
+        Returns
+        -------
+        atom instance
+            Unpickled atom instance.
+
+        """
+        with open(filename, "rb") as f:
+            atom = pickle.load(f)
+
+        # Check if atom instance
+        if atom.__class__.__name__ not in ("ATOMClassifier", "ATOMRegressor"):
+            raise ValueError(
+                "The loaded class is not a ATOMClassifier nor "
+                f"ATOMRegressor instance, got {atom.__class__.__name__}."
+            )
+
+        # Reassign the transformer attributes (warnings random_state, etc...)
+        BaseTransformer.__init__(
+            atom, **{x: getattr(atom, x) for x in BaseTransformer.attrs},
+        )
+
+        if data is not None:
+            if any(branch._data is not None for branch in atom._branches):
+                raise ValueError(
+                    f"The loaded {atom.__class__.__name__} "
+                    "instance already contains data."
+                )
+
+            # Prepare the provided data
+            data, idx, atom.holdout = atom._get_data(data, use_n_rows=transform_data)
+
+            # Apply transformations per branch
+            step = {}  # Current step in the pipeline per branch
+            for b1 in atom._branches:
+                # Provide the input data if not already filled from another branch
+                if b1._data is None:
+                    b1._data, b1._idx = data, idx
+
+                if transform_data:
+                    if len(atom._branches) > 2 and not b1.pipeline.empty:
+                        atom.log(f"Transforming data for branch {b1.name}:", 1)
+
+                    for i, est1 in enumerate(b1.pipeline):
+                        # Skip if the transformation was already applied
+                        if step.get(b1.name, -1) < i:
+                            custom_transform(est1, b1, verbose=verbose)
+
+                            if atom.index is False:
+                                b1._data = b1.dataset.reset_index(drop=True)
+                                b1._idx = [
+                                    b1._idx[0],
+                                    b1._data.index[:len(b1._idx[1])],
+                                    b1._data.index[-len(b1._idx[2]):],
+                                ]
+
+                            for b2 in atom._branches:
+                                if b1.name != b2.name and b2.pipeline.get(i) is est1:
+                                    # Update the data and step for the other branch
+                                    atom._branches[b2.name]._data = deepcopy(b1._data)
+                                    atom._branches[b2.name]._idx = deepcopy(b1._idx)
+                                    atom._branches[b2.name]._holdout = b1._holdout
+                                    step[b2.name] = i
+
+        atom.log(f"{atom.__class__.__name__} successfully loaded.", 1)
+
+        return atom
 
     @composed(crash, method_to_log)
     def reset(self):
@@ -576,12 +723,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._delete_models(self._get_models())
 
         # Recreate the master branch from original and drop rest
-        self._current = "master"
-        self._branches = CustomDict({self._current: self._get_og_branches()[0]})
+        self._current = self.og
+        self._current.name = "master"
+        self._branches = ClassMap(self._current)
+        self._og = None  # Reset original branch
 
         self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def save_data(self, filename: str = "auto", *, dataset: str = "dataset"):
         """Save the data in the current branch to a `.csv` file.
 
@@ -602,14 +751,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         getattr(self, dataset).to_csv(filename, index=False)
         self.log("Data set successfully saved.", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def shrink(
         self,
         *,
         obj2cat: bool = True,
         int2uint: bool = False,
         dense2sparse: bool = False,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
 
@@ -643,22 +792,22 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         fastai/tabular/core.py
 
         """
-        columns = self._get_columns(columns)
+        columns = self.branch._get_columns(columns)
         exclude_types = ["category", "datetime64[ns]", "bool"]
 
-        # Build column filter and type_map
+        # Build column filter and types
         types_1 = (np.int8, np.int16, np.int32, np.int64)
         types_2 = (np.uint8, np.uint16, np.uint32, np.uint64)
         types_3 = (np.float32, np.float64, np.longdouble)
 
-        type_map = {
+        types = {
             "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
             "uint": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_2],
             "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_3],
         }
 
         if obj2cat:
-            type_map["object"] = "category"
+            types["object"] = "category"
         else:
             exclude_types += ["object"]
 
@@ -669,18 +818,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 continue
 
             if pd.api.types.is_sparse(column):
-                t = next(
-                    v for k, v in type_map.items() if old_t.subtype.name.startswith(k)
-                )
+                t = next(v for k, v in types.items() if old_t.subtype.name.startswith(k))
             else:
-                t = next(
-                    v for k, v in type_map.items() if old_t.name.startswith(k)
-                )
+                t = next(v for k, v in types.items() if old_t.name.startswith(k))
 
             if isinstance(t, list):
                 # Use uint if values are strictly positive
-                if int2uint and t == type_map["int"] and column.min() >= 0:
-                    t = type_map["uint"]
+                if int2uint and t == types["int"] and column.min() >= 0:
+                    t = types["uint"]
 
                 # Find the smallest type that fits
                 new_t = next(
@@ -709,21 +854,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                     dtype=column.dtype,
                 )
 
-            self.branch.X = pd.DataFrame(new_cols, index=self.y.index)
+            self.branch.X = bk.DataFrame(new_cols, index=self.y.index)
 
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
     def stats(self, _vb: INT = -2, /):
         """Print basic information about the dataset.
-
-        !!! tip
-            For classification tasks, the count and balance of classes
-            is shown, followed by the ratio (between parentheses) of
-            the class with respect to the rest of the classes in the
-            same data set, i.e. the class with the fewest samples is
-            followed by `(1.0)`. This information can be used to quickly
-            assess if the data set is unbalanced.
 
         Parameters
         ----------
@@ -733,7 +870,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
+        self.log(f"Train set size: {len(self.train)}", _vb)
+        self.log(f"Test set size: {len(self.test)}", _vb)
+        if self.holdout is not None:
+            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
 
+        self.log("-" * 37, _vb)
         if (memory := self.dataset.memory_usage(deep=True).sum()) < 1e6:
             self.log(f"Memory: {memory / 1e3:.2f} kB", _vb)
         else:
@@ -754,7 +896,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             nans = self.nans.sum()
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
-            duplicates = self.dataset.duplicated().sum()
+            try:
+                # Can fail for unhashable columns (e.g. multilabel with lists)
+                duplicates = self.dataset.duplicated().sum()
+            except TypeError:
+                duplicates = None
+                self.log(
+                    "Unable to calculate the number of duplicate "
+                    "rows because a column is unhashable.", 3
+                )
 
             self.log(f"Scaled: {self.scaled}", _vb)
             if nans:
@@ -770,32 +920,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 p_dup = round(100 * duplicates / len(self.dataset), 1)
                 self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
-        self.log("-" * 37, _vb)
-        self.log(f"Train set size: {len(self.train)}", _vb)
-        self.log(f"Test set size: {len(self.test)}", _vb)
-        if self.holdout is not None:
-            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
-
-        # Print count and balance of classes
-        if self.task != "regression":
-            self.log("-" * 37, _vb)
-            cls = self.classes
-            func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
-
-            # Create custom Table object and print the content
-            table = Table(
-                headers=[("", "left"), *cls.columns],
-                spaces=(
-                    max(cls.index.astype(str).str.len()),
-                    *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns),
-                )
-            )
-            self.log(table.print_header(), _vb + 1)
-            self.log(table.print_line(), _vb + 1)
-            for i, row in cls.iterrows():
-                sequence = {"": i, **{c: func(row[c], c) for c in cls.columns}}
-                self.log(table.print(sequence), _vb + 1)
-
     @composed(crash, method_to_log)
     def status(self):
         """Get an overview of the branches and models.
@@ -806,15 +930,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         self.log(str(self))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
-        X: Optional[X_TYPES] = None,
-        /,
-        y: Optional[Y_TYPES] = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         *,
-        verbose: Optional[INT] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        verbose: INT | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, SERIES]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -829,12 +952,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             X is ignored. If None,
             X is ignored in the transformers.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored in the transformers.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
@@ -842,14 +968,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed feature set. Only returned if provided.
 
-        pd.Series
+        series
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.og.features)
 
         for transformer in self.pipeline:
             if not transformer._train_only:
@@ -859,7 +985,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Base transformers ============================================ >>
 
-    def _prepare_kwargs(self, kwargs: dict, params: Optional[List[str]] = None) -> dict:
+    def _prepare_kwargs(self, kwargs: dict, params: list[str] | None = None) -> dict:
         """Return kwargs with atom's values if not specified.
 
         This method is used for all transformers and runners to pass
@@ -883,7 +1009,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def _add_transformer(
         self,
         transformer: Transformer,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -915,7 +1041,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Additional keyword arguments for the transformer's fit method.
 
         """
-        if self.branch._get_depending_models():
+        if any(m.branch is self.branch for m in self._models):
             raise PermissionError(
                 "It's not allowed to add transformers to the branch "
                 "after it has been used to train models. Create a "
@@ -935,7 +1061,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         if not hasattr(transformer, "_train_only"):
             transformer._train_only = train_only
         if columns is not None:
-            inc, exc = self._get_columns(columns, return_inc_exc=True)
+            inc, exc = self.branch._get_columns(columns, return_inc_exc=True)
             transformer._cols = [[c for c in inc if c != self.target], exc]
 
         if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
@@ -944,24 +1070,32 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
             fit_one(transformer, self.X_train, self.y_train, **fit_params)
 
-        # Create an og branch before transforming (if it doesn't exist already)
-        if self._get_og_branches() == [self.branch]:
-            self._branches.insert(0, "og", Branch(self, "og", parent=self.branch))
+        # Store data in og branch
+        if not self._og:
+            self._og = Branch(name="og", parent=self.branch)
 
         custom_transform(transformer, self.branch)
 
+        if self.index is False:
+            self.branch._data = self.branch.dataset.reset_index(drop=True)
+            self.branch._idx = [
+                self.branch._idx[0],
+                self.branch._data.index[:len(self.branch._idx[1])],
+                self.branch._data.index[-len(self.branch._idx[2]):],
+            ]
+
         # Add the estimator to the pipeline
-        self.branch.pipeline = pd.concat(
+        self.branch._pipeline = pd.concat(
             [self.pipeline, pd.Series([transformer], dtype="object")],
             ignore_index=True,
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def add(
         self,
         transformer: Transformer,
         *,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -1038,14 +1172,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 f"Adding {transformer.__class__.__name__} to the pipeline...", 1)
             self._add_transformer(transformer, columns, train_only, **fit_params)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def apply(
         self,
         func: Callable,
-        inverse_func: Optional[Callable] = None,
+        inverse_func: Callable | None = None,
         *,
-        kw_args: Optional[dict] = None,
-        inv_kw_args: Optional[dict] = None,
+        kw_args: dict | None = None,
+        inv_kw_args: dict | None = None,
         **kwargs,
     ):
         """Apply a function to the dataset.
@@ -1092,7 +1226,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     # Data cleaning transformers =================================== >>
 
     @available_if(has_task("class"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def balance(self, strategy: str = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
 
@@ -1104,15 +1238,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         See the [Balancer][] class for a description of the parameters.
 
         !!! note
-            This transformation is only applied to the training set in
-            order to maintain the original distribution of target
-            classes in the test set.
+            * The balance method does not support [multioutput tasks][].
+            * This transformation is only applied to the training set
+              in order to maintain the original distribution of target
+              classes in the test set.
 
         !!! tip
             Use atom's [classes][self-classes] attribute for an overview
             of the target class distribution per data set.
 
         """
+        if is_multioutput(self.task):
+            raise ValueError("The balance method does not support multioutput tasks.")
+
         columns = kwargs.pop("columns", None)
         balancer = Balancer(
             strategy=strategy,
@@ -1127,11 +1265,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         # Attach the estimator attribute to atom's branch
         setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def clean(
         self,
         *,
-        drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        drop_types: str | SEQUENCE | None = None,
+        drop_chars: str | None = None,
         strip_categorical: bool = True,
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
@@ -1144,10 +1283,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         The available steps are:
 
         - Drop columns with specific data types.
+        - Remove characters from column names.
         - Strip categorical features from white spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
-        - Encode the target column (can't be True for regression tasks).
+        - Encode the target column (ignored for regression tasks).
 
         See the [Cleaner][] class for a description of the parameters.
 
@@ -1155,6 +1295,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         cleaner = Cleaner(
             drop_types=drop_types,
+            drop_chars=drop_chars,
             strip_categorical=strip_categorical,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
@@ -1166,17 +1307,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         cleaner.missing = self.missing
 
         self._add_transformer(cleaner, columns=columns)
+        self.mapping.update(cleaner.mapping)
 
-        if cleaner.mapping:
-            self.mapping.insert(-1, self.target, cleaner.mapping)
-
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def discretize(
         self,
         strategy: str = "quantile",
         *,
-        bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
-        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        bins: INT | SEQUENCE | dict = 5,
+        labels: SEQUENCE | dict | None = None,
         **kwargs,
     ):
         """Bin continuous data into intervals.
@@ -1202,14 +1341,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(discretizer, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def encode(
         self,
         strategy: str = "LeaveOneOut",
         *,
-        max_onehot: Optional[INT] = 10,
-        ordinal: Optional[Dict[Union[INT, str], SEQUENCE_TYPES]] = None,
-        rare_to_value: Optional[SCALAR] = None,
+        max_onehot: INT | None = 10,
+        ordinal: dict[str, SEQUENCE] | None = None,
+        rare_to_value: SCALAR | None = None,
         value: str = "rare",
         **kwargs,
     ):
@@ -1252,17 +1391,17 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._add_transformer(encoder, columns=columns)
 
         # Add mapping of the encoded columns and reorder because of target col
-        self.mapping.update(encoder.mapping)
-        self.mapping = self.mapping[[c for c in self.columns if c in self.mapping]]
+        self.branch._mapping.update(encoder.mapping)
+        self.branch._mapping.reorder(self.columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def impute(
         self,
-        strat_num: Union[SCALAR, str] = "drop",
+        strat_num: SCALAR | str = "drop",
         strat_cat: str = "drop",
         *,
-        max_nan_rows: Optional[SCALAR] = None,
-        max_nan_cols: Optional[SCALAR] = None,
+        max_nan_rows: SCALAR | None = None,
+        max_nan_cols: SCALAR | None = None,
         **kwargs,
     ):
         """Handle missing values in the dataset.
@@ -1293,7 +1432,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(imputer, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def normalize(self, strategy: str = "yeojohnson", **kwargs):
         """Transform the data to follow a Normal/Gaussian distribution.
 
@@ -1323,12 +1462,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if hasattr(normalizer, attr):
                 setattr(self.branch, attr, getattr(normalizer, attr))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def prune(
         self,
-        strategy: Union[str, SEQUENCE_TYPES] = "zscore",
+        strategy: str | SEQUENCE = "zscore",
         *,
-        method: Union[SCALAR, str] = "drop",
+        method: SCALAR | str = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         **kwargs,
@@ -1367,7 +1506,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if strat.lower() != "zscore":
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def scale(self, strategy: str = "standard", include_binary: bool = False, **kwargs):
         """Scale the data.
 
@@ -1394,22 +1533,22 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # NLP transformers ============================================= >>
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def textclean(
         self,
         *,
         decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
-        regex_email: Optional[str] = None,
+        regex_email: str | None = None,
         drop_url: bool = True,
-        regex_url: Optional[str] = None,
+        regex_url: str | None = None,
         drop_html: bool = True,
-        regex_html: Optional[str] = None,
+        regex_html: str | None = None,
         drop_emoji: bool = True,
-        regex_emoji: Optional[str] = None,
+        regex_emoji: str | None = None,
         drop_number: bool = True,
-        regex_number: Optional[str] = None,
+        regex_number: str | None = None,
         drop_punctuation: bool = True,
         **kwargs,
     ):
@@ -1447,13 +1586,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         setattr(self.branch, "drops", getattr(textcleaner, "drops"))
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def textnormalize(
         self,
         *,
-        stopwords: Union[bool, str] = True,
-        custom_stopwords: Optional[SEQUENCE_TYPES] = None,
-        stem: Union[bool, str] = False,
+        stopwords: bool | str = True,
+        custom_stopwords: SEQUENCE | None = None,
+        stem: bool | str = False,
         lemmatize: bool = True,
         **kwargs,
     ):
@@ -1480,12 +1619,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(normalizer, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def tokenize(
         self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        quadgram_freq: Optional[SCALAR] = None,
+        bigram_freq: SCALAR | None = None,
+        trigram_freq: SCALAR | None = None,
+        quadgram_freq: SCALAR | None = None,
         **kwargs,
     ):
         """Tokenize the corpus.
@@ -1513,7 +1652,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.branch.trigrams = tokenizer.trigrams
         self.branch.quadgrams = tokenizer.quadgrams
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def vectorize(self, strategy: str = "bow", *, return_sparse: bool = True, **kwargs):
         """Vectorize the corpus.
 
@@ -1546,11 +1685,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Feature engineering transformers ============================= >>
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_extraction(
         self,
-        features: Union[str, SEQUENCE_TYPES] = ["day", "month", "year"],
-        fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        features: str | SEQUENCE = ["day", "month", "year"],
+        fmt: str | SEQUENCE | None = None,
         *,
         encoding_type: str = "ordinal",
         drop_columns: bool = True,
@@ -1579,13 +1718,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(feature_extractor, columns=columns)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_generation(
         self,
         strategy: str = "dfs",
         *,
-        n_features: Optional[INT] = None,
-        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        n_features: INT | None = None,
+        operators: str | SEQUENCE | None = None,
         **kwargs,
     ):
         """Generate new features.
@@ -1612,13 +1751,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             self.branch.gfg = feature_generator.gfg
             self.branch.genetic_features = feature_generator.genetic_features
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_grouping(
         self,
-        group: Union[str, SEQUENCE_TYPES],
-        name: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        group: str | SEQUENCE,
+        name: str | SEQUENCE | None = None,
         *,
-        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        operators: str | SEQUENCE | None = None,
         drop_columns: bool = True,
         **kwargs,
     ):
@@ -1646,16 +1785,16 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._add_transformer(feature_grouper, columns=columns)
         self.branch.groups = feature_grouper.groups
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def feature_selection(
         self,
-        strategy: Optional[str] = None,
+        strategy: str | None = None,
         *,
-        solver: Optional[Union[str, callable]] = None,
-        n_features: Optional[SCALAR] = None,
-        min_repeated: Optional[SCALAR] = 2,
-        max_repeated: Optional[SCALAR] = 1.0,
-        max_correlation: Optional[float] = 1.0,
+        solver: str | Callable | None = None,
+        n_features: SCALAR | None = None,
+        min_repeated: SCALAR | None = 2,
+        max_repeated: SCALAR | None = 1.0,
+        max_correlation: SCALAR | None = 1.0,
         **kwargs,
     ):
         """Reduce the number of features in the data.
@@ -1702,44 +1841,47 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             **self._prepare_kwargs(kwargs, sign(FeatureSelector)),
         )
 
+        # Add estimator to support multioutput tasks
+        feature_selector._multioutput = self.multioutput
+
         self._add_transformer(feature_selector, columns=columns)
 
         # Attach used attributes to atom's branch
-        for attr in ("collinear", "feature_importance", str(strategy).lower()):
-            if getattr(feature_selector, attr, None) is not None:
+        for attr in ("collinear", str(strategy).lower()):
+            if getattr(feature_selector, attr) is not None:
                 setattr(self.branch, attr, getattr(feature_selector, attr))
 
     # Training methods ============================================= >>
 
-    def _check(self, metric: Union[str, callable, Scorer, SEQUENCE_TYPES]) -> CustomDict:
+    def _check(self, metric: str | Callable | SEQUENCE) -> str | Callable | SEQUENCE:
         """Check whether the provided metric is valid.
+
+        If there was a previous run, check that the provided metric
+        is the same.
 
         Parameters
         ----------
-        metric: str, func, callable or sequence
+        metric: str, func, scorer or sequence
             Metric provided for the run.
 
         Returns
         -------
-        CustomDict
-            Metric for the run. Should be the same as previous run.
+        str, func, scorer or sequence
+            Metric for the run.
 
         """
         if self._metric:
             # If the metric is empty, assign the existing one
             if metric is None:
-                metric = self._metric
+                metric = list(self._metric)
             else:
                 # If there's a metric, it should be the same as previous run
-                new_metric = CustomDict(
-                    {(s := get_custom_scorer(m)).name: s for m in lst(metric)}
-                )
-
-                if list(new_metric) != list(self._metric):
+                new_metric = [get_custom_scorer(m).name for m in lst(metric)]
+                if new_metric != self._metric.keys():
                     raise ValueError(
                         "Invalid value for the metric parameter! The metric "
                         "should be the same as previous run. Expected "
-                        f"{self.metric}, got {flt(list(new_metric))}."
+                        f"{self.metric}, got {flt(new_metric)}."
                     )
 
         return metric
@@ -1757,51 +1899,45 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Instance that does the actual model training.
 
         """
-        if self.y.dtype.kind not in "ifu":
+        if any(col.dtype.kind not in "ifu" for col in get_cols(self.y)):
             raise ValueError(
                 "The target column is not numerical. Use atom.clean() "
                 "to encode the target column to numerical values."
             )
 
-        try:
-            trainer._aesthetics = self._aesthetics
-            trainer._tracking_params = self._tracking_params
-            trainer._current = self._current
-            trainer._branches = self._branches
-            trainer.scaled = self.scaled
-            trainer.run()
-        finally:
-            # Catch errors and pass them to atom's attribute
-            for model, error in trainer.errors.items():
-                self._errors[model] = error
-                self._models.pop(model)
+        # Transfer attributes
+        trainer.index = self.index
+        trainer._og = self._og
+        trainer._current = self._current
+        trainer._branches = self._branches
+        trainer._multioutput = self._multioutput
+
+        trainer.run()
 
         # Overwrite models with same name as new ones
         for model in trainer._models:
-            if model in self._models:
-                self._models.pop(model)
+            if model.name in self._models:
+                self._delete_models(model.name)
                 self.log(
-                    f"Consecutive runs of model {model}. The former "
-                    "model has been overwritten.", 1, severity="warning"
+                    f"Consecutive runs of model {model.name}. "
+                    "The former model has been overwritten.", 1
                 )
 
-        self._models.update(trainer._models)
+        self._models.extend(trainer._models)
         self._metric = trainer._metric
 
-        for model in self._models.values():
-            self._errors.pop(model.name)  # Remove model from errors (if there)
-            model.T = self  # Change the model's parent class from trainer to atom
-
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def run(
         self,
-        models: Optional[Union[str, callable, Predictor, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        est_params: Optional[dict] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
+        est_params: dict | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         **kwargs,
     ):
         """Train and evaluate the models in a direct fashion.
@@ -1837,21 +1973,25 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 n_trials=n_trials,
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
+                parallel=parallel,
+                errors=errors,
                 **self._prepare_kwargs(kwargs),
             )
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def successive_halving(
         self,
-        models: Union[str, Predictor, SEQUENCE_TYPES],
-        metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
         skip_runs: INT = 0,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -1894,21 +2034,25 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 n_trials=n_trials,
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
+                parallel=parallel,
+                errors=errors,
                 **self._prepare_kwargs(kwargs),
             )
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def train_sizing(
         self,
-        models: Union[str, Predictor, SEQUENCE_TYPES],
-        metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        models: str | Callable | Predictor | SEQUENCE,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        train_sizes: INT | SEQUENCE = 5,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         **kwargs,
     ):
         """Train and evaluate the models in a train sizing fashion.
@@ -1949,6 +2093,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 n_trials=n_trials,
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
+                parallel=parallel,
+                errors=errors,
                 **self._prepare_kwargs(kwargs),
             )
         )

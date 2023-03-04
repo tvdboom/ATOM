@@ -9,10 +9,9 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 from __future__ import annotations
 
-from typing import Generator, List, Optional, Tuple, Union
+from typing import Generator
 
 import numpy as np
-import pandas as pd
 from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as skPipeline
@@ -22,8 +21,9 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from atom.utils import (
-    FLOAT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Estimator, check_is_fitted,
-    fit_one, fit_transform_one, transform_one, variable_return,
+    DATAFRAME, FEATURES, FLOAT, SEQUENCE, SERIES, TARGET, Estimator,
+    check_is_fitted, fit_one, fit_transform_one, transform_one,
+    variable_return,
 )
 
 
@@ -55,9 +55,9 @@ class Pipeline(skPipeline):
 
     def __init__(
         self,
-        steps: List[Tuple[str, Estimator]],
+        steps: list[tuple[str, Estimator]],
         *,
-        memory: Optional[Union[str, Memory]] = None,
+        memory: str | Memory | None = None,
         verbose: bool = False,
     ):
         super().__init__(steps, memory=memory, verbose=verbose)
@@ -67,7 +67,7 @@ class Pipeline(skPipeline):
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
             self._is_fitted = True
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str):
         try:
             return getattr(self._final_estimator, item)
         except AttributeError:
@@ -79,7 +79,7 @@ class Pipeline(skPipeline):
         return self._memory
 
     @memory.setter
-    def memory(self, value: Optional[Union[str, Memory]]):
+    def memory(self, value: str | Memory | None):
         """Create new internal memory object."""
         self._memory = check_memory(value)
         self._memory_fit = self._memory.cache(fit_transform_one)
@@ -142,8 +142,8 @@ class Pipeline(skPipeline):
 
     def _fit(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params_steps,
     ):
         """Get data transformed through the pipeline.
@@ -167,10 +167,10 @@ class Pipeline(skPipeline):
 
         Returns
         -------
-        pd.DataFrame or None
+        dataframe or None
             Transformed feature set.
 
-        pd.Series or None
+        series or None
             Transformed target column.
 
         """
@@ -212,8 +212,8 @@ class Pipeline(skPipeline):
 
     def fit(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params,
     ) -> Pipeline:
         """Fit the pipeline.
@@ -222,8 +222,7 @@ class Pipeline(skPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
-            if the pipeline only uses y.
+            X is ignored.
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
@@ -255,9 +254,9 @@ class Pipeline(skPipeline):
     @available_if(_can_transform)
     def transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
-    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Transform the data.
 
         Call `transform` on each transformer in the pipeline. The
@@ -271,8 +270,7 @@ class Pipeline(skPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
-            if the pipeline only uses y.
+            X is ignored. None if the pipeline only uses y.
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
@@ -284,10 +282,10 @@ class Pipeline(skPipeline):
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed feature set. Only returned if provided.
 
-        pd.Series
+        series
             Transformed target column. Only returned if provided.
 
         """
@@ -298,10 +296,10 @@ class Pipeline(skPipeline):
 
     def fit_transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params,
-    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Fit the pipeline and transform the data.
 
         Parameters
@@ -324,10 +322,10 @@ class Pipeline(skPipeline):
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed feature set. Only returned if provided.
 
-        pd.Series
+        series
             Transformed target column. Only returned if provided.
 
         """
@@ -347,9 +345,9 @@ class Pipeline(skPipeline):
     @available_if(_can_inverse_transform)
     def inverse_transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
-    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the
@@ -359,8 +357,7 @@ class Pipeline(skPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
-            if the pipeline only uses y.
+            X is ignored. None if the pipeline only uses y.
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
@@ -372,10 +369,10 @@ class Pipeline(skPipeline):
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed feature set. Only returned if provided.
 
-        pd.Series
+        series
             Transformed target column. Only returned if provided.
 
         """
@@ -385,7 +382,7 @@ class Pipeline(skPipeline):
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: X_TYPES, **predict_params) -> np.ndarray:
+    def predict(self, X: FEATURES, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -412,7 +409,7 @@ class Pipeline(skPipeline):
         return self.steps[-1][-1].predict(X, **predict_params)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X: X_TYPES) -> np.ndarray:
+    def predict_proba(self, X: FEATURES) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
@@ -432,7 +429,7 @@ class Pipeline(skPipeline):
         return self.steps[-1][-1].predict_proba(X)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X: X_TYPES) -> np.ndarray:
+    def predict_log_proba(self, X: FEATURES) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
@@ -452,7 +449,7 @@ class Pipeline(skPipeline):
         return self.steps[-1][-1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X: X_TYPES) -> np.ndarray:
+    def decision_function(self, X: FEATURES) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
@@ -474,9 +471,9 @@ class Pipeline(skPipeline):
     @available_if(_final_estimator_has("score"))
     def score(
         self,
-        X: X_TYPES,
-        y: Y_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        X: FEATURES,
+        y: TARGET,
+        sample_weight: SEQUENCE | None = None,
     ) -> FLOAT:
         """Transform, then score of the final estimator.
 

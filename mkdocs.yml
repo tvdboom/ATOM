@@ -6,7 +6,7 @@ repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
-copyright: Copyright &copy; 2022, by Mavs.
+copyright: Copyright &copy; 2023, by Mavs.
 
 theme:
     name: material
@@ -49,24 +49,24 @@ extra:
     version:
         provider: mike
     social:
-      - icon: fontawesome/brands/slack
-        link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3
-        name: Slack
-      - icon: fontawesome/brands/github
-        link: https://github.com/tvdboom/ATOM
-        name: GitHub
-      - icon: fontawesome/brands/stack-overflow
-        link: https://stackoverflow.com/questions/tagged/atom-ml
-        name: StackOverflow
-      - icon: fontawesome/brands/python
-        link: https://pypi.org/project/atom-ml/
-        name: Pypi
-      - icon: fontawesome/brands/medium
-        link: https://tvdboom.medium.com/
-        name: Medium
-      - icon: fontawesome/solid/envelope
-        link: mailto:m.524687@gmail.com
-        name: Email
+        - icon: fontawesome/brands/slack
+          link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3
+          name: Slack
+        - icon: fontawesome/brands/github
+          link: https://github.com/tvdboom/ATOM
+          name: GitHub
+        - icon: fontawesome/brands/stack-overflow
+          link: https://stackoverflow.com/questions/tagged/atom-ml
+          name: StackOverflow
+        - icon: fontawesome/brands/python
+          link: https://pypi.org/project/atom-ml/
+          name: Pypi
+        - icon: fontawesome/brands/medium
+          link: https://tvdboom.medium.com/
+          name: Medium
+        - icon: fontawesome/solid/envelope
+          link: mailto:m.524687@gmail.com
+          name: Email
 
 plugins:
     - search
@@ -76,10 +76,10 @@ plugins:
           include_source: true
           ignore_h1_titles: true
     - mkdocs-simple-hooks:
-        hooks:
-            on_page_markdown: "docs_sources.autodocs:render"
-            on_page_content: "docs_sources.autodocs:convert_plotly"
-            on_post_build: "docs_sources.autodocs:clean_search"
+          hooks:
+              on_page_markdown: "docs_sources.autodocs:render"
+              on_page_content: "docs_sources.autodocs:convert_plotly"
+              on_post_build: "docs_sources.autodocs:clean_search"
 
 markdown_extensions:
     - admonition
@@ -129,7 +129,6 @@ nav:
     - API:
         - ATOM:
             - ATOMClassifier: API/ATOM/atomclassifier.md
-            - ATOMLoader: API/ATOM/atomloader.md
             - ATOMModel: API/ATOM/atommodel.md
             - ATOMRegressor: API/ATOM/atomregressor.md
         - Data cleaning:
@@ -264,9 +263,12 @@ nav:
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - In-training validation: examples/in_training_validation.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
+        - Multilabel classification: examples/multilabel_classification.ipynb
+        - Multioutput regression: examples/multioutput_regression.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb
         - NLP: examples/nlp.ipynb
         - Pruning: examples/pruning.ipynb
+        - Ray backend: examples/ray_backend.ipynb
         - Regression: examples/regression.ipynb
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb

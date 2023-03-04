@@ -12,10 +12,12 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+import requests
 from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler
 from optuna.study import Study
+from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import r2_score, recall_score
 from sklearn.tree import DecisionTreeClassifier
@@ -24,8 +26,8 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_is_fitted, check_scaling, rnd
 
 from .conftest import (
-    X10_str, X_bin, X_class, X_idx, X_reg, y10, y10_str, y_bin, y_class, y_idx,
-    y_reg,
+    X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
+    y_class, y_idx, y_label, y_multiclass, y_reg,
 )
 
 
@@ -34,7 +36,7 @@ from .conftest import (
 def test_scaler():
     """Assert that a scaler is made for models that need scaling."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LGB", "LDA"])
+    atom.run(["LGB", "LDA"], est_params={"LGB": {"n_estimators": 5}})
     assert atom.lgb.scaler and not atom.lda.scaler
 
 
@@ -80,8 +82,12 @@ def test_getitem():
 def test_est_params_invalid_param():
     """Assert that invalid parameters in est_params are caught."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"], n_trials=1, est_params={"test": 220})
-    assert list(atom.errors) == ["LR"]  # LGB passes since it accepts kwargs
+    atom.run(
+        models=["LR", "LGB"],
+        n_trials=1,
+        est_params={"test": 220, "LGB": {"n_estimators": 5}},
+    )
+    assert atom.models == "LGB"  # LGB passes since it accepts kwargs
 
 
 def test_est_params_unknown_param_fit():
@@ -109,7 +115,12 @@ def test_custom_distributions_name_is_invalid():
     """Assert that an error is raised when an invalid parameter is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*is not a predefined hyperparameter.*"):
-        atom.run("LR", n_trials=1, ht_params={"distributions": "invalid"})
+        atom.run(
+            models="LR",
+            n_trials=1,
+            ht_params={"distributions": "invalid"},
+            errors="raise",
+        )
 
 
 def test_custom_distributions_is_dist():
@@ -127,13 +138,18 @@ def test_custom_distributions_include_and_excluded():
     """Assert that an error is raised when parameters are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*either include or exclude.*"):
-        atom.run("LR", n_trials=5, ht_params={"distributions": ["!max_iter", "penalty"]})
+        atom.run(
+            models="LR",
+            n_trials=1,
+            ht_params={"distributions": ["!max_iter", "penalty"]},
+            errors="raise",
+        )
 
 
 def test_est_params_removed_from_ht():
     """Assert that params in est_params are dropped from the optimization."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", n_trials=1, est_params={"n_estimators": 220})
+    atom.run("LGB", n_trials=1, est_params={"n_estimators": 5})
     assert "n_estimators" not in atom.lgb.trials.params[0]
 
 
@@ -153,26 +169,33 @@ def test_multi_objective_optimization():
 
 def test_hyperparameter_tuning_with_plot():
     """Assert that you can plot the hyperparameter tuning as it runs."""
-    atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
-    atom.run(
-        models=["LDA", "lSVM", "SVM", "MLP"],
-        n_trials=(17, 17, 17, 20),
-        ht_params={"plot": True},
-    )
-    assert not atom.errors
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, ht_params={"plot": True})
 
 
 def test_xgb_optimizes_score():
     """Assert that the XGB model optimizes the score."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("XGB", n_trials=10, ht_params={"pruner": PatientPruner(None, patience=2)})
+    atom.run(
+        models="XGB",
+        n_trials=10,
+        est_params={"n_estimators": 10},
+        ht_params={"pruner": PatientPruner(None, patience=1)},
+    )
     assert atom.xgb.trials["score"].sum() > 0  # All scores are positive
 
 
 def test_empty_study():
     """Assert that the optimization is skipped when there are no completed trials."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("PA", n_trials=1, ht_params={"pruner": PatientPruner(None, patience=2)})
+    atom.run(
+        models="PA",
+        n_trials=1,
+        ht_params={
+            "pruner": PatientPruner(None, patience=1),
+            "distributions": {"max_iter": IntDistribution(10, 20)},
+        },
+    )
     assert atom.pa.best_trial is None
 
 
@@ -184,13 +207,24 @@ def test_ht_with_pipeline():
     assert atom.lr.trials is not None
 
 
+def test_ht_with_multioutput():
+    """Assert that the hyperparameter tuning works with multioutput tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("SGD", est_params={"max_iter": 5})
+    atom.multioutput = None
+    atom.run("MLP", est_params={"max_iter": 5}, errors="raise")
+
+
 def test_sample_weight_fit():
     """Assert that sample weights can be used with the BO."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="LGB",
         n_trials=1,
-        est_params={"sample_weight_fit": list(range(len(atom.y_train)))},
+        est_params={
+            "n_estimators": 5,
+            "sample_weight_fit": list(range(len(atom.y_train))),
+        },
     )
 
 
@@ -198,11 +232,9 @@ def test_cv_larger_1():
     """Assert that trials with cv>1 work for both tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("dummy", n_trials=1, ht_params={"cv": 3})
-    assert not atom.errors
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("dummy", n_trials=1, ht_params={"cv": 3})
-    assert not atom.errors
 
 
 def test_skip_duplicate_calls():
@@ -280,7 +312,7 @@ def test_continued_hyperparameter_tuning():
 def test_continued_bootstrapping():
     """Assert that the bootstrapping method can be recalled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB")
+    atom.run("LGB", est_params={"n_estimators": 5})
     assert atom.lgb.bootstrap is None
     atom.lgb.bootstrapping(3)
     assert len(atom.lgb.bootstrap) == 3
@@ -299,16 +331,10 @@ def test_name_property():
     assert atom.tree2.name == "Tree2"
     atom.tree2.name = ""
     assert atom.tree.name == "Tree"
-    atom.tree.name = "3"
+    atom.tree.name = "Tree3"
     assert atom.tree3.name == "Tree3"
-
-
-def test_name_property_already_exists():
-    """Assert that an error is raised when a model with that name already exists."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "Tree2"])
-    with pytest.raises(ValueError, match=".*already exists.*"):
-        atom.tree2.name = "Tree"
+    atom.tree3.name = "4"
+    assert atom.tree4.name == "Tree4"
 
 
 @patch("mlflow.MlflowClient.set_tag")
@@ -393,7 +419,7 @@ def test_estimator_property():
 def test_evals_property():
     """Assert that the estimator property returns the estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB")
+    atom.run("LGB", est_params={"n_estimators": 5})
     assert len(atom.lgb.evals) == 2
 
 
@@ -452,6 +478,14 @@ def test_feature_importance_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     assert len(atom.tree.feature_importance) == X_bin.shape[1]
+
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("LDA")
+    assert len(atom.lda.feature_importance) == X_label.shape[1]
+
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("LDA")
+    assert len(atom.lda.feature_importance) == X_class.shape[1]
 
 
 def test_results_property():
@@ -562,8 +596,8 @@ def test_y_holdout_property():
 # Test prediction properties ======================================= >>
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_all_prediction_properties(dataset):
-    """Assert that all prediction properties can be called."""
+def test_prediction_attributes_binary(dataset):
+    """Assert that all prediction properties work for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("LR")
     assert isinstance(getattr(atom.lr, f"predict_{dataset}"), pd.Series)
@@ -574,11 +608,31 @@ def test_all_prediction_properties(dataset):
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_prediction_decision_function_type(dataset):
-    """Assert that the decision_function predictions change type."""
-    atom = ATOMClassifier(X_class, y_class, holdout_size=0.1, random_state=1)
-    atom.run("LR")
-    assert isinstance(getattr(atom.lr, f"decision_function_{dataset}"), pd.DataFrame)
+def test_prediction_attributes_multilabel(dataset):
+    """Assert that the prediction attributes change for multilabel tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, random_state=1)
+    atom.run(["LR", "RF"])
+    predict = getattr(atom.lr, f"predict_{dataset}")
+    decision_function = getattr(atom.lr, f"decision_function_{dataset}")
+    predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
+    predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
+    assert predict.shape[1] == y_label.shape[1]
+    assert decision_function.shape[1] == y_label.shape[1]
+    assert isinstance(predict_proba.index, pd.Index)
+    assert isinstance(predict_log_proba.index, pd.Index)
+
+
+@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
+def test_prediction_attributes_multioutput(dataset):
+    """Assert that the prediction attributes change for multioutput tasks."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, random_state=1)
+    atom.run("RF")
+    predict = getattr(atom.rf, f"predict_{dataset}")
+    predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
+    predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
+    assert predict.shape[1] == y_multiclass.shape[1]
+    assert isinstance(predict_proba.index, pd.MultiIndex)
+    assert isinstance(predict_log_proba.index, pd.MultiIndex)
 
 
 # Test prediction methods ========================================== >>
@@ -615,6 +669,13 @@ def test_predictions_from_new_data():
     atom.run("LR")
     assert isinstance(atom.lr.predict(X_bin), pd.Series)
     assert isinstance(atom.lr.predict_proba(X_bin), pd.DataFrame)
+
+
+def test_prediction_from_multioutput():
+    """Assert that predictions can be made for multioutput datasets."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.predict_proba(X_class).index, pd.MultiIndex)
 
 
 def test_score_regression():
@@ -679,9 +740,8 @@ def test_calibrate_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     print(atom.tree.predict_log_proba_test)
-    assert atom.tree._pred[7] is not None
     atom.tree.calibrate()
-    assert atom.tree._pred[7] is None
+    assert "predict_log_proba_test" not in atom.tree.__dict__
 
 
 def test_calibrate_new_mlflow_run():
@@ -697,13 +757,12 @@ def test_clear():
     """Assert that the clear method resets the model's attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
+    print(atom.lr.predict_test)
     atom.plot_shap_beeswarm(display=False)
-    assert atom.lr._pred[9] is not None
-    assert atom.lr._scores
+    assert "predict_test" in atom.lr.__dict__
     assert not atom.lr._shap._shap_values.empty
     atom.clear()
-    assert atom.lr._pred == [None] * 12
-    assert not atom.lr._scores
+    assert "predict_test" not in atom.lr.__dict__
     assert atom.lr._shap._shap_values.empty
 
 
@@ -716,6 +775,14 @@ def test_create_app(interface):
     atom.run("Tree")
     atom.tree.create_app()
     interface.assert_called_once()
+
+
+def test_create_dashboard_multioutput():
+    """Assert that the method is unavailable for multioutput tasks."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("Tree")
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.tree.create_dashboard()
 
 
 def test_create_dashboard_dataset_no_holdout():
@@ -735,12 +802,20 @@ def test_create_dashboard_invalid_dataset():
 
 
 @patch("explainerdashboard.ExplainerDashboard")
-@pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
-def test_create_dashboard_classification(func, dataset):
+def test_create_dashboard_binary(func):
     """Assert that the create_dashboard method calls the underlying package."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("LR")
+    atom.lr.create_dashboard(dataset="holdout", filename="dashboard")
+    func.assert_called_once()
+
+
+@patch("explainerdashboard.ExplainerDashboard")
+def test_create_dashboard_multiclass(func):
+    """Assert that the create_dashboard method calls the underlying package."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
-    atom.tree.create_dashboard(dataset=dataset, filename="dashboard")
+    atom.tree.create_dashboard()
     func.assert_called_once()
 
 
@@ -749,7 +824,7 @@ def test_create_dashboard_regression(func):
     """Assert that the create_dashboard method calls the underlying package."""
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("Tree")
-    atom.tree.create_dashboard()
+    atom.tree.create_dashboard(dataset="both")
     func.assert_called_once()
 
 
@@ -761,13 +836,12 @@ def test_cross_validate():
     assert isinstance(atom.lr.cross_validate(scoring="AP"), pd.DataFrame)
 
 
-def test_delete():
-    """Assert that models can be deleted."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree")
-    atom.tree.delete()
-    assert not atom.models
-    assert not atom.metric
+def test_evaluate_invalid_threshold_length():
+    """Assert that an error is raised when the threshold is invalid."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("MNB")
+    with pytest.raises(ValueError, match=".*should be equal to the number of target.*"):
+        atom.mnb.evaluate(threshold=[0.5, 0.6])
 
 
 def test_evaluate_invalid_threshold():
@@ -775,7 +849,7 @@ def test_evaluate_invalid_threshold():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     with pytest.raises(ValueError, match=".*Value should lie.*"):
-        atom.mnb.evaluate(threshold=0)
+        atom.mnb.evaluate(threshold=0.0)
 
 
 def test_evaluate_invalid_dataset():
@@ -807,10 +881,15 @@ def test_evaluate_metric_None(dataset):
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 6
 
+    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, random_state=1)
+    atom.run("MNB")
+    scores = atom.mnb.evaluate(dataset=dataset)
+    assert len(scores) == 7
+
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("OLS")
     scores = atom.ols.evaluate(dataset=dataset)
-    assert len(scores) == 6
+    assert len(scores) == 5
 
 
 def test_evaluate_custom_metric():
@@ -823,10 +902,17 @@ def test_evaluate_custom_metric():
 def test_evaluate_threshold():
     """Assert that the threshold parameter changes the predictions."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("RF")
+    atom.run("RF", est_params={"n_estimators": 5})
     pred_1 = atom.rf.evaluate(threshold=0.01)
     pred_2 = atom.rf.evaluate(threshold=0.99)
     assert not pred_1.equals(pred_2)
+
+
+def test_evaluate_threshold_multilabel():
+    """Assert that the threshold parameter accepts a list as threshold."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("Tree")
+    assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8]), pd.Series)
 
 
 def test_evaluate_sample_weight():
@@ -875,9 +961,8 @@ def test_full_train_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     print(atom.tree.predict_log_proba_test)
-    assert atom.tree._pred[7] is not None
     atom.tree.full_train()
-    assert atom.tree._pred[7] is None
+    assert "predict_log_proba_test" not in atom.tree.__dict__
 
 
 def test_full_train_new_mlflow_run():
@@ -889,8 +974,38 @@ def test_full_train_new_mlflow_run():
     assert atom.gnb._run is not run
 
 
+def test_get_best_threshold_no_predict_proba():
+    """Assert that an error is raised when the model has no predict_proba."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("SVM")
+    with pytest.raises(ValueError, match=".*with a predict_proba method.*"):
+        atom.svm.get_best_threshold()
+
+
+def test_get_best_threshold_invalid_dataset():
+    """Assert that an error is raised when dataset is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Dummy")
+    with pytest.raises(ValueError, match=".*dataset parameter.*"):
+        atom.dummy.get_best_threshold("invalid")
+
+
+def test_get_best_threshold_binary():
+    """Assert that the get_best_threshold method works for binary tasks."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert 0 < atom.lr.get_best_threshold() < 1
+
+
+def test_get_best_threshold_multilabel():
+    """Assert that the get_best_threshold method works for multilabel tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("LR")
+    assert len(atom.lr.get_best_threshold()) == len(atom.target)
+
+
 def test_inverse_transform():
-    """ Assert that the inverse_transform method works as intended."""
+    """Assert that the inverse_transform method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.clean()
     atom.run("LR")
@@ -905,6 +1020,34 @@ def test_save_estimator():
     assert glob.glob("MultinomialNB")
 
 
+def test_serve():
+    """Assert that the serve methods deploys a reachable endpoint."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    atom.mnb.serve()
+    assert "200" in str(requests.get("http://127.0.0.1:8000/", json=X_bin.to_json()))
+    serve.shutdown()
+
+
+def test_register_no_experiment():
+    """Assert that an error is raised when there is no experiment."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    with pytest.raises(PermissionError, match=".*mlflow experiment.*"):
+        atom.mnb.register()
+
+
+@patch("mlflow.register_model")
+@patch("mlflow.MlflowClient.transition_model_version_stage")
+def test_register(mlflow, client):
+    """Assert that the register saves the model to a stage."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("MNB")
+    atom.mnb.register()
+    mlflow.assert_called_once()
+    client.assert_called_once()
+
+
 def test_transform():
     """Assert that new data can be transformed by the model's pipeline."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -912,4 +1055,4 @@ def test_transform():
     atom.run("LR")
     X = atom.lr.transform(X10_str)
     assert len(X.columns) > 3  # Data is one-hot encoded
-    assert all(-3 <= v <= 3 for v in X.values.flatten())  # Data is scaled
+    assert all(-3 <= v <= 3 for v in X.values.ravel())  # Data is scaled

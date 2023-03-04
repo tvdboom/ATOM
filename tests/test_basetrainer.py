@@ -11,16 +11,19 @@ from unittest.mock import patch
 
 import mlflow
 import pytest
+import ray
 from mlflow.tracking.fluent import ActiveRun
 from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import MedianPruner
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, make_scorer
 
+from atom import ATOMClassifier
 from atom.training import DirectClassifier, DirectRegressor
 
 from .conftest import (
-    bin_test, bin_train, class_test, class_train, reg_test, reg_train,
+    bin_test, bin_train, class_test, class_train, label_test, label_train,
+    reg_test, reg_train,
 )
 
 
@@ -43,7 +46,11 @@ def test_package_not_installed():
 
 def test_model_is_custom():
     """Assert that custom models are accepted."""
-    trainer = DirectClassifier(RandomForestClassifier, random_state=1)
+    trainer = DirectClassifier(
+        models=RandomForestClassifier,
+        est_params={"n_estimators": 5},
+        random_state=1,
+    )
     trainer.run(bin_train, bin_test)
     assert trainer.models == "RFC"
 
@@ -114,7 +121,12 @@ def test_default_metric():
     trainer.run(class_train, class_test)
     assert trainer.metric == "f1_weighted"
 
-    trainer = DirectRegressor("LGB", random_state=1)
+    # Multioutput can't be initialized directly from the trainer
+    atom = ATOMClassifier(label_train, label_test, y=[-2, -1], random_state=1)
+    atom.run("LR")
+    assert atom.metric == "average_precision"
+
+    trainer = DirectRegressor("OLS", random_state=1)
     trainer.run(reg_train, reg_test)
     assert trainer.metric == "r2"
 
@@ -138,7 +150,6 @@ def test_metric_is_custom(metric):
     """Assert that you can use the custom metrics."""
     trainer = DirectClassifier("LR", metric=metric, random_state=1)
     trainer.run(bin_train, bin_test)
-    assert not trainer.errors
 
 
 def test_metric_is_invalid_scorer_name():
@@ -174,11 +185,11 @@ def test_est_params_all_models():
     trainer = DirectClassifier(
         models=["RF", "ET"],
         n_trials=1,
-        est_params={"n_estimators": 20, "all": {"bootstrap": False}},
+        est_params={"n_estimators": 5, "all": {"bootstrap": False}},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert trainer.et.estimator.get_params()["n_estimators"] == 20
+    assert trainer.et.estimator.get_params()["n_estimators"] == 5
     assert trainer.rf.estimator.get_params()["bootstrap"] is False
 
 
@@ -186,17 +197,21 @@ def test_est_params_per_model():
     """Assert that est_params passes the parameters per model."""
     trainer = DirectClassifier(
         models=["XGB", "LGB"],
-        est_params={"xgb": {"n_estimators": 15}, "lgb": {"n_estimators": 20}},
+        est_params={"xgb": {"n_estimators": 5}, "lgb": {"n_estimators": 10}},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert trainer.xgb.estimator.get_params()["n_estimators"] == 15
-    assert trainer.lgb.estimator.get_params()["n_estimators"] == 20
+    assert trainer.xgb.estimator.get_params()["n_estimators"] == 5
+    assert trainer.lgb.estimator.get_params()["n_estimators"] == 10
 
 
 def test_est_params_default_method():
     """Assert that custom parameters overwrite the default ones."""
-    trainer = DirectClassifier("RF", est_params={"n_jobs": 3}, random_state=1)
+    trainer = DirectClassifier(
+        models="RF",
+        est_params={"n_estimators": 5, "n_jobs": 3},
+        random_state=1,
+    )
     trainer.run(bin_train, bin_test)
     assert trainer.rf.estimator.get_params()["n_jobs"] == 3
     assert trainer.rf.estimator.get_params()["random_state"] == 1
@@ -206,11 +221,13 @@ def test_est_params_for_fit():
     """Assert that est_params is used for fit if ends in _fit."""
     trainer = DirectClassifier(
         models="LGB",
-        est_params={"feature_name_fit": [f"x{i}" for i in range(30)]},
+        est_params={
+            "n_estimators": 5,
+            "feature_name_fit": [f"x{i}" for i in range(30)],
+        },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert not trainer.errors
 
 
 def test_custom_tags():
@@ -219,7 +236,6 @@ def test_custom_tags():
         models="LR",
         n_trials=1,
         ht_params={"tags": {"tag1": 1, "LR": {"tag2": 2}}},
-        experiment="test",
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -264,15 +280,15 @@ def test_custom_distributions_per_model():
         n_trials=1,
         ht_params={
             "distributions": {
-                "lr1": {"max_iter": IntDistribution(100, 200)},
-                "lr2": {"max_iter": IntDistribution(300, 400)},
+                "lr1": {"max_iter": IntDistribution(10, 20)},
+                "lr2": {"max_iter": IntDistribution(30, 40)},
             },
         },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert 100 <= trainer.lr1.best_params["max_iter"] <= 200
-    assert 300 <= trainer.lr2.best_params["max_iter"] <= 400
+    assert 10 <= trainer.lr1.best_params["max_iter"] <= 20
+    assert 30 <= trainer.lr2.best_params["max_iter"] <= 40
 
 
 def test_ht_params_kwargs():
@@ -299,19 +315,26 @@ def test_ht_params_invalid_key():
         trainer.run(bin_train, bin_test)
 
 
+def test_errors_invalid():
+    """Assert that an error is raised when errors is invalid."""
+    trainer = DirectClassifier(models="LR", errors="invalid", random_state=1)
+    with pytest.raises(ValueError, match=".*errors parameter.*"):
+        trainer.run(bin_train, bin_test)
+
+
 # Test _core_iteration ============================================= >>
 
 def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
     trainer = DirectClassifier(
-        models=["LR", "LGB"],
-        n_trials=(2, 4),
-        n_bootstrap=[2, 7],
+        models=["LR", "Tree"],
+        n_trials=(1, 2),
+        n_bootstrap=[2, 3],
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert len(trainer.LR.trials) == 2
-    assert len(trainer.lgb.bootstrap) == 7
+    assert len(trainer.lr.trials) == 1
+    assert len(trainer.tree.bootstrap) == 3
 
 
 def test_mlflow_run_is_started():
@@ -321,31 +344,71 @@ def test_mlflow_run_is_started():
     assert isinstance(trainer.ols._run, ActiveRun)
 
 
-def test_error_handling():
-    """Assert that models with errors are removed from the pipeline."""
+def test_errors_raise():
+    """Assert that an error is raised when encountered."""
     trainer = DirectClassifier(
-        models=["LR", "LDA"],
+        models="LDA",
         n_trials=1,
-        ht_params={"plot": True, "distributions": {"LDA": "test"}},
+        ht_params={"distributions": "test"},
+        errors="raise",
         experiment="test",
         random_state=1,
     )
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
+def test_errors_skip():
+    """Assert that models with errors are removed."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        n_trials=1,
+        ht_params={"distributions": {"LDA": "test"}},
+        errors="skip",
+        random_state=1,
+    )
     trainer.run(bin_train, bin_test)
-    assert trainer.errors.get("LDA")
     assert "LDA" not in trainer.models
     assert "LDA" not in trainer.results.index
     assert mlflow.active_run() is None  # Run has been ended
 
 
-def test_one_model_failed():
-    """Assert that the model error is raised when it fails."""
+def test_errors_keep():
+    """Assert that models with errors are kept."""
     trainer = DirectClassifier(
-        models="LR",
+        models="LDA",
         n_trials=1,
         ht_params={"distributions": "test"},
+        errors="keep",
         random_state=1,
     )
-    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+    trainer.run(bin_train, bin_test)
+    assert trainer._models == [trainer.lda]
+
+
+def test_parallel_with_ray():
+    """Assert that parallel runs successfully with ray backend."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        parallel=True,
+        n_jobs=2,
+        backend="ray",
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer._models == [trainer.lr, trainer.lda]
+    ray.shutdown()
+
+
+def test_parallel():
+    """Assert that parallel runs successfully."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        parallel=True,
+        n_jobs=2,
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer._models == [trainer.lr, trainer.lda]
 
 
 def test_all_models_failed():

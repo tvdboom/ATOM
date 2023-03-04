@@ -13,6 +13,7 @@ import importlib
 import json
 import os
 import warnings
+from dataclasses import dataclass
 from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     isroutine, signature,
@@ -23,6 +24,8 @@ import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
 
+from atom.basetransformer import BaseTransformer
+
 
 # Variables ======================================================== >>
 
@@ -32,6 +35,7 @@ CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
+    modin="https://modin.readthedocs.io/en/stable/",
     warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
@@ -40,8 +44,8 @@ CUSTOM_URLS = dict(
     automlsearch="https://evalml.alteryx.com/en/stable/autoapi/evalml/automl/index.html#evalml.automl.AutoMLSearch",
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
     pipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
-    profiling="https://github.com/ydataai/pandas-profiling",
-    profilereport="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html",
+    profiling="https://github.com/ydataai/ydata-profiling",
+    profilereport="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html",
     # BaseModel
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
@@ -50,6 +54,7 @@ CUSTOM_URLS = dict(
     launch="https://gradio.app/docs/#launch-header",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
+    registry="https://www.mlflow.org/docs/latest/model-registry.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
@@ -95,6 +100,10 @@ CUSTOM_URLS = dict(
     mutual_info_regression="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_regression.html",
     chi2="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html",
     # Models
+    classifierchain="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.ClassifierChain.html",
+    regressorchain="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.RegressorChain.html",
+    multioutputclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html",
+    multioutputregressor="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputRegressor.html",
     adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
     adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
@@ -215,41 +224,15 @@ CUSTOM_URLS = dict(
 )
 
 
-TYPES_CONVERSION = {
-    "atom.branch.Branch": "[Branch][branches]",
-    "atom.utils.CustomDict": "dict",
-    "atom.utils.Model": "[model][models]",
-    "List[atom.utils.Model]": "list",
-    "atom.utils.Predictor": "Predictor",
-    "Tuple[int, int]": "tuple",
-    "Optional[int]": "int or None",
-    "Optional[float]": "float or None",
-    "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
-    "Optional[pandas.core.series.Series]": "pd.Series or None",
-    "pandas.core.frame.DataFrame": "pd.DataFrame",
-    "pandas.core.series.Series": "pd.Series",
-    "Union[str, List[str]]": "str or list",
-    "Union[float, List[float]]": "float or list",
-    "Union[float, List[float], NoneType]": "float, list or None",
-    "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
-    "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
-    "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
-    "Optional[optuna.study.study.Study]": "[Study][] or None",
-    "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
-    "Union[str, list, tuple, numpy.ndarray, pandas.core.series.Series]": "str or sequence",
-}
-
-
 # Classes ========================================================== >>
 
+@dataclass
 class DummyTrainer:
     """Dummy trainer class to call model instances."""
 
-    def __init__(self, goal: str, device: str = "cpu", engine: str = "sklearn"):
-        self.goal = goal
-        self.task = "binary" if goal == "class" else "reg"
-        self.device = device
-        self.engine = engine
+    goal: str
+    device: str
+    engine: str
 
 
 def insert(config: dict) -> str:
@@ -271,7 +254,7 @@ def insert(config: dict) -> str:
     content = ""
     url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
     try:
-        with open(url, "r", encoding="utf-8") as f:
+        with open(url, 'r', encoding="utf-8") as f:
             content = f.read()
 
     except FileNotFoundError:
@@ -412,6 +395,8 @@ class AutoDocs:
             text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
         if self.obj.accepts_sparse:
             text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
+        if self.obj.native_multioutput:
+            text += "[native multioutput](../../../user_guide/data_management/#multioutput-tasks){ .md-tag }"
         if self.obj.has_validation:
             text += "[allows validation](../../../user_guide/training/#in-training-validation){ .md-tag }"
         if any(engine != "sklearn" for engine in self.obj.supports_engines):
@@ -592,9 +577,11 @@ class AutoDocs:
 
                     if isinstance(obj, property):
                         obj = obj.fget
+                    elif obj.__class__.__name__ == "cached_property":
+                        obj = obj.func
 
-                    output = str(signature(obj)).split(" -> ")[-1]
-                    header = f"{obj.__name__}: {TYPES_CONVERSION.get(output, output)}"
+                    output = str(signature(obj)).split(" -> ")[-1][1:-1]
+                    header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}</div>"
 
                     anchor = f"<a id='{self.obj.__name__.lower()}-{obj.__name__}'></a>"
@@ -672,11 +659,12 @@ class AutoDocs:
                 Table in html format.
 
             """
-            # Create the model instance from the trainer
-            instance = self.obj(trainer, fast_init=True)
+            # Create the model from the trainer
+            model = self.obj(goal=trainer.goal)
+            model.task = "binary" if trainer.goal == "class" else "reg"
 
             text = ""
-            for name, dist in instance._get_distributions().items():
+            for name, dist in model._get_distributions().items():
                 anchor = f"<a id='{self.obj.__name__.lower()}-{name}'></a>"
                 text += f"{anchor}<strong>{name}</strong><br>"
                 text += f"<div markdown class='param'>{dist}</div>"
@@ -802,6 +790,7 @@ def render(markdown: str, **kwargs) -> str:
         Modified markdown/html source text of page.
 
     """
+
     autodocs = None
     while match := re.search("(:: )(\w.*?)(?=::|\n\n|\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))
@@ -850,6 +839,39 @@ def render(markdown: str, **kwargs) -> str:
         markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
+
+
+def types_conversion(dtype: str) -> str:
+    """Convert data types to a clean representation.
+
+    Parameters
+    ----------
+    dtype: str
+        Type to convert.
+
+    Returns
+    -------
+    str
+        Converted type.
+
+    """
+    types = {
+        "CustomDict": "dict",
+        "INT": "int",
+        "FLOAT": "float",
+        "SERIES": "series",
+        "DATAFRAME": "dataframe",
+        "PANDAS": "series | dataframe",
+        "Branch": "[Branch][branches]",
+        "Model": "[model][models]",
+        "Study | None": "[Study][] | None",
+        "Trial | None": "[Trial][] | None",
+    }
+
+    for k, v in types.items():
+        dtype = dtype.replace(k, v)
+
+    return dtype
 
 
 def convert_plotly(html: str, **kwargs) -> str:
@@ -902,7 +924,7 @@ def clean_search(config: MkDocsConfig):
         Object containing the search index.
 
     """
-    with open(f"{config.data['site_dir']}/search/search_index.json", "r") as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json", 'r') as f:
         search = json.load(f)
 
     for elem in search["docs"]:
@@ -912,7 +934,7 @@ def clean_search(config: MkDocsConfig):
         # Remove mkdocs-jupyter css
         elem["text"] = re.sub("\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
 
-    with open(f"{config.data['site_dir']}/search/search_index.json", "w") as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json", 'w') as f:
         json.dump(search, f)
 
 

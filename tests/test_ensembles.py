@@ -30,11 +30,9 @@ def classifiers():
     return [
         ("lda", LinearDiscriminantAnalysis().fit(X_bin, y_bin)),
         ("placeholder1", "drop"),
-        (
-            "pl", Pipeline(
-                [("scaler", StandardScaler()), ("et", ExtraTreesClassifier())]
-            ).fit(X_bin, y_bin)
-        ),
+        ("pl", Pipeline(
+            [("scaler", StandardScaler()), ("et", ExtraTreesClassifier(n_estimators=5))]
+        ).fit(X_bin, y_bin)),
     ]
 
 
@@ -44,7 +42,9 @@ def regressors():
     return [
         ("ols", LinearRegression()),
         ("placeholder1", "drop"),
-        ("pl", Pipeline([("scaler", StandardScaler()), ("et", ExtraTreesRegressor())])),
+        ("pl", Pipeline(
+            [("scaler", StandardScaler()), ("et", ExtraTreesRegressor(n_estimators=5))]
+        )),
     ]
 
 

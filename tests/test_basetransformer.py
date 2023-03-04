@@ -10,8 +10,10 @@ Description: Unit tests for basetransformer.py
 import glob
 import multiprocessing
 import os
+from logging import Logger
 from unittest.mock import patch
 
+import mlflow
 import numpy as np
 import pandas as pd
 import pytest
@@ -80,8 +82,27 @@ def test_engine_parameter_no_cuml():
 
 def test_engine_parameter_invalid():
     """Assert that an error is raised when engine is invalid."""
-    with pytest.raises(ValueError, match=".*Choose from : sklearn.*"):
+    with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
         BaseTransformer(engine="invalid")
+
+
+def test_backend_invalid():
+    """Assert that an error is raised when backend is invalid."""
+    with pytest.raises(ValueError, match=".*the backend parameter.*"):
+        BaseTransformer(backend="invalid")
+
+
+@patch("ray.init")
+def test_backend_ray(ray):
+    """Assert that ray is initialized when selected."""
+    BaseTransformer(backend="ray")
+    assert ray.is_called_once
+
+
+def test_backend():
+    """Assert that other backends can be specified."""
+    base = BaseTransformer(backend="threading")
+    assert base.backend == "threading"
 
 
 @pytest.mark.parametrize("verbose", [-2, 3])
@@ -112,22 +133,20 @@ def test_warnings_parameter_str():
     assert base.warnings == "always"
 
 
-@patch("atom.utils.getLogger")
-def test_logger_creator(cls):
+@patch("atom.basetransformer.getLogger")
+@pytest.mark.parametrize("logger", [None, "auto", Logger("test")])
+def test_logger_creator(cls, logger):
     """Assert that the logger is created correctly."""
-    BaseTransformer(logger=None)
-    cls.assert_not_called()
-
     BaseTransformer(logger="auto")
-    cls.assert_called_once()
+    cls.assert_called()
 
 
 @patch("atom.utils.getLogger")
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
-    pytest.raises(ValueError, atom.run, "LR", est_params={"test": 2})
-    cls.return_value.exception.assert_called()
+    pytest.raises(RuntimeError, atom.run, "LR", est_params={"test": 2})
+    cls.assert_called()
 
 
 @patch("mlflow.set_experiment")
@@ -136,6 +155,24 @@ def test_experiment_creation(mlflow):
     base = BaseTransformer(experiment="test")
     assert base.experiment == "test"
     mlflow.assert_called_once()
+
+
+@patch("mlflow.set_experiment")
+@patch("dagshub.auth.get_token")
+@patch("requests.get")
+@patch("dagshub.init")
+def test_experiment_dagshub(dagshub, request, token, _):
+    """Assert that the experiment can be stored in dagshub."""
+    token.return_value = "token"
+    request.return_value.text = dict(username="user1")
+
+    BaseTransformer(experiment="dagshub:test")
+    dagshub.assert_called_once()
+    assert "dagshub" in mlflow.get_tracking_uri()
+
+    # Reset to default URI
+    BaseTransformer(experiment="test")
+    assert "dagshub" not in mlflow.get_tracking_uri()
 
 
 def test_random_state_setter():
@@ -214,6 +251,13 @@ def test_int_columns_to_str():
     assert atom.X.columns[0] == "0"
 
 
+def test_duplicate_column_names_in_X():
+    """Assert that an error is raised when X has duplicate column names."""
+    X = merge(X_bin.copy(), pd.Series(1, name="mean texture"))
+    with pytest.raises(ValueError, match=".*column names found in X.*"):
+        ATOMClassifier(X, y_bin, random_state=1)
+
+
 def test_sparse_matrices_X_y():
     """Assert that sparse matrices are accepted as (X, y) input."""
     atom = ATOMClassifier(X_sparse, y10, random_state=1)
@@ -236,17 +280,28 @@ def test_to_pandas():
     assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
 
 
-def test_y_is1dimensional():
-    """Assert that an error is raised when y is not 1-dimensional."""
-    y = [[0, 0], [1, 1], [0, 1], [1, 0], [0, 0]]
-    with pytest.raises(ValueError, match=".*should be one-dimensional.*"):
-        BaseTransformer._prepare_input(X10[:5], y)
+def test_target_is_dict():
+    """Assert that the target column is assigned correctly for a dict."""
+    _, y = BaseTransformer._prepare_input(X10, {"a": [0] * 10})
+    assert isinstance(y, pd.Series)
+
+
+def test_multioutput_str():
+    """Assert that multioutput can be assigned by column name."""
+    X, y = BaseTransformer._prepare_input(X_bin, ["mean radius", "worst perimeter"])
+    assert list(y.columns) == ["mean radius", "worst perimeter"]
+
+
+def test_multioutput_int():
+    """Assert that multioutput can be assigned by column position."""
+    X, y = BaseTransformer._prepare_input(X_bin, [0, 2])
+    assert list(y.columns) == ["mean radius", "mean perimeter"]
 
 
 def test_equal_length():
-    """Assert that an error is raised when X and y don't have equal size."""
+    """Assert that an error is raised when X and y have unequal length."""
     with pytest.raises(ValueError, match=".*number of rows.*"):
-        BaseTransformer._prepare_input(X10, [0, 1, 1])
+        BaseTransformer._prepare_input(X10, [312, 22])
 
 
 def test_equal_index():
@@ -408,8 +463,8 @@ def test_data_already_set():
     trainer.run(bin_train, bin_test)
     trainer.run()
     pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
-    pd.testing.assert_index_equal(trainer.branch._idx[0], bin_train.index)
-    pd.testing.assert_index_equal(trainer.branch._idx[1], bin_test.index)
+    pd.testing.assert_index_equal(trainer.branch._idx[1], bin_train.index)
+    pd.testing.assert_index_equal(trainer.branch._idx[2], bin_test.index)
 
 
 def test_input_is_X():
@@ -661,7 +716,13 @@ def test_log_invalid_severity():
         BaseTransformer(logger="log").log("test", severity="invalid")
 
 
-@patch("atom.utils.getLogger")
+def test_log_severity_error():
+    """Assert that an error is raised when the severity is error."""
+    with pytest.raises(UserWarning, match=".*user error.*"):
+        BaseTransformer(logger="log").log("this is a user error", severity="error")
+
+
+@patch("atom.basetransformer.getLogger")
 def test_log(cls):
     """Assert the log method works."""
     base = BaseTransformer(verbose=2, logger="log")

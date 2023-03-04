@@ -10,7 +10,6 @@ Description: Module containing the ensemble estimators.
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional, Tuple
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -26,7 +25,7 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils import INT, SEQUENCE_TYPES, X_TYPES, Predictor, check_is_fitted
+from atom.utils import FEATURES, INT, SEQUENCE, Predictor, check_is_fitted
 
 
 class BaseEnsemble:
@@ -53,9 +52,9 @@ class BaseVoting(BaseEnsemble):
 
     def fit(
         self,
-        X: X_TYPES,
-        y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        X: FEATURES,
+        y: SEQUENCE,
+        sample_weight: SEQUENCE | None = None,
     ) -> BaseVoting:
         """Fit the estimators in the ensemble.
 
@@ -116,9 +115,9 @@ class BaseStacking(BaseEnsemble):
 
     def fit(
         self,
-        X: X_TYPES,
-        y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        X: FEATURES,
+        y: SEQUENCE,
+        sample_weight: SEQUENCE | None = None,
     ) -> BaseStacking:
         """Fit the estimators in the ensemble.
 
@@ -231,11 +230,11 @@ class VotingClassifier(BaseVoting, VC):
 
     def __init__(
         self,
-        estimators: List[Tuple[str, Predictor]],
+        estimators: list[tuple[str, Predictor]],
         *,
         voting: str = "hard",
-        weights: Optional[SEQUENCE_TYPES] = None,
-        n_jobs: Optional[INT] = None,
+        weights: SEQUENCE | None = None,
+        n_jobs: INT | None = None,
         flatten_transform: bool = True,
         verbose: bool = False,
     ):
@@ -255,9 +254,9 @@ class VotingClassifier(BaseVoting, VC):
 
     def fit(
         self,
-        X: X_TYPES,
-        y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        X: FEATURES,
+        y: SEQUENCE,
+        sample_weight: SEQUENCE | None = None,
     ) -> VotingClassifier:
         """Fit the estimators, skipping prefit ones.
 
@@ -283,7 +282,7 @@ class VotingClassifier(BaseVoting, VC):
         check_classification_targets(y)
         if isinstance(y, np.ndarray) and len(y.shape) > 1 and y.shape[1] > 1:
             raise NotImplementedError(
-                "Multilabel and multi-output classification is not supported."
+                "Multilabel and multioutput classification is not supported."
             )
 
         if self.voting not in ("soft", "hard"):
@@ -299,7 +298,7 @@ class VotingClassifier(BaseVoting, VC):
 
         return super().fit(X, y, sample_weight)
 
-    def predict(self, X: X_TYPES) -> np.ndarray:
+    def predict(self, X: FEATURES) -> np.ndarray:
         """Predict class labels for X.
 
         Parameters
@@ -337,7 +336,14 @@ class VotingRegressor(BaseVoting, VR):
 
     """
 
-    def __init__(self, estimators, *, weights=None, n_jobs=None, verbose=False):
+    def __init__(
+        self,
+        estimators: list[tuple[str, Predictor]],
+        *,
+        weights: SEQUENCE | None = None,
+        n_jobs: INT | None = None,
+        verbose: bool = False,
+    ):
         super().__init__(
             estimators,
             weights=weights,
@@ -365,9 +371,9 @@ class StackingClassifier(BaseStacking, SC):
 
     def fit(
         self,
-        X: X_TYPES,
-        y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        X: FEATURES,
+        y: SEQUENCE,
+        sample_weight: SEQUENCE | None = None,
     ) -> VotingRegressor:
         """Fit the estimators, skipping prefit ones.
 
@@ -391,9 +397,9 @@ class StackingClassifier(BaseStacking, SC):
 
         """
         check_classification_targets(y)
-        self._le = LabelEncoder().fit(y)
-        self.classes_ = self._le.classes_
-        return super().fit(X, self._le.transform(y), sample_weight)
+        self._label_encoder = LabelEncoder().fit(y)
+        self.classes_ = self._label_encoder.classes_
+        return super().fit(X, self._label_encoder.transform(y), sample_weight)
 
 
 class StackingRegressor(BaseStacking, SR):
@@ -410,9 +416,9 @@ class StackingRegressor(BaseStacking, SR):
 
     def fit(
         self,
-        X: X_TYPES,
-        y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        X: FEATURES,
+        y: SEQUENCE,
+        sample_weight: SEQUENCE | None = None,
     ) -> StackingRegressor:
         """Fit the estimators, skipping prefit ones.
 

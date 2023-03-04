@@ -135,3 +135,45 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
 * [Ridge][] (only for regression tasks)
 * [SupportVectorMachine][]
 * [XGBoost][]
+
+
+## Parallel execution
+
+Another way to accelerate your pipelines is executing processes in parallel.
+Use the [`backend`][atomclassifier-backend] parameter to select one of several
+parallelization backends.
+
+* **loky:** Used by default, can induce some communication and memory overhead
+  when exchanging input and output data with the worker Python processes. On
+  some rare systems (such as Pyiodide), the loky backend may not be available.
+* **multiprocessing:** Previous process-based backend based on `multiprocessing.Pool`.
+  Less robust than loky.
+* **threading:** Very low-overhead backend but it suffers from the Python Global
+  Interpreter Lock if the called function relies a lot on Python objects. It's 
+  mostly useful when the execution bottleneck is a compiled extension that
+  explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
+  block or an expensive call to a library such as numpy).
+* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework
+  that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
+  Selecting the ray backend also parallelizes the data using [modin][], a
+  multi-threading, drop-in replacement for pandas, that uses Ray as backend.
+  See [here][example-ray-backend] an example use case.
+
+!!! warning
+    Using [modin][] can be considerably less performant than pandas for small
+    datasets (<1M rows).
+
+The parallelization backend is applied in the following cases:
+
+* In every individual estimator that uses parallelization internally.
+* To calculate cross-validated results during [hyperparameter tuning][].
+* To train multiple models in parallel (when the trainer's `parallel` parameter is True`).
+* To calculate partial dependencies in [plot_partial_dependence][].
+
+!!! note
+    The [`njobs`][atomclassifier-n_jobs] parameter sets the number of cores
+    for the individual models as well as for parallel training. You won't
+    gain much training two models in parallel with 2 cores, when the models
+    also parallelize computations internally. Instead, use parallel training
+    for models that can't parallelize their training (their constructor doesn't
+    have the `n_jobs` parameter).

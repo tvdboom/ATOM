@@ -7,28 +7,34 @@ Description: Module containing the BaseRunner class.
 
 """
 
-import re
-import tempfile
-from copy import deepcopy
-from typing import Any, List, Optional, Tuple, Union
+from __future__ import annotations
 
-import mlflow
-import pandas as pd
+import re
+from typing import Any, Callable
+
 from joblib.memory import Memory
-from typeguard import typechecked
+from sklearn.base import clone
+from sklearn.multioutput import (
+    ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
+)
+from sklearn.utils.class_weight import compute_sample_weight
+from sklearn.utils.metaestimators import available_if
 
 from atom.basemodel import BaseModel
+from atom.basetracker import BaseTracker
+from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, check_is_fitted,
-    composed, crash, divide, flt, get_best_score, get_pl_name, get_versions,
-    lst, method_to_log,
+    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, SERIES, ClassMap, CustomDict,
+    Model, Predictor, bk, check_is_fitted, composed, crash, divide,
+    export_pipeline, flt, get_best_score, get_versions, has_task,
+    is_multioutput, lst, method_to_log, pd,
 )
 
 
-class BaseRunner:
+class BaseRunner(BaseTracker):
     """Base class for runners.
 
     Contains shared attributes and methods for the atom and trainer
@@ -36,15 +42,6 @@ class BaseRunner:
     utility properties, prediction methods and utility methods.
 
     """
-
-    # Tracking parameters for mlflow
-    _tracking_params = dict(
-        log_ht=True,
-        log_model=True,
-        log_plots=True,
-        log_data=False,
-        log_pipeline=False,
-    )
 
     def __getstate__(self) -> dict:
         # Store an extra attribute with the package versions
@@ -66,12 +63,12 @@ class BaseRunner:
                     )
 
     def __getattr__(self, item: str) -> Any:
-        if item in self.__dict__.get("_branches").min("og"):
+        if item in self.__dict__.get("_branches"):
             return self._branches[item]  # Get branch
-        elif item in self.branch._get_attrs():
+        elif item in dir(self.branch) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
-        elif self.__dict__.get("_models").get(item.lower()):
-            return self._models[item.lower()]  # Get model subclass
+        elif item in self.__dict__.get("_models"):
+            return self._models[item]  # Get model
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column from dataset
         elif item in DF_ATTRS:
@@ -82,15 +79,13 @@ class BaseRunner:
             )
 
     def __setattr__(self, item: str, value: Any):
-        if item != "holdout" and isinstance(getattr(Branch, item, None), property):
+        if isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
 
     def __delattr__(self, item: str):
-        if item in self._branches:
-            self.branch.__delete__(self._branches[item])
-        elif item in self._models:
+        if item in self._models:
             self.delete(item)
         else:
             super().__delattr__(item)
@@ -104,16 +99,16 @@ class BaseRunner:
         else:
             return item in self.dataset
 
-    def __getitem__(self, item: Union[INT, str, list]) -> Any:
+    def __getitem__(self, item: INT | str | list) -> Any:
         if self.dataset is None:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
             )
-        elif isinstance(item, int):
+        elif isinstance(item, INT_TYPES):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
-            if item in self._branches.min("og"):
+            if item in self._branches:
                 return self._branches[item]  # Get branch
             elif item in self._models:
                 return self._models[item]  # Get model
@@ -132,108 +127,103 @@ class BaseRunner:
                 "subscriptable with types int, str or list."
             )
 
-    # Tracking properties ========================================== >>
-
-    @property
-    def log_ht(self) -> bool:
-        """Whether to track every trial of the hyperparameter tuning."""
-        return self._tracking_params["log_ht"]
-
-    @log_ht.setter
-    @typechecked
-    def log_ht(self, value: bool):
-        self._tracking_params["log_ht"] = value
-
-    @property
-    def log_model(self) -> bool:
-        """Whether to save the model's estimator after fitting."""
-        return self._tracking_params["log_model"]
-
-    @log_model.setter
-    @typechecked
-    def log_model(self, value: bool):
-        self._tracking_params["log_model"] = value
-
-    @property
-    def log_plots(self) -> bool:
-        """Whether to save plots as artifacts."""
-        return self._tracking_params["log_plots"]
-
-    @log_plots.setter
-    @typechecked
-    def log_plots(self, value: bool):
-        self._tracking_params["log_plots"] = value
-
-    @property
-    def log_data(self) -> bool:
-        """Whether to save the train and test sets."""
-        return self._tracking_params["log_data"]
-
-    @log_data.setter
-    @typechecked
-    def log_data(self, value: bool):
-        self._tracking_params["log_data"] = value
-
-    @property
-    def log_pipeline(self) -> bool:
-        """Whether to save the model's pipeline."""
-        return self._tracking_params["log_pipeline"]
-
-    @log_pipeline.setter
-    @typechecked
-    def log_pipeline(self, value: bool):
-        self._tracking_params["log_pipeline"] = value
-
     # Utility properties =========================================== >>
+
+    @property
+    def og(self) -> Branch:
+        """Branch containing the original dataset.
+
+        This branch contains the data prior to any transformations.
+        It redirects to the current branch if its pipeline is empty
+        to not have the same data in memory twice.
+
+        """
+        return self._og or self.branch
 
     @property
     def branch(self) -> Branch:
         """Current active branch.
 
-        Use the property's `@setter` to change from current branch or
-        to create a new one. If the value is the name of an existing
-        branch, switch to that one. Else, create a new branch using
-        that name. The new branch is split from the current branch. Use
-        `__from__` to split the new branch from any other existing
-        branch. Read more in the [user guide][branches].
+        Use the property's `@setter` to change the branch or to create
+        a new one. If the value is the name of an existing branch,
+        switch to that one. Else, create a new branch using that name.
+        The new branch is split from the current branch. Use `__from__`
+        to split the new branch from any other existing branch. Read
+        more in the [user guide][branches].
 
         """
-        return self._branches[self._current]
+        return self._current
 
     @branch.deleter
     def branch(self):
         """Delete the current active branch."""
-        self.branch.__delete__(self.branch)
+        if len(self._branches) == 1:
+            raise PermissionError("Can't delete the last branch!")
+
+        # Delete all depending models
+        for model in self._models:
+            if model.branch is self.branch:
+                self._delete_models(model.name)
+
+        self._branches.remove(self._current)
+        self._current = self._branches[-1]
+
+        self.log(f"Branch {self.branch.name} successfully deleted.", 1)
+        self.log(f"Switched to branch {self.branch.name}.", 1)
 
     @property
-    def models(self) -> Union[str, List[str]]:
-        """Name of the model(s)."""
-        if isinstance(self._models, CustomDict):
-            return flt([model.name for model in self._models.values()])
-        else:
-            return self._models
+    def multioutput(self) -> Predictor | None:
+        """Meta-estimator for [multioutput tasks][].
 
-    @property
-    def metric(self) -> Union[str, List[str]]:
-        """Name of the metric(s)."""
-        if isinstance(self._metric, CustomDict):
-            return flt([metric.name for metric in self._metric.values()])
-        else:
-            return self._metric
-
-    @property
-    def errors(self) -> CustomDict:
-        """Errors encountered during model training.
-
-        The key is the model's name and the value is the exception
-        object that was raised. Use the `__traceback__` attribute to
-        investigate the error.
+        This estimator is only used when the model has no native
+        support for multioutput tasks. Use the `@setter` to set any
+        other meta-estimator (the underlying estimator should be the
+        first parameter in the constructor) or set equal to None to
+        avoid this wrapper.
 
         """
-        return self._errors
+        if self._multioutput == "auto":
+            if self.task.startswith("multilabel"):
+                return ClassifierChain
+            elif self.goal.startswith("class"):
+                return MultiOutputClassifier
+            else:
+                return MultiOutputRegressor
+        else:
+            return self._multioutput
+
+    @multioutput.setter
+    def multioutput(self, value: str | Predictor | None):
+        """Assign a new multioutput meta-estimator."""
+        if value is None:
+            self._multioutput = value
+        elif isinstance(value, str):
+            if value.lower() != "auto":
+                raise ValueError(
+                    "Invalid value for the multioutput attribute. Use 'auto' "
+                    "for the default meta-estimator, None to ignore it, or "
+                    "provide a custom meta-estimator class or instance."
+                )
+            self._multioutput = "auto"
+        elif callable(value):
+            self._multioutput = value
+        else:
+            self._multioutput = clone(value)
 
     @property
-    def winners(self) -> List[Model]:
+    def models(self) -> str | list[str] | None:
+        """Name of the model(s)."""
+        if isinstance(self._models, ClassMap):
+            return flt(self._models.keys())
+
+    @property
+    def metric(self) -> str | list[str] | None:
+        """Name of the metric(s)."""
+        if isinstance(self._metric, ClassMap):
+            return flt(self._metric.keys())
+
+    @property
+    def winners(self) -> list[Model]:
         """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
@@ -244,9 +234,7 @@ class BaseRunner:
 
         """
         if self._models:  # Returns None if not fitted
-            return sorted(
-                self._models.values(), key=lambda x: get_best_score(x), reverse=True
-            )
+            return sorted(self._models, key=lambda x: get_best_score(x), reverse=True)
 
     @property
     def winner(self) -> Model:
@@ -285,25 +273,36 @@ class BaseRunner:
 
         """
 
-        def frac(m: Model) -> float:
-            """Return the fraction of the train set used for the model."""
-            n_models = len(m.branch.train) / m._train_idx
-            if n_models == int(n_models):
+        def frac(m: Model) -> FLOAT:
+            """Return the fraction of the train set used.
+
+            Parameters
+            ----------
+            m: Model
+                Used model.
+
+            Returns
+            -------
+            float
+                Calculated fraction.
+
+            """
+            if (n_models := len(m.branch.train) / m._train_idx) == int(n_models):
                 return round(1.0 / n_models, 2)
             else:
                 return round(m._train_idx / len(m.branch.train), 2)
 
         df = pd.DataFrame(
-            data=[m.results for m in self._models.values()],
+            data=[m.results for m in self._models],
             columns=self._models[0].results.index if self._models else [],
             index=lst(self.models),
         ).dropna(axis=1, how="all")
 
         # For sh and ts runs, include the fraction of training set
-        if any(m._train_idx != len(m.branch.train) for m in self._models.values()):
+        if any(m._train_idx != len(m.branch.train) for m in self._models):
             df = df.set_index(
                 pd.MultiIndex.from_arrays(
-                    [[frac(m) for m in self._models.values()], self.models],
+                    arrays=[[frac(m) for m in self._models], self.models],
                     names=["frac", "model"],
                 )
             ).sort_index(level=0, ascending=True)
@@ -312,265 +311,13 @@ class BaseRunner:
 
     # Utility methods ============================================== >>
 
-    def _get_og_branches(self):
-        """Return branches containing the original dataset."""
-        return [branch for branch in self._branches.values() if branch.pipeline.empty]
-
-    def _get_rows(
-        self,
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        return_test: bool = True,
-        branch: Optional[Branch] = None,
-    ) -> list:
-        """Get a subset of the rows in the dataset.
-
-        Rows can be selected by name, index or regex pattern. If a
-        string is provided, use `+` to select multiple rows and `!`
-        to exclude them. Rows cannot be included and excluded in the
-        same call.
-
-        Parameters
-        ----------
-        index: int, str, slice, sequence or None, default=None
-            Names or indices of the rows to select. If None, returns
-            the complete dataset or the test set.
-
-        return_test: bool, default=True
-            Whether to return the test or the complete dataset when no
-            index is provided.
-
-        branch: Branch or None, default=None
-            Get columns from specified branch. If None, use the current
-            branch.
-
-        Returns
-        -------
-        list
-            Indices of the included rows.
-
-        """
-
-        def get_match(idx: str, ex: Optional[ValueError] = None):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            idx: str
-                Regex pattern to match with indices.
-
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if idx.startswith("!") and idx not in indices:
-                array = exc
-                idx = idx[1:]
-
-            # Find rows using regex matches
-            if matches := [i for i in indices if re.fullmatch(idx, str(i))]:
-                array.extend(matches)
-            else:
-                raise ex or ValueError(
-                    "Invalid value for the index parameter. "
-                    f"Could not find any row that matches {idx}."
-                )
-
-        if not branch:
-            branch = self.branch
-
-        indices = list(branch.dataset.index)
-        if branch.holdout is not None:
-            indices += list(branch.holdout.index)
-
-        inc, exc = [], []
-        if index is None:
-            inc = list(branch._idx[1]) if return_test else list(branch.X.index)
-        elif isinstance(index, slice):
-            inc = indices[index]
-        else:
-            for idx in lst(index):
-                if isinstance(idx, (int, float, str)) and idx in indices:
-                    inc.append(idx)
-                elif isinstance(idx, int):
-                    if -len(indices) <= idx <= len(indices):
-                        inc.append(indices[idx])
-                    else:
-                        raise ValueError(
-                            f"Invalid value for the index parameter. Value {index} is "
-                            f"out of range for a dataset with {len(indices)} rows."
-                        )
-                elif isinstance(idx, str):
-                    try:
-                        get_match(idx)
-                    except ValueError as ex:
-                        for i in idx.split("+"):
-                            get_match(i, ex)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the index parameter, got {type(idx)}. "
-                        "Use a row's name or position to select it."
-                    )
-
-        if len(inc) + len(exc) == 0:
-            raise ValueError(
-                "Invalid value for the index parameter, got "
-                f"{index}. At least one row has to be selected."
-            )
-        elif inc and exc:
-            raise ValueError(
-                "Invalid value for the index parameter. You can either "
-                "include or exclude rows, not combinations of these."
-            )
-
-        if exc:
-            # If rows were excluded with `!`, select all but those
-            inc = [idx for idx in indices if idx not in exc]
-
-        return list(dict.fromkeys(inc))  # Avoid duplicates
-
-    def _get_columns(
-        self,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        include_target: bool = True,
-        return_inc_exc: bool = False,
-        only_numerical: bool = False,
-        branch: Optional[Branch] = None,
-    ) -> Union[List[str], Tuple[List[str], List[str]]]:
-        """Get a subset of the columns.
-
-        Columns can be selected by name, index or regex pattern. If a
-        string is provided, use `+` to select multiple columns and `!`
-        to exclude them. Columns cannot be included and excluded in
-        the same call.
-
-        Parameters
-        ----------
-        columns: int, str, slice, sequence or None
-            Names, indices or dtypes of the columns to select. If None,
-            it returns all columns in the dataframe.
-
-        include_target: bool, default=True
-            Whether to include the target column in the dataframe to
-            select from.
-
-        return_inc_exc: bool, default=False
-            Whether to return only included columns or the tuple
-            (included, excluded).
-
-        only_numerical: bool, default=False
-            Whether to return only numerical columns.
-
-        branch: Branch or None, default=None
-            Get columns from specified branch. If None, use the current
-            branch.
-
-        Returns
-        -------
-        list
-            Names of the included columns.
-
-        list
-            Names of the excluded columns. Only returned if
-            return_inc_exc=True.
-
-        """
-
-        def get_match(col: str, ex: Optional[ValueError] = None):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            col: str
-                Regex pattern to match with the column names.
-
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if col.startswith("!") and col not in df.columns:
-                array = exc
-                col = col[1:]
-
-            # Find columns using regex matches
-            if matches := [c for c in df.columns if re.fullmatch(col, str(c))]:
-                array.extend(matches)
-            else:
-                # Find columns by type
-                try:
-                    array.extend(list(df.select_dtypes(col).columns))
-                except TypeError:
-                    raise ex or ValueError(
-                        "Invalid value for the columns parameter. "
-                        f"Could not find any column that matches {col}."
-                    )
-
-        if not branch:
-            branch = self.branch
-
-        # Select dataframe from which to get the columns
-        df = branch.dataset if include_target else branch.X
-
-        inc, exc = [], []
-        if columns is None:
-            if only_numerical:
-                return list(df.select_dtypes(include=["number"]).columns)
-            else:
-                return list(df.columns)
-        elif isinstance(columns, slice):
-            inc = list(df.columns[columns])
-        else:
-            for col in lst(columns):
-                if isinstance(col, int):
-                    try:
-                        inc.append(df.columns[col])
-                    except IndexError:
-                        raise ValueError(
-                            f"Invalid value for the columns parameter. Value {col} "
-                            f"is out of range for a dataset with {df.shape[1]} columns."
-                        )
-                elif isinstance(col, str):
-                    try:
-                        get_match(col)
-                    except ValueError as ex:
-                        for c in col.split("+"):
-                            get_match(c, ex)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the columns parameter, got {type(col)}. "
-                        "Use a column's name or position to select it."
-                    )
-
-        if len(inc) + len(exc) == 0:
-            raise ValueError(
-                "Invalid value for the columns parameter, got "
-                f"{columns}. At least one column has to be selected."
-            )
-        elif inc and exc:
-            raise ValueError(
-                "Invalid value for the columns parameter. You can either "
-                "include or exclude columns, not combinations of these."
-            )
-        elif return_inc_exc:
-            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
-
-        if exc:
-            # If columns were excluded with `!`, select all but those
-            inc = [col for col in df.columns if col not in exc]
-
-        return list(dict.fromkeys(inc))  # Avoid duplicates
-
     def _get_models(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         ensembles: bool = True,
-    ) -> List[str]:
-        """Get names of models.
+        branch: Branch | None = None,
+    ) -> list[Model]:
+        """Get models.
 
         Models can be selected by name, index or regex pattern. If a
         string is provided, use `+` to select multiple models and `!`
@@ -585,16 +332,20 @@ class BaseRunner:
 
         ensembles: bool, default=True
             Whether to include ensemble models in the output. If False,
-            they are silently ignored.
+            they are silently excluded from any return.
+
+        branch: Branch or None, default=None
+            Force returned models to have been fitted on this branch,
+            else raises an exception. If None, this filter is ignored.
 
         Returns
         -------
         list
-            Model names.
+            Selected models.
 
         """
 
-        def get_match(model: str, ex: Optional[ValueError] = None):
+        def get_match(model: str):
             """Try to find a match by regex.
 
             Parameters
@@ -602,55 +353,50 @@ class BaseRunner:
             model: str
                 Regex pattern to match with model names.
 
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
             """
             nonlocal inc, exc
 
             array = inc
-            if model.startswith("!") and model not in options:
+            if model.startswith("!") and model not in self._models:
                 array = exc
                 model = model[1:]
 
             # Find rows using regex matches
             if model.lower() == "winner":
-                array.append(self.winner.name)
-            elif matches := [m for m in options if re.fullmatch(model, m, re.IGNORECASE)]:
-                array.extend(matches)
+                array.append(self.winner)
+            elif match := [m for m in self._models if re.fullmatch(model, m.name, re.I)]:
+                array.extend(match)
             else:
-                raise ex or ValueError(
+                raise ValueError(
                     "Invalid value for the models parameter. Could "
                     f"not find any model that matches {model}. The "
-                    f"available models are: {', '.join(options)}."
+                    f"available models are: {', '.join(self._models.keys())}."
                 )
-
-        options = self._models.min("og")
 
         inc, exc = [], []
         if models is None:
-            inc.extend(options)
+            inc.extend(self._models)
         elif isinstance(models, slice):
-            inc.extend(options[models])
+            inc.extend(self._models[models])
         else:
             for model in lst(models):
-                if isinstance(model, int):
+                if isinstance(model, INT_TYPES):
                     try:
-                        inc.append(options[model].name)
+                        inc.append(self._models[model])
                     except KeyError:
                         raise ValueError(
                             "Invalid value for the models parameter. Value "
                             f"{model} is out of range for a pipeline with "
-                            f"{len(options)} models."
+                            f"{len(self._models)} models."
                         )
                 elif isinstance(model, str):
                     try:
                         get_match(model)
-                    except ValueError as ex:
+                    except ValueError:
                         for m in model.split("+"):
-                            get_match(m, ex)
+                            get_match(m)
                 elif isinstance(model, BaseModel):
-                    inc.append(model.name)
+                    inc.append(model)
                 else:
                     raise TypeError(
                         f"Invalid type for the models parameter, got {type(model)}. "
@@ -665,17 +411,23 @@ class BaseRunner:
 
         if exc:
             # If models were excluded with `!`, select all but those
-            inc = [m for m in options if m not in exc]
+            inc = [m for m in self._models if m not in exc]
 
         if not ensembles:
-            inc = [
-                model for model in inc
-                if not model.startswith("Stack") and not model.startswith("Vote")
-            ]
+            inc = [m for m in inc if all(not m.acronym == x for x in ("Stack", "Vote"))]
+
+        if branch:
+            for m in inc:
+                if m.branch is not branch:
+                    raise ValueError(
+                        "Invalid value for the models parameter. All "
+                        f"models must have been fitted on {branch}, but "
+                        f"model {m.name} is fitted on {m.branch}."
+                    )
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
-    def _delete_models(self, models: SEQUENCE_TYPES):
+    def _delete_models(self, models: str | SEQUENCE):
         """Delete models.
 
         Remove models from the instance. All attributes are deleted
@@ -684,16 +436,17 @@ class BaseRunner:
 
         Parameters
         ----------
-        models: sequence
-            Names of the models to delete.
+        models: str or sequence
+            Model(s) to delete.
 
         """
-        for model in models:
-            self._models.pop(model)
+        for model in lst(models):
+            if model in self._models:
+                self._models.remove(model)
 
         # If no models, reset the metric
         if not self._models:
-            self._metric = CustomDict()
+            self._metric = ClassMap()
 
     @crash
     def available_models(self) -> pd.DataFrame:
@@ -711,13 +464,15 @@ class BaseRunner:
             - **module:** The estimator's module.
             - **needs_scaling:** Whether the model requires feature scaling.
             - **accepts_sparse:** Whether the model accepts sparse matrices.
+            - **native_multioutput:** Whether the model has native support
+              for [multioutput tasks][].
             - **has_validation:** Whether the model has [in-training validation][].
             - **supports_engines:** List of engines supported by the model.
 
         """
         rows = []
-        for model in MODELS.values():
-            m = model(self, fast_init=True)
+        for model in MODELS:
+            m = model(goal=self.goal)
             if self.goal in m._estimators:
                 rows.append(
                     {
@@ -727,6 +482,7 @@ class BaseRunner:
                         "module": m._est_class.__module__.split(".")[0] + m._module,
                         "needs_scaling": m.needs_scaling,
                         "accepts_sparse": m.accepts_sparse,
+                        "native_multioutput": m.native_multioutput,
                         "has_validation": bool(m.has_validation),
                         "supports_engines": ", ". join(m.supports_engines),
                     }
@@ -736,26 +492,29 @@ class BaseRunner:
 
     @composed(crash, method_to_log)
     def clear(self):
-        """Clear attributes from all models.
+        """Reset attributes and clear cache from all models.
 
-        Reset all model attributes to their initial state, deleting
+        Reset certain model attributes to their initial state, deleting
         potentially large data arrays. Use this method to free some
-        memory before [saving][self-save] the instance. The cleared
-        attributes per model are:
+        memory before [saving][self-save] the instance. The affected
+        attributes are:
 
-        - [Prediction attributes][]
-        - [Metric scores][metric]
+        - [In-training validation][] scores
         - [Shap values][shap]
         - [App instance][adaboost-create_app]
         - [Dashboard instance][adaboost-create_dashboard]
+        - Cached [prediction attributes][]
+        - Cached [metric scores][metric]
+        - Cached [holdout data sets][data-sets]
 
         """
-        for model in self._models.values():
+        for model in self._models:
             model.clear()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def delete(
-        self, models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None
+        self,
+        models: INT | str | slice | Model | SEQUENCE | None = None
     ):
         """Delete models.
 
@@ -774,21 +533,19 @@ class BaseRunner:
         if not models:
             self.log("No models to delete.", 1)
         else:
-            self._delete_models(models)
-            if len(models) == 1:
-                self.log(f"Model {models[0]} successfully deleted.", 1)
-            else:
-                self.log(f"Deleting {len(models)} models...", 1)
-                for m in models:
-                    self.log(f" --> Model {m} successfully deleted.", 1)
+            self.log(f"Deleting {len(models)} models...", 1)
+            for m in models:
+                self._delete_models(m.name)
+                self.log(f" --> Model {m.name} successfully deleted.", 1)
 
-    @composed(crash, typechecked)
+    @crash
     def evaluate(
         self,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        metric: str | Callable | SEQUENCE | None = None,
         dataset: str = "test",
-        threshold: FLOAT = 0.5,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        *,
+        threshold: FLOAT | SEQUENCE = 0.5,
+        sample_weight: SEQUENCE | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -802,13 +559,18 @@ class BaseRunner:
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
-        threshold: float, default=0.5
+        threshold: float or sequence, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
 
-            - The task is binary classification.
+            - The task is binary or [multilabel][] classification.
             - The model has a `predict_proba` method.
-            - The metric evaluates predicted target values.
+            - The metric evaluates predicted probabilities.
+
+            For multilabel classification tasks, it's possible to
+            provide a sequence of thresholds (one per target column).
+            The same threshold per target column is applied to all
+            models.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
@@ -821,20 +583,26 @@ class BaseRunner:
         """
         check_is_fitted(self, attributes="_models")
 
-        return pd.DataFrame(
-            [
-                m.evaluate(metric, dataset, threshold, sample_weight)
-                for m in self._models.values()
-            ]
-        )
+        evaluations = []
+        for m in self._models:
+            evaluations.append(
+                m.evaluate(
+                    metric=metric,
+                    dataset=dataset,
+                    threshold=threshold,
+                    sample_weight=sample_weight,
+                )
+            )
 
-    @composed(crash, typechecked)
+        return pd.DataFrame(evaluations)
+
+    @crash
     def export_pipeline(
         self,
-        model: Optional[Union[str, Model]] = None,
+        model: str | Model | None = None,
         *,
-        memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[INT] = None,
+        memory: bool | str | Memory | None = None,
+        verbose: INT | None = None,
     ) -> Pipeline:
         """Export the pipeline to a sklearn-like object.
 
@@ -877,12 +645,11 @@ class BaseRunner:
         Returns
         -------
         Pipeline
-            Sklearn-like Pipeline object with all transformers in the
-            current branch.
+            Current branch as a sklearn-like Pipeline object.
 
         """
         if model:
-            model = getattr(self, self._get_models(model)[0])
+            model = self._get_models(model)[0]
             pipeline = model.pipeline
         else:
             pipeline = self.pipeline
@@ -890,29 +657,12 @@ class BaseRunner:
         if len(pipeline) == 0 and not model:
             raise RuntimeError("There is no pipeline to export!")
 
-        steps = []
-        for transformer in pipeline:
-            est = deepcopy(transformer)  # Not clone to keep fitted
+        return export_pipeline(pipeline, model, memory, verbose)
 
-            # Set the new verbosity (if possible)
-            if verbose is not None and hasattr(est, "verbose"):
-                est.verbose = verbose
-
-            steps.append((get_pl_name(est.__class__.__name__, steps), est))
-
-        if model:
-            steps.append((model.name, deepcopy(model.estimator)))
-
-        if not memory:  # None or False
-            memory = None
-        elif memory is True:
-            memory = tempfile.gettempdir()
-
-        return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
-
-    @composed(crash, typechecked)
-    def get_class_weight(self, dataset: str = "train") -> dict:
-        """Return class weights for a balanced dataset.
+    @available_if(has_task("class"))
+    @crash
+    def get_class_weight(self, dataset: str = "train") -> CustomDict:
+        """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
         that the sampled data set represents the target population
@@ -923,29 +673,63 @@ class BaseRunner:
         ----------
         dataset: str, default="train"
             Data set from which to get the weights. Choose from:
-            "train", "test" or "dataset".
+            "train", "test", "dataset".
 
         Returns
         -------
         dict
-            Classes with the corresponding weights.
+            Classes with the corresponding weights. A dict of dicts is
+            returned for [multioutput tasks][].
 
         """
-        if self.goal != "class":
-            raise PermissionError(
-                "The balance method is only available for classification tasks!"
-            )
-
-        if dataset not in ("train", "test", "dataset"):
+        if dataset.lower() not in ("train", "test", "dataset"):
             raise ValueError(
-                "Invalid value for the dataset parameter. "
-                "Choose from: train, test or dataset."
+                f"Invalid value for the dataset parameter, got {dataset}. "
+                "Choose from: train, test, dataset."
             )
 
-        y = self.classes[dataset]
-        return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
+        y = self.classes[dataset.lower()]
+        if is_multioutput(self.task):
+            weights = {
+                t: {i: round(divide(sum(y.loc[t]), v), 3) for i, v in y.items()}
+                for t in self.target
+            }
+        else:
+            weights = {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
 
-    @composed(crash, method_to_log, typechecked)
+        return CustomDict(weights)
+
+    @available_if(has_task("class"))
+    @crash
+    def get_sample_weight(self, dataset: str = "train") -> SERIES:
+        """Return sample weights for a balanced data set.
+
+        The returned weights are inversely proportional to the class
+        frequencies in the selected data set. For [multioutput tasks][],
+        the weights of each column of `y` will be multiplied.
+
+        Parameters
+        ----------
+        dataset: str, default="train"
+            Data set from which to get the weights. Choose from:
+            "train", "test", "dataset".
+
+        Returns
+        -------
+        series
+            Sequence of weights with shape=(n_samples,).
+
+        """
+        if dataset.lower() not in ("train", "test", "dataset"):
+            raise ValueError(
+                f"Invalid value for the dataset parameter, got {dataset}. "
+                "Choose from: train, test, dataset."
+            )
+
+        weights = compute_sample_weight("balanced", y=getattr(self, dataset.lower()))
+        return bk.Series(weights, name="sample_weight").round(3)
+
+    @composed(crash, method_to_log)
     def merge(self, other: Any, /, suffix: str = "2"):
         """Merge another instance of the same class into this one.
 
@@ -975,9 +759,7 @@ class BaseRunner:
             )
 
         # Check that both instances have the same original dataset
-        current_og = self._get_og_branches()[0]
-        other_og = other._get_og_branches()[0]
-        if not current_og._data.equals(other_og._data):
+        if not self.og._data.equals(other.og._data):
             raise ValueError(
                 "Invalid value for the other parameter. The provided instance "
                 "was initialized using a different dataset than this one."
@@ -993,46 +775,44 @@ class BaseRunner:
             )
 
         self.log("Merging instances...", 1)
-        for name, branch in other._branches.min("og").items():
-            self.log(f" --> Merging branch {name}.", 1)
-            if name in self._branches:
-                name = f"{name}{suffix}"
-            branch._name = name
-            self._branches[name] = branch
+        for branch in other._branches:
+            self.log(f" --> Merging branch {branch.name}.", 1)
+            if branch.name in self._branches:
+                branch._name = f"{branch.name}{suffix}"
+            self._branches[branch.name] = branch
 
-        for name, model in other._models.items():
-            self.log(f" --> Merging model {name}.", 1)
-            if name in self._models:
-                name = f"{name}{suffix}"
-            model._name = name
-            self._models[name] = model
+        for model in other._models:
+            self.log(f" --> Merging model {model.name}.", 1)
+            if model.name in self._models:
+                model._name = f"{model.name}{suffix}"
+            self._models[model.name] = model
 
         self.log(" --> Merging attributes.", 1)
         if hasattr(self, "missing"):
             self.missing.extend([x for x in other.missing if x not in self.missing])
-        for name, error in other._errors.items():
-            if name in self._errors:
-                name = f"{name}{suffix}"
-            self._errors[name] = error
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def stacking(
         self,
+        models: slice | SEQUENCE | None = None,
         name: str = "Stack",
-        models: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
         """Add a [Stacking][] model to the pipeline.
 
+        !!! warning
+            Combining models trained on different branches into one
+            ensemble is not allowed and will raise an exception.
+
         Parameters
         ----------
+        models: slice, sequence or None, default=None
+            Models that feed the stacking estimator. The models must have
+            been fitted on the current branch.
+
         name: str, default="Stack"
             Name of the model. The name is always presided with the
-            model's acronym: `stack`.
-
-        models: slice, sequence or None, default=None
-            Models that feed the stacking estimator. If None, it selects
-            all non-ensemble models trained on the current branch.
+            model's acronym: `Stack`.
 
         **kwargs
             Additional keyword arguments for sklearn's stacking instance.
@@ -1041,12 +821,12 @@ class BaseRunner:
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_models(models or self.branch._get_depending_models(), False)
+        models = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
 
         if len(models) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Stacking model should "
-                f"contain at least two underlying estimators, got {models}."
+                f"contain at least two underlying estimators, got only {models[0]}."
             )
 
         if not name.lower().startswith("stack"):
@@ -1059,14 +839,25 @@ class BaseRunner:
                 "train multiple Stacking models within the same instance."
             )
 
+        kw_model = dict(
+            index=self.index,
+            goal=self.goal,
+            metric=self._metric,
+            multioutput=self.multioutput,
+            og=self.og,
+            branch=self.branch,
+            **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
+        )
+
         if isinstance(kwargs.get("final_estimator"), str):
             if kwargs["final_estimator"] not in MODELS:
                 raise ValueError(
-                    "Invalid value for the final_estimator parameter. Unknown model: "
-                    f"{kwargs['final_estimator']}. Choose from: {', '.join(MODELS)}."
+                    "Invalid value for the final_estimator parameter. "
+                    f"Unknown model: {kwargs['final_estimator']}. Choose "
+                    f"from: {', '.join(MODELS.keys())}."
                 )
             else:
-                model = MODELS[kwargs["final_estimator"]](self)
+                model = MODELS[kwargs["final_estimator"]](**kw_model)
                 if self.goal not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
@@ -1075,46 +866,44 @@ class BaseRunner:
 
                 kwargs["final_estimator"] = model._get_est()
 
-        self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
-
-        if self.experiment:
-            self[name]._run = mlflow.start_run(run_name=self[name].name)
+        self._models.append(Stacking(models=models, name=name, **kw_model, **kwargs))
 
         self[name].fit()
 
-        if self.experiment:
-            mlflow.end_run()
-
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def voting(
         self,
+        models: slice | SEQUENCE | None = None,
         name: str = "Vote",
-        models: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
         """Add a [Voting][] model to the pipeline.
 
+        !!! warning
+            Combining models trained on different branches into one
+            ensemble is not allowed and will raise an exception.
+
         Parameters
         ----------
+        models: slice, sequence or None, default=None
+            Models that feed the stacking estimator. The models must have
+            been fitted on the current branch.
+
         name: str, default="Vote"
             Name of the model. The name is always presided with the
-            model's acronym: `vote`.
-
-        models: slice, sequence or None, default=None
-            Models that feed the voting estimator. If None, it selects
-            all non-ensemble models trained on the current branch.
+            model's acronym: `Vote`.
 
         **kwargs
             Additional keyword arguments for sklearn's voting instance.
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_models(models or self.branch._get_depending_models(), False)
+        models = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
 
         if len(models) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Voting model should "
-                f"contain at least two underlying estimators, got {models}."
+                f"contain at least two underlying estimators, got only {models[0]}."
             )
 
         if not name.lower().startswith("vote"):
@@ -1127,12 +916,19 @@ class BaseRunner:
                 "train multiple Voting models within the same instance."
             )
 
-        self._models[name] = Voting(self, name, models=self._models[models], **kwargs)
-
-        if self.experiment:
-            self[name]._run = mlflow.start_run(run_name=self[name].name)
+        self._models.append(
+            Voting(
+                models=models,
+                name=name,
+                index=self.index,
+                goal=self.goal,
+                metric=self._metric,
+                multioutput=self.multioutput,
+                og=self.og,
+                branch=self.branch,
+                **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
+                **kwargs,
+            )
+        )
 
         self[name].fit()
-
-        if self.experiment:
-            mlflow.end_run()

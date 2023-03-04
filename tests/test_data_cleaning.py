@@ -7,8 +7,6 @@ Description: Unit tests for data_cleaning.py
 
 """
 
-from unittest.mock import MagicMock, patch
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -21,11 +19,11 @@ from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
     Scaler,
 )
-from atom.utils import NotFittedError, check_scaling, to_df
+from atom.utils import NotFittedError, check_scaling, merge, to_df
 
 from .conftest import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
-    y10_str, y_bin, y_class, y_idx,
+    y10_label, y10_nan, y10_str, y_bin, y_class, y_idx, y_multiclass,
 )
 
 
@@ -44,7 +42,20 @@ def test_fit_transform_no_fit():
     assert len(X) > len(X_bin)
 
 
+def test_inverse_transform():
+    """Assert that the inverse_transform returns the data unchanged."""
+    encoder = Encoder().fit(X_bin)
+    pd.testing.assert_frame_equal(encoder.inverse_transform(X_bin), X_bin)
+
+
 # Test Balancer ==================================================== >>
+
+
+def test_balance_multioutput_task():
+    """Assert that an error is raised for multioutput tasks."""
+    with pytest.raises(ValueError, match=".*not support multioutput.*"):
+        Balancer().transform(X_class, y_multiclass)
+
 
 def test_balancer_strategy_unknown_str():
     """Assert that an error is raised when strategy is unknown."""
@@ -146,6 +157,23 @@ def test_cleaner_drop_invalid_column_list_types():
     assert "string_col" not in X.columns
 
 
+def test_cleaner_remove_characters_from_column_names():
+    """Assert that specified chars are removed from column names."""
+    X, y = X_bin.copy(), y_bin.copy()
+    X.columns = ["test##"] + list(X.columns[1:])
+    y.name = "::test"
+    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    assert X.columns[0] == "test"
+    assert y.name == "test"
+
+    X, y = X_class.copy(), y_multiclass.copy()
+    X.columns = ["test##"] + list(X.columns[1:])
+    y.columns = ["::test"] + list(y.columns[1:])
+    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    assert X.columns[0] == "test"
+    assert y.columns[0] == "test"
+
+
 def test_cleaner_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()
@@ -169,13 +197,8 @@ def test_cleaner_drop_duplicate_rows():
 
 def test_cleaner_drop_missing_target():
     """Assert that rows with missing values in the target column are dropped."""
-    y = y_bin.copy()
-    length = len(X_bin)
-    y[0], y[21], y[41] = np.NaN, 99, np.inf  # Set missing to target column
-    cleaner = Cleaner()
-    cleaner.missing.append(99)
-    _, y = cleaner.fit_transform(X_bin, y)
-    assert length == len(y) + 3
+    y = Cleaner().fit_transform(y=y10_nan)
+    assert len(y) == 9
 
 
 def test_cleaner_label_encoder_target_column():
@@ -184,12 +207,22 @@ def test_cleaner_label_encoder_target_column():
     assert np.all((y == 0) | (y == 1))
 
 
-@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
-@patch.dict("sys.modules", {"cuml.preprocessing": MagicMock()})
-def test_cleaner_label_encoder_cuml():
-    """Assert that the gpu implementation calls the to_pandas method."""
-    cleaner = Cleaner(device="gpu", engine="cuml")
-    cleaner.fit_transform(y=MagicMock(spec=["__len__", "replace", "to_pandas"]))
+def test_cleaner_multilabel():
+    """Assert that multilabel targets are encoded."""
+    cleaner = Cleaner().fit(y=y10_label)
+    assert len(cleaner.transform(y=y10_label).columns) == 4
+
+
+def test_cleaner_multiclass_multioutput():
+    """Assert that multiclass-multioutput targets are encoded."""
+    y = merge(
+        pd.Series(y10_str, name="a"),
+        pd.Series(y10, name="b"),
+        pd.Series(y10_str, name="c"),
+    )
+    y_transformed = Cleaner().fit_transform(y=y)
+    assert list(y_transformed.columns) == ["a", "b", "c"]
+    assert all(v in [0, 1] for v in y_transformed.values.ravel())
 
 
 def test_cleaner_inverse_transform():
@@ -199,16 +232,22 @@ def test_cleaner_inverse_transform():
     pd.testing.assert_series_equal(pd.Series(y10_str, name="target"), y)
 
 
+def test_cleaner_inverse_transform_multiclass_multilabel():
+    """Assert that the inverse_transform method works for multioutput."""
+    y = merge(
+        pd.Series(y10_label, name="a"),
+        pd.Series(y10, name="b"),
+        pd.Series(y10_label, name="c"),
+    )
+    cleaner = Cleaner().fit(y=y)
+    y = cleaner.inverse_transform(y=cleaner.transform(y=y))
+    pd.testing.assert_frame_equal(pd.DataFrame(dict(a=y10_label, b=y10, c=y10_label)), y)
+
+
 def test_cleaner_target_mapping_binary():
     """Assert that the mapping attribute is set for binary tasks."""
     cleaner = Cleaner().fit(y=y10_str)
-    assert cleaner.mapping == {"n": 0, "y": 1}
-
-
-def test_cleaner_target_mapping_multiclass():
-    """Assert that the mapping attribute is set for multiclass tasks."""
-    cleaner = Cleaner().fit(y=y_class)
-    assert cleaner.mapping == {"0": 0, "1": 1, "2": 2}
+    assert cleaner.mapping == {"target": {"n": 0, "y": 1}}
 
 
 # Test Discretizer ================================================= >>
@@ -733,10 +772,10 @@ def test_pruner_strategies(strategy):
 
 def test_multiple_strategies():
     """Assert that selecting multiple strategies work."""
-    pruner = Pruner(strategy=["zscore", "lof", "ee", "iforest"])
+    pruner = Pruner(strategy=["zscore", "lof", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert all(hasattr(pruner, attr) for attr in ("lof", "ee", "iforest"))
+    assert all(hasattr(pruner, attr) for attr in ("lof", "iforest"))
 
 
 def test_kwargs_one_strategy():

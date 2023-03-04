@@ -7,124 +7,39 @@ Description: Unit tests for api.py
 
 """
 
-import numpy as np
-import pandas as pd
-import pytest
 from sklearn.linear_model import HuberRegressor
 
-from atom import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
-from atom.data_cleaning import Imputer
-from atom.training import DirectClassifier
-from atom.utils import merge
+from atom import ATOMClassifier, ATOMModel, ATOMRegressor
 
 from .conftest import X_bin, X_reg, y_bin, y_reg
 
 
-# Test ATOMModel =================================================== >>
+def test_atommodel():
+    """Assert that it returns an estimator that works with atom."""
+    model = ATOMModel(
+        estimator=(huber := HuberRegressor()),
+        name="huber1",
+        acronym="huber",
+        needs_scaling=True,
+    )
 
-def test_name():
-    """Assert that the name is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber")
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(model)
+    assert model is not huber  # Is cloned
+    assert model.name == "huber1"
     assert model.acronym == "huber"
-
-
-def test_needs_scaling():
-    """Assert that the needs_scaling is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber", needs_scaling=True)
     assert model.needs_scaling is True
+    assert model.native_multioutput is False
+    assert model.has_validation is None
 
 
-# Test ATOMLoader ================================================== >>
-
-def test_load():
-    """Assert that a trainer is loaded correctly."""
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.save("trainer")
-
-    trainer2 = ATOMLoader("trainer")
-    assert trainer2.__class__.__name__ == "DirectClassifier"
-
-
-def test_load_data_when_no_atom():
-    """Assert that an error is raised when data is provided without atom."""
-    Imputer().save("imputer")
-    with pytest.raises(TypeError, match=".*Data is provided but.*"):
-        ATOMLoader("imputer", data=(X_bin,))
-
-
-def test_load_already_contains_data():
-    """Assert that an error is raised when data is provided without needed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save("atom", save_data=True)
-    with pytest.raises(ValueError, match=".*already contains data.*"):
-        ATOMLoader("atom", data=(X_bin,))
-
-
-def test_data():
-    """Assert that data can be loaded."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save("atom", save_data=False)
-
-    atom2 = ATOMLoader("atom", data=(X_bin, y_bin))
-    pd.testing.assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
-
-
-def test_load_ignores_n_rows_parameter():
-    """Assert that n_rows is not used when transform_data=False."""
-    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.6, random_state=1)
-    atom.save("atom", save_data=False)
-
-    atom2 = ATOMLoader("atom", data=(X_bin, y_bin), transform_data=False)
-    assert len(atom2.dataset) == len(X_bin)
-
-
-def test_transform_data():
-    """Assert that the data is transformed correctly."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.scale(columns=slice(3, 10))
-    atom.apply(np.exp, columns=2)
-    atom.feature_generation(strategy="dfs", n_features=5)
-    atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
-    atom.save("atom", save_data=False)
-
-    atom2 = ATOMLoader("atom", data=(X_bin, y_bin), transform_data=True)
-    assert atom2.dataset.shape == atom.dataset.shape
-
-    atom3 = ATOMLoader("atom", data=(X_bin, y_bin), transform_data=False)
-    assert atom3.dataset.shape == merge(X_bin, y_bin).shape
-
-
-def test_transform_data_multiple_branches():
-    """Assert that the data is transformed with multiple branches."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.prune()
-    atom.branch = "b2"
-    atom.balance()
-    atom.feature_generation(strategy="dfs", n_features=5)
-    atom.branch = "b3"
-    atom.feature_selection(strategy="sfm", solver="lgb", n_features=20)
-    atom.save("atom_2", save_data=False)
-
-    atom2 = ATOMLoader("atom_2", data=(X_bin, y_bin), transform_data=True)
-    for branch in atom._branches:
-        pd.testing.assert_frame_equal(
-            left=atom2._branches[branch]._data,
-            right=atom._branches[branch]._data,
-            check_dtype=False,
-        )
-
-
-# Test ATOMClassifier ============================================== >>
-
-def test_goal_ATOMClassifier():
+def test_atomclassifier():
     """Assert that the goal is set correctly for ATOMClassifier."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.goal == "class"
 
 
-# Test ATOMRegressor =============================================== >>
-
-def test_goal_ATOMRegressor():
+def test_atomregressor():
     """Assert that the goal is set correctly for ATOMRegressor."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     assert atom.goal == "reg"

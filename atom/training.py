@@ -7,18 +7,20 @@ Description: Module containing the training classes.
 
 """
 
+from __future__ import annotations
+
+from copy import copy
 from logging import Logger
-from typing import Optional, Union
+from typing import Callable
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
-from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils import (
-    INT, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
-    infer_task, lst, method_to_log,
+    INT, INT_TYPES, SEQUENCE, ClassMap, Predictor, composed, crash,
+    get_best_score, infer_task, lst, method_to_log,
 )
 
 
@@ -34,12 +36,14 @@ class Direct(BaseEstimator, BaseTrainer):
     """
 
     def __init__(
-        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-        device, engine, verbose, warnings, logger, experiment, random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
+        parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
+        logger, experiment, random_state,
     ):
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -58,7 +62,9 @@ class Direct(BaseEstimator, BaseTrainer):
             - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
+        self.branch._data, self.branch._idx, holdout = self._get_data(arrays)
+        self.holdout = self.branch._holdout = holdout
+
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
@@ -78,13 +84,15 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
     """
 
     def __init__(
-        self, models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
-        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+        self, models, metric, skip_runs, est_params, n_trials, ht_params,
+        n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+        verbose, warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -103,7 +111,9 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
             - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
+        self.branch._data, self.branch._idx, holdout = self._get_data(arrays)
+        self.holdout = self.branch._holdout = holdout
+
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
@@ -123,11 +133,11 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         run = 0
-        models = CustomDict()
-        og_models = {k: v._new_copy() for k, v in self._models.items()}
+        models = ClassMap()
+        og_models = ClassMap(copy(m) for m in self._models)
         while len(self._models) > 2 ** self.skip_runs - 1:
             # Create the new set of models for the run
-            for m in self._models.values():
+            for m in self._models:
                 m._name += str(len(self._models))
                 m._train_idx = len(self.train) // len(self._models)
 
@@ -139,18 +149,16 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
-            models.update({m.name: m for m in self._models.values()})
+            models.extend(self._models)
 
             # Select best models for halving
             best = pd.Series(
-                data=[get_best_score(m) for m in self._models.values()],
-                index=[m._group for m in self._models.values()],
-                dtype="float",
+                data=[get_best_score(m) for m in self._models],
+                index=[m._group for m in self._models],
+                dtype=float,
             ).nlargest(n=len(self._models) // 2, keep="first")
 
-            self._models = CustomDict(
-                {k: v._new_copy() for k, v in og_models.items() if k in best.index}
-            )
+            self._models = ClassMap(copy(m) for m in og_models if m.name in best.index)
 
             run += 1
 
@@ -166,13 +174,15 @@ class TrainSizing(BaseEstimator, BaseTrainer):
     """
 
     def __init__(
-        self, models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
-        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state
+        self, models, metric, train_sizes, est_params, n_trials, ht_params,
+        n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+        verbose, warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -191,7 +201,9 @@ class TrainSizing(BaseEstimator, BaseTrainer):
             - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
+        self.branch._data, self.branch._idx, holdout = self._get_data(arrays)
+        self.holdout = self.branch._holdout = holdout
+
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
@@ -199,21 +211,21 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         # Convert integer train_sizes to sequence
-        if isinstance(self.train_sizes, int):
+        if isinstance(self.train_sizes, INT_TYPES):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
-        models = CustomDict()
-        og_models = {k: v._new_copy() for k, v in self._models.items()}
+        models = ClassMap()
+        og_models = ClassMap(copy(m) for m in self._models)
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
             if size <= 1:
                 frac = round(size, 2)
-                train_idx = int(size * len(self.branch.train))
+                train_idx = int(size * len(self.train))
             else:
-                frac = round(size / len(self.branch.train), 2)
+                frac = round(size / len(self.train), 2)
                 train_idx = size
 
-            for m in self._models.values():
+            for m in self._models:
                 m._name += str(frac).replace(".", "")  # Add frac to the name
                 m._train_idx = train_idx
 
@@ -225,10 +237,10 @@ class TrainSizing(BaseEstimator, BaseTrainer):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
-            models.update({m.name.lower(): m for m in self._models.values()})
+            models.extend(self._models)
 
             # Create next models for sizing
-            self._models = CustomDict({k: v._new_copy() for k, v in og_models.items()})
+            self._models = ClassMap(copy(m) for m in og_models)
 
         self._models = models  # Restore original models
 
@@ -261,8 +273,9 @@ class DirectClassifier(Direct):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -305,6 +318,26 @@ class DirectClassifier(Direct):
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
 
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
+
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
 
@@ -326,6 +359,18 @@ class DirectClassifier(Direct):
         - "sklearn" (only if device="cpu")
         - "sklearnex"
         - "cuml" (only if device="gpu")
+
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
+
+        Selecting the ray backend also parallelizes the data using
+        [modin][].
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -363,7 +408,6 @@ class DirectClassifier(Direct):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import DirectClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -419,29 +463,32 @@ class DirectClassifier(Direct):
 
     """
 
-    @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
 
@@ -473,8 +520,9 @@ class DirectRegressor(Direct):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -516,6 +564,26 @@ class DirectRegressor(Direct):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -575,7 +643,6 @@ class DirectRegressor(Direct):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import DirectRegressor
     >>> from sklearn.datasets import load_digits
@@ -630,29 +697,32 @@ class DirectRegressor(Direct):
 
     """
 
-    @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
         )
 
 
@@ -684,8 +754,9 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -730,6 +801,26 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -789,7 +880,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import SuccessiveHalvingClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -871,30 +961,33 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     """
 
-    @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
         skip_runs: INT = 0,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, skip_runs, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -926,8 +1019,9 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -972,6 +1066,26 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -1031,7 +1145,6 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import SuccessiveHalvingRegressor
     >>> from sklearn.datasets import load_digits
@@ -1114,30 +1227,33 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     """
 
-    @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
         skip_runs: INT = 0,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, skip_runs, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1169,8 +1285,9 @@ class TrainSizingClassifier(TrainSizing):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
@@ -1220,6 +1337,26 @@ class TrainSizingClassifier(TrainSizing):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -1279,7 +1416,6 @@ class TrainSizingClassifier(TrainSizing):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import TrainSizingClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1417,30 +1553,33 @@ class TrainSizingClassifier(TrainSizing):
 
     """
 
-    @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        train_sizes: INT | SEQUENCE = 5,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, train_sizes, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1472,8 +1611,9 @@ class TrainSizingRegressor(TrainSizing):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
@@ -1523,6 +1663,26 @@ class TrainSizingRegressor(TrainSizing):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -1582,7 +1742,6 @@ class TrainSizingRegressor(TrainSizing):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import TrainSizingRegressor
     >>> from sklearn.datasets import load_digits
@@ -1720,28 +1879,31 @@ class TrainSizingRegressor(TrainSizing):
 
     """
 
-    @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        train_sizes: INT | SEQUENCE = 5,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, train_sizes, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )

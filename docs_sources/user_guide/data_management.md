@@ -75,8 +75,8 @@ To avoid this, specify the `index` parameter. If the dataset has an
   their index.
 
 !!! warning
-    Avoid duplicate indices in the dataframe. Having them may potentially
-    lead to unexpected behavior.
+Avoid duplicate indices in the dataframe. Having them may potentially
+lead to unexpected behavior.
 
 <br>
 
@@ -99,6 +99,146 @@ native support for sparse matrices.
 
 Click [here][example-nlp] to see an example that uses sparse data.
 
+<br>
+
+## Multioutput tasks
+
+Multioutput is a task where there are more than one target column, i.e.
+the goal is to predict multiple targets at the same time. When providing
+a dataframe as target, use the [y][atomclassifier-y] parameter. Providing
+`y` without keyword makes ATOM think you are providing `train, test` (see
+the [data sets][] section).
+
+### Task types
+
+ATOM recognizes three multioutput tasks.
+
+!!! note
+    Combinations of binary and multiclass target columns are treated as
+    [multiclass-multioutput][] tasks.
+
+
+#### Multilabel
+
+Multilabel is a classification task, labeling each sample with `m` labels
+from `n_classes` possible classes, where `m` can be 0 to `n_classes` inclusive.
+This can be thought of as predicting properties of a sample that are not
+mutually exclusive.
+
+For example, prediction of the topics relevant to a text document. The
+document may be about one of religion, politics, finance or education,
+several of the topic classes or all of the topic classes. The target
+column (`atom.y`) could look like this:
+
+```pycon
+0                        [politics]
+1               [religion, finance]
+2    [politics, finance, education]
+3                                []
+4                         [finance]
+5               [finance, religion]
+6                         [finance]
+7               [religion, finance]
+8                       [education]
+9     [finance, religion, politics]
+
+Name: target, dtype: object
+```
+
+A model can not directly ingest a variable amount of target classes. Use
+the [clean][atomclassifier-clean] method to assign a binary output to
+each class, for every sample. Positive classes are indicated with 1 and
+negative classes with 0. It is thus comparable to running n_classes
+binary classification tasks. In our example, target (`atom.y`) is
+converted to:
+
+```pycon
+   education  finance  politics  religion
+0          0        0         1         0
+1          0        1         0         1
+2          1        1         1         0
+3          0        0         0         0
+4          0        1         0         0
+5          0        1         0         1
+6          0        1         0         0
+7          0        1         0         1
+8          1        0         0         0
+9          0        1         1         1
+```
+
+#### Multiclass-multioutput
+
+Multiclass-multioutput (also known as multitask classification) is a
+classification task which labels each sample with a set of non-binary
+properties. Both the number of properties and the number of classes per
+property is greater than 2. A single estimator thus handles several joint
+classification tasks. This is both a generalization of the multilabel
+classification task, which only considers binary attributes, as well as
+a generalization of the multiclass classification task, where only one
+property is considered.
+
+For example, classification of the properties "type of fruit" and "colour"
+for a set of images of fruit. The property "type of fruit" has the possible
+classes: "apple", "pear" and "orange". The property "colour" has the possible
+classes: "green", "red", "yellow" and "orange". Each sample is an image of
+a fruit, a label is output for both properties and each label is one of the
+possible classes of the corresponding property.
+
+#### Multioutput regression
+
+Multioutput regression predicts multiple numerical properties for each
+sample. Each property is a numerical variable and the number of properties
+to be predicted for each sample is >= 2. Some estimators that support
+multioutput regression are faster than just running n_output estimators.
+
+For example, prediction of both wind speed and wind direction, in degrees,
+using data obtained at a certain location. Each sample would be data
+obtained at one location and both wind speed and direction would be output
+for each sample.
+
+### Native multioutput models
+
+Some models have native support for multioutput tasks. This means that
+the original estimator is used to make predictions directly on all the
+target columns. Examples of such models are [KNearestNeighbors][],
+[RandomForest][] and [ExtraTrees][].
+
+
+### Non-native multioutput models
+
+The majority of the models don't have integrated support for multioutput
+tasks. However, it's possible to still use them for such tasks, wrapping
+them in a meta-estimator capable of handling multiple target columns. For
+non-native multioutput models, ATOM does so automatically. For
+[multilabel][] tasks, the meta-estimator is:
+
+* [ClassifierChain][]
+
+And for [multiclass-multioutput][] and [multioutput regression][], the
+meta-estimators are respectively:
+
+* [MultioutputClassifier][]
+* [MultioutputRegressor][]
+
+The `multioutput` attribute contains the meta-estimator object. Change the
+attribute's value to use a custom object. Both classes or instances where the
+underlying estimator is the first parameter are accepted. Set the attribute to
+`None` to ignore the meta-estimator for multioutput tasks.
+
+!!! note
+    Currently, scikit-learn metrics do not support multiclass-multioutput
+    classification tasks. In this case, ATOM calculates the mean of the
+    selected metric over every individual target.
+
+!!! tip
+    * Some models like [MultiLayerPerceptron][] have native support for
+    multilabel tasks, but not for multioutput. Use `atom.multioutput = None`
+    to disable the meta-estimator wrapper.
+    * Set the `native_multioutput` parameter in [ATOMModel][] equal to True
+    to ignore the meta-estimator for [custom models][].
+    * Check out the [multilabel classification][example-multilabel-classification]
+    and [multioutput regression][example-multioutput-regression] examples.
+    
 
 <br>
 
@@ -116,11 +256,9 @@ through atom's `branch` property. A branch contains a specific pipeline,
 the dataset transformed through that pipeline, and all data and utility
 attributes that refer to that dataset. Transformers and models called
 from atom use the dataset in the current branch, as well as data
-attributes such as `atom.dataset`. Use the branch's \__repr__ to get an
-overview of the transformers in the branch. It's not allowed to change
-the data in a branch after fitting a model with it. Doing this would
-cause unexpected model behaviour and break down the plotting methods.
-Instead, create a new branch for every unique pipeline.
+attributes such as `atom.dataset`. It's not allowed to change the data
+in a branch after fitting a model with it. Instead, create a new branch
+for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. `#!python atom.branch = "undersample"`.
@@ -131,7 +269,8 @@ branch "oversample" from branch "master", even if the current branch is
 "undersample". To switch between existing branches, just type the name of
 the desired branch, e.g. `#!python atom.branch = "master"` brings you back
 to the master branch. Note that every branch contains a unique copy of the
-whole dataset! Creating many branches can cause memory issues for large datasets.
+whole dataset! Creating many branches can cause [memory issues](#memory-considerations)
+for large datasets.
 
 See the [Imbalanced datasets][example-imbalanced-datasets] or
 [Feature engineering][example-feature-engineering] examples for
@@ -139,7 +278,8 @@ branching use cases.
 
 !!! warning
     Always create a new branch if you want to change the dataset after fitting
-    a model!
+    a model! Forcing a data change through the data property's `@setter` can
+    cause unexpected model behaviour and break down the plotting methods.
 
 <br>
 
@@ -152,17 +292,16 @@ branching use cases.
 
 ## Memory considerations
 
-An atom instance stores one copy of the dataframe in each branch, and
-one copy of the initial dataset with which the instance is initialized
-(this copy is necessary to avoid data leakage during hyperparameter
-tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
-and [reset][atomclassifier-reset]). This initial copy is created as soon
-as there are no branches in the initial state (usually after calling the
-first data transformation) and it's stored in an internal branch called
-`og` (original). The og branch is not accessible by the user. If the
-dataset is occupying too much memory, consider using the [shrink]
-[atomclassifier-shrink] method to convert the dtypes to their smallest
-possible matching dtype.
+An atom instance stores one copy of the dataset for each branch (this
+doesn't include the [hokdout set](#data-sets), which is only stored once),
+and one copy of the initial dataset with which the instance is initialized.
+This copy of the original dataset is necessary to avoid data leakage during
+hyperparameter tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
+and [reset][atomclassifier-reset]). It's created as soon as there are no
+branches in the initial state (usually after calling the first data
+transformation). If the dataset is occupying too much memory, consider
+using the [shrink][atomclassifier-shrink] method to convert the dtypes to
+their smallest possible matching dtype.
 
 Apart from the dataset itself, a model's [prediction attributes][] (e.g.
 `#!python atom.lr.predict_train`), metric scores and [shap values][shap]
