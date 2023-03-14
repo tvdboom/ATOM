@@ -1124,7 +1124,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             ]
             self.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
 
-        # Track results to mlflow ================================== >>
+        # Get duration and print to log
+        self._time_fit += (dt.now() - t_init).total_seconds()
+        self.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
+
+        # Track results in mlflow ================================== >>
 
         # Log parameters, metrics, model and data to mlflow
         if self.experiment:
@@ -1170,17 +1174,13 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 if self.log_pipeline:
                     mlflow.sklearn.log_model(
                         sk_model=self.export_pipeline(),
-                        artifact_path=f"pl_{self.name}",
+                        artifact_path=f"{self.name}_pipeline",
                         signature=infer_signature(
                             model_input=pd.DataFrame(self.X),
                             model_output=self.predict_test.to_numpy(),
                         ),
                         input_example=pd.DataFrame(self.X.iloc[[0], :]),
                     )
-
-        # Get duration and print to log
-        self._time_fit += (dt.now() - t_init).total_seconds()
-        self.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
 
     @composed(crash, method_to_log)
     def bootstrapping(self, n_bootstrap: INT, reset: bool = False):

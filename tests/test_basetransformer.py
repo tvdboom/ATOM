@@ -12,14 +12,12 @@ import multiprocessing
 import os
 from logging import Logger
 from unittest.mock import patch
-
+from platform import machine
 import mlflow
 import numpy as np
 import pandas as pd
 import pytest
-import sklearnex
 from sklearn.naive_bayes import GaussianNB
-from sklearnex.svm import SVC
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.basetransformer import BaseTransformer
@@ -62,8 +60,18 @@ def test_device_parameter():
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
 
 
+@patch.dict("sys.modules", {"sklearnex": None})
+def test_engine_parameter_no_sklearnex():
+    """Assert that an error is raised when sklearnex is not installed."""
+    with pytest.raises(ModuleNotFoundError, match=".*import scikit-learn-intelex.*"):
+        BaseTransformer(engine="sklearnex")
+
+
+@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
+    import sklearnex
+
     BaseTransformer(device="gpu", engine="sklearnex")
     assert sklearnex.get_config()["target_offload"] == "gpu"
 
@@ -201,8 +209,11 @@ def test_device_id_invalid():
 
 # Test _get_est_class ============================================== >>
 
+@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
+    from sklearnex.svm import SVC
+
     base = BaseTransformer(device="cpu", engine="sklearnex")
     assert base._get_est_class("SVC", "svm") == SVC
 

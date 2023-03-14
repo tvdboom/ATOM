@@ -578,12 +578,12 @@ def test_add_keep_column_names():
     """Assert that the column names are kept after transforming."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
 
-    # Transformer has method get_feature_names
-    atom.add(LeaveOneOutEncoder(return_df=False))
-    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
-
     # Transformer has method get_feature_names_out
     atom.add(StandardScaler())
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
+
+    # Transformer has method get_feature_names
+    atom.add(LeaveOneOutEncoder(return_df=False))
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer keeps rows equal

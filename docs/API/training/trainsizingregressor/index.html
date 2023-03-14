@@ -3537,7 +3537,7 @@ is compared.</div><a id='trainsizingregressor-results'></a><strong>results: pd.D
 <p>The tracking attributes are used to customize what elements of the
 experiment are tracked. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">user guide</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-log_ht'></a><strong>log_ht: oo</strong><br><div markdown class='param'>Whether to track every trial of the hyperparameter tuning.</div><a id='trainsizingregressor-log_model'></a><strong>log_model: oo</strong><br><div markdown class='param'>Whether to save the model's estimator after fitting.</div><a id='trainsizingregressor-log_plots'></a><strong>log_plots: oo</strong><br><div markdown class='param'>Whether to save plots as artifacts.</div><a id='trainsizingregressor-log_data'></a><strong>log_data: oo</strong><br><div markdown class='param'>Whether to save the train and test sets.</div><a id='trainsizingregressor-log_pipeline'></a><strong>log_pipeline: oo</strong><br><div markdown class='param'>Whether to save the model's pipeline.</div></td></tr></p>
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-log_ht'></a><strong>log_ht: bool</strong><br><div markdown class='param'>Whether to track every trial of the hyperparameter tuning.</div><a id='trainsizingregressor-log_model'></a><strong>log_model: bool</strong><br><div markdown class='param'>Whether to save the model's estimator after fitting.</div><a id='trainsizingregressor-log_plots'></a><strong>log_plots: bool</strong><br><div markdown class='param'>Whether to save plots as artifacts.</div><a id='trainsizingregressor-log_data'></a><strong>log_data: bool</strong><br><div markdown class='param'>Whether to save the train and test sets.</div><a id='trainsizingregressor-log_pipeline'></a><strong>log_pipeline: bool</strong><br><div markdown class='param'>Whether to save the model's pipeline.</div></td></tr></p>
 </table>
 <p><br></p>
 <h3 id="plot-attributes">Plot attributes</h3>
@@ -3738,7 +3738,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingregressor-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L868>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='trainsizingregressor-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L874>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3799,7 +3799,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L903>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='trainsizingregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L909>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>

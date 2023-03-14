@@ -364,19 +364,19 @@ def test_max_onehot_parameter():
         encoder.fit(X10_str, y10)
 
 
-def test_rare_to_value_parameter():
-    """Assert that the rare_to_value parameter is set correctly."""
-    encoder = Encoder(rare_to_value=-2)
-    with pytest.raises(ValueError, match=".*value for the rare_to_value.*"):
+def test_infrequent_to_value_parameter():
+    """Assert that the infrequent_to_value parameter is set correctly."""
+    encoder = Encoder(infrequent_to_value=-2)
+    with pytest.raises(ValueError, match=".*value for the infrequent_to_value.*"):
         encoder.fit(X10_str, y10)
 
 
-@pytest.mark.parametrize("rare_to_value", [3, 0.3])
-def test_rare_to_value(rare_to_value):
+@pytest.mark.parametrize("infrequent_to_value", [3, 0.3])
+def test_infrequent_to_value(infrequent_to_value):
     """Assert that the other values are created when encoding."""
-    encoder = Encoder(max_onehot=5, rare_to_value=rare_to_value)
+    encoder = Encoder(max_onehot=5, infrequent_to_value=infrequent_to_value)
     X = encoder.fit_transform(X10_str, y10)
-    assert "x2_rare" in X.columns
+    assert "x2_infrequent" in X.columns
 
 
 def test_encoder_strategy_invalid_estimator():

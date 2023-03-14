@@ -1023,6 +1023,7 @@ class BasePlot:
                     kwargs["figsize"][0] // fig.get_dpi(),
                     kwargs["figsize"][1] // fig.get_dpi(),
                 )
+            plt.tight_layout()
             if kwargs.get("filename"):
                 fig.savefig(name)
 
@@ -1035,7 +1036,6 @@ class BasePlot:
                         artifact_file=name if "." in name else f"{name}.png",
                     )
 
-            plt.tight_layout()
             plt.show() if kwargs.get("display") else plt.close()
             if kwargs.get("display") is None:
                 return fig
@@ -2987,7 +2987,7 @@ class HTPlot(BasePlot):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("RF")
+        >>> atom.run("RF", n_trials=15)
         >>> atom.plot_hyperparameters(params=(0, 1, 2))
 
         ```
@@ -5828,7 +5828,7 @@ class PredictionPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -7261,7 +7261,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -7376,7 +7376,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -7494,7 +7494,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -7620,7 +7620,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -7757,7 +7757,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -7874,7 +7874,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -8002,7 +8002,7 @@ class ShapPlot(BasePlot):
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
+            the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.

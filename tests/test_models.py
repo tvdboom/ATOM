@@ -8,7 +8,7 @@ Description: Unit tests for models.py
 """
 
 from unittest.mock import MagicMock, patch
-
+from platform import machine
 import numpy as np
 import pandas as pd
 import pytest
@@ -103,6 +103,7 @@ def test_all_models_regression():
     )
 
 
+@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_models_sklearnex_classification():
     """Assert the sklearnex engine works for classification tasks."""
     atom = ATOMClassifier(X_bin, y_bin, device="cpu", engine="sklearnex", random_state=1)
@@ -113,6 +114,7 @@ def test_models_sklearnex_classification():
     )
 
 
+@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_models_sklearnex_regression():
     """Assert the sklearnex engine works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, device="cpu", engine="sklearnex", random_state=1)

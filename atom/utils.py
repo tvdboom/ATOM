@@ -49,7 +49,7 @@ from sklearn.utils import _print_elapsed_time
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.1.0"
+__version__ = "5.1.1"
 
 # Group of variable types for isinstance
 # TODO: From Python 3.10, add typeguard.typechecked back
@@ -496,7 +496,7 @@ class TrialsCallback:
             }
         )
 
-        # Save trials to experiment as nested runs
+        # Save trials to mlflow experiment as nested runs
         if self.T.experiment and self.T.log_ht:
             with mlflow.start_run(run_id=self.T._run.info.run_id):
                 run_name = f"{self.T.name} - {trial.number}"
@@ -2380,10 +2380,11 @@ def transform_one(
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, DATAFRAME_TYPES):
-            if hasattr(transformer, "get_feature_names"):
-                columns = transformer.get_feature_names()
-            elif hasattr(transformer, "get_feature_names_out"):
+            if hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
+            elif hasattr(transformer, "get_feature_names"):
+                # Some estimators have legacy method, e.g. cuml, category-encoders...
+                columns = transformer.get_feature_names()
             else:
                 columns = name_cols(out, X, use_cols)
 
