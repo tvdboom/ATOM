@@ -46,6 +46,7 @@ CUSTOM_URLS = dict(
     pipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
     profiling="https://github.com/ydataai/ydata-profiling",
     profilereport="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html",
+    to_csv="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html",
     # BaseModel
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
@@ -580,7 +581,11 @@ class AutoDocs:
                     elif obj.__class__.__name__ == "cached_property":
                         obj = obj.func
 
-                    output = str(signature(obj)).split(" -> ")[-1][1:-1]
+                    # Get the output type
+                    output = str(signature(obj)).split(" -> ")[-1]
+                    if output.startswith("'") and output.endswith("'"):
+                        output = output[1:-1]
+
                     header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}</div>"
 

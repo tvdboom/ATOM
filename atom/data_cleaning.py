@@ -1407,8 +1407,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Missing values are propagated to the output column. Unknown
     classes encountered during transforming are imputed according
-    to the selected strategy. Rare classes can be replaced with a
-    value in order to prevent too high cardinality.
+    to the selected strategy. Infrequent classes can be replaced with
+    a value in order to prevent too high cardinality.
 
     This class can be accessed from atom through the [encode]
     [atomclassifier-encode] method. Read more in the [user guide]
@@ -1437,18 +1437,18 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         name and the value is the class order, e.g. `{"salary": ["low",
         "medium", "high"]}`.
 
-    rare_to_value: int, float or None, default=None
-        Replaces rare class occurrences in categorical columns with the
-        string in parameter `value`. This transformation is done before
-        the encoding of the column.
+    infrequent_to_value: int, float or None, default=None
+        Replaces infrequent class occurrences in categorical columns
+        with the string in parameter `value`. This transformation is
+        done before the encoding of the column.
 
         - If None: Skip this step.
         - If int: Minimum number of occurrences in a class.
         - If float: Minimum fraction of occurrences in a class.
 
-    value: str, default="rare"
+    value: str, default="infrequent"
         Value with which to replace rare classes. This parameter is
-        ignored if `rare_to_value=None`.
+        ignored if `infrequent_to_value=None`.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1610,8 +1610,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         max_onehot: INT | None = 10,
         ordinal: dict[str, SEQUENCE] | None = None,
-        rare_to_value: SCALAR | None = None,
-        value: str = "rare",
+        infrequent_to_value: SCALAR | None = None,
+        value: str = "infrequent",
         verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,
@@ -1620,15 +1620,15 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.strategy = strategy
         self.max_onehot = max_onehot
         self.ordinal = ordinal
-        self.rare_to_value = rare_to_value
+        self.infrequent_to_value = infrequent_to_value
         self.value = value
         self.kwargs = kwargs
 
         self.mapping = {}
         self._cat_cols = None
         self._max_onehot = None
-        self._rare_to_value = None
-        self._to_other = defaultdict(list)
+        self._infrequent_to_value = None
+        self._to_value = defaultdict(list)
         self._categories = {}
         self._encoders = {}
         self._is_fitted = False
@@ -1717,30 +1717,30 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             self._max_onehot = self.max_onehot
 
-        if self.rare_to_value:
-            if self.rare_to_value < 0:
+        if self.infrequent_to_value:
+            if self.infrequent_to_value < 0:
                 raise ValueError(
-                    "Invalid value for the rare_to_value parameter. "
-                    f"Value should be >0, got {self.rare_to_value}."
+                    "Invalid value for the infrequent_to_value parameter. "
+                    f"Value should be >0, got {self.infrequent_to_value}."
                 )
-            elif self.rare_to_value < 1:
-                self._rare_to_value = int(self.rare_to_value * len(X))
+            elif self.infrequent_to_value < 1:
+                self._infrequent_to_value = int(self.infrequent_to_value * len(X))
             else:
-                self._rare_to_value = self.rare_to_value
+                self._infrequent_to_value = self.infrequent_to_value
 
         self.log("Fitting Encoder...", 1)
 
         # Reset internal attrs in case of repeated fit
         self.mapping = {}
-        self._to_other = defaultdict(list)
+        self._to_value = defaultdict(list)
         self._categories, self._encoders = {}, {}
 
         for name, column in X[self._cat_cols].items():
-            # Replace rare classes with the string "other"
-            if self._rare_to_value:
+            # Replace infrequent classes with the string in `value`
+            if self._infrequent_to_value:
                 for category, count in column.value_counts().items():
-                    if count <= self._rare_to_value:
-                        self._to_other[name].append(category)
+                    if count <= self._infrequent_to_value:
+                        self._to_value[name].append(category)
                         X[name] = column.replace(category, self.value)
 
             # Get the unique categories before fitting
@@ -1774,6 +1774,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
             elif 2 < len(self._categories[name]) <= self._max_onehot:
                 self._encoders[name] = OneHotEncoder(
+                    cols=[name],  # Specify to not skip numerical columns
                     use_cat_names=True,
                     handle_missing="return_nan",
                     handle_unknown="value",
@@ -1829,8 +1830,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         for name, column in X[self._cat_cols].items():
             # Convert uncommon classes to "other"
-            if self._to_other[name]:
-                X[name] = column.replace(self._to_other[name], self.value)
+            if self._to_value[name]:
+                X[name] = column.replace(self._to_value[name], self.value)
 
             n_classes = len(column.unique())
             self.log(

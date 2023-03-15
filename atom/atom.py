@@ -731,7 +731,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
     @composed(crash, method_to_log)
-    def save_data(self, filename: str = "auto", *, dataset: str = "dataset"):
+    def save_data(self, filename: str = "auto", *, dataset: str = "dataset", **kwargs):
         """Save the data in the current branch to a `.csv` file.
 
         Parameters
@@ -742,13 +742,16 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         dataset: str, default="dataset"
             Data set to save.
 
+        **kwargs
+            Additional keyword arguments for pandas' [to_csv][] method.
+
         """
         if filename.endswith("auto"):
             filename = filename.replace("auto", f"{self.__class__.__name__}_{dataset}")
         if not filename.endswith(".csv"):
             filename += ".csv"
 
-        getattr(self, dataset).to_csv(filename, index=False)
+        getattr(self, dataset).to_csv(filename, **kwargs)
         self.log("Data set successfully saved.", 1)
 
     @composed(crash, method_to_log)
@@ -1348,7 +1351,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         *,
         max_onehot: INT | None = 10,
         ordinal: dict[str, SEQUENCE] | None = None,
-        rare_to_value: SCALAR | None = None,
+        infrequent_to_value: SCALAR | None = None,
         value: str = "rare",
         **kwargs,
     ):
@@ -1383,7 +1386,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             strategy=strategy,
             max_onehot=max_onehot,
             ordinal=ordinal,
-            rare_to_value=rare_to_value,
+            infrequent_to_value=infrequent_to_value,
             value=value,
             **self._prepare_kwargs(kwargs, sign(Encoder)),
         )

@@ -3433,7 +3433,7 @@ column (<code>atom.y</code>) could look like this:</p>
 the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clean">clean</a> method to assign a binary output to
 each class, for every sample. Positive classes are indicated with 1 and
 negative classes with 0. It is thus comparable to running n_classes
-binary classification tasks. In our example, target (<code>atom.y</code>) is
+binary classification tasks. In our example, the target (<code>atom.y</code>) is
 converted to:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="go">   education  finance  politics  religion</span>
 <span class="go">0          0        0         1         0</span>
@@ -3495,12 +3495,10 @@ meta-estimators are respectively:</p>
 attribute's value to use a custom object. Both classes or instances where the
 underlying estimator is the first parameter are accepted. Set the attribute to
 <code>None</code> to ignore the meta-estimator for multioutput tasks.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Currently, scikit-learn metrics do not support multiclass-multioutput
-classification tasks. In this case, ATOM calculates the mean of the
-selected metric over every individual target.</p>
-</div>
+<p>p!!! warning
+    Currently, scikit-learn metrics do not support multiclass-multioutput
+    classification tasks. In this case, ATOM calculates the mean of the
+    selected metric over every individual target.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <ul>

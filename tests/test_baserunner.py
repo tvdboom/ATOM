@@ -36,7 +36,7 @@ def test_getstate_and_setstate():
     atom.run("LR")
     atom.save("atom")
 
-    sys.modules["sklearn"].__version__ = "1.0.0"  # Fake version
+    sys.modules["sklearn"].__version__ = "1.2.7"  # Fake version
     with pytest.warns(Warning, match=".*while the version in this environment.*"):
         ATOMClassifier.load("atom")
 

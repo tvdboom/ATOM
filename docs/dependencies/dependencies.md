@@ -63,7 +63,7 @@ additional libraries. You can install all the optional dependencies using
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.15)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)
-* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.0.0)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.1.0)
 
 
 ### Development

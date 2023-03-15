@@ -4646,10 +4646,10 @@ Imputing missing values...
             </clipboard-copy>
         </div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Encode the categorical features</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">rare_to_value</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">infrequent_to_value</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
 </pre></div>
 <div id="cell-5" class="clipboard-copy-txt"># Encode the categorical features
-atom.encode(strategy="Target", max_onehot=10, rare_to_value=0.04)</div>
+atom.encode(strategy="Target", max_onehot=10, infrequent_to_value=0.04)</div>
     
         </div>
     </div>

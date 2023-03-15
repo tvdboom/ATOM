@@ -26,7 +26,6 @@ import mlflow
 import numpy as np
 import ray
 import requests
-import sklearnex
 from dagshub.auth.token_auth import HTTPBearerAuth
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
@@ -121,7 +120,14 @@ class BaseTransformer:
     @engine.setter
     def engine(self, value: str):
         if value == "sklearnex":
-            sklearnex.set_config("auto" if "cpu" in self.device else self.device)
+            if not find_spec("sklearnex"):
+                raise ModuleNotFoundError(
+                    "Failed to import scikit-learn-intelex. Package is not installed. "
+                    "Note that the library only supports CPUs with a x86 architecture."
+                )
+            else:
+                import sklearnex
+                sklearnex.set_config("auto" if "cpu" in self.device else self.device)
         elif value == "cuml":
             if "cpu" in self.device:
                 raise ValueError(

@@ -3129,7 +3129,7 @@
 
 <h1 id="encoder">Encoder</h1>
 <hr />
-<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="LeaveOneOut", max_onehot=10, ordinal=None, rare_to_value=None, value="rare", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1399>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="LeaveOneOut", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1399>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the column:</p>
 <ul>
 <li>If n_classes=2 or ordinal feature, use Ordinal-encoding.</li>
@@ -3138,8 +3138,8 @@
 </ul>
 <p>Missing values are propagated to the output column. Unknown
 classes encountered during transforming are imputed according
-to the selected strategy. Rare classes can be replaced with a
-value in order to prevent too high cardinality.</p>
+to the selected strategy. Infrequent classes can be replaced with
+a value in order to prevent too high cardinality.</p>
 <p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-encode">encode</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#encoding-categorical-features">user guide</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -3162,18 +3162,18 @@ used for columns with more than two classes.</p>
 Order of ordinal features, where the dict key is the feature's
 name and the value is the class order, e.g. <code>{"salary": ["low",
 "medium", "high"]}</code>.</p>
-<p></div><a id='encoder-rare_to_value'></a><strong>rare_to_value: int, float or None, default=None</strong><br><div markdown class='param'>
-Replaces rare class occurrences in categorical columns with the
-string in parameter <code>value</code>. This transformation is done before
-the encoding of the column.</p>
+<p></div><a id='encoder-infrequent_to_value'></a><strong>infrequent_to_value: int, float or None, default=None</strong><br><div markdown class='param'>
+Replaces infrequent class occurrences in categorical columns
+with the string in parameter <code>value</code>. This transformation is
+done before the encoding of the column.</p>
 <ul>
 <li>If None: Skip this step.</li>
 <li>If int: Minimum number of occurrences in a class.</li>
 <li>If float: Minimum fraction of occurrences in a class.</li>
 </ul>
-<p></div><a id='encoder-value'></a><strong>value: str, default="rare"</strong><br><div markdown class='param'>
+<p></div><a id='encoder-value'></a><strong>value: str, default="infrequent"</strong><br><div markdown class='param'>
 Value with which to replace rare classes. This parameter is
-ignored if <code>rare_to_value=None</code>.</p>
+ignored if <code>infrequent_to_value=None</code>.</p>
 <p></div><a id='encoder-verbose'></a><strong>verbose: int, default=0</strong><br><div markdown class='param'>
 Verbosity level of the class. Choose from:</p>
 <ul>
@@ -3410,7 +3410,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L868>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='encoder-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L874>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3422,7 +3422,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L903>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='encoder-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L909>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3442,7 +3442,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1807>[source]</a></span></div>Encode the data.</p>
+<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1808>[source]</a></span></div>Encode the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
