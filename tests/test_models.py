@@ -7,8 +7,9 @@ Description: Unit tests for models.py
 
 """
 
-from unittest.mock import MagicMock, patch
 from platform import machine
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
 import pytest

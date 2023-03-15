@@ -1351,7 +1351,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         *,
         max_onehot: INT | None = 10,
         ordinal: dict[str, SEQUENCE] | None = None,
-        rare_to_value: SCALAR | None = None,
+        infrequent_to_value: SCALAR | None = None,
         value: str = "rare",
         **kwargs,
     ):
@@ -1386,7 +1386,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             strategy=strategy,
             max_onehot=max_onehot,
             ordinal=ordinal,
-            rare_to_value=rare_to_value,
+            infrequent_to_value=infrequent_to_value,
             value=value,
             **self._prepare_kwargs(kwargs, sign(Encoder)),
         )

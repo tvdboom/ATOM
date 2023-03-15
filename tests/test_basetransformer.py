@@ -11,8 +11,9 @@ import glob
 import multiprocessing
 import os
 from logging import Logger
-from unittest.mock import patch
 from platform import machine
+from unittest.mock import patch
+
 import mlflow
 import numpy as np
 import pandas as pd
@@ -70,10 +71,10 @@ def test_engine_parameter_no_sklearnex():
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
-    import sklearnex
+    from sklearnex import get_config
 
     BaseTransformer(device="gpu", engine="sklearnex")
-    assert sklearnex.get_config()["target_offload"] == "gpu"
+    assert get_config()["target_offload"] == "gpu"
 
 
 def test_engine_parameter_cuml_with_cpu():
