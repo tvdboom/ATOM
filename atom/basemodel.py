@@ -606,10 +606,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         # Select method to use for predictions
         if attr == "thresh":
-            if hasattr(self.estimator, "decision_function"):
-                attr = "decision_function"
-            else:
-                attr = "predict_proba"
+            for attribute in ("decision_function", "predict_proba", "predict"):
+                if hasattr(self.estimator, attribute):
+                    attr = attribute
 
         y_true = getattr(self, f"y_{dataset}")
         y_pred = getattr(self, f"{attr}_{dataset}")
