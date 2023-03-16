@@ -225,7 +225,15 @@ class BaseTransformer:
 
     @logger.setter
     def logger(self, value: str | Logger | None):
-        external_loggers = ["dagshub", "mlflow", "optuna", "ray", "modin", "featuretools"]
+        external_loggers = [
+            "dagshub",
+            "mlflow",
+            "optuna",
+            "ray",
+            "modin",
+            "featuretools",
+            "evalml",
+        ]
 
         # Clear existing handlers for external loggers
         for name in external_loggers:

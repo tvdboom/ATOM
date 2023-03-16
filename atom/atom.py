@@ -1057,8 +1057,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         # Add BaseTransformer params to the estimator if left to default
         sig = sign(transformer.__init__)
         for p in ("n_jobs", "random_state"):
-            if p in sig and transformer.get_params()[p] == sig[p]._default:
-                transformer.set_params(**{p: getattr(self, p)})
+            if p in sig and getattr(transformer, p, "<!>") == sig[p]._default:
+                setattr(transformer, p, getattr(self, p))
 
         # Transformers remember the train_only and cols parameters
         if not hasattr(transformer, "_train_only"):

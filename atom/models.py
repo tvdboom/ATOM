@@ -42,9 +42,6 @@ Description: Module containing all available models. The models are
 
         Instance attributes
         -------------------
-        T: class
-            Parent class from which the model is called.
-
         name: str
             Name of the model. Defaults to the same as the acronym
             but can be different if the same model is called multiple
