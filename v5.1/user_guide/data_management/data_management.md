@@ -149,7 +149,7 @@ A model can not directly ingest a variable amount of target classes. Use
 the [clean][atomclassifier-clean] method to assign a binary output to
 each class, for every sample. Positive classes are indicated with 1 and
 negative classes with 0. It is thus comparable to running n_classes
-binary classification tasks. In our example, target (`atom.y`) is
+binary classification tasks. In our example, the target (`atom.y`) is
 converted to:
 
 ```pycon
@@ -225,7 +225,7 @@ attribute's value to use a custom object. Both classes or instances where the
 underlying estimator is the first parameter are accepted. Set the attribute to
 `None` to ignore the meta-estimator for multioutput tasks.
 
-!!! note
+p!!! warning
     Currently, scikit-learn metrics do not support multiclass-multioutput
     classification tasks. In this case, ATOM calculates the mean of the
     selected metric over every individual target.

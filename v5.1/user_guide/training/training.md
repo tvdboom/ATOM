@@ -344,9 +344,9 @@ using all its predefined parameters except `n_estimators`, run:
 
 ```pycon
 >>> atom.run(
-... models="ET",
-... n_trials=15,
-... ht_params={"distributions": "!n_estimators"},
+...     models="ET",
+...     n_trials=15,
+...     ht_params={"distributions": "!n_estimators"},
 ... )
 ```
 

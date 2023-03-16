@@ -3222,11 +3222,16 @@
 <h1 id="accelerating-pipelines">Accelerating pipelines</h1>
 <hr />
 <h2 id="cpu-acceleration">CPU acceleration</h2>
-<p>ATOM uses <a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>
-to accelerate sklearn applications and still have full conformance
-with its API. This tool can bring over 10-100X acceleration across a
-variety of transformers and models. See <a class="autorefs autorefs-internal" href="../../examples/accelerating_sklearnex/#example-accelerating-pipelines">here</a>
-an example.</p>
+<p>With the <a href="https://intel.github.io/scikit-learn-intelex/index.html">Intel® Extension for Scikit-learn</a>
+package (or sklearnex, for brevity) you can accelerate your sklearn
+models and transformers, keeping full conformance with sklearn's API.
+Sklearnex is a free software AI accelerator that offers you a way to
+make sklearn code 10–100 times faster. The software acceleration is
+achieved through the use of vector instructions, IA hardware-specific
+memory optimizations, threading, and optimizations for all upcoming
+Intel platforms at launch time.</p>
+<p>Select <code class="language-python highlight"><span class="n">engine</span><span class="o">=</span><span class="s2">&quot;sklearnex&quot;</span></code> in atom's constructor to make use
+of this feature. See <a class="autorefs autorefs-internal" href="../../examples/accelerating_sklearnex/#example-accelerating-pipelines">here</a> an example.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <ul>
 <li>Operating System:<ul>
@@ -3242,13 +3247,15 @@ an example.</p>
 </ul>
 </li>
 <li>Libraries:<ul>
-<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with atom)</li>
+<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with atom when the processor has x86 architecture)</li>
 </ul>
 </li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Intel® processors provide better performance than other CPUs.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul>
+<li>Intel® processors provide better performance than other CPUs.</li>
+</ul>
 </div>
 <p><br></p>
 <h3 id="supported-estimators">Supported estimators</h3>
@@ -3322,12 +3329,12 @@ type.</p>
 </ul>
 </li>
 <li>Drivers:<ul>
-<li>For cuML: CUDA &amp; NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5</li>
 <li>For sklearnex: Intel® GPU drivers.</li>
+<li>For cuML: CUDA &amp; NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5</li>
 </ul>
 </li>
 <li>Libraries:<ul>
-<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with ATOM)</li>
+<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with atom when the processor has x86 architecture)</li>
 <li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=22.10</li>
 </ul>
 </li>
@@ -3393,7 +3400,7 @@ datasets (&lt;1M rows).</p>
 <ul>
 <li>In every individual estimator that uses parallelization internally.</li>
 <li>To calculate cross-validated results during <a class="autorefs autorefs-internal" href="../training/#hyperparameter-tuning">hyperparameter tuning</a>.</li>
-<li>To train multiple models in parallel (when the trainer's <code>parallel</code> parameter is True`).</li>
+<li>To train multiple models in parallel (when the trainer's <code>parallel</code> parameter is True).</li>
 <li>To calculate partial dependencies in <a class="autorefs autorefs-internal" href="../../API/plots/plot_partial_dependence/#plot_partial_dependence">plot_partial_dependence</a>.</li>
 </ul>
 <div class="admonition note">

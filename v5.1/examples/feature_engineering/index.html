@@ -4548,12 +4548,12 @@ X.head()</div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Initialize atom and apply data cleaning</span>
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;remove&quot;</span><span class="p">,</span> <span class="n">max_nan_rows</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">rare_to_value</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">infrequent_to_value</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
 </pre></div>
 <div id="cell-3" class="clipboard-copy-txt"># Initialize atom and apply data cleaning
 atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0)
 atom.impute(strat_num="knn", strat_cat="remove", max_nan_rows=0.8)
-atom.encode(max_onehot=10, rare_to_value=0.04)</div>
+atom.encode(max_onehot=10, infrequent_to_value=0.04)</div>
     
         </div>
     </div>

@@ -3580,9 +3580,9 @@ It's possible to exclude multiple parameters, but not to combine inclusion
 and exclusion for the same model. For example, to optimize a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>
 using all its predefined parameters except <code>n_estimators</code>, run:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span>
-<span class="gp">... </span><span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-<span class="gp">... </span><span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">},</span>
 <span class="gp">... </span><span class="p">)</span>
 </code></pre></div>
 <p>If just the parameter name is provided, the predefined distribution is

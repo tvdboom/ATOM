@@ -3,11 +3,17 @@
 
 ## CPU acceleration
 
-ATOM uses [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)
-to accelerate sklearn applications and still have full conformance
-with its API. This tool can bring over 10-100X acceleration across a
-variety of transformers and models. See [here][example-accelerating-pipelines]
-an example.
+With the [Intel® Extension for Scikit-learn](https://intel.github.io/scikit-learn-intelex/index.html)
+package (or sklearnex, for brevity) you can accelerate your sklearn
+models and transformers, keeping full conformance with sklearn's API.
+Sklearnex is a free software AI accelerator that offers you a way to
+make sklearn code 10–100 times faster. The software acceleration is
+achieved through the use of vector instructions, IA hardware-specific
+memory optimizations, threading, and optimizations for all upcoming
+Intel platforms at launch time.
+
+Select `#!python engine="sklearnex"` in atom's constructor to make use
+of this feature. See [here][example-accelerating-pipelines] an example.
 
 ### Prerequisites
 
@@ -20,10 +26,10 @@ an example.
     - Processor must support at least one of SSE2, AVX, AVX2, AVX512 instruction sets.
     - ARM* architecture is not supported.
 * Libraries:
-    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with atom)
+    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with atom when the processor has x86 architecture)
 
-!!! note
-    Intel® processors provide better performance than other CPUs.
+!!! tip
+    * Intel® processors provide better performance than other CPUs.
 
 <br>
 
@@ -97,10 +103,10 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
     - For sklearnex: All Intel® integrated and discrete GPUs.
     - For cuML: NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
 * Drivers:
-    - For cuML: CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
     - For sklearnex: Intel® GPU drivers.
+    - For cuML: CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
 * Libraries:
-    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with ATOM)
+    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with atom when the processor has x86 architecture)
     - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=22.10
 
 ### Supported estimators
@@ -167,7 +173,7 @@ The parallelization backend is applied in the following cases:
 
 * In every individual estimator that uses parallelization internally.
 * To calculate cross-validated results during [hyperparameter tuning][].
-* To train multiple models in parallel (when the trainer's `parallel` parameter is True`).
+* To train multiple models in parallel (when the trainer's `parallel` parameter is True).
 * To calculate partial dependencies in [plot_partial_dependence][].
 
 !!! note

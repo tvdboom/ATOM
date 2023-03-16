@@ -4499,7 +4499,7 @@ X.head()</div>
 <span class="c1"># Apply data cleaning steps</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rare_to_value</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">infrequent_to_value</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 
 <span class="c1"># Train a linear SVM</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;gnb&quot;</span><span class="p">)</span>
@@ -4509,7 +4509,7 @@ X.head()</div>
 # Apply data cleaning steps
 atom.clean()
 atom.impute(strat_num="median", strat_cat="most_frequent")
-atom.encode(strategy="target", max_onehot=5, rare_to_value=0.05)
+atom.encode(strategy="target", max_onehot=5, infrequent_to_value=0.05)
 
 # Train a linear SVM
 atom.run("gnb")</div>

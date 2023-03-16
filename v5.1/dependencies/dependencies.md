@@ -32,7 +32,7 @@ packages are necessary for its correct functioning.
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.10.1)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.23.0)
-* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.2.0)
+* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.6.3)
 * **[mlflow](https://mlflow.org/)** (>=2.2.0)
 * **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.18.1)
@@ -63,7 +63,7 @@ additional libraries. You can install all the optional dependencies using
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.15)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)
-* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.0.0)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.1.0)
 
 
 ### Development

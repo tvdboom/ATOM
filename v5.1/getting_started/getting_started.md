@@ -18,10 +18,11 @@ or via `conda`:
 
 **Optional dependencies**
 
-To install the [optional dependencies][optional], add `[models]` after
-the package's name.
+Some specific models, utility methods or plots require the installation of
+additional libraries. To install the [optional dependencies][optional], add
+`[full]` after the package's name.
 
-    pip install -U atom-ml[models]
+    pip install -U atom-ml[full]
 
 <br style="display: block; margin-top: 2em; content: ' '">
 
