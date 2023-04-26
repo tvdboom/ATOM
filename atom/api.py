@@ -212,6 +212,9 @@ class ATOMClassifier(BaseTransformer, ATOM):
         This parameter is ignored if `shuffle=False` or if the test
         set is provided through `arrays`.
 
+        For [multioutput tasks][], stratification is applied to the
+        joint target columns.
+
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
         all rows.

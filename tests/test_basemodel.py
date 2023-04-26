@@ -209,7 +209,7 @@ def test_ht_with_pipeline():
 
 def test_ht_with_multioutput():
     """Assert that the hyperparameter tuning works with multioutput tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("SGD", est_params={"max_iter": 5})
     atom.multioutput = None
     atom.run("MLP", est_params={"max_iter": 5}, errors="raise")
@@ -479,7 +479,7 @@ def test_feature_importance_property():
     atom.run("Tree")
     assert len(atom.tree.feature_importance) == X_bin.shape[1]
 
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("LDA")
     assert len(atom.lda.feature_importance) == X_label.shape[1]
 
@@ -610,7 +610,7 @@ def test_prediction_attributes_binary(dataset):
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
 def test_prediction_attributes_multilabel(dataset):
     """Assert that the prediction attributes change for multilabel tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, stratify=False)
     atom.run(["LR", "RF"])
     predict = getattr(atom.lr, f"predict_{dataset}")
     decision_function = getattr(atom.lr, f"decision_function_{dataset}")
@@ -625,7 +625,7 @@ def test_prediction_attributes_multilabel(dataset):
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
 def test_prediction_attributes_multioutput(dataset):
     """Assert that the prediction attributes change for multioutput tasks."""
-    atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, random_state=1)
+    atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, stratify=False)
     atom.run("RF")
     predict = getattr(atom.rf, f"predict_{dataset}")
     predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
@@ -838,7 +838,7 @@ def test_cross_validate():
 
 def test_evaluate_invalid_threshold_length():
     """Assert that an error is raised when the threshold is invalid."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("MNB")
     with pytest.raises(ValueError, match=".*should be equal to the number of target.*"):
         atom.mnb.evaluate(threshold=[0.5, 0.6])
@@ -881,7 +881,7 @@ def test_evaluate_metric_None(dataset):
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 6
 
-    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, stratify=False)
     atom.run("MNB")
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 7
@@ -910,7 +910,7 @@ def test_evaluate_threshold():
 
 def test_evaluate_threshold_multilabel():
     """Assert that the threshold parameter accepts a list as threshold."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("Tree")
     assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8]), pd.Series)
 
@@ -999,7 +999,7 @@ def test_get_best_threshold_binary():
 
 def test_get_best_threshold_multilabel():
     """Assert that the get_best_threshold method works for multilabel tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("LR")
     assert len(atom.lr.get_best_threshold()) == len(atom.target)
 
