@@ -20,7 +20,6 @@ from category_encoders.binary import BinaryEncoder
 from category_encoders.cat_boost import CatBoostEncoder
 from category_encoders.helmert import HelmertEncoder
 from category_encoders.james_stein import JamesSteinEncoder
-from category_encoders.leave_one_out import LeaveOneOutEncoder
 from category_encoders.m_estimate import MEstimateEncoder
 from category_encoders.one_hot import OneHotEncoder
 from category_encoders.ordinal import OrdinalEncoder
@@ -1415,14 +1414,15 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     [encoding-categorical-features].
 
     !!! warning
-        Two category-encoders estimators are unavailable:
+        Three category-encoders estimators are unavailable:
 
         * [OneHotEncoder][]: Use the max_onehot parameter.
         * [HashingEncoder][]: Incompatibility of APIs.
+        * [LeaveOneOutEncoder][]: Incompatibility of APIs.
 
     Parameters
     ----------
-    strategy: str or estimator, default="LeaveOneOut"
+    strategy: str or estimator, default="Target"
         Type of encoding to use for high cardinality features. Choose
         from any of the estimators in the category-encoders package
         or provide a custom one.
@@ -1516,13 +1516,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         [569 rows x 33 columns]
 
-        >>> atom.encode(strategy="leaveoneout", max_onehot=10, verbose=2)
+        >>> atom.encode(strategy="target", max_onehot=10, verbose=2)
 
         Fitting Encoder...
         Encoding categorical columns...
          --> Ordinal-encoding feature cat_feature_1. Contains 2 classes.
          --> OneHot-encoding feature cat_feature_2. Contains 3 classes.
-         --> LeaveOneOut-encoding feature cat_feature_3. Contains 20 classes.
+         --> Target-encoding feature cat_feature_3. Contains 20 classes.
 
         >>> # Note the one-hot encoded column with name [feature]_[class]
         >>> print(atom.X)
@@ -1571,14 +1571,14 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         [569 rows x 33 columns]
 
-        >>> encoder = Encoder(strategy="leaveoneout", max_onehot=10, verbose=2)
+        >>> encoder = Encoder(strategy="target", max_onehot=10, verbose=2)
         >>> X = encoder.fit_transform(X, y)
 
         Fitting Encoder...
         Encoding categorical columns...
          --> Ordinal-encoding feature cat_feature_1. Contains 2 classes.
          --> OneHot-encoding feature cat_feature_2. Contains 3 classes.
-         --> LeaveOneOut-encoding feature cat_feature_3. Contains 20 classes.
+         --> Target-encoding feature cat_feature_3. Contains 20 classes.
 
         >>> # Note the one-hot encoded column with name [feature]_[class]
         >>> print(X)
@@ -1606,7 +1606,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str | Estimator = "LeaveOneOut",
+        strategy: str | Estimator = "Target",
         *,
         max_onehot: INT | None = 10,
         ordinal: dict[str, SEQUENCE] | None = None,
@@ -1675,7 +1675,6 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             catboost=CatBoostEncoder,
             helmert=HelmertEncoder,
             jamesstein=JamesSteinEncoder,
-            leaveoneout=LeaveOneOutEncoder,
             mestimate=MEstimateEncoder,
             ordinal=OrdinalEncoder,
             polynomial=PolynomialEncoder,

@@ -213,7 +213,7 @@ def test_delete_current():
 
 def test_multioutput_None():
     """Assert that the multioutput estimator is ignored when None."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.multioutput = None
     atom.run("RF", est_params={"n_estimators": 5})  # RF has native support for multilabel
     assert atom.rf.estimator.__class__.__name__ == "RandomForestClassifier"
@@ -221,7 +221,7 @@ def test_multioutput_None():
 
 def test_multioutput_auto():
     """Assert that the multioutput estimator can use auto to set default."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.multioutput = None
     assert atom.multioutput is None
 

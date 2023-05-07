@@ -37,6 +37,7 @@ from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from pandas.api.types import is_numeric_dtype
 from scipy import sparse
 from shap import Explainer, Explanation
 from sklearn.metrics import (
@@ -49,7 +50,7 @@ from sklearn.utils import _print_elapsed_time
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.1.1"
+__version__ = "5.1.2"
 
 # Group of variable types for isinstance
 # TODO: From Python 3.10, add typeguard.typechecked back
@@ -2161,7 +2162,14 @@ def name_cols(
     # If columns were added or removed
     temp_cols = []
     for i, col in enumerate(array.T):
-        mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
+        # equal_nan=True fails for non-numeric dtypes
+        mask = original_df.apply(
+            lambda c: np.array_equal(
+                a1=c,
+                a2=col,
+                equal_nan=is_numeric_dtype(c) and np.issubdtype(col.dtype, np.number)),
+        )
+
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
             # If the column is equal, use the existing name
             temp_cols.append(mask[mask].index.values[0])

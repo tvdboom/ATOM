@@ -2694,21 +2694,21 @@ class HTPlot(BasePlot):
         >>> atom.impute()
         >>> atom.encode()
 
-        # We run three models with different search spaces
+        >>> # We run three models with different search spaces
         >>> atom.run(
         ...     models="RF1",
         ...     n_trials=200,
         ...     ht_params={"distributions": {"n_estimators": IntDistribution(10, 20)}},
         ... )
         >>> atom.run(
-        ...     models="RF1",
+        ...     models="RF2",
         ...     n_trials=200,
-        ...     ht_params={"distributions": {"n_estimators": IntDistribution(50, 80)}},
+        ...     ht_params={"distributions": {"n_estimators": IntDistribution(50, 70)}},
         ... )
         >>> atom.run(
-        ...     models="RF1",
+        ...     models="RF3",
         ...     n_trials=200,
-        ...     ht_params={"distributions": {"n_estimators": IntDistribution(100, 200)}},
+        ...     ht_params={"distributions": {"n_estimators": IntDistribution(80, 90)}},
         ... )
 
         >>> atom.plot_edf()
@@ -6085,7 +6085,7 @@ class PredictionPlot(BasePlot):
             dpi, bbox = fig.get_dpi(), d.get_bbox()
             figsize = (dpi * bbox.xmax // 4, (dpi / 2) * (bbox.ymax - bbox.ymin))
 
-        d.draw(ax=plt.gca(), showframe=False, show=False)
+        d.draw(canvas=plt.gca(), showframe=False, show=False)
         plt.axis("off")
 
         BasePlot._fig.used_models.extend(models)

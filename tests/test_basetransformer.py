@@ -12,6 +12,7 @@ import multiprocessing
 import os
 from logging import Logger
 from platform import machine
+from random import sample
 from unittest.mock import patch
 
 import mlflow
@@ -233,6 +234,25 @@ def test_input_X_and_y_None():
         BaseTransformer._prepare_input()
 
 
+def test_to_pandas():
+    """Assert that the data provided is converted to pandas objects."""
+    X, y = BaseTransformer._prepare_input(X_bin_array, y_bin_array)
+    assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
+
+
+def test_column_order_is_retained():
+    """Assert that column order is kept if column names are specified."""
+    X_shuffled = X_bin[sample(list(X_bin.columns), X_bin.shape[1])]
+    X, _ = BaseTransformer._prepare_input(X_shuffled, columns=X_bin.columns)
+    assert list(X.columns) == list(X_bin.columns)
+
+
+def test_incorrect_columns():
+    """Assert that an error is raised when the provided columns do not match."""
+    with pytest.raises(ValueError, match=".*Features are different.*"):
+        BaseTransformer._prepare_input(X_bin, columns=["1", "2"])
+
+
 def test_input_data_in_atom():
     """Assert that the data does not change once in an atom pipeline."""
     atom = ATOMClassifier(X10, y10, random_state=1)
@@ -284,12 +304,6 @@ def test_sparse_matrices_2_tuples():
     assert isinstance(atom.X, pd.DataFrame)
     assert atom.shape == (20, 4)
     assert atom[atom.columns[0]].dtype.name == "Sparse[int64, 0]"
-
-
-def test_to_pandas():
-    """Assert that the data provided is converted to pandas objects."""
-    X, y = BaseTransformer._prepare_input(X_bin_array, y_bin_array)
-    assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
 
 
 def test_target_is_dict():
@@ -381,7 +395,9 @@ def test_index_is_int_invalid():
 
 def test_index_is_int():
     """Assert that a column can be selected from a position."""
-    atom = ATOMClassifier(X_bin, y_bin, index=0, random_state=1)
+    X = X_bin.copy()
+    X.iloc[:, 0] = range(len(X))
+    atom = ATOMClassifier(X, y_bin, index=0, random_state=1)
     assert atom.dataset.index.name == "mean radius"
 
 
@@ -393,7 +409,9 @@ def test_index_is_str_invalid():
 
 def test_index_is_str():
     """Assert that a column can be selected from a name."""
-    atom = ATOMClassifier(X_bin, y_bin, index="mean texture", random_state=1)
+    X = X_bin.copy()
+    X.loc[:, "mean texture"] = range(len(X))
+    atom = ATOMClassifier(X, y_bin, index="mean texture", random_state=1)
     assert atom.dataset.index.name == "mean texture"
 
 
@@ -428,6 +446,12 @@ def test_index_is_sequence_has_data_sets():
     atom = ATOMClassifier(bin_train, bin_test, bin_test, index=index, random_state=1)
     assert atom.dataset.index[0] == "index_68"
     assert atom.holdout.index[0] == "index_667"
+
+
+def test_duplicate_indices():
+    """Assert that an error is raised when there are duplicate indices."""
+    with pytest.raises(ValueError, match=".*duplicate indices.*"):
+        ATOMClassifier(X_bin, X_bin, index=True, random_state=1)
 
 
 # Test _get_stratify_columns======================================== >>

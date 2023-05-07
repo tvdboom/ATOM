@@ -119,7 +119,7 @@ class BaseTransformer:
 
     @engine.setter
     def engine(self, value: str):
-        if value == "sklearnex":
+        if value.lower() == "sklearnex":
             if not find_spec("sklearnex"):
                 raise ModuleNotFoundError(
                     "Failed to import scikit-learn-intelex. Package is not installed. "
@@ -128,7 +128,7 @@ class BaseTransformer:
             else:
                 import sklearnex
                 sklearnex.set_config("auto" if "cpu" in self.device else self.device)
-        elif value == "cuml":
+        elif value.lower() == "cuml":
             if "cpu" in self.device:
                 raise ValueError(
                     f"Invalid value for the engine parameter. device="
@@ -139,7 +139,7 @@ class BaseTransformer:
                     "Failed to import cuml. Package is not installed. Refer "
                     "to: https://rapids.ai/start.html#rapids-release-selector."
                 )
-        elif value != "sklearn":
+        elif value.lower() != "sklearn":
             raise ValueError(
                 "Invalid value for the engine parameter, got "
                 f"{value}. Choose from: sklearn, sklearnex, cuml."
@@ -154,12 +154,12 @@ class BaseTransformer:
 
     @backend.setter
     def backend(self, value: str):
-        if value not in (opts := ("loky", "multiprocessing", "threading", "ray")):
+        if value.lower() not in (opts := ("loky", "multiprocessing", "threading", "ray")):
             raise ValueError(
                 f"Invalid value for the backend parameter, got "
                 f"{value}. Choose from: {', '.join(opts)}."
             )
-        elif value == "ray":
+        elif value.lower() == "ray":
             import modin.pandas as md
 
             # Overwrite utils backend with modin
@@ -380,8 +380,9 @@ class BaseTransformer:
             - If dataframe: Target columns for multioutput tasks.
 
         columns: sequence or None
-            Names of the features corresponding to X. If None and X is not
-            a dataframe, it gets default feature names.
+            Names of the features corresponding to X. If X already is a
+            dataframe, force feature order. If None and X is not a
+            dataframe, assign default feature names.
 
         Returns
         -------
@@ -400,13 +401,23 @@ class BaseTransformer:
             # If text dataset, change the name of the column to corpus
             if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":
                 X = X.rename(columns={X.columns[0]: "corpus"})
+            else:
+                # Convert all column names to str
+                X.columns = map(str, X.columns)
 
-            # Convert all column names to str
-            X.columns = map(str, X.columns)
+                # No duplicate column names are allowed
+                if len(set(X.columns)) != len(X.columns):
+                    raise ValueError("Duplicate column names found in X.")
 
-            # No duplicate column names are allowed
-            if len(set(X.columns)) != len(X.columns):
-                raise ValueError("Duplicate column names found in X.")
+                # Reorder columns to original order
+                if columns is not None:
+                    try:
+                        X = X[list(columns)]  # Force feature order determined by columns
+                    except KeyError as ex:
+                        raise ValueError(
+                            "Features are different than seen "
+                            f"at fit time. Got exception: {ex}."
+                        )
 
         # Prepare target column
         if isinstance(y, (dict, *SEQUENCE_TYPES, *DATAFRAME_TYPES)):
@@ -481,7 +492,7 @@ class BaseTransformer:
 
         """
         if self.index is True:  # True gets caught by isinstance(int)
-            return df
+            pass
         elif self.index is False:
             df = df.reset_index(drop=True)
         elif isinstance(self.index, INT_TYPES):
@@ -507,15 +518,24 @@ class BaseTransformer:
                 f"can not be the same as the target column, got {df.index.name}."
             )
 
+        if df.index.duplicated().any():
+            raise ValueError(
+                "Invalid value for the index parameter. There are duplicate indices "
+                "in the dataset. Use index=False to reset the index to RangeIndex."
+            )
+
         return df
 
-    def _get_stratify_columns(self, df: DATAFRAME) -> DATAFRAME | None:
+    def _get_stratify_columns(self, df: DATAFRAME, y: PANDAS) -> DATAFRAME | None:
         """Get columns to stratify by.
 
         Parameters
         ----------
         df: dataframe
             Dataset from which to get the columns.
+
+        y: series or dataframe
+            Target column.
 
         Returns
         -------
@@ -529,11 +549,12 @@ class BaseTransformer:
             return None
         elif self.shuffle is False:
             self.log(
-                "Stratification is not possible when shuffle=False.", 3, "warning"
+                "Stratification is not possible when shuffle=False.", 3,
+                severity="warning"
             )
             return None
         elif self.stratify is True:
-            return df.iloc[:, -1]
+            return df[[c.name for c in get_cols(y)]]
         else:
             inc = []
             for col in lst(self.stratify):
@@ -634,7 +655,7 @@ class BaseTransformer:
                 Feature set with shape=(n_samples, n_features).
 
             y: series or dataframe
-                Target column corresponding to X.
+                Target column(s) corresponding to X.
 
             Returns
             -------
@@ -699,7 +720,7 @@ class BaseTransformer:
                     test_size=holdout_size,
                     random_state=self.random_state,
                     shuffle=self.shuffle,
-                    stratify=self._get_stratify_columns(data),
+                    stratify=self._get_stratify_columns(data, y),
                 )
                 holdout = self._set_index(holdout, y)
             else:
@@ -710,7 +731,7 @@ class BaseTransformer:
                 test_size=test_size,
                 random_state=self.random_state,
                 shuffle=self.shuffle,
-                stratify=self._get_stratify_columns(data),
+                stratify=self._get_stratify_columns(data, y),
             )
             data = self._set_index(bk.concat([train, test]), y)
 

@@ -1347,7 +1347,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def encode(
         self,
-        strategy: str = "LeaveOneOut",
+        strategy: str = "Target",
         *,
         max_onehot: INT | None = 10,
         ordinal: dict[str, SEQUENCE] | None = None,

@@ -60,6 +60,7 @@ CUSTOM_URLS = dict(
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
     hashingencoder="https://contrib.scikit-learn.org/category_encoders/hashing.html",
+    leaveoneoutencoder="https://contrib.scikit-learn.org/category_encoders/leaveoneout.html",
     quantile="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html",
     boxcox="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html",
     yeojohnson="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html",

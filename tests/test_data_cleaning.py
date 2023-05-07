@@ -10,7 +10,7 @@ Description: Unit tests for data_cleaning.py
 import numpy as np
 import pandas as pd
 import pytest
-from category_encoders.leave_one_out import LeaveOneOutEncoder
+from category_encoders.target_encoder import TargetEncoder
 from imblearn.combine import SMOTETomek
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
@@ -388,11 +388,11 @@ def test_encoder_strategy_invalid_estimator():
 
 def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
-    encoder = Encoder(strategy=LeaveOneOutEncoder, max_onehot=None)
+    encoder = Encoder(strategy=TargetEncoder, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
     assert X.at[0, "x2"] != "a"
 
-    encoder = Encoder(strategy=LeaveOneOutEncoder(), max_onehot=None)
+    encoder = Encoder(strategy=TargetEncoder(), max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
     assert X.at[0, "x2"] != "a"
 
@@ -447,9 +447,9 @@ def test_all_encoder_types(strategy):
 
 def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
-    encoder = Encoder(strategy="LeaveOneOut", max_onehot=None, sigma=0.5)
+    encoder = Encoder(strategy="Target", max_onehot=None, smoothing=20)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["x2"].get_params()["sigma"] == 0.5
+    assert encoder._encoders["x2"].get_params()["smoothing"] == 20
 
 
 # Test Imputer ===================================================== >>

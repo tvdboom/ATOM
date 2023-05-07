@@ -1046,25 +1046,36 @@ class FeatureSelector(
         strategy="pca"). Choose from:
 
         - If strategy="univariate":
+
             - "[f_classif][]"
             - "[f_regression][]"
             - "[mutual_info_classif][]"
             - "[mutual_info_regression][]"
             - "[chi2][]"
             - Any function with signature `func(X, y) -> (scores, p-values)`.
+
         - If strategy="pca":
+
             - If data is dense:
+
                 - If engine="sklearn":
+
                     - "auto" (default)
                     - "full"
                     - "arpack"
                     - "randomized"
+
                 - If engine="sklearnex":
+
                     - "full" (default)
+
                 - If engine="cuml":
+
                     - "full" (default)
                     - "jacobi"
+
             - If data is sparse:
+
                 - "randomized" (default)
                 - "arpack"
 
@@ -1843,10 +1854,9 @@ class FeatureSelector(
                     X = X.drop(column, axis=1)
 
         else:  # Advanced strategies
-            n_features = len(self._estimator.best_feature_list)
             self.log(
                 f" --> {self.strategy.lower()} selected "
-                f"{n_features} features from the dataset.", 2
+                f"{len(self._estimator.best_feature_list)} features from the dataset.", 2
             )
 
             for column in X:

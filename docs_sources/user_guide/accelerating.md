@@ -57,7 +57,7 @@ of this feature. See [here][example-accelerating-pipelines] an example.
 ## GPU acceleration
 
 Graphics Processing Units (GPUs) can significantly accelerate
-calculations for preprocessing step or training machine learning
+calculations for preprocessing steps or training machine learning
 models. Training models involves compute-intensive matrix
 multiplications and other operations that can take advantage of a
 GPU's massively parallel architecture. Training on large datasets can
@@ -71,6 +71,7 @@ follows the [SYCL_DEVICE_FILTER][] filter selector. Examples are:
 
 * device="cpu" (use CPU)
 * device="gpu" (use default GPU)
+* device="gpu:0" (use first GPU)
 * device="gpu:1" (use second GPU)
 
 Use the [`engine`][atomclassifier-engine] parameter to choose between the
@@ -115,7 +116,7 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
 
 * [Cleaner][] (only for cuML with encode_target=True)
 * [Discretizer][] (only for cuML with strategy!="custom")
-* [Imputer][] (only for cuML with strat_num="knn")
+* [Imputer][] (only for cuML with strat_num!="knn")
 * [Normalizer][] (only for cuML)
 * [Pruner][] (only for strategy="dbscan")
 * [Scaler][] (only for cuML)
@@ -167,7 +168,7 @@ parallelization backends.
 
 !!! warning
     Using [modin][] can be considerably less performant than pandas for small
-    datasets (<1M rows).
+    datasets (<3M rows).
 
 The parallelization backend is applied in the following cases:
 

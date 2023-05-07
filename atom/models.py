@@ -615,7 +615,8 @@ class CatBoost(BaseModel):
     CatBoost is a machine learning method based on gradient boosting
     over decision trees. Main advantages of CatBoost:
 
-    - Superior quality when compared with other GBDT models on many datasets.
+    - Superior quality when compared with other GBDT models on many
+      datasets.
     - Best in class prediction speed.
 
     Corresponding estimators are:
@@ -626,8 +627,13 @@ class CatBoost(BaseModel):
     Read more in CatBoost's [documentation][catbdocs].
 
     !!! warning
-        [In-training validation][] and [pruning][] are disabled when
-        `device="gpu"`.
+        * CatBoost selects the weights achieved by the best evaluation
+          on the test set after training. This means that, by default,
+          there is some minor data leakage in the test set. Use the
+          `use_best_model=False` parameter to avoid this behavior or use
+          a [holdout set][data-sets] to evaluate the final estimator.
+        * [In-training validation][] and [pruning][] are disabled when
+          `device="gpu"`.
 
     !!! note
         ATOM uses CatBoost's `n_estimators` parameter instead of
