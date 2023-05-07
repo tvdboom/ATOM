@@ -3142,7 +3142,7 @@
 
 <h1 id="scaler">Scaler</h1>
 <hr />
-<p><a id='Scaler'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Scaler</strong>(strategy="standard", include_binary=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3065>[source]</a></span></div>Scale the data.</p>
+<p><a id='Scaler'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Scaler</strong>(strategy="standard", include_binary=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3064>[source]</a></span></div>Scale the data.</p>
 <p>Apply one of sklearn's scalers. Categorical columns are ignored.</p>
 <p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-scale">scale</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#scaling-the-feature-set">user guide</a>.</p>
 <table class="table_params">
@@ -3304,7 +3304,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#scaler-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-inverse_transform">inverse_transform</a></td><td>Apply the inverse transformation to the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-transform">transform</a></td><td>Perform standardization by centering and scaling.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='scaler-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3258>[source]</a></span></div>Fit to data.</p>
+<p><a id='scaler-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3257>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3315,7 +3315,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='scaler-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='scaler-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L108>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3351,7 +3351,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='scaler-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3345>[source]</a></span></div>Apply the inverse transformation to the data.</p>
+<p><a id='scaler-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3344>[source]</a></span></div>Apply the inverse transformation to the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3394,7 +3394,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='scaler-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3311>[source]</a></span></div>Perform standardization by centering and scaling.</p>
+<p><a id='scaler-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3310>[source]</a></span></div>Perform standardization by centering and scaling.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

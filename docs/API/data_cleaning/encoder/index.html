@@ -3142,7 +3142,7 @@
 
 <h1 id="encoder">Encoder</h1>
 <hr />
-<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="LeaveOneOut", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1399>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1398>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the column:</p>
 <ul>
 <li>If n_classes=2 or ordinal feature, use Ordinal-encoding.</li>
@@ -3156,14 +3156,15 @@ a value in order to prevent too high cardinality.</p>
 <p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-encode">encode</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#encoding-categorical-features">user guide</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Two category-encoders estimators are unavailable:</p>
+<p>Three category-encoders estimators are unavailable:</p>
 <ul>
 <li><a href="https://contrib.scikit-learn.org/category_encoders/onehot.html">OneHotEncoder</a>: Use the max_onehot parameter.</li>
 <li><a href="https://contrib.scikit-learn.org/category_encoders/hashing.html">HashingEncoder</a>: Incompatibility of APIs.</li>
+<li><a href="https://contrib.scikit-learn.org/category_encoders/leaveoneout.html">LeaveOneOutEncoder</a>: Incompatibility of APIs.</li>
 </ul>
 </div>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='encoder-strategy'></a><strong>strategy: str or estimator, default="LeaveOneOut"</strong><br><div markdown class='param'>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='encoder-strategy'></a><strong>strategy: str or estimator, default="Target"</strong><br><div markdown class='param'>
 Type of encoding to use for high cardinality features. Choose
 from any of the estimators in the category-encoders package
 or provide a custom one.</p>
@@ -3251,13 +3252,13 @@ Number of features seen during fit.</p>
 
 <span class="go">[569 rows x 33 columns]</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;leaveoneout&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="go">Fitting Encoder...</span>
 <span class="go">Encoding categorical columns...</span>
 <span class="go"> --&gt; Ordinal-encoding feature cat_feature_1. Contains 2 classes.</span>
 <span class="go"> --&gt; OneHot-encoding feature cat_feature_2. Contains 3 classes.</span>
-<span class="go"> --&gt; LeaveOneOut-encoding feature cat_feature_3. Contains 20 classes.</span>
+<span class="go"> --&gt; Target-encoding feature cat_feature_3. Contains 20 classes.</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
@@ -3304,14 +3305,14 @@ Number of features seen during fit.</p>
 
 <span class="go">[569 rows x 33 columns]</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;leaveoneout&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
 <span class="go">Fitting Encoder...</span>
 <span class="go">Encoding categorical columns...</span>
 <span class="go"> --&gt; Ordinal-encoding feature cat_feature_1. Contains 2 classes.</span>
 <span class="go"> --&gt; OneHot-encoding feature cat_feature_2. Contains 3 classes.</span>
-<span class="go"> --&gt; LeaveOneOut-encoding feature cat_feature_3. Contains 20 classes.</span>
+<span class="go"> --&gt; Target-encoding feature cat_feature_3. Contains 20 classes.</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
@@ -3363,7 +3364,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='encoder-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L108>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3399,7 +3400,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L150>[source]</a></span></div>Does nothing.</p>
+<p><a id='encoder-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L149>[source]</a></span></div>Does nothing.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3455,7 +3456,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1808>[source]</a></span></div>Encode the data.</p>
+<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1807>[source]</a></span></div>Encode the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

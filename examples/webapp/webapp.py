@@ -49,7 +49,7 @@ if st.sidebar.button("Run"):
         atom.scale()
     if encode:
         placeholder.write("Encoding the categorical features...")
-        atom.encode(strategy="LeaveOneOut", max_onehot=10)
+        atom.encode(strategy="Target", max_onehot=10)
     if impute:
         placeholder.write("Imputing the missing values...")
         atom.impute(strat_num="drop", strat_cat="most_frequent")

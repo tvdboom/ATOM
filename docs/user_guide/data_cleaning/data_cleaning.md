@@ -93,7 +93,7 @@ package, depending on the value of the `max_onehot` parameter.
 encodes the column making a dummy feature for every class. This
 approach preserves all the information but increases the size of
 the dataset considerably, making it often an undesirable strategy for
-high cardinality features. Other strategies like [LeaveOneOut](https://contrib.scikit-learn.org/category_encoders/leaveoneout.html)
+high cardinality features. Other strategies like [Target](https://contrib.scikit-learn.org/category_encoders/targetencoder.html)
 transform the column in place.
 
 <br>

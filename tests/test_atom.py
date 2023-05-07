@@ -13,7 +13,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from category_encoders.leave_one_out import LeaveOneOutEncoder
+from category_encoders.target_encoder import TargetEncoder
 from evalml.pipelines.components.estimators import SVMClassifier
 from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
@@ -579,7 +579,7 @@ def test_add_keep_column_names():
     atom = ATOMClassifier(X10_str, y10, random_state=1)
 
     # Transformer has method get_feature_names
-    atom.add(LeaveOneOutEncoder(return_df=False))
+    atom.add(TargetEncoder(return_df=False))
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer has method get_feature_names_out

@@ -3242,7 +3242,7 @@ calling the <a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifi
 dataset. The transformations are applied immediately after calling the
 method (no fit and transform commands necessary).</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">)</span>  
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 
 <span class="go">Fitting Imputer...</span>
 <span class="go">Imputing missing values...</span>
@@ -3268,10 +3268,10 @@ method (no fit and transform commands necessary).</p>
 <span class="go"> --&gt; Imputing 5 missing values with most_frequent (No) in feature RainToday.</span>
 <span class="go">Fitting Encoder...</span>
 <span class="go">Encoding categorical columns...</span>
-<span class="go"> --&gt; LeaveOneOut-encoding feature Location. Contains 49 classes.</span>
-<span class="go"> --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.</span>
-<span class="go"> --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 classes.</span>
-<span class="go"> --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 classes.</span>
+<span class="go"> --&gt; Target-encoding feature Location. Contains 49 classes.</span>
+<span class="go"> --&gt; Target-encoding feature WindGustDir. Contains 16 classes.</span>
+<span class="go"> --&gt; Target-encoding feature WindDir9am. Contains 16 classes.</span>
+<span class="go"> --&gt; Target-encoding feature WindDir3pm. Contains 16 classes.</span>
 <span class="go"> --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.</span>
 </code></pre></div>
 <p>Similarly, models are <a class="autorefs autorefs-internal" href="../user_guide/training/#training">trained and evaluated</a> using the

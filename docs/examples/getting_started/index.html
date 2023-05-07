@@ -4253,10 +4253,10 @@ Categorical features: 5 (23.8%)
                 </clipboard-copy>
             </div>
             <div class="highlight-ipynb hl-python "><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">)</span>  
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 </pre></div>
 <div id="cell-3" class="clipboard-copy-txt">atom.impute(strat_num="median", strat_cat="most_frequent")  
-atom.encode(strategy="LeaveOneOut", max_onehot=8)</div>
+atom.encode(strategy="Target", max_onehot=8)</div>
         
         </div>
     </div>
@@ -4300,10 +4300,10 @@ Imputing missing values...
  --&gt; Imputing 12 missing values with most_frequent (No) in feature RainToday.
 Fitting Encoder...
 Encoding categorical columns...
- --&gt; LeaveOneOut-encoding feature Location. Contains 49 classes.
- --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.
- --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 classes.
- --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 classes.
+ --&gt; Target-encoding feature Location. Contains 49 classes.
+ --&gt; Target-encoding feature WindGustDir. Contains 16 classes.
+ --&gt; Target-encoding feature WindDir9am. Contains 16 classes.
+ --&gt; Target-encoding feature WindDir3pm. Contains 16 classes.
  --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.
 </pre>
 </div>
