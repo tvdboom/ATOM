@@ -201,7 +201,12 @@ To apply in-training validation to a [custom model][custom-models], use the
 custom model.
 
 !!! warning
-    In-training validation is **not** calculated during [hyperparameter tuning][].
+    * In-training validation is **not** calculated during [hyperparameter tuning][].
+    * CatBoost selects the weights achieved by the best evaluation on the
+    test set after training. This means that, by default, there is some
+    minor data leakage in the test set. Use the `use_best_model=False`
+    parameter to avoid this behavior or use a [holdout set][data-sets] to
+    evaluate the final estimator.
 
 !!! tip
     Use the [plot_evals][] method to visualize the in-training validation

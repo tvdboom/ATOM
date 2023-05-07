@@ -133,7 +133,7 @@ method (no fit and transform commands necessary).
 
 ```pycon
 >>> atom.impute(strat_num="median", strat_cat="most_frequent")  
->>> atom.encode(strategy="LeaveOneOut", max_onehot=8)
+>>> atom.encode(strategy="Target", max_onehot=8)
 
 Fitting Imputer...
 Imputing missing values...
@@ -159,10 +159,10 @@ Imputing missing values...
  --> Imputing 5 missing values with most_frequent (No) in feature RainToday.
 Fitting Encoder...
 Encoding categorical columns...
- --> LeaveOneOut-encoding feature Location. Contains 49 classes.
- --> LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.
- --> LeaveOneOut-encoding feature WindDir9am. Contains 16 classes.
- --> LeaveOneOut-encoding feature WindDir3pm. Contains 16 classes.
+ --> Target-encoding feature Location. Contains 49 classes.
+ --> Target-encoding feature WindGustDir. Contains 16 classes.
+ --> Target-encoding feature WindDir9am. Contains 16 classes.
+ --> Target-encoding feature WindDir3pm. Contains 16 classes.
  --> Ordinal-encoding feature RainToday. Contains 2 classes.
 
 ```
