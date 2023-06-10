@@ -46,7 +46,7 @@ from atom.utils import (
     check_dependency, check_is_fitted, check_scaling, composed, crash,
     custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
     infer_task, is_multioutput, is_sparse, lst, method_to_log, sign,
-    variable_return,
+    variable_return, DataConfig
 )
 
 
@@ -83,6 +83,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.n_rows = n_rows
         self.test_size = test_size
         self.holdout_size = holdout_size
+
+        self._config = DataConfig(index, shuffle, stratify, test_size)
 
         self._multioutput = "auto"
         self._missing = [
@@ -1909,7 +1911,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
 
         # Transfer attributes
-        trainer.index = self.index
+        trainer._config = self._config
         trainer._og = self._og
         trainer._current = self._current
         trainer._branches = self._branches

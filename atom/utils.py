@@ -25,7 +25,7 @@ from itertools import cycle
 from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
-
+from dataclasses import dataclass
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -50,7 +50,7 @@ from sklearn.utils import _print_elapsed_time
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.1.2"
+__version__ = "5.2.0"
 
 # Group of variable types for isinstance
 # TODO: From Python 3.10, add typeguard.typechecked back
@@ -149,6 +149,21 @@ class Transformer(Protocol):
     """Protocol for all predictors."""
     def fit(self, **params): ...
     def transform(self, **params): ...
+
+
+@dataclass
+class DataConfig:
+    """Stores the data configuration.
+
+    This is a utility class to store the data configuration in one
+    attribute and pass it down to the models. The default values are
+    the one adopted by trainers.
+
+    """
+    index: bool | INT | str | SEQUENCE = True
+    shuffle: bool = True
+    stratify: bool | INT | str | SEQUENCE = True
+    test_size: SCALAR = 0.2
 
 
 class CatBMetric:

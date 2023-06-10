@@ -491,25 +491,25 @@ class BaseTransformer:
             Dataset with updated indices.
 
         """
-        if self.index is True:  # True gets caught by isinstance(int)
+        if self._config.index is True:  # True gets caught by isinstance(int)
             pass
-        elif self.index is False:
+        elif self._config.index is False:
             df = df.reset_index(drop=True)
-        elif isinstance(self.index, INT_TYPES):
-            if -df.shape[1] <= self.index <= df.shape[1]:
-                df = df.set_index(df.columns[self.index], drop=True)
+        elif isinstance(self._config.index, INT_TYPES):
+            if -df.shape[1] <= self._config.index <= df.shape[1]:
+                df = df.set_index(df.columns[self._config.index], drop=True)
             else:
                 raise ValueError(
-                    f"Invalid value for the index parameter. Value {self.index} "
+                    f"Invalid value for the index parameter. Value {self._config.index} "
                     f"is out of range for a dataset with {df.shape[1]} columns."
                 )
-        elif isinstance(self.index, str):
-            if self.index in df:
-                df = df.set_index(self.index, drop=True)
+        elif isinstance(self._config.index, str):
+            if self._config.index in df:
+                df = df.set_index(self._config.index, drop=True)
             else:
                 raise ValueError(
                     "Invalid value for the index parameter. "
-                    f"Column {self.index} not found in the dataset."
+                    f"Column {self._config.index} not found in the dataset."
                 )
 
         if y is not None and df.index.name in (c.name for c in get_cols(y)):
@@ -545,19 +545,19 @@ class BaseTransformer:
 
         """
         # Stratification is not possible when the data cannot change order
-        if self.stratify is False:
+        if self._config.stratify is False:
             return None
-        elif self.shuffle is False:
+        elif self._config.shuffle is False:
             self.log(
                 "Stratification is not possible when shuffle=False.", 3,
                 severity="warning"
             )
             return None
-        elif self.stratify is True:
+        elif self._config.stratify is True:
             return df[[c.name for c in get_cols(y)]]
         else:
             inc = []
-            for col in lst(self.stratify):
+            for col in lst(self._config.stratify):
                 if isinstance(col, INT_TYPES):
                     if -df.shape[1] <= col <= df.shape[1]:
                         inc.append(df.columns[col])
@@ -666,14 +666,14 @@ class BaseTransformer:
             data = merge(X, y)
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self.index, SEQUENCE_TYPES):
-                if len(self.index) != len(data):
+            if isinstance(self._config.index, SEQUENCE_TYPES):
+                if len(self._config.index) != len(data):
                     raise ValueError(
                         "Invalid value for the index parameter. Length of "
-                        f"index ({len(self.index)}) doesn't match that of "
-                        f"the dataset ({len(data)})."
+                        f"index ({len(self._config.index)}) doesn't match "
+                        f"that of the dataset ({len(data)})."
                     )
-                data.index = self.index
+                data.index = self._config.index
 
             if use_n_rows:
                 if not 0 < self.n_rows <= len(data):
@@ -710,16 +710,15 @@ class BaseTransformer:
 
                 if not 0 <= holdout_size <= len(data) - test_size:
                     raise ValueError(
-                        "Invalid value for the holdout_size parameter. "
-                        "Value should lie between 0 and len(X) - len(test), "
-                        f"got {self.holdout_size}."
+                        "Invalid value for the holdout_size parameter. Value should "
+                        f"lie between 0 and len(X) - len(test), got {self.holdout_size}."
                     )
 
                 data, holdout = train_test_split(
                     data,
                     test_size=holdout_size,
                     random_state=self.random_state,
-                    shuffle=self.shuffle,
+                    shuffle=self._config.shuffle,
                     stratify=self._get_stratify_columns(data, y),
                 )
                 holdout = self._set_index(holdout, y)
@@ -730,7 +729,7 @@ class BaseTransformer:
                 data,
                 test_size=test_size,
                 random_state=self.random_state,
-                shuffle=self.shuffle,
+                shuffle=self._config.shuffle,
                 stratify=self._get_stratify_columns(data, y),
             )
             data = self._set_index(bk.concat([train, test]), y)
@@ -784,21 +783,21 @@ class BaseTransformer:
             holdout = merge(X_holdout, y_holdout) if X_holdout is not None else None
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self.index, SEQUENCE_TYPES):
+            if isinstance(self._config.index, SEQUENCE_TYPES):
                 len_data = len(train) + len(test)
                 if holdout is not None:
                     len_data += len(holdout)
 
-                if len(self.index) != len_data:
+                if len(self._config.index) != len_data:
                     raise ValueError(
                         "Invalid value for the index parameter. Length of "
-                        f"index ({len(self.index)}) doesn't match that of "
-                        f"the data sets ({len_data})."
+                        f"index ({len(self._config.index)}) doesn't match "
+                        f"that of the data sets ({len_data})."
                     )
-                train.index = self.index[:len(train)]
-                test.index = self.index[len(train):len(train) + len(test)]
+                train.index = self._config.index[:len(train)]
+                test.index = self._config.index[len(train):len(train) + len(test)]
                 if holdout is not None:
-                    holdout.index = self.index[-len(holdout):]
+                    holdout.index = self._config.index[-len(holdout):]
 
             # Skip the n_rows step if not called from atom
             # Don't use hasattr since getattr can fail when _models is not converted

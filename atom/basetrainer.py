@@ -29,7 +29,7 @@ from atom.models import MODELS, CatBoost, CustomModel, LightGBM, XGBoost
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     SEQUENCE_TYPES, ClassMap, Model, check_dependency, get_best_score,
-    get_custom_scorer, lst, sign, time_to_str,
+    get_custom_scorer, lst, sign, time_to_str, DataConfig
 )
 
 
@@ -71,11 +71,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         self._models = lst(models) if models is not None else []
         self._metric = lst(metric) if metric is not None else []
 
+        self._config = DataConfig()
+
         self._og = None
         self._current = Branch(name="master")
         self._branches = ClassMap(self._current)
 
-        self.index = True
         self.task = None
 
         self._multioutput = "auto"
@@ -158,12 +159,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         # Define models ============================================ >>
 
         kwargs = dict(
-            index=self.index,
             goal=self.goal,
-            metric=self._metric,
-            multioutput=self.multioutput,
+            config=self._config,
             og=self.og,
             branch=self.branch,
+            metric=self._metric,
+            multioutput=self.multioutput,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 

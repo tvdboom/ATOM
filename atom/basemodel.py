@@ -18,7 +18,7 @@ from importlib import import_module
 from logging import Logger
 from typing import Any, Callable
 from unittest.mock import patch
-
+from optuna.terminator import report_cross_validation_scores
 import dill as pickle
 import mlflow
 import numpy as np
@@ -56,7 +56,7 @@ from atom.utils import (
     custom_transform, estimator_has_attr, export_pipeline, flt, get_cols,
     get_custom_scorer, get_feature_importance, has_task, infer_task, is_binary,
     is_multioutput, it, lst, merge, method_to_log, rnd, score, sign,
-    time_to_str, to_df, to_pandas, variable_return,
+    time_to_str, to_df, to_pandas, variable_return, DataConfig
 )
 
 
@@ -69,21 +69,21 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         Name for the model. If None, the name is the same as the
         model's acronym.
 
-    index: bool, int, str or sequence, default=False
-        Handle the index in the resulting dataframe.
-
     goal: str, default="class"
         Model's goal. Choose from "class" for classification or
         "reg" for regression.
 
-    metric: ClassMap or None, default=None
-        Metric on which to fit the model.
+    config: DataConfig or None, default=None
+        Data configuration. If None, use the default config values.
 
     og: Branch or None, default=None
         Original branch.
 
     branch: Branch or None, default=None
         Current branch.
+
+    metric: ClassMap or None, default=None
+        Metric on which to fit the model.
 
     multioutput: Estimator or None, default=None
         Meta-estimator for multioutput tasks.
@@ -166,11 +166,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def __init__(
         self,
         name: str | None = None,
-        index: bool | INT | str | SEQUENCE = True,
         goal: str = "class",
-        metric: ClassMap | None = None,
+        config: DataConfig | None = None,
         og: Any | None = None,
         branch: Any | None = None,
+        metric: ClassMap | None = None,
         multioutput: Estimator | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
@@ -195,8 +195,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         )
 
         self._name = name or self.acronym
-        self.index = index
         self.goal = goal
+
+        self._config = config or DataConfig()
         self._metric = metric
         self.multioutput = multioutput
 
@@ -896,34 +897,39 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
             # Skip if the eval function has already been evaluated at this point
             if dict(params) not in self.trials["params"].tolist():
+                # Follow same stratification strategy as atom
+                cols = self._get_stratify_columns(self.og.train, self.og.y_train)
+
                 if self._ht.get("cv", 1) == 1:
-                    if self.goal == "class":
-                        split = StratifiedShuffleSplit  # Keep % of samples per class
-                    else:
+                    if cols is None:
                         split = ShuffleSplit
+                    else:
+                        cols = self.og.y_train
+                        split = StratifiedShuffleSplit
 
                     # Get the ShuffleSplit cross-validator object
                     fold = split(
                         n_splits=1,
-                        test_size=len(self.og.test) / self.og.shape[0],
+                        test_size=self._config.test_size,
                         random_state=trial.number + (self.random_state or 0),
-                    ).split(self.og.X_train, get_cols(self.og.y_train)[0])
+                    ).split(self.og.X_train, cols)
 
                     # Fit model just on the one fold
                     estimator, score = fit_model(estimator, *next(fold))
 
                 else:  # Use cross validation to get the score
-                    if self.goal == "class":
-                        k_fold = StratifiedKFold  # Keep % of samples per class
-                    else:
+                    if cols is None:
                         k_fold = KFold
+                    else:
+                        cols = self.og.y_train
+                        k_fold = StratifiedKFold
 
                     # Get the K-fold cross-validator object
                     fold = k_fold(
                         n_splits=self._ht["cv"],
                         shuffle=True,
                         random_state=trial.number + (self.random_state or 0),
-                    ).split(self.og.X_train, get_cols(self.og.y_train)[0])
+                    ).split(self.og.X_train, cols)
 
                     # Parallel loop over fit_model
                     results = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
@@ -931,7 +937,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     )
 
                     estimator = results[0][0]
-                    score = list(np.mean([r[1] for r in results], axis=0))
+                    score = list(np.mean(scores := [r[1] for r in results], axis=0))
+
+                    # Report cv scores for termination judgement
+                    report_cross_validation_scores(trial, scores)
             else:
                 # Get same estimator and score as previous evaluation
                 idx = self.trials.index[self.trials["params"] == params][0]
@@ -1047,7 +1056,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
             self.log(
-                "The study didn't complete any trial. "
+                "The study didn't complete any trial successfully. "
                 "Skipping hyperparameter tuning.", 1, severity="warning"
             )
             return

@@ -3592,6 +3592,140 @@ class HTPlot(BasePlot):
         )
 
     @composed(crash, plot_from_model)
+    def plot_terminator_improvement(
+        self,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the potentials for future objective improvement.
+
+        This function visualizes the objective improvement potentials.
+        It helps to determine whether you should continue the
+        optimization or not. The evaluated error is also plotted. Note
+        that this function may take some time to compute the improvement
+        potentials. This plot is only available for models that ran
+        [hyperparameter tuning][].
+
+        !!! warning
+            The plot_terminator_improvement method is only available
+            for models that ran [hyperparameter tuning][] using
+            cross-validation, e.g. using `ht_params={'cv': 5}`.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models that used hyperparameter
+            tuning are selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of hyperparameters shown.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HTPlot.plot_edf
+        atom.plots:HTPlot.plot_pareto_front
+        atom.plots:HTPlot.plot_trials
+
+        Examples
+        --------
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.run(["LR", "RF"], n_trials=15)
+        >>> atom.plot_terminator_improvement()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_terminator_improvement.html
+
+        """
+        check_dependency("botorch")
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            from optuna.visualization._terminator_improvement import _get_improvement_info
+            try:
+                info = _get_improvement_info(m.study, get_error=True)
+            except ValueError:
+                raise PermissionError(
+                    "The plot_terminator_improvement method is only available for "
+                    "models that ran hyperparameter tuning using cross-validation, "
+                    "e.g. using ht_params={'cv': 5}."
+                )
+
+            fig.add_trace(
+                go.Bar(
+                    x=np.array(list(importances.values())) / sum(importances.values()),
+                    y=list(importances.keys()),
+                    orientation="h",
+                    marker=dict(
+                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                    ),
+                    hovertemplate="%{x}<extra></extra>",
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Trial",
+            ylabel="Terminator improvement",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_terminator_improvement",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
     def plot_trials(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,

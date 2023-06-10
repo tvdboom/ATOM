@@ -185,18 +185,14 @@ def test_xgb_optimizes_score():
     assert atom.xgb.trials["score"].sum() > 0  # All scores are positive
 
 
-def test_empty_study():
+@patch("optuna.study.Study.get_trials")
+def test_empty_study(func):
     """Assert that the optimization is skipped when there are no completed trials."""
+    func.return_value = []  # No successful trials
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models="PA",
-        n_trials=1,
-        ht_params={
-            "pruner": PatientPruner(None, patience=1),
-            "distributions": {"max_iter": IntDistribution(10, 20)},
-        },
-    )
-    assert atom.pa.best_trial is None
+    atom.run(models="tree", n_trials=1)
+    assert atom.tree.best_trial is None
 
 
 def test_ht_with_pipeline():

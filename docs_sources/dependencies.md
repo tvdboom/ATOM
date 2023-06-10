@@ -38,7 +38,7 @@ packages are necessary for its correct functioning.
 * **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.18.1)
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
 * **[numpy](https://numpy.org/)** (>=1.23.5)
-* **[optuna](https://optuna.org/)** (>=3.1.0)
+* **[optuna](https://optuna.org/)** (>=3.2.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.5.0)
 * **[plotly](https://plotly.com/python/)** (>=5.13.1)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.3.0)
@@ -55,13 +55,14 @@ Some specific models, utility methods or plots require the installation of
 additional libraries. You can install all the optional dependencies using
 `pip install atom-ml[full]`. Doing so also installs the following libraries:
 
+* **[botorch](https://botorch.org/docs/introduction)** (>=0.8.5)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.1.1)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.2)
 * **[evalml](https://evalml.alteryx.com/en/stable/)** (>=0.68.0)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.19.1)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.5)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
-* **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.2)
+* **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)
 * **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.1.0)
 
