@@ -16,6 +16,7 @@ import warnings
 from collections import OrderedDict, deque
 from collections.abc import MutableMapping
 from copy import copy, deepcopy
+from dataclasses import dataclass
 from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
@@ -25,7 +26,7 @@ from itertools import cycle
 from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
-from dataclasses import dataclass
+
 import mlflow
 import modin.pandas as md
 import numpy as np

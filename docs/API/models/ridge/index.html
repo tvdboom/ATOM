@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.1/API/models/ridge/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/ridge/">
       
       
         <link rel="prev" href="../rf/">
@@ -19,16 +19,16 @@
         <link rel="next" href="../sgd/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.9">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
   <title>Ridge - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.85bb2934.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a6bdf11c.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
       
       
 
@@ -2558,6 +2558,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_terminator_improvement/" class="md-nav__link">
+        plot_terminator_improvement
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_threshold/" class="md-nav__link">
         plot_threshold
       </a>
@@ -3462,7 +3476,7 @@ from the model. The remaining utility methods can be found hereunder.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#ridge-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#ridge-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='ridge-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1184>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='ridge-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1194>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -3473,7 +3487,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2208>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='ridge-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2218>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -3490,7 +3504,7 @@ another, independent set for testing.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2248>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p><a id='ridge-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2258>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
@@ -3505,7 +3519,7 @@ affected attributes are:</p>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='ridge-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2278>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='ridge-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2288>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -3517,7 +3531,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2342>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='ridge-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2352>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -3548,7 +3562,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2445>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='ridge-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2455>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the solution's
 performance.</p>
@@ -3562,7 +3576,7 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2501>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='ridge-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2511>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="#ridge-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
@@ -3595,7 +3609,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2620>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
+<p><a id='ridge-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2630>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that, if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -3630,7 +3644,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1074>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='ridge-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1084>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -3645,7 +3659,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2668>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='ridge-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2678>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -3668,7 +3682,7 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2710>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
+<p><a id='ridge-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2720>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
 <p>Only available for models with a <code>predict_proba</code> method in a
 binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <table class="table_params">
@@ -3680,7 +3694,7 @@ Best threshold or list of thresholds for multilabel tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L781>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='ridge-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L783>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -3693,7 +3707,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2751>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='ridge-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2761>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -3725,14 +3739,14 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2852>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='ridge-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2862>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2870>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
+<p><a id='ridge-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2880>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
 <p>The complete pipeline is served with the model. The inference
 data must be supplied as json to the HTTP request, e.g.
 <code>requests.get("http://127.0.0.1:8000/", json=X.to_json())</code>.
@@ -3754,7 +3768,7 @@ Port for HTTP server.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2812>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p><a id='ridge-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2822>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
 <p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
 enabled using one of the following URI schemes: databricks,
 http, https, postgresql, mysql, sqlite, mssql.</p>
@@ -3767,7 +3781,7 @@ New desired stage for the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='ridge-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2942>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='ridge-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2952>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be
@@ -3905,7 +3919,7 @@ Transformed target column. Only returned if provided.
     <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.fac441b0.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       

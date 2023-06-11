@@ -18,7 +18,7 @@ from importlib import import_module
 from logging import Logger
 from typing import Any, Callable
 from unittest.mock import patch
-from optuna.terminator import report_cross_validation_scores
+
 import dill as pickle
 import mlflow
 import numpy as np
@@ -31,6 +31,7 @@ from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
 from optuna.samplers import NSGAIISampler, TPESampler
 from optuna.study import Study
+from optuna.terminator import report_cross_validation_scores
 from optuna.trial import Trial, TrialState
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
@@ -51,12 +52,12 @@ from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, DF_ATTRS, FEATURES, FLOAT, FLOAT_TYPES, INDEX,
     INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET, ClassMap,
-    CustomDict, Estimator, PlotCallback, Predictor, Scorer, ShapExplanation,
-    TrialsCallback, bk, check_dependency, check_scaling, composed, crash,
-    custom_transform, estimator_has_attr, export_pipeline, flt, get_cols,
-    get_custom_scorer, get_feature_importance, has_task, infer_task, is_binary,
-    is_multioutput, it, lst, merge, method_to_log, rnd, score, sign,
-    time_to_str, to_df, to_pandas, variable_return, DataConfig
+    CustomDict, DataConfig, Estimator, PlotCallback, Predictor, Scorer,
+    ShapExplanation, TrialsCallback, bk, check_dependency, check_scaling,
+    composed, crash, custom_transform, estimator_has_attr, export_pipeline,
+    flt, get_cols, get_custom_scorer, get_feature_importance, has_task,
+    infer_task, is_binary, is_multioutput, it, lst, merge, method_to_log, rnd,
+    score, sign, time_to_str, to_df, to_pandas, variable_return,
 )
 
 

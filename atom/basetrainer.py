@@ -10,6 +10,7 @@ Description: Module containing the BaseTrainer class.
 from __future__ import annotations
 
 import re
+import tempfile
 import traceback
 from datetime import datetime as dt
 from typing import Any
@@ -20,6 +21,7 @@ import numpy as np
 import ray
 from joblib import Parallel, delayed
 from optuna import Study, create_study
+from sklearn.utils.validation import check_memory
 
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
@@ -28,8 +30,8 @@ from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CatBoost, CustomModel, LightGBM, XGBoost
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    SEQUENCE_TYPES, ClassMap, Model, check_dependency, get_best_score,
-    get_custom_scorer, lst, sign, time_to_str, DataConfig
+    SEQUENCE_TYPES, ClassMap, DataConfig, Model, check_dependency,
+    get_best_score, get_custom_scorer, lst, sign, time_to_str,
 )
 
 
@@ -72,6 +74,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         self._metric = lst(metric) if metric is not None else []
 
         self._config = DataConfig()
+        self._memory = check_memory(tempfile.gettempdir())
 
         self._og = None
         self._current = Branch(name="master")
