@@ -121,10 +121,12 @@ class BaseFigure:
         self.horizontal_spacing = horizontal_spacing
         self.vertical_spacing = vertical_spacing
         if isinstance(palette, str):
-            self.palette = cycle(getattr(px.colors.qualitative, palette))
+            self._palette = getattr(px.colors.qualitative, palette)
+            self.palette = cycle(self._palette)
         else:
             # Convert color names or hex to rgb
-            self.palette = cycle(map(to_rgb, palette))
+            self._palette = list(map(to_rgb, palette))
+            self.palette = cycle(self._palette)
         self.is_canvas = is_canvas
         self.backend = backend
         self.create_figure = create_figure

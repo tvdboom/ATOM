@@ -877,7 +877,13 @@ def test_evaluate_metric_None(dataset):
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 6
 
-    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, stratify=False)
+    atom = ATOMClassifier(
+        X_label,
+        y=y_label,
+        holdout_size=0.1,
+        stratify=False,
+        random_state=1,
+    )
     atom.run("MNB")
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 7
