@@ -890,14 +890,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             # the estimator (often changed by _get_parameters in models.py),
             # we implement this hacky method to overwrite the params in storage
             trial._cached_frozen_trial.params = params
-            for name, value in params.items():
-                distribution = trial.distributions[name]
-                trial.storage.set_trial_param(
-                    trial_id=trial.number,
-                    param_name=name,
-                    param_value_internal=distribution.to_internal_repr(value),
-                    distribution=distribution,
-                )
+            frozen_trial = self.study._storage._get_trial(trial.number)
+            frozen_trial.params = params
+            frozen_trial.distributions = self._ht["distributions"]
+            self.study._storage._set_trial(trial.number, frozen_trial)
 
             # Store user defined tags
             for key, value in self._ht["tags"].items():

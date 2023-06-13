@@ -538,8 +538,8 @@ def test_plot_hyperparameter_importance():
 
 def test_plot_hyperparameters():
     """Assert that the plot_hyperparameters method works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree", n_trials=3)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("lr", n_trials=3)
 
     # Only one hyperparameter
     with pytest.raises(ValueError, match=".*minimum of two parameters.*"):
@@ -569,8 +569,8 @@ def test_plot_pareto_front():
 
 def test_plot_slice():
     """Assert that the plot_slice method works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("tree", metric=["mae", "mse"], n_trials=3)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("lr", metric=["f1", "recall"], n_trials=3)
     atom.plot_slice(display=False)
 
 
