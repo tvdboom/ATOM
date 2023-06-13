@@ -587,6 +587,13 @@ def test_plot_terminator_improvements():
     atom.plot_terminator_improvement(display=False)
 
 
+def test_plot_timeline():
+    """Assert that the plot_timeline method works."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("tree", n_trials=1)
+    atom.plot_timeline(display=False)
+
+
 def test_plot_trials():
     """Assert that the plot_bo method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)

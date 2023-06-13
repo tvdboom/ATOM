@@ -244,6 +244,7 @@ nav:
             - plot_slice: API/plots/plot_slice.md
             - plot_successive_halving: API/plots/plot_successive_halving.md
             - plot_terminator_improvement: API/plots/plot_terminator_improvement.md
+            - plot_timeline: API/plots/plot_timeline.md
             - plot_threshold: API/plots/plot_threshold.md
             - plot_trials: API/plots/plot_trials.md
             - plot_wordcloud: API/plots/plot_wordcloud.md

@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
@@ -30,6 +31,7 @@ from nltk.collocations import (
     TrigramCollocationFinder,
 )
 from optuna.importance import FanovaImportanceEvaluator
+from optuna.trial import TrialState
 from optuna.visualization._parallel_coordinate import (
     _get_dims_from_info, _get_parallel_coordinate_info,
 )
@@ -43,13 +45,14 @@ from sklearn.metrics import (
     confusion_matrix, det_curve, precision_recall_curve, roc_curve,
 )
 from sklearn.utils import _safe_indexing
+from sklearn.utils._bunch import Bunch
 from sklearn.utils.metaestimators import available_if
 
 from atom.utils import (
     FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
     check_dependency, check_hyperparams, check_predict_proba, composed, crash,
-    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
-    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
+    divide, flt, get_best_score, get_corpus, get_custom_scorer, has_attr,
+    has_task, is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -3598,8 +3601,8 @@ class HTPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:HTPlot.plot_edf
         atom.plots:HTPlot.plot_pareto_front
+        atom.plots:HTPlot.plot_timeline
         atom.plots:HTPlot.plot_trials
 
         Examples
@@ -3622,6 +3625,8 @@ class HTPlot(BasePlot):
 
         """
         check_dependency("botorch")
+
+        models = check_hyperparams(models, "plot_terminator_improvement")
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -3657,6 +3662,160 @@ class HTPlot(BasePlot):
             legend=legend,
             figsize=figsize,
             plotname="plot_terminator_improvement",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_timeline(
+        self,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the timeline of a study.
+
+        This plot is only available for models that ran
+        [hyperparameter tuning][].
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models that used hyperparameter
+            tuning are selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right",
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y)
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HTPlot.plot_edf
+        atom.plots:HTPlot.plot_slice
+        atom.plots:HTPlot.plot_terminator_improvement
+
+        Examples
+        --------
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from optuna.pruners import PatientPruner
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(
+        ...     models="LGB",
+        ...     n_trials=15,
+        ...     ht_params={"pruner": PatientPruner(None, patience=100)},
+        ... )
+        >>> atom.plot_timeline()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_timeline.html
+
+        """
+        models = check_hyperparams(models, "plot_timeline")
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        _cm = {
+            "COMPLETE": BasePlot._fig._palette[0],  # Main color
+            "FAIL": "rgb(255, 0, 0)",  # Red
+            "PRUNED": "rgb(255, 165, 0)",  # Orange
+            "RUNNING": "rgb(124, 252, 0)",  # Green
+            "WAITING": "rgb(220, 220, 220)",  # Gray
+        }
+
+        for m in models:
+            info = []
+            for trial in m.study.get_trials(deepcopy=False):
+                date_complete = trial.datetime_complete or datetime.now()
+                date_start = trial.datetime_start or date_complete
+                params = "<br>".join([f" --> {k}: {v}" for k, v in trial.params.items()])
+                info.append(
+                    Bunch(
+                        number=trial.number,
+                        start=date_start,
+                        duration=1000 * (date_complete - date_start).total_seconds(),
+                        state=trial.state,
+                        hovertext=(
+                            f"Trial: {trial.number}<br>"
+                            f"Value: {flt(trial.values)}<br>"
+                            f"Parameters:<br>{params}"
+                        )
+                    )
+                )
+
+            for state in sorted(TrialState, key=lambda x: x.name):
+                if bars := list(filter(lambda x: x.state == state, info)):
+                    fig.add_trace(
+                        go.Bar(
+                            name=state.name,
+                            x=[b.duration for b in bars],
+                            y=[b.number for b in bars],
+                            base=[b.start.isoformat() for b in bars],
+                            text=[b.hovertext for b in bars],
+                            textposition="none",
+                            hovertemplate=f"%{{text}}<extra>{m.name}</extra>",
+                            orientation="h",
+                            marker=dict(
+                                color=f"rgba({_cm[state.name][4:-1]}, 0.2)",
+                                line=dict(width=2, color=_cm[state.name]),
+                            ),
+                            showlegend=BasePlot._fig.showlegend(_cm[state.name], legend),
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    )
+
+        fig.update_layout({f"xaxis{yaxis[1:]}_type": "date", "barmode": "group"})
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Datetime",
+            ylabel="Trial",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_timeline",
             filename=filename,
             display=display,
         )
@@ -5806,6 +5965,7 @@ class PredictionPlot(BasePlot):
                     y=list(np.array([[fx] * n_repeats for fx in m.features]).ravel()),
                     marker_color=BasePlot._fig.get_elem(m.name),
                     boxpoints="outliers",
+                    orientation="h",
                     name=m.name,
                     legendgroup=m.name,
                     showlegend=BasePlot._fig.showlegend(m.name, legend),
@@ -5814,7 +5974,6 @@ class PredictionPlot(BasePlot):
                 )
             )
 
-        fig.update_traces(orientation="h")
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
@@ -6760,6 +6919,7 @@ class PredictionPlot(BasePlot):
                             y=list(y),
                             marker_color=color,
                             boxpoints="outliers",
+                            orientation="h",
                             name=name,
                             legendgroup=name,
                             showlegend=BasePlot._fig.showlegend(name, legend),
@@ -6790,7 +6950,6 @@ class PredictionPlot(BasePlot):
                         )
                     )
 
-        fig.update_traces(orientation="h")
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
