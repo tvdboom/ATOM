@@ -517,9 +517,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
                     if trial.should_prune():
                         # Hacky solution to add the pruned step to the output
-                        p = trial.storage.get_trial_user_attrs(trial.number)["params"]
-                        if self.has_validation in p:
-                            p[self.has_validation] = f"{step}/{steps}"
+                        if self.has_validation in trial.params:
+                            trial.params[self.has_validation] = f"{step}/{steps}"
 
                         trial.set_user_attr("estimator", estimator)
                         raise TrialPruned()
@@ -885,9 +884,22 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
             # Start trial ========================================== >>
 
-            # Get parameter suggestions and store rounded values in user_attrs
             params = self._get_parameters(trial)
-            trial.set_user_attr("params", params)
+
+            # Since the suggested values are not the exact same values used in
+            # the estimator (often changed by _get_parameters in models.py),
+            # we implement this hacky method to overwrite the params in storage
+            trial._cached_frozen_trial.params = params
+            for name, value in params.items():
+                distribution = trial.distributions[name]
+                trial.storage.set_trial_param(
+                    trial_id=trial.number,
+                    param_name=name,
+                    param_value_internal=distribution.to_internal_repr(value),
+                    distribution=distribution,
+                )
+
+            # Store user defined tags
             for key, value in self._ht["tags"].items():
                 trial.set_user_attr(key, value)
 

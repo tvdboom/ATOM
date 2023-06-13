@@ -36,6 +36,7 @@ from optuna.visualization._parallel_coordinate import (
     _get_dims_from_info, _get_parallel_coordinate_info,
 )
 from optuna.visualization._terminator_improvement import _get_improvement_info
+from optuna.visualization._utils import _is_log_scale
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -3025,6 +3026,11 @@ class HTPlot(BasePlot):
                     )
                 )
 
+                if _is_log_scale(m.study.trials, params[y]):
+                    fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
+                if _is_log_scale(m.study.trials, params[x + 1]):
+                    fig.update_layout({f"yaxis{xaxis[1:]}_type": "log"})
+
                 if x < length - 1:
                     fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
                 if y > 0:
@@ -3512,6 +3518,9 @@ class HTPlot(BasePlot):
                     yaxis=yaxis,
                 )
             )
+
+            if _is_log_scale(m.study.trials, params[y]):
+                fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
 
             if x < len(metric) - 1:
                 fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})

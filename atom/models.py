@@ -796,10 +796,10 @@ class CatBoost(BaseModel):
                 self._evals[f"{m}_test"] = evals["validation"]["CatBMetric"]
 
             if trial and len(self._metric) == 1 and cb._pruned:
-                # Hacky solution to add the pruned step to the output
+                # Add the pruned step to the output
+                step = len(self.evals[f'{m}_train'])
                 steps = estimator.get_params()[self.has_validation]
-                p = trial.storage.get_trial_user_attrs(trial.number)["params"]
-                p[self.has_validation] = f"{len(self.evals[f'{m}_train'])}/{steps}"
+                trial.params[self.has_validation] = f"{step}/{steps}"
 
                 trial.set_user_attr("estimator", estimator)
                 raise TrialPruned(cb._message)
@@ -2325,11 +2325,10 @@ class LightGBM(BaseModel):
                 **params,
             )
         except TrialPruned as ex:
-            # Hacky solution to add the pruned step to the output
+            # Add the pruned step to the output
             step = str(ex).split(" ")[-1][:-1]
             steps = estimator.get_params()[self.has_validation]
-            p = trial.storage.get_trial_user_attrs(trial.number)["params"]
-            p[self.has_validation] = f"{step}/{steps}"
+            trial.params[self.has_validation] = f"{step}/{steps}"
 
             trial.set_user_attr("estimator", estimator)
             raise ex
@@ -4112,11 +4111,10 @@ class XGBoost(BaseModel):
                 **params,
             )
         except TrialPruned as ex:
-            # Hacky solution to add the pruned step to the output
+            # Add the pruned step to the output
             step = str(ex).split(" ")[-1][:-1]
             steps = estimator.get_params()[self.has_validation]
-            p = trial.storage.get_trial_user_attrs(trial.number)["params"]
-            p[self.has_validation] = f"{step}/{steps}"
+            trial.params[self.has_validation] = f"{step}/{steps}"
 
             trial.set_user_attr("estimator", estimator)
             raise ex

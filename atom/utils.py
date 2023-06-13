@@ -496,7 +496,7 @@ class TrialsCallback:
             # XGBoost's eval_metric minimizes the function
             score = np.negative(score)
 
-        params = self.T._trial_to_est(trial.user_attrs["params"])
+        params = self.T._trial_to_est(trial.params)
         estimator = trial.user_attrs.get("estimator", None)
 
         # Add row to the trials attribute
@@ -546,7 +546,7 @@ class TrialsCallback:
                         )
 
         if self.n_jobs == 1:
-            sequence = {"trial": trial.number, **trial.user_attrs["params"]}
+            sequence = {"trial": trial.number, **trial.params}
             for i, m in enumerate(self.T._metric):
                 best_score = rnd(np.nanmax([lst(s)[i] for s in self.T.trials["score"]]))
                 sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
