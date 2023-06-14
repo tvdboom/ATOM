@@ -2,802 +2,802 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://tvdboom.github.io/ATOM/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/about/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/contributing/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/dependencies/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/faq/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/getting_started/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/license/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/ATOM/atommodel/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/ATOM/atomregressor/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/balancer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/cleaner/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/discretizer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/encoder/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/imputer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/normalizer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/pruner/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/data_cleaning/scaler/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/feature_engineering/featureextractor/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/feature_engineering/featuregenerator/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/feature_engineering/featuregrouper/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/feature_engineering/featureselector/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/adab/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/ard/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/bag/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/bnb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/br/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/catb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/catnb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/cnb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/dummy/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/en/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/et/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/etree/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/gbm/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/gnb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/gp/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/hgbm/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/huber/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/knn/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/lars/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/lasso/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/lda/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/lgb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/lr/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/lsvm/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/mlp/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/mnb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/ols/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/omp/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/pa/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/perc/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/qda/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/rf/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/ridge/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/rnn/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/sgd/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/svm/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/tree/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/models/xgb/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/nlp/textcleaner/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/nlp/textnormalizer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/nlp/tokenizer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/nlp/vectorizer/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_calibration/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_components/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_confusion_matrix/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_correlation/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_det/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_distribution/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_edf/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_errors/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_evals/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_feature_importance/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_gains/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_hyperparameter_importance/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_hyperparameters/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_learning_curve/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_lift/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_ngrams/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_parallel_coordinate/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_pareto_front/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_parshap/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_partial_dependence/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_pca/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_permutation_importance/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_pipeline/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_prc/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_probabilities/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_qq/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_relationships/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_residuals/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_results/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_rfecv/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_roc/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_bar/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_beeswarm/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_decision/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_force/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_heatmap/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_scatter/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_shap_waterfall/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_slice/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_successive_halving/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_terminator_improvement/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_threshold/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_timeline/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_trials/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/plots/plot_wordcloud/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/predicting/decision_function/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/predicting/predict/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/predicting/predict_log_proba/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/predicting/predict_proba/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/predicting/score/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/training/directclassifier/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/training/directregressor/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/training/successivehalvingclassifier/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/training/successivehalvingregressor/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/training/trainsizingclassifier/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/API/training/trainsizingregressor/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/changelog/v4.x.x/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/changelog/v5.x.x/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/accelerating_cuml/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/accelerating_sklearnex/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/advanced_plotting/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/automated_feature_scaling/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/automl/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/binary_classification/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/calibration/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/deep_learning/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/ensembles/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/feature_engineering/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/getting_started/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/holdout_set/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/hyperparameter_tuning/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/imbalanced_datasets/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/in_training_validation/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/multi_metric/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/multiclass_classification/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/multilabel_classification/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/multioutput_regression/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/nlp/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/pruning/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/ray_backend/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/regression/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/successive_halving/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/train_sizing/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/examples/utilities/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/accelerating/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/data_cleaning/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/data_management/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/feature_engineering/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/introduction/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/logging/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/models/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/nlp/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/nomenclature/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/plots/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/predicting/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://tvdboom.github.io/ATOM/user_guide/training/</loc>
-         <lastmod>2023-06-13</lastmod>
+         <lastmod>2023-06-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
