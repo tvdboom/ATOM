@@ -499,7 +499,7 @@ def test_export_pipeline_memory(func):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     atom.export_pipeline(memory=True)
-    func.assert_called_once()
+    assert func.call_count == 2
 
 
 def test_get_class_weight_regression():

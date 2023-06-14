@@ -840,12 +840,12 @@ class BaseRunner(BaseTracker):
             )
 
         kw_model = dict(
-            index=self.index,
             goal=self.goal,
-            metric=self._metric,
-            multioutput=self.multioutput,
+            config=self._config,
             og=self.og,
             branch=self.branch,
+            metric=self._metric,
+            multioutput=self.multioutput,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 
@@ -920,12 +920,12 @@ class BaseRunner(BaseTracker):
             Voting(
                 models=models,
                 name=name,
-                index=self.index,
                 goal=self.goal,
-                metric=self._metric,
-                multioutput=self.multioutput,
+                config=self._config,
                 og=self.og,
                 branch=self.branch,
+                metric=self._metric,
+                multioutput=self.multioutput,
                 **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
                 **kwargs,
             )

@@ -9,6 +9,7 @@ Description: Module containing the ATOM class.
 
 from __future__ import annotations
 
+import tempfile
 from collections import defaultdict
 from copy import deepcopy
 from platform import machine, platform, python_build, python_version
@@ -20,6 +21,7 @@ import pandas as pd
 from scipy import stats
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.utils.metaestimators import available_if
+from sklearn.utils.validation import check_memory
 
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
@@ -42,7 +44,7 @@ from atom.training import (
 )
 from atom.utils import (
     DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
-    ClassMap, Predictor, Runner, Transformer, __version__, bk,
+    ClassMap, DataConfig, Predictor, Runner, Transformer, __version__, bk,
     check_dependency, check_is_fitted, check_scaling, composed, crash,
     custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
     infer_task, is_multioutput, is_sparse, lst, method_to_log, sign,
@@ -83,6 +85,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.n_rows = n_rows
         self.test_size = test_size
         self.holdout_size = holdout_size
+
+        self._config = DataConfig(index, shuffle, stratify, test_size)
+        self._memory = check_memory(tempfile.gettempdir())
 
         self._multioutput = "auto"
         self._missing = [
@@ -1909,7 +1914,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
 
         # Transfer attributes
-        trainer.index = self.index
+        trainer._config = self._config
         trainer._og = self._og
         trainer._current = self._current
         trainer._branches = self._branches

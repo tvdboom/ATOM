@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
@@ -30,9 +31,12 @@ from nltk.collocations import (
     TrigramCollocationFinder,
 )
 from optuna.importance import FanovaImportanceEvaluator
+from optuna.trial import TrialState
 from optuna.visualization._parallel_coordinate import (
     _get_dims_from_info, _get_parallel_coordinate_info,
 )
+from optuna.visualization._terminator_improvement import _get_improvement_info
+from optuna.visualization._utils import _is_log_scale
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -42,13 +46,14 @@ from sklearn.metrics import (
     confusion_matrix, det_curve, precision_recall_curve, roc_curve,
 )
 from sklearn.utils import _safe_indexing
+from sklearn.utils._bunch import Bunch
 from sklearn.utils.metaestimators import available_if
 
 from atom.utils import (
     FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
     check_dependency, check_hyperparams, check_predict_proba, composed, crash,
-    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
-    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
+    divide, flt, get_best_score, get_corpus, get_custom_scorer, has_attr,
+    has_task, is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -100,6 +105,10 @@ class BaseFigure:
 
     """
 
+    _marker = ["circle", "x", "diamond", "pentagon", "star", "hexagon"]
+    _dash = [None, "dashdot", "dash", "dot", "longdash", "longdashdot"]
+    _shape = ["", "/", "x", "\\", "-", "|", "+", "."]
+
     def __init__(
         self,
         rows: INT = 1,
@@ -116,10 +125,12 @@ class BaseFigure:
         self.horizontal_spacing = horizontal_spacing
         self.vertical_spacing = vertical_spacing
         if isinstance(palette, str):
-            self.palette = cycle(getattr(px.colors.qualitative, palette))
+            self._palette = getattr(px.colors.qualitative, palette)
+            self.palette = cycle(self._palette)
         else:
             # Convert color names or hex to rgb
-            self.palette = cycle(map(to_rgb, palette))
+            self._palette = list(map(to_rgb, palette))
+            self.palette = cycle(self._palette)
         self.is_canvas = is_canvas
         self.backend = backend
         self.create_figure = create_figure
@@ -133,10 +144,10 @@ class BaseFigure:
                 self.figure, _ = plt.subplots()
 
         self.groups = []
-        self.style = dict(colors={}, markers={}, dashes={}, shapes={})
-        self.markers = cycle(["circle", "x", "diamond", "pentagon", "star", "hexagon"])
-        self.dashes = cycle([None, "dashdot", "dash", "dot", "longdash", "longdashdot"])
-        self.shapes = cycle(["", "/", "x", "\\", "-", "|", "+", "."])
+        self.style = dict(palette={}, marker={}, dash={}, shape={})
+        self.marker = cycle(self._marker)
+        self.dash = cycle(self._dash)
+        self.shape = cycle(self._shape)
 
         self.pos = {}  # Subplot position to use for title
         self.custom_layout = {}  # Layout params specified by user
@@ -192,101 +203,34 @@ class BaseFigure:
         if self.create_figure:
             return self.figure
 
-    def get_color(self, elem: SCALAR | str | None = None) -> str:
-        """Get the next color.
+    def get_elem(self, name: SCALAR | str | None = None, element: str = "palette") -> str:
+        """Get the plot element for a specific name.
 
-        This method is used to assign the same color to the same
-        elements (columns, models, etc...) in a plot.
+        This method is used to assign the same element (color, marker,
+        etc...) to the same columns and models in a plot.
 
         Parameters
         ----------
-        elem: int, float or str or None
-            Element for which to get the color.
+        name: int, float or str or None
+            Name for which to get the plot element. The name is stored in
+            the element attributes to assign the same element to all calls
+            with the same name.
+
+        element: str, default="palette"
+            Plot element to get. Choose from: palette, marker, dash, shape.
 
         Returns
         -------
         str
-            Color code.
+            Element code.
 
         """
-        if elem is None:
-            return next(self.palette)
-        elif elem in self.style["colors"]:
-            return self.style["colors"][elem]
+        if name is None:
+            return getattr(self, f"_{element}")[0]  # Get first element (default)
+        elif name in self.style[element]:
+            return self.style[element][name]
         else:
-            return self.style["colors"].setdefault(elem, next(self.palette))
-
-    def get_marker(self, elem: SCALAR | str | None = None) -> str:
-        """Get the next marker.
-
-        This method is used to assign the same marker to the same
-        elements (e.g. distribution) in a plot.
-
-        Parameters
-        ----------
-        elem: int, float or str or None
-            Element for which to get the marker.
-
-        Returns
-        -------
-        str
-            Marker code.
-
-        """
-        if elem is None:
-            return next(self.markers)
-        elif elem in self.style["markers"]:
-            return self.style["markers"][elem]
-        else:
-            return self.style["markers"].setdefault(elem, next(self.markers))
-
-    def get_dashes(self, elem: SCALAR | str | None = None) -> str:
-        """Get the next dash style.
-
-        This method is used to assign the same dash style to the same
-        elements (e.g. data set) in a plot.
-
-        Parameters
-        ----------
-        elem: int, float or str or None
-            Element for which to get the dash.
-
-        Returns
-        -------
-        str
-            Dash style.
-
-        """
-        if elem is None:
-            return next(self.dashes)
-        elif elem in self.style["dashes"]:
-            return self.style["dashes"][elem]
-        else:
-            return self.style["dashes"].setdefault(elem, next(self.dashes))
-
-    def get_shapes(self, elem: SCALAR | str | None = None) -> str:
-        """Get the next shape pattern.
-
-        This method is used to assign the same shape pattern to the
-        same elements in a plot.
-
-        Parameters
-        ----------
-        elem: int, float or str or None
-            Element for which to get the shape.
-
-        Returns
-        -------
-        str
-            Pattern shape.
-
-        """
-        if elem is None:
-            return next(self.shapes)
-        elif elem in self.style["shapes"]:
-            return self.style["shapes"][elem]
-        else:
-            return self.style["shapes"].setdefault(elem, next(self.shapes))
+            return self.style[element].setdefault(name, next(getattr(self, element)))
 
     def showlegend(self, name: str, legend: str | dict | None) -> bool:
         """Get whether the trace should be showed in the legend.
@@ -775,21 +719,21 @@ class BasePlot:
 
         """
         legendgrouptitle = dict(text=parent, font_size=self.label_fontsize)
-        hover = f"(%{{x}}, %{{y}})<extra>{parent}{' - ' + child if child else ''}</extra>"
+        hover = f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>"
         return go.Scatter(
             line=dict(
                 width=self.line_width,
-                color=BasePlot._fig.get_color(parent),
-                dash=BasePlot._fig.get_dashes(child) if child else None,
+                color=BasePlot._fig.get_elem(parent),
+                dash=BasePlot._fig.get_elem(child, "dash"),
             ),
             marker=dict(
-                symbol=BasePlot._fig.get_marker(child),
+                symbol=BasePlot._fig.get_elem(child, "marker"),
                 size=self.marker_size,
-                color=BasePlot._fig.get_color(parent),
+                color=BasePlot._fig.get_elem(parent),
                 line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
             ),
             hovertemplate=kwargs.pop("hovertemplate", hover),
-            name=kwargs.pop("name", child if child else parent),
+            name=kwargs.pop("name", child or parent),
             legendgroup=kwargs.pop("legendgroup", parent),
             legendgrouptitle=legendgrouptitle if child else None,
             showlegend=BasePlot._fig.showlegend(f"{parent}-{child}", legend),
@@ -1168,7 +1112,7 @@ class BasePlot:
             operation.
 
         **kwargs
-            Keyword/value pair of properties to be updated.
+            Keyword/value pairs of properties to be updated.
 
         """
         self._custom_layout = dict(dict1=dict1, overwrite=overwrite, **kwargs)
@@ -1277,7 +1221,7 @@ class FeatureSelectorPlot(BasePlot):
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         # Create color scheme: first normal and then fully transparent
-        color = BasePlot._fig.get_color("components")
+        color = BasePlot._fig.get_elem("components")
         opacity = [0.2] * self.pca._comps + [0] * (len(variance) - self.pca._comps)
 
         fig.add_trace(
@@ -1397,7 +1341,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=tuple(range(1, self.pca.n_features_in_ + 1)),
                 y=np.cumsum(self.pca.explained_variance_ratio_),
                 mode="lines+markers",
-                line=dict(width=self.line_width, color=BasePlot._fig.get_color("pca")),
+                line=dict(width=self.line_width, color=BasePlot._fig.get_elem("pca")),
                 marker=dict(
                     symbol=symbols,
                     size=sizes,
@@ -1531,7 +1475,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=list(x),
                 y=mean,
                 mode="lines+markers",
-                line=dict(width=self.line_width, color=BasePlot._fig.get_color("rfecv")),
+                line=dict(width=self.line_width, color=BasePlot._fig.get_elem("rfecv")),
                 marker=dict(
                     symbol=symbols,
                     size=sizes,
@@ -1553,7 +1497,7 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean + std,
                     mode="lines",
-                    line=dict(width=1, color=BasePlot._fig.get_color("rfecv")),
+                    line=dict(width=1, color=BasePlot._fig.get_elem("rfecv")),
                     hovertemplate="%{y}<extra>upper bound</extra>",
                     legendgroup="rfecv",
                     showlegend=False,
@@ -1564,9 +1508,9 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean - std,
                     mode="lines",
-                    line=dict(width=1, color=BasePlot._fig.get_color("rfecv")),
+                    line=dict(width=1, color=BasePlot._fig.get_elem("rfecv")),
                     fill="tonexty",
-                    fillcolor=f"rgba{BasePlot._fig.get_color('rfecv')[3:-1]}, 0.2)",
+                    fillcolor=f"rgba{BasePlot._fig.get_elem('rfecv')[3:-1]}, 0.2)",
                     hovertemplate="%{y}<extra>lower bound</extra>",
                     legendgroup="rfecv",
                     showlegend=False,
@@ -1878,7 +1822,7 @@ class DataPlot(BasePlot):
                     f"Value should be >0, got {show}."
                 )
 
-            color = BasePlot._fig.get_color()
+            color = BasePlot._fig.get_elem()
             fig.add_trace(
                 go.Bar(
                     x=series,
@@ -1915,8 +1859,8 @@ class DataPlot(BasePlot):
                         x=self.dataset[col],
                         histnorm="probability density",
                         marker=dict(
-                            color=f"rgba({BasePlot._fig.get_color(col)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=BasePlot._fig.get_color(col)),
+                            color=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_elem(col)),
                         ),
                         nbinsx=40,
                         name="dist",
@@ -2140,8 +2084,8 @@ class DataPlot(BasePlot):
                 y=data.index,
                 orientation="h",
                 marker=dict(
-                    color=f"rgba({BasePlot._fig.get_color(ngram)[4:-1]}, 0.2)",
-                    line=dict(width=2, color=BasePlot._fig.get_color(ngram)),
+                    color=f"rgba({BasePlot._fig.get_elem(ngram)[4:-1]}, 0.2)",
+                    line=dict(width=2, color=BasePlot._fig.get_elem(ngram)),
                 ),
                 hovertemplate="%{x}<extra></extra>",
                 name=f"Total {ngram}: {len(series)}",
@@ -2375,7 +2319,7 @@ class DataPlot(BasePlot):
         )
 
         fig = self._get_figure()
-        color = BasePlot._fig.get_color()
+        color = BasePlot._fig.get_elem()
         for i in range(len(columns)**2):
             x, y = i // len(columns), i % len(columns)
 
@@ -2877,8 +2821,8 @@ class HTPlot(BasePlot):
                     y=list(importances.keys()),
                     orientation="h",
                     marker=dict(
-                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                     ),
                     hovertemplate="%{x}<extra></extra>",
                     name=m.name,
@@ -3023,7 +2967,7 @@ class HTPlot(BasePlot):
                     y=(y_pos, rnd(y_pos + size)),
                     coloraxis=dict(
                         axes="99",
-                        colorscale=PALETTE.get(BasePlot._fig.get_color(m.name), "Blues"),
+                        colorscale=PALETTE.get(BasePlot._fig.get_elem(m.name), "Blues"),
                         cmin=np.nanmin(
                             m.trials.apply(lambda x: lst(x["score"])[met], axis=1)
                         ),
@@ -3044,7 +2988,7 @@ class HTPlot(BasePlot):
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=BasePlot._fig.get_color(m.name),
+                            color=BasePlot._fig.get_elem(m.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
                         customdata=list(
@@ -3081,6 +3025,11 @@ class HTPlot(BasePlot):
                         yaxis=yaxis,
                     )
                 )
+
+                if _is_log_scale(m.study.trials, params[y]):
+                    fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
+                if _is_log_scale(m.study.trials, params[x + 1]):
+                    fig.update_layout({f"yaxis{xaxis[1:]}_type": "log"})
 
                 if x < length - 1:
                     fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
@@ -3256,7 +3205,7 @@ class HTPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(
             coloraxis=dict(
-                colorscale=PALETTE.get(BasePlot._fig.get_color(m.name), "Blues"),
+                colorscale=PALETTE.get(BasePlot._fig.get_elem(m.name), "Blues"),
                 cmin=min(dims[0]["values"]),
                 cmax=max(dims[0]["values"]),
                 title=self._metric[met].name,
@@ -3570,6 +3519,9 @@ class HTPlot(BasePlot):
                 )
             )
 
+            if _is_log_scale(m.study.trials, params[y]):
+                fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
+
             if x < len(metric) - 1:
                 fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
             if y > 0:
@@ -3587,6 +3539,292 @@ class HTPlot(BasePlot):
             legend=legend,
             figsize=figsize or (800 + 100 * len(params), 500 + 100 * len(metric)),
             plotname="plot_slice",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_terminator_improvement(
+        self,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the potentials for future objective improvement.
+
+        This function visualizes the objective improvement potentials.
+        It helps to determine whether you should continue the
+        optimization or not. The evaluated error is also plotted. Note
+        that this function may take some time to compute the improvement
+        potentials. This plot is only available for models that ran
+        [hyperparameter tuning][].
+
+        !!! warning
+            * The plot_terminator_improvement method is only available
+              for models that ran [hyperparameter tuning][] using
+              cross-validation, e.g. using `ht_params={'cv': 5}`.
+            * This method can be slow. Results are cached to fasten
+              repeated calls.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models that used hyperparameter
+            tuning are selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right",
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y)
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HTPlot.plot_pareto_front
+        atom.plots:HTPlot.plot_timeline
+        atom.plots:HTPlot.plot_trials
+
+        Examples
+        --------
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"], n_trials=15, ht_params={"cv": 5})
+        >>> atom.plot_terminator_improvement()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_terminator_improvement.html
+
+        """
+        check_dependency("botorch")
+
+        models = check_hyperparams(models, "plot_terminator_improvement")
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            if m._ht["cv"] > 1:
+                info = self._memory.cache(_get_improvement_info)(m.study, get_error=True)
+            else:
+                raise ValueError(
+                    "The plot_terminator_improvement method is only available for "
+                    "models that ran hyperparameter tuning using cross-validation, "
+                    "e.g. using ht_params={'cv': 5}."
+                )
+
+            fig.add_trace(
+                self._draw_line(
+                    x=m.trials.index,
+                    y=info.improvements,
+                    error_y=dict(type="data", array=info.errors),
+                    mode="markers+lines",
+                    parent=m.name,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Trial",
+            ylabel="Terminator improvement",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_terminator_improvement",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_timeline(
+        self,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the timeline of a study.
+
+        This plot is only available for models that ran
+        [hyperparameter tuning][].
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models that used hyperparameter
+            tuning are selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right",
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y)
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HTPlot.plot_edf
+        atom.plots:HTPlot.plot_slice
+        atom.plots:HTPlot.plot_terminator_improvement
+
+        Examples
+        --------
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from optuna.pruners import PatientPruner
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(
+        ...     models="LGB",
+        ...     n_trials=15,
+        ...     ht_params={"pruner": PatientPruner(None, patience=100)},
+        ... )
+        >>> atom.plot_timeline()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_timeline.html
+
+        """
+        models = check_hyperparams(models, "plot_timeline")
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        _cm = {
+            "COMPLETE": BasePlot._fig._palette[0],  # Main color
+            "FAIL": "rgb(255, 0, 0)",  # Red
+            "PRUNED": "rgb(255, 165, 0)",  # Orange
+            "RUNNING": "rgb(124, 252, 0)",  # Green
+            "WAITING": "rgb(220, 220, 220)",  # Gray
+        }
+
+        for m in models:
+            info = []
+            for trial in m.study.get_trials(deepcopy=False):
+                date_complete = trial.datetime_complete or datetime.now()
+                date_start = trial.datetime_start or date_complete
+                params = "<br>".join([f" --> {k}: {v}" for k, v in trial.params.items()])
+                info.append(
+                    Bunch(
+                        number=trial.number,
+                        start=date_start,
+                        duration=1000 * (date_complete - date_start).total_seconds(),
+                        state=trial.state,
+                        hovertext=(
+                            f"Trial: {trial.number}<br>"
+                            f"Value: {flt(trial.values)}<br>"
+                            f"Parameters:<br>{params}"
+                        )
+                    )
+                )
+
+            for state in sorted(TrialState, key=lambda x: x.name):
+                if bars := list(filter(lambda x: x.state == state, info)):
+                    fig.add_trace(
+                        go.Bar(
+                            name=state.name,
+                            x=[b.duration for b in bars],
+                            y=[b.number for b in bars],
+                            base=[b.start.isoformat() for b in bars],
+                            text=[b.hovertext for b in bars],
+                            textposition="none",
+                            hovertemplate=f"%{{text}}<extra>{m.name}</extra>",
+                            orientation="h",
+                            marker=dict(
+                                color=f"rgba({_cm[state.name][4:-1]}, 0.2)",
+                                line=dict(width=2, color=_cm[state.name]),
+                            ),
+                            showlegend=BasePlot._fig.showlegend(_cm[state.name], legend),
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    )
+
+        fig.update_layout({f"xaxis{yaxis[1:]}_type": "date", "barmode": "group"})
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Datetime",
+            ylabel="Trial",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_timeline",
             filename=filename,
             display=display,
         )
@@ -3914,8 +4152,8 @@ class PredictionPlot(BasePlot):
                         x=y_pred,
                         xbins=dict(start=0, end=1, size=1. / n_bins),
                         marker=dict(
-                            color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                         ),
                         name=m.name,
                         legendgroup=m.name,
@@ -4129,7 +4367,7 @@ class PredictionPlot(BasePlot):
             else:
                 xaxis, yaxis = BasePlot._fig.get_axes()
 
-                color = BasePlot._fig.get_color(m.name)
+                color = BasePlot._fig.get_elem(m.name)
                 fig.add_trace(
                     go.Bar(
                         x=cm.ravel(),
@@ -4391,7 +4629,7 @@ class PredictionPlot(BasePlot):
                     x=y_true,
                     y=y_pred,
                     mode="markers",
-                    line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                     name=m.name,
                     legendgroup=m.name,
                     showlegend=BasePlot._fig.showlegend(m.name, legend),
@@ -4410,7 +4648,7 @@ class PredictionPlot(BasePlot):
                     x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
                     y=model.predict(x[:, np.newaxis]),
                     mode="lines",
-                    line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                     hovertemplate="(%{x}, %{y})<extra></extra>",
                     legendgroup=m.name,
                     showlegend=False,
@@ -4658,8 +4896,8 @@ class PredictionPlot(BasePlot):
                     y=fi.index,
                     orientation="h",
                     marker=dict(
-                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                     ),
                     hovertemplate="%{x}<extra></extra>",
                     name=m.name,
@@ -4935,14 +5173,14 @@ class PredictionPlot(BasePlot):
 
                 # Add error bands
                 if m.bootstrap is not None:
-                    fillcolor = f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)"
+                    fillcolor = f"rgba{BasePlot._fig.get_elem(group)[3:-1]}, 0.2)"
                     fig.add_traces(
                         [
                             go.Scatter(
                                 x=x[group],
                                 y=np.add(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
                                 hovertemplate="%{y}<extra>upper bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -4953,7 +5191,7 @@ class PredictionPlot(BasePlot):
                                 x=x[group],
                                 y=np.subtract(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
                                 fill="tonexty",
                                 fillcolor=fillcolor,
                                 hovertemplate="%{y}<extra>lower bound</extra>",
@@ -5272,7 +5510,7 @@ class PredictionPlot(BasePlot):
             if m.feature_importance is not None:
                 color = m.feature_importance.loc[fxs]
             else:
-                color = BasePlot._fig.get_color("parshap")
+                color = BasePlot._fig.get_elem("parshap")
 
             fig.add_trace(
                 go.Scatter(
@@ -5462,7 +5700,7 @@ class PredictionPlot(BasePlot):
         axes, names = [], []
         fig = self._get_figure()
         for m in models:
-            color = BasePlot._fig.get_color(m.name)
+            color = BasePlot._fig.get_elem(m.name)
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
@@ -5537,7 +5775,7 @@ class PredictionPlot(BasePlot):
                             y0=0,
                             y1=0.05,
                             yref=f"{axes[0][1]} domain",
-                            line=dict(width=1, color=BasePlot._fig.get_color(m.name)),
+                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
                             opacity=0.6,
                             layer="below",
                         )
@@ -5582,7 +5820,7 @@ class PredictionPlot(BasePlot):
                             )
 
                 else:
-                    colorscale = PALETTE.get(BasePlot._fig.get_color(m.name), "Teal")
+                    colorscale = PALETTE.get(BasePlot._fig.get_elem(m.name), "Teal")
                     fig.add_trace(
                         go.Contour(
                             x=pred["values"][0],
@@ -5634,12 +5872,9 @@ class PredictionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot the feature permutation importance of models.
 
-        Calculating permutations can be time-consuming, especially
-        if `n_repeats` is high. For this reason, the permutations
-        are stored under the `permutations` attribute. If the plot
-        is called again for the same model with the same `n_repeats`,
-        it will use the stored values, making the method considerably
-        faster.
+        !!! warning
+            This method can be slow. Results are cached to fasten
+            repeated calls.
 
         Parameters
         ----------
@@ -5722,29 +5957,24 @@ class PredictionPlot(BasePlot):
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models:
-            # If permutations are already calculated and n_repeats is
-            # same, use known permutations (for efficient re-plotting)
-            if (
-                not hasattr(m, "permutations")
-                or m.permutations.importances.shape[1] != n_repeats
-            ):
-                # Permutation importances returns Bunch object
-                m.permutations = permutation_importance(
-                    estimator=m.estimator,
-                    X=m.X_test,
-                    y=m.y_test,
-                    scoring=self._metric[0],
-                    n_repeats=n_repeats,
-                    n_jobs=self.n_jobs,
-                    random_state=self.random_state,
-                )
+            # Permutation importances returns Bunch object
+            permutations = self._memory.cache(permutation_importance)(
+                estimator=m.estimator,
+                X=m.X_test,
+                y=m.y_test,
+                scoring=self._metric[0],
+                n_repeats=n_repeats,
+                n_jobs=self.n_jobs,
+                random_state=self.random_state,
+            )
 
             fig.add_trace(
                 go.Box(
-                    x=m.permutations["importances"].ravel(),
+                    x=permutations["importances"].ravel(),
                     y=list(np.array([[fx] * n_repeats for fx in m.features]).ravel()),
-                    marker_color=BasePlot._fig.get_color(m.name),
+                    marker_color=BasePlot._fig.get_elem(m.name),
                     boxpoints="outliers",
+                    orientation="h",
                     name=m.name,
                     legendgroup=m.name,
                     showlegend=BasePlot._fig.showlegend(m.name, legend),
@@ -5753,7 +5983,6 @@ class PredictionPlot(BasePlot):
                 )
             )
 
-        fig.update_traces(orientation="h")
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
@@ -6346,12 +6575,12 @@ class PredictionPlot(BasePlot):
                         mode="lines",
                         line=dict(
                             width=2,
-                            color=BasePlot._fig.get_color(m.name),
-                            dash=BasePlot._fig.get_dashes(ds),
+                            color=BasePlot._fig.get_elem(m.name),
+                            dash=BasePlot._fig.get_elem(ds, "dash"),
                         ),
                         fill="tonexty",
-                        fillcolor=f"rgba{BasePlot._fig.get_color(m.name)[3:-1]}, 0.2)",
-                        fillpattern=dict(shape=BasePlot._fig.get_shapes(value)),
+                        fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
+                        fillpattern=dict(shape=BasePlot._fig.get_elem(value, "shape")),
                         name=f"{col}={value}",
                         legendgroup=m.name,
                         legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
@@ -6482,7 +6711,7 @@ class PredictionPlot(BasePlot):
                     x=y_true,
                     y=(res := np.subtract(y_true, y_pred)),
                     mode="markers",
-                    line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                     name=m.name,
                     legendgroup=m.name,
                     showlegend=BasePlot._fig.showlegend(m.name, legend),
@@ -6496,8 +6725,8 @@ class PredictionPlot(BasePlot):
                     y=res,
                     bingroup="residuals",
                     marker=dict(
-                        color=f"rgba({BasePlot._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=BasePlot._fig.get_color(m.name)),
+                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                     ),
                     name=m.name,
                     legendgroup=m.name,
@@ -6668,7 +6897,7 @@ class PredictionPlot(BasePlot):
 
         for met in metric:
             if isinstance(met, str):
-                color = BasePlot._fig.get_color(met)
+                color = BasePlot._fig.get_elem(met)
                 fig.add_trace(
                     go.Bar(
                         x=[getattr(m, met) for m in models],
@@ -6688,7 +6917,7 @@ class PredictionPlot(BasePlot):
                 )
             else:
                 name = self._metric[met].name
-                color = BasePlot._fig.get_color()
+                color = BasePlot._fig.get_elem()
 
                 if all(m.score_bootstrap for m in models):
                     x = np.array([m.bootstrap.iloc[:, met] for m in models]).ravel()
@@ -6699,6 +6928,7 @@ class PredictionPlot(BasePlot):
                             y=list(y),
                             marker_color=color,
                             boxpoints="outliers",
+                            orientation="h",
                             name=name,
                             legendgroup=name,
                             showlegend=BasePlot._fig.showlegend(name, legend),
@@ -6729,7 +6959,6 @@ class PredictionPlot(BasePlot):
                         )
                     )
 
-        fig.update_traces(orientation="h")
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
@@ -6993,14 +7222,14 @@ class PredictionPlot(BasePlot):
 
                 # Add error bands
                 if m.bootstrap is not None:
-                    fillcolor = f"rgba{BasePlot._fig.get_color(group)[3:-1]}, 0.2)"
+                    fillcolor = f"rgba{BasePlot._fig.get_elem(group)[3:-1]}, 0.2)"
                     fig.add_traces(
                         [
                             go.Scatter(
                                 x=x[group],
                                 y=np.add(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
                                 hovertemplate="%{y}<extra>upper bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -7011,7 +7240,7 @@ class PredictionPlot(BasePlot):
                                 x=x[group],
                                 y=np.subtract(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_color(group)),
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
                                 fill="tonexty",
                                 fillcolor=fillcolor,
                                 hovertemplate="%{y}<extra>lower bound</extra>",

@@ -32,7 +32,7 @@ dependencies = [
     "modin[ray]>=0.18.1",
     "nltk>=3.8.1",
     "numpy>=1.23.5",
-    "optuna>=3.1.0",
+    "optuna>=3.2.0",
     "pandas>=1.5.3",
     "plotly>=5.13.1",
     "ray[serve]>=2.3.0",
@@ -45,13 +45,14 @@ dependencies = [
 
 [project.optional-dependencies]
 full = [
+    "botorch>=0.8.5",
     "catboost>=1.1.1",
     "evalml>=0.68.0",
     "explainerdashboard>=0.4.2",
     "gradio>=3.19.1",
     "lightgbm>=3.3.5",
     "schemdraw>=0.16",
-    "wordcloud>=1.8.2",
+    "wordcloud>=1.9.2",
     "xgboost>=1.7.4",
     "ydata-profiling>=4.1.0",
 ]

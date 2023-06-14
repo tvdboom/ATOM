@@ -16,6 +16,7 @@ import warnings
 from collections import OrderedDict, deque
 from collections.abc import MutableMapping
 from copy import copy, deepcopy
+from dataclasses import dataclass
 from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
@@ -50,7 +51,7 @@ from sklearn.utils import _print_elapsed_time
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.1.2"
+__version__ = "5.2.0"
 
 # Group of variable types for isinstance
 # TODO: From Python 3.10, add typeguard.typechecked back
@@ -149,6 +150,21 @@ class Transformer(Protocol):
     """Protocol for all predictors."""
     def fit(self, **params): ...
     def transform(self, **params): ...
+
+
+@dataclass
+class DataConfig:
+    """Stores the data configuration.
+
+    This is a utility class to store the data configuration in one
+    attribute and pass it down to the models. The default values are
+    the one adopted by trainers.
+
+    """
+    index: bool | INT | str | SEQUENCE = True
+    shuffle: bool = True
+    stratify: bool | INT | str | SEQUENCE = True
+    test_size: SCALAR = 0.2
 
 
 class CatBMetric:
@@ -480,7 +496,7 @@ class TrialsCallback:
             # XGBoost's eval_metric minimizes the function
             score = np.negative(score)
 
-        params = self.T._trial_to_est(trial.user_attrs["params"])
+        params = self.T._trial_to_est(trial.params)
         estimator = trial.user_attrs.get("estimator", None)
 
         # Add row to the trials attribute
@@ -530,7 +546,7 @@ class TrialsCallback:
                         )
 
         if self.n_jobs == 1:
-            sequence = {"trial": trial.number, **trial.user_attrs["params"]}
+            sequence = {"trial": trial.number, **trial.params}
             for i, m in enumerate(self.T._metric):
                 best_score = rnd(np.nanmax([lst(s)[i] for s in self.T.trials["score"]]))
                 sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})

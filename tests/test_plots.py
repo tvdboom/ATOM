@@ -37,36 +37,12 @@ def test_invalid_vertical_spacing():
         BaseFigure(vertical_spacing=0)
 
 
-def test_get_colors():
-    """Assert that markers are assigned correctly."""
+def test_get_elem():
+    """Assert that elements are assigned correctly."""
     base = BaseFigure()
-    assert base.get_color() == "rgb(95, 70, 144)"
-    assert base.get_color("x") == "rgb(29, 105, 150)"
-    assert base.get_color("x") == "rgb(29, 105, 150)"
-
-
-def test_get_marker():
-    """Assert that markers are assigned correctly."""
-    base = BaseFigure()
-    assert base.get_marker() == "circle"
-    assert base.get_marker("x") == "x"
-    assert base.get_marker("x") == "x"
-
-
-def test_get_dashes():
-    """Assert that dashes are assigned correctly."""
-    base = BaseFigure()
-    assert base.get_dashes() is None
-    assert base.get_dashes("x") == "dashdot"
-    assert base.get_dashes("x") == "dashdot"
-
-
-def test_get_shapes():
-    """Assert that shapes are assigned correctly."""
-    base = BaseFigure()
-    assert base.get_shapes() == ""
-    assert base.get_shapes("x") == "/"
-    assert base.get_shapes("x") == "/"
+    assert base.get_elem() == "rgb(95, 70, 144)"
+    assert base.get_elem("x") == "rgb(95, 70, 144)"
+    assert base.get_elem("x") == "rgb(95, 70, 144)"
 
 
 # Test BasePlot ==================================================== >>
@@ -562,8 +538,8 @@ def test_plot_hyperparameter_importance():
 
 def test_plot_hyperparameters():
     """Assert that the plot_hyperparameters method works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree", n_trials=3)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("lr", n_trials=3)
 
     # Only one hyperparameter
     with pytest.raises(ValueError, match=".*minimum of two parameters.*"):
@@ -593,9 +569,29 @@ def test_plot_pareto_front():
 
 def test_plot_slice():
     """Assert that the plot_slice method works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("tree", metric=["mae", "mse"], n_trials=3)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("lr", metric=["f1", "recall"], n_trials=3)
     atom.plot_slice(display=False)
+
+
+def test_plot_terminator_improvements():
+    """Assert that the plot_terminator_improvement method works."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("tree", n_trials=1)
+
+    # No cross-validation
+    with pytest.raises(ValueError, match=".*using cross-validation.*"):
+        atom.plot_terminator_improvement()
+
+    atom.run("tree", n_trials=1, ht_params={"cv": 2})
+    atom.plot_terminator_improvement(display=False)
+
+
+def test_plot_timeline():
+    """Assert that the plot_timeline method works."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("tree", n_trials=1)
+    atom.plot_timeline(display=False)
 
 
 def test_plot_trials():

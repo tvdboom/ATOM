@@ -185,18 +185,14 @@ def test_xgb_optimizes_score():
     assert atom.xgb.trials["score"].sum() > 0  # All scores are positive
 
 
-def test_empty_study():
+@patch("optuna.study.Study.get_trials")
+def test_empty_study(func):
     """Assert that the optimization is skipped when there are no completed trials."""
+    func.return_value = []  # No successful trials
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models="PA",
-        n_trials=1,
-        ht_params={
-            "pruner": PatientPruner(None, patience=1),
-            "distributions": {"max_iter": IntDistribution(10, 20)},
-        },
-    )
-    assert atom.pa.best_trial is None
+    atom.run(models="tree", n_trials=1)
+    assert atom.tree.best_trial is None
 
 
 def test_ht_with_pipeline():
@@ -207,12 +203,32 @@ def test_ht_with_pipeline():
     assert atom.lr.trials is not None
 
 
+def test_ht_with_multilabel():
+    """Assert that the hyperparameter tuning works with multilabel tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom.run("SGD", n_trials=1, est_params={"max_iter": 5})
+    atom.multioutput = None
+    atom.run("MLP", n_trials=1, est_params={"max_iter": 5})
+
+
 def test_ht_with_multioutput():
     """Assert that the hyperparameter tuning works with multioutput tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
-    atom.run("SGD", est_params={"max_iter": 5})
-    atom.multioutput = None
-    atom.run("MLP", est_params={"max_iter": 5}, errors="raise")
+    atom = ATOMClassifier(X_class, y=y_multiclass, stratify=False, random_state=1)
+    atom.run("SGD", n_trials=1, est_params={"max_iter": 5})
+
+
+def test_ht_with_pruning():
+    """Assert that trials can be pruned."""
+    atom = ATOMClassifier(X_bin, y=y_bin, random_state=1)
+    atom.run(
+        models="SGD",
+        n_trials=10,
+        ht_params={
+            "distributions": {"max_iter": IntDistribution(5, 15)},
+            "pruner": PatientPruner(None, patience=1),
+        },
+    )
+    assert "PRUNED" in atom.sgd.trials["state"].values
 
 
 def test_sample_weight_fit():
@@ -242,6 +258,13 @@ def test_skip_duplicate_calls():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("dummy", n_trials=5)
     assert atom.dummy.trials["score"].nunique() < len(atom.dummy.trials["score"])
+
+
+def test_trials_stored_correctly():
+    """Assert that the trials attribute has same params as trial object."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("lr", n_trials=3)
+    assert atom.lr.trials.loc[2]["params"] == atom.lr.study.trials[2].params
 
 
 @patch("mlflow.log_params")
@@ -881,7 +904,13 @@ def test_evaluate_metric_None(dataset):
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 6
 
-    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, stratify=False)
+    atom = ATOMClassifier(
+        X_label,
+        y=y_label,
+        holdout_size=0.1,
+        stratify=False,
+        random_state=1,
+    )
     atom.run("MNB")
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 7
