@@ -1,0 +1,3341 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Mavs">
+      
+      
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.2/API/plots/plot_lift/">
+      
+      
+        <link rel="prev" href="../plot_learning_curve/">
+      
+      
+        <link rel="next" href="../plot_ngrams/">
+      
+      <link rel="icon" href="../../../img/favicon.ico">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+    
+    
+  <title>plot_lift - ATOM</title>
+
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#plot_lift" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're not viewing the latest version.
+  <a href="../../../..">
+    <strong>Click here to go to latest.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),outdated=__md_get("__outdated",sessionStorage);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
+      
+  <img src="../../../img/icon_white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ATOM
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              plot_lift
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+            
+              <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+              </label>
+            
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+            
+              <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+              </label>
+            
+          
+        </form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tvdboom/ATOM
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../about/" class="md-tabs__link">
+      About
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../getting_started/" class="md-tabs__link">
+      Getting started
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../user_guide/introduction/" class="md-tabs__link">
+        User guide
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../ATOM/atomclassifier/" class="md-tabs__link md-tabs__link--active">
+        API
+      </a>
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../examples/accelerating_cuml/" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/v5.x.x/" class="md-tabs__link">
+        Changelog
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../faq/" class="md-tabs__link">
+      FAQ
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../contributing/" class="md-tabs__link">
+      Contributing
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../dependencies/" class="md-tabs__link">
+      Dependencies
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../license/" class="md-tabs__link">
+      License
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
+      
+  <img src="../../../img/icon_white.png" alt="logo">
+
+    </a>
+    ATOM
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tvdboom/ATOM
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../about/" class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          User guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          User guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/nomenclature/" class="md-nav__link">
+        Nomenclature
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/logging/" class="md-nav__link">
+        Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/accelerating/" class="md-nav__link">
+        Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/data_cleaning/" class="md-nav__link">
+        Data cleaning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/feature_engineering/" class="md-nav__link">
+        Feature engineering
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/nlp/" class="md-nav__link">
+        NLP
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/models/" class="md-nav__link">
+        Models
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/training/" class="md-nav__link">
+        Training
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/predicting/" class="md-nav__link">
+        Predicting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+          ATOM
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_1">
+          <span class="md-nav__icon md-icon"></span>
+          ATOM
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomclassifier/" class="md-nav__link">
+        ATOMClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atommodel/" class="md-nav__link">
+        ATOMModel
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomregressor/" class="md-nav__link">
+        ATOMRegressor
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+          Data cleaning
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_2">
+          <span class="md-nav__icon md-icon"></span>
+          Data cleaning
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/balancer/" class="md-nav__link">
+        Balancer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/cleaner/" class="md-nav__link">
+        Cleaner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/discretizer/" class="md-nav__link">
+        Discretizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/encoder/" class="md-nav__link">
+        Encoder
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/imputer/" class="md-nav__link">
+        Imputer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/pruner/" class="md-nav__link">
+        Pruner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/scaler/" class="md-nav__link">
+        Scaler
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+          Feature engineering
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_3">
+          <span class="md-nav__icon md-icon"></span>
+          Feature engineering
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featureextractor/" class="md-nav__link">
+        FeatureExtractor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featuregenerator/" class="md-nav__link">
+        FeatureGenerator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featuregrouper/" class="md-nav__link">
+        FeatureGrouper
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featureselector/" class="md-nav__link">
+        FeatureSelector
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+          NLP
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_4">
+          <span class="md-nav__icon md-icon"></span>
+          NLP
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/textcleaner/" class="md-nav__link">
+        TextCleaner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/tokenizer/" class="md-nav__link">
+        Tokenizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/vectorizer/" class="md-nav__link">
+        Vectorizer
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+          Training
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_5">
+          <span class="md-nav__icon md-icon"></span>
+          Training
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/directclassifier/" class="md-nav__link">
+        DirectClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/directregressor/" class="md-nav__link">
+        DirectRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/successivehalvingclassifier/" class="md-nav__link">
+        SuccessiveHalvingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/successivehalvingregressor/" class="md-nav__link">
+        SuccessiveHalvingRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/trainsizingclassifier/" class="md-nav__link">
+        TrainSizingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/trainsizingregressor/" class="md-nav__link">
+        TrainSizingRegressor
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+          Models
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_6">
+          <span class="md-nav__icon md-icon"></span>
+          Models
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/adab/" class="md-nav__link">
+        AdaBoost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ard/" class="md-nav__link">
+        AutomaticRelevanceDetermination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/bag/" class="md-nav__link">
+        Bagging
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/br/" class="md-nav__link">
+        BayesianRidge
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/bnb/" class="md-nav__link">
+        BernoulliNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/catb/" class="md-nav__link">
+        CatBoost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/catnb/" class="md-nav__link">
+        CategoricalNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/cnb/" class="md-nav__link">
+        ComplementNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/tree/" class="md-nav__link">
+        DecisionTree
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/dummy/" class="md-nav__link">
+        Dummy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/en/" class="md-nav__link">
+        ElasticNet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/etree/" class="md-nav__link">
+        ExtraTree
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/et/" class="md-nav__link">
+        ExtraTrees
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gnb/" class="md-nav__link">
+        GaussianNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gp/" class="md-nav__link">
+        GaussianProcess
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gbm/" class="md-nav__link">
+        GradientBoostingMachine
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        HuberRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/hgbm/" class="md-nav__link">
+        HistGradientBoosting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/knn/" class="md-nav__link">
+        KNearestNeighbors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lasso/" class="md-nav__link">
+        Lasso
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        LeastAngleRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lgb/" class="md-nav__link">
+        LightGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lda/" class="md-nav__link">
+        LinearDiscriminantAnalysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lsvm/" class="md-nav__link">
+        LinearSVM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lr/" class="md-nav__link">
+        LogisticRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/mlp/" class="md-nav__link">
+        MultiLayerPerceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/mnb/" class="md-nav__link">
+        MultinomialNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ols/" class="md-nav__link">
+        OrdinaryLeastSquares
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/pa/" class="md-nav__link">
+        PassiveAggressive
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/qda/" class="md-nav__link">
+        QuadraticDiscriminantAnalysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/rnn/" class="md-nav__link">
+        RadiusNearestNeighbors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/rf/" class="md-nav__link">
+        RandomForest
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ridge/" class="md-nav__link">
+        Ridge
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/sgd/" class="md-nav__link">
+        StochasticGradientDescent
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/svm/" class="md-nav__link">
+        SupportVectorMachine
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/xgb/" class="md-nav__link">
+        XGBoost
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
+          Predicting
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_7">
+          <span class="md-nav__icon md-icon"></span>
+          Predicting
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../predicting/decision_function/" class="md-nav__link">
+        decision_function
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../predicting/predict/" class="md-nav__link">
+        predict
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../predicting/predict_log_proba/" class="md-nav__link">
+        predict_log_proba
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../predicting/predict_proba/" class="md-nav__link">
+        predict_proba
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../predicting/score/" class="md-nav__link">
+        score
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+          Plots
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_4_8">
+          <span class="md-nav__icon md-icon"></span>
+          Plots
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calibration/" class="md-nav__link">
+        plot_calibration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_components/" class="md-nav__link">
+        plot_components
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_confusion_matrix/" class="md-nav__link">
+        plot_confusion_matrix
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_correlation/" class="md-nav__link">
+        plot_correlation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_det/" class="md-nav__link">
+        plot_det
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_distribution/" class="md-nav__link">
+        plot_distribution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_errors/" class="md-nav__link">
+        plot_errors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_evals/" class="md-nav__link">
+        plot_evals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_gains/" class="md-nav__link">
+        plot_gains
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_learning_curve/" class="md-nav__link">
+        plot_learning_curve
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          plot_lift
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        plot_lift
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_pareto_front/" class="md-nav__link">
+        plot_pareto_front
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_pca/" class="md-nav__link">
+        plot_pca
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_pipeline/" class="md-nav__link">
+        plot_pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_prc/" class="md-nav__link">
+        plot_prc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_probabilities/" class="md-nav__link">
+        plot_probabilities
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_qq/" class="md-nav__link">
+        plot_qq
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_relationships/" class="md-nav__link">
+        plot_relationships
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_residuals/" class="md-nav__link">
+        plot_residuals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_results/" class="md-nav__link">
+        plot_results
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_rfecv/" class="md-nav__link">
+        plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_roc/" class="md-nav__link">
+        plot_roc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_bar/" class="md-nav__link">
+        plot_shap_bar
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_beeswarm/" class="md-nav__link">
+        plot_shap_beeswarm
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_decision/" class="md-nav__link">
+        plot_shap_decision
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_force/" class="md-nav__link">
+        plot_shap_force
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_heatmap/" class="md-nav__link">
+        plot_shap_heatmap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_scatter/" class="md-nav__link">
+        plot_shap_scatter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_shap_waterfall/" class="md-nav__link">
+        plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_successive_halving/" class="md-nav__link">
+        plot_successive_halving
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_terminator_improvement/" class="md-nav__link">
+        plot_terminator_improvement
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_timeline/" class="md-nav__link">
+        plot_timeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_threshold/" class="md-nav__link">
+        plot_threshold
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_trials/" class="md-nav__link">
+        plot_trials
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_wordcloud/" class="md-nav__link">
+        plot_wordcloud
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/accelerating_cuml/" class="md-nav__link">
+        Accelerating cuml
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/accelerating_sklearnex/" class="md-nav__link">
+        Accelerating sklearnex
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/advanced_plotting/" class="md-nav__link">
+        Advanced plotting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/automated_feature_scaling/" class="md-nav__link">
+        Automated feature scaling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/automl/" class="md-nav__link">
+        AutoML
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/binary_classification/" class="md-nav__link">
+        Binary classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/calibration/" class="md-nav__link">
+        Calibration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/deep_learning/" class="md-nav__link">
+        Deep learning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/ensembles/" class="md-nav__link">
+        Ensembles
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/feature_engineering/" class="md-nav__link">
+        Feature engineering
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/getting_started/" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/hyperparameter_tuning/" class="md-nav__link">
+        Hyperparameter tuning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
+        Imbalanced datasets
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/in_training_validation/" class="md-nav__link">
+        In-training validation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multiclass_classification/" class="md-nav__link">
+        Multiclass classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multioutput_regression/" class="md-nav__link">
+        Multioutput regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multi_metric/" class="md-nav__link">
+        Multi-metric runs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/nlp/" class="md-nav__link">
+        NLP
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/pruning/" class="md-nav__link">
+        Pruning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/ray_backend/" class="md-nav__link">
+        Ray backend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/regression/" class="md-nav__link">
+        Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/successive_halving/" class="md-nav__link">
+        Successive halving
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/train_sizing/" class="md-nav__link">
+        Train sizing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/utilities/" class="md-nav__link">
+        Utilities
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Changelog
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Changelog
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/v5.x.x/" class="md-nav__link">
+        v5.x.x
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/v4.x.x/" class="md-nav__link">
+        v4.x.x
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dependencies/" class="md-nav__link">
+        Dependencies
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+
+<script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
+
+                  
+
+
+<h1 id="plot_lift">plot_lift</h1>
+<hr />
+<p><a id='plot_lift'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_lift</strong>(models=None, dataset="test", target=0, title=None, legend="upper right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5220>[source]</a></span></div>Plot the lift curve.</p>
+<p>Only available for binary classification tasks.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_lift-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Models to plot. If None, all models are selected.</p>
+<p></div><a id='plot_lift-dataset'></a><strong>dataset: str or sequence, default="test"</strong><br><div markdown class='param'>
+Data set on which to calculate the metric. Use a sequence
+or add <code>+</code> between options to select more than one. Choose
+from: "train", "test" or "holdout".</p>
+<p></div><a id='plot_lift-target'></a><strong>target: int or str, default=0</strong><br><div markdown class='param'>
+Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</p>
+<p></div><a id='plot_lift-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
+Title for the plot.</p>
+<ul>
+<li>If None, no title is shown.</li>
+<li>If str, text for the title.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
+</ul>
+<p></div><a id='plot_lift-legend'></a><strong>legend: str, dict or None, default="upper right"</strong><br><div markdown class='param'>
+Legend for the plot. See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">user guide</a> for
+an extended description of the choices.</p>
+<ul>
+<li>If None: No legend is shown.</li>
+<li>If str: Location where to show the legend.</li>
+<li>If dict: Legend configuration.</li>
+</ul>
+<p></div><a id='plot_lift-figsize'></a><strong>figsize: tuple, default=(900, 600)</strong><br><div markdown class='param'>
+Figure's size in pixels, format as (x, y).</p>
+<p></div><a id='plot_lift-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no file type,
+the plot is saved as html. If None, the plot is not saved.</p>
+<p></div><a id='plot_lift-display'></a><strong>display: bool or None, default=True</strong><br><div markdown class='param'>
+Whether to render the plot. If None, it returns the figure.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='plot_lift-<a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None'></a><strong><a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None</strong><br><div markdown class='param'>
+Plot object. Only returned if <code>display=None</code>.</p>
+<p></div></td></tr></p>
+</table>
+<p><br></p>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../plot_det/#plot_det">plot_det</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the Detection Error Tradeoff curve.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_gains/#plot_gains">plot_gains</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the cumulative gains curve.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_prc/#plot_prc">plot_prc</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the precision-recall curve.</div></p>
+</div>
+<p><br></p>
+<h2 id="example">Example</h2>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./examples/datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">plot_lift</span><span class="p">()</span>
+</code></pre></div>
+<div>                            <div id="7385f072-f296-4e47-83ef-769a17fa502d" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("7385f072-f296-4e47-83ef-769a17fa502d")) {                    Plotly.newPlot(                        "7385f072-f296-4e47-83ef-769a17fa502d",                        [{"hovertemplate":"(%{x}, %{y})<extra>LR - test</extra>","legendgroup":"LR","legendgrouptitle":{"font":{"size":16},"text":"LR"},"line":{"color":"rgb(0, 98, 98)","width":2},"marker":{"color":"rgb(0, 98, 98)","line":{"color":"rgba(255, 255, 255, 0.9)","width":1},"size":8,"symbol":"circle"},"mode":"lines","name":"test","showlegend":true,"x":[0.00129366106080207,0.00258732212160414,0.0038809831824062097,0.00517464424320828,0.00646830530401035,0.007761966364812419,0.009055627425614488,0.01034928848641656,0.01164294954721863,0.0129366106080207,0.014230271668822769,0.015523932729624839,0.016817593790426907,0.018111254851228976,0.019404915912031046,0.02069857697283312,0.02199223803363519,0.02328589909443726,0.02457956015523933,0.0258732212160414,0.027166882276843468,0.028460543337645538,0.029754204398447608,0.031047865459249677,0.03234152652005175,0.03363518758085381,0.03492884864165589,0.03622250970245795,0.037516170763260026,0.03880983182406209,0.040103492884864166,0.04139715394566624,0.042690815006468305,0.04398447606727038,0.045278137128072445,0.04657179818887452,0.047865459249676584,0.04915912031047866,0.050452781371280724,0.0517464424320828,0.05304010349288486,0.054333764553686936,0.055627425614489,0.056921086675291076,0.05821474773609314,0.059508408796895215,0.06080206985769728,0.062095730918499355,0.06338939197930142,0.0646830530401035,0.06597671410090557,0.06727037516170763,0.0685640362225097,0.06985769728331177,0.07115135834411385,0.0724450194049159,0.07373868046571798,0.07503234152652005,0.07632600258732213,0.07761966364812418,0.07891332470892626,0.08020698576972833,0.0815006468305304,0.08279430789133248,0.08408796895213454,0.08538163001293661,0.08667529107373868,0.08796895213454076,0.08926261319534282,0.09055627425614489,0.09184993531694696,0.09314359637774904,0.0944372574385511,0.09573091849935317,0.09702457956015524,0.09831824062095731,0.09961190168175937,0.10090556274256145,0.10219922380336352,0.1034928848641656,0.10478654592496765,0.10608020698576973,0.1073738680465718,0.10866752910737387,0.10996119016817593,0.111254851228978,0.11254851228978008,0.11384217335058215,0.11513583441138421,0.11642949547218628,0.11772315653298836,0.11901681759379043,0.1203104786545925,0.12160413971539456,0.12289780077619664,0.12419146183699871,0.12548512289780078,0.12677878395860284,0.12807244501940493,0.129366106080207,0.13065976714100905,0.13195342820181113,0.1332470892626132,0.13454075032341525,0.13583441138421734,0.1371280724450194,0.1384217335058215,0.13971539456662355,0.1410090556274256,0.1423027166882277,0.14359637774902975,0.1448900388098318,0.1461836998706339,0.14747736093143596,0.14877102199223805,0.1500646830530401,0.15135834411384216,0.15265200517464425,0.1539456662354463,0.15523932729624837,0.15653298835705046,0.15782664941785252,0.1591203104786546,0.16041397153945666,0.16170763260025872,0.1630012936610608,0.16429495472186287,0.16558861578266496,0.16688227684346701,0.16817593790426907,0.16946959896507116,0.17076326002587322,0.17205692108667528,0.17335058214747737,0.17464424320827943,0.1759379042690815,0.17723156532988357,0.17852522639068563,0.17981888745148772,0.18111254851228978,0.18240620957309184,0.18369987063389392,0.18499353169469598,0.18628719275549807,0.18758085381630013,0.1888745148771022,0.19016817593790428,0.19146183699870634,0.1927554980595084,0.19404915912031048,0.19534282018111254,0.19663648124191463,0.1979301423027167,0.19922380336351875,0.20051746442432083,0.2018111254851229,0.20310478654592498,0.20439844760672704,0.2056921086675291,0.2069857697283312,0.20827943078913325,0.2095730918499353,0.2108667529107374,0.21216041397153945,0.21345407503234154,0.2147477360931436,0.21604139715394566,0.21733505821474774,0.2186287192755498,0.21992238033635186,0.22121604139715395,0.222509702457956,0.2238033635187581,0.22509702457956016,0.22639068564036222,0.2276843467011643,0.22897800776196636,0.23027166882276842,0.2315653298835705,0.23285899094437257,0.23415265200517466,0.23544631306597671,0.23673997412677877,0.23803363518758086,0.23932729624838292,0.240620957309185,0.24191461836998707,0.24320827943078913,0.2445019404915912,0.24579560155239327,0.24708926261319533,0.24838292367399742,0.24967658473479948,0.25097024579560157,0.2522639068564036,0.2535575679172057,0.25485122897800777,0.25614489003880986,0.2574385510996119,0.258732212160414,0.26002587322121606,0.2613195342820181,0.2626131953428202,0.26390685640362227,0.2652005174644243,0.2664941785252264,0.2677878395860285,0.2690815006468305,0.2703751617076326,0.2716688227684347,0.2729624838292367,0.2742561448900388,0.2755498059508409,0.276843467011643,0.278137128072445,0.2794307891332471,0.2807244501940492,0.2820181112548512,0.2833117723156533,0.2846054333764554,0.2858990944372574,0.2871927554980595,0.2884864165588616,0.2897800776196636,0.2910737386804657,0.2923673997412678,0.2936610608020699,0.2949547218628719,0.296248382923674,0.2975420439844761,0.2988357050452781,0.3001293661060802,0.3014230271668823,0.3027166882276843,0.3040103492884864,0.3053040103492885,0.30659767141009053,0.3078913324708926,0.3091849935316947,0.31047865459249674,0.3117723156532988,0.3130659767141009,0.314359637774903,0.31565329883570503,0.3169469598965071,0.3182406209573092,0.31953428201811124,0.3208279430789133,0.3221216041397154,0.32341526520051744,0.32470892626131953,0.3260025873221216,0.32729624838292365,0.32858990944372574,0.3298835705045278,0.3311772315653299,0.33247089262613194,0.33376455368693403,0.3350582147477361,0.33635187580853815,0.33764553686934023,0.3389391979301423,0.34023285899094435,0.34152652005174644,0.3428201811125485,0.34411384217335056,0.34540750323415265,0.34670116429495473,0.34799482535575677,0.34928848641655885,0.35058214747736094,0.351875808538163,0.35316946959896506,0.35446313065976714,0.35575679172056923,0.35705045278137126,0.35834411384217335,0.35963777490297544,0.36093143596377747,0.36222509702457956,0.36351875808538164,0.3648124191461837,0.36610608020698576,0.36739974126778785,0.36869340232858994,0.36998706338939197,0.37128072445019406,0.37257438551099614,0.3738680465717982,0.37516170763260026,0.37645536869340235,0.3777490297542044,0.37904269081500647,0.38033635187580855,0.3816300129366106,0.3829236739974127,0.38421733505821476,0.3855109961190168,0.3868046571798189,0.38809831824062097,0.38939197930142305,0.3906856403622251,0.39197930142302717,0.39327296248382926,0.3945666235446313,0.3958602846054334,0.39715394566623546,0.3984476067270375,0.3997412677878396,0.40103492884864167,0.4023285899094437,0.4036222509702458,0.4049159120310479,0.40620957309184996,0.407503234152652,0.4087968952134541,0.41009055627425617,0.4113842173350582,0.4126778783958603,0.4139715394566624,0.4152652005174644,0.4165588615782665,0.4178525226390686,0.4191461836998706,0.4204398447606727,0.4217335058214748,0.4230271668822768,0.4243208279430789,0.425614489003881,0.4269081500646831,0.4282018111254851,0.4294954721862872,0.4307891332470893,0.4320827943078913,0.4333764553686934,0.4346701164294955,0.4359637774902975,0.4372574385510996,0.4385510996119017,0.4398447606727037,0.4411384217335058,0.4424320827943079,0.44372574385511,0.445019404915912,0.4463130659767141,0.4476067270375162,0.4489003880983182,0.4501940491591203,0.4514877102199224,0.45278137128072443,0.4540750323415265,0.4553686934023286,0.45666235446313064,0.4579560155239327,0.4592496765847348,0.46054333764553684,0.46183699870633893,0.463130659767141,0.4644243208279431,0.46571798188874514,0.4670116429495472,0.4683053040103493,0.46959896507115134,0.47089262613195343,0.4721862871927555,0.47347994825355755,0.47477360931435963,0.4760672703751617,0.47736093143596375,0.47865459249676584,0.4799482535575679,0.48124191461837,0.48253557567917205,0.48382923673997413,0.4851228978007762,0.48641655886157825,0.48771021992238034,0.4890038809831824,0.49029754204398446,0.49159120310478654,0.49288486416558863,0.49417852522639066,0.49547218628719275,0.49676584734799484,0.49805950840879687,0.49935316946959896,0.500646830530401,0.5019404915912031,0.5032341526520052,0.5045278137128072,0.5058214747736093,0.5071151358344114,0.5084087968952135,0.5097024579560155,0.5109961190168176,0.5122897800776197,0.5135834411384217,0.5148771021992238,0.5161707632600259,0.517464424320828,0.51875808538163,0.5200517464424321,0.5213454075032341,0.5226390685640362,0.5239327296248383,0.5252263906856404,0.5265200517464425,0.5278137128072445,0.5291073738680466,0.5304010349288486,0.5316946959896507,0.5329883570504528,0.5342820181112549,0.535575679172057,0.536869340232859,0.538163001293661,0.5394566623544631,0.5407503234152652,0.5420439844760673,0.5433376455368694,0.5446313065976714,0.5459249676584734,0.5472186287192755,0.5485122897800776,0.5498059508408797,0.5510996119016818,0.5523932729624839,0.553686934023286,0.5549805950840879,0.55627425614489,0.5575679172056921,0.5588615782664942,0.5601552393272963,0.5614489003880984,0.5627425614489003,0.5640362225097024,0.5653298835705045,0.5666235446313066,0.5679172056921087,0.5692108667529108,0.5705045278137129,0.5717981888745148,0.5730918499353169,0.574385510996119,0.5756791720569211,0.5769728331177232,0.5782664941785253,0.5795601552393272,0.5808538163001293,0.5821474773609314,0.5834411384217335,0.5847347994825356,0.5860284605433377,0.5873221216041398,0.5886157826649417,0.5899094437257438,0.5912031047865459,0.592496765847348,0.5937904269081501,0.5950840879689522,0.5963777490297542,0.5976714100905562,0.5989650711513583,0.6002587322121604,0.6015523932729625,0.6028460543337646,0.6041397153945667,0.6054333764553687,0.6067270375161707,0.6080206985769728,0.6093143596377749,0.610608020698577,0.6119016817593791,0.6131953428201811,0.6144890038809832,0.6157826649417852,0.6170763260025873,0.6183699870633894,0.6196636481241915,0.6209573091849935,0.6222509702457956,0.6235446313065977,0.6248382923673997,0.6261319534282018,0.6274256144890039,0.628719275549806,0.630012936610608,0.6313065976714101,0.6326002587322122,0.6338939197930142,0.6351875808538163,0.6364812419146184,0.6377749029754204,0.6390685640362225,0.6403622250970246,0.6416558861578266,0.6429495472186287,0.6442432082794308,0.6455368693402329,0.6468305304010349,0.648124191461837,0.6494178525226391,0.6507115135834411,0.6520051746442432,0.6532988357050453,0.6545924967658473,0.6558861578266494,0.6571798188874515,0.6584734799482536,0.6597671410090556,0.6610608020698577,0.6623544631306598,0.6636481241914618,0.6649417852522639,0.666235446313066,0.6675291073738681,0.6688227684346701,0.6701164294954722,0.6714100905562742,0.6727037516170763,0.6739974126778784,0.6752910737386805,0.6765847347994826,0.6778783958602846,0.6791720569210866,0.6804657179818887,0.6817593790426908,0.6830530401034929,0.684346701164295,0.685640362225097,0.6869340232858991,0.6882276843467011,0.6895213454075032,0.6908150064683053,0.6921086675291074,0.6934023285899095,0.6946959896507116,0.6959896507115135,0.6972833117723156,0.6985769728331177,0.6998706338939198,0.7011642949547219,0.702457956015524,0.703751617076326,0.705045278137128,0.7063389391979301,0.7076326002587322,0.7089262613195343,0.7102199223803364,0.7115135834411385,0.7128072445019404,0.7141009055627425,0.7153945666235446,0.7166882276843467,0.7179818887451488,0.7192755498059509,0.720569210866753,0.7218628719275549,0.723156532988357,0.7244501940491591,0.7257438551099612,0.7270375161707633,0.7283311772315654,0.7296248382923674,0.7309184993531694,0.7322121604139715,0.7335058214747736,0.7347994825355757,0.7360931435963778,0.7373868046571799,0.7386804657179818,0.7399741267787839,0.741267787839586,0.7425614489003881,0.7438551099611902,0.7451487710219923,0.7464424320827943,0.7477360931435963,0.7490297542043984,0.7503234152652005,0.7516170763260026,0.7529107373868047,0.7542043984476067,0.7554980595084088,0.7567917205692108,0.7580853816300129,0.759379042690815,0.7606727037516171,0.7619663648124192,0.7632600258732212,0.7645536869340233,0.7658473479948253,0.7671410090556274,0.7684346701164295,0.7697283311772316,0.7710219922380336,0.7723156532988357,0.7736093143596378,0.7749029754204398,0.7761966364812419,0.777490297542044,0.7787839586028461,0.7800776196636481,0.7813712807244502,0.7826649417852523,0.7839586028460543,0.7852522639068564,0.7865459249676585,0.7878395860284605,0.7891332470892626,0.7904269081500647,0.7917205692108668,0.7930142302716688,0.7943078913324709,0.795601552393273,0.796895213454075,0.7981888745148771,0.7994825355756792,0.8007761966364813,0.8020698576972833,0.8033635187580854,0.8046571798188874,0.8059508408796895,0.8072445019404916,0.8085381630012937,0.8098318240620958,0.8111254851228978,0.8124191461836999,0.8137128072445019,0.815006468305304,0.8163001293661061,0.8175937904269082,0.8188874514877102,0.8201811125485123,0.8214747736093143,0.8227684346701164,0.8240620957309185,0.8253557567917206,0.8266494178525227,0.8279430789133247,0.8292367399741267,0.8305304010349288,0.8318240620957309,0.833117723156533,0.8344113842173351,0.8357050452781372,0.8369987063389392,0.8382923673997412,0.8395860284605433,0.8408796895213454,0.8421733505821475,0.8434670116429496,0.8447606727037517,0.8460543337645536,0.8473479948253557,0.8486416558861578,0.8499353169469599,0.851228978007762,0.8525226390685641,0.8538163001293662,0.8551099611901681,0.8564036222509702,0.8576972833117723,0.8589909443725744,0.8602846054333765,0.8615782664941786,0.8628719275549805,0.8641655886157826,0.8654592496765847,0.8667529107373868,0.8680465717981889,0.869340232858991,0.8706338939197931,0.871927554980595,0.8732212160413971,0.8745148771021992,0.8758085381630013,0.8771021992238034,0.8783958602846055,0.8796895213454075,0.8809831824062095,0.8822768434670116,0.8835705045278137,0.8848641655886158,0.8861578266494179,0.88745148771022,0.888745148771022,0.890038809831824,0.8913324708926261,0.8926261319534282,0.8939197930142303,0.8952134540750324,0.8965071151358344,0.8978007761966365,0.8990944372574385,0.9003880983182406,0.9016817593790427,0.9029754204398448,0.9042690815006468,0.9055627425614489,0.906856403622251,0.908150064683053,0.9094437257438551,0.9107373868046572,0.9120310478654593,0.9133247089262613,0.9146183699870634,0.9159120310478654,0.9172056921086675,0.9184993531694696,0.9197930142302717,0.9210866752910737,0.9223803363518758,0.9236739974126779,0.92496765847348,0.926261319534282,0.9275549805950841,0.9288486416558862,0.9301423027166882,0.9314359637774903,0.9327296248382924,0.9340232858990944,0.9353169469598965,0.9366106080206986,0.9379042690815006,0.9391979301423027,0.9404915912031048,0.9417852522639069,0.943078913324709,0.944372574385511,0.9456662354463131,0.9469598965071151,0.9482535575679172,0.9495472186287193,0.9508408796895214,0.9521345407503234,0.9534282018111255,0.9547218628719275,0.9560155239327296,0.9573091849935317,0.9586028460543338,0.9598965071151359,0.9611901681759379,0.96248382923674,0.963777490297542,0.9650711513583441,0.9663648124191462,0.9676584734799483,0.9689521345407504,0.9702457956015524,0.9715394566623544,0.9728331177231565,0.9741267787839586,0.9754204398447607,0.9767141009055628,0.9780077619663649,0.9793014230271668,0.9805950840879689,0.981888745148771,0.9831824062095731,0.9844760672703752,0.9857697283311773,0.9870633893919794,0.9883570504527813,0.9896507115135834,0.9909443725743855,0.9922380336351876,0.9935316946959897,0.9948253557567918,0.9961190168175937,0.9974126778783958,0.9987063389391979,1.0],"xaxis":"x","y":[4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.726222826086956,4.728457446808511,4.730598958333333,4.7326530612244895,4.734625,4.736519607843137,4.738341346153846,4.740094339622642,4.741782407407407,4.743409090909091,4.744977678571429,4.746491228070175,4.747952586206897,4.7493644067796605,4.670208333333334,4.672848360655738,4.675403225806452,4.677876984126984,4.604785156249999,4.533942307692308,4.53844696969697,4.542817164179104,4.547058823529412,4.551177536231885,4.555178571428571,4.559066901408451,4.562847222222222,4.56652397260274,4.570101351351352,4.573583333333333,4.576973684210526,4.580275974025974,4.58349358974359,4.525474683544304,4.529296875,4.533024691358024,4.536661585365854,4.540210843373494,4.486160714285714,4.490220588235294,4.494186046511628,4.498060344827586,4.446946022727272,4.396980337078651,4.401805555555555,4.406524725274726,4.358627717391305,4.311760752688172,4.265890957446809,4.271842105263158,4.22734375,4.183762886597938,4.141071428571429,4.148042929292929,4.154875,4.161571782178218,4.120772058823529,4.080764563106796,4.08798076923077,4.049047619047619,4.010849056603774,3.973364485981308,3.9365740740740742,3.9447821100917437,3.9089204545454543,3.873704954954955,3.8822544642857144,3.8478982300884956,3.8141447368421053,3.8229891304347823,3.831681034482758,3.8402243589743597,3.807680084745763,3.8162815126050424,3.8247395833333337,3.833057851239669,3.8412397540983605,3.8100101626016256,3.8182459677419356,3.8263500000000006,3.8343253968253967,3.8041338582677167,3.7744140624999996,3.7826065891472864,3.7535096153846155,3.7617366412213737,3.733238636363636,3.705169172932331,3.6775186567164173,3.686064814814815,3.694485294117647,3.6675182481751825,3.6409420289855077,3.614748201438849,3.5889285714285717,3.563475177304965,3.5724031690140845,3.581206293706294,3.556336805555555,3.531810344827586,3.5076198630136988,3.4837585034013605,3.4602195945945944,3.4694211409395974,3.4785000000000004,3.455463576158941,3.464514802631579,3.44187091503268,3.450892857142857,3.4286290322580646,3.406650641025641,3.384952229299363,3.3941060126582276,3.372759433962264,3.3516796875,3.360869565217391,3.3401234567901232,3.3196319018404905,3.328849085365854,3.3379545454545454,3.3178463855421687,3.297979041916168,3.2783482142857143,3.2875369822485205,3.268198529411765,3.2773391812865493,3.2582848837209304,3.239450867052023,3.220833333333333,3.2024285714285714,3.1842329545454544,3.166242937853107,3.1755969101123593,3.184846368715084,3.167152777777778,3.1763466850828728,3.158894230769231,3.1416325136612024,3.1245584239130433,3.133783783783784,3.1169354838709675,3.1002673796791442,3.083776595744681,3.067460317460317,3.0513157894736844,3.0353403141361257,3.0446940104166664,3.0289183937823836,3.0133054123711336,2.997852564102564,2.9825573979591837,2.9674175126903553,2.9768308080808077,2.9861494974874376,2.9712187500000002,2.956436567164179,2.941800742574258,2.9511083743842366,2.936642156862745,2.922317073170732,2.908131067961165,2.8940821256038647,2.8801682692307695,2.8663875598086124,2.852738095238095,2.862114928909953,2.8486143867924527,2.8352406103286385,2.8445677570093455,2.8313372093023257,2.8182291666666663,2.827505760368663,2.8145355504587157,2.823744292237443,2.810909090909091,2.820050904977376,2.807347972972973,2.7947589686098655,2.782282366071429,2.769916666666667,2.7576603982300885,2.7455121145374446,2.7334703947368424,2.7215338427947597,2.7097010869565215,2.697970779220779,2.6863415948275864,2.6748122317596565,2.6633814102564104,2.6726063829787234,2.661281779661017,2.650052742616034,2.65921743697479,2.6480910041841,2.6571875,2.646161825726141,2.6352272727272723,2.6243827160493822,2.613627049180328,2.6226785714285716,2.612017276422764,2.601442307692308,2.5909526209677423,2.58054718875502,2.570225,2.5599850597609564,2.549826388888889,2.5397480237154153,2.5297490157480316,2.519828431372549,2.5099853515625,2.500218871595331,2.490528100775194,2.480912162162162,2.4899519230769234,2.480411877394636,2.4709446564885496,2.461549429657795,2.4705255681818183,2.4612028301886792,2.451950187969925,2.4427668539325844,2.433652052238806,2.4246050185873607,2.415625,2.406711254612546,2.397863051470588,2.3890796703296706,2.380360401459854,2.3717045454545453,2.3806159420289856,2.3894629963898915,2.3808678057553956,2.372334229390681,2.363861607142857,2.3554492882562275,2.3470966312056736,2.338803003533569,2.3305677816901404,2.3223903508771926,2.3142701048951047,2.3062064459930314,2.3149739583333333,2.3069636678200696,2.2990086206896554,2.2911082474226805,2.28326198630137,2.2754692832764505,2.2841624149659863,2.276419491525424,2.2687288851351353,2.261090067340067,2.2535025167785236,2.245965719063545,2.2384791666666666,2.2310423588039865,2.2236548013245034,2.21631600660066,2.2249177631578947,2.2176229508196723,2.210375816993464,2.2031758957654723,2.1960227272727275,2.188915857605178,2.1818548387096772,2.17483922829582,2.16786858974359,2.1609424920127793,2.169446656050955,2.177896825396825,2.1710047468354428,2.164156151419558,2.1573506289308177,2.150587774294671,2.1438671874999997,2.1371884735202493,2.1305512422360247,2.1389125386996906,2.1472222222222226,2.140615384615385,2.1340490797546012,2.1275229357798167,2.1210365853658537,2.1145896656534955,2.108181818181818,2.1018126888217523,2.095481927710843,2.089189189189189,2.082934131736527,2.076716417910448,2.0849144345238093,2.0930637982195845,2.086871301775148,2.080715339233038,2.074595588235294,2.0685117302052785,2.0624634502923977,2.070535714285714,2.064516715116279,2.058532608695652,2.052583092485549,2.0466678674351586,2.0407866379310344,2.034939111747851,2.029125,2.023344017094017,2.0313210227272727,2.0255665722379605,2.0198446327683617,2.014154929577465,2.0084971910112364,2.0028711484593837,1.9972765363128493,1.9917130919220056,1.9861805555555556,1.980678670360111,1.975207182320442,1.969765840220386,1.9643543956043956,1.958972602739726,1.953620218579235,1.9482970027247957,1.9430027173913045,1.9377371273712738,1.9455574324324325,1.9403133423180594,1.935097446236559,1.9299095174262735,1.9247493315508022,1.9196166666666665,1.9145113031914895,1.909433023872679,1.9043816137566136,1.912104221635884,1.9070723684210527,1.902066929133858,1.8970876963350787,1.8921344647519582,1.88720703125,1.882305194805195,1.877428756476684,1.8725775193798448,1.8677512886597938,1.8629498714652954,1.858173076923077,1.853420716112532,1.8486926020408163,1.8439885496183206,1.8393083756345177,1.8346518987341771,1.8300189393939392,1.8254093198992445,1.8208228643216082,1.8162593984962405,1.81171875,1.8072007481296757,1.802705223880597,1.7982320099255584,1.7937809405940595,1.7893518518518519,1.7849445812807883,1.780558968058968,1.7761948529411764,1.7718520782396086,1.767530487804878,1.7632299270072993,1.7589502427184467,1.7546912832929782,1.7621225845410626,1.7578765060240962,1.753650841346154,1.749445443645084,1.7452601674641148,1.7410948687350836,1.7369494047619047,1.7328236342042753,1.7287174170616115,1.7246306146572106,1.7205630896226416,1.7165147058823529,1.7124853286384976,1.7084748243559718,1.7044830607476633,1.7005099067599068,1.6965552325581397,1.692618909512761,1.688700810185185,1.6848008083140877,1.6809187788018431,1.6770545977011495,1.673208142201835,1.669379290617849,1.665567922374429,1.661773917995444,1.657997159090909,1.654237528344671,1.6504949095022625,1.6467691873589165,1.6430602477477478,1.6393679775280898,1.6356922645739909,1.6320329977628634,1.628390066964286,1.6247633630289533,1.6211527777777779,1.6175582039911307,1.61397953539823,1.6104166666666666,1.6068694933920702,1.603337912087912,1.5998218201754386,1.5963211159737418,1.5928356986899563,1.589365468409586,1.5859103260869563,1.5824701735357918,1.5790449134199134,1.5756344492440604,1.5722386853448276,1.5688575268817204,1.565490879828326,1.5621386509635973,1.558800747863248,1.555477078891258,1.5521675531914894,1.5488720806794054,1.5455905720338983,1.5423229386892177,1.5390690928270043,1.535828947368421,1.5326024159663865,1.5293894129979035,1.5261898535564853,1.5230036534446763,1.5198307291666668,1.516670997920998,1.5135243775933611,1.5103907867494824,1.5072701446280992,1.5041623711340204,1.5010673868312756,1.497985112936345,1.4949154713114754,1.4918583844580777,1.488813775510204,1.485781568228106,1.4827616869918698,1.479754056795132,1.4767586032388664,1.4737752525252525,1.4708039314516128,1.4678445674044265,1.4648970883534136,1.4619614228456912,1.4590375,1.456125249500998,1.4532246015936254,1.4599403578528827,1.4570436507936506,1.4637252475247524,1.4608325098814232,1.4579511834319527,1.4550812007874017,1.4522224950884086,1.449375,1.4465386497064578,1.44371337890625,1.4408991228070176,1.4380958171206226,1.4446844660194176,1.4418846899224806,1.439095744680851,1.4363175675675675,1.433550096339114,1.4307932692307694,1.4280470249520154,1.4253113026819924,1.4225860420650096,1.4198711832061068,1.4263690476190478,1.423657319391635,1.4209558823529411,1.418264678030303,1.4155836483931947,1.4129127358490565,1.4102518832391713,1.4076010338345866,1.4049601313320825,1.4023291198501873,1.3997079439252336,1.3970965485074627,1.3944948789571694,1.3919028810408922,1.389320500927644,1.3867476851851852,1.38418438077634,1.3816305350553506,1.3790860957642725,1.3854319852941175,1.3828899082568809,1.3803571428571428,1.3778336380255942,1.3841354927007299,1.3816142987249544,1.3791022727272726,1.3765993647912886,1.374105525362319,1.371620705244123,1.3691448555956678,1.3666779279279277,1.3642198741007192,1.361770646319569,1.3593301971326166,1.3568984794275492,1.3544754464285713,1.3520610516934046,1.3496552491103202,1.3472579928952042,1.3448692375886526,1.3424889380530973,1.3401170494699646,1.3377535273368606,1.3353983274647887,1.3330514059753953,1.3307127192982455,1.328382224168126,1.3260598776223775,1.3237456369982548,1.3214394599303134,1.319141304347826,1.3168511284722222,1.314568890814558,1.3122945501730103,1.3100280656303973,1.307769396551724,1.3055185025817555,1.3032753436426117,1.3010398799313894,1.2988120719178082,1.2965918803418803,1.294379266211604,1.2921741908006814,1.2899766156462584,1.2877865025466892,1.285603813559322,1.283428510998308,1.2812605574324325,1.2790999156829679,1.2769465488215488,1.2748004201680672,1.2726614932885907,1.2705297319932998,1.268405100334448,1.2662875626043406,1.2641770833333332,1.2620736272878534,1.2599771594684384,1.2658996683250416,1.26380380794702,1.2617148760330579,1.2596328382838284,1.2575576606260297,1.2554893092105264,1.2534277504105091,1.2513729508196723,1.2493248772504093,1.247283496732026,1.2452487765089724,1.243220684039088,1.24119918699187,1.2391842532467534,1.2371758508914101,1.2351739482200648,1.2331785137318256,1.2311895161290323,1.22920692431562,1.2272307073954984,1.225260834670947,1.2232972756410256,1.22134,1.2193889776357827,1.2174441786283892,1.2155055732484077,1.213573131955485,1.2116468253968256,1.2097266244057052,1.2078125,1.2059044233807268,1.2040023659305994,1.2021062992125986,1.2002161949685535,1.1983320251177394,1.196453761755486,1.1945813771517997,1.19271484375,1.1908541341653667,1.1889992211838007,1.1871500777604977,1.1853066770186336,1.1834689922480621,1.1816369969040248,1.1798106646058732,1.1779899691358027,1.1761748844375963,1.1743653846153848,1.1725614439324117,1.1707630368098159,1.1689701378254211,1.1671827217125383,1.1654007633587786,1.1636242378048782,1.1618531202435312,1.160087386018237,1.1583270106221548,1.1565719696969696,1.1548222390317702,1.1530777945619337,1.1513386123680243,1.1496046686746988,1.147875939849624,1.1461524024024023,1.1444340329835083,1.1427208083832336,1.1410127055306427,1.1393097014925373,1.1376117734724291,1.1431082589285715,1.1414097325408619,1.1468842729970328,1.1451851851851853,1.143491124260355,1.1418020679468242,1.140117994100295,1.138438880706922,1.136764705882353,1.1350954478707782,1.1334310850439884,1.1317715959004393,1.1301169590643274,1.1284671532846715,1.1268221574344022,1.1251819505094616,1.123546511627907,1.1219158200290276,1.1202898550724638,1.118668596237337,1.1170520231213872,1.1154401154401155,1.1138328530259367,1.112230215827338,1.110632183908046,1.1090387374461979,1.1074498567335243,1.105865522174535,1.1042857142857143,1.102710413694722,1.101139601139601,1.0995732574679944,1.0980113636363635,1.0964539007092198,1.094900849858357,1.0933521923620935,1.0918079096045197,1.0902679830747533,1.088732394366197,1.0872011251758087,1.0856741573033708,1.0841514726507715,1.0826330532212884,1.0811188811188812,1.079608938547486,1.0781032078103208,1.0766016713091922,1.0751043115438108,1.073611111111111,1.072122052704577,1.0706371191135733,1.0691562932226832,1.0676795580110496,1.0662068965517242,1.0647382920110193,1.0632737276478679,1.0618131868131868,1.0603566529492454,1.058904109589041,1.0574555403556771,1.0560109289617488,1.0545702592087314,1.053133514986376,1.0517006802721087,1.0502717391304348,1.0488466757123474,1.0474254742547426,1.0460081190798376,1.0445945945945947,1.0431848852901484,1.04177897574124,1.0403768506056528,1.0389784946236558,1.0375838926174497,1.0361930294906165,1.034805890227577,1.0334224598930482,1.0320427236315086,1.0306666666666666,1.0292942743009321,1.0279255319148937,1.0265604249667994,1.0251989389920424,1.023841059602649,1.0224867724867726,1.0211360634081903,1.0197889182058049,1.018445322793149,1.0171052631578947,1.0157687253613665,1.0144356955380578,1.0131061598951507,1.0117801047120418,1.0104575163398692,1.0091383812010444,1.0078226857887875,1.0065104166666667,1.0052015604681404,1.0038961038961038,1.0025940337224384,1.0012953367875648,1.0],"yaxis":"y","type":"scatter"},{"hovertemplate":"(%{x}, %{y})<extra>RF - test</extra>","legendgroup":"RF","legendgrouptitle":{"font":{"size":16},"text":"RF"},"line":{"color":"rgb(56, 166, 165)","width":2},"marker":{"color":"rgb(56, 166, 165)","line":{"color":"rgba(255, 255, 255, 0.9)","width":1},"size":8,"symbol":"circle"},"mode":"lines","name":"test","showlegend":true,"x":[0.00129366106080207,0.00258732212160414,0.0038809831824062097,0.00517464424320828,0.00646830530401035,0.007761966364812419,0.009055627425614488,0.01034928848641656,0.01164294954721863,0.0129366106080207,0.014230271668822769,0.015523932729624839,0.016817593790426907,0.018111254851228976,0.019404915912031046,0.02069857697283312,0.02199223803363519,0.02328589909443726,0.02457956015523933,0.0258732212160414,0.027166882276843468,0.028460543337645538,0.029754204398447608,0.031047865459249677,0.03234152652005175,0.03363518758085381,0.03492884864165589,0.03622250970245795,0.037516170763260026,0.03880983182406209,0.040103492884864166,0.04139715394566624,0.042690815006468305,0.04398447606727038,0.045278137128072445,0.04657179818887452,0.047865459249676584,0.04915912031047866,0.050452781371280724,0.0517464424320828,0.05304010349288486,0.054333764553686936,0.055627425614489,0.056921086675291076,0.05821474773609314,0.059508408796895215,0.06080206985769728,0.062095730918499355,0.06338939197930142,0.0646830530401035,0.06597671410090557,0.06727037516170763,0.0685640362225097,0.06985769728331177,0.07115135834411385,0.0724450194049159,0.07373868046571798,0.07503234152652005,0.07632600258732213,0.07761966364812418,0.07891332470892626,0.08020698576972833,0.0815006468305304,0.08279430789133248,0.08408796895213454,0.08538163001293661,0.08667529107373868,0.08796895213454076,0.08926261319534282,0.09055627425614489,0.09184993531694696,0.09314359637774904,0.0944372574385511,0.09573091849935317,0.09702457956015524,0.09831824062095731,0.09961190168175937,0.10090556274256145,0.10219922380336352,0.1034928848641656,0.10478654592496765,0.10608020698576973,0.1073738680465718,0.10866752910737387,0.10996119016817593,0.111254851228978,0.11254851228978008,0.11384217335058215,0.11513583441138421,0.11642949547218628,0.11772315653298836,0.11901681759379043,0.1203104786545925,0.12160413971539456,0.12289780077619664,0.12419146183699871,0.12548512289780078,0.12677878395860284,0.12807244501940493,0.129366106080207,0.13065976714100905,0.13195342820181113,0.1332470892626132,0.13454075032341525,0.13583441138421734,0.1371280724450194,0.1384217335058215,0.13971539456662355,0.1410090556274256,0.1423027166882277,0.14359637774902975,0.1448900388098318,0.1461836998706339,0.14747736093143596,0.14877102199223805,0.1500646830530401,0.15135834411384216,0.15265200517464425,0.1539456662354463,0.15523932729624837,0.15653298835705046,0.15782664941785252,0.1591203104786546,0.16041397153945666,0.16170763260025872,0.1630012936610608,0.16429495472186287,0.16558861578266496,0.16688227684346701,0.16817593790426907,0.16946959896507116,0.17076326002587322,0.17205692108667528,0.17335058214747737,0.17464424320827943,0.1759379042690815,0.17723156532988357,0.17852522639068563,0.17981888745148772,0.18111254851228978,0.18240620957309184,0.18369987063389392,0.18499353169469598,0.18628719275549807,0.18758085381630013,0.1888745148771022,0.19016817593790428,0.19146183699870634,0.1927554980595084,0.19404915912031048,0.19534282018111254,0.19663648124191463,0.1979301423027167,0.19922380336351875,0.20051746442432083,0.2018111254851229,0.20310478654592498,0.20439844760672704,0.2056921086675291,0.2069857697283312,0.20827943078913325,0.2095730918499353,0.2108667529107374,0.21216041397153945,0.21345407503234154,0.2147477360931436,0.21604139715394566,0.21733505821474774,0.2186287192755498,0.21992238033635186,0.22121604139715395,0.222509702457956,0.2238033635187581,0.22509702457956016,0.22639068564036222,0.2276843467011643,0.22897800776196636,0.23027166882276842,0.2315653298835705,0.23285899094437257,0.23415265200517466,0.23544631306597671,0.23673997412677877,0.23803363518758086,0.23932729624838292,0.240620957309185,0.24191461836998707,0.24320827943078913,0.2445019404915912,0.24579560155239327,0.24708926261319533,0.24838292367399742,0.24967658473479948,0.25097024579560157,0.2522639068564036,0.2535575679172057,0.25485122897800777,0.25614489003880986,0.2574385510996119,0.258732212160414,0.26002587322121606,0.2613195342820181,0.2626131953428202,0.26390685640362227,0.2652005174644243,0.2664941785252264,0.2677878395860285,0.2690815006468305,0.2703751617076326,0.2716688227684347,0.2729624838292367,0.2742561448900388,0.2755498059508409,0.276843467011643,0.278137128072445,0.2794307891332471,0.2807244501940492,0.2820181112548512,0.2833117723156533,0.2846054333764554,0.2858990944372574,0.2871927554980595,0.2884864165588616,0.2897800776196636,0.2910737386804657,0.2923673997412678,0.2936610608020699,0.2949547218628719,0.296248382923674,0.2975420439844761,0.2988357050452781,0.3001293661060802,0.3014230271668823,0.3027166882276843,0.3040103492884864,0.3053040103492885,0.30659767141009053,0.3078913324708926,0.3091849935316947,0.31047865459249674,0.3117723156532988,0.3130659767141009,0.314359637774903,0.31565329883570503,0.3169469598965071,0.3182406209573092,0.31953428201811124,0.3208279430789133,0.3221216041397154,0.32341526520051744,0.32470892626131953,0.3260025873221216,0.32729624838292365,0.32858990944372574,0.3298835705045278,0.3311772315653299,0.33247089262613194,0.33376455368693403,0.3350582147477361,0.33635187580853815,0.33764553686934023,0.3389391979301423,0.34023285899094435,0.34152652005174644,0.3428201811125485,0.34411384217335056,0.34540750323415265,0.34670116429495473,0.34799482535575677,0.34928848641655885,0.35058214747736094,0.351875808538163,0.35316946959896506,0.35446313065976714,0.35575679172056923,0.35705045278137126,0.35834411384217335,0.35963777490297544,0.36093143596377747,0.36222509702457956,0.36351875808538164,0.3648124191461837,0.36610608020698576,0.36739974126778785,0.36869340232858994,0.36998706338939197,0.37128072445019406,0.37257438551099614,0.3738680465717982,0.37516170763260026,0.37645536869340235,0.3777490297542044,0.37904269081500647,0.38033635187580855,0.3816300129366106,0.3829236739974127,0.38421733505821476,0.3855109961190168,0.3868046571798189,0.38809831824062097,0.38939197930142305,0.3906856403622251,0.39197930142302717,0.39327296248382926,0.3945666235446313,0.3958602846054334,0.39715394566623546,0.3984476067270375,0.3997412677878396,0.40103492884864167,0.4023285899094437,0.4036222509702458,0.4049159120310479,0.40620957309184996,0.407503234152652,0.4087968952134541,0.41009055627425617,0.4113842173350582,0.4126778783958603,0.4139715394566624,0.4152652005174644,0.4165588615782665,0.4178525226390686,0.4191461836998706,0.4204398447606727,0.4217335058214748,0.4230271668822768,0.4243208279430789,0.425614489003881,0.4269081500646831,0.4282018111254851,0.4294954721862872,0.4307891332470893,0.4320827943078913,0.4333764553686934,0.4346701164294955,0.4359637774902975,0.4372574385510996,0.4385510996119017,0.4398447606727037,0.4411384217335058,0.4424320827943079,0.44372574385511,0.445019404915912,0.4463130659767141,0.4476067270375162,0.4489003880983182,0.4501940491591203,0.4514877102199224,0.45278137128072443,0.4540750323415265,0.4553686934023286,0.45666235446313064,0.4579560155239327,0.4592496765847348,0.46054333764553684,0.46183699870633893,0.463130659767141,0.4644243208279431,0.46571798188874514,0.4670116429495472,0.4683053040103493,0.46959896507115134,0.47089262613195343,0.4721862871927555,0.47347994825355755,0.47477360931435963,0.4760672703751617,0.47736093143596375,0.47865459249676584,0.4799482535575679,0.48124191461837,0.48253557567917205,0.48382923673997413,0.4851228978007762,0.48641655886157825,0.48771021992238034,0.4890038809831824,0.49029754204398446,0.49159120310478654,0.49288486416558863,0.49417852522639066,0.49547218628719275,0.49676584734799484,0.49805950840879687,0.49935316946959896,0.500646830530401,0.5019404915912031,0.5032341526520052,0.5045278137128072,0.5058214747736093,0.5071151358344114,0.5084087968952135,0.5097024579560155,0.5109961190168176,0.5122897800776197,0.5135834411384217,0.5148771021992238,0.5161707632600259,0.517464424320828,0.51875808538163,0.5200517464424321,0.5213454075032341,0.5226390685640362,0.5239327296248383,0.5252263906856404,0.5265200517464425,0.5278137128072445,0.5291073738680466,0.5304010349288486,0.5316946959896507,0.5329883570504528,0.5342820181112549,0.535575679172057,0.536869340232859,0.538163001293661,0.5394566623544631,0.5407503234152652,0.5420439844760673,0.5433376455368694,0.5446313065976714,0.5459249676584734,0.5472186287192755,0.5485122897800776,0.5498059508408797,0.5510996119016818,0.5523932729624839,0.553686934023286,0.5549805950840879,0.55627425614489,0.5575679172056921,0.5588615782664942,0.5601552393272963,0.5614489003880984,0.5627425614489003,0.5640362225097024,0.5653298835705045,0.5666235446313066,0.5679172056921087,0.5692108667529108,0.5705045278137129,0.5717981888745148,0.5730918499353169,0.574385510996119,0.5756791720569211,0.5769728331177232,0.5782664941785253,0.5795601552393272,0.5808538163001293,0.5821474773609314,0.5834411384217335,0.5847347994825356,0.5860284605433377,0.5873221216041398,0.5886157826649417,0.5899094437257438,0.5912031047865459,0.592496765847348,0.5937904269081501,0.5950840879689522,0.5963777490297542,0.5976714100905562,0.5989650711513583,0.6002587322121604,0.6015523932729625,0.6028460543337646,0.6041397153945667,0.6054333764553687,0.6067270375161707,0.6080206985769728,0.6093143596377749,0.610608020698577,0.6119016817593791,0.6131953428201811,0.6144890038809832,0.6157826649417852,0.6170763260025873,0.6183699870633894,0.6196636481241915,0.6209573091849935,0.6222509702457956,0.6235446313065977,0.6248382923673997,0.6261319534282018,0.6274256144890039,0.628719275549806,0.630012936610608,0.6313065976714101,0.6326002587322122,0.6338939197930142,0.6351875808538163,0.6364812419146184,0.6377749029754204,0.6390685640362225,0.6403622250970246,0.6416558861578266,0.6429495472186287,0.6442432082794308,0.6455368693402329,0.6468305304010349,0.648124191461837,0.6494178525226391,0.6507115135834411,0.6520051746442432,0.6532988357050453,0.6545924967658473,0.6558861578266494,0.6571798188874515,0.6584734799482536,0.6597671410090556,0.6610608020698577,0.6623544631306598,0.6636481241914618,0.6649417852522639,0.666235446313066,0.6675291073738681,0.6688227684346701,0.6701164294954722,0.6714100905562742,0.6727037516170763,0.6739974126778784,0.6752910737386805,0.6765847347994826,0.6778783958602846,0.6791720569210866,0.6804657179818887,0.6817593790426908,0.6830530401034929,0.684346701164295,0.685640362225097,0.6869340232858991,0.6882276843467011,0.6895213454075032,0.6908150064683053,0.6921086675291074,0.6934023285899095,0.6946959896507116,0.6959896507115135,0.6972833117723156,0.6985769728331177,0.6998706338939198,0.7011642949547219,0.702457956015524,0.703751617076326,0.705045278137128,0.7063389391979301,0.7076326002587322,0.7089262613195343,0.7102199223803364,0.7115135834411385,0.7128072445019404,0.7141009055627425,0.7153945666235446,0.7166882276843467,0.7179818887451488,0.7192755498059509,0.720569210866753,0.7218628719275549,0.723156532988357,0.7244501940491591,0.7257438551099612,0.7270375161707633,0.7283311772315654,0.7296248382923674,0.7309184993531694,0.7322121604139715,0.7335058214747736,0.7347994825355757,0.7360931435963778,0.7373868046571799,0.7386804657179818,0.7399741267787839,0.741267787839586,0.7425614489003881,0.7438551099611902,0.7451487710219923,0.7464424320827943,0.7477360931435963,0.7490297542043984,0.7503234152652005,0.7516170763260026,0.7529107373868047,0.7542043984476067,0.7554980595084088,0.7567917205692108,0.7580853816300129,0.759379042690815,0.7606727037516171,0.7619663648124192,0.7632600258732212,0.7645536869340233,0.7658473479948253,0.7671410090556274,0.7684346701164295,0.7697283311772316,0.7710219922380336,0.7723156532988357,0.7736093143596378,0.7749029754204398,0.7761966364812419,0.777490297542044,0.7787839586028461,0.7800776196636481,0.7813712807244502,0.7826649417852523,0.7839586028460543,0.7852522639068564,0.7865459249676585,0.7878395860284605,0.7891332470892626,0.7904269081500647,0.7917205692108668,0.7930142302716688,0.7943078913324709,0.795601552393273,0.796895213454075,0.7981888745148771,0.7994825355756792,0.8007761966364813,0.8020698576972833,0.8033635187580854,0.8046571798188874,0.8059508408796895,0.8072445019404916,0.8085381630012937,0.8098318240620958,0.8111254851228978,0.8124191461836999,0.8137128072445019,0.815006468305304,0.8163001293661061,0.8175937904269082,0.8188874514877102,0.8201811125485123,0.8214747736093143,0.8227684346701164,0.8240620957309185,0.8253557567917206,0.8266494178525227,0.8279430789133247,0.8292367399741267,0.8305304010349288,0.8318240620957309,0.833117723156533,0.8344113842173351,0.8357050452781372,0.8369987063389392,0.8382923673997412,0.8395860284605433,0.8408796895213454,0.8421733505821475,0.8434670116429496,0.8447606727037517,0.8460543337645536,0.8473479948253557,0.8486416558861578,0.8499353169469599,0.851228978007762,0.8525226390685641,0.8538163001293662,0.8551099611901681,0.8564036222509702,0.8576972833117723,0.8589909443725744,0.8602846054333765,0.8615782664941786,0.8628719275549805,0.8641655886157826,0.8654592496765847,0.8667529107373868,0.8680465717981889,0.869340232858991,0.8706338939197931,0.871927554980595,0.8732212160413971,0.8745148771021992,0.8758085381630013,0.8771021992238034,0.8783958602846055,0.8796895213454075,0.8809831824062095,0.8822768434670116,0.8835705045278137,0.8848641655886158,0.8861578266494179,0.88745148771022,0.888745148771022,0.890038809831824,0.8913324708926261,0.8926261319534282,0.8939197930142303,0.8952134540750324,0.8965071151358344,0.8978007761966365,0.8990944372574385,0.9003880983182406,0.9016817593790427,0.9029754204398448,0.9042690815006468,0.9055627425614489,0.906856403622251,0.908150064683053,0.9094437257438551,0.9107373868046572,0.9120310478654593,0.9133247089262613,0.9146183699870634,0.9159120310478654,0.9172056921086675,0.9184993531694696,0.9197930142302717,0.9210866752910737,0.9223803363518758,0.9236739974126779,0.92496765847348,0.926261319534282,0.9275549805950841,0.9288486416558862,0.9301423027166882,0.9314359637774903,0.9327296248382924,0.9340232858990944,0.9353169469598965,0.9366106080206986,0.9379042690815006,0.9391979301423027,0.9404915912031048,0.9417852522639069,0.943078913324709,0.944372574385511,0.9456662354463131,0.9469598965071151,0.9482535575679172,0.9495472186287193,0.9508408796895214,0.9521345407503234,0.9534282018111255,0.9547218628719275,0.9560155239327296,0.9573091849935317,0.9586028460543338,0.9598965071151359,0.9611901681759379,0.96248382923674,0.963777490297542,0.9650711513583441,0.9663648124191462,0.9676584734799483,0.9689521345407504,0.9702457956015524,0.9715394566623544,0.9728331177231565,0.9741267787839586,0.9754204398447607,0.9767141009055628,0.9780077619663649,0.9793014230271668,0.9805950840879689,0.981888745148771,0.9831824062095731,0.9844760672703752,0.9857697283311773,0.9870633893919794,0.9883570504527813,0.9896507115135834,0.9909443725743855,0.9922380336351876,0.9935316946959897,0.9948253557567918,0.9961190168175937,0.9974126778783958,0.9987063389391979,1.0],"xaxis":"x","y":[4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.831250000000001,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.83125,4.723888888888889,4.726222826086956,4.728457446808511,4.730598958333333,4.7326530612244895,4.734625,4.736519607843137,4.738341346153846,4.740094339622642,4.741782407407407,4.743409090909091,4.744977678571429,4.746491228070175,4.747952586206897,4.7493644067796605,4.670208333333334,4.672848360655738,4.675403225806452,4.677876984126984,4.6802734374999995,4.608269230769231,4.53844696969697,4.470708955223881,4.476011029411764,4.481159420289855,4.417142857142857,4.354929577464789,4.361545138888888,4.30179794520548,4.308952702702703,4.315916666666666,4.322697368421053,4.329301948051948,4.273798076923077,4.280854430379747,4.287734374999999,4.294444444444445,4.300990853658536,4.249171686746988,4.2561011904761905,4.206029411764706,4.2132994186046515,4.2204022988505745,4.22734375,4.234129213483146,4.187083333333334,4.141071428571428,4.148573369565217,4.155913978494623,4.111702127659575,4.119276315789474,4.126692708333333,4.13395618556701,4.141071428571429,4.099242424242424,4.1065625,4.113737623762376,4.073406862745098,4.033859223300971,4.041526442307692,4.049047619047619,4.056426886792453,4.063668224299065,4.026041666666667,4.033428899082569,3.996761363636363,4.004279279279279,4.011662946428572,3.976161504424779,3.9836622807017545,3.991032608695652,3.9566271551724137,3.9228098290598292,3.8895656779661016,3.8974789915966386,3.9052604166666667,3.872985537190082,3.8808401639344265,3.888567073170732,3.8572076612903228,3.865,3.8726686507936505,3.8802165354330707,3.8499023437499993,3.8200581395348836,3.7906730769230768,3.7986164122137405,3.7698390151515153,3.741494360902256,3.7496268656716416,3.757638888888889,3.73000919117647,3.7027828467153285,3.7109601449275362,3.7190197841726613,3.692455357142857,3.666267730496454,3.6404489436619714,3.6149912587412585,3.589887152777777,3.598448275862069,3.573801369863014,3.5494897959183676,3.525506756756757,3.501845637583893,3.4785000000000004,3.4874586092715236,3.496299342105263,3.4734477124183005,3.450892857142857,3.4286290322580646,3.406650641025641,3.4157245222929933,3.424683544303797,3.433529874213837,3.4120703125,3.3908773291925467,3.3699459876543214,3.3492714723926382,3.328849085365854,3.3086742424242424,3.2887424698795185,3.2690494011976052,3.249590773809524,3.258949704142012,3.2397794117647063,3.220833333333333,3.202107558139535,3.1835982658959536,3.1930675287356323,3.1748214285714287,3.1842329545454544,3.19353813559322,3.1755969101123593,3.1578561452513965,3.1403125,3.12296270718232,3.132348901098901,3.1416325136612024,3.150815217391304,3.1598986486486487,3.142909946236559,3.1519385026737967,3.160871010638298,3.1441468253968257,3.1275986842105263,3.111223821989529,3.1201822916666666,3.104015544041451,3.0880154639175257,3.0721794871794876,3.0565051020408167,3.040989847715736,3.025631313131313,3.010427135678392,2.995375,3.004508706467661,2.989634900990099,2.9749076354679804,2.9603247549019605,2.9694512195121954,2.95503640776699,2.940760869565217,2.9266225961538463,2.9126196172248804,2.921755952380952,2.907908767772512,2.894192216981132,2.903286384976526,2.8897196261682243,2.8762790697674423,2.8853298611111113,2.8720334101382488,2.858858944954129,2.8458047945205482,2.8328693181818183,2.820050904977376,2.807347972972973,2.8164237668161434,2.8038504464285716,2.791388888888889,2.779037610619469,2.7667951541850218,2.7546600877192984,2.742631004366812,2.73070652173913,2.7188852813852815,2.707165948275862,2.695547210300429,2.684027777777778,2.6726063829787234,2.661281779661017,2.650052742616034,2.6389180672268906,2.6480910041841,2.6571875,2.646161825726141,2.6352272727272723,2.6243827160493822,2.613627049180328,2.602959183673469,2.612017276422764,2.601442307692308,2.5909526209677423,2.58054718875502,2.570225,2.5599850597609564,2.549826388888889,2.5397480237154153,2.5297490157480316,2.519828431372549,2.5099853515625,2.500218871595331,2.490528100775194,2.480912162162162,2.4713701923076927,2.4619013409961688,2.452504770992366,2.461549429657795,2.4522253787878787,2.4429716981132077,2.451950187969925,2.4427668539325844,2.433652052238806,2.4246050185873607,2.4335185185185186,2.4245387453874536,2.4333869485294115,2.424473443223443,2.415625,2.4068409090909086,2.3981204710144928,2.406904332129964,2.3982464028776977,2.389650537634409,2.3811160714285715,2.3726423487544483,2.3642287234042554,2.372946113074205,2.3645906690140843,2.3562938596491225,2.34805506993007,2.339873693379791,2.3317491319444446,2.3403979238754324,2.3323275862068966,2.3409149484536083,2.3328981164383564,2.3249360068259386,2.3170280612244896,2.309173728813559,2.301372466216216,2.2936237373737374,2.285927013422819,2.2782817725752507,2.2706874999999997,2.263143687707641,2.2716473509933777,2.2641501650165017,2.2567023026315787,2.2493032786885245,2.241952614379085,2.23464983713355,2.2273944805194805,2.220186084142395,2.213024193548387,2.2059083601286176,2.198838141025641,2.2072484025559107,2.200218949044586,2.193234126984127,2.186293512658228,2.1793966876971607,2.1725432389937107,2.1657327586206896,2.15896484375,2.1522390965732088,2.1455551242236024,2.1389125386996906,2.1323109567901235,2.140615384615385,2.1340490797546012,2.1275229357798167,2.135766006097561,2.1292743161094223,2.1228219696969695,2.1164086102719035,2.1100338855421685,2.1036974474474475,2.0973989520958085,2.0911380597014926,2.0849144345238093,2.078727744807122,2.0725776627218937,2.0664638643067845,2.060386029411765,2.0543438416422286,2.0483369883040936,2.042365160349854,2.0364280523255816,2.0305253623188406,2.0246567919075145,2.01882204610951,2.0130208333333335,2.0072528653295127,2.0015178571428573,1.9958155270655271,1.990145596590909,1.984507790368272,1.978901836158192,1.9733274647887324,1.9677844101123596,1.9622724089635855,1.9567912011173183,1.9513405292479107,1.945920138888889,1.9405297783933517,1.9351691988950275,1.9298381542699725,1.924536401098901,1.919263698630137,1.9140198087431695,1.9088044959128065,1.903617527173913,1.898458672086721,1.8933277027027027,1.8882243935309972,1.8831485215053763,1.8780998659517427,1.8730782085561497,1.8680833333333333,1.8631150265957448,1.8581730769230769,1.8532572751322751,1.848367414248021,1.8435032894736842,1.8386646981627297,1.833851439790576,1.829063315926893,1.8368815104166665,1.8321103896103896,1.8273639896373057,1.822642118863049,1.8179445876288658,1.8132712082262208,1.808621794871795,1.8163523017902814,1.81171875,1.807108778625954,1.8025222081218273,1.7979588607594934,1.7934185606060604,1.7889011335012595,1.784406407035176,1.7799342105263156,1.7754843749999998,1.7710567331670821,1.7666511194029848,1.7622673697270472,1.7579053217821783,1.7535648148148149,1.7492456896551722,1.7568181818181818,1.7525122549019607,1.7482273838630806,1.7557469512195123,1.7514750608272507,1.7472239077669904,1.7429933414043584,1.7387832125603864,1.7345933734939758,1.7304236778846156,1.7262739808153478,1.722144138755981,1.7180340095465394,1.7254464285714286,1.7213479809976246,1.7172689573459716,1.713209219858156,1.7091686320754718,1.7051470588235293,1.701144366197183,1.6971604215456673,1.6931950934579438,1.6892482517482519,1.6853197674418605,1.681409512761021,1.6775173611111112,1.6848008083140877,1.6809187788018431,1.6770545977011495,1.673208142201835,1.669379290617849,1.665567922374429,1.661773917995444,1.657997159090909,1.654237528344671,1.6504949095022625,1.6467691873589165,1.6430602477477478,1.6393679775280898,1.6356922645739909,1.6320329977628634,1.628390066964286,1.6247633630289533,1.6211527777777779,1.6175582039911307,1.61397953539823,1.621081677704194,1.6175110132158588,1.613956043956044,1.6104166666666666,1.6068927789934353,1.6033842794759825,1.5998910675381262,1.5964130434782606,1.5929501084598698,1.5895021645021645,1.5860691144708423,1.5826508620689654,1.5792473118279569,1.5758583690987122,1.5724839400428263,1.5691239316239316,1.5657782515991472,1.5624468085106382,1.5591295116772823,1.5558262711864406,1.552536997885835,1.5492616033755275,1.546,1.542752100840336,1.539517819706499,1.536297071129707,1.5330897703549058,1.5298958333333335,1.5267151767151768,1.5335710580912865,1.5303959627329193,1.5272339876033059,1.5240850515463917,1.520949074074074,1.517825975359343,1.5147156762295084,1.5116180981595093,1.508533163265306,1.5054607942973524,1.5024009146341464,1.4993534482758624,1.4963183198380567,1.4932954545454546,1.4902847782258066,1.487286217303823,1.4842996987951806,1.481325150300601,1.4783625000000002,1.4754116766467067,1.472472609561753,1.4695452286282307,1.4666294642857143,1.4637252475247524,1.4608325098814232,1.4579511834319527,1.4550812007874017,1.4522224950884086,1.449375,1.4465386497064578,1.44371337890625,1.4408991228070176,1.4380958171206226,1.4353033980582526,1.4325218023255815,1.4297509671179884,1.42699083011583,1.424241329479769,1.421502403846154,1.418773992322457,1.4160560344827586,1.4225860420650096,1.4198711832061068,1.417166666666667,1.4144724334600762,1.4117884250474384,1.4091145833333334,1.4064508506616258,1.4037971698113207,1.401153483992467,1.3985197368421054,1.3958958724202628,1.3932818352059926,1.390677570093458,1.3880830223880596,1.385498137802607,1.3829228624535317,1.380357142857143,1.377800925925926,1.37525415896488,1.3727167896678967,1.3701887661141805,1.3676700367647059,1.3651605504587156,1.3626602564102566,1.3690013711151736,1.3665031934306568,1.364014116575592,1.3615340909090907,1.3590630671506354,1.3566009963768118,1.3541478300180831,1.3517035198555956,1.3492680180180179,1.3468412769784173,1.3444232495511668,1.342013888888889,1.3396131484794276,1.3372209821428571,1.3348373440285204,1.3324621886120995,1.3300954706927175,1.327737145390071,1.325387168141593,1.3230454946996466,1.3207120811287478,1.3183868838028168,1.3160698594024605,1.3137609649122806,1.3114601576182137,1.3091673951048952,1.306882635253054,1.3046058362369337,1.302336956521739,1.300075954861111,1.2978227902946275,1.2955774221453287,1.2933398100172713,1.2911099137931035,1.2888876936316696,1.2866731099656357,1.2844661234991424,1.2822666952054795,1.2800747863247863,1.2778903583617747,1.2839437819420783,1.2817602040816325,1.2795840407470287,1.277415254237288,1.275253807106599,1.2730996621621622,1.2709527824620572,1.2688131313131312,1.2666806722689075,1.2645553691275169,1.2624371859296484,1.2603260869565218,1.2582220367278798,1.256125,1.254034941763727,1.2519518272425247,1.2498756218905474,1.2478062913907284,1.2457438016528926,1.2436881188118811,1.2416392092257,1.2395970394736842,1.23756157635468,1.235532786885246,1.2335106382978724,1.2314950980392156,1.2294861337683523,1.2274837133550487,1.2254878048780486,1.231341314935065,1.229345623987034,1.2273563915857604,1.2253735864297253,1.2233971774193548,1.2214271336553943,1.219463424437299,1.2175060192616372,1.2155548878205127,1.2136099999999999,1.2116713258785943,1.2097388357256778,1.2078125,1.2058922893481716,1.2039781746031746,1.2020701267828842,1.2001681170886076,1.1982721169036334,1.196382097791798,1.194498031496063,1.192619889937107,1.190747645211931,1.1888812695924764,1.1870207355242566,1.185166015625,1.1833170826833073,1.1814739096573208,1.1796364696734059,1.1778047360248447,1.1759786821705425,1.174158281733746,1.1723435085007727,1.1705343364197531,1.1687307395993836,1.1669326923076924,1.165140168970814,1.163353144171779,1.1689701378254211,1.1671827217125383,1.1654007633587786,1.1709889481707318,1.1692066210045662,1.1674297112462007,1.1656581942336874,1.1638920454545454,1.1621312405446294,1.160375755287009,1.1586255656108597,1.1568806475903615,1.155140977443609,1.1534065315315316,1.1516772863568217,1.1499532185628742,1.1482343049327355,1.1465205223880597,1.1448118479880776,1.1431082589285715,1.1414097325408619,1.1397162462908013,1.1380277777777779,1.1363443047337278,1.1346658050221565,1.1329922566371682,1.1313236377025035,1.1296599264705882,1.128001101321586,1.1263471407624635,1.1246980234260615,1.1230537280701753,1.1214142335766424,1.1197795189504374,1.1181495633187775,1.1165243459302325,1.114903846153846,1.1132880434782608,1.1116769175108538,1.1100704479768786,1.108468614718615,1.1068713976945246,1.1052787769784174,1.1036907327586207,1.1021072453371592,1.10052829512894,1.0989538626609443,1.0973839285714286,1.0958184736091299,1.0942574786324786,1.0927009246088193,1.0980113636363635,1.0964539007092198,1.094900849858357,1.0933521923620935,1.0918079096045197,1.0902679830747533,1.088732394366197,1.0872011251758087,1.0856741573033708,1.0841514726507715,1.0826330532212884,1.0811188811188812,1.079608938547486,1.0781032078103208,1.0766016713091922,1.0751043115438108,1.073611111111111,1.072122052704577,1.0706371191135733,1.0691562932226832,1.0676795580110496,1.0662068965517242,1.0647382920110193,1.0632737276478679,1.0618131868131868,1.0603566529492454,1.058904109589041,1.0574555403556771,1.0560109289617488,1.0545702592087314,1.053133514986376,1.0517006802721087,1.0502717391304348,1.0488466757123474,1.0474254742547426,1.0460081190798376,1.0445945945945947,1.0431848852901484,1.04177897574124,1.0403768506056528,1.0389784946236558,1.0375838926174497,1.0361930294906165,1.034805890227577,1.0334224598930482,1.0320427236315086,1.0306666666666666,1.0292942743009321,1.0279255319148937,1.0265604249667994,1.0251989389920424,1.023841059602649,1.0224867724867726,1.0211360634081903,1.0197889182058049,1.018445322793149,1.0171052631578947,1.0157687253613665,1.0144356955380578,1.0131061598951507,1.0117801047120418,1.0104575163398692,1.0091383812010444,1.0078226857887875,1.0065104166666667,1.0052015604681404,1.0038961038961038,1.0025940337224384,1.0012953367875648,1.0],"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,1.0],"anchor":"y","title":{"font":{"size":16},"text":"Fraction of sample"},"range":[0,1],"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","title":{"font":{"size":16},"text":"Lift"},"automargin":true},"shapes":[{"layer":"below","line":{"color":"black","dash":"dash","width":1},"opacity":0.6,"type":"line","x0":0,"x1":1,"xref":"x domain","y0":1,"y1":1,"yref":"y"}],"title":{"pad":{"t":15,"b":15},"font":{"size":24},"x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"toggleitem","bgcolor":"rgba(255, 255, 255, 0.5)","x":0.99,"y":0.99,"xanchor":"right","yanchor":"top"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":35,"pad":0},"showlegend":true},                        {"responsive": true}                    )                };                            </script>        </div>
+
+
+  
+
+
+
+
+                
+
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023, by Mavs.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://stackoverflow.com/questions/tagged/atom-ml" target="_blank" rel="noopener" title="StackOverflow" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M290.7 311 95 269.7 86.8 309l195.7 41zm51-87L188.2 95.7l-25.5 30.8 153.5 128.3zm-31.2 39.7L129.2 179l-16.7 36.5L293.7 300zM262 32l-32 24 119.3 160.3 32-24zm20.5 328h-200v39.7h200zm39.7 80H42.7V320h-40v160h359.5V320h-40z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://pypi.org/project/atom-ml/" target="_blank" rel="noopener" title="Pypi" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6zM286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3zM167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4zm-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262Zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095Zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271Z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0L0 176z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      
+        <script src="../../../stylesheets/extra.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
