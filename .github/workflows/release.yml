@@ -23,7 +23,7 @@ jobs:
         rm -rf dist/*
         pdm build
     - name: Release to PyPI
-      uses: pypa/gh-action-pypi-publish@release/${{ GITHUB_REF_NAME }}
+      uses: pypa/gh-action-pypi-publish@release/${{ env.GITHUB_REF_NAME }}
       with:
         password: ${{ secrets.PYPI_PWD }}
         verbose: true

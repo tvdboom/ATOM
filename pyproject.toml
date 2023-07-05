@@ -33,13 +33,14 @@ dependencies = [
     "nltk>=3.8.1",
     "numpy>=1.23.5",
     "optuna>=3.2.0",
-    "pandas>=1.5.3",
+    "pandas>=2.0.3",
     "plotly>=5.13.1",
     "ray[serve]>=2.3.0",
-    "shap>=0.41.0",
     "scikit-learn>=1.2.1",
     "scikit-learn-intelex>=2023.0.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "scipy>=1.9.3",
+    "shap>=0.41.0",
+    "sktime>=0.20.0",
     "zoofs>=0.1.26",
 ]
 
@@ -54,7 +55,7 @@ full = [
     "schemdraw>=0.16",
     "wordcloud>=1.9.2",
     "xgboost>=1.7.4",
-    "ydata-profiling>=4.1.0",
+    "ydata-profiling>=4.3.1",
 ]
 
 [tool.pdm.dev-dependencies]

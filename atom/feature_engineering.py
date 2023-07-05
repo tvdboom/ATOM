@@ -657,7 +657,6 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Generating new features...", 1)
 
         if self.strategy.lower() == "dfs":
-            index = X.index
             es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
             dfs = ft.calculate_feature_matrix(
                 features=self._dfs,
@@ -666,8 +665,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             )
 
             # Add the new features to the feature set
-            X = pd.concat([X.drop("index", axis=1), dfs], axis=1)
-            X.index = index
+            X = pd.concat([X, dfs], axis=1).set_index("index")
 
             self.log(f" --> {len(self._dfs)} new features were added.", 2)
 
@@ -728,22 +726,14 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     !!! tip
         Use a regex pattern with the `groups` parameter to select
-        groups easier, e.g. `atom.feature_generation(features="var_.+")`
+        groups easier, e.g. `atom.feature_grouping({"group1": "var_.+")`
         to select all features that start with `var_`.
 
     Parameters
     ----------
-    group: str, slice or sequence
-        Features that belong to a group. Select them by name, position
-        or regex pattern. A feature can belong to multiple groups. Use
-        a sequence of sequences to define multiple groups.
-
-    name: str, sequence or None, default=None
-        Name of the group. The new features are named combining the
-        operator used and the group's name, e.g. `mean(group_1)`. If
-        specfified, the length should match with the number of groups
-        defined in `features`. If None, default group names of the form
-        `group1`, `group2`, etc... are used.
+    group: dict
+        Group names and features. Select the features by name, position
+        or regex pattern. A feature can belong to multiple groups.
 
     operators: str, sequence or None, default=None
         Statistical operators to apply on the groups. Any operator from
@@ -794,7 +784,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_grouping(group=["mean.+"], name="means", verbose=2)
+        >>> atom.feature_grouping({"means": ["mean.+"]}, verbose=2)
 
         Fitting FeatureGrouper...
         Grouping features...
@@ -828,7 +818,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> # Group all features that start with mean
-        >>> fg = FeatureGrouper(group="mean.+", name="means", verbose=2)
+        >>> fg = FeatureGrouper({"means": ["mean.+"]}, verbose=2)
         >>> X = fg.transform(X)
 
         Fitting FeatureGrouper...
@@ -861,8 +851,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        group: str | SEQUENCE,
-        name: str | SEQUENCE | None = None,
+        group: dict[str, str | SEQUENCE],
         *,
         operators: str | SEQUENCE | None = None,
         drop_columns: bool = True,
@@ -871,7 +860,6 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.group = group
-        self.name = name
         self.operators = operators
         self.drop_columns = drop_columns
         self.groups = defaultdict(list)
@@ -898,17 +886,13 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Grouping features...", 1)
 
-        if np.array(self.group).ndim < 2:
-            self.group = [self.group]
-
         # Make the groups
-        groups = []
-        for group in lst(self.group):
-            groups.append([])
+        self.groups = defaultdict(list)
+        for name, group in self.group.items():
             for col in lst(group):
                 if isinstance(col, INT_TYPES):
                     try:
-                        groups[-1].append(X.columns[col])
+                        self.groups[name].append(X.columns[col])
                     except IndexError:
                         raise ValueError(
                             f"Invalid value for the groups parameter. Value {col} "
@@ -916,46 +900,30 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
                 else:
                     # Find columns using regex matches
-                    matches = [c for c in X.columns if re.fullmatch(col, c)]
-                    if matches:
-                        groups[-1].extend(matches)
+                    if matches := [c for c in X.columns if re.fullmatch(col, c)]:
+                        self.groups[name].extend(matches)
                     else:
                         try:
-                            groups[-1].extend(list(X.select_dtypes(col).columns))
+                            self.groups[name].extend(list(X.select_dtypes(col).columns))
                         except TypeError:
                             raise ValueError(
                                 "Invalid value for the groups parameter. "
                                 f"Could not find any column that matches {col}."
                             )
 
-        if self.name is None:
-            names = [f"group_{i}" for i in range(1, len(groups) + 1)]
-        else:
-            names = lst(self.name)
-
         if self.operators is None:
             operators = ["min", "max", "mean", "median", "mode", "std"]
         else:
             operators = lst(self.operators)
 
-        if len(groups) != len(names):
-            raise ValueError(
-                f"Invalid value for the names parameter, got {self.name}. The "
-                f"number of groups ({len(groups)}) does not match with the number "
-                f"of names ({len(names)})."
-            )
-
         to_drop = set()
-        self.groups = defaultdict(list)  # Reset attr for repeated transforms
-        for name, group in zip(names, groups):
-            group_df = X[group]
-
+        for name, group in self.groups.items():
             for operator in operators:
                 try:
-                    result = group_df.apply(getattr(np, operator), axis=1)
+                    result = X[group].apply(getattr(np, operator), axis=1)
                 except AttributeError:
                     try:
-                        result = getattr(stats, operator)(group_df, axis=1)[0]
+                        result = getattr(stats, operator)(X[group], axis=1)[0]
                     except AttributeError:
                         raise ValueError(
                             "Invalid value for the operators parameter. Value "
@@ -971,8 +939,6 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
             to_drop.update(group)
-
-            self.groups[name] = group
             self.log(f" --> Group {name} successfully created.", 2)
 
         if self.drop_columns:

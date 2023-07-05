@@ -3777,7 +3777,11 @@ class HTPlot(BasePlot):
             for trial in m.study.get_trials(deepcopy=False):
                 date_complete = trial.datetime_complete or datetime.now()
                 date_start = trial.datetime_start or date_complete
-                params = "<br>".join([f" --> {k}: {v}" for k, v in trial.params.items()])
+
+                # Create nice representation of scores and params for hover
+                s = [f'{m}: {trial.values[i]}' for i, m in enumerate(self._metric.keys())]
+                p = [f" --> {k}: {v}" for k, v in trial.params.items()]
+
                 info.append(
                     Bunch(
                         number=trial.number,
@@ -3786,8 +3790,8 @@ class HTPlot(BasePlot):
                         state=trial.state,
                         hovertext=(
                             f"Trial: {trial.number}<br>"
-                            f"Value: {flt(trial.values)}<br>"
-                            f"Parameters:<br>{params}"
+                            f"{'<br>'.join(s)}"
+                            f"Parameters:<br>{'<br>'.join(p)}"
                         )
                     )
                 )

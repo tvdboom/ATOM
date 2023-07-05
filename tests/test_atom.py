@@ -800,7 +800,7 @@ def test_feature_generation():
 def test_feature_grouping():
     """Assert that the feature_grouping method group features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_grouping(group=[[0, 1], [1, 2]])
+    atom.feature_grouping({"g1": [0, 1], "g2": [1, 2]})
     assert atom.X.shape[1] == X_bin.shape[1] - 3 + 12
     assert hasattr(atom, "groups")
 

@@ -192,65 +192,58 @@ def test_default_feature_names():
 
 def test_groups_invalid_int():
     """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper(group=[0, 99])
+    grouper = FeatureGrouper({"g1": [0, 99]})
     with pytest.raises(ValueError, match=".*out of range.*"):
         grouper.transform(X_bin)
 
 
 def test_groups_invalid_str():
     """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper(group=[0, "invalid"])
+    grouper = FeatureGrouper({"g1": [0, "invalid"]})
     with pytest.raises(ValueError, match=".*not find any column.*"):
-        grouper.transform(X_bin)
-
-
-def test_unequal_groups_names():
-    """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper(group=[0, 1, 2], name=["a", "b"])
-    with pytest.raises(ValueError, match=".*does not match.*"):
         grouper.transform(X_bin)
 
 
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
-    grouper = FeatureGrouper(group=[0, 1, 2], operators="invalid")
+    grouper = FeatureGrouper({"g1": [0, 1, 2]}, operators="invalid")
     with pytest.raises(ValueError, match=".*operators parameter.*"):
         grouper.transform(X_bin)
 
 
 def test_invalid_operator():
     """Assert that an error is raised when the result is not one-dimensional."""
-    grouper = FeatureGrouper(group=[0, 1, 2], operators="log")
+    grouper = FeatureGrouper({"g1": [0, 1, 2]}, operators="log")
     with pytest.raises(ValueError, match=".*one-dimensional.*"):
         grouper.transform(X_bin)
 
 
-@pytest.mark.parametrize("groups", ["mean.+", "float", [0, 1], [[0, 1], [2, 3]]])
+@pytest.mark.parametrize("groups", ["mean.+", "float", [0, 1]])
 def test_groups_are_created(groups):
     """Assert that the groups are made."""
-    grouper = FeatureGrouper(group=groups)
+    grouper = FeatureGrouper({"g1": groups})
     X = grouper.transform(X_bin)
-    assert "mean(group_1)" in X.columns
+    assert "mean(g1)" in X.columns
     assert X.columns[0] != X_bin.columns[0]
 
 
-def test_custom_names_and_operators():
-    """Assert that custom names and operators can be used."""
-    grouper = FeatureGrouper(group=[0, 1], name="gr", operators="var")
+def test_custom_operators():
+    """Assert that custom operators can be used."""
+    grouper = FeatureGrouper({"g1": [0, 1]}, operators="var")
     X = grouper.transform(X_bin)
-    assert "var(gr)" in X.columns
+    assert "var(g1)" in X.columns
 
 
 def test_columns_are_kept():
     """Assert that group columns can be kept."""
-    grouper = FeatureGrouper(group=[0, 1, 2], drop_columns=False)
+    grouper = FeatureGrouper({"g1": [0, 1, 2]}, drop_columns=False)
     X = grouper.transform(X_bin)
     assert X.columns[0] == X_bin.columns[0]
 
 
 def test_attribute_is_created():
     """Assert that the groups attribute is created."""
-    grouper = FeatureGrouper(group=[[0, 1], [2, 3]])
+    grouper = FeatureGrouper({"group_1": [0, 1], "group_2": [2, 3]})
     grouper.transform(X_bin)
     assert list(grouper.groups) == ["group_1", "group_2"]
 

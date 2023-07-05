@@ -707,7 +707,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                             for b2 in atom._branches:
                                 if b1.name != b2.name and b2.pipeline.get(i) is est1:
                                     # Update the data and step for the other branch
-                                    atom._branches[b2.name]._data = deepcopy(b1._data)
+                                    atom._branches[b2.name]._data = b1._data.copy()
                                     atom._branches[b2.name]._idx = deepcopy(b1._idx)
                                     atom._branches[b2.name]._holdout = b1._holdout
                                     step[b2.name] = i
@@ -1762,8 +1762,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def feature_grouping(
         self,
-        group: str | SEQUENCE,
-        name: str | SEQUENCE | None = None,
+        group: dict[str, str | SEQUENCE],
         *,
         operators: str | SEQUENCE | None = None,
         drop_columns: bool = True,
@@ -1784,7 +1783,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         feature_grouper = FeatureGrouper(
             group=group,
-            name=name,
             operators=operators,
             drop_columns=drop_columns,
             **self._prepare_kwargs(kwargs, sign(FeatureGrouper)),

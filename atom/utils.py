@@ -51,7 +51,7 @@ from sklearn.utils import _print_elapsed_time
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.2.0"
+__version__ = "6.0.0"
 
 # Group of variable types for isinstance
 # TODO: From Python 3.10, add typeguard.typechecked back

@@ -39,13 +39,14 @@ packages are necessary for its correct functioning.
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
 * **[numpy](https://numpy.org/)** (>=1.23.5)
 * **[optuna](https://optuna.org/)** (>=3.2.0)
-* **[pandas](https://pandas.pydata.org/)** (>=1.5.0)
+* **[pandas](https://pandas.pydata.org/)** (>=2.0.3)
 * **[plotly](https://plotly.com/python/)** (>=5.13.1)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.3.0)
-* **[shap](https://github.com/slundberg/shap/)** (>=0.41.0)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.0.1)
 * **[scipy](https://www.scipy.org/)** (>=1.9.3)
+* **[shap](https://github.com/slundberg/shap/)** (>=0.41.0)
+* **[sktime](http://www.sktime.net/en/latest/)** (>=0.20.0)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
 
@@ -64,7 +65,7 @@ additional libraries. You can install all the optional dependencies using
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)
-* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.1.0)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.3.1)
 
 
 ### Development
