@@ -636,6 +636,8 @@ class BaseTransformer:
 
             if self.shuffle:
                 return df.iloc[random.sample(range(len(df)), k=n_rows)]
+            elif self.goal == "fc":
+                return df.iloc[-n_rows:]  # For time series, select from tail
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
@@ -847,7 +849,7 @@ class BaseTransformer:
                 return self.branch._data, self.branch._idx, self.branch._holdout
 
         elif len(arrays) == 1:
-            # arrays=(X,)
+            # arrays=(X,) or arrays=(y,) for forecasting
             sets = _no_data_sets(*self._prepare_input(arrays[0], y=y))
 
         elif len(arrays) == 2:

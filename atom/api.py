@@ -520,7 +520,8 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     n_rows: int or float, default=1
         Subsample of the dataset to use. The cut is made from the head
-        of the dataset. The default value selects all rows.
+        of the dataset (older entries are dropped when sorted by date
+        ascending). The default value selects all rows.
 
         - If <=1: Fraction of the dataset to select.
         - If >1: Exact number of rows to select. Only if `arrays` is X

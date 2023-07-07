@@ -1972,9 +1972,6 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
 def infer_task(y: PANDAS, goal: str = "class") -> str:
     """Infer the task corresponding to a target column.
 
-    If goal is provided, only look at number of unique values to
-    determine the classification task.
-
     Parameters
     ----------
     y: series or dataframe
@@ -1994,6 +1991,8 @@ def infer_task(y: PANDAS, goal: str = "class") -> str:
             return "regression"
         else:
             return "multioutput regression"
+    elif goal == "fc":
+        return "forecasting"
 
     if y.ndim > 1:
         if all(y[col].nunique() == 2 for col in y):
@@ -2467,7 +2466,6 @@ def transform_one(
         )
         if isinstance(y, DATAFRAME_TYPES):
             y_new = prepare_df(y_new, y)
-
     elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
         X_new = prepare_df(out, X)

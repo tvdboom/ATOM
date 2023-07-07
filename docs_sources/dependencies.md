@@ -25,9 +25,9 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.5.1)
+* **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.1)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
-* **[dagshub](https://github.com/DagsHub/client)** (<=0.2.10)
+* **[dagshub](https://github.com/DagsHub/client)** (>=0.2.18)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.10.1)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
@@ -87,8 +87,8 @@ using `pip install atom-ml[dev]`.
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.2.1)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.0.0)
 * **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.2.0)
-* **[scikeras](https://github.com/adriangb/scikeras)** (>=0.10.0)
-* **[tensorflow](https://www.tensorflow.org/learn)** (>=2.11.0)
+* **[scikeras](https://github.com/adriangb/scikeras)** (>=0.11.0)
+* **[tensorflow](https://www.tensorflow.org/learn)** (>=2.13.0)
 
 **Documentation**
 
