@@ -26,6 +26,7 @@ from itertools import cycle
 from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
+from unittest.mock import patch
 
 import mlflow
 import modin.pandas as md
@@ -33,18 +34,19 @@ import numpy as np
 import pandas as pd
 import pandas as bk
 import plotly.graph_objects as go
+import scipy.sparse as sps
 from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from pandas.api.types import is_numeric_dtype
-from scipy import sparse
 from shap import Explainer, Explanation
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
+from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.utils import _print_elapsed_time
 
 
@@ -74,7 +76,7 @@ SERIES = Union[SERIES_TYPES]
 DATAFRAME = Union[DATAFRAME_TYPES]
 PANDAS = Union[PANDAS_TYPES]
 SEQUENCE = Union[SEQUENCE_TYPES]
-FEATURES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, DATAFRAME]
+FEATURES = Union[Callable, iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
 TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
 # Attributes shared between atom and a pd.DataFrame
@@ -1507,7 +1509,7 @@ def check_predict_proba(models: SEQUENCE, method: str):
             )
 
 
-def check_scaling(df: DATAFRAME, pipeline: Any | None = None) -> bool:
+def check_scaling(X: PANDAS, pipeline: Any | None = None) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
@@ -1520,7 +1522,7 @@ def check_scaling(df: DATAFRAME, pipeline: Any | None = None) -> bool:
 
     Parameters
     ----------
-    df: dataframe
+    X: series or dataframe
         Data set to check.
 
     pipeline: Pipeline or None, default=None
@@ -1537,6 +1539,8 @@ def check_scaling(df: DATAFRAME, pipeline: Any | None = None) -> bool:
     if pipeline is not None:
         est_names = [est.__class__.__name__.lower() for est in pipeline]
         has_scaler = any("scaler" in name for name in est_names)
+
+    df = to_df(X)  # Convert to dataframe
 
     # Remove binary columns (thus also sparse columns)
     df = df[[c for c in df if ~np.isin(df[c].unique(), [0, 1]).all()]]
@@ -1670,7 +1674,7 @@ def n_cols(data: FEATURES | TARGET | None) -> int:
 
 def to_df(
     data: FEATURES | None,
-    index: SEQUENCE = None,
+    index: SEQUENCE | None = None,
     columns: SEQUENCE | None = None,
     dtype: str | dict | np.dtype | None = None,
 ) -> DATAFRAME | None:
@@ -1700,12 +1704,12 @@ def to_df(
     """
     if data is not None and not isinstance(data, bk.DataFrame):
         # Assign default column names (dict already has column names)
-        if not isinstance(data, (dict, DATAFRAME_TYPES)) and columns is None:
+        if not isinstance(data, (dict, PANDAS_TYPES)) and columns is None:
             columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
         if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
             data = data.to_pandas()  # Convert cuML to pandas
-        elif sparse.issparse(data):
+        elif sps.issparse(data):
             # Create dataframe from sparse matrix
             data = bk.DataFrame.sparse.from_spmatrix(data, index, columns)
         else:
@@ -2209,7 +2213,7 @@ def reorder_cols(
     original_df: DATAFRAME,
     col_names: list[str],
 ) -> DATAFRAME:
-    """Reorder th   e columns to their original order.
+    """Reorder the columns to their original order.
 
     This function is necessary in case only a subset of the
     columns in the dataset was used. In that case, we need
@@ -2323,21 +2327,22 @@ def fit_one(
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
             args = []
+            inc = getattr(transformer, "_cols", getattr(X, "columns", []))
             if "X" in (params := sign(transformer.fit)):
-                if X is not None:
-                    inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
-                    if inc or exc:  # Skip if inc=[] (happens when columns=-1)
-                        args.append(X[inc or [c for c in X.columns if c not in exc]])
+                if X is not None and (cols := [c for c in inc if c in X]):
+                    args.append(X[cols])
 
                 # X is required but has not been provided
                 if len(args) == 0:
-                    if params["X"].default != Parameter.empty:
+                    if y is not None and hasattr(transformer, "_cols"):
+                        args.append(to_df(y)[inc])
+                    elif params["X"].default != Parameter.empty:
                         args.append(params["X"].default)  # Fill X with default
                     else:
                         raise ValueError(
                             "Exception while trying to fit transformer "
                             f"{transformer.__class__.__name__}. Parameter "
-                            "X is required but not provided."
+                            "X is required but has not been provided."
                         )
 
             if "y" in params and y is not None:
@@ -2386,7 +2391,7 @@ def transform_one(
 
     """
 
-    def prepare_df(out: FEATURES) -> DATAFRAME:
+    def prepare_df(out: FEATURES, og: DATAFRAME) -> DATAFRAME:
         """Convert to df and set correct column names and order.
 
         Parameters
@@ -2394,13 +2399,16 @@ def transform_one(
         out: dataframe-like
             Data returned by the transformation.
 
+        og: dataframe
+            Original dataframe, prior to transformations.
+
         Returns
         -------
         dataframe
-            Final dataset.
+            Transformed dataset.
 
         """
-        use_cols = inc or [c for c in X.columns if c not in exc]
+        use_cols = [c for c in inc if c in og.columns]
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, DATAFRAME_TYPES):
@@ -2410,13 +2418,13 @@ def transform_one(
                 # Some estimators have legacy method, e.g. cuml, category-encoders...
                 columns = transformer.get_feature_names()
             else:
-                columns = name_cols(out, X, use_cols)
+                columns = name_cols(out, og, use_cols)
 
-            out = to_df(out, index=X.index, columns=columns)
+            out = to_df(out, index=og.index, columns=columns)
 
         # Reorder columns if only a subset was used
-        if len(use_cols) != X.shape[1]:
-            return reorder_cols(transformer, out, X, use_cols)
+        if len(use_cols) != og.shape[1]:
+            return reorder_cols(transformer, out, og, use_cols)
         else:
             return out
 
@@ -2428,15 +2436,16 @@ def transform_one(
     y = to_pandas(y, index=getattr(X, "index", None))
 
     args = []
+    inc = getattr(transformer, "_cols", getattr(X, "columns", []))
     if "X" in (params := sign(getattr(transformer, method))):
-        if X is not None:
-            inc, exc = getattr(transformer, "_cols", (list(X.columns), []))
-            if inc or exc:  # Skip if inc=[] (happens when columns=-1)
-                args.append(X[inc or [c for c in X.columns if c not in exc]])
+        if X is not None and (cols := [c for c in inc if c in X]):
+            args.append(X[cols])
 
         # X is required but has not been provided
         if len(args) == 0:
-            if params["X"].default != Parameter.empty:
+            if y is not None and hasattr(transformer, "_cols"):
+                args.append(to_df(y)[inc])
+            elif params["X"].default != Parameter.empty:
                 args.append(params["X"].default)  # Fill X with default
             else:
                 return X, y  # If X is needed, skip the transformer
@@ -2449,28 +2458,33 @@ def transform_one(
 
     # Transform can return X, y or both
     if isinstance(out := getattr(transformer, method)(*args), tuple):
-        new_X = prepare_df(out[0])
-        new_y = to_pandas(
+        X_new = prepare_df(out[0], X)
+        y_new = to_pandas(
             data=out[1],
-            index=new_X.index,
+            index=X.index,
             name=getattr(y, "name", None),
             columns=getattr(y, "columns", None),
         )
-    elif "X" in params and X is not None and (inc != [] or exc != []):
+        if isinstance(y, DATAFRAME_TYPES):
+            y_new = prepare_df(y_new, y)
+
+    elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
-        new_X = prepare_df(out)
-        new_y = y if y is None else y.set_axis(new_X.index)
+        X_new = prepare_df(out, X)
+        y_new = y if y is None else y.set_axis(X_new.index)
     else:
-        # X not in -> output must be y
-        new_y = to_pandas(
+        # Output must be y
+        y_new = to_pandas(
             data=out,
             index=y.index,
             name=getattr(y, "name", None),
             columns=getattr(y, "columns", None),
         )
-        new_X = X if X is None else X.set_index(new_y.index)
+        X_new = X if X is None else X.set_index(y_new.index)
+        if isinstance(y, DATAFRAME_TYPES):
+            y_new = prepare_df(y_new, y)
 
-    return new_X, new_y
+    return X_new, y_new
 
 
 def fit_transform_one(
@@ -2612,6 +2626,22 @@ def custom_transform(
 
 # Patches ========================================================== >>
 
+def fit_and_score(*args, **kwargs) -> dict:
+    """Wrapper for sklearn's _fit_and_score function.
+
+    Wrap the function sklearn.model_selection._validation._fit_and_score
+    to, in turn, path sklearn's _score function to accept pipelines that
+    drop samples during transforming, within a joblib parallel context.
+
+    """
+
+    def wrapper(*args, **kwargs) -> dict:
+        with patch("sklearn.model_selection._validation._score", score(_score)):
+            return _fit_and_score(*args, **kwargs)
+
+    return wrapper(*args, **kwargs)
+
+
 def score(f: Callable) -> Callable:
     """Patch decorator for sklearn's _score function.
 
@@ -2620,7 +2650,7 @@ def score(f: Callable) -> Callable:
 
     """
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> FLOAT | dict[str, FLOAT]:
         args = list(args)  # Convert to list for item assignment
         if len(args[0]) > 1:  # Has transformers
             args[1], args[2] = args[0][:-1].transform(args[1], args[2])

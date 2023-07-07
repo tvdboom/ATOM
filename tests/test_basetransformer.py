@@ -234,6 +234,12 @@ def test_input_X_and_y_None():
         BaseTransformer._prepare_input()
 
 
+def test_X_is_callable():
+    """Assert that the data provided can be a callable."""
+    X, _ = BaseTransformer._prepare_input(lambda: [[1, 2], [2, 1], [3, 1]])
+    assert isinstance(X, pd.DataFrame)
+
+
 def test_to_pandas():
     """Assert that the data provided is converted to pandas objects."""
     X, y = BaseTransformer._prepare_input(X_bin_array, y_bin_array)

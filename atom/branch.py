@@ -474,7 +474,6 @@ class Branch:
         self,
         columns: INT | str | slice | SEQUENCE | None = None,
         include_target: bool = True,
-        return_inc_exc: bool = False,
         only_numerical: bool = False,
     ) -> list[str] | tuple[list[str] | list[str]]:
         """Get a subset of the columns.
@@ -494,10 +493,6 @@ class Branch:
             Whether to include the target column in the dataframe to
             select from.
 
-        return_inc_exc: bool, default=False
-            Whether to return only included columns or the tuple
-            (included, excluded).
-
         only_numerical: bool, default=False
             Whether to return only numerical columns.
 
@@ -505,10 +500,6 @@ class Branch:
         -------
         list
             Names of the included columns.
-
-        list
-            Names of the excluded columns. Only returned if
-            return_inc_exc=True.
 
         """
 
@@ -577,22 +568,20 @@ class Branch:
                         "Use a column's name or position to select it."
                     )
 
-        if len(inc) + len(exc) == 0:
-            raise ValueError(
-                "Invalid value for the columns parameter, got "
-                f"{columns}. At least one column has to be selected."
-            )
-        elif inc and exc:
+        if inc and exc:
             raise ValueError(
                 "Invalid value for the columns parameter. You can either "
                 "include or exclude columns, not combinations of these."
             )
-        elif return_inc_exc:
-            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
-
-        if exc:
+        elif exc:
             # If columns were excluded with `!`, select all but those
             inc = [col for col in df.columns if col not in exc]
+
+        if len(inc) == 0:
+            raise ValueError(
+                "Invalid value for the columns parameter, got "
+                f"{columns}. At least one column has to be selected."
+            )
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 

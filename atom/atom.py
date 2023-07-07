@@ -1038,8 +1038,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Estimator to add. Should implement a `transform` method.
 
         columns: int, str, slice, sequence or None, default=None
-            Names or indices of the columns in the dataset to transform.
-            If None, transform all columns.
+            Columns in the dataset to transform. If None, transform
+            all features.
 
         train_only: bool, default=False
             Whether to apply the transformer only on the train set or
@@ -1069,8 +1069,17 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         if not hasattr(transformer, "_train_only"):
             transformer._train_only = train_only
         if columns is not None:
-            inc, exc = self.branch._get_columns(columns, return_inc_exc=True)
-            transformer._cols = [[c for c in inc if c != self.target], exc]
+            inc = self.branch._get_columns(columns)
+            fxs_in_inc = any(c in self.features for c in inc)
+            target_in_inc = any(c in lst(self.target) for c in inc)
+            if fxs_in_inc and target_in_inc:
+                self.log(
+                    "Features and target columns passed to transformer "
+                    f"{transformer.__class__.__name__}. Only select features or the "
+                    "target column, not both at the sametime. The transformation of "
+                    "the target column will be ignored.", 1, severity="warning"
+                )
+            transformer._cols = inc
 
         if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
             if not transformer.__module__.startswith("atom"):
@@ -1129,7 +1138,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             If the transform method doesn't return a dataframe:
 
             * The column naming happens as follows. If the transformer
-              has a `get_feature_names` or `get_feature_names_out`
+              has a `get_feature_names_out` or `get_feature_names`
               method, it is used. If not, and it returns the same number
               of columns, the names are kept equal. If the number of
               columns change, old columns will keep their name (as long
@@ -1154,12 +1163,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         columns: int, str, slice, sequence or None, default=None
             Names, indices or dtypes of the columns in the dataset to
-            transform. If None, transform all columns. Add `!` in front
-            of a name or dtype to exclude that column, e.g.
+            transform. Only select features or the target column, not
+            both at the same time (if that happens, the target column
+            is ignored). If None, transform all columns. Add `!` in
+            front of a name or dtype to exclude that column, e.g.
             `atom.add(Transformer(), columns="!Location")`</code>`
             transforms all columns except `Location`. You can either
-            include or exclude columns, not combinations of these. The
-            target column is always included if required by the transformer.
+            include or exclude columns, not combinations of these.
 
         train_only: bool, default=False
             Whether to apply the estimator only on the training set or
@@ -1183,8 +1193,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def apply(
         self,
-        func: Callable,
-        inverse_func: Callable | None = None,
+        func: Callable[[DATAFRAME, ...], DATAFRAME],
+        inverse_func: Callable[[DATAFRAME, ...], DATAFRAME] | None = None,
         *,
         kw_args: dict | None = None,
         inv_kw_args: dict | None = None,
@@ -1192,8 +1202,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     ):
         """Apply a function to the dataset.
 
-        The function should have signature `func(dataset, **kw_args)
-        -> dataset`. This method is useful for stateless transformations
+        The function should have signature `func(dataset, **kw_args) ->
+        dataset`. This method is useful for stateless transformations
         such as taking the log, doing custom scaling, etc...
 
         !!! note

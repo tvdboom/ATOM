@@ -39,7 +39,7 @@ from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
     KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
 )
-from sklearn.model_selection._validation import _score, cross_validate
+from sklearn.model_selection._validation import cross_validate
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
 from starlette.requests import Request
@@ -55,9 +55,9 @@ from atom.utils import (
     CustomDict, DataConfig, Estimator, PlotCallback, Predictor, Scorer,
     ShapExplanation, TrialsCallback, bk, check_dependency, check_scaling,
     composed, crash, custom_transform, estimator_has_attr, export_pipeline,
-    flt, get_cols, get_custom_scorer, get_feature_importance, has_task,
-    infer_task, is_binary, is_multioutput, it, lst, merge, method_to_log, rnd,
-    score, sign, time_to_str, to_df, to_pandas, variable_return,
+    fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
+    has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
+    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, variable_return,
 )
 
 
@@ -2491,15 +2491,16 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         self.log("Applying cross-validation...", 1)
 
-        # Monkey patch the _score function to allow for
-        # pipelines that drop samples during transformation
-        with patch("sklearn.model_selection._validation._score", score(_score)):
+        # Monkey patch sklearn's _fit_and_score function to allow
+        # for pipelines that drop samples during transformation
+        with patch("sklearn.model_selection._validation._fit_and_score", fit_and_score):
             self.cv = cross_validate(
                 estimator=self.export_pipeline(verbose=0),
                 X=self.og.X,
                 y=self.og.y,
                 scoring=scoring,
                 return_train_score=kwargs.pop("return_train_score", True),
+                error_score=kwargs.pop("error_score", "raise"),
                 n_jobs=kwargs.pop("n_jobs", self.n_jobs),
                 verbose=kwargs.pop("verbose", 0),
                 **kwargs,

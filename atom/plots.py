@@ -52,8 +52,8 @@ from sklearn.utils.metaestimators import available_if
 from atom.utils import (
     FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
     check_dependency, check_hyperparams, check_predict_proba, composed, crash,
-    divide, flt, get_best_score, get_corpus, get_custom_scorer, has_attr,
-    has_task, is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
+    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
+    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 

@@ -457,12 +457,6 @@ def test_get_columns_include_or_exclude():
         atom.branch._get_columns(columns=["mean radius", "!mean texture"])
 
 
-def test_get_columns_return_inc_exc():
-    """Assert that included and excluded columns can be returned."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert isinstance(atom.branch._get_columns("number", return_inc_exc=True), tuple)
-
-
 def test_get_columns_remove_duplicates():
     """Assert that duplicate columns are ignored."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -56,21 +56,23 @@ def test_internal_attrs_are_saved(pipeline):
     """Assert that cols and train_only attrs are stored after clone."""
     pl = pipeline(model=False, memory=True)
     pl.fit(X_bin, y_bin)
-    assert pl.steps[-1][1]._cols == [["mean radius"], []]
+    assert pl.steps[-1][1]._cols == ["mean radius"]
     assert pl.steps[-2][1]._train_only is True
 
 
-def test_transform_only_X_or_y(pipeline):
+def test_transform_only_X_or_y():
     """Assert that the pipeline can transform only X or y."""
-    pl = Pipeline(
-        steps=[
-            ("label_encoder", LabelEncoder()),
-            ("scaler", StandardScaler()),
-        ],
-    )
+    pl = Pipeline([("encoder", LabelEncoder()), ("scaler", StandardScaler())])
     pl.fit(X_bin, y_bin)
     assert isinstance(pl.transform(y=y_bin), pd.Series)
     assert isinstance(pl.transform(X=X_bin), pd.DataFrame)
+
+
+def test_X_is_required_and_not_provided():
+    """Assert that an error is raised when the transformer requires features."""
+    pl = Pipeline(steps=[("scaler", StandardScaler())])
+    with pytest.raises(ValueError, match=".*X is required.*"):
+        pl.fit()  # StandardScaler.fit requires X
 
 
 def test_fit_transform(pipeline):

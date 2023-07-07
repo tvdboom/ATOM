@@ -122,6 +122,7 @@ nav:
         - Data cleaning: user_guide/data_cleaning.md
         - Feature engineering: user_guide/feature_engineering.md
         - NLP: user_guide/nlp.md
+        - Time Series: user_guide/time_series.md
         - Models: user_guide/models.md
         - Training: user_guide/training.md
         - Predicting: user_guide/predicting.md
@@ -129,6 +130,7 @@ nav:
     - API:
         - ATOM:
             - ATOMClassifier: API/ATOM/atomclassifier.md
+            - ATOMForecaster: API/ATOM/atomforecaster.md
             - ATOMModel: API/ATOM/atommodel.md
             - ATOMRegressor: API/ATOM/atomregressor.md
         - Data cleaning:

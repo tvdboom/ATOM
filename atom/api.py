@@ -288,6 +288,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     See Also
     --------
+    atom.api:ATOMForecaster
     atom.api:ATOMRegressor
 
     Examples
@@ -492,6 +493,16 @@ class ATOMForecaster(BaseTransformer, ATOM):
         This parameter is ignored if the time series is provided
         through `arrays`.
 
+    index: bool, int, str or sequence, default=True
+        Handle the index in the resulting dataframe. The index should
+        be coercible to [DatetimeIndex][] using `pd.to_datetime()`.
+
+        - If False: Reset to [RangeIndex][].
+        - If True: Use the provided index.
+        - If int: Position of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Array with shape=(n_samples,) to use as index.
+
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
@@ -507,28 +518,9 @@ class ATOMForecaster(BaseTransformer, ATOM):
         This parameter is ignored if the holdout set is provided
         through `arrays`.
 
-    shuffle: bool, default=True
-        Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of target classes over the sets.
-
-    stratify: bool, int, str or sequence, default=True
-        Handle stratification of the target classes over the data sets.
-
-        - If False: The data is split randomly.
-        - If True: The data is stratified over the target column.
-        - Else: Name or position of the columns to stratify by. The
-          columns can't contain `NaN` values.
-
-        This parameter is ignored if `shuffle=False` or if the test
-        set is provided through `arrays`.
-
-        For [multioutput tasks][], stratification is applied to the
-        joint target columns.
-
     n_rows: int or float, default=1
-        Random subsample of the dataset to use. The default value selects
-        all rows.
+        Subsample of the dataset to use. The cut is made from the head
+        of the dataset. The default value selects all rows.
 
         - If <=1: Fraction of the dataset to select.
         - If >1: Exact number of rows to select. Only if `arrays` is X
@@ -599,6 +591,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     See Also
     --------
+    atom.api:ATOMClassifier
     atom.api:ATOMRegressor
 
     Examples
@@ -707,8 +700,6 @@ class ATOMForecaster(BaseTransformer, ATOM):
         *arrays,
         y: TARGET = -1,
         index: bool | INT | str | SEQUENCE = False,
-        shuffle: bool = True,
-        stratify: bool | INT | str | SEQUENCE = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,
@@ -734,7 +725,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "class"
+        self.goal = "fc"
         ATOM.__init__(
             self,
             arrays=arrays,
@@ -742,8 +733,8 @@ class ATOMForecaster(BaseTransformer, ATOM):
             index=index,
             test_size=test_size,
             holdout_size=holdout_size,
-            shuffle=shuffle,
-            stratify=stratify,
+            shuffle=False,
+            stratify=False,
             n_rows=n_rows,
         )
 
@@ -903,6 +894,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
     See Also
     --------
     atom.api:ATOMClassifier
+    atom.api:ATOMForecaster
 
     Examples
     --------

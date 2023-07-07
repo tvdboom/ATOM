@@ -396,7 +396,7 @@ class BaseTransformer:
         if X is None and y is None:
             raise ValueError("X and y can't be both None!")
         elif X is not None:
-            X = to_df(deepcopy(X), columns=columns)
+            X = to_df(deepcopy(X() if callable(X) else X), columns=columns)
 
             # If text dataset, change the name of the column to corpus
             if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":

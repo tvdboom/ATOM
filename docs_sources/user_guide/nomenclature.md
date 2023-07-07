@@ -51,6 +51,11 @@ values are 1d-arrays, a two-dimensional [list](https://docs.python.org/3/library
 [sps.csr_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html),
 and most commonly, a [dataframe][]. This is the standard input format
 for any dataset.
+
+Additionally, you can provide a callable whose output is any of the
+aforementioned types. This is useful when the dataset is very large and
+you are performing [parallel operations][parallel-execution], since it
+can avoid broadcasting a large dataset from the driver to the workers.
 </div>
 
 <div id="estimator"><strong>estimator</strong></div>

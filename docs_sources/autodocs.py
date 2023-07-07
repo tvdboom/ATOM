@@ -37,6 +37,7 @@ CUSTOM_URLS = dict(
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     modin="https://modin.readthedocs.io/en/stable/",
     warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
+    datetimeindex="https://pandas.pydata.org/docs/reference/api/pandas.DatetimeIndex.html",
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
