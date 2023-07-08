@@ -19,6 +19,7 @@ from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
+from typing import Callable
 
 import dagshub
 import dill as pickle
@@ -353,7 +354,7 @@ class BaseTransformer:
 
     @staticmethod
     def _prepare_input(
-        X: FEATURES | None = None,
+        X: Callable | FEATURES | None = None,
         y: TARGET | None = None,
         columns: SEQUENCE | None = None,
     ) -> tuple[DATAFRAME | None, PANDAS | None]:
@@ -469,6 +470,10 @@ class BaseTransformer:
                 raise ValueError("X can't be None when y is an int.")
 
             X, y = X.drop(X.columns[y], axis=1), X[X.columns[y]]
+
+        # For forecasting, when first argument is y, X becomes empty df
+        if X is not None and X.empty:
+            X = None
 
         return X, y
 
@@ -616,7 +621,8 @@ class BaseTransformer:
             """Select a random subset of a dataframe.
 
             If shuffle=True, the subset is shuffled, else row order
-            is maintained.
+            is maintained. For forecasting tasks, rows are dropped
+            from the tail of the data set.
 
             Parameters
             ----------
@@ -637,12 +643,12 @@ class BaseTransformer:
             if self.shuffle:
                 return df.iloc[random.sample(range(len(df)), k=n_rows)]
             elif self.goal == "fc":
-                return df.iloc[-n_rows:]  # For time series, select from tail
+                return df.iloc[-n_rows:]  # For forecasting, select from tail
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
         def _no_data_sets(
-            X: DATAFRAME,
+            X: DATAFRAME | None,
             y: PANDAS,
         ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
             """Generate data sets from one dataset.
@@ -653,8 +659,9 @@ class BaseTransformer:
 
             Parameters
             ----------
-            X: dataframe
-                Feature set with shape=(n_samples, n_features).
+            X: dataframe or None
+                Feature set with shape=(n_samples, n_features). Can
+                only be None for forecasting tasks.
 
             y: series or dataframe
                 Target column(s) corresponding to X.
@@ -665,7 +672,7 @@ class BaseTransformer:
                 Data, indices and holdout.
 
             """
-            data = merge(X, y)
+            data = to_df(y) if X is None else merge(X, y)
 
             # If the index is a sequence, assign it before shuffling
             if isinstance(self._config.index, SEQUENCE_TYPES):
@@ -840,7 +847,10 @@ class BaseTransformer:
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self.branch._data is None:
+            if self.goal == "fc" and not isinstance(y, (INT, str)):
+                # arrays=() and y=y for forecasting
+                sets = _no_data_sets(*self._prepare_input(X=None, y=y))
+            elif self.branch._data is None:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
                     "successfully. See the documentation for the allowed formats."

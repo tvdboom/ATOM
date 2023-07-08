@@ -240,7 +240,7 @@ class Branch:
     @property
     def train(self) -> DATAFRAME:
         """Training set."""
-        return self._data.loc[self._idx[1], :]
+        return self._data.loc[self._idx[1]]
 
     @train.setter
     def train(self, value: FEATURES):
@@ -251,7 +251,7 @@ class Branch:
     @property
     def test(self) -> DATAFRAME:
         """Test set."""
-        return self._data.loc[self._idx[2], :]
+        return self._data.loc[self._idx[2]]
 
     @test.setter
     def test(self, value: FEATURES):

@@ -41,6 +41,7 @@ from atom.plots import (
 from atom.training import (
     DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
+    DirectForecaster, SuccessiveHalvingForecaster, TrainSizingForecaster
 )
 from atom.utils import (
     DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
@@ -914,7 +915,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                     "rows because a column is unhashable.", 3
                 )
 
-            self.log(f"Scaled: {self.scaled}", _vb)
+            if not self.X.empty:
+                self.log(f"Scaled: {self.scaled}", _vb)
             if nans:
                 p_nans = round(100 * nans / self.dataset.size, 1)
                 self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
@@ -926,7 +928,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
             if duplicates:
                 p_dup = round(100 * duplicates / len(self.dataset), 1)
-                self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
+                self.log(f"Duplicates: {duplicates} ({p_dup}%)", _vb)
 
     @composed(crash, method_to_log)
     def status(self):
@@ -1978,22 +1980,24 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         if self.goal == "class":
             trainer = DirectClassifier
-        else:
+        elif self.goal == "reg":
             trainer = DirectRegressor
+        else:
+            trainer = DirectForecaster
 
         self._run(
-            trainer(
-                models=models,
-                metric=self._check(metric),
-                est_params=est_params,
-                n_trials=n_trials,
-                ht_params=ht_params,
-                n_bootstrap=n_bootstrap,
-                parallel=parallel,
-                errors=errors,
-                **self._prepare_kwargs(kwargs),
+                trainer(
+                    models=models,
+                    metric=self._check(metric),
+                    est_params=est_params,
+                    n_trials=n_trials,
+                    ht_params=ht_params,
+                    n_bootstrap=n_bootstrap,
+                    parallel=parallel,
+                    errors=errors,
+                    **self._prepare_kwargs(kwargs),
+                )
             )
-        )
 
     @composed(crash, method_to_log)
     def successive_halving(
@@ -2038,23 +2042,25 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         if self.goal == "class":
             trainer = SuccessiveHalvingClassifier
-        else:
+        elif self.goal == "reg":
             trainer = SuccessiveHalvingRegressor
+        else:
+            trainer = SuccessiveHalvingForecaster
 
         self._run(
-            trainer(
-                models=models,
-                metric=self._check(metric),
-                skip_runs=skip_runs,
-                est_params=est_params,
-                n_trials=n_trials,
-                ht_params=ht_params,
-                n_bootstrap=n_bootstrap,
-                parallel=parallel,
-                errors=errors,
-                **self._prepare_kwargs(kwargs),
+                trainer(
+                    models=models,
+                    metric=self._check(metric),
+                    skip_runs=skip_runs,
+                    est_params=est_params,
+                    n_trials=n_trials,
+                    ht_params=ht_params,
+                    n_bootstrap=n_bootstrap,
+                    parallel=parallel,
+                    errors=errors,
+                    **self._prepare_kwargs(kwargs),
+                )
             )
-        )
 
     @composed(crash, method_to_log)
     def train_sizing(
@@ -2097,8 +2103,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         if self.goal == "class":
             trainer = TrainSizingClassifier
-        else:
+        elif self.goal == "reg":
             trainer = TrainSizingRegressor
+        else:
+            trainer = TrainSizingForecaster
 
         self._run(
             trainer(

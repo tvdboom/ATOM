@@ -117,6 +117,7 @@ feature engineering, model training, plotting and much more. The easiest
 way to use everything ATOM has to offer is through one of the main classes:
 
 * [ATOMClassifier](https://tvdboom.github.io/ATOM/latest//API/ATOM/atomclassifier) for binary or multiclass classification tasks.
+* [ATOMForecaster](https://tvdboom.github.io/ATOM/latest//API/ATOM/atomforecaster) for forecasting tasks.
 * [ATOMRegressor](https://tvdboom.github.io/ATOM/latest//API/ATOM/atomregressor) for regression tasks.
 
 Let's walk you through an example. Click on the SageMaker Studio Lab badge

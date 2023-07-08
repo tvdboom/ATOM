@@ -492,6 +492,240 @@ class DirectClassifier(Direct):
         )
 
 
+class DirectForecaster(Direct):
+    """Train and evaluate the models in a direct fashion.
+
+    The following steps are applied to every model:
+
+    1. Apply [hyperparameter tuning][] (optional).
+    2. Fit the model on the training set using the best combination
+       of hyperparameters found.
+    3. Evaluate the model on the test set.
+    4. Train the estimator on various [bootstrapped][bootstrapping]
+       samples of the training set and evaluate again on the test set
+       (optional).
+
+    Parameters
+    ----------
+    models: str, estimator or sequence, default=None
+        Models to fit to the data. Allowed inputs are: an acronym from
+        any of the [predefined models][], an [ATOMModel][] or a custom
+        predictor as class or instance. If None, all the predefined
+        models are used.
+
+    metric: str, func, scorer, sequence or None, default=None
+        Metric on which to fit the models. Choose from any of sklearn's
+        [scorers][], a function with signature `function(y_true, y_pred)
+        -> score`, a scorer object or a sequence of these. If None, a
+        default metric is selected for every task:
+
+        - "f1" for binary classification
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
+
+    n_trials: int or sequence, default=0
+        Maximum number of iterations for the [hyperparameter tuning][].
+        If 0, skip the tuning and fit the model on its default
+        parameters. If sequence, the n-th value applies to the n-th
+        model.
+
+    est_params: dict or None, default=None
+        Additional parameters for the models. See their corresponding
+        documentation for the available options. For multiple models,
+        use the acronyms as key (or 'all' for all models) and a dict
+        of the parameters as value. Add `_fit` to the parameter's name
+        to pass it to the estimator's fit method instead of the
+        constructor.
+
+    ht_params: dict or None, default=None
+        Additional parameters for the hyperparameter tuning. If None,
+        it uses the same parameters as the first run. Can include:
+
+        - **cv: int, dict or sequence, default=1**<br>
+          Number of folds for the cross-validation. If 1, the training
+          set is randomly split in a subtrain and validation set.
+        - **plot: bool, dict or sequence, default=False**<br>
+          Whether to plot the optimization's progress as it runs.
+          Creates a canvas with two plots: the first plot shows the
+          score of every trial and the second shows the distance between
+          the last consecutive steps. See the [plot_trials][] method.
+        - **distributions: dict, sequence or None, default=None**<br>
+          Custom hyperparameter distributions. If None, it uses the
+          model's predefined distributions. Read more in the
+          [user guide][hyperparameter-tuning].
+        - **tags: dict, sequence or None, default=None**<br>
+          Custom tags for the model's trial and [mlflow run][tracking].
+        - **\*\*kwargs**<br>
+          Additional Keyword arguments for the constructor of the
+          [study][] class or the [optimize][] method.
+
+    n_bootstrap: int or sequence, default=0
+        Number of data sets to use for [bootstrapping][]. If 0, no
+        bootstrapping is performed. If sequence, the n-th value applies
+        to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    warnings: bool or str, default=False
+        - If True: Default warning action (equal to "default").
+        - If False: Suppress all warnings (equal to "ignore").
+        - If str: One of python's [warnings filters][warnings].
+
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic name.
+        - Else: Python `logging.Logger` instance.
+
+    experiment: str or None, default=None
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMRegressor
+    atom.training:SuccessiveHalvingRegressor
+    atom.training:TrainSizingRegressor
+
+    Examples
+    --------
+    ```pycon
+    >>> from atom.training import DirectRegressor
+    >>> from sklearn.datasets import load_digits
+
+    >>> X, y = load_digits(return_X_y=True, as_frame=True)
+    >>> train, test = train_test_split(
+    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
+    ...     test_size=0.3,
+    ... )
+
+    >>> runner = DirectClassifier(models=["OLS", "RF"], metric="r2", verbose=2)
+    >>> runner.run(train, test)
+
+    Models: OLS, RF
+    Metric: r2
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.5881
+    Test evaluation --> r2: 0.6029
+    Time elapsed: 0.022s
+    -------------------------------------------------
+    Total time: 0.022s
+
+
+    Results for RandomForest:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.981
+    Test evaluation --> r2: 0.8719
+    Time elapsed: 0.838s
+    -------------------------------------------------
+    Total time: 0.838s
+
+
+    Final results ==================== >>
+    Total time: 0.862s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.6029
+    RandomForest         --> r2: 0.8719 !
+
+    >>> # Analyze the results
+    >>> runner.evaluate()
+
+         neg_mean_absolute_error  ...  neg_root_mean_squared_error
+    OLS                  -1.4124  ...                      -1.8109
+    RF                   -0.6569  ...                      -1.0692
+
+    [2 rows x 6 columns]
+
+    ```
+
+    """
+
+    def __init__(
+        self,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
+        *,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
+        n_jobs: INT = 1,
+        device: str = "cpu",
+        engine: str = "sklearn",
+        backend: str = "loky",
+        verbose: INT = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
+    ):
+        self.goal = "fc"
+        super().__init__(
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
+        )
+
+
 class DirectRegressor(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -984,6 +1218,272 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         random_state: INT | None = None,
     ):
         self.goal = "class"
+        super().__init__(
+            models, metric, skip_runs, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
+        )
+
+
+class SuccessiveHalvingForecaster(SuccessiveHalving):
+    """Train and evaluate the models in a [successive halving][] fashion.
+
+    The following steps are applied to every model (per iteration):
+
+    1. Apply [hyperparameter tuning][] (optional).
+    2. Fit the model on the training set using the best combination
+       of hyperparameters found.
+    3. Evaluate the model on the test set.
+    4. Train the estimator on various [bootstrapped][bootstrapping]
+       samples of the training set and evaluate again on the test set
+       (optional).
+
+    Parameters
+    ----------
+    models: str, estimator or sequence, default=None
+        Models to fit to the data. Allowed inputs are: an acronym from
+        any of the [predefined models][], an [ATOMModel][] or a custom
+        predictor as class or instance. If None, all the predefined
+        models are used.
+
+    metric: str, func, scorer, sequence or None, default=None
+        Metric on which to fit the models. Choose from any of sklearn's
+        [scorers][], a function with signature `function(y_true, y_pred)
+        -> score`, a scorer object or a sequence of these. If None, a
+        default metric is selected for every task:
+
+        - "f1" for binary classification
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
+
+    skip_runs: int, default=0
+        Skip last `skip_runs` runs of the successive halving.
+
+    n_trials: int or sequence, default=0
+        Maximum number of iterations for the [hyperparameter tuning][].
+        If 0, skip the tuning and fit the model on its default
+        parameters. If sequence, the n-th value applies to the n-th
+        model.
+
+    est_params: dict or None, default=None
+        Additional parameters for the models. See their corresponding
+        documentation for the available options. For multiple models,
+        use the acronyms as key (or 'all' for all models) and a dict
+        of the parameters as value. Add `_fit` to the parameter's name
+        to pass it to the estimator's fit method instead of the
+        constructor.
+
+    ht_params: dict or None, default=None
+        Additional parameters for the hyperparameter tuning. If None,
+        it uses the same parameters as the first run. Can include:
+
+        - **cv: int, dict or sequence, default=1**<br>
+          Number of folds for the cross-validation. If 1, the training
+          set is randomly split in a subtrain and validation set.
+        - **plot: bool, dict or sequence, default=False**<br>
+          Whether to plot the optimization's progress as it runs.
+          Creates a canvas with two plots: the first plot shows the
+          score of every trial and the second shows the distance between
+          the last consecutive steps. See the [plot_trials][] method.
+        - **distributions: dict, sequence or None, default=None**<br>
+          Custom hyperparameter distributions. If None, it uses the
+          model's predefined distributions. Read more in the
+          [user guide][hyperparameter-tuning].
+        - **tags: dict, sequence or None, default=None**<br>
+          Custom tags for the model's trial and [mlflow run][tracking].
+        - **\*\*kwargs**<br>
+          Additional Keyword arguments for the constructor of the
+          [study][] class or the [optimize][] method.
+
+    n_bootstrap: int or sequence, default=0
+        Number of data sets to use for [bootstrapping][]. If 0, no
+        bootstrapping is performed. If sequence, the n-th value applies
+        to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    warnings: bool or str, default=False
+        - If True: Default warning action (equal to "default").
+        - If False: Suppress all warnings (equal to "ignore").
+        - If str: One of python's [warnings filters][warnings].
+
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic name.
+        - Else: Python `logging.Logger` instance.
+
+    experiment: str or None, default=None
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMRegressor
+    atom.training:DirectRegressor
+    atom.training:TrainSizingRegressor
+
+    Examples
+    --------
+    ```pycon
+    >>> from atom.training import SuccessiveHalvingRegressor
+    >>> from sklearn.datasets import load_digits
+
+    >>> X, y = load_digits(return_X_y=True, as_frame=True)
+    >>> train, test = train_test_split(
+    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
+    ...     test_size=0.3,
+    ... )
+
+    >>> runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
+    >>> runner.run(train, test)
+
+    Training ========================= >>
+    Metric: r2
+
+
+    Run: 0 =========================== >>
+    Models: OLS2, RF2
+    Size of training set: 398 (50%)
+    Size of test set: 171
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7878
+    Test evaluation --> r2: 0.6764
+    Time elapsed: 0.007s
+    -------------------------------------------------
+    Total time: 0.007s
+
+
+    Results for RandomForest:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.9755
+    Test evaluation --> r2: 0.8189
+    Time elapsed: 0.132s
+    -------------------------------------------------
+    Total time: 0.132s
+
+
+    Final results ==================== >>
+    Total time: 0.140s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.6764
+    RandomForest         --> r2: 0.8189 !
+
+
+    Run: 1 =========================== >>
+    Models: RF1
+    Size of training set: 398 (100%)
+    Size of test set: 171
+
+
+    Results for RandomForest:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.9803
+    Test evaluation --> r2: 0.8092
+    Time elapsed: 0.217s
+    -------------------------------------------------
+    Total time: 0.217s
+
+
+    Final results ==================== >>
+    Total time: 0.217s
+    -------------------------------------
+    RandomForest --> r2: 0.8092
+
+    >>> # Analyze the results
+    >>> runner.evaluate()
+
+          neg_mean_absolute_error  ...  neg_root_mean_squared_error
+    OLS2                  -0.1982  ...                      -0.2744
+    RF2                   -0.0970  ...                      -0.2053
+    RF1                   -0.0974  ...                      -0.2107
+
+    [3 rows x 6 columns]
+
+    ```
+
+    """
+
+    def __init__(
+        self,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
+        *,
+        skip_runs: INT = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
+        n_jobs: INT = 1,
+        device: str = "cpu",
+        engine: str = "sklearn",
+        backend: str = "loky",
+        verbose: INT = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
+    ):
+        self.goal = "fc"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1576,6 +2076,332 @@ class TrainSizingClassifier(TrainSizing):
         random_state: INT | None = None,
     ):
         self.goal = "class"
+        super().__init__(
+            models, metric, train_sizes, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
+        )
+
+
+class TrainSizingForecaster(TrainSizing):
+    """Train and evaluate the models in a [train sizing][] fashion.
+
+    The following steps are applied to every model (per iteration):
+
+    1. Apply [hyperparameter tuning][] (optional).
+    2. Fit the model on the training set using the best combination
+       of hyperparameters found.
+    3. Evaluate the model on the test set.
+    4. Train the estimator on various [bootstrapped][bootstrapping]
+       samples of the training set and evaluate again on the test set
+       (optional).
+
+    Parameters
+    ----------
+    models: str, estimator or sequence, default=None
+        Models to fit to the data. Allowed inputs are: an acronym from
+        any of the [predefined models][], an [ATOMModel][] or a custom
+        predictor as class or instance. If None, all the predefined
+        models are used.
+
+    metric: str, func, scorer, sequence or None, default=None
+        Metric on which to fit the models. Choose from any of sklearn's
+        [scorers][], a function with signature `function(y_true, y_pred)
+        -> score`, a scorer object or a sequence of these. If None, a
+        default metric is selected for every task:
+
+        - "f1" for binary classification
+        - "f1_weighted" for multiclass(-multioutput) classification
+        - "average_precision" for multilabel classification
+        - "r2" for regression or multioutput regression
+
+    train_sizes: int or sequence, default=5
+        Sequence of training set sizes used to run the trainings.
+
+        - If int: Number of equally distributed splits, i.e. for a value
+          `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
+        - If sequence: Fraction of the training set when <=1, else total
+          number of samples.
+
+    n_trials: int or sequence, default=0
+        Maximum number of iterations for the [hyperparameter tuning][].
+        If 0, skip the tuning and fit the model on its default
+        parameters. If sequence, the n-th value applies to the n-th
+        model.
+
+    est_params: dict or None, default=None
+        Additional parameters for the models. See their corresponding
+        documentation for the available options. For multiple models,
+        use the acronyms as key (or 'all' for all models) and a dict
+        of the parameters as value. Add `_fit` to the parameter's name
+        to pass it to the estimator's fit method instead of the
+        constructor.
+
+    ht_params: dict or None, default=None
+        Additional parameters for the hyperparameter tuning. If None,
+        it uses the same parameters as the first run. Can include:
+
+        - **cv: int, dict or sequence, default=1**<br>
+          Number of folds for the cross-validation. If 1, the training
+          set is randomly split in a subtrain and validation set.
+        - **plot: bool, dict or sequence, default=False**<br>
+          Whether to plot the optimization's progress as it runs.
+          Creates a canvas with two plots: the first plot shows the
+          score of every trial and the second shows the distance between
+          the last consecutive steps. See the [plot_trials][] method.
+        - **distributions: dict, sequence or None, default=None**<br>
+          Custom hyperparameter distributions. If None, it uses the
+          model's predefined distributions. Read more in the
+          [user guide][hyperparameter-tuning].
+        - **tags: dict, sequence or None, default=None**<br>
+          Custom tags for the model's trial and [mlflow run][tracking].
+        - **\*\*kwargs**<br>
+          Additional Keyword arguments for the constructor of the
+          [study][] class or the [optimize][] method.
+
+    n_bootstrap: int or sequence, default=0
+        Number of data sets to use for [bootstrapping][]. If 0, no
+        bootstrapping is performed. If sequence, the n-th value applies
+        to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    warnings: bool or str, default=False
+        - If True: Default warning action (equal to "default").
+        - If False: Suppress all warnings (equal to "ignore").
+        - If str: One of python's [warnings filters][warnings].
+
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic name.
+        - Else: Python `logging.Logger` instance.
+
+    experiment: str or None, default=None
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMRegressor
+    atom.training:DirectRegressor
+    atom.training:SuccessiveHalvingRegressor
+
+    Examples
+    --------
+    ```pycon
+    >>> from atom.training import TrainSizingRegressor
+    >>> from sklearn.datasets import load_digits
+
+    >>> X, y = load_digits(return_X_y=True, as_frame=True)
+    >>> train, test = train_test_split(
+    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
+    ...     test_size=0.3,
+    ... )
+
+    >>> runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
+    >>> runner.run(train, test)
+
+    Training ========================= >>
+    Metric: r2
+
+
+    Run: 0 =========================== >>
+    Models: OLS02
+    Size of training set: 79 (20%)
+    Size of test set: 171
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.8554
+    Test evaluation --> r2: 0.4273
+    Time elapsed: 0.008s
+    -------------------------------------------------
+    Total time: 0.008s
+
+
+    Final results ==================== >>
+    Total time: 0.107s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.4273 ~
+
+
+    Run: 1 =========================== >>
+    Models: OLS04
+    Size of training set: 159 (40%)
+    Size of test set: 171
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7987
+    Test evaluation --> r2: 0.653
+    Time elapsed: 0.008s
+    -------------------------------------------------
+    Total time: 0.008s
+
+
+    Final results ==================== >>
+    Total time: 0.129s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.653
+
+
+    Run: 2 =========================== >>
+    Models: OLS06
+    Size of training set: 238 (60%)
+    Size of test set: 171
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7828
+    Test evaluation --> r2: 0.7161
+    Time elapsed: 0.008s
+    -------------------------------------------------
+    Total time: 0.008s
+
+
+    Final results ==================== >>
+    Total time: 0.156s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.7161
+
+
+    Run: 3 =========================== >>
+    Models: OLS08
+    Size of training set: 318 (80%)
+    Size of test set: 171
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7866
+    Test evaluation --> r2: 0.7306
+    Time elapsed: 0.009s
+    -------------------------------------------------
+    Total time: 0.009s
+
+
+    Final results ==================== >>
+    Total time: 0.187s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.7306
+
+
+    Run: 4 =========================== >>
+    Models: OLS10
+    Size of training set: 398 (100%)
+    Size of test set: 171
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7798
+    Test evaluation --> r2: 0.7394
+    Time elapsed: 0.009s
+    -------------------------------------------------
+    Total time: 0.009s
+
+
+    Final results ==================== >>
+    Total time: 0.226s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.7394
+
+    >>> # Analyze the results
+    >>> runner.evaluate()
+
+           neg_mean_absolute_error  ...  neg_root_mean_squared_error
+    OLS02                  -0.2766  ...                      -0.3650
+    OLS04                  -0.2053  ...                      -0.2841
+    OLS06                  -0.1957  ...                      -0.2570
+    OLS08                  -0.1928  ...                      -0.2504
+    OLS10                  -0.1933  ...                      -0.2463
+
+    [5 rows x 6 columns]
+
+    ```
+
+    """
+
+    def __init__(
+        self,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
+        *,
+        train_sizes: INT | SEQUENCE = 5,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
+        parallel: bool = False,
+        errors: str = "skip",
+        n_jobs: INT = 1,
+        device: str = "cpu",
+        engine: str = "sklearn",
+        backend: str = "loky",
+        verbose: INT = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
+    ):
+        self.goal = "fc"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,

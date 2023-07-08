@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.2/getting_started/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/getting_started/">
       
       
         <link rel="prev" href="../about/">
@@ -19,7 +19,7 @@
         <link rel="next" href="../user_guide/introduction/">
       
       <link rel="icon" href="../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
   <title>Getting started - ATOM</title>
@@ -645,6 +645,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../user_guide/time_series/" class="md-nav__link">
+        Time Series
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user_guide/models/" class="md-nav__link">
         Models
       </a>
@@ -765,6 +779,20 @@
     <li class="md-nav__item">
       <a href="../API/ATOM/atomclassifier/" class="md-nav__link">
         ATOMClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/ATOM/atomforecaster/" class="md-nav__link">
+        ATOMForecaster
       </a>
     </li>
   
@@ -1179,6 +1207,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../API/training/directforecaster/" class="md-nav__link">
+        DirectRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../API/training/directregressor/" class="md-nav__link">
         DirectRegressor
       </a>
@@ -1207,6 +1249,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../API/training/successivehalvingforecaster/" class="md-nav__link">
+        SuccessiveHalvingRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../API/training/successivehalvingregressor/" class="md-nav__link">
         SuccessiveHalvingRegressor
       </a>
@@ -1223,6 +1279,20 @@
     <li class="md-nav__item">
       <a href="../API/training/trainsizingclassifier/" class="md-nav__link">
         TrainSizingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/training/trainsizingforecaster/" class="md-nav__link">
+        TrainSizingRegressor
       </a>
     </li>
   
@@ -3218,7 +3288,8 @@ package files for all versions published on PyPI.</p>
 feature engineering, model training, plotting and much more. The easiest
 way to use everything ATOM has to offer is through one of the main classes:</p>
 <ul>
-<li><a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier">ATOMClassifier</a> for binary or multiclass classification tasks.</li>
+<li><a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier">ATOMClassifier</a> for classification tasks.</li>
+<li><a class="autorefs autorefs-internal" href="../API/ATOM/atomforecaster/#atomforecaster">ATOMForecaster</a> for forecasting tasks.</li>
 <li><a class="autorefs autorefs-internal" href="../API/ATOM/atomregressor/#atomregressor">ATOMRegressor</a> for regression tasks.</li>
 </ul>
 <p>Let's walk you through an example. Click on the SageMaker Studio Lab badge
@@ -3493,16 +3564,22 @@ and <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost">Ad
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../assets/javascripts/bundle.220ee61c.min.js"></script>
       
-        <script src="../stylesheets/extra.js"></script>
+        
+          <script src="../stylesheets/extra.js"></script>
+        
       
-        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
       
     
   </body>

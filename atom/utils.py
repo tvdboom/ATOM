@@ -61,7 +61,7 @@ __version__ = "6.0.0"
 INT_TYPES = (int, np.integer)
 FLOAT_TYPES = (float, np.floating)
 SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
-INDEX_TYPES = (pd.Index, md.Index, pd.MultiIndex, md.MultiIndex)
+INDEX_TYPES = (pd.Index, md.Index)
 SERIES_TYPES = (pd.Series, md.Series)
 DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
 PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
@@ -76,7 +76,7 @@ SERIES = Union[SERIES_TYPES]
 DATAFRAME = Union[DATAFRAME_TYPES]
 PANDAS = Union[PANDAS_TYPES]
 SEQUENCE = Union[SEQUENCE_TYPES]
-FEATURES = Union[Callable, iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
+FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
 TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
 # Attributes shared between atom and a pd.DataFrame
@@ -1341,7 +1341,7 @@ def merge(*args) -> DATAFRAME:
     Parameters
     ----------
     *args
-        Objects to concatenate.
+        Objects to concatenate. If None, use empty df.
 
     Returns
     -------
@@ -2347,7 +2347,10 @@ def fit_one(
             if "y" in params and y is not None:
                 args.append(y)
 
+            # Store attrs since sktime transformers reset during fit
+            _train_only, _cols = transformer._train_only, transformer._cols
             transformer.fit(*args, **fit_params)
+            transformer._train_only, transformer._cols = _train_only, _cols
 
 
 def transform_one(

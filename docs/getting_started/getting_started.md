@@ -64,7 +64,8 @@ ATOM contains a variety of classes and functions to perform data cleaning,
 feature engineering, model training, plotting and much more. The easiest
 way to use everything ATOM has to offer is through one of the main classes:
 
-* [ATOMClassifier][] for binary or multiclass classification tasks.
+* [ATOMClassifier][] for classification tasks.
+* [ATOMForecaster][] for forecasting tasks.
 * [ATOMRegressor][] for regression tasks.
 
 Let's walk you through an example. Click on the SageMaker Studio Lab badge

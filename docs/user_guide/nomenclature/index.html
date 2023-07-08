@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.2/user_guide/nomenclature/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/nomenclature/">
       
       
         <link rel="prev" href="../introduction/">
@@ -19,7 +19,7 @@
         <link rel="next" href="../data_management/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
   <title>Nomenclature - ATOM</title>
@@ -609,6 +609,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../time_series/" class="md-nav__link">
+        Time Series
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../models/" class="md-nav__link">
         Models
       </a>
@@ -729,6 +743,20 @@
     <li class="md-nav__item">
       <a href="../../API/ATOM/atomclassifier/" class="md-nav__link">
         ATOMClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/ATOM/atomforecaster/" class="md-nav__link">
+        ATOMForecaster
       </a>
     </li>
   
@@ -1143,6 +1171,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/training/directforecaster/" class="md-nav__link">
+        DirectRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/training/directregressor/" class="md-nav__link">
         DirectRegressor
       </a>
@@ -1171,6 +1213,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/training/successivehalvingforecaster/" class="md-nav__link">
+        SuccessiveHalvingRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/training/successivehalvingregressor/" class="md-nav__link">
         SuccessiveHalvingRegressor
       </a>
@@ -1187,6 +1243,20 @@
     <li class="md-nav__item">
       <a href="../../API/training/trainsizingclassifier/" class="md-nav__link">
         TrainSizingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/training/trainsizingforecaster/" class="md-nav__link">
+        TrainSizingRegressor
       </a>
     </li>
   
@@ -3156,6 +3226,10 @@ values are 1d-arrays, a two-dimensional <a href="https://docs.python.org/3/libra
 <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html">sps.csr_matrix</a>,
 and most commonly, a <a class="autorefs autorefs-internal" href="#dataframe">dataframe</a>. This is the standard input format
 for any dataset.</p>
+<p>Additionally, you can provide a callable whose output is any of the
+aforementioned types. This is useful when the dataset is very large and
+you are performing <a class="autorefs autorefs-internal" href="../accelerating/#parallel-execution">parallel operations</a>, since it
+can avoid broadcasting a large dataset from the driver to the workers.</p>
 </div>
 <div id="estimator"><strong>estimator</strong></div>
 <div style="margin: -1em 0 0 1.2em">
@@ -3227,7 +3301,7 @@ an estimator's fit method.</p>
 </div>
 <div id="task"><strong>task</strong></div>
 <div style="margin: -1em 0 0 1.2em">
-<p>One of the six supervised machine learning approaches that ATOM supports:</p>
+<p>One of the supervised machine learning approaches that ATOM supports:</p>
 <ul style="line-height:1.2em;margin-top:-10px">
 <li><a href="https://en.wikipedia.org/wiki/Binary_classification">binary classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Multiclass_classification">multiclass classification</a></li>
@@ -3235,6 +3309,7 @@ an estimator's fit method.</p>
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multiclass-multioutput-classification">multiclass-multioutput classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multioutput-regression">multioutput regression</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Time_series">forecasting</a></li>
 </ul>
 </div>
 <div id="transformer"><strong>transformer</strong></div>
@@ -3345,16 +3420,22 @@ data cleaning and feature engineering classes.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
-        <script src="../../stylesheets/extra.js"></script>
+        
+          <script src="../../stylesheets/extra.js"></script>
+        
       
-        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
       
     
   </body>

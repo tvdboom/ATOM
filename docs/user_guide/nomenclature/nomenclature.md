@@ -51,6 +51,11 @@ values are 1d-arrays, a two-dimensional [list](https://docs.python.org/3/library
 [sps.csr_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html),
 and most commonly, a [dataframe][]. This is the standard input format
 for any dataset.
+
+Additionally, you can provide a callable whose output is any of the
+aforementioned types. This is useful when the dataset is very large and
+you are performing [parallel operations][parallel-execution], since it
+can avoid broadcasting a large dataset from the driver to the workers.
 </div>
 
 <div id="estimator"><strong>estimator</strong></div>
@@ -135,7 +140,7 @@ an estimator's fit method.
 
 <div id="task"><strong>task</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-One of the six supervised machine learning approaches that ATOM supports:
+One of the supervised machine learning approaches that ATOM supports:
 <ul style="line-height:1.2em;margin-top:-10px">
 <li><a href="https://en.wikipedia.org/wiki/Binary_classification">binary classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Multiclass_classification">multiclass classification</a></li>
@@ -143,6 +148,7 @@ One of the six supervised machine learning approaches that ATOM supports:
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multiclass-multioutput-classification">multiclass-multioutput classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multioutput-regression">multioutput regression</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Time_series">forecasting</a></li>
 </ul>
 </div>
 

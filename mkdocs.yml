@@ -154,10 +154,13 @@ nav:
             - Vectorizer: API/nlp/vectorizer.md
         - Training:
             - DirectClassifier: API/training/directclassifier.md
+            - DirectRegressor: API/training/directforecaster.md
             - DirectRegressor: API/training/directregressor.md
             - SuccessiveHalvingClassifier: API/training/successivehalvingclassifier.md
+            - SuccessiveHalvingRegressor: API/training/successivehalvingforecaster.md
             - SuccessiveHalvingRegressor: API/training/successivehalvingregressor.md
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
+            - TrainSizingRegressor: API/training/trainsizingforecaster.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
             - AdaBoost: API/models/adab.md

@@ -700,7 +700,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         self,
         *arrays,
         y: TARGET = -1,
-        index: bool | INT | str | SEQUENCE = False,
+        index: bool | INT | str | SEQUENCE = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,

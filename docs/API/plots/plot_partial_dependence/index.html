@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.2/API/plots/plot_partial_dependence/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/plot_partial_dependence/">
       
       
         <link rel="prev" href="../plot_parshap/">
@@ -19,7 +19,7 @@
         <link rel="next" href="../plot_pca/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
   <title>plot_partial_dependence - ATOM</title>
@@ -597,6 +597,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../user_guide/time_series/" class="md-nav__link">
+        Time Series
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../user_guide/models/" class="md-nav__link">
         Models
       </a>
@@ -719,6 +733,20 @@
     <li class="md-nav__item">
       <a href="../../ATOM/atomclassifier/" class="md-nav__link">
         ATOMClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomforecaster/" class="md-nav__link">
+        ATOMForecaster
       </a>
     </li>
   
@@ -1133,6 +1161,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../training/directforecaster/" class="md-nav__link">
+        DirectRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../training/directregressor/" class="md-nav__link">
         DirectRegressor
       </a>
@@ -1161,6 +1203,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../training/successivehalvingforecaster/" class="md-nav__link">
+        SuccessiveHalvingRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../training/successivehalvingregressor/" class="md-nav__link">
         SuccessiveHalvingRegressor
       </a>
@@ -1177,6 +1233,20 @@
     <li class="md-nav__item">
       <a href="../../training/trainsizingclassifier/" class="md-nav__link">
         TrainSizingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/trainsizingforecaster/" class="md-nav__link">
+        TrainSizingRegressor
       </a>
     </li>
   
@@ -3162,7 +3232,7 @@
 
 <h1 id="plot_partial_dependence">plot_partial_dependence</h1>
 <hr />
-<p><a id='plot_partial_dependence'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_partial_dependence</strong>(models=None, columns=None, kind="average", pair=None, target=1, title=None, legend="lower right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5557>[source]</a></span></div>Plot the partial dependence of features.</p>
+<p><a id='plot_partial_dependence'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_partial_dependence</strong>(models=None, columns=None, kind="average", pair=None, target=1, title=None, legend="lower right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5561>[source]</a></span></div>Plot the partial dependence of features.</p>
 <p>The partial dependence of a feature (or a set of features)
 corresponds to the response of the model for each possible
 value of the feature. The plot can take two forms:</p>
@@ -3355,16 +3425,22 @@ Plot object. Only returned if <code>display=None</code>.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
-        <script src="../../../stylesheets/extra.js"></script>
+        
+          <script src="../../../stylesheets/extra.js"></script>
+        
       
-        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
       
     
   </body>

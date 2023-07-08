@@ -17,12 +17,15 @@ There are three approaches to run the training.
 
 * Direct training:
     - [DirectClassifier][]
+    - [DirectForecaster][]
     - [DirectRegressor][]
 * Training via [successive halving][]:
     - [SuccessiveHalvingClassifier][]
+    - [SuccessiveHalvingForecaster][]
     - [SuccessiveHalvingRegressor][]
 * Training via [train sizing][]:
     - [TrainSizingClassifier][]
+    - [TrainSizingForecaster][]
     - [TrainSizingRegressor][]
 
 The direct fashion repeats the aforementioned steps only once, while the
