@@ -9,7 +9,7 @@ Description: Module containing the BaseTransformer class.
 
 from __future__ import annotations
 
-import multiprocessing
+from multiprocessing import cpu_count
 import os
 import random
 import sys
@@ -88,8 +88,7 @@ class BaseTransformer:
     @n_jobs.setter
     def n_jobs(self, value: INT):
         # Check number of cores for multiprocessing
-        n_cores = multiprocessing.cpu_count()
-        if value > n_cores:
+        if value > (n_cores := cpu_count()):
             value = n_cores
         else:
             value = n_cores + 1 + value if value < 0 else value
@@ -423,7 +422,7 @@ class BaseTransformer:
         # Prepare target column
         if isinstance(y, (dict, *SEQUENCE_TYPES, *DATAFRAME_TYPES)):
             if isinstance(y, dict):
-                if n_cols(y := to_df(y, index=getattr(X, "index", None))) == 1:
+                if n_cols(y := to_df(deepcopy(y), index=getattr(X, "index", None))) == 1:
                     y = y.iloc[:, 0]  # If y is one-dimensional, get series
 
             elif isinstance(y, (*SEQUENCE_TYPES, *DATAFRAME_TYPES)):
@@ -446,7 +445,7 @@ class BaseTransformer:
                         ) from None
 
                 y = to_pandas(
-                    data=y,
+                    data=deepcopy(y),
                     index=getattr(X, "index", None),
                     columns=[f"y{i}" for i in range(n_cols(y))],
                 )
@@ -470,10 +469,6 @@ class BaseTransformer:
                 raise ValueError("X can't be None when y is an int.")
 
             X, y = X.drop(X.columns[y], axis=1), X[X.columns[y]]
-
-        # For forecasting, when first argument is y, X becomes empty df
-        if X is not None and X.empty:
-            X = None
 
         return X, y
 
@@ -648,7 +643,7 @@ class BaseTransformer:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
         def _no_data_sets(
-            X: DATAFRAME | None,
+            X: DATAFRAME,
             y: PANDAS,
         ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
             """Generate data sets from one dataset.
@@ -659,9 +654,8 @@ class BaseTransformer:
 
             Parameters
             ----------
-            X: dataframe or None
-                Feature set with shape=(n_samples, n_features). Can
-                only be None for forecasting tasks.
+            X: dataframe
+                Feature set with shape=(n_samples, n_features).
 
             y: series or dataframe
                 Target column(s) corresponding to X.
@@ -672,7 +666,7 @@ class BaseTransformer:
                 Data, indices and holdout.
 
             """
-            data = to_df(y) if X is None else merge(X, y)
+            data = merge(X, y)
 
             # If the index is a sequence, assign it before shuffling
             if isinstance(self._config.index, SEQUENCE_TYPES):
@@ -687,8 +681,8 @@ class BaseTransformer:
             if use_n_rows:
                 if not 0 < self.n_rows <= len(data):
                     raise ValueError(
-                        "Invalid value for the n_rows parameter. Value "
-                        f"should lie between 0 and len(X), got {self.n_rows}."
+                        "Invalid value for the n_rows parameter. Value should "
+                        f"lie between 0 and len(X)={len(data)}, got {self.n_rows}."
                     )
                 data = _subsample(data)
 
@@ -849,7 +843,7 @@ class BaseTransformer:
         if len(arrays) == 0:
             if self.goal == "fc" and not isinstance(y, (INT, str)):
                 # arrays=() and y=y for forecasting
-                sets = _no_data_sets(*self._prepare_input(X=None, y=y))
+                sets = _no_data_sets(*self._prepare_input(y=y))
             elif self.branch._data is None:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "

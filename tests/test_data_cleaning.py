@@ -215,11 +215,7 @@ def test_cleaner_multilabel():
 
 def test_cleaner_multiclass_multioutput():
     """Assert that multiclass-multioutput targets are encoded."""
-    y = merge(
-        pd.Series(y10_str, name="a"),
-        pd.Series(y10, name="b"),
-        pd.Series(y10_str, name="c"),
-    )
+    y = pd.DataFrame({"a": y10_str, "b": y10, "c": y10_str})
     y_transformed = Cleaner().fit_transform(y=y)
     assert list(y_transformed.columns) == ["a", "b", "c"]
     assert all(v in [0, 1] for v in y_transformed.values.ravel())
@@ -232,16 +228,12 @@ def test_cleaner_inverse_transform():
     pd.testing.assert_series_equal(pd.Series(y10_str, name="target"), y)
 
 
-def test_cleaner_inverse_transform_multiclass_multilabel():
-    """Assert that the inverse_transform method works for multioutput."""
-    y = merge(
-        pd.Series(y10_label, name="a"),
-        pd.Series(y10, name="b"),
-        pd.Series(y10_label, name="c"),
-    )
+def test_cleaner_inverse_transform_multilabel():
+    """Assert that the inverse_transform method works for multilabel."""
+    y = pd.DataFrame({"a": y10_label, "b": y10, "c": y10_label})
     cleaner = Cleaner().fit(y=y)
-    y = cleaner.inverse_transform(y=cleaner.transform(y=y))
-    pd.testing.assert_frame_equal(pd.DataFrame(dict(a=y10_label, b=y10, c=y10_label)), y)
+    y_new = cleaner.inverse_transform(y=cleaner.transform(y=y))
+    pd.testing.assert_frame_equal(y_new, y)
 
 
 def test_cleaner_target_mapping_binary():

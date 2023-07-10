@@ -27,7 +27,7 @@ from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
 from unittest.mock import patch
-
+from contextlib import contextmanager
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -121,25 +121,15 @@ class NotFittedError(ValueError, AttributeError):
     """
 
 
-class Runner(Protocol):
-    """Protocol for all runners."""
-    def run(self, **params): ...
-
-
-class Model(Protocol):
-    """Protocol for all models."""
-    def est_class(self): ...
-    def get_estimator(self, **params): ...
-
-
 class Scorer(Protocol):
     """Protocol for all scorers."""
     def _score(self, method_caller, clf, X, y, sample_weight=None): ...
 
 
-class Estimator(Protocol):
-    """Protocol for all estimators."""
+class Transformer(Protocol):
+    """Protocol for all predictors."""
     def fit(self, **params): ...
+    def transform(self, **params): ...
 
 
 class Predictor(Protocol):
@@ -148,10 +138,20 @@ class Predictor(Protocol):
     def predict(self, **params): ...
 
 
-class Transformer(Protocol):
-    """Protocol for all predictors."""
+class Estimator(Protocol):
+    """Protocol for all estimators."""
     def fit(self, **params): ...
-    def transform(self, **params): ...
+
+
+class Model(Protocol):
+    """Protocol for all models."""
+    def est_class(self): ...
+    def get_estimator(self, **params): ...
+
+
+class Runner(Protocol):
+    """Protocol for all runners."""
+    def run(self, **params): ...
 
 
 @dataclass
@@ -1336,12 +1336,12 @@ def sign(obj: Callable) -> OrderedDict:
 def merge(*args) -> DATAFRAME:
     """Concatenate pandas objects column-wise.
 
-    Empty objects are ignored.
+    None and empty objects are ignored.
 
     Parameters
     ----------
     *args
-        Objects to concatenate. If None, use empty df.
+        Objects to concatenate.
 
     Returns
     -------
@@ -1349,10 +1349,10 @@ def merge(*args) -> DATAFRAME:
         Concatenated dataframe.
 
     """
-    if len(args := [elem for elem in args if not elem.empty]) == 1:
-        return args[0]
+    if len(args := [x for x in args if x is not None and not x.empty]) == 1:
+        return bk.DataFrame(args[0])
     else:
-        return bk.concat([*args], axis=1)
+        return bk.DataFrame(bk.concat([*args], axis=1))
 
 
 def get_cols(elem: PANDAS) -> list[SERIES]:
@@ -1551,6 +1551,27 @@ def check_scaling(X: PANDAS, pipeline: Any | None = None) -> bool:
         mean = df.mean(numeric_only=True).mean()
         std = df.std(numeric_only=True).mean()
         return has_scaler or (-0.05 < mean < 0.05 and 0.85 < std < 1.15)
+
+
+@contextmanager
+def keep_attrs(estimator: Estimator):
+    """Contextmanager to save an estimator's custom attributes.
+
+    ATOM's pipeline uses two custom attributes for its transformers:
+    _train_only, and _cols. Since some transformers reset their
+    attributes during fit (like those from sktime), we wrap the fit
+    method in a contextmanager that saves and restores the attrs.
+
+    """
+    try:
+        train_only = getattr(estimator, "_train_only", None)
+        cols = getattr(estimator, "_cols", None)
+        yield
+    finally:
+        if train_only is not None:
+            estimator._train_only = train_only
+        if cols is not None:
+            estimator._cols = cols
 
 
 def get_versions(models: ClassMap) -> dict:
@@ -2347,10 +2368,9 @@ def fit_one(
             if "y" in params and y is not None:
                 args.append(y)
 
-            # Store attrs since sktime transformers reset during fit
-            _train_only, _cols = transformer._train_only, transformer._cols
-            transformer.fit(*args, **fit_params)
-            transformer._train_only, transformer._cols = _train_only, _cols
+            # Keep custom attrs since some transformers reset during fit
+            with keep_attrs(transformer):
+                transformer.fit(*args, **fit_params)
 
 
 def transform_one(

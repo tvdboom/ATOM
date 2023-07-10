@@ -21,14 +21,14 @@ import pandas as pd
 import pytest
 from sklearn.naive_bayes import GaussianNB
 
-from atom import ATOMClassifier, ATOMRegressor
+from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier
 from atom.utils import merge
 
 from .conftest import (
     X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train, y10,
-    y_bin, y_bin_array, y_idx,
+    y_bin, y_bin_array, y_fc, y_idx,
 )
 
 
@@ -228,6 +228,12 @@ def test_get_est_class_from_default():
 
 # Test _prepare_input ============================================== >>
 
+def test_input_is_copied():
+    """Assert that the data is copied."""
+    X, y = BaseTransformer._prepare_input(X_bin, y_bin)
+    assert X is not X_bin and y is not y_bin
+
+
 def test_input_X_and_y_None():
     """Assert that an error is raised when both X and y are None."""
     with pytest.raises(ValueError, match=".*both None.*"):
@@ -379,6 +385,12 @@ def test_target_is_none():
     assert y is None
 
 
+def test_X_empty_df():
+    """Assert that X becomes an empty dataframe when provided but in y."""
+    X, y = BaseTransformer._prepare_input(y_fc, y=-1)
+    assert X.empty and isinstance(y, pd.Series)
+
+
 # Test _set_index ================================================== >>
 
 def test_index_is_true():
@@ -493,6 +505,13 @@ def test_stratify_invalid_column_str():
 
 # Test _get_data =================================================== >>
 
+
+def test_inout_is_y_without_arrays():
+    """Assert that input y through parameter works."""
+    atom = ATOMForecaster(y=y_fc, random_state=1)
+    assert atom.dataset.shape == (len(y_fc), 1)
+
+
 def test_empty_data_arrays():
     """Assert that an error is raised when no data is provided."""
     with pytest.raises(ValueError, match=".*data arrays are empty.*"):
@@ -513,6 +532,12 @@ def test_input_is_X():
     """Assert that input X works."""
     atom = ATOMRegressor(X_bin, random_state=1)
     assert atom.dataset.shape == X_bin.shape
+
+
+def test_input_is_y():
+    """Assert that input y works for forecasting tasks."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    assert atom.dataset.shape == (len(y_fc), 1)
 
 
 def test_input_is_X_with_parameter_y():
@@ -552,6 +577,13 @@ def test_n_rows_X_y_int():
     """Assert that n_rows>1 work for input X and X, y."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=200, random_state=1)
     assert len(atom.dataset) == 200
+
+
+def test_n_rows_forecasting():
+    """Assert that the rows are cut from the dataset's head when forecasting."""
+    atom = ATOMForecaster(y_fc, n_rows=142, random_state=1)
+    assert len(atom.dataset) == 142
+    assert atom.dataset.index[0] == y_fc.index[len(y_fc) - 142]
 
 
 def test_n_rows_too_large():

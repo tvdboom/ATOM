@@ -20,6 +20,7 @@ from sklearn.datasets import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+from sktime.datasets import load_airline
 
 from atom.utils import (
     DATAFRAME, FEATURES, TARGET, merge, n_cols, to_df, to_pandas,
@@ -279,3 +280,6 @@ bin_train, bin_test = get_train_test(X_bin, y_bin)
 class_train, class_test = get_train_test(X_class, y_class)
 reg_train, reg_test = get_train_test(X_reg, y_reg)
 label_train, label_test = get_train_test(X_label, y_label)
+
+# Time series datasets
+y_fc = load_airline()

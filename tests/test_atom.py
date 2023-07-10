@@ -24,8 +24,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
     LabelEncoder, MultiLabelBinarizer, OneHotEncoder, StandardScaler,
 )
+from sktime.transformations.series.summarize import WindowSummarizer
 
-from atom import ATOMClassifier, ATOMRegressor
+from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.data_cleaning import Cleaner, Pruner
 from atom.training import DirectClassifier
 from atom.utils import check_scaling
@@ -33,7 +34,7 @@ from atom.utils import check_scaling
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
     X_class, X_label, X_reg, X_sparse, X_text, merge, y10, y10_label,
-    y10_label2, y10_sn, y10_str, y_bin, y_class, y_label, y_multiclass,
+    y10_label2, y10_sn, y10_str, y_bin, y_class, y_fc, y_label, y_multiclass,
     y_multireg, y_reg,
 )
 
@@ -556,12 +557,12 @@ def test_only_y_transformation():
     assert check_scaling(atom.y)
 
 
-def test_X_and_y_transformation():
-    """Assert that only the features are transformed when y is also provided."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.scale(columns=[-2, -1])
-    assert check_scaling(atom.X.iloc[:, -1])
-    assert not check_scaling(atom.y)
+def test_only_y_transformation_return_series():
+    """Assert that the output is correctly converted to a dataframe."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.add(WindowSummarizer(), columns=-1)
+    assert isinstance(atom.y, pd.Series)
+    assert isinstance(atom.dataset, pd.DataFrame)
 
 
 def test_only_y_transformation_multioutput():
@@ -570,6 +571,14 @@ def test_only_y_transformation_multioutput():
     atom.scale(columns=[-3, -1])
     assert check_scaling(atom.y.iloc[:, [0, 2]])
     assert list(atom.y.columns) == ["a", "b", "c"]
+
+
+def test_X_and_y_transformation():
+    """Assert that only the features are transformed when y is also provided."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.scale(columns=[-2, -1])
+    assert check_scaling(atom.X.iloc[:, -1])
+    assert not check_scaling(atom.y)
 
 
 def test_returned_column_already_exists():
