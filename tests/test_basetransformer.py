@@ -25,10 +25,10 @@ from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier
 from atom.utils import merge
-
+from sklearnex.svm import SVC
 from .conftest import (
-    X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train, y10,
-    y_bin, y_bin_array, y_fc, y_idx,
+    X10, X_bin, X_bin_array, X_idx, X_label, X_sparse, X_text, bin_test,
+    bin_train, y10, y_bin, y_bin_array, y_fc, y_idx, y_label,
 )
 
 
@@ -209,13 +209,20 @@ def test_device_id_invalid():
         BaseTransformer(device="gpu:2,3")
 
 
+# Test _inherit ==================================================== >>
+
+def test_inherit():
+    """Assert that the inherit method passes the parameters correctly."""
+    base = BaseTransformer(random_state=2)
+    svc = base._inherit(SVC())
+    assert svc.get_params()["random_state"] == 2
+
+
 # Test _get_est_class ============================================== >>
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
-    from sklearnex.svm import SVC
-
     base = BaseTransformer(device="cpu", engine="sklearnex")
     assert base._get_est_class("SVC", "svm") == SVC
 
@@ -505,7 +512,6 @@ def test_stratify_invalid_column_str():
 
 # Test _get_data =================================================== >>
 
-
 def test_inout_is_y_without_arrays():
     """Assert that input y through parameter works."""
     atom = ATOMForecaster(y=y_fc, random_state=1)
@@ -623,6 +629,12 @@ def test_test_size_int():
     atom = ATOMClassifier(X_bin, y_bin, test_size=100, random_state=1)
     assert len(atom.test) == 100
     assert len(atom.train) == len(X_bin) - 100
+
+
+def test_error_message_impossible_stratification():
+    """Assert that the correct error is shown when stratification fails."""
+    with pytest.raises(ValueError, match=".*stratify=False.*"):
+        ATOMClassifier(X_label, y=y_label, stratify=True, random_state=1)
 
 
 def test_input_is_X_y():

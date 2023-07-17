@@ -19,7 +19,7 @@ from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
     Scaler,
 )
-from atom.utils import NotFittedError, check_scaling, merge, to_df
+from atom.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
@@ -753,7 +753,7 @@ def test_drop_outlier_in_target():
     assert len(y) + 2 == len(y10)
 
 
-@pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan"])
+@pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan", "hdbscan"])
 def test_pruner_strategies(strategy):
     """Assert that all estimator requiring strategies work."""
     pruner = Pruner(strategy=strategy)

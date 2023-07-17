@@ -9,7 +9,6 @@ Description: Module containing the BaseTransformer class.
 
 from __future__ import annotations
 
-from multiprocessing import cpu_count
 import os
 import random
 import sys
@@ -19,6 +18,7 @@ from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
+from multiprocessing import cpu_count
 from typing import Callable
 
 import dagshub
@@ -33,8 +33,9 @@ from sklearn.model_selection import train_test_split
 
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk, composed, crash,
-    get_cols, lst, merge, method_to_log, n_cols, pd, to_df, to_pandas,
+    PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Estimator,
+    Predictor, bk, composed, crash, get_cols, lst, merge, method_to_log,
+    n_cols, pd, sign, to_df, to_pandas,
 )
 
 
@@ -214,6 +215,7 @@ class BaseTransformer:
             self._warnings = value
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
+        warnings.filterwarnings("ignore", category=UserWarning, module=".*sktime.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
         warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*shap.*")
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
@@ -325,6 +327,30 @@ class BaseTransformer:
                 )
 
     # Methods ====================================================== >>
+
+    def _inherit(self, est: Estimator) -> Estimator:
+        """Inherit n_jobs and/or random_state from parent.
+
+        Utility method to set the n_jobs and random_state parameters
+        of an estimator (if available) equal to that of this instance.
+
+        Parameters
+        ----------
+        est: Estimator
+            Object in which to change the parameters.
+
+        Returns
+        -------
+        Estimator
+            Same object with changed parameters.
+
+        """
+        signature = sign(est.__init__)
+        for p in ("n_jobs", "random_state"):
+            if p in signature and getattr(est, p, "<!>") == signature[p]._default:
+                setattr(est, p, getattr(self, p))
+
+        return est
 
     def _get_est_class(self, name: str, module: str) -> Predictor:
         """Import a class from a module.
@@ -704,41 +730,56 @@ class BaseTransformer:
             else:
                 test_size = self.test_size
 
-            # Define holdout set size
-            if self.holdout_size:
-                if self.holdout_size < 1:
-                    holdout_size = max(1, int(self.holdout_size * len(data)))
-                else:
-                    holdout_size = self.holdout_size
+            try:
+                # Define holdout set size
+                if self.holdout_size:
+                    if self.holdout_size < 1:
+                        holdout_size = max(1, int(self.holdout_size * len(data)))
+                    else:
+                        holdout_size = self.holdout_size
 
-                if not 0 <= holdout_size <= len(data) - test_size:
-                    raise ValueError(
-                        "Invalid value for the holdout_size parameter. Value should "
-                        f"lie between 0 and len(X) - len(test), got {self.holdout_size}."
+                    if not 0 <= holdout_size <= len(data) - test_size:
+                        raise ValueError(
+                            "Invalid value for the holdout_size parameter. "
+                            "Value should lie between 0 and len(X) - len(test), "
+                            f"got {self.holdout_size}."
+                        )
+
+                    data, holdout = train_test_split(
+                        data,
+                        test_size=holdout_size,
+                        random_state=self.random_state,
+                        shuffle=self._config.shuffle,
+                        stratify=self._get_stratify_columns(data, y),
                     )
+                    holdout = self._set_index(holdout, y)
+                else:
+                    holdout = None
 
-                data, holdout = train_test_split(
+                train, test = train_test_split(
                     data,
-                    test_size=holdout_size,
+                    test_size=test_size,
                     random_state=self.random_state,
                     shuffle=self._config.shuffle,
                     stratify=self._get_stratify_columns(data, y),
                 )
-                holdout = self._set_index(holdout, y)
-            else:
-                holdout = None
 
-            train, test = train_test_split(
-                data,
-                test_size=test_size,
-                random_state=self.random_state,
-                shuffle=self._config.shuffle,
-                stratify=self._get_stratify_columns(data, y),
-            )
-            data = self._set_index(bk.concat([train, test]), y)
+                data = self._set_index(bk.concat([train, test]), y)
 
-            # [number of target columns, train indices, test indices]
-            idx = [len(get_cols(y)), data.index[:-len(test)], data.index[-len(test):]]
+                # [number of target columns, train indices, test indices]
+                idx = [len(get_cols(y)), data.index[:-len(test)], data.index[-len(test):]]
+
+            except ValueError as ex:
+                if "least populated class" in str(ex) and isinstance(y, PANDAS_TYPES):
+                    # Clarify common error for wirth stratification for multioutput tasks
+                    raise ValueError(
+                        "Stratification for multioutput tasks is applied over all target "
+                        "columns, which results in a least populated class that has only "
+                        "one member. Either select only one column to stratify over, or "
+                        "set the parameter stratify=False."
+                    )
+                else:
+                    raise ex
 
             return data, idx, holdout
 

@@ -15,6 +15,7 @@ import tempfile
 import warnings
 from collections import OrderedDict, deque
 from collections.abc import MutableMapping
+from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import datetime as dt
@@ -27,7 +28,7 @@ from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
 from unittest.mock import patch
-from contextlib import contextmanager
+
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -62,6 +63,16 @@ INT_TYPES = (int, np.integer)
 FLOAT_TYPES = (float, np.floating)
 SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
 INDEX_TYPES = (pd.Index, md.Index)
+TS_INDEX_TYPES = (
+    pd.RangeIndex,
+    md.RangeIndex,
+    pd.PeriodIndex,
+    md.PeriodIndex,
+    pd.DatetimeIndex,
+    md.DatetimeIndex,
+    pd.TimedeltaIndex,
+    md.TimedeltaIndex,
+)
 SERIES_TYPES = (pd.Series, md.Series)
 DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
 PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
@@ -2013,7 +2024,7 @@ def infer_task(y: PANDAS, goal: str = "class") -> str:
         else:
             return "multioutput regression"
     elif goal == "fc":
-        return "forecasting"
+        return "forecast"
 
     if y.ndim > 1:
         if all(y[col].nunique() == 2 for col in y):
@@ -2346,18 +2357,18 @@ def fit_one(
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
-            args = []
+            kwargs = {}
             inc = getattr(transformer, "_cols", getattr(X, "columns", []))
             if "X" in (params := sign(transformer.fit)):
                 if X is not None and (cols := [c for c in inc if c in X]):
-                    args.append(X[cols])
+                    kwargs["X"] = X[cols]
 
                 # X is required but has not been provided
-                if len(args) == 0:
+                if len(kwargs) == 0:
                     if y is not None and hasattr(transformer, "_cols"):
-                        args.append(to_df(y)[inc])
+                        kwargs["X"] = to_df(y)[inc]
                     elif params["X"].default != Parameter.empty:
-                        args.append(params["X"].default)  # Fill X with default
+                        kwargs["X"] = params["X"].default  # Fill X with default
                     else:
                         raise ValueError(
                             "Exception while trying to fit transformer "
@@ -2366,11 +2377,11 @@ def fit_one(
                         )
 
             if "y" in params and y is not None:
-                args.append(y)
+                kwargs["y"] = y
 
             # Keep custom attrs since some transformers reset during fit
             with keep_attrs(transformer):
-                transformer.fit(*args, **fit_params)
+                transformer.fit(**kwargs, **fit_params)
 
 
 def transform_one(
@@ -2457,29 +2468,38 @@ def transform_one(
     )
     y = to_pandas(y, index=getattr(X, "index", None))
 
-    args = []
+    kwargs = {}
     inc = getattr(transformer, "_cols", getattr(X, "columns", []))
     if "X" in (params := sign(getattr(transformer, method))):
         if X is not None and (cols := [c for c in inc if c in X]):
-            args.append(X[cols])
+            kwargs["X"] = X[cols]
 
         # X is required but has not been provided
-        if len(args) == 0:
+        if len(kwargs) == 0:
             if y is not None and hasattr(transformer, "_cols"):
-                args.append(to_df(y)[inc])
+                kwargs["X"] = to_df(y)[inc]
             elif params["X"].default != Parameter.empty:
-                args.append(params["X"].default)  # Fill X with default
+                kwargs["X"] = params["X"].default  # Fill X with default
             else:
                 return X, y  # If X is needed, skip the transformer
 
     if "y" in params:
         if y is not None:
-            args.append(y)
+            kwargs["y"] = y
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
+    try:
+        out = getattr(transformer, method)(**kwargs)
+    except TypeError as ex:
+        try:
+            # Duck type using args instead of kwargs
+            out = getattr(transformer, method)(*kwargs.values())
+        except TypeError:
+            raise ex
+
     # Transform can return X, y or both
-    if isinstance(out := getattr(transformer, method)(*args), tuple):
+    if isinstance(out, tuple):
         X_new = prepare_df(out[0], X)
         y_new = to_pandas(
             data=out[1],
@@ -2685,7 +2705,7 @@ def score(f: Callable) -> Callable:
 # Decorators ======================================================= >>
 
 def has_task(task: str | list[str], inverse: bool = False) -> Callable:
-    """Check that the instance is from specific task.
+    """Check that the instance is from a specific task.
 
     Parameters
     ----------

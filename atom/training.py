@@ -275,7 +275,6 @@ class DirectClassifier(Direct):
         - "f1" for binary classification
         - "f1_weighted" for multiclass(-multioutput) classification
         - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -295,9 +294,9 @@ class DirectClassifier(Direct):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -516,13 +515,8 @@ class DirectForecaster(Direct):
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
-
-        - "f1" for binary classification
-        - "f1_weighted" for multiclass(-multioutput) classification
-        - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
+        -> score`, a scorer object or a sequence of these. If None, the
+        default metric `mean_absolute_percentage_error` is selected.
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -542,9 +536,9 @@ class DirectForecaster(Direct):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -637,9 +631,9 @@ class DirectForecaster(Direct):
 
     See Also
     --------
-    atom.api:ATOMRegressor
-    atom.training:SuccessiveHalvingRegressor
-    atom.training:TrainSizingRegressor
+    atom.api:ATOMForecaster
+    atom.training:SuccessiveHalvingForecaster
+    atom.training:TrainSizingForecaster
 
     Examples
     --------
@@ -750,13 +744,8 @@ class DirectRegressor(Direct):
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
-
-        - "f1" for binary classification
-        - "f1_weighted" for multiclass(-multioutput) classification
-        - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
+        -> score`, a scorer object or a sequence of these. If None, the
+        default metric `r2` is selected.
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -776,9 +765,9 @@ class DirectRegressor(Direct):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -990,7 +979,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         - "f1" for binary classification
         - "f1_weighted" for multiclass(-multioutput) classification
         - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -1013,9 +1001,9 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -1249,13 +1237,8 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
-
-        - "f1" for binary classification
-        - "f1_weighted" for multiclass(-multioutput) classification
-        - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
+        -> score`, a scorer object or a sequence of these. If None, the
+        default metric `mean_absolute_percentage_error` is selected.
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -1278,9 +1261,9 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -1373,9 +1356,9 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     See Also
     --------
-    atom.api:ATOMRegressor
-    atom.training:DirectRegressor
-    atom.training:TrainSizingRegressor
+    atom.api:ATOMForecaster
+    atom.training:DirectForecaster
+    atom.training:TrainSizingForecaster
 
     Examples
     --------
@@ -1515,13 +1498,8 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
-
-        - "f1" for binary classification
-        - "f1_weighted" for multiclass(-multioutput) classification
-        - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
+        -> score`, a scorer object or a sequence of these. If None, the
+        default metric `r2` is selected.
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -1544,9 +1522,9 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -1787,7 +1765,6 @@ class TrainSizingClassifier(TrainSizing):
         - "f1" for binary classification
         - "f1_weighted" for multiclass(-multioutput) classification
         - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
@@ -1815,9 +1792,9 @@ class TrainSizingClassifier(TrainSizing):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -2107,13 +2084,8 @@ class TrainSizingForecaster(TrainSizing):
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
-
-        - "f1" for binary classification
-        - "f1_weighted" for multiclass(-multioutput) classification
-        - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
+        -> score`, a scorer object or a sequence of these. If None, the
+        default metric `mean_absolute_percentage_error` is selected.
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
@@ -2141,9 +2113,9 @@ class TrainSizingForecaster(TrainSizing):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
@@ -2236,9 +2208,9 @@ class TrainSizingForecaster(TrainSizing):
 
     See Also
     --------
-    atom.api:ATOMRegressor
-    atom.training:DirectRegressor
-    atom.training:SuccessiveHalvingRegressor
+    atom.api:ATOMForecaster
+    atom.training:DirectForecaster
+    atom.training:SuccessiveHalvingForecaster
 
     Examples
     --------
@@ -2433,13 +2405,8 @@ class TrainSizingRegressor(TrainSizing):
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
-
-        - "f1" for binary classification
-        - "f1_weighted" for multiclass(-multioutput) classification
-        - "average_precision" for multilabel classification
-        - "r2" for regression or multioutput regression
+        -> score`, a scorer object or a sequence of these. If None, the
+        default metric `r2` is selected.
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
@@ -2467,9 +2434,9 @@ class TrainSizingRegressor(TrainSizing):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **cv: int, dict or sequence, default=1**<br>
-          Number of folds for the cross-validation. If 1, the training
-          set is randomly split in a subtrain and validation set.
+        - **cv: int, cv-generator, dict or sequence, default=1**<br>
+          Cross-validation object or number of folds. If 1, the
+          data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the

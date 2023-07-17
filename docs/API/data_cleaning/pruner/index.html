@@ -1735,6 +1735,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/nf/" class="md-nav__link">
+        NaiveForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/ols/" class="md-nav__link">
         OrdinaryLeastSquares
       </a>
@@ -3246,7 +3260,7 @@
 
 <h1 id="pruner">Pruner</h1>
 <hr />
-<p><a id='Pruner'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Pruner</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2687>[source]</a></span></div>Prune outliers from the data.</p>
+<p><a id='Pruner'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Pruner</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2685>[source]</a></span></div>Prune outliers from the data.</p>
 <p>Replace or remove outliers. The definition of outlier depends
 on the selected strategy and can greatly differ from one another.
 Ignores categorical columns.</p>
@@ -3268,6 +3282,7 @@ strategies are dropped. Choose from:</p>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">lof</a>": Local Outlier Factor.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html">svm</a>": One-class SVM.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">dbscan</a>": Density-Based Spatial Clustering.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.HDBSCAN.html">hdbscan</a>": Hierarchical Density-Based Spatial Clustering.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">optics</a>": DBSCAN-like clustering approach.</li>
 </ul>
 <p></div><a id='pruner-method'></a><strong>method: int, float or str, default="drop"</strong><br><div markdown class='param'>
@@ -3524,7 +3539,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pruner-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L908>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='pruner-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L949>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3536,7 +3551,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pruner-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L943>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='pruner-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L984>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3556,7 +3571,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pruner-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2911>[source]</a></span></div>Apply the outlier strategy on the data.</p>
+<p><a id='pruner-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2910>[source]</a></span></div>Apply the outlier strategy on the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

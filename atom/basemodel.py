@@ -37,11 +37,13 @@ from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
-    KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
+    ShuffleSplit, StratifiedShuffleSplit, TimeSeriesSplit,
 )
 from sklearn.model_selection._validation import cross_validate
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
+from sktime.forecasting.model_selection import SingleWindowSplitter
+from sktime.proba.normal import Normal
 from starlette.requests import Request
 
 from atom.basetracker import BaseTracker
@@ -57,7 +59,8 @@ from atom.utils import (
     composed, crash, custom_transform, estimator_has_attr, export_pipeline,
     fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
     has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
-    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, variable_return,
+    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
+    variable_return,
 )
 
 
@@ -396,8 +399,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
 
-        Add the parent's `n_jobs` and `random_state` parameters to
-        the instance if available in the constructor.
+        Use the multioutput meta-estimator if the estimator has
+        no native support for multioutput.
 
         Parameters
         ----------
@@ -410,24 +413,17 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Estimator instance.
 
         """
-        for param in ("n_jobs", "random_state"):
-            if param in sign(self._est_class):
-                params[param] = params.pop(param, getattr(self, param))
+        estimator = self._inherit(self._est_class(**params))
 
         if is_multioutput(self.task) and not self.native_multioutput and self.multioutput:
             if callable(self.multioutput):
-                kwargs = {}
-                for param in ("n_jobs", "random_state"):
-                    if param in sign(self.multioutput):
-                        kwargs[param] = getattr(self, param)
-
-                return self.multioutput(self._est_class(**params), **kwargs)
+                estimator = self._inherit(self.multioutput(estimator))
             else:
                 # Assign estimator to first parameter of meta-estimator
                 key = list(sign(self.multioutput.__init__))[0]
-                return self.multioutput.set_params(**{key: self._est_class(**params)})
-        else:
-            return self._est_class(**params)
+                estimator = self.multioutput.set_params(**{key: estimator})
+
+        return estimator
 
     def _fit_estimator(
         self,
@@ -524,7 +520,15 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                         raise TrialPruned()
 
         else:
-            estimator.fit(*data, **est_params_fit)
+            # Add forecasting horizon to sktime estimators
+            if "fh" in sign(estimator.fit):
+                if estimator.get_tag("requires-fh-in-fit"):
+                    est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
+
+                estimator.fit(data[1], X=data[0], **est_params_fit)
+
+            else:
+                estimator.fit(*data, **est_params_fit)
 
         return estimator
 
@@ -572,7 +576,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         dataset: str,
         target: str | None = None,
         attr: str = "predict",
-    ) -> tuple[SERIES | DATAFRAME, SERIES | DATAFRAME]:
+    ) -> tuple[PANDAS, PANDAS]:
         """Get the true and predicted values for a column.
 
         Predictions are made using the `decision_function` or
@@ -627,7 +631,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         scorer: Scorer,
         estimator: Predictor,
         X: DATAFRAME,
-        y: SERIES | DATAFRAME,
+        y: PANDAS,
         **kwargs,
     ) -> FLOAT:
         """Calculate the metric score from an estimator.
@@ -655,7 +659,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Calculated score.
 
         """
-        if self.task.startswith("multiclass-multioutput"):
+        if self.goal == "fc":
+            # Sktime uses signature estimator.predict(fh, X)
+            y_pred = to_series(estimator.predict(y.index, X), index=y.index)
+            return self._score_from_pred(scorer, y, y_pred, **kwargs)
+        elif self.task.startswith("multiclass-multioutput"):
             # Calculate predictions with shape=(n_samples, n_targets)
             y_pred = to_df(estimator.predict(X), index=y.index, columns=y.columns)
             return self._score_from_pred(scorer, y, y_pred, **kwargs)
@@ -665,8 +673,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def _score_from_pred(
         self,
         scorer: Scorer,
-        y_true: SERIES | DATAFRAME,
-        y_pred: SERIES | DATAFRAME,
+        y_true: PANDAS,
+        y_pred: PANDAS,
         **kwargs,
     ) -> FLOAT:
         """Calculate the metric score from predicted values.
@@ -695,13 +703,15 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Calculated score.
 
         """
-        score = lambda s, x, y: s._sign * s._score_func(x, y, **s._kwargs, **kwargs)
+        func = lambda x, y: scorer._score_func(x, y, **scorer._kwargs, **kwargs)
 
         if self.task.startswith("multiclass-multioutput"):
             # Get mean of scores over target columns
-            return np.mean([score(scorer, y_true[c], y_pred[c]) for c in y_pred], axis=0)
+            return np.mean(
+                [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred], axis=0
+            )
         else:
-            return score(scorer, y_true, y_pred)
+            return scorer._sign * func(y_true, y_pred)
 
     @lru_cache
     def _get_score(
@@ -909,45 +919,41 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 # Follow same stratification strategy as atom
                 cols = self._get_stratify_columns(self.og.train, self.og.y_train)
 
-                if self._ht.get("cv", 1) == 1:
-                    if cols is None:
-                        split = ShuffleSplit
-                    else:
-                        cols = self.og.y_train
-                        split = StratifiedShuffleSplit
+                if isinstance(cv := self._ht["cv"], INT_TYPES):
+                    if self.goal == "fc":
+                        if cv == 1:
+                            splitter = SingleWindowSplitter(range(1, len(self.og.test)))
+                        else:
+                            splitter = TimeSeriesSplit(n_splits=cv)
+                    elif isinstance(self._ht["cv"], INT):
+                        # We use ShuffleSplit instead of Kfold because it
+                        # works with n_splits=1 and multioutput stratification
+                        if cols is None:
+                            splitter = ShuffleSplit
+                        else:
+                            splitter = StratifiedShuffleSplit
 
-                    # Get the ShuffleSplit cross-validator object
-                    fold = split(
-                        n_splits=1,
-                        test_size=self._config.test_size,
-                        random_state=trial.number + (self.random_state or 0),
-                    ).split(self.og.X_train, cols)
+                        splitter = splitter(
+                            n_splits=self._ht["cv"],
+                            test_size=self._config.test_size,
+                            random_state=trial.number + (self.random_state or 0),
+                        )
+                else:  # Custom cross-validation generator
+                    splitter = self._inherit(cv)
 
-                    # Fit model just on the one fold
-                    estimator, score = fit_model(estimator, *next(fold))
+                args = [self.og.X_train]
+                if "y" in sign(splitter.split) and cols is not None:
+                    args.append(cols)
 
-                else:  # Use cross validation to get the score
-                    if cols is None:
-                        k_fold = KFold
-                    else:
-                        cols = self.og.y_train
-                        k_fold = StratifiedKFold
+                # Parallel loop over fit_model
+                results = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                    delayed(fit_model)(estimator, i, j) for i, j in splitter.split(*args)
+                )
 
-                    # Get the K-fold cross-validator object
-                    fold = k_fold(
-                        n_splits=self._ht["cv"],
-                        shuffle=True,
-                        random_state=trial.number + (self.random_state or 0),
-                    ).split(self.og.X_train, cols)
+                estimator = results[0][0]
+                score = list(np.mean(scores := [r[1] for r in results], axis=0))
 
-                    # Parallel loop over fit_model
-                    results = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
-                        delayed(fit_model)(estimator, i, j) for i, j in fold
-                    )
-
-                    estimator = results[0][0]
-                    score = list(np.mean(scores := [r[1] for r in results], axis=0))
-
+                if len(results) > 1:
                     # Report cv scores for termination judgement
                     report_cross_validation_scores(trial, scores)
             else:
@@ -1557,6 +1563,31 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     # Prediction properties ======================================== >>
 
+    def _get_predict(self, X: DATAFRAME, method: str = "predict") -> PANDAS:
+        """Get the data from a prediction method of an estimator.
+
+        This utility is needed because the signature for the predict
+        method of sklearn estimators is different from sktime.
+
+        Parameters
+        ----------
+        X: dataframe
+            Data set on which to predict.
+
+        method: str, default="predict"
+            Method to use for predictions.
+
+        Returns
+        -------
+        series or dataframe
+            Predicted values.
+
+        """
+        if "fh" in sign(getattr(self.estimator, method)):
+            return self.estimator.predict(fh=X.index, X=X)
+        else:
+            return getattr(self.estimator, method)(X)
+
     def _assign_prediction_indices(self, index: INDEX) -> INDEX:
         """Assign index names for the prediction methods.
 
@@ -1659,7 +1690,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         """
         return to_pandas(
-            data=self.estimator.predict(self.X_train),
+            data=self._get_predict(self.X_train),
             index=self.X_train.index,
             name=self.target,
             columns=self._assign_prediction_columns(),
@@ -1676,7 +1707,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         """
         return to_pandas(
-            data=self.estimator.predict(self.X_test),
+            data=self._get_predict(self.X_test),
             index=self.X_test.index,
             name=self.target,
             columns=self._assign_prediction_columns(),
@@ -1694,7 +1725,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         if self.holdout is not None:
             return to_pandas(
-                data=self.estimator.predict(self.X_holdout),
+                data=self._get_predict(self.X_holdout),
                 index=self.X_holdout.index,
                 name=self.target,
                 columns=self._assign_prediction_columns(),
@@ -1713,24 +1744,26 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         data = np.array(self.estimator.predict_log_proba(self.X_train))
         if data.ndim < 3:
-            return bk.DataFrame(
+            data = bk.DataFrame(
                 data=data,
                 index=self.X_train.index,
                 columns=self._assign_prediction_columns(),
             )
         elif self.task.startswith("multilabel"):
             # Convert to (n_samples, n_targets)
-            return bk.DataFrame(
+            data = bk.DataFrame(
                 data=np.array([d[:, 1] for d in data]).T,
                 index=self.X_train.index,
                 columns=self._assign_prediction_columns(),
             )
         else:
-            return bk.DataFrame(
+            data = bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
                 index=self._assign_prediction_indices(self.X_train.index),
                 columns=self._assign_prediction_columns(),
             )
+
+        return data
 
     @cached_property
     def predict_log_proba_test(self) -> DATAFRAME:
@@ -1745,24 +1778,26 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         data = np.array(self.estimator.predict_log_proba(self.X_test))
         if data.ndim < 3:
-            return bk.DataFrame(
+            data = bk.DataFrame(
                 data=data,
                 index=self.X_test.index,
                 columns=self._assign_prediction_columns(),
             )
         elif self.task.startswith("multilabel"):
             # Convert to (n_samples, n_targets)
-            return bk.DataFrame(
+            data = bk.DataFrame(
                 data=np.array([d[:, 1] for d in data]).T,
                 index=self.X_test.index,
                 columns=self._assign_prediction_columns(),
             )
         else:
-            return bk.DataFrame(
+            data = bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
                 index=self._assign_prediction_indices(self.X_test.index),
                 columns=self._assign_prediction_columns(),
             )
+
+        return data
 
     @cached_property
     def predict_log_proba_holdout(self) -> DATAFRAME | None:
@@ -1778,27 +1813,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if self.holdout is not None:
             data = np.array(self.estimator.predict_log_proba(self.X_holdout))
             if data.ndim < 3:
-                return bk.DataFrame(
+                data = bk.DataFrame(
                     data=data,
                     index=self.X_holdout.index,
                     columns=self._assign_prediction_columns(),
                 )
             elif self.task.startswith("multilabel"):
                 # Convert to (n_samples, n_targets)
-                return bk.DataFrame(
+                data = bk.DataFrame(
                     data=np.array([d[:, 1] for d in data]).T,
                     index=self.X_holdout.index,
                     columns=self._assign_prediction_columns(),
                 )
             else:
-                return bk.DataFrame(
+                data = bk.DataFrame(
                     data=data.reshape(-1, data.shape[2]),
                     index=self._assign_prediction_indices(self.X_holdout.index),
                     columns=self._assign_prediction_columns(),
                 )
 
+            return data
+
     @cached_property
-    def predict_proba_train(self) -> DATAFRAME:
+    def predict_proba_train(self) -> DATAFRAME | Normal:
         """Class probability predictions on the training set.
 
         The shape of the output depends on the task:
@@ -1806,31 +1843,35 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         - (n_samples, n_classes) for binary and multiclass.
         - (n_samples, n_targets) for [multilabel][].
         - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+        - `sktime.proba.normal.Normal` object for [forecast][].
 
         """
-        data = np.array(self.estimator.predict_proba(self.X_train))
-        if data.ndim < 3:
-            return bk.DataFrame(
-                data=data,
-                index=self.X_train.index,
-                columns=self._assign_prediction_columns(),
-            )
-        elif self.task.startswith("multilabel"):
-            # Convert to (n_samples, n_targets)
-            return bk.DataFrame(
-                data=np.array([d[:, 1] for d in data]).T,
-                index=self.X_train.index,
-                columns=self._assign_prediction_columns(),
-            )
-        else:
-            return bk.DataFrame(
-                data=data.reshape(-1, data.shape[2]),
-                index=self._assign_prediction_indices(self.X_train.index),
-                columns=self._assign_prediction_columns(),
-            )
+        data = self._get_predict(self.X_train, method="predict_proba")
+        if self.goal != "fc":
+            if (data := np.array(data)).ndim < 3:
+                data = bk.DataFrame(
+                    data=data,
+                    index=self.X_train.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            elif self.task.startswith("multilabel"):
+                # Convert to (n_samples, n_targets)
+                data = bk.DataFrame(
+                    data=np.array([d[:, 1] for d in data]).T,
+                    index=self.X_train.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            else:
+                data = bk.DataFrame(
+                    data=data.reshape(-1, data.shape[2]),
+                    index=self._assign_prediction_indices(self.X_train.index),
+                    columns=self._assign_prediction_columns(),
+                )
+
+        return data
 
     @cached_property
-    def predict_proba_test(self) -> DATAFRAME:
+    def predict_proba_test(self) -> DATAFRAME | Normal:
         """Class probability predictions on the test set.
 
         The shape of the output depends on the task:
@@ -1838,31 +1879,35 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         - (n_samples, n_classes) for binary and multiclass.
         - (n_samples, n_targets) for [multilabel][].
         - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+        - `sktime.proba.normal.Normal` object for [forecast][].
 
         """
-        data = np.array(self.estimator.predict_proba(self.X_test))
-        if data.ndim < 3:
-            return bk.DataFrame(
-                data=data,
-                index=self.X_test.index,
-                columns=self._assign_prediction_columns(),
-            )
-        elif self.task.startswith("multilabel"):
-            # Convert to (n_samples, n_targets)
-            return bk.DataFrame(
-                data=np.array([d[:, 1] for d in data]).T,
-                index=self.X_test.index,
-                columns=self._assign_prediction_columns(),
-            )
-        else:
-            return bk.DataFrame(
-                data=data.reshape(-1, data.shape[2]),
-                index=self._assign_prediction_indices(self.X_test.index),
-                columns=self._assign_prediction_columns(),
-            )
+        data = self._get_predict(self.X_test, method="predict_proba")
+        if self.goal != "fc":
+            if (data := np.array(data)).ndim < 3:
+                data = bk.DataFrame(
+                    data=data,
+                    index=self.X_test.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            elif self.task.startswith("multilabel"):
+                # Convert to (n_samples, n_targets)
+                data = bk.DataFrame(
+                    data=np.array([d[:, 1] for d in data]).T,
+                    index=self.X_test.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            else:
+                data = bk.DataFrame(
+                    data=data.reshape(-1, data.shape[2]),
+                    index=self._assign_prediction_indices(self.X_test.index),
+                    columns=self._assign_prediction_columns(),
+                )
+
+        return data
 
     @cached_property
-    def predict_proba_holdout(self) -> DATAFRAME | None:
+    def predict_proba_holdout(self) -> DATAFRAME | Normal | None:
         """Class probability predictions on the holdout set.
 
         The shape of the output depends on the task:
@@ -1870,29 +1915,33 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         - (n_samples, n_classes) for binary and multiclass.
         - (n_samples, n_targets) for [multilabel][].
         - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+        - `sktime.proba.normal.Normal` object for [forecast][].
 
         """
         if self.holdout is not None:
-            data = np.array(self.estimator.predict_proba(self.X_holdout))
-            if data.ndim < 3:
-                return bk.DataFrame(
-                    data=data,
-                    index=self.X_holdout.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            elif self.task.startswith("multilabel"):
-                # Convert to (n_samples, n_targets)
-                return bk.DataFrame(
-                    data=np.array([d[:, 1] for d in data]).T,
-                    index=self.X_holdout.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            else:
-                return bk.DataFrame(
-                    data=data.reshape(-1, data.shape[2]),
-                    index=self._assign_prediction_indices(self.X_holdout.index),
-                    columns=self._assign_prediction_columns(),
-                )
+            data = self._get_predict(self.X_holdout, method="predict_proba")
+            if self.goal != "fc":
+                if (data := np.array(data)).ndim < 3:
+                    data = bk.DataFrame(
+                        data=data,
+                        index=self.X_holdout.index,
+                        columns=self._assign_prediction_columns(),
+                    )
+                elif self.task.startswith("multilabel"):
+                    # Convert to (n_samples, n_targets)
+                    data = bk.DataFrame(
+                        data=np.array([d[:, 1] for d in data]).T,
+                        index=self.X_holdout.index,
+                        columns=self._assign_prediction_columns(),
+                    )
+                else:
+                    data = bk.DataFrame(
+                        data=data.reshape(-1, data.shape[2]),
+                        index=self._assign_prediction_indices(self.X_holdout.index),
+                        columns=self._assign_prediction_columns(),
+                    )
+
+            return data
 
     # Prediction methods =========================================== >>
 
@@ -1954,7 +2003,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         # Two options: select from existing predictions (X has to be able
         # to get rows from dataset) or calculate predictions from new data
         try:
-            # Raises an error if X can't select indices
+            # Duck type _get_rows -> raises an error if X can't select indices
             rows = self.branch._get_rows(X, return_test=True)
         except (ValueError, TypeError, IndexError, KeyError):
             rows = None
@@ -2853,7 +2902,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             )
 
         model = mlflow.register_model(
-            model_uri=f"runs:/{self._run.info.run_id}/sklearn-model",
+            model_uri=f"runs:/{self._run.info.run_id}/{name or self._fullname}",
             name=name or self._fullname,
         )
 
@@ -2861,11 +2910,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             name=model.name,
             version=model.version,
             stage=stage,
-        )
-
-        self.log(
-            f"Model {self.name} with version {model.version} "
-            f"successfully registered in stage {stage}.", 1
         )
 
     @composed(crash, method_to_log)

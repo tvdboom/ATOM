@@ -493,16 +493,6 @@ class ATOMForecaster(BaseTransformer, ATOM):
         This parameter is ignored if the time series is provided
         through `arrays`.
 
-    index: bool, int, str or sequence, default=True
-        Handle the index in the resulting dataframe. The index should
-        be coercible to [DatetimeIndex][] using `pd.to_datetime()`.
-
-        - If False: Reset to [RangeIndex][].
-        - If True: Use the provided index.
-        - If int: Position of the column to use as index.
-        - If str: Name of the column to use as index.
-        - If sequence: Array with shape=(n_samples,) to use as index.
-
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
@@ -700,7 +690,6 @@ class ATOMForecaster(BaseTransformer, ATOM):
         self,
         *arrays,
         y: TARGET = -1,
-        index: bool | INT | str | SEQUENCE = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,
@@ -731,7 +720,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
             self,
             arrays=arrays,
             y=y,
-            index=index,
+            index=True,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=False,

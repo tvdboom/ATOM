@@ -2,7 +2,7 @@
 -------------
 
 
-## Forecasting
+## Forecast
 
 
 <br>

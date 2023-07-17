@@ -146,9 +146,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 elif self.task.startswith("multilabel"):
                     # Multilabel classification
                     self._metric = ClassMap(get_custom_scorer("ap"))
-            else:
+            elif self.goal.startswith("reg"):
                 # Regression, multioutput regression
                 self._metric = ClassMap(get_custom_scorer("r2"))
+            else:
+                # Forecasting
+                self._metric = ClassMap(get_custom_scorer("mape"))
         elif not isinstance(self._metric, ClassMap):
             metrics = []
             for m in lst(self._metric):
@@ -182,7 +185,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                         if not cls:
                             raise ValueError(
                                 f"Invalid value for the models parameter, got {m}. "
-                                f"Choose from: {', '.join(MODELS.keys())}."
+                                f"Choose from:\n" + "\n".join(
+                                    [
+                                        f" --> '{m.acronym}' for {m.__name__}"
+                                        for m in MODELS if self.goal in m._estimators
+                                    ]
+                                )
                             )
                         else:
                             cls = cls[0]
@@ -193,7 +201,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
                         inc.append(x := cls(cls.acronym + m[len(cls.acronym):], **kwargs))
 
-                        # Check for regression/classification-only models
+                        # Check if the model supports the task
                         if self.goal not in inc[-1]._estimators:
                             raise ValueError(
                                 f"The {x._fullname} model is not "

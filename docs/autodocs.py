@@ -52,6 +52,7 @@ CUSTOM_URLS = dict(
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
     trial="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html",
+    normal="https://github.com/sktime/sktime/blob/b29e147b54959a53cc96e5be9c3f819717aa38e7/sktime/proba/normal.py#L13",
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
@@ -70,6 +71,7 @@ CUSTOM_URLS = dict(
     lof="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html",
     svm="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html",
     dbscan="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html",
+    hdbscan="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.HDBSCAN.html",
     optics="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html",
     standard="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html",
     minmax="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html",
@@ -202,6 +204,7 @@ CUSTOM_URLS = dict(
     xgbclassifier="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier",
     xgbregressor="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor",
     xgbdocs="https://xgboost.readthedocs.io/en/latest/index.html",
+    naiveforecaster="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.naive.NaiveForecaster.html",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -402,7 +405,7 @@ class AutoDocs:
             text += "[native multioutput](../../../user_guide/data_management/#multioutput-tasks){ .md-tag }"
         if self.obj.has_validation:
             text += "[allows validation](../../../user_guide/training/#in-training-validation){ .md-tag }"
-        if any(engine != "sklearn" for engine in self.obj.supports_engines):
+        if any(engine not in ("sklearn", "sktime") for engine in self.obj.supports_engines):
             text += "[supports acceleration](../../../user_guide/accelerating/){ .md-tag }"
 
         return text + "<br><br>"
@@ -871,8 +874,9 @@ def types_conversion(dtype: str) -> str:
         "PANDAS": "series | dataframe",
         "Branch": "[Branch][branches]",
         "Model": "[model][models]",
-        "Study | None": "[Study][] | None",
-        "Trial | None": "[Trial][] | None",
+        "Study": "[Study][]",
+        "Trial": "[Trial][]",
+        "Normal": "[Normal][]",
     }
 
     for k, v in types.items():

@@ -1683,6 +1683,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/nf/" class="md-nav__link">
+        NaiveForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/ols/" class="md-nav__link">
         OrdinaryLeastSquares
       </a>
@@ -3318,7 +3332,7 @@
 <h2 id="version-600">Version 6.0.0</h2>
 <p><strong><img alt="⭐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/2b50.svg" title=":star:" /> New features</strong></p>
 <ul>
-<li>Completely new module for time series forecasting.</li>
+<li>Completely new module for time series. Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/time_series/#time-series">user guide</a>.</li>
 </ul>
 <p><strong><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
@@ -3330,15 +3344,20 @@
 <li>Transformations only on <code>y</code> are now accepted, e.g. <code>atom.scale(columns=-1)</code>.</li>
 <li>The dataset can now be provided as a callable.</li>
 <li>Cleaner representation on hover for the <a class="autorefs autorefs-internal" href="../../API/plots/plot_timeline/#plot_timeline">plot_timeline</a> method.</li>
+<li>Added the <code>hdbscan</code> strategy to the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> class.</li>
+<li>The <code>cv</code> key in <code>ht_params</code> now accepts a custom cross-validation generator.</li>
+<li>Improved error message for incorrect stratification of multioutput datasets.</li>
 </ul>
 <p><strong><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
 <li>Fixed a bug where the [cross_validate][adaboost-cross_valdiate] method could
   fail for pipelines that changed the number of rows.</li>
+<li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> class didn't drop all outlier clusters.</li>
 <li>Fixed a bug where the pipeline could fail for transformers that returned a
   series.</li>
 <li>Fixed a bug where the pipeline could fail for transformers that reset its
   internal attributes during fitting.</li>
+<li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-register">register</a> method failed in Databricks.</li>
 </ul>
 <p><a name="v520"></a></p>
 <h2 id="version-520">Version 5.2.0</h2>

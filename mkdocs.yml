@@ -190,6 +190,7 @@ nav:
             - LogisticRegression: API/models/lr.md
             - MultiLayerPerceptron: API/models/mlp.md
             - MultinomialNB: API/models/mnb.md
+            - NaiveForecaster: API/models/nf.md
             - OrdinaryLeastSquares: API/models/ols.md
             - OrthogonalMatchingPursuit: API/models/omp.md
             - PassiveAggressive: API/models/pa.md

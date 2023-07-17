@@ -46,11 +46,11 @@ from atom.training import (
 )
 from atom.utils import (
     DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
-    ClassMap, DataConfig, Predictor, Runner, Transformer, __version__, bk,
-    check_dependency, check_is_fitted, check_scaling, composed, crash,
-    custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
-    infer_task, is_multioutput, is_sparse, lst, method_to_log, sign,
-    variable_return,
+    TS_INDEX_TYPES, ClassMap, DataConfig, Predictor, Runner, Transformer,
+    __version__, bk, check_dependency, check_is_fitted, check_scaling,
+    composed, crash, custom_transform, fit_one, flt, get_cols,
+    get_custom_scorer, has_task, infer_task, is_multioutput, is_sparse, lst,
+    method_to_log, sign, variable_return,
 )
 
 
@@ -880,10 +880,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
-        self.log(f"Train set size: {len(self.train)}", _vb)
-        self.log(f"Test set size: {len(self.test)}", _vb)
-        if self.holdout is not None:
-            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
+
+        for set_ in ("Train", "Test", "Holdout"):
+            if (data := getattr(self, set_.lower())) is not None:
+                self.log(f"{set_} set size: {len(data)}", _vb)
+                if isinstance(self.train.index, TS_INDEX_TYPES):
+                    self.log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self.log("-" * 37, _vb)
         if (memory := self.dataset.memory_usage(deep=True).sum()) < 1e6:
@@ -1063,10 +1065,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             raise AttributeError("Added transformers should have a transform method!")
 
         # Add BaseTransformer params to the estimator if left to default
-        sig = sign(transformer.__init__)
-        for p in ("n_jobs", "random_state"):
-            if p in sig and getattr(transformer, p, "<!>") == sig[p]._default:
-                setattr(transformer, p, getattr(self, p))
+        transformer = self._inherit(transformer)
 
         # Transformers remember the train_only and cols parameters
         if not hasattr(transformer, "_train_only"):
@@ -1078,9 +1077,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if fxs_in_inc and target_in_inc:
                 self.log(
                     "Features and target columns passed to transformer "
-                    f"{transformer.__class__.__name__}. Only select features or the "
-                    "target column, not both at the sametime. The transformation of "
-                    "the target column will be ignored.", 1, severity="warning"
+                    f"{transformer.__class__.__name__}. Either select features or "
+                    "the target column, not both at the sametime. The transformation "
+                    "of the target column will be ignored.", 1, severity="warning"
                 )
             transformer._cols = inc
 

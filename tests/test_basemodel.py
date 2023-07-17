@@ -20,6 +20,7 @@ from optuna.study import Study
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import r2_score, recall_score
+from sklearn.model_selection import KFold
 from sklearn.tree import DecisionTreeClassifier
 
 from atom import ATOMClassifier, ATOMRegressor
@@ -244,13 +245,10 @@ def test_sample_weight_fit():
     )
 
 
-def test_cv_larger_1():
-    """Assert that trials with cv>1 work for both tasks."""
+def test_custom_cv():
+    """Assert that trials with a custom cv work for both tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("dummy", n_trials=1, ht_params={"cv": 3})
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("dummy", n_trials=1, ht_params={"cv": 3})
+    atom.run("dummy", n_trials=1, ht_params={"cv": KFold(n_splits=3)})
 
 
 def test_skip_duplicate_calls():
@@ -941,7 +939,7 @@ def test_evaluate_threshold_multilabel():
     """Assert that the threshold parameter accepts a list as threshold."""
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("Tree")
-    assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8]), pd.Series)
+    assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8, 0.9]), pd.Series)
 
 
 def test_evaluate_sample_weight():

@@ -70,56 +70,62 @@ Description: Module containing all available models. The models are
 
 List of available models:
 
-- "AdaB" for AdaBoost
-- "ARD" for AutomaticRelevanceDetermination
-- "Bag" for Bagging
-- "BR" for BayesianRidge
-- "BNB" for BernoulliNB
-- "CatB" for CatBoost (if package is available)
-- "CatNB" for CategoricalNB
-- "CNB" for ComplementNB
-- "Tree" for DecisionTree
-- "Dummy" for Dummy
-- "EN" for ElasticNet
-- "ETree" for ExtraTree
-- "ET" for ExtraTrees
-- "GNB" for GaussianNB (no hyperparameter tuning)
-- "GP" for GaussianProcess (no hyperparameter tuning)
-- "GBM" for GradientBoosting
-- "Huber" for HuberRegression
-- "hGBM" for HistGradientBoosting
-- "KNN" for KNearestNeighbors
-- "Lasso" for Lasso
-- "Lars" for LeastAngleRegression (no hyperparameter tuning)
-- "LGB" for LightGBM (if package is available)
-- "LDA" for LinearDiscriminantAnalysis
-- "lSVM" for LinearSVM
-- "LR" for LogisticRegression
-- "MLP" for MultiLayerPerceptron
-- "MNB" for MultinomialNB
-- "OLS" for OrdinaryLeastSquares (no hyperparameter tuning)
-- "OMP" for OrthogonalMatchingPursuit (no hyperparameter tuning)
-- "PA" for PassiveAggressive
-- "Perc" for Perceptron
-- "QDA" for QuadraticDiscriminantAnalysis
-- "RNN" for RadiusNearestNeighbors
-- "RF" for RandomForest
-- "Ridge" for Ridge
-- "SGD" for StochasticGradientDescent
-- "SVM" for SupportVectorMachine
-- "XGB" for XGBoost (if package is available)
+- Classification and regression:
 
-Additionally, ATOM implements two ensemble models:
+    - "AdaB" for AdaBoost
+    - "ARD" for AutomaticRelevanceDetermination
+    - "Bag" for Bagging
+    - "BR" for BayesianRidge
+    - "BNB" for BernoulliNB
+    - "CatB" for CatBoost (if package is available)
+    - "CategoricalNB" for CategoricalNB
+    - "CNB" for ComplementNB
+    - "Tree" for DecisionTree
+    - "Dummy" for Dummy
+    - "EN" for ElasticNet
+    - "ETree" for ExtraTree
+    - "ET" for ExtraTrees
+    - "GNB" for GaussianNB (no hyperparameter tuning)
+    - "GP" for GaussianProcess (no hyperparameter tuning)
+    - "GBM" for GradientBoosting
+    - "Huber" for HuberRegression
+    - "hGBM" for HistGradientBoosting
+    - "KNN" for KNearestNeighbors
+    - "Lasso" for Lasso
+    - "Lars" for LeastAngleRegression (no hyperparameter tuning)
+    - "LGB" for LightGBM (if package is available)
+    - "LDA" for LinearDiscriminantAnalysis
+    - "lSVM" for LinearSVM
+    - "LR" for LogisticRegression
+    - "MLP" for MultiLayerPerceptron
+    - "MNB" for MultinomialNB
+    - "OLS" for OrdinaryLeastSquares (no hyperparameter tuning)
+    - "OMP" for OrthogonalMatchingPursuit (no hyperparameter tuning)
+    - "PA" for PassiveAggressive
+    - "Perc" for Perceptron
+    - "QDA" for QuadraticDiscriminantAnalysis
+    - "RNN" for RadiusNearestNeighbors
+    - "RF" for RandomForest
+    - "Ridge" for Ridge
+    - "SGD" for StochasticGradientDescent
+    - "SVM" for SupportVectorMachine
+    - "XGB" for XGBoost (if package is available)
 
-- "Stack" for Stacking
-- "Vote" for Voting
+- Time series:
+
+    - "NF" for NaiveForecaster
+
+- Ensembles:
+
+    - "Stack" for Stacking
+    - "Vote" for Voting
 
 """
 
 from __future__ import annotations
 
 import numpy as np
-from optuna.distributions import CategoricalDistribution as Categorical
+from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
 from optuna.exceptions import TrialPruned
@@ -271,9 +277,9 @@ class AdaBoost(BaseModel):
         )
 
         if self.goal == "class":
-            dist["algorithm"] = Categorical(["SAMME.R", "SAMME"])
+            dist["algorithm"] = Cat(["SAMME.R", "SAMME"])
         else:
-            dist["loss"] = Categorical(["linear", "square", "exponential"])
+            dist["loss"] = Cat(["linear", "square", "exponential"])
 
         return dist
 
@@ -443,8 +449,8 @@ class Bagging(BaseModel):
             n_estimators=Int(10, 500, step=10),
             max_samples=Float(0.5, 1.0, step=0.1),
             max_features=Float(0.5, 1.0, step=0.1),
-            bootstrap=Categorical([True, False]),
-            bootstrap_features=Categorical([True, False]),
+            bootstrap=Cat([True, False]),
+            bootstrap_features=Cat([True, False]),
         )
 
 
@@ -605,12 +611,12 @@ class BernoulliNB(BaseModel):
         """
         return CustomDict(
             alpha=Float(0.01, 10, log=True),
-            fit_prior=Categorical([True, False]),
+            fit_prior=Cat([True, False]),
         )
 
 
 class CatBoost(BaseModel):
-    """Categorical Boosting Machine.
+    """Cat Boosting Machine.
 
     CatBoost is a machine learning method based on gradient boosting
     over decision trees. Main advantages of CatBoost:
@@ -819,9 +825,9 @@ class CatBoost(BaseModel):
         return CustomDict(
             n_estimators=Int(20, 500, step=10),
             learning_rate=Float(0.01, 1.0, log=True),
-            max_depth=Categorical([None, *range(1, 17)]),
+            max_depth=Cat([None, *range(1, 17)]),
             min_child_samples=Int(1, 30),
-            bootstrap_type=Categorical(["Bayesian", "Bernoulli"]),
+            bootstrap_type=Cat(["Bayesian", "Bernoulli"]),
             bagging_temperature=Float(0, 10),
             subsample=Float(0.5, 1.0, step=0.1),
             reg_lambda=Float(0.001, 100, log=True),
@@ -903,7 +909,7 @@ class CategoricalNB(BaseModel):
         """
         return CustomDict(
             alpha=Float(0.01, 10, log=True),
-            fit_prior=Categorical([True, False]),
+            fit_prior=Cat([True, False]),
         )
 
 
@@ -982,8 +988,8 @@ class ComplementNB(BaseModel):
         """
         return CustomDict(
             alpha=Float(0.01, 10, log=True),
-            fit_prior=Categorical([True, False]),
-            norm=Categorical([True, False]),
+            fit_prior=Cat([True, False]),
+            norm=Cat([True, False]),
         )
 
 
@@ -1066,12 +1072,12 @@ class DecisionTree(BaseModel):
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
 
         return CustomDict(
-            criterion=Categorical(criterion),
-            splitter=Categorical(["best", "random"]),
-            max_depth=Categorical([None, *range(1, 17)]),
+            criterion=Cat(criterion),
+            splitter=Cat(["best", "random"]),
+            max_depth=Cat([None, *range(1, 17)]),
             min_samples_split=Int(2, 20),
             min_samples_leaf=Int(1, 20),
-            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
@@ -1174,11 +1180,9 @@ class Dummy(BaseModel):
         """
         dist = CustomDict()
         if self.goal == "class":
-            dist["strategy"] = Categorical(
-                ["most_frequent", "prior", "stratified", "uniform"]
-            )
+            dist["strategy"] = Cat(["most_frequent", "prior", "stratified", "uniform"])
         else:
-            dist["strategy"] = Categorical(["mean", "median", "quantile"])
+            dist["strategy"] = Cat(["mean", "median", "quantile"])
             dist["quantile"] = Float(0, 1.0, step=0.1)
 
         return dist
@@ -1258,7 +1262,7 @@ class ElasticNet(BaseModel):
         return CustomDict(
             alpha=Float(1e-3, 10, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
-            selection=Categorical(["cyclic", "random"]),
+            selection=Cat(["cyclic", "random"]),
         )
 
 
@@ -1367,12 +1371,12 @@ class ExtraTree(BaseModel):
             criterion = ["squared_error", "absolute_error"]
 
         return CustomDict(
-            criterion=Categorical(criterion),
-            splitter=Categorical(["random", "best"]),
-            max_depth=Categorical([None, *range(1, 17)]),
+            criterion=Cat(criterion),
+            splitter=Cat(["random", "best"]),
+            max_depth=Cat([None, *range(1, 17)]),
             min_samples_split=Int(2, 20),
             min_samples_leaf=Int(1, 20),
-            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
@@ -1481,13 +1485,13 @@ class ExtraTrees(BaseModel):
 
         return CustomDict(
             n_estimators=Int(10, 500, step=10),
-            criterion=Categorical(criterion),
-            max_depth=Categorical([None, *range(1, 17)]),
+            criterion=Cat(criterion),
+            max_depth=Cat([None, *range(1, 17)]),
             min_samples_split=Int(2, 20),
             min_samples_leaf=Int(1, 20),
-            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            bootstrap=Categorical([True, False]),
-            max_samples=Categorical([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
+            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            bootstrap=Cat([True, False]),
+            max_samples=Cat([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
@@ -1740,24 +1744,22 @@ class GradientBoosting(BaseModel):
 
         """
         dist = CustomDict(
-            loss=Categorical(["log_loss", "exponential"]),
+            loss=Cat(["log_loss", "exponential"]),
             learning_rate=Float(0.01, 1.0, log=True),
             n_estimators=Int(10, 500, step=10),
             subsample=Float(0.5, 1.0, step=0.1),
-            criterion=Categorical(["friedman_mse", "squared_error"]),
+            criterion=Cat(["friedman_mse", "squared_error"]),
             min_samples_split=Int(2, 20),
             min_samples_leaf=Int(1, 20),
             max_depth=Int(1, 21),
-            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
         if self.task.startswith("multiclass"):
             dist.pop("loss")  # Multiclass only supports log_loss
         elif self.goal.startswith("reg"):
-            dist["loss"] = Categorical(
-                ["squared_error", "absolute_error", "huber", "quantile"]
-            )
+            dist["loss"] = Cat(["squared_error", "absolute_error", "huber", "quantile"])
             dist["alpha"] = Float(0.1, 0.9, step=0.1)
 
         return dist
@@ -1926,11 +1928,11 @@ class HistGradientBoosting(BaseModel):
 
         """
         dist = CustomDict(
-            loss=Categorical(["squared_error", "absolute_error", "poisson"]),
+            loss=Cat(["squared_error", "absolute_error", "poisson", "quantile", "gamma"]),
             learning_rate=Float(0.01, 1.0, log=True),
             max_iter=Int(10, 500, step=10),
             max_leaf_nodes=Int(10, 50),
-            max_depth=Categorical([None, *range(1, 17)]),
+            max_depth=Cat([None, *range(1, 17)]),
             min_samples_leaf=Int(10, 30),
             l2_regularization=Float(0, 1.0, step=0.1),
         )
@@ -2019,8 +2021,8 @@ class KNearestNeighbors(BaseModel):
         """
         dist = CustomDict(
             n_neighbors=Int(1, 100),
-            weights=Categorical(["uniform", "distance"]),
-            algorithm=Categorical(["auto", "ball_tree", "kd_tree", "brute"]),
+            weights=Cat(["uniform", "distance"]),
+            algorithm=Cat(["auto", "ball_tree", "kd_tree", "brute"]),
             leaf_size=Int(20, 40),
             p=Int(1, 2),
         )
@@ -2108,7 +2110,7 @@ class Lasso(BaseModel):
         """
         return CustomDict(
             alpha=Float(1e-3, 10, log=True),
-            selection=Categorical(["cyclic", "random"]),
+            selection=Cat(["cyclic", "random"]),
         )
 
 
@@ -2461,8 +2463,8 @@ class LinearDiscriminantAnalysis(BaseModel):
 
         """
         return CustomDict(
-            solver=Categorical(["svd", "lsqr", "eigen"]),
-            shrinkage=Categorical([None, "auto", 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+            solver=Cat(["svd", "lsqr", "eigen"]),
+            shrinkage=Cat([None, "auto", 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
         )
 
 
@@ -2592,15 +2594,13 @@ class LinearSVM(BaseModel):
         """
         dist = CustomDict()
         if self.goal == "class":
-            dist["penalty"] = Categorical(["l1", "l2"])
-            dist["loss"] = Categorical(["hinge", "squared_hinge"])
+            dist["penalty"] = Cat(["l1", "l2"])
+            dist["loss"] = Cat(["hinge", "squared_hinge"])
         else:
-            dist["loss"] = Categorical(
-                ["epsilon_insensitive", "squared_epsilon_insensitive"]
-            )
+            dist["loss"] = Cat(["epsilon_insensitive", "squared_epsilon_insensitive"])
 
         dist["C"] = Float(1e-3, 100, log=True)
-        dist["dual"] = Categorical([True, False])
+        dist["dual"] = Cat([True, False])
 
         if self.engine == "cuml":
             dist.pop("dual")
@@ -2718,9 +2718,9 @@ class LogisticRegression(BaseModel):
 
         """
         dist = CustomDict(
-            penalty=Categorical([None, "l1", "l2", "elasticnet"]),
+            penalty=Cat([None, "l1", "l2", "elasticnet"]),
             C=Float(1e-3, 100, log=True),
-            solver=Categorical(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
+            solver=Cat(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
             max_iter=Int(100, 1000, step=10),
             l1_ratio=Float(0, 1.0, step=0.1),
         )
@@ -2729,7 +2729,7 @@ class LogisticRegression(BaseModel):
             dist.pop("solver")
             dist.pop("penalty")  # Only 'l2' is supported
         elif self.engine == "sklearnex":
-            dist["solver"] = Categorical(["lbfgs", "newton-cg"])
+            dist["solver"] = Cat(["lbfgs", "newton-cg"])
 
         return dist
 
@@ -2875,11 +2875,11 @@ class MultiLayerPerceptron(BaseModel):
             hidden_layer_1=Int(10, 100),
             hidden_layer_2=Int(0, 100),
             hidden_layer_3=Int(0, 10),
-            activation=Categorical(["identity", "logistic", "tanh", "relu"]),
-            solver=Categorical(["lbfgs", "sgd", "adam"]),
+            activation=Cat(["identity", "logistic", "tanh", "relu"]),
+            solver=Cat(["lbfgs", "sgd", "adam"]),
             alpha=Float(1e-4, 0.1, log=True),
-            batch_size=Categorical(["auto", 8, 16, 32, 64, 128, 256]),
-            learning_rate=Categorical(["constant", "invscaling", "adaptive"]),
+            batch_size=Cat(["auto", 8, 16, 32, 64, 128, 256]),
+            learning_rate=Cat(["constant", "invscaling", "adaptive"]),
             learning_rate_init=Float(1e-3, 0.1, log=True),
             power_t=Float(0.1, 0.9, step=0.1),
             max_iter=Int(50, 500, step=10),
@@ -2966,7 +2966,7 @@ class MultinomialNB(BaseModel):
         """
         return CustomDict(
             alpha=Float(0.01, 10, log=True),
-            fit_prior=Categorical([True, False]),
+            fit_prior=Cat([True, False]),
         )
 
 
@@ -3183,8 +3183,8 @@ class PassiveAggressive(BaseModel):
         return CustomDict(
             C=Float(1e-3, 100, log=True),
             max_iter=Int(500, 1500, step=50),
-            loss=Categorical(loss),
-            average=Categorical([True, False]),
+            loss=Cat(loss),
+            average=Cat([True, False]),
         )
 
 
@@ -3290,7 +3290,7 @@ class Perceptron(BaseModel):
 
         """
         return CustomDict(
-            penalty=Categorical([None, "l2", "l1", "elasticnet"]),
+            penalty=Cat([None, "l2", "l1", "elasticnet"]),
             alpha=Float(1e-4, 10, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),
@@ -3466,8 +3466,8 @@ class RadiusNearestNeighbors(BaseModel):
         """
         return CustomDict(
             radius=Float(1e-2, 100),
-            weights=Categorical(["uniform", "distance"]),
-            algorithm=Categorical(["auto", "ball_tree", "kd_tree", "brute"]),
+            weights=Cat(["uniform", "distance"]),
+            algorithm=Cat(["auto", "ball_tree", "kd_tree", "brute"]),
             leaf_size=Int(20, 40),
             p=Int(1, 2),
         )
@@ -3588,13 +3588,13 @@ class RandomForest(BaseModel):
 
         dist = CustomDict(
             n_estimators=Int(10, 500, step=10),
-            criterion=Categorical(criterion),
-            max_depth=Categorical([None, *range(1, 17)]),
+            criterion=Cat(criterion),
+            max_depth=Cat([None, *range(1, 17)]),
             min_samples_split=Int(2, 20),
             min_samples_leaf=Int(1, 20),
-            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            bootstrap=Categorical([True, False]),
-            max_samples=Categorical([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
+            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            bootstrap=Cat([True, False]),
+            max_samples=Cat([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
@@ -3604,7 +3604,7 @@ class RandomForest(BaseModel):
         elif self.engine == "cuml":
             dist.replace_key("criterion", "split_criterion")
             dist["max_depth"] = Int(1, 17)
-            dist["max_features"] = Categorical(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
+            dist["max_features"] = Cat(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
             dist["max_samples"] = Float(0.5, 0.9, step=0.1)
             dist.pop("ccp_alpha")
 
@@ -3693,15 +3693,13 @@ class Ridge(BaseModel):
         """
         dist = CustomDict(
             alpha=Float(1e-3, 10, log=True),
-            solver=Categorical(
-                ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
-            ),
+            solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
         )
 
         if self.engine == "sklearnex":
             dist.pop("solver")  # Only supports 'auto'
         elif self.engine == "cuml":
-            dist["solver"] = Categorical(["eig", "svd", "cd"])
+            dist["solver"] = Cat(["eig", "svd", "cd"])
 
         return dist
 
@@ -3818,16 +3816,16 @@ class StochasticGradientDescent(BaseModel):
         ]
 
         return CustomDict(
-            loss=Categorical(loss if self.goal == "class" else loss[-4:]),
-            penalty=Categorical([None, "l1", "l2", "elasticnet"]),
+            loss=Cat(loss if self.goal == "class" else loss[-4:]),
+            penalty=Cat([None, "l1", "l2", "elasticnet"]),
             alpha=Float(1e-4, 1.0, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),
             epsilon=Float(1e-4, 1.0, log=True),
-            learning_rate=Categorical(["constant", "invscaling", "optimal", "adaptive"]),
+            learning_rate=Cat(["constant", "invscaling", "optimal", "adaptive"]),
             eta0=Float(1e-2, 10, log=True),
             power_t=Float(0.1, 0.9, step=0.1),
-            average=Categorical([True, False]),
+            average=Cat([True, False]),
         )
 
 
@@ -3958,12 +3956,12 @@ class SupportVectorMachine(BaseModel):
         """
         dist = CustomDict(
             C=Float(1e-3, 100, log=True),
-            kernel=Categorical(["linear", "poly", "rbf", "sigmoid"]),
+            kernel=Cat(["linear", "poly", "rbf", "sigmoid"]),
             degree=Int(2, 5),
-            gamma=Categorical(["scale", "auto"]),
+            gamma=Cat(["scale", "auto"]),
             coef0=Float(-1.0, 1.0),
             epsilon=Float(1e-3, 100, log=True),
-            shrinking=Categorical([True, False]),
+            shrinking=Cat([True, False]),
         )
 
         if self.engine == "cuml":
@@ -4151,6 +4149,92 @@ class XGBoost(BaseModel):
         )
 
 
+# Time series ====================================================== >>
+
+class NaiveForecaster(BaseModel):
+    """Naive Forecaster.
+
+    NaiveForecaster is a dummy forecaster that makes forecasts using
+    simple strategies. When used in multivariate tasks, each column
+    is forecasted with the same strategy.
+
+    Corresponding estimators are:
+
+    - [NaiveForecaster][] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:LinearSVM
+    atom.models:MultiLayerPerceptron
+    atom.models:StochasticGradientDescent
+
+    Examples
+    --------
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sktime.datasets import load_airline
+
+    >>> y = load_airline()
+
+    >>> atom = ATOMClassifier(y)
+    >>> atom.run(models="NF", metric="mape", verbose=2)
+
+    Training ========================= >>
+    Models: NF
+
+
+    Metric: neg_mean_absolute_percentage_error
+    Results for NaiveForecaster:
+    Fit ---------------------------------------------
+    Test evaluation --> neg_mean_absolute_percentage_error: -0.1932
+    Time elapsed: 0.024s
+    -------------------------------------------------
+    Total time: 0.024s
+
+
+    Final results ==================== >>
+    Total time: 0.025s
+    -------------------------------------
+    NaiveForecaster --> neg_mean_absolute_percentage_error: -0.1932
+
+    ```
+
+    """
+
+    acronym = "NF"
+    needs_scaling = False
+    accepts_sparse = False
+    native_multioutput = True
+    has_validation = None
+    supports_engines = ["sktime"]
+
+    _module = "sktime.forecasting.naive"
+    _estimators = CustomDict({"fc": "NaiveForecaster"})
+
+    def _get_est(self, **params) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return self._est_class(**params)
+
+    @staticmethod
+    def _get_distributions() -> CustomDict:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        CustomDict
+            Hyperparameter distributions.
+
+        """
+        return CustomDict(strategy=Cat(["last", "mean", "drift"]))
+
+
 # Ensembles ======================================================== >>
 
 class Stacking(BaseModel):
@@ -4314,6 +4398,7 @@ MODELS = ClassMap(
     StochasticGradientDescent,
     SupportVectorMachine,
     XGBoost,
+    NaiveForecaster,
     key="acronym",
 )
 

@@ -473,9 +473,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             counts[key] = np.sum(y == value)
 
         # Add n_jobs or random_state if its one of the estimator's parameters
-        for param in ("n_jobs", "random_state"):
-            if param in estimator.get_params():
-                estimator.set_params(**{param: getattr(self, param)})
+        estimator = self._inherit(estimator)
 
         if "over_sampling" in estimator.__module__:
             self.log(f"Oversampling with {estimator.__class__.__name__}...", 1)
@@ -2712,6 +2710,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         - "[lof][]": Local Outlier Factor.
         - "[svm][]": One-class SVM.
         - "[dbscan][]": Density-Based Spatial Clustering.
+        - "[hdbscan][]": Hierarchical Density-Based Spatial Clustering.
         - "[optics][]": DBSCAN-like clustering approach.
 
     method: int, float or str, default="drop"
@@ -2943,12 +2942,14 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
+        # Estimators with their modules
         strategies = CustomDict(
             iforest=["IsolationForest", "ensemble"],
             ee=["EllipticEnvelope", "covariance"],
             lof=["LocalOutlierFactor", "neighbors"],
             svm=["OneClassSVM", "svm"],
             dbscan=["DBSCAN", "cluster"],
+            hdbscan=["HDBSCAN", "cluster"],
             optics=["OPTICS", "cluster"],
         )
 
@@ -3041,7 +3042,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             else:
                 estimator = self._get_est_class(*strategies[strat])(**kwargs[strat])
-                mask = estimator.fit_predict(objective) != -1
+                mask = estimator.fit_predict(objective) >= 0
                 outliers.append(mask)
                 if len(lst(self.strategy)) > 1:
                     self.log(

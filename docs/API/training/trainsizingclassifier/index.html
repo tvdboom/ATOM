@@ -1776,6 +1776,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/nf/" class="md-nav__link">
+        NaiveForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/ols/" class="md-nav__link">
         OrdinaryLeastSquares
       </a>
@@ -3328,7 +3342,7 @@
 
 <h1 id="trainsizingclassifier">TrainSizingClassifier</h1>
 <hr />
-<p><a id='TrainSizingClassifier'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingClassifier</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1760>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
+<p><a id='TrainSizingClassifier'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingClassifier</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1738>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
 <p>The following steps are applied to every model (per iteration):</p>
 <ol>
 <li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
@@ -3354,7 +3368,6 @@ default metric is selected for every task:</p>
 <li>"f1" for binary classification</li>
 <li>"f1_weighted" for multiclass(-multioutput) classification</li>
 <li>"average_precision" for multilabel classification</li>
-<li>"r2" for regression or multioutput regression</li>
 </ul>
 <p></div><a id='trainsizingclassifier-train_sizes'></a><strong>train_sizes: int or sequence, default=5</strong><br><div markdown class='param'>
 Sequence of training set sizes used to run the trainings.</p>
@@ -3380,9 +3393,9 @@ constructor.</p>
 Additional parameters for the hyperparameter tuning. If None,
 it uses the same parameters as the first run. Can include:</p>
 <ul>
-<li><strong>cv: int, dict or sequence, default=1</strong><br>
-  Number of folds for the cross-validation. If 1, the training
-  set is randomly split in a subtrain and validation set.</li>
+<li><strong>cv: int, cv-generator, dict or sequence, default=1</strong><br>
+  Cross-validation object or number of folds. If 1, the
+  data is randomly split in a subtrain and validation set.</li>
 <li><strong>plot: bool, dict or sequence, default=False</strong><br>
   Whether to plot the optimization's progress as it runs.
   Creates a canvas with two plots: the first plot shows the
@@ -3855,7 +3868,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L908>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='trainsizingclassifier-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L949>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3916,7 +3929,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L943>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='trainsizingclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L984>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
