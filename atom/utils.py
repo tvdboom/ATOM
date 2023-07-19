@@ -531,11 +531,15 @@ class TrialsCallback:
             with mlflow.start_run(run_id=self.T._run.info.run_id):
                 run_name = f"{self.T.name} - {trial.number}"
                 with mlflow.start_run(run_name=run_name, nested=True):
-                    mlflow.set_tag("name", self.T.name)
-                    mlflow.set_tag("model", self.T._fullname)
-                    mlflow.set_tag("branch", self.T.branch.name)
-                    mlflow.set_tag("trial_state", trial.state.name)
-                    mlflow.set_tags(self.T._ht.get("tags", {}))
+                    mlflow.set_tags(
+                        {
+                            "name": self.T.name,
+                            "model": self.T._fullname,
+                            "branch": self.T.branch.name,
+                            "trial_state": trial.state.name,
+                            **self.T._ht["tags"],
+                        }
+                    )
 
                     # Mlflow only accepts params with char length <=250
                     pars = estimator.get_params() if estimator else params

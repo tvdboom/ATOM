@@ -1156,16 +1156,21 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         # Log parameters, metrics, model and data to mlflow
         if self.experiment:
             with mlflow.start_run(run_id=self._run.info.run_id):
-                mlflow.set_tag("name", self.name)
-                mlflow.set_tag("model", self._fullname)
-                mlflow.set_tag("branch", self.branch.name)
-                mlflow.set_tags(self._ht.get("tags", {}))
+                mlflow.set_tags(
+                    {
+                        "name": self.name,
+                        "model": self._fullname,
+                        "branch": self.branch.name,
+                        **self.T._ht["tags"],
+                    }
+                )
 
                 # Mlflow only accepts params with char length <250
                 mlflow.log_params(
                     {
                         k: v for k, v in self.estimator.get_params().items()
-                        if len(str(v)) <= 250}
+                        if len(str(v)) <= 250
+                    }
                 )
 
                 # Save evals for models with in-training validation
@@ -1190,9 +1195,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
                 if self.log_data:
                     for ds in ("train", "test"):
-                        getattr(self, ds).to_csv(f"{ds}.csv")
-                        mlflow.log_artifact(f"{ds}.csv")
-                        os.remove(f"{ds}.csv")
+                        mlflow.log_input(
+                            dataset=mlflow.data.from_pandas(getattr(self, ds)),
+                            context=ds,
+                        )
 
                 if self.log_pipeline:
                     mlflow.sklearn.log_model(
@@ -2878,7 +2884,12 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return variable_return(X, y)
 
     @composed(crash, method_to_log)
-    def register(self, name: str | None = None, stage: str = "Staging"):
+    def register(
+        self,
+        name: str | None = None,
+        stage: str = "None",
+        archive_existing_versions: bool = False,
+    ):
         """Register the model in [mlflow's model registry][registry].
 
         This method is only available when model [tracking][] is
@@ -2889,10 +2900,16 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         ----------
         name: str or None, default=None
             Name for the registered model. If None, the model's full name
-            is used.
+            is used. If the name of the model already exists, a new model
+            version is created.
 
-        stage: str, default="Staging"
+        stage: str, default="None"
             New desired stage for the model.
+
+        archive_existing_versions: bool, default=False
+            Whether all existing model versions in the `stage` will be
+            moved to the "Archived" stage. Only valid when `stage` is
+            "Staging" or "Production" otherwise an error will be raised.
 
         """
         if not self._run:
@@ -2904,12 +2921,14 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         model = mlflow.register_model(
             model_uri=f"runs:/{self._run.info.run_id}/{name or self._fullname}",
             name=name or self._fullname,
+            tags=self._ht["tags"] or None,
         )
 
         MlflowClient().transition_model_version_stage(
             name=model.name,
             version=model.version,
             stage=stage,
+            archive_existing_versions=archive_existing_versions,
         )
 
     @composed(crash, method_to_log)

@@ -14,6 +14,11 @@ or via `conda`:
 !!! note
     Since atom was already taken, download the package under the name `atom-ml`!
 
+!!! warning
+    ATOM makes use of many other ML libraries, making its [dependency list][packages]
+    quite long. Because of that, the installation may take longer than you
+    are accustomed to. Be patient!
+
 <br style="display: block; margin-top: 2em; content: ' '">
 
 **Optional dependencies**
