@@ -56,8 +56,9 @@ in common:
 
 ## Aesthetics
 
-The plot's aesthetics can be customized using the plot attributes, e.g.
-`#!python atom.title_fontsize = 30`. The default values are:
+The plot's aesthetics can be customized using the plot attributes prior
+to calling the plotting method, e.g. `#!python atom.title_fontsize = 30`.
+The default values are:
 
 * **palette:** ["rgb(0, 98, 98)", "rgb(56, 166, 165)", "rgb(115, 175, 72)",
   "rgb(237, 173, 8)", "rgb(225, 124, 5)", "rgb(204, 80, 62)", "rgb(148, 52, 110)",
@@ -67,10 +68,15 @@ The plot's aesthetics can be customized using the plot attributes, e.g.
 * **tick_fontsize:** 12
 
 Use atom's [update_layout][atomclassifier-update_layout] method to further
-customize the plot's aesthetics using any of plotly's [layout properties](https://plotly.com/python/reference/layout/),
-e.g. `#!python atom.update_layout(template="plotly_dark")`. Use the [reset_aesthetics][atomclassifier-reset_aesthetics]
-method to reset the aesthetics to their default value. See [advanced plotting][example-advanced-plotting]
-for various examples.
+customize the plot's layout using any of plotly's [layout properties](https://plotly.com/python/reference/layout/),
+e.g. `#!python atom.update_layout(template="plotly_dark")`. Similarly, use
+the [update_traces][atomclassifier-update_traces] method to customize the
+[traces properties](https://plotly.com/python/reference/scatter/), e.g.
+`#!python atom.update_traces(mode="lines+markers")`.
+
+The [reset_aesthetics][atomclassifier-reset_aesthetics] method allows you
+to reset all aesthetics to their default value. See [advanced plotting][example-advanced-plotting]
+for an example.
 
 <br>
 
@@ -149,47 +155,57 @@ depend on the task at hand.
 :: atom.plots:FeatureSelectorPlot
     :: methods:
         toc_only: True
+        solo_link: True
         exclude:
             - canvas
             - reset_aesthetics
             - update_layout
+            - update_traces
 
 ### Data plots
 
 :: atom.plots:DataPlot
     :: methods:
         toc_only: True
+        solo_link: True
         exclude:
             - canvas
             - reset_aesthetics
             - update_layout
+            - update_traces
 
 ### Hyperparameter tuning plots
 
 :: atom.plots:HTPlot
     :: methods:
         toc_only: True
+        solo_link: True
         exclude:
             - canvas
             - reset_aesthetics
             - update_layout
+            - update_traces
 
 ### Prediction plots
 
 :: atom.plots:PredictionPlot
     :: methods:
         toc_only: True
+        solo_link: True
         exclude:
             - canvas
             - reset_aesthetics
             - update_layout
+            - update_traces
 
 ### Shap plots
 
 :: atom.plots:ShapPlot
     :: methods:
         toc_only: True
+        solo_link: True
         exclude:
             - canvas
             - reset_aesthetics
             - update_layout
+            - update_traces

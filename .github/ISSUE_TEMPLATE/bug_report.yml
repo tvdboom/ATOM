@@ -20,7 +20,7 @@ body:
   - type: textarea
     attributes:
       label: Steps to reproduce
-      description: |
+      description: >
         Please add a [minimal code example](https://scikit-learn.org/dev/developers/minimal_reproducer.html)
         that can reproduce the error when running it. Be as succinct as possible,
         **do not depend on external data files**: instead you can generate synthetic
@@ -66,7 +66,7 @@ body:
       required: true
     attributes:
       label: Actual behaviour
-      description: |
+      description: >
         Paste or describe the results you observe instead of the expected results.
         If you observe an error, please paste the error message including the
         **full traceback** of the exception. For instance the code above raises the
@@ -86,10 +86,13 @@ body:
   - type: textarea
     attributes:
       label: Python and package version
-      description: Provide the used versions, i.e. run the following commands ans paste them below.
-      value: |
-        - Python: `import sys; sys.version`
-        - ATOM: `import atom; atom.__version__`
+      description: |
+        Provide the used versions, i.e. run the following commands ans paste them below.
+
+        ```python
+        import sys; print(sys.version)
+        import atom; print(atom.__version__)
+        ```
   - type: markdown
     attributes:
       value: Thanks for contributing 🎉!

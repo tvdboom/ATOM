@@ -295,7 +295,7 @@ class DirectClassifier(Direct):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -537,7 +537,7 @@ class DirectForecaster(Direct):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -766,7 +766,7 @@ class DirectRegressor(Direct):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -1002,7 +1002,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -1262,7 +1262,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -1523,7 +1523,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -1793,7 +1793,7 @@ class TrainSizingClassifier(TrainSizing):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -2114,7 +2114,7 @@ class TrainSizingForecaster(TrainSizing):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
@@ -2435,7 +2435,7 @@ class TrainSizingRegressor(TrainSizing):
         it uses the same parameters as the first run. Can include:
 
         - **cv: int, cv-generator, dict or sequence, default=1**<br>
-          Cross-validation object or number of folds. If 1, the
+          Cross-validation object or number of splits. If 1, the
           data is randomly split in a subtrain and validation set.
         - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.

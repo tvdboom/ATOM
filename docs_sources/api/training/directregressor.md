@@ -117,6 +117,7 @@ of methods to handle the data, run the training, and manage the pipeline.
         - log
         - merge
         - update_layout
+        - update_traces
         - reset_aesthetics
         - run
         - save

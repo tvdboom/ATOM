@@ -91,7 +91,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._config = DataConfig(index, shuffle, stratify, test_size)
         self._memory = check_memory(tempfile.gettempdir())
 
-        self._multioutput = "auto"
         self._missing = [
             None, np.nan, np.inf, -np.inf, "", "?", "NA",
             "nan", "NaN", "none", "None", "inf", "-inf"
@@ -378,7 +377,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                         model = m(
                             goal=self.goal,
                             metric=self._metric,
-                            multioutput=self.multioutput,
                             og=self.og,
                             branch=self.branch,
                             **{x: getattr(self, x) for x in BaseTransformer.attrs},
@@ -1859,9 +1857,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             **self._prepare_kwargs(kwargs, sign(FeatureSelector)),
         )
 
-        # Add estimator to support multioutput tasks
-        feature_selector._multioutput = self.multioutput
-
         self._add_transformer(feature_selector, columns=columns)
 
         # Attach used attributes to atom's branch
@@ -1928,7 +1923,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         trainer._og = self._og
         trainer._current = self._current
         trainer._branches = self._branches
-        trainer._multioutput = self._multioutput
 
         trainer.run()
 

@@ -18,10 +18,11 @@ Description: Module containing all available models. The models are
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
+        native_multilabel: bool
+            Whether the model has native support for multilabel tasks.
+
         native_multioutput: bool
             Whether the model has native support for multioutput tasks.
-            Note that non-native models also work with multioutput
-            datasets making use of the `multioutput` meta-estimator.
 
         has_validation: str or None
             Whether the model allows in-training validation. If str,
@@ -134,7 +135,7 @@ from optuna.integration import (
 )
 from optuna.trial import Trial
 
-from atom.basemodel import BaseModel
+from atom.basemodel import ClassRegModel, ForecastModel
 from atom.pipeline import Pipeline
 from atom.utils import (
     DATAFRAME, SERIES, CatBMetric, ClassMap, CustomDict, LGBMetric, Predictor,
@@ -142,7 +143,7 @@ from atom.utils import (
 )
 
 
-class CustomModel(BaseModel):
+class CustomModel(ClassRegModel):
     """Model with estimator provided by user."""
 
     def __init__(self, **kwargs):
@@ -170,8 +171,10 @@ class CustomModel(BaseModel):
             )
 
         self.needs_scaling = getattr(est, "needs_scaling", False)
+        self.native_multilabel = getattr(est, "native_multilabel", False)
         self.native_multioutput = getattr(est, "native_multioutput", False)
         self.has_validation = getattr(est, "has_validation", None)
+
         super().__init__(name=name, **kwargs)
 
     @property
@@ -196,7 +199,7 @@ class CustomModel(BaseModel):
         return super()._get_est(**{**self._params, **params})
 
 
-class AdaBoost(BaseModel):
+class AdaBoost(ClassRegModel):
     """Adaptive Boosting (with decision tree as base estimator).
 
     AdaBoost is a meta-estimator that begins by fitting a
@@ -255,6 +258,7 @@ class AdaBoost(BaseModel):
     acronym = "AdaB"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -284,7 +288,7 @@ class AdaBoost(BaseModel):
         return dist
 
 
-class AutomaticRelevanceDetermination(BaseModel):
+class AutomaticRelevanceDetermination(ClassRegModel):
     """Automatic Relevance Determination.
 
     Automatic Relevance Determination is very similar to
@@ -341,6 +345,7 @@ class AutomaticRelevanceDetermination(BaseModel):
     acronym = "ARD"
     needs_scaling = True
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -367,7 +372,7 @@ class AutomaticRelevanceDetermination(BaseModel):
         )
 
 
-class Bagging(BaseModel):
+class Bagging(ClassRegModel):
     """Bagging model (with decision tree as base estimator).
 
     Bagging uses an ensemble meta-estimator that fits base predictors
@@ -428,6 +433,7 @@ class Bagging(BaseModel):
     acronym = "Bag"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -454,7 +460,7 @@ class Bagging(BaseModel):
         )
 
 
-class BayesianRidge(BaseModel):
+class BayesianRidge(ClassRegModel):
     """Bayesian ridge regression.
 
     Bayesian regression techniques can be used to include regularization
@@ -510,6 +516,7 @@ class BayesianRidge(BaseModel):
     acronym = "BR"
     needs_scaling = True
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -536,7 +543,7 @@ class BayesianRidge(BaseModel):
         )
 
 
-class BernoulliNB(BaseModel):
+class BernoulliNB(ClassRegModel):
     """Bernoulli Naive Bayes.
 
     BernoulliNB implements the Naive Bayes algorithm for multivariate
@@ -592,6 +599,7 @@ class BernoulliNB(BaseModel):
     acronym = "BNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
@@ -615,7 +623,7 @@ class BernoulliNB(BaseModel):
         )
 
 
-class CatBoost(BaseModel):
+class CatBoost(ClassRegModel):
     """Cat Boosting Machine.
 
     CatBoost is a machine learning method based on gradient boosting
@@ -690,6 +698,7 @@ class CatBoost(BaseModel):
     acronym = "CatB"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["catboost"]
@@ -834,7 +843,7 @@ class CatBoost(BaseModel):
         )
 
 
-class CategoricalNB(BaseModel):
+class CategoricalNB(ClassRegModel):
     """Categorical Naive Bayes.
 
     Categorical Naive Bayes implements the Naive Bayes algorithm for
@@ -890,6 +899,7 @@ class CategoricalNB(BaseModel):
     acronym = "CatNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
@@ -913,7 +923,7 @@ class CategoricalNB(BaseModel):
         )
 
 
-class ComplementNB(BaseModel):
+class ComplementNB(ClassRegModel):
     """Complement Naive Bayes.
 
     The Complement Naive Bayes classifier was designed to correct the
@@ -969,6 +979,7 @@ class ComplementNB(BaseModel):
     acronym = "CNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
@@ -993,7 +1004,7 @@ class ComplementNB(BaseModel):
         )
 
 
-class DecisionTree(BaseModel):
+class DecisionTree(ClassRegModel):
     """Single Decision Tree.
 
     A single decision tree classifier/regressor.
@@ -1048,6 +1059,7 @@ class DecisionTree(BaseModel):
     acronym = "Tree"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1082,7 +1094,7 @@ class DecisionTree(BaseModel):
         )
 
 
-class Dummy(BaseModel):
+class Dummy(ClassRegModel):
     """Dummy classifier/regressor.
 
     When doing supervised learning, a simple sanity check consists of
@@ -1102,7 +1114,7 @@ class Dummy(BaseModel):
     --------
     atom.models:DecisionTree
     atom.models:ExtraTree
-    atom.models:RandomForest
+    atom.models:NaiveForecaster
 
     Examples
     --------
@@ -1141,6 +1153,7 @@ class Dummy(BaseModel):
     acronym = "Dummy"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1188,7 +1201,7 @@ class Dummy(BaseModel):
         return dist
 
 
-class ElasticNet(BaseModel):
+class ElasticNet(ClassRegModel):
     """Linear Regression with elasticnet regularization.
 
     Linear least squares with l1 and l2 regularization.
@@ -1242,6 +1255,7 @@ class ElasticNet(BaseModel):
     acronym = "EN"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -1266,7 +1280,7 @@ class ElasticNet(BaseModel):
         )
 
 
-class ExtraTree(BaseModel):
+class ExtraTree(ClassRegModel):
     """Extremely Randomized Tree.
 
     Extra-trees differ from classic decision trees in the way they are
@@ -1326,6 +1340,7 @@ class ExtraTree(BaseModel):
     acronym = "ETree"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1381,7 +1396,7 @@ class ExtraTree(BaseModel):
         )
 
 
-class ExtraTrees(BaseModel):
+class ExtraTrees(ClassRegModel):
     """Extremely Randomized Trees.
 
     Extra-Trees use a meta estimator that fits a number of randomized
@@ -1439,6 +1454,7 @@ class ExtraTrees(BaseModel):
     acronym = "ET"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1496,7 +1512,7 @@ class ExtraTrees(BaseModel):
         )
 
 
-class GaussianNB(BaseModel):
+class GaussianNB(ClassRegModel):
     """Gaussian Naive Bayes.
 
     Gaussian Naive Bayes implements the Naive Bayes algorithm for
@@ -1552,6 +1568,7 @@ class GaussianNB(BaseModel):
     acronym = "GNB"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
@@ -1560,7 +1577,7 @@ class GaussianNB(BaseModel):
     _estimators = CustomDict({"class": "GaussianNB"})
 
 
-class GaussianProcess(BaseModel):
+class GaussianProcess(ClassRegModel):
     """Gaussian process.
 
     Gaussian Processes are a generic supervised learning method
@@ -1630,6 +1647,7 @@ class GaussianProcess(BaseModel):
     acronym = "GP"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1640,7 +1658,7 @@ class GaussianProcess(BaseModel):
     )
 
 
-class GradientBoosting(BaseModel):
+class GradientBoosting(ClassRegModel):
     """Gradient Boosting Machine.
 
     A Gradient Boosting Machine builds an additive model in a forward
@@ -1704,6 +1722,7 @@ class GradientBoosting(BaseModel):
     acronym = "GBM"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1765,7 +1784,7 @@ class GradientBoosting(BaseModel):
         return dist
 
 
-class HuberRegression(BaseModel):
+class HuberRegression(ClassRegModel):
     """Huber regressor.
 
     Huber is a linear regression model that is robust to outliers. It
@@ -1821,6 +1840,7 @@ class HuberRegression(BaseModel):
     acronym = "Huber"
     needs_scaling = True
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1845,7 +1865,7 @@ class HuberRegression(BaseModel):
         )
 
 
-class HistGradientBoosting(BaseModel):
+class HistGradientBoosting(ClassRegModel):
     """Histogram-based Gradient Boosting Machine.
 
     This Histogram-based Gradient Boosting Machine is much faster than
@@ -1906,6 +1926,7 @@ class HistGradientBoosting(BaseModel):
     acronym = "hGBM"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -1943,7 +1964,7 @@ class HistGradientBoosting(BaseModel):
         return dist
 
 
-class KNearestNeighbors(BaseModel):
+class KNearestNeighbors(ClassRegModel):
     """K-Nearest Neighbors.
 
     K-Nearest Neighbors, as the name clearly indicates, implements the
@@ -2001,6 +2022,7 @@ class KNearestNeighbors(BaseModel):
     acronym = "KNN"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -2037,7 +2059,7 @@ class KNearestNeighbors(BaseModel):
         return dist
 
 
-class Lasso(BaseModel):
+class Lasso(ClassRegModel):
     """Linear Regression with lasso regularization.
 
     Linear least squares with l1 regularization.
@@ -2091,6 +2113,7 @@ class Lasso(BaseModel):
     acronym = "Lasso"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -2114,7 +2137,7 @@ class Lasso(BaseModel):
         )
 
 
-class LeastAngleRegression(BaseModel):
+class LeastAngleRegression(ClassRegModel):
     """Least Angle Regression.
 
     Least-Angle Regression is a regression algorithm for
@@ -2173,6 +2196,7 @@ class LeastAngleRegression(BaseModel):
     acronym = "Lars"
     needs_scaling = True
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -2181,7 +2205,7 @@ class LeastAngleRegression(BaseModel):
     _estimators = CustomDict({"reg": "Lars"})
 
 
-class LightGBM(BaseModel):
+class LightGBM(ClassRegModel):
     """Light Gradient Boosting Machine.
 
     LightGBM is a gradient boosting model that uses tree based learning
@@ -2247,6 +2271,7 @@ class LightGBM(BaseModel):
     acronym = "LGB"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["lightgbm"]
@@ -2366,7 +2391,7 @@ class LightGBM(BaseModel):
         )
 
 
-class LinearDiscriminantAnalysis(BaseModel):
+class LinearDiscriminantAnalysis(ClassRegModel):
     """Linear Discriminant Analysis.
 
     Linear Discriminant Analysis is a classifier with a linear
@@ -2424,6 +2449,7 @@ class LinearDiscriminantAnalysis(BaseModel):
     acronym = "LDA"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -2468,7 +2494,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         )
 
 
-class LinearSVM(BaseModel):
+class LinearSVM(ClassRegModel):
     """Linear Support Vector Machine.
 
     Similar to [SupportVectorMachine][] but with a linear kernel.
@@ -2526,6 +2552,7 @@ class LinearSVM(BaseModel):
     acronym = "lSVM"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
@@ -2608,7 +2635,7 @@ class LinearSVM(BaseModel):
         return dist
 
 
-class LogisticRegression(BaseModel):
+class LogisticRegression(ClassRegModel):
     """Logistic Regression.
 
     Logistic regression, despite its name, is a linear model for
@@ -2667,6 +2694,7 @@ class LogisticRegression(BaseModel):
     acronym = "LR"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -2734,7 +2762,7 @@ class LogisticRegression(BaseModel):
         return dist
 
 
-class MultiLayerPerceptron(BaseModel):
+class MultiLayerPerceptron(ClassRegModel):
     """Multi-layer Perceptron.
 
     Multi-layer Perceptron is a supervised learning algorithm that
@@ -2799,6 +2827,7 @@ class MultiLayerPerceptron(BaseModel):
     acronym = "MLP"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
@@ -2889,7 +2918,7 @@ class MultiLayerPerceptron(BaseModel):
         return dist[3:] if "hidden_layer_sizes" in self._est_params else dist
 
 
-class MultinomialNB(BaseModel):
+class MultinomialNB(ClassRegModel):
     """Multinomial Naive Bayes.
 
     MultinomialNB implements the Naive Bayes algorithm for multinomially
@@ -2947,6 +2976,7 @@ class MultinomialNB(BaseModel):
     acronym = "MNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
@@ -2970,7 +3000,7 @@ class MultinomialNB(BaseModel):
         )
 
 
-class OrdinaryLeastSquares(BaseModel):
+class OrdinaryLeastSquares(ClassRegModel):
     """Linear Regression.
 
     Ordinary Least Squares is just linear regression without any
@@ -3028,7 +3058,7 @@ class OrdinaryLeastSquares(BaseModel):
     acronym = "OLS"
     needs_scaling = True
     accepts_sparse = True
-    native_multilabel = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -3037,7 +3067,7 @@ class OrdinaryLeastSquares(BaseModel):
     _estimators = CustomDict({"reg": "LinearRegression"})
 
 
-class OrthogonalMatchingPursuit(BaseModel):
+class OrthogonalMatchingPursuit(ClassRegModel):
     """Orthogonal Matching Pursuit.
 
     Orthogonal Matching Pursuit implements the OMP algorithm for
@@ -3091,6 +3121,7 @@ class OrthogonalMatchingPursuit(BaseModel):
     acronym = "OMP"
     needs_scaling = True
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -3099,7 +3130,7 @@ class OrthogonalMatchingPursuit(BaseModel):
     _estimators = CustomDict({"reg": "OrthogonalMatchingPursuit"})
 
 
-class PassiveAggressive(BaseModel):
+class PassiveAggressive(ClassRegModel):
     """Passive Aggressive.
 
     The passive-aggressive algorithms are a family of algorithms for
@@ -3157,6 +3188,7 @@ class PassiveAggressive(BaseModel):
     acronym = "PA"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
@@ -3188,7 +3220,7 @@ class PassiveAggressive(BaseModel):
         )
 
 
-class Perceptron(BaseModel):
+class Perceptron(ClassRegModel):
     """Linear Perceptron classification.
 
     The Perceptron is a simple classification algorithm suitable for
@@ -3251,6 +3283,7 @@ class Perceptron(BaseModel):
     acronym = "Perc"
     needs_scaling = True
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
@@ -3298,7 +3331,7 @@ class Perceptron(BaseModel):
         )
 
 
-class QuadraticDiscriminantAnalysis(BaseModel):
+class QuadraticDiscriminantAnalysis(ClassRegModel):
     """Quadratic Discriminant Analysis.
 
     Quadratic Discriminant Analysis is a classifier with a quadratic
@@ -3356,6 +3389,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     acronym = "QDA"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
@@ -3376,7 +3410,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
         return CustomDict(reg_param=Float(0, 1.0, step=0.1))
 
 
-class RadiusNearestNeighbors(BaseModel):
+class RadiusNearestNeighbors(ClassRegModel):
     """Radius Nearest Neighbors.
 
     Radius Nearest Neighbors implements the nearest neighbors vote,
@@ -3445,6 +3479,7 @@ class RadiusNearestNeighbors(BaseModel):
     acronym = "RNN"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
@@ -3473,7 +3508,7 @@ class RadiusNearestNeighbors(BaseModel):
         )
 
 
-class RandomForest(BaseModel):
+class RandomForest(ClassRegModel):
     """Random Forest.
 
     Random forests are an ensemble learning method that operate by
@@ -3539,6 +3574,7 @@ class RandomForest(BaseModel):
     acronym = "RF"
     needs_scaling = False
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -3611,7 +3647,7 @@ class RandomForest(BaseModel):
         return dist
 
 
-class Ridge(BaseModel):
+class Ridge(ClassRegModel):
     """Linear least squares with l2 regularization.
 
     If classifier, it first converts the target values into {-1, 1}
@@ -3675,6 +3711,7 @@ class Ridge(BaseModel):
     acronym = "Ridge"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = True
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -3704,7 +3741,7 @@ class Ridge(BaseModel):
         return dist
 
 
-class StochasticGradientDescent(BaseModel):
+class StochasticGradientDescent(ClassRegModel):
     """Stochastic Gradient Descent.
 
     Stochastic Gradient Descent is a simple yet very efficient approach
@@ -3763,6 +3800,7 @@ class StochasticGradientDescent(BaseModel):
     acronym = "SGD"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
@@ -3829,7 +3867,7 @@ class StochasticGradientDescent(BaseModel):
         )
 
 
-class SupportVectorMachine(BaseModel):
+class SupportVectorMachine(ClassRegModel):
     """Support Vector Machine.
 
     The implementation of the Support Vector Machine is based on libsvm.
@@ -3888,6 +3926,7 @@ class SupportVectorMachine(BaseModel):
     acronym = "SVM"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -3971,7 +4010,7 @@ class SupportVectorMachine(BaseModel):
         return dist
 
 
-class XGBoost(BaseModel):
+class XGBoost(ClassRegModel):
     """Extreme Gradient Boosting.
 
     XGBoost is an optimized distributed gradient boosting model
@@ -4029,6 +4068,7 @@ class XGBoost(BaseModel):
     acronym = "XGB"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = False
     native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["xgboost"]
@@ -4151,7 +4191,7 @@ class XGBoost(BaseModel):
 
 # Time series ====================================================== >>
 
-class NaiveForecaster(BaseModel):
+class NaiveForecaster(ForecastModel):
     """Naive Forecaster.
 
     NaiveForecaster is a dummy forecaster that makes forecasts using
@@ -4164,9 +4204,7 @@ class NaiveForecaster(BaseModel):
 
     See Also
     --------
-    atom.models:LinearSVM
-    atom.models:MultiLayerPerceptron
-    atom.models:StochasticGradientDescent
+    atom.models:Dummy
 
     Examples
     --------
@@ -4204,6 +4242,7 @@ class NaiveForecaster(BaseModel):
     acronym = "NF"
     needs_scaling = False
     accepts_sparse = False
+    native_multilabel = False
     native_multioutput = True
     has_validation = None
     supports_engines = ["sktime"]
@@ -4237,7 +4276,7 @@ class NaiveForecaster(BaseModel):
 
 # Ensembles ======================================================== >>
 
-class Stacking(BaseModel):
+class Stacking(ClassRegModel):
     """Stacking ensemble.
 
     Parameters
@@ -4253,6 +4292,7 @@ class Stacking(BaseModel):
     acronym = "Stack"
     needs_scaling = False
     has_validation = None
+    native_multilabel = False
     native_multioutput = False
     supports_engines = []
 
@@ -4261,7 +4301,7 @@ class Stacking(BaseModel):
 
     def __init__(self, models: ClassMap, **kwargs):
         self._models = models
-        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(ClassRegModel.__init__)}
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
@@ -4292,7 +4332,7 @@ class Stacking(BaseModel):
         )
 
 
-class Voting(BaseModel):
+class Voting(ClassRegModel):
     """Voting ensemble.
 
     Parameters
@@ -4308,6 +4348,7 @@ class Voting(BaseModel):
     acronym = "Vote"
     needs_scaling = False
     has_validation = None
+    native_multilabel = False
     native_multioutput = False
     supports_engines = []
 
@@ -4316,7 +4357,7 @@ class Voting(BaseModel):
 
     def __init__(self, models: ClassMap, **kwargs):
         self._models = models
-        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(ClassRegModel.__init__)}
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 

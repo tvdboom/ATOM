@@ -9,7 +9,6 @@ Description: Module containing the BaseModel class.
 
 from __future__ import annotations
 
-import os
 import re
 from copy import deepcopy
 from datetime import datetime as dt
@@ -26,6 +25,7 @@ import pandas as pd
 import ray
 from joblib import Parallel, delayed
 from joblib.memory import Memory
+from mlflow.data import from_pandas
 from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
@@ -40,8 +40,13 @@ from sklearn.model_selection import (
     ShuffleSplit, StratifiedShuffleSplit, TimeSeriesSplit,
 )
 from sklearn.model_selection._validation import cross_validate
+from sklearn.multioutput import (
+    ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
+)
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
+from sktime.forecasting.base import ForecastingHorizon
+from sktime.forecasting.compose import make_reduction
 from sktime.forecasting.model_selection import SingleWindowSplitter
 from sktime.proba.normal import Normal
 from starlette.requests import Request
@@ -54,13 +59,12 @@ from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, DF_ATTRS, FEATURES, FLOAT, FLOAT_TYPES, INDEX,
     INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET, ClassMap,
-    CustomDict, DataConfig, Estimator, PlotCallback, Predictor, Scorer,
-    ShapExplanation, TrialsCallback, bk, check_dependency, check_scaling,
-    composed, crash, custom_transform, estimator_has_attr, export_pipeline,
-    fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
-    has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
-    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
-    variable_return,
+    CustomDict, DataConfig, PlotCallback, Predictor, Scorer, ShapExplanation,
+    TrialsCallback, bk, check_dependency, check_scaling, composed, crash,
+    custom_transform, estimator_has_attr, export_pipeline, fit_and_score, flt,
+    get_cols, get_custom_scorer, get_feature_importance, has_task, infer_task,
+    is_binary, is_multioutput, it, lst, merge, method_to_log, rnd, sign,
+    time_to_str, to_df, to_pandas, to_series, variable_return,
 )
 
 
@@ -88,9 +92,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     metric: ClassMap or None, default=None
         Metric on which to fit the model.
-
-    multioutput: Estimator or None, default=None
-        Meta-estimator for multioutput tasks.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -175,7 +176,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         og: Any | None = None,
         branch: Any | None = None,
         metric: ClassMap | None = None,
-        multioutput: Estimator | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -203,7 +203,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         self._config = config or DataConfig()
         self._metric = metric
-        self.multioutput = multioutput
 
         self.scaler = None
         self.app = None
@@ -289,13 +288,15 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Return the estimator's class (not instance)."""
         try:
             module = import_module(f"{self.engine}.{self._module}")
-            return getattr(module, self._estimators[self.goal])
+            cls = self._estimators.get(self.goal, self._estimators.get("reg"))
         except (ModuleNotFoundError, AttributeError):
             if "sklearn" in self.supports_engines:
                 module = import_module(f"sklearn.{self._module}")
             else:
                 module = import_module(self._module)
-            return getattr(module, self._estimators[self.goal])
+            cls = self._estimators.get(self.goal, self._estimators.get("reg"))
+
+        return getattr(module, cls)
 
     @property
     def _shap(self) -> ShapExplanation:
@@ -402,6 +403,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         Use the multioutput meta-estimator if the estimator has
         no native support for multioutput.
 
+        Use sktime's [make_reduction][] function for regressors
+        in forecast tasks.
+
         Parameters
         ----------
         **params
@@ -413,17 +417,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Estimator instance.
 
         """
-        estimator = self._inherit(self._est_class(**params))
-
-        if is_multioutput(self.task) and not self.native_multioutput and self.multioutput:
-            if callable(self.multioutput):
-                estimator = self._inherit(self.multioutput(estimator))
+        # Separate the parameters for the estimator from those in sub-estimators
+        base_params, sub_params = {}, {}
+        for name, value in params.items():
+            if "__" not in name:
+                base_params[name] = value
             else:
-                # Assign estimator to first parameter of meta-estimator
-                key = list(sign(self.multioutput.__init__))[0]
-                estimator = self.multioutput.set_params(**{key: estimator})
+                sub_params[name] = value
 
-        return estimator
+        estimator = self._inherit(self._est_class(**base_params))
+        estimator.set_params(**sub_params)
+
+        if self.task.startswith("multilabel") and not self.native_multilabel:
+            estimator = ClassifierChain(estimator)
+        elif "multioutput" in self.task and not self.native_multioutput:
+            if self.goal.startswith("class"):
+                estimator = MultiOutputClassifier(estimator)
+            else:
+                estimator = MultiOutputRegressor(estimator)
+        elif hasattr(self, "_estimators") and self.goal not in self._estimators:
+            # Forecasting task with a regressor
+            estimator = make_reduction(estimator)
+
+        return self._inherit(estimator)
 
     def _fit_estimator(
         self,
@@ -485,8 +501,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 kwargs = {}
                 if self.goal.startswith("class"):
                     if is_multioutput(self.task):
-                        if self.multioutput is None:
-                            # Native multioutput models (e.g., MLP, Ridge, ...)
+                        if self.native_multilabel:
                             kwargs["classes"] = list(range(self.y.shape[1]))
                         else:
                             kwargs["classes"] = [np.unique(y) for y in get_cols(self.y)]
@@ -1161,7 +1176,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                         "name": self.name,
                         "model": self._fullname,
                         "branch": self.branch.name,
-                        **self.T._ht["tags"],
+                        **self._ht["tags"],
                     }
                 )
 
@@ -1196,7 +1211,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 if self.log_data:
                     for ds in ("train", "test"):
                         mlflow.log_input(
-                            dataset=mlflow.data.from_pandas(getattr(self, ds)),
+                            dataset=from_pandas(pd.DataFrame(getattr(self, ds))),
                             context=ds,
                         )
 
@@ -1538,14 +1553,14 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def X_train(self) -> DATAFRAME:
         """Features of the training set."""
         if self.scaler:
-            return self.scaler.transform(self.branch.X_train[:self._train_idx])
+            return self.scaler.transform(self.branch.X_train[-self._train_idx:])
         else:
-            return self.branch.X_train[:self._train_idx]
+            return self.branch.X_train[-self._train_idx:]
 
     @property
     def y_train(self) -> PANDAS:
         """Target column of the training set."""
-        return self.branch.y_train[:self._train_idx]
+        return self.branch.y_train[-self._train_idx:]
 
     @property
     def X_test(self) -> DATAFRAME:
@@ -1566,715 +1581,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Target column of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout[self.branch.target]
-
-    # Prediction properties ======================================== >>
-
-    def _get_predict(self, X: DATAFRAME, method: str = "predict") -> PANDAS:
-        """Get the data from a prediction method of an estimator.
-
-        This utility is needed because the signature for the predict
-        method of sklearn estimators is different from sktime.
-
-        Parameters
-        ----------
-        X: dataframe
-            Data set on which to predict.
-
-        method: str, default="predict"
-            Method to use for predictions.
-
-        Returns
-        -------
-        series or dataframe
-            Predicted values.
-
-        """
-        if "fh" in sign(getattr(self.estimator, method)):
-            return self.estimator.predict(fh=X.index, X=X)
-        else:
-            return getattr(self.estimator, method)(X)
-
-    def _assign_prediction_indices(self, index: INDEX) -> INDEX:
-        """Assign index names for the prediction methods.
-
-        Create a multi-index object for multioutput tasks, where the
-        first level of the index is the target classes and the second
-        the original row indices from the data set.
-
-        Parameters
-        ----------
-        index: index
-            Original row indices of the data set.
-
-        Returns
-        -------
-        index
-            Indices for the dataframe.
-
-        """
-        return bk.MultiIndex.from_tuples(
-            [(col, idx) for col in np.unique(self.y) for idx in index]
-        )
-
-    def _assign_prediction_columns(self) -> list[str]:
-        """Assign column names for the prediction methods.
-
-        Returns
-        -------
-        list of str
-            Columns for the dataframe.
-
-        """
-        if is_multioutput(self.task):
-            return self.target  # When multioutput, target is list of str
-        else:
-            return self.mapping.get(self.target, np.unique(self.y).astype(str))
-
-    @cached_property
-    def decision_function_train(self) -> PANDAS:
-        """Predicted confidence scores on the training set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples,) for binary classification.
-        - (n_samples, n_classes) for multiclass classification.
-        - (n_samples, n_targets) for [multilabel][] classification.
-
-        """
-        return to_pandas(
-            data=self.estimator.decision_function(self.X_train),
-            index=self.X_train.index,
-            name=self.target,
-            columns=self._assign_prediction_columns(),
-        )
-
-    @cached_property
-    def decision_function_test(self) -> PANDAS:
-        """Predicted confidence scores on the test set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples,) for binary classification.
-        - (n_samples, n_classes) for multiclass classification.
-        - (n_samples, n_targets) for [multilabel][] classification.
-
-        """
-        return to_pandas(
-            data=self.estimator.decision_function(self.X_test),
-            index=self.X_test.index,
-            name=self.target,
-            columns=self._assign_prediction_columns(),
-        )
-
-    @cached_property
-    def decision_function_holdout(self) -> PANDAS | None:
-        """Predicted confidence scores on the holdout set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples,) for binary classification.
-        - (n_samples, n_classes) for multiclass classification.
-        - (n_samples, n_targets) for [multilabel][] classification.
-
-        """
-        if self.holdout is not None:
-            return to_pandas(
-                data=self.estimator.decision_function(self.X_holdout),
-                index=self.X_holdout.index,
-                name=self.target,
-                columns=self._assign_prediction_columns(),
-            )
-
-    @cached_property
-    def predict_train(self) -> PANDAS:
-        """Class predictions on the training set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples,) for non-multioutput tasks.
-        - (n_samples, n_targets) for [multioutput tasks][].
-
-        """
-        return to_pandas(
-            data=self._get_predict(self.X_train),
-            index=self.X_train.index,
-            name=self.target,
-            columns=self._assign_prediction_columns(),
-        )
-
-    @cached_property
-    def predict_test(self) -> PANDAS:
-        """Class predictions on the test set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples,) for non-multioutput tasks.
-        - (n_samples, n_targets) for [multioutput tasks][].
-
-        """
-        return to_pandas(
-            data=self._get_predict(self.X_test),
-            index=self.X_test.index,
-            name=self.target,
-            columns=self._assign_prediction_columns(),
-        )
-
-    @cached_property
-    def predict_holdout(self) -> PANDAS | None:
-        """Class predictions on the holdout set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples,) for non-multioutput tasks.
-        - (n_samples, n_targets) for [multioutput tasks][].
-
-        """
-        if self.holdout is not None:
-            return to_pandas(
-                data=self._get_predict(self.X_holdout),
-                index=self.X_holdout.index,
-                name=self.target,
-                columns=self._assign_prediction_columns(),
-            )
-
-    @cached_property
-    def predict_log_proba_train(self) -> DATAFRAME:
-        """Class log-probability predictions on the training set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples, n_classes) for binary and multiclass.
-        - (n_samples, n_targets) for [multilabel][].
-        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
-
-        """
-        data = np.array(self.estimator.predict_log_proba(self.X_train))
-        if data.ndim < 3:
-            data = bk.DataFrame(
-                data=data,
-                index=self.X_train.index,
-                columns=self._assign_prediction_columns(),
-            )
-        elif self.task.startswith("multilabel"):
-            # Convert to (n_samples, n_targets)
-            data = bk.DataFrame(
-                data=np.array([d[:, 1] for d in data]).T,
-                index=self.X_train.index,
-                columns=self._assign_prediction_columns(),
-            )
-        else:
-            data = bk.DataFrame(
-                data=data.reshape(-1, data.shape[2]),
-                index=self._assign_prediction_indices(self.X_train.index),
-                columns=self._assign_prediction_columns(),
-            )
-
-        return data
-
-    @cached_property
-    def predict_log_proba_test(self) -> DATAFRAME:
-        """Class log-probability predictions on the test set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples, n_classes) for binary and multiclass.
-        - (n_samples, n_targets) for [multilabel][].
-        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
-
-        """
-        data = np.array(self.estimator.predict_log_proba(self.X_test))
-        if data.ndim < 3:
-            data = bk.DataFrame(
-                data=data,
-                index=self.X_test.index,
-                columns=self._assign_prediction_columns(),
-            )
-        elif self.task.startswith("multilabel"):
-            # Convert to (n_samples, n_targets)
-            data = bk.DataFrame(
-                data=np.array([d[:, 1] for d in data]).T,
-                index=self.X_test.index,
-                columns=self._assign_prediction_columns(),
-            )
-        else:
-            data = bk.DataFrame(
-                data=data.reshape(-1, data.shape[2]),
-                index=self._assign_prediction_indices(self.X_test.index),
-                columns=self._assign_prediction_columns(),
-            )
-
-        return data
-
-    @cached_property
-    def predict_log_proba_holdout(self) -> DATAFRAME | None:
-        """Class log-probability predictions on the holdout set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples, n_classes) for binary and multiclass.
-        - (n_samples, n_targets) for [multilabel][].
-        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
-
-        """
-        if self.holdout is not None:
-            data = np.array(self.estimator.predict_log_proba(self.X_holdout))
-            if data.ndim < 3:
-                data = bk.DataFrame(
-                    data=data,
-                    index=self.X_holdout.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            elif self.task.startswith("multilabel"):
-                # Convert to (n_samples, n_targets)
-                data = bk.DataFrame(
-                    data=np.array([d[:, 1] for d in data]).T,
-                    index=self.X_holdout.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            else:
-                data = bk.DataFrame(
-                    data=data.reshape(-1, data.shape[2]),
-                    index=self._assign_prediction_indices(self.X_holdout.index),
-                    columns=self._assign_prediction_columns(),
-                )
-
-            return data
-
-    @cached_property
-    def predict_proba_train(self) -> DATAFRAME | Normal:
-        """Class probability predictions on the training set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples, n_classes) for binary and multiclass.
-        - (n_samples, n_targets) for [multilabel][].
-        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
-        - `sktime.proba.normal.Normal` object for [forecast][].
-
-        """
-        data = self._get_predict(self.X_train, method="predict_proba")
-        if self.goal != "fc":
-            if (data := np.array(data)).ndim < 3:
-                data = bk.DataFrame(
-                    data=data,
-                    index=self.X_train.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            elif self.task.startswith("multilabel"):
-                # Convert to (n_samples, n_targets)
-                data = bk.DataFrame(
-                    data=np.array([d[:, 1] for d in data]).T,
-                    index=self.X_train.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            else:
-                data = bk.DataFrame(
-                    data=data.reshape(-1, data.shape[2]),
-                    index=self._assign_prediction_indices(self.X_train.index),
-                    columns=self._assign_prediction_columns(),
-                )
-
-        return data
-
-    @cached_property
-    def predict_proba_test(self) -> DATAFRAME | Normal:
-        """Class probability predictions on the test set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples, n_classes) for binary and multiclass.
-        - (n_samples, n_targets) for [multilabel][].
-        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
-        - `sktime.proba.normal.Normal` object for [forecast][].
-
-        """
-        data = self._get_predict(self.X_test, method="predict_proba")
-        if self.goal != "fc":
-            if (data := np.array(data)).ndim < 3:
-                data = bk.DataFrame(
-                    data=data,
-                    index=self.X_test.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            elif self.task.startswith("multilabel"):
-                # Convert to (n_samples, n_targets)
-                data = bk.DataFrame(
-                    data=np.array([d[:, 1] for d in data]).T,
-                    index=self.X_test.index,
-                    columns=self._assign_prediction_columns(),
-                )
-            else:
-                data = bk.DataFrame(
-                    data=data.reshape(-1, data.shape[2]),
-                    index=self._assign_prediction_indices(self.X_test.index),
-                    columns=self._assign_prediction_columns(),
-                )
-
-        return data
-
-    @cached_property
-    def predict_proba_holdout(self) -> DATAFRAME | Normal | None:
-        """Class probability predictions on the holdout set.
-
-        The shape of the output depends on the task:
-
-        - (n_samples, n_classes) for binary and multiclass.
-        - (n_samples, n_targets) for [multilabel][].
-        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
-        - `sktime.proba.normal.Normal` object for [forecast][].
-
-        """
-        if self.holdout is not None:
-            data = self._get_predict(self.X_holdout, method="predict_proba")
-            if self.goal != "fc":
-                if (data := np.array(data)).ndim < 3:
-                    data = bk.DataFrame(
-                        data=data,
-                        index=self.X_holdout.index,
-                        columns=self._assign_prediction_columns(),
-                    )
-                elif self.task.startswith("multilabel"):
-                    # Convert to (n_samples, n_targets)
-                    data = bk.DataFrame(
-                        data=np.array([d[:, 1] for d in data]).T,
-                        index=self.X_holdout.index,
-                        columns=self._assign_prediction_columns(),
-                    )
-                else:
-                    data = bk.DataFrame(
-                        data=data.reshape(-1, data.shape[2]),
-                        index=self._assign_prediction_indices(self.X_holdout.index),
-                        columns=self._assign_prediction_columns(),
-                    )
-
-            return data
-
-    # Prediction methods =========================================== >>
-
-    def _prediction(
-        self,
-        X: slice | TARGET | FEATURES,
-        y: TARGET | None = None,
-        metric: str | Callable | None = None,
-        sample_weight: SEQUENCE | None = None,
-        verbose: INT | None = None,
-        method: str = "predict",
-    ) -> FLOAT | PANDAS:
-        """Get predictions on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The model should implement the provided method.
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Index names or positions of rows in the dataset, or new
-            feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
-
-        metric: str, func, scorer or None, default=None
-            Metric to calculate. Choose from any of sklearn's scorers,
-            a function with signature metric(y_true, y_pred) or a scorer
-            object. If None, it returns mean accuracy for classification
-            tasks and r2 for regression tasks. Only for method="score".
-
-        sample_weight: sequence or None, default=None
-            Sample weights for the score method.
-
-        verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            estimator's own verbosity.
-
-        method: str, default="predict"
-            Prediction method to be applied to the estimator.
-
-        Returns
-        -------
-        float, series or dataframe
-            Calculated predictions. The return type depends on the method
-            called.
-
-        """
-        # Two options: select from existing predictions (X has to be able
-        # to get rows from dataset) or calculate predictions from new data
-        try:
-            # Duck type _get_rows -> raises an error if X can't select indices
-            rows = self.branch._get_rows(X, return_test=True)
-        except (ValueError, TypeError, IndexError, KeyError):
-            rows = None
-
-            # When there is a pipeline, apply transformations first
-            X, y = self._prepare_input(X, y, columns=self.og.features)
-            X = self._set_index(X, y)
-            if y is not None:
-                y.index = X.index
-
-            for transformer in self.pipeline:
-                if not transformer._train_only:
-                    X, y = custom_transform(transformer, self.branch, (X, y), verbose)
-
-        if method != "score":
-            if rows:
-                # Concatenate the predictions for all sets and retrieve indices
-                predictions = pd.concat(
-                    [
-                        getattr(self, f"{method}_{ds}")
-                        for ds in ("train", "test", "holdout")
-                    ]
-                )
-                return predictions.loc[rows]
-            else:
-                if (data := np.array(getattr(self.estimator, method)(X))).ndim < 3:
-                    return to_pandas(
-                        data=data,
-                        index=X.index,
-                        name=self.target,
-                        columns=self._assign_prediction_columns(),
-                    )
-                else:
-                    return bk.DataFrame(
-                        data=data.reshape(-1, data.shape[2]),
-                        index=bk.MultiIndex.from_tuples(
-                            [(col, i) for col in self.target for i in X.index]
-                        ),
-                        columns=np.unique(self.y),
-                    )
-        else:
-            if metric is None:
-                metric = self._metric[0]
-            else:
-                metric = get_custom_scorer(metric)
-
-            if rows:
-                # Define X and y for the score method
-                data = self.dataset
-                if self.holdout is not None:
-                    data = bk.concat([self.dataset, self.holdout])
-
-                X, y = data.loc[rows, self.features], data.loc[rows, self.target]
-
-            return metric(self.estimator, X, y, sample_weight)
-
-    @available_if(estimator_has_attr("decision_function"))
-    @composed(crash, method_to_log)
-    def decision_function(
-        self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
-        *,
-        verbose: INT | None = None,
-    ) -> PANDAS:
-        """Get confidence scores on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `decision_function` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
-            set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        series or dataframe
-            Predicted confidence scores with shape=(n_samples,) for
-            binary classification tasks or shape=(n_samples, n_classes)
-            for multiclass classification tasks.
-
-        """
-        return self._prediction(X, verbose=verbose, method="decision_function")
-
-    @composed(crash, method_to_log)
-    def predict(
-        self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
-        *,
-        verbose: INT | None = None,
-    ) -> PANDAS:
-        """Get class predictions on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `predict` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new
-            feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        series or dataframe
-            Class predictions with shape=(n_samples,) or
-            shape=(n_samples, n_targets) for [multioutput tasks][].
-
-        """
-        return self._prediction(X, verbose=verbose, method="predict")
-
-    @available_if(estimator_has_attr("predict_log_proba"))
-    @composed(crash, method_to_log)
-    def predict_log_proba(
-        self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
-        *,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
-        """Get class log-probabilities on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `predict_log_proba` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
-            set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        dataframe
-            Class log-probability predictions with shape=(n_samples,
-            n_classes).
-
-        """
-        return self._prediction(X, verbose=verbose, method="predict_log_proba")
-
-    @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, method_to_log)
-    def predict_proba(
-        self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
-        *,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
-        """Get class probabilities on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `predict_proba` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new
-            feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        dataframe
-            Class probability predictions with shape=(n_samples, n_classes)
-            or (n_targets * n_samples, n_classes) with a multiindex format
-            for [multioutput tasks][].
-
-        """
-        return self._prediction(X, verbose=verbose, method="predict_proba")
-
-    @available_if(estimator_has_attr("score"))
-    @composed(crash, method_to_log)
-    def score(
-        self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
-        y: TARGET | None = None,
-        metric: str | Callable | None = None,
-        *,
-        sample_weight: SEQUENCE | None = None,
-        verbose: INT | None = None,
-    ) -> FLOAT:
-        """Get a metric score on new data.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. If called from atom, the best model (under the `winner`
-        attribute) is used. If called from a model, that model is used.
-
-        Read more in the [user guide][predicting].
-
-        !!! info
-            If the `metric` parameter is left to its default value, the
-            method returns atom's metric score, not the metric returned
-            by sklearn's score method for estimators.
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
-            set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
-
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
-
-        metric: str, func, scorer or None, default=None
-            Metric to calculate. Choose from any of sklearn's scorers,
-            a function with signature `metric(y_true, y_pred) -> score`
-            or a scorer object. If None, it uses atom's metric (the main
-            metric for [multi-metric runs][]).
-
-        sample_weight: sequence or None, default=None
-            Sample weights corresponding to y.
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        float
-            Metric score of X with respect to y.
-
-        """
-        return self._prediction(
-            X=X,
-            y=y,
-            metric=metric,
-            sample_weight=sample_weight,
-            verbose=verbose,
-            method="score",
-        )
 
     # Utility methods ============================================== >>
 
@@ -3075,3 +2381,1273 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
         return variable_return(X, y)
+
+
+class ClassRegModel(BaseModel):
+    """Classification and regression models."""
+
+    # Prediction properties ======================================== >>
+
+    def _assign_prediction_indices(self, index: INDEX) -> INDEX:
+        """Assign index names for the prediction methods.
+
+        Create a multi-index object for multioutput tasks, where the
+        first level of the index is the target classes and the second
+        the original row indices from the data set.
+
+        Parameters
+        ----------
+        index: index
+            Original row indices of the data set.
+
+        Returns
+        -------
+        index
+            Indices for the dataframe.
+
+        """
+        return bk.MultiIndex.from_tuples(
+            [(col, idx) for col in np.unique(self.y) for idx in index]
+        )
+
+    def _assign_prediction_columns(self) -> list[str]:
+        """Assign column names for the prediction methods.
+
+        Returns
+        -------
+        list of str
+            Columns for the dataframe.
+
+        """
+        if is_multioutput(self.task):
+            return self.target  # When multioutput, target is list of str
+        else:
+            return self.mapping.get(self.target, np.unique(self.y).astype(str))
+
+    @cached_property
+    def decision_function_train(self) -> PANDAS:
+        """Predicted confidence scores on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for binary classification.
+        - (n_samples, n_classes) for multiclass classification.
+        - (n_samples, n_targets) for [multilabel][] classification.
+
+        """
+        return to_pandas(
+            data=self.estimator.decision_function(self.X_train),
+            index=self.X_train.index,
+            name=self.target,
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
+    def decision_function_test(self) -> PANDAS:
+        """Predicted confidence scores on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for binary classification.
+        - (n_samples, n_classes) for multiclass classification.
+        - (n_samples, n_targets) for [multilabel][] classification.
+
+        """
+        return to_pandas(
+            data=self.estimator.decision_function(self.X_test),
+            index=self.X_test.index,
+            name=self.target,
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
+    def decision_function_holdout(self) -> PANDAS | None:
+        """Predicted confidence scores on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for binary classification.
+        - (n_samples, n_classes) for multiclass classification.
+        - (n_samples, n_targets) for [multilabel][] classification.
+
+        """
+        if self.holdout is not None:
+            return to_pandas(
+                data=self.estimator.decision_function(self.X_holdout),
+                index=self.X_holdout.index,
+                name=self.target,
+                columns=self._assign_prediction_columns(),
+            )
+
+    @cached_property
+    def predict_train(self) -> PANDAS:
+        """Predictions on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for non-multioutput tasks.
+        - (n_samples, n_targets) for [multioutput tasks][].
+
+        """
+        return to_pandas(
+            data=self.estimator.predict(self.X_train),
+            index=self.X_train.index,
+            name=self.target,
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
+    def predict_test(self) -> PANDAS:
+        """Predictions on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for non-multioutput tasks.
+        - (n_samples, n_targets) for [multioutput tasks][].
+
+        """
+        return to_pandas(
+            data=self.estimator.predict(self.X_test),
+            index=self.X_test.index,
+            name=self.target,
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
+    def predict_holdout(self) -> PANDAS | None:
+        """Predictions on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for non-multioutput tasks.
+        - (n_samples, n_targets) for [multioutput tasks][].
+
+        """
+        if self.holdout is not None:
+            return to_pandas(
+                data=self.estimator.predict(self.X_holdout),
+                index=self.X_holdout.index,
+                name=self.target,
+                columns=self._assign_prediction_columns(),
+            )
+
+    @cached_property
+    def predict_log_proba_train(self) -> DATAFRAME:
+        """Class log-probability predictions on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+
+        """
+        data = np.array(self.estimator.predict_log_proba(self.X_train))
+        if data.ndim < 3:
+            data = bk.DataFrame(
+                data=data,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            data = bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
+        else:
+            data = bk.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=self._assign_prediction_indices(self.X_train.index),
+                columns=self._assign_prediction_columns(),
+            )
+
+        return data
+
+    @cached_property
+    def predict_log_proba_test(self) -> DATAFRAME:
+        """Class log-probability predictions on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+
+        """
+        data = np.array(self.estimator.predict_log_proba(self.X_test))
+        if data.ndim < 3:
+            data = bk.DataFrame(
+                data=data,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            data = bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
+        else:
+            data = bk.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=self._assign_prediction_indices(self.X_test.index),
+                columns=self._assign_prediction_columns(),
+            )
+
+        return data
+
+    @cached_property
+    def predict_log_proba_holdout(self) -> DATAFRAME | None:
+        """Class log-probability predictions on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+
+        """
+        if self.holdout is not None:
+            data = np.array(self.estimator.predict_log_proba(self.X_holdout))
+            if data.ndim < 3:
+                data = bk.DataFrame(
+                    data=data,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            elif self.task.startswith("multilabel"):
+                # Convert to (n_samples, n_targets)
+                data = bk.DataFrame(
+                    data=np.array([d[:, 1] for d in data]).T,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            else:
+                data = bk.DataFrame(
+                    data=data.reshape(-1, data.shape[2]),
+                    index=self._assign_prediction_indices(self.X_holdout.index),
+                    columns=self._assign_prediction_columns(),
+                )
+
+            return data
+
+    @cached_property
+    def predict_proba_train(self) -> DATAFRAME:
+        """Class probability predictions on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+
+        """
+        data = np.array(self.estimator.predict_proba(self.X_train))
+        if data.ndim < 3:
+            data = bk.DataFrame(
+                data=data,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            data = bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
+        else:
+            data = bk.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=self._assign_prediction_indices(self.X_train.index),
+                columns=self._assign_prediction_columns(),
+            )
+
+        return data
+
+    @cached_property
+    def predict_proba_test(self) -> DATAFRAME:
+        """Class probability predictions on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+
+        """
+        data = np.array(self.estimator.predict_proba(self.X_test))
+        if data.ndim < 3:
+            data = bk.DataFrame(
+                data=data,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            data = bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
+        else:
+            data = bk.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=self._assign_prediction_indices(self.X_test.index),
+                columns=self._assign_prediction_columns(),
+            )
+
+        return data
+
+    @cached_property
+    def predict_proba_holdout(self) -> DATAFRAME | None:
+        """Class probability predictions on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
+
+        """
+        if self.holdout is not None:
+            data = np.array(self.estimator.predict_proba(self.X_holdout))
+            if data.ndim < 3:
+                data = bk.DataFrame(
+                    data=data,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            elif self.task.startswith("multilabel"):
+                # Convert to (n_samples, n_targets)
+                data = bk.DataFrame(
+                    data=np.array([d[:, 1] for d in data]).T,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            else:
+                data = bk.DataFrame(
+                    data=data.reshape(-1, data.shape[2]),
+                    index=self._assign_prediction_indices(self.X_holdout.index),
+                    columns=self._assign_prediction_columns(),
+                )
+
+            return data
+
+    # Prediction methods =========================================== >>
+
+    def _prediction(
+        self,
+        X: slice | TARGET | FEATURES,
+        y: TARGET | None = None,
+        metric: str | Callable | None = None,
+        sample_weight: SEQUENCE | None = None,
+        verbose: INT | None = None,
+        method: str = "predict",
+    ) -> FLOAT | PANDAS:
+        """Get predictions on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The model should implement the provided method.
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Index names or positions of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        metric: str, func, scorer or None, default=None
+            Metric to calculate. Choose from any of sklearn's scorers,
+            a function with signature metric(y_true, y_pred) or a scorer
+            object. If None, it returns mean accuracy for classification
+            tasks and r2 for regression tasks. Only for method="score".
+
+        sample_weight: sequence or None, default=None
+            Sample weights for the score method.
+
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            estimator's own verbosity.
+
+        method: str, default="predict"
+            Prediction method to be applied to the estimator.
+
+        Returns
+        -------
+        float, series or dataframe
+            Calculated predictions. The return type depends on the method
+            called.
+
+        """
+        # Two options: select from existing predictions (X has to be able
+        # to get rows from dataset) or calculate predictions from new data
+        try:
+            # Duck type _get_rows -> raises an error if X can't select indices
+            rows = self.branch._get_rows(X, return_test=True)
+        except (ValueError, TypeError, IndexError, KeyError):
+            rows = None
+
+            # When there is a pipeline, apply transformations first
+            X, y = self._prepare_input(X, y, columns=self.og.features)
+            X = self._set_index(X, y)
+            if y is not None:
+                y.index = X.index
+
+            for transformer in self.pipeline:
+                if not transformer._train_only:
+                    X, y = custom_transform(transformer, self.branch, (X, y), verbose)
+
+        if method != "score":
+            if rows:
+                # Concatenate the predictions for all sets and retrieve indices
+                predictions = pd.concat(
+                    [
+                        getattr(self, f"{method}_{ds}")
+                        for ds in ("train", "test", "holdout")
+                    ]
+                )
+                return predictions.loc[rows]
+            else:
+                if (data := np.array(getattr(self.estimator, method)(X))).ndim < 3:
+                    return to_pandas(
+                        data=data,
+                        index=X.index,
+                        name=self.target,
+                        columns=self._assign_prediction_columns(),
+                    )
+                else:
+                    return bk.DataFrame(
+                        data=data.reshape(-1, data.shape[2]),
+                        index=bk.MultiIndex.from_tuples(
+                            [(col, i) for col in self.target for i in X.index]
+                        ),
+                        columns=np.unique(self.y),
+                    )
+        else:
+            if metric is None:
+                metric = self._metric[0]
+            else:
+                metric = get_custom_scorer(metric)
+
+            if rows:
+                # Define X and y for the score method
+                data = bk.concat([self.dataset, self.holdout])
+                X, y = data.loc[rows, self.features], data.loc[rows, self.target]
+
+            return metric(self.estimator, X, y, sample_weight)
+
+    @available_if(estimator_has_attr("decision_function"))
+    @composed(crash, method_to_log)
+    def decision_function(
+        self,
+        X: INT | str | slice | SEQUENCE | FEATURES,
+        verbose: INT | None = None,
+    ) -> PANDAS:
+        """Get confidence scores on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `decision_function` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        series or dataframe
+            Predicted confidence scores with shape=(n_samples,) for
+            binary classification tasks or shape=(n_samples, n_classes)
+            for multiclass classification tasks.
+
+        """
+        return self._prediction(X, verbose=verbose, method="decision_function")
+
+    @available_if(estimator_has_attr("predict"))
+    @composed(crash, method_to_log)
+    def predict(
+        self,
+        X: INT | str | slice | SEQUENCE | FEATURES,
+        verbose: INT | None = None,
+    ) -> PANDAS:
+        """Get predictions on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        series or dataframe
+            Predictions with shape=(n_samples,) or shape=(n_samples,
+            n_targets) for [multioutput tasks][].
+
+        """
+        return self._prediction(X, verbose=verbose, method="predict")
+
+    @available_if(estimator_has_attr("predict_log_proba"))
+    @composed(crash, method_to_log)
+    def predict_log_proba(
+        self,
+        X: INT | str | slice | SEQUENCE | FEATURES,
+        verbose: INT | None = None,
+    ) -> DATAFRAME:
+        """Get class log-probabilities on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_log_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        dataframe
+            Class log-probability predictions with shape=(n_samples,
+            n_classes).
+
+        """
+        return self._prediction(X, verbose=verbose, method="predict_log_proba")
+
+    @available_if(estimator_has_attr("predict_proba"))
+    @composed(crash, method_to_log)
+    def predict_proba(
+        self,
+        X: INT | str | slice | SEQUENCE | FEATURES,
+        verbose: INT | None = None,
+    ) -> DATAFRAME:
+        """Get class probabilities on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        dataframe
+            Class probability predictions with shape=(n_samples, n_classes)
+            or (n_targets * n_samples, n_classes) with a multiindex format
+            for [multioutput tasks][].
+
+        """
+        return self._prediction(X, verbose=verbose, method="predict_proba")
+
+    @available_if(estimator_has_attr("score"))
+    @composed(crash, method_to_log)
+    def score(
+        self,
+        X: INT | str | slice | SEQUENCE | FEATURES,
+        y: TARGET | None = None,
+        metric: str | Callable | None = None,
+        sample_weight: SEQUENCE | None = None,
+        verbose: INT | None = None,
+    ) -> FLOAT:
+        """Get a metric score on new data.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped.
+
+        Read more in the [user guide][predicting].
+
+        !!! info
+            If the `metric` parameter is left to its default value, the
+            method returns atom's metric score, not the metric returned
+            by sklearn's score method for estimators.
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to X.
+
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        metric: str, func, scorer or None, default=None
+            Metric to calculate. Choose from any of sklearn's scorers,
+            a function with signature `metric(y_true, y_pred) -> score`
+            or a scorer object. If None, it uses atom's metric (the main
+            metric for [multi-metric runs][]).
+
+        sample_weight: sequence or None, default=None
+            Sample weights corresponding to y.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        float
+            Metric score of X with respect to y.
+
+        """
+        return self._prediction(
+            X=X,
+            y=y,
+            metric=metric,
+            sample_weight=sample_weight,
+            verbose=verbose,
+            method="score",
+        )
+
+
+class ForecastModel(BaseModel):
+    """Forecasting models."""
+
+    # Prediction properties ======================================== >>
+
+    @cached_property
+    def predict_train(self) -> PANDAS:
+        """Predictions on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict(self.train.index, X=self.X_train)
+
+    @cached_property
+    def predict_test(self) -> PANDAS:
+        """Predictions on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict(self.test.index, X=self.X_test)
+
+    @cached_property
+    def predict_holdout(self) -> PANDAS | None:
+        """Predictions on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        if self.holdout is not None:
+            return self.estimator.predict(self.holdout.index, X=self.X_holdout)
+
+    @cached_property
+    def predict_interval_train(self) -> DATAFRAME:
+        """Prediction interval on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, 2) for univariate tasks.
+        - (n_samples, 2 * n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_interval(self.train.index, X=self.X_train)
+
+    @cached_property
+    def predict_interval_test(self) -> DATAFRAME:
+        """Prediction interval on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, 2) for univariate tasks.
+        - (n_samples, 2 * n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_interval(self.test.index, X=self.X_test)
+
+    @cached_property
+    def predict_interval_holdout(self) -> DATAFRAME | None:
+        """Prediction interval on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, 2) for univariate tasks.
+        - (n_samples, 2 * n_targets) for [multivariate][] tasks.
+
+        """
+        if self.holdout:
+            return self.estimator.predict_interval(self.train.index, X=self.X_train)
+
+    @cached_property
+    def predict_proba_train(self) -> Normal:
+        """Probabilistic forecast on the training set."""
+        return self.estimator.predict_proba(self.train.index, X=self.X_train)
+
+    @cached_property
+    def predict_proba_test(self) -> Normal:
+        """Probabilistic forecast on the test set."""
+        return self.estimator.predict_proba(self.test.index, X=self.X_test)
+
+    @cached_property
+    def predict_proba_holdout(self) -> Normal | None:
+        """Probabilistic forecast on the holdout set."""
+        if self.holdout:
+            return self.estimator.predict_proba(self.holdout.index, X=self.X_holdout)
+
+    @cached_property
+    def predict_quantiles_train(self) -> DATAFRAME:
+        """Quantile forecast on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, 2) for univariate tasks.
+        - (n_samples, 2 * n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_quantiles(self.train.index, X=self.X_train)
+
+    @cached_property
+    def predict_quantiles_test(self) -> DATAFRAME:
+        """Quantile forecast on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, 2) for univariate tasks.
+        - (n_samples, 2 * n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_quantiles(self.test.index, X=self.X_test)
+
+    @cached_property
+    def predict_quantiles_holdout(self) -> DATAFRAME | None:
+        """Quantile forecast on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples, 2) for univariate tasks.
+        - (n_samples, 2 * n_targets) for [multivariate][] tasks.
+
+        """
+        if self.holdout:
+            return self.estimator.predict_quantiles(self.holdout.index, X=self.X_holdout)
+
+    @cached_property
+    def predict_residuals_train(self) -> PANDAS:
+        """Residuals forecast on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_residuals(self.y_train, X=self.X_train)
+
+    @cached_property
+    def predict_residuals_test(self) -> PANDAS:
+        """Residuals forecast on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_residuals(self.y_test, X=self.X_test)
+
+    @cached_property
+    def predict_residuals_holdout(self) -> PANDAS | None:
+        """Residuals forecast on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        if self.holdout:
+            return self.estimator.predict_residuals(self.y_holdout, X=self.X_holdout)
+
+    @cached_property
+    def predict_var_train(self) -> DATAFRAME:
+        """Variance forecast on the training set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_var(self.y_train, X=self.X_train)
+
+    @cached_property
+    def predict_var_test(self) -> DATAFRAME:
+        """Variance forecast on the test set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        return self.estimator.predict_var(self.y_test, X=self.X_test)
+
+    @cached_property
+    def predict_var_holdout(self) -> DATAFRAME | None:
+        """Variance forecast on the holdout set.
+
+        The shape of the output depends on the task:
+
+        - (n_samples,) for univariate tasks.
+        - (n_samples, n_targets) for [multivariate][] tasks.
+
+        """
+        if self.holdout:
+            return self.estimator.predict_var(self.y_holdout, X=self.X_holdout)
+
+    # Prediction methods =========================================== >>
+
+    def _prediction(
+        self,
+        metric: str | Callable | None = None,
+        verbose: INT | None = None,
+        method: str = "predict",
+        **kwargs,
+    ) -> FLOAT | PANDAS:
+        """Get predictions on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The model should implement the provided method.
+
+        Parameters
+        ----------
+        metric: str, func, scorer or None, default=None
+            Metric to calculate. Choose from any of sklearn's scorers,
+            a function with signature metric(y_true, y_pred) or a scorer
+            object. If None, it returns mean accuracy for classification
+            tasks and r2 for regression tasks. Only for method="score".
+
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            estimator's own verbosity.
+
+        method: str, default="predict"
+            Prediction method to be applied to the estimator.
+
+        **kwargs
+            Additional keyword arguments for the method.
+
+        Returns
+        -------
+        float, series or dataframe
+            Calculated predictions. The return type depends on the method
+            called.
+
+        """
+        if (X := kwargs.get("X")) is not None and (y := kwargs.get("y")) is not None:
+            X, y = self._prepare_input(X, y, columns=self.og.features)
+            X = self._set_index(X, y)
+            if y is not None:
+                y.index = X.index
+
+            for transformer in self.pipeline:
+                if not transformer._train_only:
+                    X, y = custom_transform(transformer, self.branch, (X, y), verbose)
+
+        if method != "score":
+            return getattr(self.estimator, method)(**kwargs)
+        else:
+            if metric is None:
+                metric = self._metric[0]
+            else:
+                metric = get_custom_scorer(metric)
+
+            return self._score_from_est(metric, self.estimator, X, y, **kwargs)
+
+    @available_if(estimator_has_attr("predict"))
+    @composed(crash, method_to_log)
+    def predict(
+        self,
+        fh: int | range | SEQUENCE | ForecastingHorizon,
+        X: FEATURES | None = None,
+        verbose: INT | None = None,
+    ) -> PANDAS:
+        """Get predictions on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        fh: int, range, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        series or dataframe
+            Predictions with shape=(n_samples,) or shape=(n_samples,
+            n_targets) for [multivariate][] tasks.
+
+        """
+        return self._prediction(fh=fh, X=X, verbose=verbose, method="predict")
+
+    @available_if(estimator_has_attr("predict_interval"))
+    @composed(crash, method_to_log)
+    def predict_interval(
+        self,
+        fh: int | SEQUENCE | ForecastingHorizon,
+        X: FEATURES | None = None,
+        coverage: FLOAT | SEQUENCE = 0.9,
+        verbose: INT | None = None,
+    ) -> DATAFRAME:
+        """Get prediction intervals on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_interval` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        coverage: float or sequence, default=0.9
+            Nominal coverage(s) of predictive interval(s).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        dataframe
+            Predictions with shape=(n_samples, 2) or shape=(n_samples,
+            2 * n_targets) for [multivariate][] tasks.
+
+        """
+        return self._prediction(
+            fh=fh,
+            X=X,
+            coverage=coverage,
+            verbose=verbose,
+            method="predict_interval",
+        )
+
+    @available_if(estimator_has_attr("predict_proba"))
+    @composed(crash, method_to_log)
+    def predict_proba(
+        self,
+        fh: int | SEQUENCE | ForecastingHorizon,
+        X: FEATURES | None = None,
+        marginal: bool = True,
+        verbose: INT | None = None,
+    ) -> Normal:
+        """Get probabilistic forecasts on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        marginal: bool, default=True
+            Whether returned distribution is marginal by time index.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        sktime.proba.[Normal][]
+            Predicted distribution.
+
+        """
+        return self._prediction(
+            fh=fh,
+            X=X,
+            marginal=marginal,
+            verbose=verbose,
+            method="predict_proba",
+        )
+
+    @available_if(estimator_has_attr("predict_quantiles"))
+    @composed(crash, method_to_log)
+    def predict_quantiles(
+        self,
+        fh: int | SEQUENCE | ForecastingHorizon,
+        X: FEATURES | None = None,
+        alpha: FLOAT | list[FLOAT] = [0.05, 0.95],
+        verbose: INT | None = None,
+    ) -> DATAFRAME:
+        """Get probabilistic forecasts on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_quantiles` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        alpha: float or list of float, default=[0.05, 0.95]
+            A probability or list of, at which quantile forecasts are
+            computed.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        dataframe
+            Predictions with shape=(n_samples, len(alpha)) or
+            shape=(n_samples, len(alpha) * n_targets) for [multivariate][]
+            tasks.
+
+        """
+        return self._prediction(
+            fh=fh,
+            X=X,
+            alpha=alpha,
+            verbose=verbose,
+            method="predict_quantiles",
+        )
+
+    @available_if(estimator_has_attr("predict_residuals"))
+    @composed(crash, method_to_log)
+    def predict_residuals(
+        self,
+        y: SEQUENCE | DATAFRAME,
+        X: FEATURES | None = None,
+        verbose: INT | None = None,
+    ) -> DATAFRAME:
+        """Get residuals of forecasts on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_residuals` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        y: sequence or dataframe-like
+            Ground truth observations to compute residuals to.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        series or dataframe
+            Predictions with shape=(n_samples,) or shape=(n_samples,
+            n_targets) for [multivariate][] tasks.
+
+        """
+        return self._prediction(y=y, X=X, verbose=verbose, method="predict_residuals")
+
+    @available_if(estimator_has_attr("predict_var"))
+    @composed(crash, method_to_log)
+    def predict_var(
+        self,
+        fh: int | SEQUENCE | ForecastingHorizon,
+        X: FEATURES | None = None,
+        cov: bool = False,
+        verbose: INT | None = None,
+    ) -> DATAFRAME:
+        """Get probabilistic forecasts on new data or existing rows.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_var` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        cov: bool, default=False
+            Whether to computes covariance matrix forecast or marginal
+            variance forecasts.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        dataframe
+            Predictions with shape=(n_samples,) or shape=(n_samples,
+            n_targets) for [multivariate][] tasks.
+
+        """
+        return self._prediction(
+            fh=fh,
+            X=X,
+            cov=cov,
+            verbose=verbose,
+            method="predict_var",
+        )
+
+    @available_if(estimator_has_attr("score"))
+    @composed(crash, method_to_log)
+    def score(
+        self,
+        y: SEQUENCE | DATAFRAME,
+        X: DATAFRAME | None = None,
+        fh: int | SEQUENCE | ForecastingHorizon | None = None,
+        metric: str | Callable | None = None,
+        verbose: INT | None = None,
+    ) -> FLOAT:
+        """Get a metric score on new data.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped.
+
+        Read more in the [user guide][predicting].
+
+        !!! info
+            If the `metric` parameter is left to its default value, the
+            method returns atom's metric score, not the metric returned
+            by sktime's score method for estimators.
+
+        Parameters
+        ----------
+        y: sequence or dataframe-like
+            Ground truth observations.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh.
+
+        fh: int, sequence or [ForecastingHorizon][] or None, default=None
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        metric: str, func, scorer or None, default=None
+            Metric to calculate. Choose from any of sklearn's scorers,
+            a function with signature `metric(y_true, y_pred) -> score`
+            or a scorer object. If None, it uses atom's metric (the main
+            metric for [multi-metric runs][]).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        float
+            Metric score of y with respect to a ground truth.
+
+        """
+        return self._prediction(
+            y=y,
+            X=X,
+            fh=fh,
+            metric=metric,
+            verbose=verbose,
+            method="score",
+        )

@@ -13,9 +13,6 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.multioutput import (
-    ClassifierChain, MultiOutputRegressor, RegressorChain,
-)
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
@@ -23,8 +20,8 @@ from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
 
 from .conftest import (
-    X10, X_bin, X_class, X_label, X_reg, bin_test, bin_train, y10, y_bin,
-    y_class, y_label, y_multiclass, y_multireg, y_reg,
+    X10, X_bin, X_class, X_reg, bin_test, bin_train, y10, y_bin, y_class,
+    y_multiclass, y_reg,
 )
 
 
@@ -209,36 +206,6 @@ def test_delete_current():
     atom.branch = "b2"
     del atom.branch
     assert "b2" not in atom._branches
-
-
-def test_multioutput_None():
-    """Assert that the multioutput estimator is ignored when None."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
-    atom.multioutput = None
-    atom.run("RF", est_params={"n_estimators": 5})  # RF has native support for multilabel
-    assert atom.rf.estimator.__class__.__name__ == "RandomForestClassifier"
-
-
-def test_multioutput_auto():
-    """Assert that the multioutput estimator can use auto to set default."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
-    atom.multioutput = None
-    assert atom.multioutput is None
-
-    with pytest.raises(ValueError, match=".*multioutput attribute.*"):
-        atom.multioutput = "invalid"
-
-    atom.multioutput = "auto"
-    assert atom.multioutput == ClassifierChain
-
-
-@pytest.mark.parametrize("multioutput", [MultiOutputRegressor, RegressorChain(None)])
-def test_multioutput_regression(multioutput):
-    """Assert that the multioutput estimator works for regression tasks."""
-    atom = ATOMRegressor(X_reg, y=y_multireg, random_state=1)
-    atom.multioutput = multioutput
-    atom.run("OLS")
-    assert atom.models == "OLS"
 
 
 def test_models_property():

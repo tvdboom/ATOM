@@ -13,10 +13,6 @@ import re
 from typing import Any, Callable
 
 from joblib.memory import Memory
-from sklearn.base import clone
-from sklearn.multioutput import (
-    ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
-)
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 
@@ -28,9 +24,9 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, SERIES, ClassMap, CustomDict,
-    Model, Predictor, bk, check_is_fitted, composed, crash, divide,
-    export_pipeline, flt, get_best_score, get_versions, has_task,
-    is_multioutput, lst, method_to_log, pd,
+    Model, bk, check_is_fitted, composed, crash, divide, export_pipeline, flt,
+    get_best_score, get_versions, has_task, is_multioutput, lst, method_to_log,
+    pd,
 )
 
 
@@ -170,45 +166,6 @@ class BaseRunner(BaseTracker):
 
         self.log(f"Branch {self.branch.name} successfully deleted.", 1)
         self.log(f"Switched to branch {self.branch.name}.", 1)
-
-    @property
-    def multioutput(self) -> Predictor | None:
-        """Meta-estimator for [multioutput tasks][].
-
-        This estimator is only used when the model has no native
-        support for multioutput tasks. Use the `@setter` to set any
-        other meta-estimator (the underlying estimator should be the
-        first parameter in the constructor) or set equal to None to
-        avoid this wrapper.
-
-        """
-        if self._multioutput == "auto":
-            if self.task.startswith("multilabel"):
-                return ClassifierChain
-            elif self.goal.startswith("class"):
-                return MultiOutputClassifier
-            else:
-                return MultiOutputRegressor
-        else:
-            return self._multioutput
-
-    @multioutput.setter
-    def multioutput(self, value: str | Predictor | None):
-        """Assign a new multioutput meta-estimator."""
-        if value is None:
-            self._multioutput = value
-        elif isinstance(value, str):
-            if value.lower() != "auto":
-                raise ValueError(
-                    "Invalid value for the multioutput attribute. Use 'auto' "
-                    "for the default meta-estimator, None to ignore it, or "
-                    "provide a custom meta-estimator class or instance."
-                )
-            self._multioutput = "auto"
-        elif callable(value):
-            self._multioutput = value
-        else:
-            self._multioutput = clone(value)
 
     @property
     def models(self) -> str | list[str] | None:
@@ -464,10 +421,12 @@ class BaseRunner(BaseTracker):
             - **module:** The estimator's module.
             - **needs_scaling:** Whether the model requires feature scaling.
             - **accepts_sparse:** Whether the model accepts sparse matrices.
+            - **native_multilabel:** Whether the model has native support
+              for [multilabel][] tasks.
             - **native_multioutput:** Whether the model has native support
               for [multioutput tasks][].
             - **has_validation:** Whether the model has [in-training validation][].
-            - **supports_engines:** List of engines supported by the model.
+            - **supports_engines:** Engines supported by the model.
 
         """
         rows = []
@@ -482,6 +441,7 @@ class BaseRunner(BaseTracker):
                         "module": m._est_class.__module__.split(".")[0] + m._module,
                         "needs_scaling": m.needs_scaling,
                         "accepts_sparse": m.accepts_sparse,
+                        "native_multilabel": m.native_multilabel,
                         "native_multioutput": m.native_multioutput,
                         "has_validation": bool(m.has_validation),
                         "supports_engines": ", ". join(m.supports_engines),
@@ -845,7 +805,6 @@ class BaseRunner(BaseTracker):
             og=self.og,
             branch=self.branch,
             metric=self._metric,
-            multioutput=self.multioutput,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 
@@ -925,7 +884,6 @@ class BaseRunner(BaseTracker):
                 og=self.og,
                 branch=self.branch,
                 metric=self._metric,
-                multioutput=self.multioutput,
                 **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
                 **kwargs,
             )

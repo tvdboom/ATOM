@@ -24,6 +24,7 @@ def ATOMModel(
     *,
     acronym: str | None = None,
     needs_scaling: bool = False,
+    native_multilabel: bool = False,
     native_multioutput: bool = False,
     has_validation: str | None = None,
 ) -> Predictor:
@@ -55,9 +56,15 @@ def ATOMModel(
     needs_scaling: bool, default=False
         Whether the model should use [automated feature scaling][].
 
+    native_multilabel: bool, default=False
+        Whether the model has native support for [multilabel][] tasks.
+        If False and the task is multilabel, a multilabel meta-estimator
+        is wrapper around the estimator.
+
     native_multioutput: bool, default=False
         Whether the model has native support for [multioutput tasks][].
-        If True, the model won't use the `multioutput` meta-estimator.
+        If False and the task is multiouput, a multiotuput meta-estimator
+        is wrapper around the estimator.
 
     has_validation: str or None, default=None
         Whether the model allows [in-training validation][]. If str,
@@ -115,6 +122,7 @@ def ATOMModel(
         estimator.acronym = acronym
     estimator.needs_scaling = needs_scaling
     estimator.native_multioutput = native_multioutput
+    estimator.native_multilabel = native_multilabel
     estimator.has_validation = has_validation
 
     return estimator

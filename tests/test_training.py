@@ -61,7 +61,7 @@ def test_models_are_restored():
     )
     sh.run(reg_train, reg_test)
     assert "Tree" not in sh._models  # Original model is deleted
-    assert all(m in sh.models for m in ("Tree4", "RF2", "LGB1"))
+    assert all(m in sh.models for m in ("Tree4", "AdaB2", "LGB1"))
 
 
 def test_ts_int_train_sizes():

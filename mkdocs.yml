@@ -202,12 +202,6 @@ nav:
             - StochasticGradientDescent: API/models/sgd.md
             - SupportVectorMachine: API/models/svm.md
             - XGBoost: API/models/xgb.md
-        - Predicting:
-            - decision_function: API/predicting/decision_function.md
-            - predict: API/predicting/predict.md
-            - predict_log_proba: API/predicting/predict_log_proba.md
-            - predict_proba: API/predicting/predict_proba.md
-            - score: API/predicting/score.md
         - Plots:
             - plot_calibration: API/plots/plot_calibration.md
             - plot_components: API/plots/plot_components.md
@@ -219,6 +213,7 @@ nav:
             - plot_errors: API/plots/plot_errors.md
             - plot_evals: API/plots/plot_evals.md
             - plot_feature_importance: API/plots/plot_feature_importance.md
+            - plot_forecast: API/plots/plot_forecast.md
             - plot_gains: API/plots/plot_gains.md
             - plot_hyperparameter_importance: API/plots/plot_hyperparameter_importance.md
             - plot_hyperparameters: API/plots/plot_hyperparameters.md

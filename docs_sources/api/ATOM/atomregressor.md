@@ -152,6 +152,7 @@ of utility methods to handle the data and manage the pipeline.
         - log
         - merge
         - update_layout
+        - update_traces
         - reset
         - reset_aesthetics
         - save

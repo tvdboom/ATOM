@@ -25,7 +25,10 @@ from sklearn.tree import DecisionTreeClassifier
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_is_fitted, check_scaling, rnd
-
+from atom import ATOMModel
+from sklearn.multioutput import ClassifierChain
+from sklearn.linear_model import LogisticRegression
+from optuna.distributions import CategoricalDistribution
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
     y_class, y_idx, y_label, y_multiclass, y_reg,
@@ -145,6 +148,25 @@ def test_custom_distributions_include_and_excluded():
             ht_params={"distributions": ["!max_iter", "penalty"]},
             errors="raise",
         )
+
+
+def test_custom_distributions_meta_estimators():
+    """Assert that meta-estimators can be tuned normally."""
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom.run(
+        models=ATOMModel(
+            estimator=ClassifierChain(LogisticRegression(), cv=2),
+            native_multilabel=True,
+        ),
+        n_trials=1,
+        ht_params={
+            "distributions": {
+                "order": CategoricalDistribution([[0, 1], [1, 0]]),
+                "base_estimator__solver": CategoricalDistribution(["lbfgs", "newton-cg"]),
+            }
+        },
+    )
+    assert isinstance(atom.winner.estimator, ClassifierChain)
 
 
 def test_est_params_removed_from_ht():
@@ -299,7 +321,7 @@ def test_run_log_models_to_mlflow(mlflow):
     assert mlflow.call_count == 1
 
 
-@patch("mlflow.log_artifact")
+@patch("mlflow.log_input")
 def test_run_log_data_to_mlflow(mlflow):
     """Assert that train and test sets are logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
@@ -778,7 +800,6 @@ def test_clear():
     """Assert that the clear method resets the model's attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    print(atom.lr.predict_test)
     atom.plot_shap_beeswarm(display=False)
     assert "predict_test" in atom.lr.__dict__
     assert not atom.lr._shap._shap_values.empty

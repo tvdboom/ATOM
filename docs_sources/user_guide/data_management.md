@@ -111,7 +111,7 @@ the [data sets][] section).
 
 ### Task types
 
-ATOM recognizes three multioutput tasks.
+ATOM recognizes four multioutput tasks.
 
 !!! note
     Combinations of binary and multiclass target columns are treated as
@@ -196,6 +196,24 @@ using data obtained at a certain location. Each sample would be data
 obtained at one location and both wind speed and direction would be output
 for each sample.
 
+#### Multivariate
+
+Multivariate is the multioutput task for forecasting. In this case, we
+try to forecast more than one time series at the same time.
+
+Although all forecasting models in ATOM support multivariate tasks, we
+differentiate two types of models:
+
+* The "native multivariate" models apply forecasts where every prediction
+  of endogeneous (`y`) variables will depend on values of the other target
+  columns.
+* The rest of the models apply an estimator per column, meaning that forecasts
+  will be made per endogeneous variable, and not be affected by other variables.
+  To access the column-wise estimators, use the estimator's `forecasters_`
+  parameter, which stores the fitted forecasters in a dataframe.
+
+Read more about time series tasks [here][time-series].
+
 ### Native multioutput models
 
 Some models have native support for multioutput tasks. This means that
@@ -220,25 +238,17 @@ meta-estimators are respectively:
 * [MultioutputClassifier][]
 * [MultioutputRegressor][]
 
-The `multioutput` attribute contains the meta-estimator object. Change the
-attribute's value to use a custom object. Both classes or instances where the
-underlying estimator is the first parameter are accepted. Set the attribute to
-`None` to ignore the meta-estimator for multioutput tasks.
-
-p!!! warning
+!!! warning
     Currently, scikit-learn metrics do not support multiclass-multioutput
     classification tasks. In this case, ATOM calculates the mean of the
     selected metric over every individual target.
 
 !!! tip
-    * Some models like [MultiLayerPerceptron][] have native support for
-    multilabel tasks, but not for multioutput. Use `atom.multioutput = None`
-    to disable the meta-estimator wrapper.
-    * Set the `native_multioutput` parameter in [ATOMModel][] equal to True
-    to ignore the meta-estimator for [custom models][].
+    * Set the `native_multilabel` or `native_multioutput` parameter in
+    [ATOMModel][] equal to `True` to ignore the meta-estimator for [custom models][].
     * Check out the [multilabel classification][example-multilabel-classification]
     and [multioutput regression][example-multioutput-regression] examples.
-    
+
 
 <br>
 
@@ -293,7 +303,7 @@ branching use cases.
 ## Memory considerations
 
 An atom instance stores one copy of the dataset for each branch (this
-doesn't include the [hokdout set](#data-sets), which is only stored once),
+doesn't include the [holdout set](#data-sets), which is only stored once),
 and one copy of the initial dataset with which the instance is initialized.
 This copy of the original dataset is necessary to avoid data leakage during
 hyperparameter tuning and for some specific methods like [cross_validate][adaboost-cross_validate]

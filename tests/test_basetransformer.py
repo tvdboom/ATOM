@@ -20,12 +20,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn.naive_bayes import GaussianNB
+from sklearnex.svm import SVC
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier
 from atom.utils import merge
-from sklearnex.svm import SVC
+
 from .conftest import (
     X10, X_bin, X_bin_array, X_idx, X_label, X_sparse, X_text, bin_test,
     bin_train, y10, y_bin, y_bin_array, y_fc, y_idx, y_label,
@@ -792,6 +793,12 @@ def test_merger_to_dataset():
         right=df2.reset_index(drop=True),
         check_dtype=False,
     )
+
+
+def test_invalid_index_forecast():
+    """Assert that an error is raised when the index is invalid."""
+    with pytest.raises(ValueError, match=".*index of the dataset must.*"):
+        ATOMForecaster(pd.Series([1, 2, 3, 4, 5], index=[1, 4, 2, 3, 5]), random_state=1)
 
 
 # Test log ========================================================= >>

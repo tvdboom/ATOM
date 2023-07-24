@@ -397,6 +397,13 @@ def test_update_layout():
     plotter._custom_layout["template"] = "plotly-dark"
 
 
+def test_update_traces():
+    """Assert that the update_traces method set default trace values."""
+    plotter = BasePlot()
+    plotter.update_traces(mode="lines+markers")
+    plotter._custom_traces["mode"] = "lines+markers"
+
+
 def test_plot_not_fitted():
     """Assert that an error is raised when atom is not fitted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

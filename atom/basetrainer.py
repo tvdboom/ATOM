@@ -82,7 +82,6 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
         self.task = None
 
-        self._multioutput = "auto"
         self._n_trials = {}
         self._n_bootstrap = {}
         self._ht_params = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
@@ -170,7 +169,6 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             og=self.og,
             branch=self.branch,
             metric=self._metric,
-            multioutput=self.multioutput,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 
@@ -203,10 +201,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
                         # Check if the model supports the task
                         if self.goal not in inc[-1]._estimators:
-                            raise ValueError(
-                                f"The {x._fullname} model is not "
-                                f"available for {self.task} tasks!"
-                            )
+                            # Forecast task can use regression models
+                            if not (self.goal == "fc" and "reg" in inc[-1]._estimators):
+                                raise ValueError(
+                                    f"The {x._fullname} model is not "
+                                    f"available for {self.task} tasks!"
+                                )
             elif isinstance(model, BaseModel):  # For reruns
                 inc.append(model)
             else:  # Model is a custom estimator

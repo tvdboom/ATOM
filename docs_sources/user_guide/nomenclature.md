@@ -148,7 +148,8 @@ One of the supervised machine learning approaches that ATOM supports:
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multiclass-multioutput-classification">multiclass-multioutput classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multioutput-regression">multioutput regression</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Time_series">forecasting</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Forecasting">univariate forecasting</a></li>
+<li><a href="https://www.sktime.net/en/latest/examples/01_forecasting.html#1.2.4.-Multivariate-forecasting">multivariate forecasting</a></li>
 </ul>
 </div>
 

@@ -19,7 +19,9 @@ from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
-
+from sklearn.utils.metadata_routing import (
+    _raise_for_params, process_routing
+)
 from atom.utils import (
     DATAFRAME, FEATURES, FLOAT, SEQUENCE, SERIES, TARGET, Estimator,
     check_is_fitted, fit_one, fit_transform_one, transform_one,
@@ -82,8 +84,8 @@ class Pipeline(skPipeline):
     def memory(self, value: str | Memory | None):
         """Create new internal memory object."""
         self._memory = check_memory(value)
-        self._memory_fit = self._memory.cache(fit_transform_one)
-        self._memory_transform = self._memory.cache(transform_one)
+        self._cache_fit = self._memory.cache(fit_transform_one)
+        self._cache_transform = self._memory.cache(transform_one)
 
     def _can_transform(self) -> bool:
         """Check if the pipeline can use the transform method."""
@@ -144,7 +146,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        **fit_params_steps,
+        routed_params: dict | None = None,
     ):
         """Get data transformed through the pipeline.
 
@@ -162,8 +164,8 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
-        **fit_params
-            Additional keyword arguments for the fit method.
+        routed_params: dict or None, default=None
+            Parameters of the form `process_routing()["step_name"]`.
 
         Returns
         -------
@@ -183,7 +185,7 @@ class Pipeline(skPipeline):
                     continue
 
             if hasattr(transformer, "transform"):
-                if self._memory_fit.__class__.__name__ == "NotMemorizedFunc":
+                if self._cache_fit.__class__.__name__ == "NotMemorizedFunc":
                     # Don't clone when caching is disabled to
                     # preserve backward compatibility
                     cloned = transformer
@@ -196,12 +198,12 @@ class Pipeline(skPipeline):
                             setattr(cloned, attr, getattr(transformer, attr))
 
                 # Fit or load the current estimator from cache
-                X, y, fitted_transformer = self._memory_fit(
+                X, y, fitted_transformer = self._cache_fit(
                     transformer=cloned,
                     X=X,
                     y=y,
                     message=self._log_message(step_idx),
-                    **fit_params_steps[name],
+                    params=routed_params[name],
                 )
 
             # Replace the estimator of the step with the fitted
@@ -214,7 +216,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        **fit_params,
+        **params,
     ) -> Pipeline:
         """Fit the pipeline.
 
@@ -232,8 +234,18 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
-        **fit_params
-            Additional keyword arguments for the fit method.
+        **params
+            - If `enable_metadata_routing=False` (default):
+
+                Parameters passed to the `fit` method of each step,
+                where each parameter name is prefixed such that
+                parameter `p` for step `s` has key `s__p`.
+
+            - If `enable_metadata_routing=True`:
+
+                Parameters requested and accepted by steps. Each step
+                must have requested certain metadata for these
+                parameters to be forwarded to them.
 
         Returns
         -------
@@ -241,12 +253,11 @@ class Pipeline(skPipeline):
             Estimator instance.
 
         """
-        fit_params_steps = self._check_fit_params(**fit_params)
-        X, y = self._fit(X, y, **fit_params_steps)
+        routed_params = self._check_method_params(method="fit", props=params)
+        X, y = self._fit(X, y, routed_params)
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator != "passthrough":
-                fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-                fit_one(self._final_estimator, X, y, **fit_params_last_step)
+                fit_one(self._final_estimator, X, y, routed_params[self.steps[-1][0]])
 
         self._is_fitted = True
         return self
@@ -256,6 +267,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
+        **params,
     ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Transform the data.
 
@@ -280,6 +292,11 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
+        **params
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
+
         Returns
         -------
         dataframe
@@ -289,8 +306,11 @@ class Pipeline(skPipeline):
             Transformed target column. Only returned if provided.
 
         """
-        for _, _, transformer in self._iter():
-            X, y = self._memory_transform(transformer, X, y)
+        _raise_for_params(params, self, "transform")
+
+        routed_params = process_routing(self, "transform", other_params=params)
+        for _, name, transformer in self._iter():
+            X, y = self._cache_transform(transformer, X, y, routed_params[name].transform)
 
         return variable_return(X, y)
 
@@ -298,7 +318,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        **fit_params,
+        **params,
     ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Fit the pipeline and transform the data.
 
@@ -317,8 +337,18 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
-        **fit_params
-            Additional keyword arguments for the fit method.
+        **params
+            - If `enable_metadata_routing=False` (default):
+
+                Parameters passed to the `fit` method of each step,
+                where each parameter name is prefixed such that
+                parameter `p` for step `s` has key `s__p`.
+
+            - If `enable_metadata_routing=True`:
+
+                Parameters requested and accepted by steps. Each step
+                must have requested certain metadata for these
+                parameters to be forwarded to them.
 
         Returns
         -------
@@ -329,16 +359,15 @@ class Pipeline(skPipeline):
             Transformed target column. Only returned if provided.
 
         """
-        fit_params_steps = self._check_fit_params(**fit_params)
-        X, y = self._fit(X, y, **fit_params_steps)
+        routed_params = self._check_method_params(method="fit_transform", props=params)
+        X, y = self._fit(X, y, routed_params)
 
         last_step = self._final_estimator
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if last_step == "passthrough":
                 return variable_return(X, y)
 
-            fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-            X, y, _ = fit_transform_one(last_step, X, y, **fit_params_last_step)
+            X, y, _ = fit_transform_one(last_step, X, y, routed_params[self.steps[-1][0]])
 
         return variable_return(X, y)
 
@@ -347,6 +376,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
+        **params,
     ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Inverse transform for each step in a reverse order.
 
@@ -367,6 +397,11 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
+        **params
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
+
         Returns
         -------
         dataframe
@@ -376,13 +411,22 @@ class Pipeline(skPipeline):
             Transformed target column. Only returned if provided.
 
         """
+        _raise_for_params(params, self, "inverse_transform")
+
+        routed_params = process_routing(self, "inverse_transform", other_params=params)
         for _, _, transformer in reversed(list(self._iter())):
-            X, y = self._memory_transform(transformer, X, y, method="inverse_transform")
+            X, y = self._cache_transform(
+                transformer=transformer,
+                X=X,
+                y=y,
+                params=routed_params[name].inverse_transform,
+                method="inverse_transform",
+            )
 
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: FEATURES, **predict_params) -> np.ndarray:
+    def predict(self, X: FEATURES, **params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -390,12 +434,17 @@ class Pipeline(skPipeline):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        **predict_params
-            Additional keyword arguments for the predict method. Note
-            that while this may be used to return uncertainties from
-            some models with return_std or return_cov, uncertainties
-            that are generated by the transformations in the pipeline
-            are not propagated to the final estimator.
+        **params
+            - If `enable_metadata_routing=False` (default):
+
+                Parameters to the `predict` called at the end of all
+                transformations in the pipeline.
+
+            - If `enable_metadata_routing=True`:
+
+                Parameters requested and accepted by steps. Each
+                step must have requested certain metadata for these
+                parameters to be forwarded to them.
 
         Returns
         -------
@@ -403,10 +452,15 @@ class Pipeline(skPipeline):
             Predicted classes with shape=(n_samples,).
 
         """
+        routed_params = process_routing(self, "predict", other_params=params)
         for _, name, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._cache_transform(
+                transformer=transformer,
+                X=X,
+                params=routed_params[name].transform,
+            )
 
-        return self.steps[-1][-1].predict(X, **predict_params)
+        return self.steps[-1][-1].predict(X, **routed_params[self.steps[-1][0]].predict)
 
     @available_if(_final_estimator_has("predict_proba"))
     def predict_proba(self, X: FEATURES) -> np.ndarray:
@@ -424,7 +478,7 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._cache_transform(transformer, X)
 
         return self.steps[-1][-1].predict_proba(X)
 
@@ -444,7 +498,7 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._cache_transform(transformer, X)
 
         return self.steps[-1][-1].predict_log_proba(X)
 
@@ -464,7 +518,7 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._cache_transform(transformer, X)
 
         return self.steps[-1][-1].decision_function(X)
 
@@ -497,6 +551,6 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, y = self._memory_transform(transformer, X, y)
+            X, y = self._cache_transform(transformer, X, y)
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)

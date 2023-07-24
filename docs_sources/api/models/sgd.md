@@ -86,18 +86,18 @@ attributes that are never used, saving time and memory.
     - attributes:
         from_docstring: False
         include:
-            - atom.basemodel:BaseModel.decision_function_train
-            - atom.basemodel:BaseModel.decision_function_test
-            - atom.basemodel:BaseModel.decision_function_holdout
-            - atom.basemodel:BaseModel.predict_train
-            - atom.basemodel:BaseModel.predict_test
-            - atom.basemodel:BaseModel.predict_holdout
-            - atom.basemodel:BaseModel.predict_log_proba_train
-            - atom.basemodel:BaseModel.predict_log_proba_test
-            - atom.basemodel:BaseModel.predict_log_proba_holdout
-            - atom.basemodel:BaseModel.predict_proba_train
-            - atom.basemodel:BaseModel.predict_proba_test
-            - atom.basemodel:BaseModel.predict_proba_holdout
+            - atom.basemodel:ClassRegModel.decision_function_train
+            - atom.basemodel:ClassRegModel.decision_function_test
+            - atom.basemodel:ClassRegModel.decision_function_holdout
+            - atom.basemodel:ClassRegModel.predict_train
+            - atom.basemodel:ClassRegModel.predict_test
+            - atom.basemodel:ClassRegModel.predict_holdout
+            - atom.basemodel:ClassRegModel.predict_log_proba_train
+            - atom.basemodel:ClassRegModel.predict_log_proba_test
+            - atom.basemodel:ClassRegModel.predict_log_proba_holdout
+            - atom.basemodel:ClassRegModel.predict_proba_train
+            - atom.basemodel:ClassRegModel.predict_proba_test
+            - atom.basemodel:ClassRegModel.predict_proba_holdout
 
 
 <br><br>
@@ -109,21 +109,5 @@ from the model. The remaining utility methods can be found hereunder.
 
 :: methods:
     toc_only: False
-    include:
-        - bootstrapping
-        - calibrate
-        - clear
-        - create_app
-        - create_dashboard
-        - cross_validate
-        - evaluate
-        - export_pipeline
-        - fit
-        - full_train
-        - get_best_threshold
-        - hyperparameter_tuning
-        - inverse_transform
-        - save_estimator
-        - serve
-        - register
-        - transform
+    exclude:
+        - plot_.*

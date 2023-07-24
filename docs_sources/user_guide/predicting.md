@@ -5,17 +5,19 @@
 
 After training a model, you probably want to make predictions on new,
 unseen data. Just like a sklearn estimator, you can call the prediction
-methods from the model, e.g. `atom.tree.predict(X)`.
+methods from the model, e.g. `#!python atom.tree.predict(X)`.
 
 All prediction methods transform the provided data through the pipeline
 in the model's branch before making the predictions. Transformers that
 should only be applied on the training set are excluded from this step
 (e.g. outlier pruning or class balancing).
 
-The available prediction methods are the most common methods for estimators
-in sklearn's API:
+The available prediction methods are the standard methods for estimators
+in sklearn's and sktime's API.
 
-:: atom.basemodel:BaseModel
+For classification and regression tasks:
+
+:: atom.models:AdaBoost
     :: methods:
         toc_only: True
         include:
@@ -23,6 +25,19 @@ in sklearn's API:
             - predict
             - predict_log_proba
             - predict_proba
+            - score
+
+For forecast tasks:
+
+:: atom.models:NaiveForecaster
+    :: methods:
+        toc_only: True
+        include:
+            - predict
+            - predict_interval
+            - predict_proba
+            - predict_quantiles
+            - predict_var
             - score
 
 
@@ -38,10 +53,10 @@ Use the [clear][atomclassifier-clear] method if you need to free
 the memory.
 
 !!! warning
-    The prediction attributes for the [score][] method return atom's
+    The prediction attributes for the `score` method return atom's
     metric score on that set, not the metric returned by sklearn's score
-    method for estimators. Use the method's [`metric`][score-metric]
-    parameter to calculate a different metric.
+    method for estimators. Use the method's `metric` parameter to
+    calculate a different metric.
 
 !!! note
     The `predict_proba` method of some meta-estimators for [multioutput tasks][]
@@ -57,8 +72,13 @@ the memory.
 
 It's also possible to get the prediction for a specific row or rows in
 the dataset, providing the names or positions of the rows to the [prediction methods][],
-e.g. `atom.rf.predict(10)` returns the random forest's prediction on the
-10th row in the dataset, or `atom.rf.predict_proba(["index1", "index2"])`
+e.g. `#!python atom.rf.predict(10)` returns the random forest's prediction on the
+10th row in the dataset, or `#!python atom.rf.predict_proba(["index1", "index2"])`
 returns the class probabilities for the rows in the dataset with indices
 `index1` and `index2`.
 
+!!! note
+    For forecast models, prediction on rows follow the [ForecastingHorizon][]
+    API. That means that using the row index works, but for example using
+    `#!python atom.arima.predict(1)` returns the prediction on the first row
+    of the test set (instead of the second row of the train set).

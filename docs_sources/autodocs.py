@@ -16,7 +16,7 @@ import warnings
 from dataclasses import dataclass
 from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
-    isroutine, signature,
+    ismethod, isroutine, signature,
 )
 from typing import Any, Callable, Optional
 
@@ -49,10 +49,12 @@ CUSTOM_URLS = dict(
     profilereport="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html",
     to_csv="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html",
     # BaseModel
+    make_reduction="https://sktime-backup.readthedocs.io/en/v0.13.0/api_reference/auto_generated/sktime.forecasting.compose.make_reduction.html",
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
     trial="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html",
     normal="https://github.com/sktime/sktime/blob/b29e147b54959a53cc96e5be9c3f819717aa38e7/sktime/proba/normal.py#L13",
+    forecastinghorizon="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.base.ForecastingHorizon.html#sktime.forecasting.base.ForecastingHorizon",
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
@@ -114,6 +116,7 @@ CUSTOM_URLS = dict(
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
     ardregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ARDRegression.html",
     arddocs="https://scikit-learn.org/stable/modules/linear_model.html#automatic-relevance-determination-ard",
+    arima="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.arima.ARIMA.html",
     baggingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html",
     baggingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html",
     bagdocs="https://scikit-learn.org/stable/modules/ensemble.html#bootstrapping",
@@ -214,6 +217,8 @@ CUSTOM_URLS = dict(
     palette="https://plotly.com/python/discrete-color/",
     gofigure="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html",
     pltfigure="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html",
+    update_layout="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html#plotly.graph_objects.Figure.update_layout",
+    update_traces="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html#plotly.graph_objects.Figure.update_traces",
     fanova="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.importance.FanovaImportanceEvaluator.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
@@ -401,6 +406,8 @@ class AutoDocs:
             text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
         if self.obj.accepts_sparse:
             text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
+        if self.obj.native_multilabel:
+            text += "[native multilabel](../../../user_guide/data_management/#multilabel){ .md-tag }"
         if self.obj.native_multioutput:
             text += "[native multioutput](../../../user_guide/data_management/#multioutput-tasks){ .md-tag }"
         if self.obj.has_validation:
@@ -565,12 +572,13 @@ class AutoDocs:
                 config = block[name.lower()]
 
             # Get from config which attributes to display
-            if config.get("include"):
-                attrs = config["include"]
+            if include := config.get("include"):
+                attrs = include
             else:
                 attrs = [
                     m for m, _ in getmembers(self.obj, lambda x: not isroutine(x))
                     if not m.startswith("_")
+                    and not any(re.fullmatch(p, m) for p in config.get("exclude", []))
                 ]
 
             content = ""
@@ -725,6 +733,7 @@ class AutoDocs:
             Options to configure. Choose from:
 
             - toc_only: Whether to display only the toc.
+            - solo_link: Whether the link comes from the parent.
             - include: Methods to include.
             - exclude: Methods to exclude.
 
@@ -734,14 +743,19 @@ class AutoDocs:
             Toc and blocks for all selected methods.
 
         """
-        toc_only = config.get('toc_only')
+        toc_only = config.get("toc_only")
+        solo_link = config.get("solo_link")
+        include = config.get("include", [])
+        exclude = config.get("exclude", [])
 
-        if config.get("include"):
-            methods = config["include"]
+        predicate = lambda f: ismethod(f) or isfunction(f)
+
+        if include:
+            methods = include
         else:
             methods = [
-                m for m, _ in getmembers(self.obj, predicate=isfunction)
-                if not m.startswith("_") and m not in config.get("exclude", [])
+                m for m, _ in getmembers(self.obj, predicate=predicate)
+                if not m.startswith("_") and not any(re.fullmatch(p, m) for p in exclude)
             ]
 
         # Create toc
@@ -749,7 +763,7 @@ class AutoDocs:
         for method in methods:
             func = AutoDocs(self.obj, method=method)
 
-            name = f"[{method}][{'' if toc_only else func._parent_anchor}{method}]"
+            name = f"[{method}][{'' if solo_link else func._parent_anchor}{method}]"
             summary = func.get_summary()
             toc += f"<tr><td>{name}</td><td>{summary}</td></tr>"
 

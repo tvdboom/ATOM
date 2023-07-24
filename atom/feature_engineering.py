@@ -1397,7 +1397,6 @@ class FeatureSelector(
                     if solver in MODELS:
                         model = MODELS[solver](
                             goal=goal,
-                            multioutput=self._multioutput,
                             **{x: getattr(self, x, False) for x in BaseTransformer.attrs},
                         )
                         model.task = infer_task(y, goal)

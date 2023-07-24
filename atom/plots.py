@@ -50,10 +50,11 @@ from sklearn.utils._bunch import Bunch
 from sklearn.utils.metaestimators import available_if
 
 from atom.utils import (
-    FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
-    check_dependency, check_hyperparams, check_predict_proba, composed, crash,
-    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
-    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
+    DATAFRAME, FLOAT, INDEX, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model,
+    bk, check_canvas, check_dependency, check_hyperparams, check_predict_proba,
+    composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
+    has_attr, has_task, is_binary, is_multioutput, it, lst, plot_from_model,
+    rnd, to_rgb,
 )
 
 
@@ -351,6 +352,7 @@ class BasePlot:
 
     _fig = None
     _custom_layout = {}
+    _custom_traces = {}
     _aesthetics = Aesthetics(
         palette=list(PALETTE),
         title_fontsize=24,
@@ -473,6 +475,30 @@ class BasePlot:
         self._aesthetics.marker_size = value
 
     # Methods ====================================================== >>
+
+    @staticmethod
+    def _get_plot_index(df: DATAFRAME) -> INDEX:
+        """Return the dataset's index in a plottable format.
+
+        Plotly does not accept all index formats (e.g. pd.Period),
+        thus use this utility method to convert to timestamp those
+        indices that can, else return as is.
+
+        Parameters
+        ----------
+        df: dataframe
+            Data set to get the index from.
+
+        Returns
+        -------
+        index
+            Index in an acceptable format.
+
+        """
+        if hasattr(df.index, "to_timestamp"):
+            return df.index.to_timestamp()
+        else:
+            return df.index
 
     @staticmethod
     def _get_show(show: INT | None, model: Model | list[Model]) -> INT:
@@ -611,6 +637,7 @@ class BasePlot:
         self,
         dataset: str | SEQUENCE,
         max_one: bool,
+        allow_train: bool = True,
         allow_holdout: bool = True,
     ) -> str | list[str]:
         """Check and return the provided data set.
@@ -623,6 +650,9 @@ class BasePlot:
         max_one: bool
             Whether one or multiple data sets are allowed. If True, return
             the data set instead of a list.
+
+        allow_train: bool, default=True
+            Whether to allow the retrieval of the training set.
 
         allow_holdout: bool, default=True
             Whether to allow the retrieval of the holdout set.
@@ -644,12 +674,19 @@ class BasePlot:
                 else:
                     raise ValueError(
                         "Invalid value for the dataset parameter, got "
-                        f"{ds}. Choose from: train or test."
+                        f"{ds}. Choose from: {'train, ' if allow_train else ''}test."
                     )
-            elif ds not in ("train", "test"):
+            elif ds == "train":
+                if not allow_train:
+                    raise ValueError(
+                        "Invalid value for the dataset parameter, got "
+                        f"{ds}. Choose from: test{', holdout' if allow_holdout else ''}."
+                    )
+            elif ds != "test":
                 raise ValueError(
                     "Invalid value for the dataset parameter, "
-                    f"got {ds}. Choose from: train, test or holdout."
+                    f"got {ds}. Choose from: {'train, ' if allow_train else ''}"
+                    f"test{', holdout' if allow_holdout else ''}."
                 )
 
         if max_one and len(dataset) > 1:
@@ -928,7 +965,8 @@ class BasePlot:
                     height=kwargs["figsize"][1],
                 )
 
-                # Update layout with custom settings
+                # Update plot with custom settings
+                fig.update_traces(**self._custom_traces)
                 fig.update_layout(**self._custom_layout)
 
                 if kwargs.get("filename"):
@@ -1080,6 +1118,7 @@ class BasePlot:
     def reset_aesthetics(self):
         """Reset the plot [aesthetics][] to their default values."""
         self._custom_layout = {}
+        self._custom_traces = {}
         self._aesthetics = Aesthetics(
             palette=PALETTE,
             title_fontsize=24,
@@ -1089,33 +1128,33 @@ class BasePlot:
             marker_size=8,
         )
 
-    def update_layout(
-        self,
-        dict1: dict | None = None,
-        overwrite: bool = False,
-        **kwargs,
-    ):
+    def update_layout(self, **kwargs):
         """Update the properties of the plot's layout.
 
-        This recursively updates the structure of the original layout
-        with the values in the input dict / keyword arguments.
+        Recursively update the structure of the original layout with
+        the values in the arguments.
 
         Parameters
         ----------
-        dict1: dict or None, default=None
-            Dictionary of properties to be updated.
-
-        overwrite: bool, default=False
-            If True, overwrite existing properties. If False, apply
-            updates to existing properties recursively, preserving
-            existing properties that are not specified in the update
-            operation.
-
         **kwargs
-            Keyword/value pairs of properties to be updated.
+            Keyword arguments for the figure's [update_layout][] method.
 
         """
-        self._custom_layout = dict(dict1=dict1, overwrite=overwrite, **kwargs)
+        self._custom_layout = kwargs
+
+    def update_traces(self, **kwargs):
+        """Update the properties of the plot's traces.
+
+        Recursively update the structure of the original traces with
+        the values in the arguments.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments for the figure's [update_traces][] method.
+
+        """
+        self._custom_traces = kwargs
 
 
 class FeatureSelectorPlot(BasePlot):
@@ -4931,6 +4970,146 @@ class PredictionPlot(BasePlot):
             legend=legend,
             figsize=figsize or (900, 400 + show * 50),
             plotname="plot_feature_importance",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @composed(crash, plot_from_model(check_fitted=False))
+    def plot_forecast(
+        self,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
+        plot_interval: bool = True,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a time series with model forecasts.
+
+        This plot is only available for forecasting tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected. If no
+            models are selected, only the target column is plotted.
+
+        dataset: str or sequence, default="test"
+            Data set for which to plot the predictions. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multivariate][] tasks.
+
+        plot_interval: bool, default=True
+            Whether to plot prediction intervals instead of the exact
+            prediction value.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_lift
+        atom.plots:PredictionPlot.plot_prc
+        atom.plots:PredictionPlot.plot_roc
+
+        Examples
+        --------
+        ```pycon
+        >>> from atom import ATOMForecaster
+        >>> from sktime.datasets import load_airline
+
+        >>> y = load_airline()
+
+        >>> atom = ATOMForecaster(y, random_state=1)
+        >>> atom.run("NF")
+        >>> atom.plot_forecast()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_forecast.html
+
+        """
+        dataset = self._get_set(dataset, max_one=False, allow_train=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        # Draw original time series
+        fig.add_trace(
+            go.Scatter(
+                x=self._get_plot_index(self.dataset),
+                y=self.dataset[target],
+                line=dict(width=2, color="black"),
+                opacity=0.6,
+                showlegend=False,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+        )
+
+        # Draw predictions
+        for m in models:
+            for ds in dataset:
+                fig.add_trace(
+                    self._draw_line(
+                        x=self._get_plot_index(getattr(self, ds)),
+                        y=getattr(m, f"predict_{ds}"),
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel=self.y.index.name,
+            ylabel=target,
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_forecast",
             filename=filename,
             display=display,
         )

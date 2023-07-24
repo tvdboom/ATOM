@@ -30,6 +30,7 @@ import requests
 from dagshub.auth.token_auth import HTTPBearerAuth
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
+from sktime.datatypes import check_is_mtype
 
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
@@ -348,7 +349,7 @@ class BaseTransformer:
         signature = sign(est.__init__)
         for p in ("n_jobs", "random_state"):
             if p in signature and getattr(est, p, "<!>") == signature[p]._default:
-                setattr(est, p, getattr(self, p))
+                est.set_params(**{p: getattr(self, p)})
 
         return est
 
@@ -943,6 +944,18 @@ class BaseTransformer:
             raise ValueError(
                 "Invalid data arrays. See the documentation for the allowed formats."
             )
+
+        # For forecasting, check if index complies with sktime standard
+        if self.goal == "fc":
+            valid, msg, _ = check_is_mtype(
+                obj=pd.DataFrame(bk.concat([sets[0], sets[2]])),
+                mtype="pd.DataFrame",
+                return_metadata=True,
+                var_name="the dataset",
+            )
+
+            if not valid:
+                raise ValueError(msg)
 
         return sets
 
