@@ -19,7 +19,7 @@
         <link rel="next" href="../v4.x.x/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
     
     
   <title>v5.x.x - ATOM</title>
@@ -1319,6 +1319,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/arima/" class="md-nav__link">
+        ARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/autoarima/" class="md-nav__link">
+        AutoARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         AutomaticRelevanceDetermination
       </a>
@@ -1447,6 +1475,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
         ElasticNet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/ets/" class="md-nav__link">
+        ETS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/es/" class="md-nav__link">
+        ExponentialSmoothing
       </a>
     </li>
   
@@ -1741,6 +1797,20 @@
     <li class="md-nav__item">
       <a href="../../API/models/perc/" class="md-nav__link">
         Perceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/pt/" class="md-nav__link">
+        PolynomialTrend
       </a>
     </li>
   
@@ -3273,6 +3343,8 @@
 <li>Fixed a bug where the pipeline could fail for transformers that reset its
   internal attributes during fitting.</li>
 <li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-register">register</a> method failed in Databricks.</li>
+<li>Fixed a bug where tuning hyperparameter for a <code>base_estimator</code> inside a custom
+  meta-estimator would fail.</li>
 </ul>
 <p><a name="v520"></a></p>
 <h2 id="version-520">Version 5.2.0</h2>
@@ -3433,7 +3505,7 @@
 <ul>
 <li>The <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class no longer raises a warning for highly
   fragmented dataframes.</li>
-<li>Fixed a bug where models could not call the [score][] function.</li>
+<li>Fixed a bug where models could not call the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-score">score</a> function.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/encoder/#encoder">Encoder</a> class no longer fails when the user provides ordinal
   values that are not present during fitting.</li>
 <li>Fixed a bug with the <code>max_nan_rows</code> parameter in the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/imputer/#imputer">Imputer</a> class.</li>

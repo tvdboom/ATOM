@@ -179,33 +179,45 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                     if m.startswith("!"):
                         exc.append(m[1:])
                     else:
-                        cls = [n for n in MODELS if re.match(n.acronym, m, re.I)]
-                        if not cls:
+                        try:
+                            if len(name := m.split("_", 1)) > 1:
+                                name, tag = name[0].lower(), f"_{name[1]}"
+                            else:
+                                name, tag = name[0].lower(), ""
+
+                            cls = next(n for n in MODELS if n.acronym.lower() == name)
+
+                        except StopIteration:
                             raise ValueError(
                                 f"Invalid value for the models parameter, got {m}. "
-                                f"Choose from:\n" + "\n".join(
+                                "Note that tags must be separated by an underscore. "
+                                f"Available model are:\n" + "\n".join(
                                     [
-                                        f" --> '{m.acronym}' for {m.__name__}"
+                                        f" --> {m.__name__} ({m.acronym})"
                                         for m in MODELS if self.goal in m._estimators
                                     ]
                                 )
                             )
-                        else:
-                            cls = cls[0]
 
                         # Check if libraries for non-sklearn models are available
-                        if cls in (CatBoost, LightGBM, XGBoost):
-                            check_dependency(cls.supports_engines[0])
+                        dependencies = {
+                            "ARIMA": "pmdarima",
+                            "Catb": "castboost",
+                            "LGB": "lightgbm",
+                            "XGB": "xgboost",
+                        }
+                        if cls.acronym in dependencies:
+                            check_dependency(dependencies[cls.acronym])
 
-                        inc.append(x := cls(cls.acronym + m[len(cls.acronym):], **kwargs))
+                        inc.append(instance := cls(f"{cls.acronym}{tag}", **kwargs))
 
                         # Check if the model supports the task
                         if self.goal not in inc[-1]._estimators:
                             # Forecast task can use regression models
                             if not (self.goal == "fc" and "reg" in inc[-1]._estimators):
                                 raise ValueError(
-                                    f"The {x._fullname} model is not "
-                                    f"available for {self.task} tasks!"
+                                    f"The {instance._fullname} model is "
+                                    f"not available for {self.task} tasks!"
                                 )
             elif isinstance(model, BaseModel):  # For reruns
                 inc.append(model)
@@ -221,8 +233,9 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             if len(set(names := [m.name for m in inc])) != len(names):
                 raise ValueError(
                     "Invalid value for the models parameter. There are duplicate "
-                    "models. Add a tag to a model's acronym to train two different "
-                    "models with the same estimator, e.g. models=['LR1', 'LR2']."
+                    "models. Add a tag to a model's acronym (separated by an "
+                    "underscore) to train two different models with the same estimator, "
+                    "e.g. models=['LR_1', 'LR_2']."
                 )
             self._models = ClassMap(*inc)
         else:

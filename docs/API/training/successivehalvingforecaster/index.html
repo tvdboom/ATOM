@@ -19,7 +19,7 @@
         <link rel="next" href="../successivehalvingregressor/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
     
     
   <title>SuccessiveHalvingRegressor - ATOM</title>
@@ -1412,6 +1412,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/arima/" class="md-nav__link">
+        ARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/autoarima/" class="md-nav__link">
+        AutoARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/ard/" class="md-nav__link">
         AutomaticRelevanceDetermination
       </a>
@@ -1540,6 +1568,34 @@
     <li class="md-nav__item">
       <a href="../../models/en/" class="md-nav__link">
         ElasticNet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ets/" class="md-nav__link">
+        ETS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/es/" class="md-nav__link">
+        ExponentialSmoothing
       </a>
     </li>
   
@@ -1834,6 +1890,20 @@
     <li class="md-nav__item">
       <a href="../../models/perc/" class="md-nav__link">
         Perceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/pt/" class="md-nav__link">
+        PolynomialTrend
       </a>
     </li>
   
@@ -3252,7 +3322,7 @@
 
 <h1 id="successivehalvingforecaster">SuccessiveHalvingForecaster</h1>
 <hr />
-<p><a id='SuccessiveHalvingForecaster'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>SuccessiveHalvingForecaster</strong>(models=None, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1216>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#successive-halving">successive halving</a> fashion.</p>
+<p><a id='SuccessiveHalvingForecaster'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>SuccessiveHalvingForecaster</strong>(models=None, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1215>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#successive-halving">successive halving</a> fashion.</p>
 <p>The following steps are applied to every model (per iteration):</p>
 <ol>
 <li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
@@ -3547,7 +3617,7 @@ include:</p>
 <li><strong>native_multioutput:</strong> Whether the model has native support
   for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</li>
 <li><strong>has_validation:</strong> Whether the model has <a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">in-training validation</a>.</li>
-<li><strong>supports_engines:</strong> List of engines supported by the model.
+<li><strong>supports_engines:</strong> Engines supported by the model.
 </div></td></tr></li>
 </ul>
 </table>
@@ -3704,7 +3774,7 @@ returned for <a class="autorefs autorefs-internal" href="../../../user_guide/dat
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='successivehalvingforecaster-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L153>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='successivehalvingforecaster-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L177>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -3714,7 +3784,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='successivehalvingforecaster-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L962>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='successivehalvingforecaster-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L971>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3777,7 +3847,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='successivehalvingforecaster-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L997>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='successivehalvingforecaster-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1004>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3788,7 +3858,7 @@ add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomc
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='successivehalvingforecaster-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L177>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='successivehalvingforecaster-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L201>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
 Estimator parameters.</p>

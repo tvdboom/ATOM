@@ -409,6 +409,7 @@ class DirectClassifier(Direct):
     --------
     ```pycon
     >>> from atom.training import DirectClassifier
+    >>> from sklearn.model_selection import train_test_split
     >>> from sklearn.datasets import load_breast_cancer
 
     >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
@@ -638,16 +639,14 @@ class DirectForecaster(Direct):
     Examples
     --------
     ```pycon
-    >>> from atom.training import DirectRegressor
-    >>> from sklearn.datasets import load_digits
+    >>> from atom.training import DirectForecaster
+    >>> from sktime.forecasting.model_selection import temporal_train_test_split
+    >>> from sktime.datasets import load_airline
 
-    >>> X, y = load_digits(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    >>> y = load_airline()
+    >>> train, test = temporal_train_test_split(y, test_size=0.2)
 
-    >>> runner = DirectClassifier(models=["OLS", "RF"], metric="r2", verbose=2)
+    >>> runner = DirectForecaster(models=["ES", "ETS"], verbose=2)
     >>> runner.run(train, test)
 
     Models: OLS, RF

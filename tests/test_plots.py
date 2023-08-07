@@ -244,7 +244,7 @@ def test_get_set_no_holdout():
 def test_get_set_no_holdout_allowed():
     """Assert that an error is raised when holdout isn't allowed."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    with pytest.raises(ValueError, match=".*Choose from: train or test.*"):
+    with pytest.raises(ValueError, match=".*Choose from: train, test.*"):
         atom._get_set(dataset="holdout", max_one=False, allow_holdout=False)
 
 
@@ -755,7 +755,7 @@ def test_plot_permutation_importance():
 def test_plot_pipeline():
     """Assert that the plot_pipeline method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("KNN")
+    atom.run("KNN", errors="raise")
     atom.plot_pipeline(display=False)  # No transformers
 
     # Called from a canvas
@@ -819,11 +819,11 @@ def test_plot_residuals():
 def test_plot_results_metric(metric):
     """Assert that the plot_results method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["OLS", "Tree", "Tree2"], metric=metric, n_bootstrap=(3, 3, 0))
+    atom.run(["OLS", "Tree", "Tree_2"], metric=metric, n_bootstrap=(3, 3, 0))
     atom.voting()
     atom.plot_results(metric="me", display=False)  # Mixed bootstrap
     atom.plot_results(models=["OLS", "Tree"], metric="me", display=False)  # All bootstrap
-    atom.plot_results(models="Tree2", metric="me", display=False)  # No bootstrap
+    atom.plot_results(models="Tree_2", metric="me", display=False)  # No bootstrap
 
 
 @pytest.mark.parametrize("metric", ["time_ht", "time_fit", "time"])

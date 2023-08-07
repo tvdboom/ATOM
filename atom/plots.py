@@ -637,7 +637,6 @@ class BasePlot:
         self,
         dataset: str | SEQUENCE,
         max_one: bool,
-        allow_train: bool = True,
         allow_holdout: bool = True,
     ) -> str | list[str]:
         """Check and return the provided data set.
@@ -650,9 +649,6 @@ class BasePlot:
         max_one: bool
             Whether one or multiple data sets are allowed. If True, return
             the data set instead of a list.
-
-        allow_train: bool, default=True
-            Whether to allow the retrieval of the training set.
 
         allow_holdout: bool, default=True
             Whether to allow the retrieval of the holdout set.
@@ -674,19 +670,12 @@ class BasePlot:
                 else:
                     raise ValueError(
                         "Invalid value for the dataset parameter, got "
-                        f"{ds}. Choose from: {'train, ' if allow_train else ''}test."
+                        f"{ds}. Choose from: train, test."
                     )
-            elif ds == "train":
-                if not allow_train:
-                    raise ValueError(
-                        "Invalid value for the dataset parameter, got "
-                        f"{ds}. Choose from: test{', holdout' if allow_holdout else ''}."
-                    )
-            elif ds != "test":
+            elif ds not in ("train", "test"):
                 raise ValueError(
-                    "Invalid value for the dataset parameter, "
-                    f"got {ds}. Choose from: {'train, ' if allow_train else ''}"
-                    f"test{', holdout' if allow_holdout else ''}."
+                    "Invalid value for the dataset parameter, got {ds}. "
+                    f"Choose from: train, test{', holdout' if allow_holdout else ''}."
                 )
 
         if max_one and len(dataset) > 1:
@@ -4979,12 +4968,13 @@ class PredictionPlot(BasePlot):
     def plot_forecast(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
+        fh: int | str | range | SEQUENCE | ForecastingHorizon = "test",
+        X: FEATURES | None = None,
         target: INT | str = 0,
         plot_interval: bool = True,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: str | dict | None = "upper left",
         figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -4999,17 +4989,22 @@ class PredictionPlot(BasePlot):
             Models to plot. If None, all models are selected. If no
             models are selected, only the target column is plotted.
 
-        dataset: str or sequence, default="test"
-            Data set for which to plot the predictions. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "test" or "holdout".
+        fh: int, str, range, sequence or [ForecastingHorizon][], default="test"
+            Forecast horizon for which to plot the predictions. If
+            string, choose from: "train", "test" or "holdout". Use a
+            sequence or add `+` between options to select more than one.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh. This parameter
+            is ignored if fh is a data set.
 
         target: int or str, default=0
             Target column to look at. Only for [multivariate][] tasks.
 
         plot_interval: bool, default=True
             Whether to plot prediction intervals instead of the exact
-            prediction value.
+            prediction values. If True, the plotted estimators should
+            have a `predict_interval` method.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -5018,7 +5013,7 @@ class PredictionPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="upper right"
+        legend: str, dict or None, default="upper left"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
@@ -5058,52 +5053,136 @@ class PredictionPlot(BasePlot):
         >>> y = load_airline()
 
         >>> atom = ATOMForecaster(y, random_state=1)
-        >>> atom.run("NF")
+        >>> atom.plot_forecast()
+        ```
+
+        :: insert:
+            url: /img/plots/plot_forecast_1.html
+
+        ```pycon
+        >>> atom.run(
+        ...     models="arima",
+        ...     est_params={"order": (1, 1, 0), "seasonal_order": (0, 1, 0, 12)},
+        ... )
         >>> atom.plot_forecast()
 
         ```
 
         :: insert:
-            url: /img/plots/plot_forecast.html
+            url: /img/plots/plot_forecast_2.html
+
+        ```pycon
+        >>> atom.plot_forecast(fh="train+test", plot_interval=False)
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_forecast_3.html
+
+        ```pycon
+        >>> # Forecast the next 4 years starting from the test set
+        >>> atom.plot_forecast(fh=range(1, 48))
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_forecast_4.html
 
         """
-        dataset = self._get_set(dataset, max_one=False, allow_train=False)
         target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         # Draw original time series
-        fig.add_trace(
-            go.Scatter(
-                x=self._get_plot_index(self.dataset),
-                y=self.dataset[target],
-                line=dict(width=2, color="black"),
-                opacity=0.6,
-                showlegend=False,
-                xaxis=xaxis,
-                yaxis=yaxis,
+        for ds in ("train", "test"):
+            fig.add_trace(
+                go.Scatter(
+                    x=self._get_plot_index(getattr(self, ds)),
+                    y=getattr(self, ds)[target],
+                    mode="lines+markers",
+                    line=dict(
+                        width=2,
+                        color="black",
+                        dash=BasePlot._fig.get_elem(ds, "dash"),
+                    ),
+                    opacity=0.6,
+                    name=ds,
+                    showlegend=False if models else BasePlot._fig.showlegend(ds, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
             )
-        )
 
         # Draw predictions
         for m in models:
-            for ds in dataset:
-                fig.add_trace(
-                    self._draw_line(
-                        x=self._get_plot_index(getattr(self, ds)),
-                        y=getattr(m, f"predict_{ds}"),
-                        parent=m.name,
-                        child=ds,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+            if isinstance(fh, str):
+                # Get fh and corresponding X from data set
+                datasets = self._get_set(fh, max_one=False)
+                fh = pd.concat([getattr(m, ds) for ds in datasets]).index
+                X = m.X.loc[fh]
+
+            y_pred = m.predict(fh, X)
+            if is_multioutput(self.task):
+                y_pred = y_pred[target]
+
+            fig.add_trace(
+                self._draw_line(
+                    x=self._get_plot_index(y_pred),
+                    y=y_pred,
+                    mode="lines+markers",
+                    parent=m.name,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+            if plot_interval:
+                try:
+                    y_pred = m.predict_interval(fh, X)
+                except NotImplementedError:
+                    continue  # Fails for some models like ES
+
+                if is_multioutput(self.task):
+                    # Select interval of target column for multivariate
+                    y = y_pred.iloc[:, y_pred.columns.get_loc(target)]
+                else:
+                    y = y_pred  # Univariate
+
+                fig.add_traces(
+                    [
+                        go.Scatter(
+                            x=self._get_plot_index(y_pred),
+                            y=y.iloc[:, 1],
+                            mode="lines",
+                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            hovertemplate=f"%{{y}}<extra>{m.name} - upper bound</extra>",
+                            legendgroup=m.name,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                        go.Scatter(
+                            x=self._get_plot_index(y_pred),
+                            y=y.iloc[:, 0],
+                            mode="lines",
+                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            fill="tonexty",
+                            fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
+                            hovertemplate=f"%{{y}}<extra>{m.name} - lower bound</extra>",
+                            legendgroup=m.name,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    ]
                 )
 
         BasePlot._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup" if plot_interval else "toggleitem",
             xlabel=self.y.index.name,
             ylabel=target,
             title=title,

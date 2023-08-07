@@ -144,20 +144,19 @@ def test_warnings_parameter_str():
     assert base.warnings == "always"
 
 
-@patch("atom.basetransformer.getLogger")
 @pytest.mark.parametrize("logger", [None, "auto", Logger("test")])
-def test_logger_creator(cls, logger):
+def test_logger_creator(logger):
     """Assert that the logger is created correctly."""
-    BaseTransformer(logger="auto")
-    cls.assert_called()
+    base = BaseTransformer(logger="auto")
+    assert isinstance(base.logger, Logger)
 
 
-@patch("atom.utils.getLogger")
-def test_crash_with_logger(cls):
+def test_crash_with_logger():
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
     pytest.raises(RuntimeError, atom.run, "LR", est_params={"test": 2})
-    cls.assert_called()
+    with open("log.log", "rb") as f:
+        assert "raise RuntimeError" in str(f.read())
 
 
 @patch("mlflow.set_experiment")

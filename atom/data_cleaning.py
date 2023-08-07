@@ -2293,7 +2293,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Imputing {nans} missing values using "
                         f"the KNN imputer in feature {name}.", 2
                     )
-                    X[name] = self._imputers[name].transform(X[[name]])
+                    X[name] = self._imputers[name].transform(X[[name]]).flatten()
 
                 else:  # Strategies mean, median or most_frequent
                     n = np.round(self._imputers[name].statistics_[0], 2)
@@ -2301,7 +2301,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
                     )
-                    X[name] = self._imputers[name].transform(X[[name]])
+                    X[name] = self._imputers[name].transform(X[[name]]).flatten()
 
             # Column is categorical and contains missing values
             elif nans > 0:
@@ -2327,7 +2327,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Imputing {nans} missing values with "
                         f"most_frequent ({mode}) in feature {name}.", 2
                     )
-                    X[name] = self._imputers[name].transform(X[[name]])
+                    X[name] = self._imputers[name].transform(X[[name]]).flatten()
 
         return variable_return(X, y)
 

@@ -29,7 +29,7 @@ For classification and regression tasks:
 
 For forecast tasks:
 
-:: atom.models:NaiveForecaster
+:: atom.models:ARIMA
     :: methods:
         toc_only: True
         include:
@@ -47,8 +47,8 @@ The prediction methods can be calculated on the train, test and
 holdout set. You can access them through attributes of the form
 [method]_[data_set], e.g. `atom.mnb.predict_train`, `atom.mnb.predict_test`
 or `atom.mnb.predict_holdout`. The results are cached after the
-first call to avoid consequent expensive calculations. This
-mechanism can increase the size of the instance for large datasets.
+first call to avoid consequent expensive calculations (lazy properties).
+This mechanism can increase the size of the instance for large datasets.
 Use the [clear][atomclassifier-clear] method if you need to free
 the memory.
 

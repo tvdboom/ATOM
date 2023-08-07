@@ -280,8 +280,8 @@ def test_get_models_is_None():
     """Assert that all models are returned by default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom._get_models(models=None) == []
-    atom.run(["LR1", "LR2"])
-    assert atom._get_models(models=None) == [atom.lr1, atom.lr2]
+    atom.run(["LR_1", "LR_2"])
+    assert atom._get_models(models=None) == [atom.lr_1, atom.lr_2]
 
 
 def test_get_models_by_int():
@@ -289,33 +289,33 @@ def test_get_models_by_int():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*out of range for a pipeline.*"):
         atom._get_models(models=0)
-    atom.run(["LR1", "LR2"])
-    assert atom._get_models(models=1) == [atom.lr2]
+    atom.run(["LR_1", "LR_2"])
+    assert atom._get_models(models=1) == [atom.lr_2]
 
 
 def test_get_models_by_slice():
     """Assert that a slice of models is returned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.train_sizing(["LR1", "LR2"])
+    atom.train_sizing(["LR_1", "LR_2"])
     assert len(atom._get_models(models=slice(1, 4))) == 3
 
 
 def test_get_models_winner():
     """Assert that the winner is returned when used as name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR1", "LR2"])
-    assert atom._get_models(models="winner") == [atom.lr1]
+    atom.run(["LR_1", "LR_2"])
+    assert atom._get_models(models="winner") == [atom.lr_1]
 
 
 def test_get_models_by_str():
     """Assert that models can be retrieved by name or regex."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["GNB", "LR1", "LR2"])
-    assert atom._get_models(models="gnb+lr1") == [atom.gnb, atom.lr1]
-    assert atom._get_models(models=["gnb+lr1", "lr2"]) == [atom.gnb, atom.lr1, atom.lr2]
-    assert atom._get_models(models="lr.*") == [atom.lr1, atom.lr2]
-    assert atom._get_models(models="!lr1") == [atom.gnb, atom.lr2]
-    assert atom._get_models(models="!lr.*") == [atom.gnb]
+    atom.run(["GNB", "LR_1", "LR_2"])
+    assert atom._get_models("gnb+lr_1") == [atom.gnb, atom.lr_1]
+    assert atom._get_models(["gnb+lr_1", "lr_2"]) == [atom.gnb, atom.lr_1, atom.lr_2]
+    assert atom._get_models("lr.*") == [atom.lr_1, atom.lr_2]
+    assert atom._get_models("!lr_1") == [atom.gnb, atom.lr_2]
+    assert atom._get_models("!lr.*") == [atom.gnb]
     with pytest.raises(ValueError, match=".*any model that matches.*"):
         atom._get_models(models="invalid")
 
@@ -332,9 +332,9 @@ def test_get_models_exclude():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*not find any model.*"):
         atom._get_models(models="!invalid")
-    atom.run(["LR1", "LR2"])
-    assert atom._get_models(models="!lr1") == [atom.lr2]
-    assert atom._get_models(models="!.*2$") == [atom.lr1]
+    atom.run(["LR_1", "LR_2"])
+    assert atom._get_models(models="!lr_1") == [atom.lr_2]
+    assert atom._get_models(models="!.*_2$") == [atom.lr_1]
 
 
 def test_get_models_by_model():
@@ -355,15 +355,15 @@ def test_get_models_wrong_type():
 def test_get_models_include_or_exclude():
     """Assert that an error is raised when models are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR1", "LR2"])
+    atom.run(["LR_1", "LR_2"])
     with pytest.raises(ValueError, match=".*either include or exclude models.*"):
-        atom._get_models(models=["LR1", "!LR2"])
+        atom._get_models(models=["LR_1", "!LR_2"])
 
 
 def test_get_models_remove_ensembles():
     """Assert that ensembles can be excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR1", "LR2"])
+    atom.run(["LR_1", "LR_2"])
     atom.voting()
     assert "Vote" not in atom._get_models(models=None, ensembles=False)
 
@@ -381,8 +381,8 @@ def test_get_models_invalid_branch():
 def test_get_models_remove_duplicates():
     """Assert that duplicate models are returned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR1", "LR2"])
-    assert atom._get_models(["LR1", "LR1"]) == [atom.lr1]
+    atom.run(["LR_1", "LR_2"])
+    assert atom._get_models(["LR_1", "LR_1"]) == [atom.lr_1]
 
 
 def test_available_models():

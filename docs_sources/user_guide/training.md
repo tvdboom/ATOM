@@ -37,21 +37,22 @@ and [train_sizing][atomclassifier-train_sizing] methods respectively.
 
 Models are called through their [acronyms][models], e.g. `#!python atom.run(models="RF")`
 will train a [RandomForest][]. If you want to run the same model multiple
-times, add a tag after the acronym to differentiate them.
+times, add a tag after the acronym to differentiate them. the tag must be 
+separated from the accronym by an underscore.
 
 ```pycon
 >>> atom.run(
-...     models=["RF1", "RF2"],
+...     models=["RF_1", "RF_2"],
 ...     est_params={
-...         "RF1": {"n_estimators": 100},
-...         "RF2": {"n_estimators": 200},
+...         "RF_1": {"n_estimators": 100},
+...         "RF_2": {"n_estimators": 200},
 ...     }
 ... )
 ```
 
 For example, this pipeline fits two Random Forest models, one with 100
 and the other with 200 decision trees. The models can be accessed through
-`atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
+`atom.rf_1` and `atom.rf_2`. Use tagged models to test how the same model
 performs when fitted with different parameters or on different data sets.
 See the [Imbalanced datasets][example-imbalanced-datasets] example.
 
@@ -207,7 +208,7 @@ custom model.
     * In-training validation is **not** calculated during [hyperparameter tuning][].
     * CatBoost selects the weights achieved by the best evaluation on the
     test set after training. This means that, by default, there is some
-    minor data leakage in the test set. Use the `use_best_model=False`
+    minor data leakage in the test set. Use the `#!python use_best_model=False`
     parameter to avoid this behavior or use a [holdout set][data-sets] to
     evaluate the final estimator.
 

@@ -75,8 +75,8 @@ To avoid this, specify the `index` parameter. If the dataset has an
   their index.
 
 !!! warning
-Avoid duplicate indices in the dataframe. Having them may potentially
-lead to unexpected behavior.
+    Avoid duplicate indices in the dataframe. Having them may potentially
+    lead to unexpected behavior.
 
 <br>
 

@@ -97,7 +97,7 @@ X_class, y_class = load_wine(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
 
 # Multilabel classification data
-X_label, y_label = make_multilabel_classification(n_samples=100, n_classes=4)
+X_label, y_label = make_multilabel_classification(n_samples=200, n_classes=4)
 
 # Sparse data
 X_sparse = pd.DataFrame(

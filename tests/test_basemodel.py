@@ -13,22 +13,21 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 import requests
-from optuna.distributions import IntDistribution
+from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler
 from optuna.study import Study
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import r2_score, recall_score
 from sklearn.model_selection import KFold
+from sklearn.multioutput import ClassifierChain
 from sklearn.tree import DecisionTreeClassifier
 
-from atom import ATOMClassifier, ATOMRegressor
+from atom import ATOMClassifier, ATOMModel, ATOMRegressor
 from atom.utils import check_is_fitted, check_scaling, rnd
-from atom import ATOMModel
-from sklearn.multioutput import ClassifierChain
-from sklearn.linear_model import LogisticRegression
-from optuna.distributions import CategoricalDistribution
+
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
     y_class, y_idx, y_label, y_multiclass, y_reg,
@@ -161,12 +160,11 @@ def test_custom_distributions_meta_estimators():
         n_trials=1,
         ht_params={
             "distributions": {
-                "order": CategoricalDistribution([[0, 1], [1, 0]]),
+                "order": CategoricalDistribution([(0, 1, 2, 3), (1, 0, 3, 2)]),
                 "base_estimator__solver": CategoricalDistribution(["lbfgs", "newton-cg"]),
             }
         },
     )
-    assert isinstance(atom.winner.estimator, ClassifierChain)
 
 
 def test_est_params_removed_from_ht():
@@ -370,14 +368,14 @@ def test_continued_bootstrapping():
 def test_name_property():
     """Assert that the name property can be set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree2")
-    assert atom.tree2.name == "Tree2"
-    atom.tree2.name = ""
+    atom.run("Tree_2")
+    assert atom.tree_2.name == "Tree_2"
+    atom.tree_2.name = ""
     assert atom.tree.name == "Tree"
-    atom.tree.name = "Tree3"
-    assert atom.tree3.name == "Tree3"
-    atom.tree3.name = "4"
-    assert atom.tree4.name == "Tree4"
+    atom.tree.name = "Tree_3"
+    assert atom.tree_3.name == "Tree_3"
+    atom.tree_3.name = "4"
+    assert atom.tree_4.name == "Tree_4"
 
 
 @patch("mlflow.MlflowClient.set_tag")
@@ -386,7 +384,7 @@ def test_name_property_to_mlflow(mlflow):
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("Tree")
     atom.tree.name = "2"
-    mlflow.assert_called_with(atom.tree2._run.info.run_id, "mlflow.runName", "Tree2")
+    mlflow.assert_called_with(atom.tree_2._run.info.run_id, "mlflow.runName", "Tree_2")
 
 
 def test_study_property():

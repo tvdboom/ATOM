@@ -1440,6 +1440,23 @@ def is_sparse(df: DATAFRAME) -> bool:
     return any(bk.api.types.is_sparse(df[col]) for col in df)
 
 
+def check_empty(obj: PANDAS) -> PANDAS | None:
+    """Check if a pandas object is empty.
+
+    Parameters
+    ----------
+    obj: series or dataframe
+        Pandas object to check.
+
+    Returns
+    -------
+    series, dataframe or None
+        Same object or None if empty.
+
+    """
+    return obj if not obj.empty else None
+
+
 def check_dependency(name: str):
     """Raise an error if a package is not installed.
 
@@ -2329,7 +2346,7 @@ def fit_one(
     X: FEATURES | None = None,
     y: TARGET | None = None,
     message: str | None = None,
-    params: dict | None = None,
+    **fit_params,
 ):
     """Fit the data using one estimator.
 
@@ -2355,8 +2372,8 @@ def fit_one(
     message: str or None
         Short message. If None, nothing will be printed.
 
-    params: dict or None, default=None
-        Parameters of the form `process_routing()["step_name"]`.
+    **fit_params
+        Additional keyword arguments for the fit method.
 
     """
     X = to_df(X, index=getattr(y, "index", None))
@@ -2366,7 +2383,7 @@ def fit_one(
         if hasattr(transformer, "fit"):
             kwargs = {}
             inc = getattr(transformer, "_cols", getattr(X, "columns", []))
-            if "X" in (parameters := sign(transformer.fit)):
+            if "X" in (params := sign(transformer.fit)):
                 if X is not None and (cols := [c for c in inc if c in X]):
                     kwargs["X"] = X[cols]
 
@@ -2374,8 +2391,8 @@ def fit_one(
                 if len(kwargs) == 0:
                     if y is not None and hasattr(transformer, "_cols"):
                         kwargs["X"] = to_df(y)[inc]
-                    elif parameters["X"].default != Parameter.empty:
-                        kwargs["X"] = parameters["X"].default  # Fill X with default
+                    elif params["X"].default != Parameter.empty:
+                        kwargs["X"] = params["X"].default  # Fill X with default
                     else:
                         raise ValueError(
                             "Exception while trying to fit transformer "
@@ -2383,19 +2400,18 @@ def fit_one(
                             "X is required but has not been provided."
                         )
 
-            if "y" in parameters and y is not None:
+            if "y" in params and y is not None:
                 kwargs["y"] = y
 
             # Keep custom attrs since some transformers reset during fit
             with keep_attrs(transformer):
-                transformer.fit(**kwargs, **params.get("fit", {}) if params else {})
+                transformer.fit(**kwargs, **fit_params)
 
 
 def transform_one(
     transformer: Transformer,
     X: FEATURES | None = None,
     y: TARGET | None = None,
-    params: dict | None = None,
     method: str = "transform",
 ) -> tuple[DATAFRAME | None, SERIES | None]:
     """Transform the data using one estimator.
@@ -2418,9 +2434,6 @@ def transform_one(
         - If sequence: Target array with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
-
-    params: dict or None, default=None
-        Parameters of the form `process_routing()["step_name"]`.
 
     method: str, default="transform"
         Method to apply: transform or inverse_transform.
@@ -2481,7 +2494,7 @@ def transform_one(
 
     kwargs = {}
     inc = getattr(transformer, "_cols", getattr(X, "columns", []))
-    if "X" in (parameters := sign(getattr(transformer, method))):
+    if "X" in (params := sign(getattr(transformer, method))):
         if X is not None and (cols := [c for c in inc if c in X]):
             kwargs["X"] = X[cols]
 
@@ -2489,23 +2502,23 @@ def transform_one(
         if len(kwargs) == 0:
             if y is not None and hasattr(transformer, "_cols"):
                 kwargs["X"] = to_df(y)[inc]
-            elif parameters["X"].default != Parameter.empty:
-                kwargs["X"] = parameters["X"].default  # Fill X with default
+            elif params["X"].default != Parameter.empty:
+                kwargs["X"] = params["X"].default  # Fill X with default
             else:
                 return X, y  # If X is needed, skip the transformer
 
-    if "y" in parameters:
+    if "y" in params:
         if y is not None:
             kwargs["y"] = y
-        elif "X" not in parameters:
+        elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
     try:
-        out = getattr(transformer, method)(**kwargs, **params.get("transform") if params else {})
+        out = getattr(transformer, method)(**kwargs)
     except TypeError as ex:
         try:
             # Duck type using args instead of kwargs
-            out = getattr(transformer, method)(*kwargs.values(), **params.get("transform") if params else {})
+            out = getattr(transformer, method)(*kwargs.values())
         except TypeError:
             raise ex
 
@@ -2520,7 +2533,7 @@ def transform_one(
         )
         if isinstance(y, DATAFRAME_TYPES):
             y_new = prepare_df(y_new, y)
-    elif "X" in parameters and X is not None and any(c in X for c in inc):
+    elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
         X_new = prepare_df(out, X)
         y_new = y if y is None else y.set_axis(X_new.index)
@@ -2544,7 +2557,7 @@ def fit_transform_one(
     X: FEATURES | None = None,
     y: TARGET | None = None,
     message: str | None = None,
-    params: dict | None = None,
+    **fit_params,
 ) -> tuple[DATAFRAME | None, SERIES | None]:
     """Fit and transform the data using one estimator.
 
@@ -2570,8 +2583,8 @@ def fit_transform_one(
     message: str or None
         Short message. If None, nothing will be printed.
 
-    params: dict or None, default=None
-        Parameters of the form `process_routing()["step_name"]`.
+    **fit_params
+        Additional keyword arguments for the fit method.
 
     Returns
     -------
@@ -2585,7 +2598,7 @@ def fit_transform_one(
         Fitted transformer.
 
     """
-    fit_one(transformer, X, y, message, params)
+    fit_one(transformer, X, y, message, **fit_params)
     X, y = transform_one(transformer, X, y)
 
     return X, y, transformer
@@ -2802,20 +2815,16 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs) -> Any:
-        if args[0].logger is not None:
-            try:  # Run the function
-                return f(*args, **kwargs)
-
-            except Exception as ex:
-                # If exception is not same as last, write to log
-                if ex is not cache["last_exception"]:
-                    cache["last_exception"] = ex
-                    logger = getLogger(args[0].__class__.__name__)
-                    logger.exception("Exception encountered:")
-
-                raise ex
-        else:
+        try:  # Run the function
             return f(*args, **kwargs)
+
+        except Exception as ex:
+            # If exception is not same as last, write to log
+            if ex is not cache["last_exception"]:
+                cache["last_exception"] = ex
+                args[0].logger.exception("Exception encountered:")
+
+            raise ex
 
     return wrapper
 
@@ -2825,11 +2834,9 @@ def method_to_log(f: Callable) -> Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs) -> Any:
-        if args[0].logger is not None:
-            logger = getLogger(args[0].__class__.__name__)
-            if f.__name__ != "__init__":
-                logger.info("")
-            logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
+        if f.__name__ != "__init__":
+            args[0].logger.info("")
+        args[0].logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
 
         return f(*args, **kwargs)
 

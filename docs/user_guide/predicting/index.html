@@ -19,7 +19,7 @@
         <link rel="next" href="../plots/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
     
     
   <title>Predicting - ATOM</title>
@@ -1376,6 +1376,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/arima/" class="md-nav__link">
+        ARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/autoarima/" class="md-nav__link">
+        AutoARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         AutomaticRelevanceDetermination
       </a>
@@ -1504,6 +1532,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
         ElasticNet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/ets/" class="md-nav__link">
+        ETS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/es/" class="md-nav__link">
+        ExponentialSmoothing
       </a>
     </li>
   
@@ -1798,6 +1854,20 @@
     <li class="md-nav__item">
       <a href="../../API/models/perc/" class="md-nav__link">
         Perceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/pt/" class="md-nav__link">
+        PolynomialTrend
       </a>
     </li>
   
@@ -3185,7 +3255,7 @@
 <h2 id="prediction-methods">Prediction methods</h2>
 <p>After training a model, you probably want to make predictions on new,
 unseen data. Just like a sklearn estimator, you can call the prediction
-methods from the model, e.g. <code>atom.tree.predict(X)</code>.</p>
+methods from the model, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></code>.</p>
 <p>All prediction methods transform the provided data through the pipeline
 in the model's branch before making the predictions. Transformers that
 should only be applied on the training set are excluded from this step
@@ -3193,37 +3263,28 @@ should only be applied on the training set are excluded from this step
 <p>The available prediction methods are the standard methods for estimators
 in sklearn's and sktime's API.</p>
 <p>For classification and regression tasks:</p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-decision_function">decision_function</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict">predict</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict_log_proba">predict_log_proba</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict_proba">predict_proba</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-score">score</a></li>
-</ul>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-score">score</a></td><td>Get a metric score on new data.</td></tr></p>
+</table>
 <p>For forecast tasks:</p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../API/models/nf/#naiveforecaster-predict">predict</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/nf/#naiveforecaster-predict_interval">predict_interval</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/nf/#naiveforecaster-predict_proba">predict_proba</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/nf/#naiveforecaster-predict_quantiles">predict_quantiles</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/nf/#naiveforecaster-predict_var">predict_var</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/nf/#naiveforecaster-score">score</a></li>
-</ul>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_interval">predict_interval</a></td><td>Get prediction intervals on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_proba">predict_proba</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_quantiles">predict_quantiles</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_var">predict_var</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-score">score</a></td><td>Get a metric score on new data.</td></tr></p>
+</table>
 <h2 id="prediction-attributes">Prediction attributes</h2>
 <p>The prediction methods can be calculated on the train, test and
 holdout set. You can access them through attributes of the form
 [method]_[data_set], e.g. <code>atom.mnb.predict_train</code>, <code>atom.mnb.predict_test</code>
 or <code>atom.mnb.predict_holdout</code>. The results are cached after the
-first call to avoid consequent expensive calculations. This
-mechanism can increase the size of the instance for large datasets.
+first call to avoid consequent expensive calculations (lazy properties).
+This mechanism can increase the size of the instance for large datasets.
 Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method if you need to free
 the memory.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The prediction attributes for the <code>score</code> method return atom's
 metric score on that set, not the metric returned by sklearn's score
-method for estimators. Use the method's <a class="autorefs autorefs-internal" href="../../API/models/xgb/#score-metric"><code>metric</code></a>
-parameter to calculate a different metric.</p>
+method for estimators. Use the method's <code>metric</code> parameter to
+calculate a different metric.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3238,10 +3299,17 @@ indices are the target columns, and the second level are the classes. Use
 <h2 id="predictions-on-rows-in-the-dataset">Predictions on rows in the dataset</h2>
 <p>It's also possible to get the prediction for a specific row or rows in
 the dataset, providing the names or positions of the rows to the <a class="autorefs autorefs-internal" href="#prediction-methods">prediction methods</a>,
-e.g. <code>atom.rf.predict(10)</code> returns the random forest's prediction on the
-10th row in the dataset, or <code>atom.rf.predict_proba(["index1", "index2"])</code>
+e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></code> returns the random forest's prediction on the
+10th row in the dataset, or <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">([</span><span class="s2">&quot;index1&quot;</span><span class="p">,</span> <span class="s2">&quot;index2&quot;</span><span class="p">])</span></code>
 returns the class probabilities for the rows in the dataset with indices
 <code>index1</code> and <code>index2</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For forecast models, prediction on rows follow the <a href="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.base.ForecastingHorizon.html#sktime.forecasting.base.ForecastingHorizon">ForecastingHorizon</a>
+API. That means that using the row index works, but for example using
+<code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">arima</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code> returns the prediction on the first row
+of the test set (instead of the second row of the train set).</p>
+</div>
 
 
   

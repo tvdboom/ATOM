@@ -67,7 +67,7 @@ method. Often used interchangeably with [predictor][] because of user
 preference.
 </div>
 
-<div id="sequence"><strong>index</strong></div>
+<div id="index"><strong>index</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 Immutable sequence used for indexing and alignment of type [pd.Index](https://pandas.pydata.org/docs/reference/api/pandas.Index.html),
 [pd.MultiIndex](https://pandas.pydata.org/docs/reference/api/pandas.MultiIndex.html)
@@ -119,7 +119,7 @@ returned number must correspond with a better score. See sklearn's
 
 <div id="sequence"><strong>sequence</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-A one-dimensional array of type [list](https://docs.python.org/3/library/functions.html#func-list),
+A one-dimensional, indexable array of type [list](https://docs.python.org/3/library/functions.html#func-list),
 [tuple](https://docs.python.org/3/library/functions.html#func-tuple),
 [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html)
 or [series][]. This is the standard input format for a dataset's target column.

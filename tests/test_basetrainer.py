@@ -71,16 +71,16 @@ def test_invalid_model_name():
 
 def test_multiple_models_with_add():
     """Assert that you can add model names to select them."""
-    trainer = DirectClassifier("gnb+lr+lr2", random_state=1)
+    trainer = DirectClassifier("gnb+lr+lr_2", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["GNB", "LR", "LR2"]
+    assert trainer.models == ["GNB", "LR", "LR_2"]
 
 
 def test_multiple_same_models():
     """Assert that the same model can used with different names."""
-    trainer = DirectClassifier(["lr", "lr2", "lr_3"], random_state=1)
+    trainer = DirectClassifier(["lr", "lr_2", "lr_3"], random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["LR", "LR2", "LR_3"]
+    assert trainer.models == ["LR", "LR_2", "LR_3"]
 
 
 def test_only_task_models():
@@ -258,37 +258,37 @@ def test_custom_distributions():
 def test_custom_distributions_is_all():
     """Assert that the custom distributions can be set for all models."""
     trainer = DirectClassifier(
-        models=["LR1", "LR2"],
+        models=["LR_1", "LR_2"],
         n_trials=1,
         ht_params={
             "distributions": {
                 "all": {"max_iter": IntDistribution(10, 20)},
-                "LR2": {"penalty": CategoricalDistribution(["l1", "l2"])},
+                "LR_2": {"penalty": CategoricalDistribution(["l1", "l2"])},
             },
         },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert list(trainer.lr1.best_params) == ["max_iter"]
-    assert list(trainer.lr2.best_params) == ["max_iter", "penalty"]
+    assert list(trainer.lr_1.best_params) == ["max_iter"]
+    assert list(trainer.lr_2.best_params) == ["max_iter", "penalty"]
 
 
 def test_custom_distributions_per_model():
     """Assert that the custom distributions are distributed over the models."""
     trainer = DirectClassifier(
-        models=["LR1", "LR2"],
+        models=["LR_1", "LR_2"],
         n_trials=1,
         ht_params={
             "distributions": {
-                "lr1": {"max_iter": IntDistribution(10, 20)},
-                "lr2": {"max_iter": IntDistribution(30, 40)},
+                "lr_1": {"max_iter": IntDistribution(10, 20)},
+                "lr_2": {"max_iter": IntDistribution(30, 40)},
             },
         },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert 10 <= trainer.lr1.best_params["max_iter"] <= 20
-    assert 30 <= trainer.lr2.best_params["max_iter"] <= 40
+    assert 10 <= trainer.lr_1.best_params["max_iter"] <= 20
+    assert 30 <= trainer.lr_2.best_params["max_iter"] <= 40
 
 
 def test_ht_params_kwargs():

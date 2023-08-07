@@ -17,14 +17,15 @@ from copy import deepcopy
 from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
-from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
+from logging import DEBUG, FileHandler, Formatter, Logger, getLogger, NullHandler
 from multiprocessing import cpu_count
-from typing import Callable
+from typing import Any, Callable
 
 import dagshub
 import dill as pickle
 import mlflow
 import numpy as np
+import optuna.logging
 import ray
 import requests
 from dagshub.auth.token_auth import HTTPBearerAuth
@@ -34,9 +35,9 @@ from sktime.datatypes import check_is_mtype
 
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Estimator,
-    Predictor, bk, composed, crash, get_cols, lst, merge, method_to_log,
-    n_cols, pd, sign, to_df, to_pandas,
+    PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk,
+    composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
+    to_df, to_pandas,
 )
 
 
@@ -223,7 +224,7 @@ class BaseTransformer:
 
     @property
     def logger(self) -> Logger:
-        """Name of the log file or Logger object."""
+        """Logger of this class."""
         return self._logger
 
     @logger.setter
@@ -238,31 +239,39 @@ class BaseTransformer:
             "evalml",
         ]
 
-        # Clear existing handlers for external loggers
-        for name in external_loggers:
-            for handler in (log := getLogger(name)).handlers:
-                handler.close()
-            log.handlers.clear()
-
-        if isinstance(value, str):
-            # Prepare the FileHandler
-            if not value.endswith(".log"):
-                value += ".log"
-            if os.path.basename(value) == "auto.log":
-                current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
-                value = value.replace("auto", self.__class__.__name__ + "_" + current)
-
-            handler = FileHandler(value)
-            handler.setFormatter(Formatter("%(asctime)s - %(levelname)s: %(message)s"))
-
+        if isinstance(value, Logger):
+            logger = value
+        else:
             logger = getLogger(self.__class__.__name__)
             logger.setLevel(DEBUG)
+
+            # Clear existing handlers
+            for name in [logger.name] + external_loggers:
+                for handler in (log := getLogger(name)).handlers:
+                    handler.close()
+                log.handlers.clear()
+
+            # Setup file handler
+            if isinstance(value, str):
+                # Prepare the FileHandler
+                if not value.endswith(".log"):
+                    value += ".log"
+                if os.path.basename(value) == "auto.log":
+                    current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
+                    value = value.replace("auto", self.__class__.__name__ + "_" + current)
+
+                formatter = Formatter("%(asctime)s - %(levelname)s: %(message)s")
+
+                handler = FileHandler(value)
+                handler.setFormatter(formatter)
+            else:
+                handler = NullHandler()
 
             # Redirect loggers to file handler
             for log in [logger.name] + external_loggers:
                 getLogger(log).addHandler(handler)
 
-        self._logger = value
+        self._logger = logger
 
     @property
     def experiment(self) -> str | None:
@@ -329,7 +338,7 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _inherit(self, est: Estimator) -> Estimator:
+    def _inherit(self, obj: Any) -> Any:
         """Inherit n_jobs and/or random_state from parent.
 
         Utility method to set the n_jobs and random_state parameters
@@ -337,21 +346,21 @@ class BaseTransformer:
 
         Parameters
         ----------
-        est: Estimator
+        obj: object
             Object in which to change the parameters.
 
         Returns
         -------
-        Estimator
+        object
             Same object with changed parameters.
 
         """
-        signature = sign(est.__init__)
+        signature = sign(obj.__init__)
         for p in ("n_jobs", "random_state"):
-            if p in signature and getattr(est, p, "<!>") == signature[p]._default:
-                est.set_params(**{p: getattr(self, p)})
+            if p in signature and getattr(obj, p, "<!>") == signature[p]._default:
+                setattr(obj, p, getattr(self, p))
 
-        return est
+        return obj
 
     def _get_est_class(self, name: str, module: str) -> Predictor:
         """Import a class from a module.
@@ -771,8 +780,8 @@ class BaseTransformer:
                 idx = [len(get_cols(y)), data.index[:-len(test)], data.index[-len(test):]]
 
             except ValueError as ex:
-                if "least populated class" in str(ex) and isinstance(y, PANDAS_TYPES):
-                    # Clarify common error for wirth stratification for multioutput tasks
+                # Clarify common error with stratification for multioutput tasks
+                if "least populated class" in str(ex) and isinstance(y, DATAFRAME_TYPES):
                     raise ValueError(
                         "Stratification for multioutput tasks is applied over all target "
                         "columns, which results in a least populated class that has only "
@@ -989,10 +998,8 @@ class BaseTransformer:
         elif severity == "info" and self.verbose >= level:
             print(msg)
 
-        # Store in file
-        if self.logger is not None:
-            for text in str(msg).split("\n"):
-                getattr(getLogger(self.__class__.__name__), severity)(str(text))
+        for text in str(msg).split("\n"):
+            getattr(self.logger, severity)(str(text))
 
     @composed(crash, method_to_log)
     def save(self, filename: str = "auto", *, save_data: bool = True):

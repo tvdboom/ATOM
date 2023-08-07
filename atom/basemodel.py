@@ -60,11 +60,12 @@ from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, DF_ATTRS, FEATURES, FLOAT, FLOAT_TYPES, INDEX,
     INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET, ClassMap,
     CustomDict, DataConfig, PlotCallback, Predictor, Scorer, ShapExplanation,
-    TrialsCallback, bk, check_dependency, check_scaling, composed, crash,
-    custom_transform, estimator_has_attr, export_pipeline, fit_and_score, flt,
-    get_cols, get_custom_scorer, get_feature_importance, has_task, infer_task,
-    is_binary, is_multioutput, it, lst, merge, method_to_log, rnd, sign,
-    time_to_str, to_df, to_pandas, to_series, variable_return,
+    TrialsCallback, bk, check_dependency, check_empty, check_scaling, composed,
+    crash, custom_transform, estimator_has_attr, export_pipeline,
+    fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
+    has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
+    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
+    variable_return,
 )
 
 
@@ -152,21 +153,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         number generator is the `RandomState` used by `np.random`.
 
     """
-
-    _prediction_attributes = (
-        "decision_function_train",
-        "decision_function_test",
-        "decision_function_holdout",
-        "predict_train",
-        "predict_test",
-        "predict_holdout",
-        "predict_log_proba_train",
-        "predict_log_proba_test",
-        "predict_log_proba_holdout",
-        "predict_proba_train",
-        "predict_proba_test",
-        "predict_proba_holdout",
-    )
 
     def __init__(
         self,
@@ -536,11 +522,12 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         else:
             # Add forecasting horizon to sktime estimators
-            if "fh" in sign(estimator.fit):
-                if estimator.get_tag("requires-fh-in-fit"):
-                    est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
+            if self.goal == "fc":
+                if "fh" in sign(estimator.fit):
+                    if estimator.get_tag("requires-fh-in-fit"):
+                        est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
 
-                estimator.fit(data[1], X=data[0], **est_params_fit)
+                estimator.fit(data[1], X=check_empty(data[0]), **est_params_fit)
 
             else:
                 estimator.fit(*data, **est_params_fit)
@@ -575,11 +562,12 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     ]
                 )
 
-            # Annotate if model overfitted when train 20% > test on main metric
-            score_train = lst(self.score_train)[0]
-            score_test = lst(self.score_test)[0]
-            if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
-                out += " ~"
+            if self.goal != "fc":
+                # Annotate if model overfitted when train 20% > test on main metric
+                score_train = lst(self.score_train)[0]
+                score_test = lst(self.score_test)[0]
+                if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
+                    out += " ~"
 
         except AttributeError:  # Fails when model failed but errors="keep"
             out = "FAIL"
@@ -676,7 +664,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         if self.goal == "fc":
             # Sktime uses signature estimator.predict(fh, X)
-            y_pred = to_series(estimator.predict(y.index, X), index=y.index)
+            y_pred = to_series(estimator.predict(y.index, check_empty(X)), index=y.index)
             return self._score_from_pred(scorer, y, y_pred, **kwargs)
         elif self.task.startswith("multiclass-multioutput"):
             # Calculate predictions with shape=(n_samples, n_targets)
@@ -719,6 +707,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         """
         func = lambda x, y: scorer._score_func(x, y, **scorer._kwargs, **kwargs)
+
+        # Forecasting models can have first prediction NaN
+        if self.goal == "fc" and all(x.isna()[0] for x in get_cols(y_pred)):
+            y_true, y_pred, = y_true.iloc[1:], y_pred.iloc[1:]
 
         if self.task.startswith("multiclass-multioutput"):
             # Get mean of scores over target columns
@@ -1304,11 +1296,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def name(self, value: str):
         """Change the model's name."""
         # Drop the acronym if provided by the user
-        if re.match(self.acronym, value, re.I):
-            value = value[len(self.acronym):]
+        if re.match(f"{self.acronym}_", value, re.I):
+            value = value[len(self.acronym) + 1:]
 
-        # Add the acronym (with right capitalization)
-        self._name = self.acronym + value
+        # Add the acronym in front (with right capitalization)
+        self._name = f"{self.acronym}{f'_{value}' if value else ''}"
 
         if self._run:  # Change name in mlflow's run
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
@@ -1649,8 +1641,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self.dashboard = None
 
         # Clear caching
-        for prop in self._prediction_attributes:
-            self.__dict__.pop(prop, None)
+        for method in self._prediction_methods:
+            for ds in ("train", "test", "holdout"):
+                self.__dict__.pop(f"{method}_{ds}", None)
         self._get_score.cache_clear()
         self.branch.__dict__.pop("holdout", None)
 
@@ -2386,6 +2379,13 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 class ClassRegModel(BaseModel):
     """Classification and regression models."""
 
+    _prediction_methods = (
+        "decision_function",
+        "predict",
+        "predict_log_proba",
+        "predict_proba",
+    )
+
     # Prediction properties ======================================== >>
 
     def _assign_prediction_indices(self, index: INDEX) -> INDEX:
@@ -3060,6 +3060,14 @@ class ClassRegModel(BaseModel):
 class ForecastModel(BaseModel):
     """Forecasting models."""
 
+    _prediction_methods = (
+        "predict",
+        "predict_interval",
+        "predict_proba",
+        "predict_quantiles",
+        "predict_var",
+    )
+
     # Prediction properties ======================================== >>
 
     @cached_property
@@ -3072,7 +3080,10 @@ class ForecastModel(BaseModel):
         - (n_samples, n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict(self.train.index, X=self.X_train)
+        return self.estimator.predict(
+            fh=self.train.index,
+            X=check_empty(self.X_train),
+        )
 
     @cached_property
     def predict_test(self) -> PANDAS:
@@ -3084,7 +3095,10 @@ class ForecastModel(BaseModel):
         - (n_samples, n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict(self.test.index, X=self.X_test)
+        return self.estimator.predict(
+            fh=self.test.index,
+            X=check_empty(self.X_test),
+        )
 
     @cached_property
     def predict_holdout(self) -> PANDAS | None:
@@ -3097,7 +3111,10 @@ class ForecastModel(BaseModel):
 
         """
         if self.holdout is not None:
-            return self.estimator.predict(self.holdout.index, X=self.X_holdout)
+            return self.estimator.predict(
+                fh=self.holdout.index,
+                X=check_empty(self.X_holdout),
+            )
 
     @cached_property
     def predict_interval_train(self) -> DATAFRAME:
@@ -3109,7 +3126,10 @@ class ForecastModel(BaseModel):
         - (n_samples, 2 * n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_interval(self.train.index, X=self.X_train)
+        return self.estimator.predict_interval(
+            fh=self.train.index,
+            X=check_empty(self.X_train),
+        )
 
     @cached_property
     def predict_interval_test(self) -> DATAFRAME:
@@ -3121,7 +3141,10 @@ class ForecastModel(BaseModel):
         - (n_samples, 2 * n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_interval(self.test.index, X=self.X_test)
+        return self.estimator.predict_interval(
+            fh=self.test.index,
+            X=check_empty(self.X_test),
+        )
 
     @cached_property
     def predict_interval_holdout(self) -> DATAFRAME | None:
@@ -3134,23 +3157,35 @@ class ForecastModel(BaseModel):
 
         """
         if self.holdout:
-            return self.estimator.predict_interval(self.train.index, X=self.X_train)
+            return self.estimator.predict_interval(
+                fh=self.train.index,
+                X=check_empty(self.X_train),
+            )
 
     @cached_property
     def predict_proba_train(self) -> Normal:
         """Probabilistic forecast on the training set."""
-        return self.estimator.predict_proba(self.train.index, X=self.X_train)
+        return self.estimator.predict_proba(
+            fh=self.train.index,
+            X=check_empty(self.X_train),
+        )
 
     @cached_property
     def predict_proba_test(self) -> Normal:
         """Probabilistic forecast on the test set."""
-        return self.estimator.predict_proba(self.test.index, X=self.X_test)
+        return self.estimator.predict_proba(
+            fh=self.test.index,
+            X=check_empty(self.X_test),
+        )
 
     @cached_property
     def predict_proba_holdout(self) -> Normal | None:
         """Probabilistic forecast on the holdout set."""
         if self.holdout:
-            return self.estimator.predict_proba(self.holdout.index, X=self.X_holdout)
+            return self.estimator.predict_proba(
+                fh=self.holdout.index,
+                X=check_empty(self.X_holdout),
+            )
 
     @cached_property
     def predict_quantiles_train(self) -> DATAFRAME:
@@ -3162,7 +3197,10 @@ class ForecastModel(BaseModel):
         - (n_samples, 2 * n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_quantiles(self.train.index, X=self.X_train)
+        return self.estimator.predict_quantiles(
+            fh=self.train.index,
+            X=check_empty(self.X_train),
+        )
 
     @cached_property
     def predict_quantiles_test(self) -> DATAFRAME:
@@ -3174,7 +3212,10 @@ class ForecastModel(BaseModel):
         - (n_samples, 2 * n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_quantiles(self.test.index, X=self.X_test)
+        return self.estimator.predict_quantiles(
+            fh=self.test.index,
+            X=check_empty(self.X_test),
+        )
 
     @cached_property
     def predict_quantiles_holdout(self) -> DATAFRAME | None:
@@ -3187,7 +3228,10 @@ class ForecastModel(BaseModel):
 
         """
         if self.holdout:
-            return self.estimator.predict_quantiles(self.holdout.index, X=self.X_holdout)
+            return self.estimator.predict_quantiles(
+                fh=self.holdout.index,
+                X=check_empty(self.X_holdout),
+            )
 
     @cached_property
     def predict_residuals_train(self) -> PANDAS:
@@ -3199,7 +3243,10 @@ class ForecastModel(BaseModel):
         - (n_samples, n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_residuals(self.y_train, X=self.X_train)
+        return self.estimator.predict_residuals(
+            y=self.y_train,
+            X=check_empty(self.X_train),
+        )
 
     @cached_property
     def predict_residuals_test(self) -> PANDAS:
@@ -3211,7 +3258,10 @@ class ForecastModel(BaseModel):
         - (n_samples, n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_residuals(self.y_test, X=self.X_test)
+        return self.estimator.predict_residuals(
+            y=self.y_test,
+            X=check_empty(self.X_test),
+        )
 
     @cached_property
     def predict_residuals_holdout(self) -> PANDAS | None:
@@ -3224,7 +3274,10 @@ class ForecastModel(BaseModel):
 
         """
         if self.holdout:
-            return self.estimator.predict_residuals(self.y_holdout, X=self.X_holdout)
+            return self.estimator.predict_residuals(
+                y=self.y_holdout,
+                X=check_empty(self.X_holdout),
+            )
 
     @cached_property
     def predict_var_train(self) -> DATAFRAME:
@@ -3236,7 +3289,10 @@ class ForecastModel(BaseModel):
         - (n_samples, n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_var(self.y_train, X=self.X_train)
+        return self.estimator.predict_var(
+            fh=self.y_train.index,
+            X=check_empty(self.X_train),
+        )
 
     @cached_property
     def predict_var_test(self) -> DATAFRAME:
@@ -3248,7 +3304,10 @@ class ForecastModel(BaseModel):
         - (n_samples, n_targets) for [multivariate][] tasks.
 
         """
-        return self.estimator.predict_var(self.y_test, X=self.X_test)
+        return self.estimator.predict_var(
+            fh=self.y_test.index,
+            X=check_empty(self.X_test),
+        )
 
     @cached_property
     def predict_var_holdout(self) -> DATAFRAME | None:
@@ -3261,7 +3320,10 @@ class ForecastModel(BaseModel):
 
         """
         if self.holdout:
-            return self.estimator.predict_var(self.y_holdout, X=self.X_holdout)
+            return self.estimator.predict_var(
+                fh=self.y_holdout.index,
+                X=check_empty(self.holdout),
+            )
 
     # Prediction methods =========================================== >>
 

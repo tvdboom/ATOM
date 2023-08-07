@@ -116,6 +116,9 @@ CUSTOM_URLS = dict(
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
     ardregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ARDRegression.html",
     arddocs="https://scikit-learn.org/stable/modules/linear_model.html#automatic-relevance-determination-ard",
+    arimaclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.arima.ARIMA.html",
+    autoarimaclass="https://github.com/sktime/sktime/blob/c48883eb4f6d5336961c8413192dd22a65db1b77/sktime/forecasting/arima.py#L11",
+    autoets="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.ets.AutoETS.html",
     baggingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html",
     baggingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html",
     bagdocs="https://scikit-learn.org/stable/modules/ensemble.html#bootstrapping",
@@ -138,6 +141,7 @@ CUSTOM_URLS = dict(
     dummydocs="https://scikit-learn.org/stable/modules/model_evaluation.html#dummy-estimators",
     elasticnetreg="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html",
     endocs="https://scikit-learn.org/stable/modules/linear_model.html#elastic-net",
+    esclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.exp_smoothing.ExponentialSmoothing.html",
     extratreeclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.tree.ExtraTreeClassifier.html",
     extratreeregressor="https://scikit-learn.org/stable/modules/generated/sklearn.tree.ExtraTreeRegressor.html",
     extratreesclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html",
@@ -187,6 +191,7 @@ CUSTOM_URLS = dict(
     padocs="https://scikit-learn.org/stable/modules/linear_model.html#passive-aggressive",
     percclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Perceptron.html",
     percdocs="https://scikit-learn.org/stable/modules/linear_model.html#perceptron",
+    polynomialtrendforecaster="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.trend.PolynomialTrendForecaster.html",
     qdaclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html",
     radiusneighborsclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsClassifier.html",
     radiusneighborsregressor="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsRegressor.html",
@@ -732,6 +737,7 @@ class AutoDocs:
             Options to configure. Choose from:
 
             - toc_only: Whether to display only the toc.
+            - solo_link: Whether the link comes from the parent.
             - include: Methods to include.
             - exclude: Methods to exclude.
 
@@ -741,7 +747,8 @@ class AutoDocs:
             Toc and blocks for all selected methods.
 
         """
-        toc_only = config.get('toc_only')
+        toc_only = config.get("toc_only")
+        solo_link = config.get("solo_link")
         include = config.get("include", [])
         exclude = config.get("exclude", [])
 
@@ -760,7 +767,7 @@ class AutoDocs:
         for method in methods:
             func = AutoDocs(self.obj, method=method)
 
-            name = f"[{method}][{'' if toc_only else func._parent_anchor}{method}]"
+            name = f"[{method}][{'' if solo_link else func._parent_anchor}{method}]"
             summary = func.get_summary()
             toc += f"<tr><td>{name}</td><td>{summary}</td></tr>"
 
@@ -899,9 +906,8 @@ def types_conversion(dtype: str) -> str:
 def convert_plotly(html: str, **kwargs) -> str:
     """Prepare plotly plots from the html page.
 
-    This function changes the size of plotly plots to fit the screen's
-    width and fixes a problem that prevents plotly plots in the jupyter
-    notebook examples to be showed.
+    This function changes the size of plotly plots to fit the
+    screen's width.
 
     Parameters
     ----------
@@ -920,13 +926,6 @@ def convert_plotly(html: str, **kwargs) -> str:
         Modified html source text of page.
 
     """
-    # Remove plotly js
-    html = re.sub('<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text\/html">\s*?<script type="text\/javascript">.*?<\/script>\s*?<\/div>', "", html, flags=re.S)
-
-    # Fix plots in jupyter notebook
-    html = re.sub('(?<=<script type="text\/javascript">)\s*?require\(\["plotly"\], function\(Plotly\) {\s*?(?=window\.PLOTLYENV)', "", html)
-    html = re.sub('\).then\(function\(\){.*?(?=<\/script>)', ')}', html, flags=re.S)
-
     # Correct sizes of the plot to adjust to frame
     html = re.sub('(?<=style="height:\d+?px; width:)\d+?px(?=;")', "100%", html)
     html = re.sub('(?<="showlegend":\w+?),"width":\d+?,"height":\d+?(?=[},])', "", html)

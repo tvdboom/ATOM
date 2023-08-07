@@ -26,13 +26,13 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.5.1)
+* **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.1)
 * **[dagshub](https://github.com/DagsHub/client)** (>=0.2.10)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.11.0)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
-* **[featuretools](https://www.featuretools.com/)** (>=1.26.0)
+* **[featuretools](https://www.featuretools.com/)** (>=1.27.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.3.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.7.2)
 * **[mlflow](https://mlflow.org/)** (>=2.5.0)
@@ -44,7 +44,7 @@ packages are necessary for its correct functioning.
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.6.1)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.0)
-* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.0)
+* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.42.1)
 * **[sktime](http://www.sktime.net/en/latest/)** (>=0.20.1)
@@ -59,10 +59,11 @@ additional libraries. You can install all the optional dependencies using
 
 * **[botorch](https://botorch.org/docs/introduction)** (>=0.8.5)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.2)
-* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.2)
+* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.3)
 * **[evalml](https://evalml.alteryx.com/en/stable/)** (>=0.78.0)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.19.1)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.5)
+* **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)

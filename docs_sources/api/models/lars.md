@@ -88,8 +88,8 @@ attributes that are never used, saving time and memory.
 
 ## Methods
 
-The [plots][available-plots] and [prediction methods][] can be called directly
-from the model. The remaining utility methods can be found hereunder.
+The [plots][available-plots] can be called directly from the model.
+The remaining utility methods can be found hereunder.
 
 :: methods:
     toc_only: False

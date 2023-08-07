@@ -13,44 +13,50 @@ can be accessed using their acronyms, e.g. `atom.LGB` to access the
 LightGBM model. The available models and their corresponding
 acronyms are:
 
-* "AdaB" for [AdaBoost][]
-* "ARD" for [AutomaticRelevanceDetermination][]
-* "Bag" for [Bagging][]
-* "BR" for [BayesianRidge][]
-* "BNB" for [BernoulliNB][]
-* "CatB" for [CatBoost][]
-* "CatNB" for [CategoricalNB][]
-* "CNB" for [ComplementNB][]
-* "Tree" for [DecisionTree][]
-* "Dummy" for [Dummy][]
-* "EN" for [ElasticNet][]
-* "ETree" for [ExtraTree][]
-* "ET" for [ExtraTrees][]
-* "GNB" for [GaussianNB][]
-* "GP" for [GaussianProcess][]
-* "GBM" for [GradientBoosting][]
-* "Huber" for [HuberRegression][]
-* "hGBM" for [HistGradientBoosting][]
-* "KNN" for [KNearestNeighbors][]
-* "Lasso" for [Lasso][]
-* "Lars" for [LeastAngleRegression][]
-* "LGB" for [LightGBM][]
-* "LDA" for [LinearDiscriminantAnalysis][]
-* "lSVM" for [LinearSVM][]
-* "LR" for [LogisticRegression][]
-* "MLP" for [MultiLayerPerceptron][]
-* "MNB" for [MultinomialNB][]
-* "OLS" for [OrdinaryLeastSquares][]
-* "OMP" for [OrthogonalMatchingPursuit][]
-* "PA" for [PassiveAggressive][]
-* "Perc" for [Perceptron][]
-* "QDA" for [QuadraticDiscriminantAnalysis][]
-* "RNN" for [RadiusNearestNeighbors][]
-* "RF" for [RandomForest][]
-* "Ridge" for [Ridge][]
-* "SGD" for [StochasticGradientDescent][]
-* "SVM" for [SupportVectorMachine][]
-* "XGB" for [XGBoost][]
+* [AdaBoost][] (AdaB)
+* [ARIMA][] (Arima)
+* [AutoARIMA][] (AutoARIMA)
+* [AutomaticRelevanceDetermination][] (ARD)
+* [Bagging][] (Bag)
+* [BayesianRidge][] (BR)
+* [BernoulliNB][] (BNB)
+* [CatBoost][] (CatB)
+* [CategoricalNB][] (CatNB)
+* [ComplementNB][] (CNB)
+* [DecisionTree][] (Tree)
+* [Dummy][] (Dummy)
+* [ElasticNet][] (EN)
+* [ETS][] (ETS)
+* [ExponentialSmoothing][] (ES)
+* [ExtraTree][] (ETree)
+* [ExtraTrees][] (ET)
+* [GaussianNB][] (GNB)
+* [GaussianProcess][] (GP)
+* [GradientBoostingMachine][] (GBM)
+* [HuberRegression][] (Huber)
+* [HistGradientBoosting][] (hGBM)
+* [KNearestNeighbors][] (KNN)
+* [Lasso][] (Lasso)
+* [LeastAngleRegression][] (Lars)
+* [LightGBM][] (LGB)
+* [LinearDiscriminantAnalysis][] (LDA)
+* [LinearSVM][] (lSVM)
+* [LogisticRegression][] (LR)
+* [MultiLayerPerceptron][] (MLP)
+* [MultinomialNB][] (MNB)
+* [NaiveForecaster][] (NF)
+* [OrdinaryLeastSquares][] (OLS)
+* [OrthogonalMatchingPursuit][] (OMP)
+* [PassiveAggressive][] (PA)
+* [Perceptron][] (Perc)
+* [PolynomialTrend][] (PT)
+* [QuadraticDiscriminantAnalysis][] (QDA)
+* [RadiusNearestNeighbors][] (RNN)
+* [RandomForest][] (RF)
+* [Ridge][] (Ridge)
+* [StochasticGradientDescent][] (SGD)
+* [SupportVectorMachine][] (SVM)
+* [XGBoost][] (XGB)
 
 !!! warning
     The model classes can not be initialized directly by the user! Use
