@@ -1,7 +1,7 @@
-# GradientBoosting
-------------------
+# GradientBoostingMachine
+-------------------------
 
-:: atom.models:GradientBoosting
+:: atom.models:GradientBoostingMachine
     :: tags
     :: description
     :: see also

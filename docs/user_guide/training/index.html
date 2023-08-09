@@ -19,13 +19,13 @@
         <link rel="next" href="../predicting/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
     
     
   <title>Training - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.eebd395e.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ecc896b0.min.css">
@@ -3413,22 +3413,23 @@ models:</p>
 other two approaches repeats them more than once. Just like the <a class="autorefs autorefs-internal" href="../data_cleaning/#data-cleaning">data cleaning</a>
 and <a class="autorefs autorefs-internal" href="../feature_engineering/#feature-engineering">feature engineering</a> classes, it's discouraged to use these classes
 directly. Instead, every approach can be called directly from atom through
-the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run">run</a>, <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-successive_halving">successive_halving</a>
-and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-train_sizing">train_sizing</a> methods respectively.</p>
+the [run][atomclassifier-run], [successive_halving][atomclassifier-successive_halving]
+and [train_sizing][atomclassifier-train_sizing] methods respectively.</p>
 <p>Models are called through their <a class="autorefs autorefs-internal" href="../models/#models">acronyms</a>, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;RF&quot;</span><span class="p">)</span></code>
 will train a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>. If you want to run the same model multiple
-times, add a tag after the acronym to differentiate them.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF1&quot;</span><span class="p">,</span> <span class="s2">&quot;RF2&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
-<span class="gp">... </span>        <span class="s2">&quot;RF1&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
-<span class="gp">... </span>        <span class="s2">&quot;RF2&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
-<span class="gp">... </span>    <span class="p">}</span>
-<span class="gp">... </span><span class="p">)</span>
+times, add a tag after the acronym to differentiate them. the tag must be 
+separated from the accronym by an underscore.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF_1&quot;</span><span class="p">,</span> <span class="s2">&quot;RF_2&quot;</span><span class="p">],</span>
+<span class="o">...</span>     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
+<span class="o">...</span>         <span class="s2">&quot;RF_1&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+<span class="o">...</span>         <span class="s2">&quot;RF_2&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
+<span class="o">...</span>     <span class="p">}</span>
+<span class="o">...</span> <span class="p">)</span>
 </code></pre></div>
 <p>For example, this pipeline fits two Random Forest models, one with 100
 and the other with 200 decision trees. The models can be accessed through
-<code>atom.rf1</code> and <code>atom.rf2</code>. Use tagged models to test how the same model
+<code>atom.rf_1</code> and <code>atom.rf_2</code>. Use tagged models to test how the same model
 performs when fitted with different parameters or on different data sets.
 See the [Imbalanced datasets][example-imbalanced-datasets] example.</p>
 <p>Additional things to take into account:</p>
@@ -3449,7 +3450,7 @@ some parameters that define the scorer's properties , such as if
 a higher or lower score is better (score or loss function) or if
 the function needs probability estimates or rounded predictions
 (see the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>
-function). The <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-metric"><code>metric</code></a> parameter accepts
+function). The [<code>metric</code>][directclassifier-metric] parameter accepts
 three ways of defining the scorer:</p>
 <ul>
 <li>Using the name of one of the <a class="autorefs autorefs-internal" href="#predefined-scorers">predefined scorers</a>.</li>
@@ -3470,7 +3471,7 @@ as well as some custom acronyms and custom scorers. Since some of
 sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
-case-insensitive and can be used in the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-metric"><code>metric</code></a>
+case-insensitive and can be used in the [<code>metric</code>][directclassifier-metric]
 parameter instead of the scorer's full name, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;BA&quot;</span><span class="p">)</span></code>
 uses <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
@@ -3512,12 +3513,12 @@ desired metrics, e.g. <code class="language-python highlight"><span class="n">at
 of metrics. For example, if you provided three metrics to the pipeline,
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">knn</span><span class="o">.</span><span class="n">score_train</span></code> could return [0.8734, 0.6672, 0.9001].
 Only the first metric of a multi-metric run (this metric is called the
-<strong>main</strong> metric) is used to select the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-winner">winning</a>
+<strong>main</strong> metric) is used to select the [winning][atomclassifier-winner]
 model.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <ul>
-<li>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-winner"><code>winning</code></a> model is retrieved comparing only
+<li>The [<code>winning</code>][atomclassifier-winner] model is retrieved comparing only
   the main metric.</li>
 <li>Some plots let you choose which of the metrics in a multi-metric run
   to show using the <code>metric</code> parameter, e.g. <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a>.</li>
@@ -3539,7 +3540,7 @@ The data is considered scaled if it has one of the following prerequisites:</p>
 <p>The scaling is applied using a <a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a> with default parameters. It
 can be accessed from the model through the <code>scaler</code> attribute. The
 scaled dataset can be examined through the model's <a class="autorefs autorefs-internal" href="../../API/training/trainsizingregressor/#data-attributes">data attributes</a>.
-Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a> method to
+Use the [available_models][atomclassifier-available_models] method to
 see which models require feature scaling. See [here][example-automated-feature-scaling]
 an example.</p>
 <p><br></p>
@@ -3563,7 +3564,7 @@ using in-training validation.</p>
 <li><a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a></li>
 </ul>
 <p>To apply in-training validation to a <a class="autorefs autorefs-internal" href="../models/#custom-models">custom model</a>, use the
-<a class="autorefs autorefs-internal" href="../../API/ATOM/atommodel/#atommodel-has_validation"><code>has_validation</code></a> parameter when creating the
+[<code>has_validation</code>][atommodel-has_validation] parameter when creating the
 custom model.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -3571,7 +3572,7 @@ custom model.</p>
 <li>In-training validation is <strong>not</strong> calculated during <a class="autorefs autorefs-internal" href="#hyperparameter-tuning">hyperparameter tuning</a>.</li>
 <li>CatBoost selects the weights achieved by the best evaluation on the
 test set after training. This means that, by default, there is some
-minor data leakage in the test set. Use the <code>use_best_model=False</code>
+minor data leakage in the test set. Use the <code class="language-python highlight"><span class="n">use_best_model</span><span class="o">=</span><span class="kc">False</span></code>
 parameter to avoid this behavior or use a <a class="autorefs autorefs-internal" href="../data_management/#data-sets">holdout set</a> to
 evaluate the final estimator.</li>
 </ul>
@@ -3584,8 +3585,8 @@ on the train and test sets.</p>
 <p><br></p>
 <h2 id="parameter-customization">Parameter customization</h2>
 <p>By default, every estimator uses the default parameters they get from
-their respective packages. To select different ones, use the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-est_params"><code>est_params</code></a>.
-parameter of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run">run</a> method. There are two ways
+their respective packages. To select different ones, use the [<code>est_params</code>][directclassifier-est_params].
+parameter of the [run][atomclassifier-run] method. There are two ways
 to add custom parameters to the models: adding them directly to the
 dictionary as key-value pairs or through dictionaries.</p>
 <p>Adding the parameters directly to <code>est_params</code> (or using a dict with
@@ -3593,24 +3594,24 @@ the key 'all') shares them across all models in the trainer. In
 this example, both the <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a> and the <a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> model use
 200 boosted trees. Make sure all the models do have the specified
 parameters or an exception will be raised!</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">})</span>
 </code></pre></div>
 <p>To specify parameters per model, use the model name as key and a dict
 of the parameters as value. In this example, the <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a> model uses
 <code>n_estimators=200</code> and the <a class="autorefs autorefs-internal" href="../../API/models/mlp/#multilayerperceptron">MultiLayerPerceptron</a> uses one hidden
 layer with 75 neurons.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
-<span class="gp">... </span>        <span class="s2">&quot;XGB&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
-<span class="gp">... </span>        <span class="s2">&quot;MLP&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hidden_layer_sizes&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">75</span><span class="p">,)},</span>
-<span class="gp">... </span>    <span class="p">}</span>
-<span class="gp">... </span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">],</span>
+<span class="o">...</span>     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
+<span class="o">...</span>         <span class="s2">&quot;XGB&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
+<span class="o">...</span>         <span class="s2">&quot;MLP&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hidden_layer_sizes&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">75</span><span class="p">,)},</span>
+<span class="o">...</span>     <span class="p">}</span>
+<span class="o">...</span> <span class="p">)</span>
 </code></pre></div>
 <p>Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding <code>_fit</code> at the end of the
 parameter. For example, to change <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a>'s verbosity, we can run:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;verbose_fit&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;verbose_fit&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3652,14 +3653,14 @@ used to fit the final model on the complete training set.</p>
   are <a href="https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html">TPESampler</a>
   for single-metric runs and <a href="https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.NSGAIISampler.html">NSGAIISampler</a>
   for <a class="autorefs autorefs-internal" href="#multi-metric-runs">multi-metric runs</a>.</li>
-<li>For <a class="autorefs autorefs-internal" href="#multi-metric-runs">multi-metric runs</a>, the selected <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-best_trial">best trial</a>
+<li>For <a class="autorefs autorefs-internal" href="#multi-metric-runs">multi-metric runs</a>, the selected [best trial][adaboost-best_trial]
   is the trial that performed best on the main metric. Use the property's
   <code>@setter</code> to change it to any other trial. See the [hyperparameter tuning][example-hyperparameter-tuning]
   example.</li>
 </ul>
 </div>
 <p>There are many possibilities to tune the study to your liking. The main
-parameter is <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-n_trials"><code>n_trials</code></a>, which determine the
+parameter is [<code>n_trials</code>][directclassifier-n_trials], which determine the
 number of trials that are performed.</p>
 <p>Extra things to take into account:</p>
 <ul>
@@ -3673,11 +3674,11 @@ number of trials that are performed.</p>
 <p>The hyperparameter tuning output can become quite wide for models
 with many hyperparameters. If you are working in a Jupyter Notebook,
 you can change the output's width running the following code in a cell:
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&lt;style&gt;.container { width:100% !important; }&lt;/style&gt;&quot;</span><span class="p">))</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+<span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&lt;style&gt;.container { width:100% !important; }&lt;/style&gt;&quot;</span><span class="p">))</span>
 </code></pre></div></p>
 </div>
-<p>Other settings can be changed through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-ht_params"><code>ht_params</code></a>
+<p>Other settings can be changed through the [<code>ht_params</code>][directclassifier-ht_params]
 parameter, a dictionary where every key-value combination can be used
 to further customize the optimization.</p>
 <p>By default, which hyperparameters are tuned and their corresponding
@@ -3689,59 +3690,59 @@ key to specify the parameters for every individual model. Use the key
 tune other parameters only for specific ones. The following example tunes
 the <code>n_estimators</code> parameter for both models but the <code>max_depth</code> parameter
 only for the <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span>   <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
-<span class="gp">... </span>   <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="gp">... </span>   <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
-<span class="gp">... </span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="o">...</span>    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+<span class="o">...</span>    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+<span class="o">...</span>    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
+<span class="o">...</span> <span class="p">)</span>
 </code></pre></div>
-<p>Like the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add"><code>columns</code></a> parameter in atom's methods, you
+<p>Like the [<code>columns</code>][atomclassifier-add] parameter in atom's methods, you
 can exclude parameters from the optimization adding <code>!</code> before its name.
 It's possible to exclude multiple parameters, but not to combine inclusion
 and exclusion for the same model. For example, to optimize a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>
 using all its predefined parameters except <code>n_estimators</code>, run:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">},</span>
-<span class="gp">... </span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<span class="o">...</span>     <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">},</span>
+<span class="o">...</span> <span class="p">)</span>
 </code></pre></div>
 <p>If just the parameter name is provided, the predefined distribution is
 used. It's also possible to provide custom distributions spaces, but make
 sure they are compliant with <a href="https://optuna.readthedocs.io/en/stable/reference/distributions.html">optuna's API</a>.
 See every model's individual documentation in ATOM's API section for an
 overview of their hyperparameters and distributions.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">optuna.distributions</span> <span class="kn">import</span> <span class="p">(</span>
-<span class="gp">... </span>   <span class="n">IntDistribution</span><span class="p">,</span> <span class="n">FloatDistribution</span><span class="p">,</span> <span class="n">CategoricalDistribution</span>
-<span class="gp">... </span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">optuna.distributions</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="o">...</span>    <span class="n">IntDistribution</span><span class="p">,</span> <span class="n">FloatDistribution</span><span class="p">,</span> <span class="n">CategoricalDistribution</span>
+<span class="o">...</span> <span class="p">)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
-<span class="gp">... </span>        <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span>
-<span class="gp">... </span>            <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-<span class="gp">... </span>            <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">{</span>
-<span class="gp">... </span>                <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-<span class="gp">... </span>                <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="n">CategoricalDistribution</span><span class="p">([</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">]),</span>
-<span class="gp">... </span>           <span class="p">},</span>
-<span class="gp">... </span>        <span class="p">},</span>
-<span class="gp">... </span>    <span class="p">},</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+<span class="o">...</span>     <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+<span class="o">...</span>     <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
+<span class="o">...</span>         <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span>
+<span class="o">...</span>             <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+<span class="o">...</span>             <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">{</span>
+<span class="o">...</span>                 <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+<span class="o">...</span>                 <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="n">CategoricalDistribution</span><span class="p">([</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">]),</span>
+<span class="o">...</span>            <span class="p">},</span>
+<span class="o">...</span>         <span class="p">},</span>
+<span class="o">...</span>     <span class="p">},</span>
+<span class="o">...</span> <span class="p">)</span>
 </code></pre></div>
 <p>Parameters for optuna's <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html">study</a> and the study's <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize">optimize</a> method can
 be added as kwargs to <code>ht_params</code>. For example, to use a different sampler
 or add a custom callback.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">optuna.samplers</span> <span class="kn">import</span> <span class="n">RandomSampler</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">optuna.samplers</span> <span class="kn">import</span> <span class="n">RandomSampler</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
-<span class="gp">... </span>        <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="n">RandomSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">atom</span><span class="o">.</span><span class="n">random_state</span><span class="p">),</span>
-<span class="gp">... </span>        <span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">(),</span>
-<span class="gp">... </span>    <span class="p">},</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+<span class="o">...</span>     <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
+<span class="o">...</span>         <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="n">RandomSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">atom</span><span class="o">.</span><span class="n">random_state</span><span class="p">),</span>
+<span class="o">...</span>         <span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">(),</span>
+<span class="o">...</span>     <span class="p">},</span>
+<span class="o">...</span> <span class="p">)</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3771,14 +3772,14 @@ trials. Have a look at them <a class="autorefs autorefs-internal" href="../plots
 early stages of the training (a.k.a., automated early-stopping). This
 can save the pipeline much time that would otherwise be wasted on an
 estimator that is unlikely to yield the best results. A pruned trial
-can't be selected as <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-best_trial"><code>best_trial</code></a>. Click
+can't be selected as [<code>best_trial</code>][adaboost-best_trial]. Click
 [here][example-pruning] to see an example that uses pruning.</p>
 <p>The study uses <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.MedianPruner.html">MedianPruner</a>
 as default pruner. You can use any other of optuna's <a href="https://optuna.readthedocs.io/en/stable/reference/pruners.html">pruners</a>
-through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-ht_params"><code>ht_params</code></a> parameter.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">optuna.pruners</span> <span class="kn">import</span> <span class="n">HyperbandPruner</span>
+through the [<code>ht_params</code>][directclassifier-ht_params] parameter.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">optuna.pruners</span> <span class="kn">import</span> <span class="n">HyperbandPruner</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;SGD&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;pruner&quot;</span><span class="p">:</span> <span class="n">HyperbandPruner</span><span class="p">()})</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;SGD&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;pruner&quot;</span><span class="p">:</span> <span class="n">HyperbandPruner</span><span class="p">()})</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -3795,7 +3796,7 @@ technique. This technique creates several new data sets selecting random
 samples from the training set (with replacement) and evaluates them on 
 the test set. This way you can get a distribution of the performance of
 the model. The sets are the same for every model. The number of sets can
-be chosen through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-n_bootstrap"><code>n_bootstrap</code></a> parameter.</p>
+be chosen through the [<code>n_bootstrap</code>][directclassifier-n_bootstrap] parameter.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a> method to plot the boostrap scores in a boxplot.</p>
@@ -3809,7 +3810,7 @@ remains, which is fitted on the complete dataset. Beware that a model's
 performance can depend greatly on the amount of data on which it is
 trained. For this reason, we recommend only to use this technique with
 similar models, e.g. only using tree-based models.</p>
-<p>Run successive halving from atom via the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-successive_halving">successive_halving</a>
+<p>Run successive halving from atom via the [successive_halving][atomclassifier-successive_halving]
 method. Consecutive runs of the same model are saved with the model's
 acronym followed by the number of models in the run. For example, a
 <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a> in a run with 4 models would become model <code>RF4</code>.</p>
@@ -3827,9 +3828,9 @@ samples in the training set. Train sizing can be used to create
 insights in this trade-off, and help determine the optimal size of
 the training set. The models are fitted multiple times, ever-increasing
 the number of samples in the training set.</p>
-<p>Run train sizing from atom via the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-train_sizing">train_sizing</a>
+<p>Run train sizing from atom via the [train_sizing][atomclassifier-train_sizing]
 method. The number of iterations and the number of samples per training
-can be specified with the <a class="autorefs autorefs-internal" href="../../API/training/trainsizingclassifier/#trainsizingclassifier-train_sizes"><code>train_sizes</code></a>
+can be specified with the [<code>train_sizes</code>][trainsizingclassifier-train_sizes]
 parameter. Consecutive runs of the same model are saved with the model's
 acronym followed by the fraction of rows in the training set (the <code>.</code> is
 removed from the fraction!). For example, a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a> in a run with
@@ -3865,6 +3866,44 @@ per size of the training set.</p>
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../models/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Models" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Models
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../predicting/" class="md-footer__link md-footer__link--next" aria-label="Next: Predicting" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Predicting
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -3943,7 +3982,7 @@ per size of the training set.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>

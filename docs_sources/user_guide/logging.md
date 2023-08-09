@@ -36,14 +36,14 @@ view it at http://localhost:5000.
 
 **Example**
 
-```pycon
->>> from atom import ATOMClassifier
->>> from sklearn.datasets import load_breast_cancer
+```python
+from atom import ATOMClassifier
+from sklearn.datasets import load_breast_cancer
 
->>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
->>> atom = ATOMClassifier(X, y, experiment="breast_cancer")
->>> atom.run(models=["LR", "RF", "LGB"], n_trials=(0, 0, 10))
+atom = ATOMClassifier(X, y, experiment="breast_cancer")
+atom.run(models=["LR", "RF", "LGB"], n_trials=(0, 0, 10))
 ```
 
 ![MLflow](../img/mlflow.png)
@@ -67,14 +67,14 @@ already exist, a new public repo is created.
 
 **Example**
 
-```pycon
->>> from atom import ATOMClassifier
->>> from sklearn.datasets import load_breast_cancer
+```python
+from atom import ATOMClassifier
+from sklearn.datasets import load_breast_cancer
 
->>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
->>> atom = ATOMClassifier(X, y, experiment="dagshub:breast_cancer")
->>> atom.run(models=["LR", "RF"])
+atom = ATOMClassifier(X, y, experiment="dagshub:breast_cancer")
+atom.run(models=["LR", "RF"])
 ```
 
 ![DAGsHub](../img/dagshub.png)

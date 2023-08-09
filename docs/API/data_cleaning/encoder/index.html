@@ -19,13 +19,13 @@
         <link rel="next" href="../imputer/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
     
     
   <title>Encoder - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.eebd395e.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
@@ -3240,7 +3240,7 @@
 
 <h1 id="encoder">Encoder</h1>
 <hr />
-<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1408>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1220>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the column:</p>
 <ul>
 <li>If n_classes=2 or ordinal feature, use Ordinal-encoding.</li>
@@ -3251,7 +3251,7 @@
 classes encountered during transforming are imputed according
 to the selected strategy. Infrequent classes can be replaced with
 a value in order to prevent too high cardinality.</p>
-<p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-encode">encode</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#encoding-categorical-features">user guide</a>.</p>
+<p>This class can be accessed from atom through the [encode][atomclassifier-encode] method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#encoding-categorical-features">user guide</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Three category-encoders estimators are unavailable:</p>
@@ -3323,112 +3323,40 @@ Number of features seen during fit.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">randint</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">randint</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
 
-<span class="go">     mean radius  mean texture  ...  cat_feature_2  cat_feature_3</span>
-<span class="go">0          13.62         23.23  ...             x0             x0</span>
-<span class="go">1          14.86         16.94  ...             x0             x5</span>
-<span class="go">2          16.74         21.59  ...             x2            x15</span>
-<span class="go">3          13.37         16.39  ...             x1            x18</span>
-<span class="go">4          11.37         18.89  ...             x0            x13</span>
-<span class="go">..           ...           ...  ...            ...            ...</span>
-<span class="go">564        14.06         17.18  ...             x2             x1</span>
-<span class="go">565        11.29         13.04  ...             x0            x10</span>
-<span class="go">566        14.26         19.65  ...             x0             x5</span>
-<span class="go">567        12.05         14.63  ...             x2            x14</span>
-<span class="go">568        18.81         19.98  ...             x1            x13</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="go">[569 rows x 33 columns]</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-<span class="go">Fitting Encoder...</span>
-<span class="go">Encoding categorical columns...</span>
-<span class="go"> --&gt; Ordinal-encoding feature cat_feature_1. Contains 2 classes.</span>
-<span class="go"> --&gt; OneHot-encoding feature cat_feature_2. Contains 3 classes.</span>
-<span class="go"> --&gt; Target-encoding feature cat_feature_3. Contains 20 classes.</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-
-<span class="go">     mean radius  mean texture  ...  cat_feature_2_x2  cat_feature_3</span>
-<span class="go">0          13.62         23.23  ...               0.0       0.714286</span>
-<span class="go">1          14.86         16.94  ...               0.0       0.555556</span>
-<span class="go">2          16.74         21.59  ...               1.0       0.681818</span>
-<span class="go">3          13.37         16.39  ...               0.0       0.739130</span>
-<span class="go">4          11.37         18.89  ...               0.0       0.521739</span>
-<span class="go">..           ...           ...  ...               ...            ...</span>
-<span class="go">564        14.06         17.18  ...               1.0       0.772727</span>
-<span class="go">565        11.29         13.04  ...               0.0       0.766667</span>
-<span class="go">566        14.26         19.65  ...               0.0       0.555556</span>
-<span class="go">567        12.05         14.63  ...               1.0       0.411765</span>
-<span class="go">568        18.81         19.98  ...               0.0       0.521739</span>
-
-<span class="go">[569 rows x 35 columns]</span>
+<span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Encoder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">randint</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Encoder</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">randint</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-<span class="go">     mean radius  mean texture  ...  cat_feature_2  cat_feature_3</span>
-<span class="go">0          13.62         23.23  ...             x0             x0</span>
-<span class="go">1          14.86         16.94  ...             x0             x5</span>
-<span class="go">2          16.74         21.59  ...             x2            x15</span>
-<span class="go">3          13.37         16.39  ...             x1            x18</span>
-<span class="go">4          11.37         18.89  ...             x0            x13</span>
-<span class="go">..           ...           ...  ...            ...            ...</span>
-<span class="go">564        14.06         17.18  ...             x2             x1</span>
-<span class="go">565        11.29         13.04  ...             x0            x10</span>
-<span class="go">566        14.26         19.65  ...             x0             x5</span>
-<span class="go">567        12.05         14.63  ...             x2            x14</span>
-<span class="go">568        18.81         19.98  ...             x1            x13</span>
+<span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
-<span class="go">[569 rows x 33 columns]</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-
-<span class="go">Fitting Encoder...</span>
-<span class="go">Encoding categorical columns...</span>
-<span class="go"> --&gt; Ordinal-encoding feature cat_feature_1. Contains 2 classes.</span>
-<span class="go"> --&gt; OneHot-encoding feature cat_feature_2. Contains 3 classes.</span>
-<span class="go"> --&gt; Target-encoding feature cat_feature_3. Contains 20 classes.</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-
-<span class="go">     mean radius  mean texture  ...  cat_feature_2_x2  cat_feature_3</span>
-<span class="go">0          17.99         10.38  ...               1.0       0.379310</span>
-<span class="go">1          20.57         17.77  ...               1.0       0.714286</span>
-<span class="go">2          19.69         21.25  ...               0.0       0.586207</span>
-<span class="go">3          11.42         20.38  ...               0.0       0.678571</span>
-<span class="go">4          20.29         14.34  ...               0.0       0.714286</span>
-<span class="go">..           ...           ...  ...               ...            ...</span>
-<span class="go">564        21.56         22.39  ...               0.0       0.580645</span>
-<span class="go">565        20.13         28.25  ...               0.0       0.518519</span>
-<span class="go">566        16.60         28.08  ...               1.0       0.600000</span>
-<span class="go">567        20.60         29.33  ...               1.0       0.586207</span>
-<span class="go">568         7.76         24.54  ...               1.0       0.678571</span>
-
-<span class="go">[569 rows x 35 columns]</span>
+<span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3436,10 +3364,10 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#encoder-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-get_metadata_routing">get_metadata_routing</a></td><td>Get metadata routing of this object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-transform">transform</a></td><td>Encode the data.</td></tr></p>
+<p><tr><td>[fit][encoder-fit]</td><td>Fit to data.</td></tr><tr><td>[fit_transform][encoder-fit_transform]</td><td>Fit to data, then transform it.</td></tr><tr><td>[get_metadata_routing][encoder-get_metadata_routing]</td><td>Get metadata routing of this object.</td></tr><tr><td>[get_params][encoder-get_params]</td><td>Get parameters for this estimator.</td></tr><tr><td>[inverse_transform][encoder-inverse_transform]</td><td>Does nothing.</td></tr><tr><td>[log][encoder-log]</td><td>Print message and save to log file.</td></tr><tr><td>[save][encoder-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[set_params][encoder-set_params]</td><td>Set the parameters of this estimator.</td></tr><tr><td>[transform][encoder-transform]</td><td>Encode the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='encoder-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1646>[source]</a></span></div>Fit to data.</p>
+<p><a id='encoder-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1384>[source]</a></span></div>Fit to data.</p>
 <p>Note that leaving y=None can lead to errors if the <code>strategy</code>
 encoder requires target values. For multioutput tasks, only
 the first target column is used to fit the encoder.</p>
@@ -3549,7 +3477,7 @@ Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a> method.
+add the data to the [load][atomclassifier-load] method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -3562,7 +3490,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1817>[source]</a></span></div>Encode the data.</p>
+<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1555>[source]</a></span></div>Encode the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3598,6 +3526,44 @@ Encoded dataframe.
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../discretizer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Discretizer" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Discretizer
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../imputer/" class="md-footer__link md-footer__link--next" aria-label="Next: Imputer" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Imputer
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -3676,7 +3642,7 @@ Encoded dataframe.
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>

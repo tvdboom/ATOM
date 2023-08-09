@@ -1217,15 +1217,15 @@ class FeatureSelectorPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection("pca", n_features=5)
-        >>> atom.plot_components(show=10)
+        atom = ATOMClassifier(X, y)
+        atom.feature_selection("pca", n_features=5)
+        atom.plot_components(show=10)
 
         ```
 
@@ -1340,15 +1340,15 @@ class FeatureSelectorPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection("pca", n_features=5)
-        >>> atom.plot_pca()
+        atom = ATOMClassifier(X, y)
+        atom.feature_selection("pca", n_features=5)
+        atom.plot_pca()
 
         ```
 
@@ -1463,15 +1463,15 @@ class FeatureSelectorPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection("rfecv", solver="Tree")
-        >>> atom.plot_rfecv()
+        atom = ATOMClassifier(X, y)
+        atom.feature_selection("rfecv", solver="Tree")
+        atom.plot_rfecv()
 
         ```
 
@@ -1638,14 +1638,14 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.plot_correlation()
+        atom = ATOMClassifier(X, y)
+        atom.plot_correlation()
 
         ```
 
@@ -1796,36 +1796,36 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import numpy as np
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        import numpy as np
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> # Add a categorical feature
-        >>> animals = ["cat", "dog", "bird", "lion", "zebra"]
-        >>> probabilities = [0.001, 0.1, 0.2, 0.3, 0.399]
-        >>> X["animals"] = np.random.choice(animals, size=len(X), p=probabilities)
+        # Add a categorical feature
+        animals = ["cat", "dog", "bird", "lion", "zebra"]
+        probabilities = [0.001, 0.1, 0.2, 0.3, 0.399]
+        X["animals"] = np.random.choice(animals, size=len(X), p=probabilities)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.plot_distribution(columns=[0, 1])
+        atom = ATOMClassifier(X, y)
+        atom.plot_distribution(columns=[0, 1])
 
         ```
 
         :: insert:
             url: /img/plots/plot_distribution_1.html
 
-        ```pycon
-        >>> atom.plot_distribution(columns=0, distributions=["norm", "invgauss"])
+        ```python
+        atom.plot_distribution(columns=0, distributions=["norm", "invgauss"])
 
         ```
 
         :: insert:
             url: /img/plots/plot_distribution_2.html
 
-        ```pycon
-        >>> atom.plot_distribution(columns="animals", legend="lower right")
+        ```python
+        atom.plot_distribution(columns="animals", legend="lower right")
 
         ```
 
@@ -2029,26 +2029,26 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import fetch_20newsgroups
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import fetch_20newsgroups
 
-        >>> X, y = fetch_20newsgroups(
-        ...     return_X_y=True,
-        ...     categories=[
-        ...         'alt.atheism',
-        ...         'sci.med',
-        ...         'comp.windows.x',
-        ...     ],
-        ...     shuffle=True,
-        ...     random_state=1,
-        ... )
-        >>> X = np.array(X).reshape(-1, 1)
+        X, y = fetch_20newsgroups(
+            return_X_y=True,
+            categories=[
+                'alt.atheism',
+                'sci.med',
+                'comp.windows.x',
+            ],
+            shuffle=True,
+            random_state=1,
+        )
+        X = np.array(X).reshape(-1, 1)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.textclean()
-        >>> atom.textnormalize()
-        >>> atom.plot_ngrams()
+        atom = ATOMClassifier(X, y)
+        atom.textclean()
+        atom.textnormalize()
+        atom.plot_ngrams()
 
         ```
 
@@ -2201,20 +2201,20 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.plot_qq(columns=[5, 6])
+        atom = ATOMClassifier(X, y)
+        atom.plot_qq(columns=[5, 6])
 
         ```
 
         :: insert:
             url: /img/plots/plot_qq_1.html
 
-        ```pycon
-        >>> atom.plot_qq(columns=0, distributions=["norm", "invgauss", "triang"])
+        ```python
+        atom.plot_qq(columns=0, distributions=["norm", "invgauss", "triang"])
 
         ```
 
@@ -2324,14 +2324,14 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.plot_relationships(columns=[0, 4, 5])
+        atom = ATOMClassifier(X, y)
+        atom.plot_relationships(columns=[0, 4, 5])
 
         ```
 
@@ -2493,26 +2493,26 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import fetch_20newsgroups
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import fetch_20newsgroups
 
-        >>> X, y = fetch_20newsgroups(
-        ...     return_X_y=True,
-        ...     categories=[
-        ...         'alt.atheism',
-        ...         'sci.med',
-        ...         'comp.windows.x',
-        ...     ],
-        ...     shuffle=True,
-        ...     random_state=1,
-        ... )
-        >>> X = np.array(X).reshape(-1, 1)
+        X, y = fetch_20newsgroups(
+            return_X_y=True,
+            categories=[
+                'alt.atheism',
+                'sci.med',
+                'comp.windows.x',
+            ],
+            shuffle=True,
+            random_state=1,
+        )
+        X = np.array(X).reshape(-1, 1)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.textclean()
-        >>> atom.textnormalize()
-        >>> atom.plot_wordcloud()
+        atom = ATOMClassifier(X, y)
+        atom.textclean()
+        atom.textnormalize()
+        atom.plot_wordcloud()
 
         ```
 
@@ -2656,34 +2656,34 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from optuna.distributions import IntDistribution
+        ```python
+        from atom import ATOMClassifier
+        from optuna.distributions import IntDistribution
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
 
-        >>> # We run three models with different search spaces
-        >>> atom.run(
-        ...     models="RF1",
-        ...     n_trials=200,
-        ...     ht_params={"distributions": {"n_estimators": IntDistribution(10, 20)}},
-        ... )
-        >>> atom.run(
-        ...     models="RF2",
-        ...     n_trials=200,
-        ...     ht_params={"distributions": {"n_estimators": IntDistribution(50, 70)}},
-        ... )
-        >>> atom.run(
-        ...     models="RF3",
-        ...     n_trials=200,
-        ...     ht_params={"distributions": {"n_estimators": IntDistribution(80, 90)}},
-        ... )
+        # We run three models with different search spaces
+        atom.run(
+            models="RF1",
+            n_trials=200,
+            ht_params={"distributions": {"n_estimators": IntDistribution(10, 20)}},
+        )
+        atom.run(
+            models="RF2",
+            n_trials=200,
+            ht_params={"distributions": {"n_estimators": IntDistribution(50, 70)}},
+        )
+        atom.run(
+            models="RF3",
+            n_trials=200,
+            ht_params={"distributions": {"n_estimators": IntDistribution(80, 90)}},
+        )
 
-        >>> atom.plot_edf()
+        atom.plot_edf()
 
         ```
 
@@ -2807,15 +2807,15 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run(["LR", "RF"], n_trials=15)
-        >>> atom.plot_hyperparameter_importance()
+        atom = ATOMClassifier(X, y)
+        atom.run(["LR", "RF"], n_trials=15)
+        atom.plot_hyperparameter_importance()
 
         ```
 
@@ -2952,15 +2952,15 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("RF", n_trials=15)
-        >>> atom.plot_hyperparameters(params=(0, 1, 2))
+        atom = ATOMClassifier(X, y)
+        atom.run("RF", n_trials=15)
+        atom.plot_hyperparameters(params=(0, 1, 2))
 
         ```
 
@@ -3160,15 +3160,15 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("RF", n_trials=15)
-        >>> atom.plot_parallel_coordinate(params=slice(1, 5))
+        atom = ATOMClassifier(X, y)
+        atom.run("RF", n_trials=15)
+        atom.plot_parallel_coordinate(params=slice(1, 5))
 
         ```
 
@@ -3333,15 +3333,15 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("RF", metric=["f1", "accuracy", "recall"], n_trials=15)
-        >>> atom.plot_pareto_front()
+        atom = ATOMClassifier(X, y)
+        atom.run("RF", metric=["f1", "accuracy", "recall"], n_trials=15)
+        atom.plot_pareto_front()
 
         ```
 
@@ -3488,15 +3488,15 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("RF", metric=["f1", "recall"], n_trials=15)
-        >>> atom.plot_slice(params=(0, 1, 2))
+        atom = ATOMClassifier(X, y)
+        atom.run("RF", metric=["f1", "recall"], n_trials=15)
+        atom.plot_slice(params=(0, 1, 2))
 
         ```
 
@@ -3644,16 +3644,16 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"], n_trials=15, ht_params={"cv": 5})
-        >>> atom.plot_terminator_improvement()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"], n_trials=15, ht_params={"cv": 5})
+        atom.plot_terminator_improvement()
 
         ```
 
@@ -3765,21 +3765,21 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from optuna.pruners import PatientPruner
+        ```python
+        from atom import ATOMClassifier
+        from optuna.pruners import PatientPruner
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(
-        ...     models="LGB",
-        ...     n_trials=15,
-        ...     ht_params={"pruner": PatientPruner(None, patience=100)},
-        ... )
-        >>> atom.plot_timeline()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(
+            models="LGB",
+            n_trials=15,
+            ht_params={"pruner": PatientPruner(None, patience=100)},
+        )
+        atom.plot_timeline()
 
         ```
 
@@ -3933,16 +3933,16 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"], n_trials=15)
-        >>> atom.plot_trials()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"], n_trials=15)
+        atom.plot_trials()
 
         ```
 
@@ -4128,16 +4128,16 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["RF", "LGB"])
-        >>> atom.plot_calibration()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["RF", "LGB"])
+        atom.plot_calibration()
 
         ```
 
@@ -4308,24 +4308,24 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.lr.plot_confusion_matrix()  # For one model
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.lr.plot_confusion_matrix()  # For one model
 
         ```
 
         :: insert:
             url: /img/plots/plot_confusion_matrix_1.html
 
-        ```pycon
-        >>> atom.plot_confusion_matrix()  # For multiple models
+        ```python
+        atom.plot_confusion_matrix()  # For multiple models
 
         ```
 
@@ -4505,17 +4505,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_det()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_det()
 
         ```
 
@@ -4632,15 +4632,15 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMRegressor
-        >>> from sklearn.datasets import load_diabetes
+        ```python
+        from atom import ATOMRegressor
+        from sklearn.datasets import load_diabetes
 
-        >>> X, y = load_diabetes(return_X_y=True, as_frame=True)
+        X, y = load_diabetes(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMRegressor(X, y)
-        >>> atom.run(["OLS", "LGB"])
-        >>> atom.plot_errors()
+        atom = ATOMRegressor(X, y)
+        atom.run(["OLS", "LGB"])
+        atom.plot_errors()
 
         ```
 
@@ -4771,16 +4771,16 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["XGB", "LGB"])
-        >>> atom.plot_evals()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["XGB", "LGB"])
+        atom.plot_evals()
 
         ```
 
@@ -4894,15 +4894,15 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_feature_importance(show=10)
+        atom = ATOMClassifier(X, y)
+        atom.run(["LR", "RF"])
+        atom.plot_feature_importance(show=10)
 
         ```
 
@@ -5046,42 +5046,42 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMForecaster
-        >>> from sktime.datasets import load_airline
+        ```python
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
 
-        >>> y = load_airline()
+        y = load_airline()
 
-        >>> atom = ATOMForecaster(y, random_state=1)
-        >>> atom.plot_forecast()
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_forecast()
         ```
 
         :: insert:
             url: /img/plots/plot_forecast_1.html
 
-        ```pycon
-        >>> atom.run(
-        ...     models="arima",
-        ...     est_params={"order": (1, 1, 0), "seasonal_order": (0, 1, 0, 12)},
-        ... )
-        >>> atom.plot_forecast()
+        ```python
+        atom.run(
+            models="arima",
+            est_params={"order": (1, 1, 0), "seasonal_order": (0, 1, 0, 12)},
+        )
+        atom.plot_forecast()
 
         ```
 
         :: insert:
             url: /img/plots/plot_forecast_2.html
 
-        ```pycon
-        >>> atom.plot_forecast(fh="train+test", plot_interval=False)
+        ```python
+        atom.plot_forecast(fh="train+test", plot_interval=False)
 
         ```
 
         :: insert:
             url: /img/plots/plot_forecast_3.html
 
-        ```pycon
-        >>> # Forecast the next 4 years starting from the test set
-        >>> atom.plot_forecast(fh=range(1, 48))
+        ```python
+        # Forecast the next 4 years starting from the test set
+        atom.plot_forecast(fh=range(1, 48))
 
         ```
 
@@ -5265,17 +5265,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_gains()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_gains()
 
         ```
 
@@ -5388,15 +5388,15 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.train_sizing(["LR", "RF"], n_bootstrap=5)
-        >>> atom.plot_learning_curve()
+        atom = ATOMClassifier(X, y)
+        atom.train_sizing(["LR", "RF"], n_bootstrap=5)
+        atom.plot_learning_curve()
 
         ```
 
@@ -5550,17 +5550,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_lift()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_lift()
 
         ```
 
@@ -5686,23 +5686,23 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run(["GNB", "RF"])
-        >>> atom.rf.plot_parshap(legend=None)
+        atom = ATOMClassifier(X, y)
+        atom.run(["GNB", "RF"])
+        atom.rf.plot_parshap(legend=None)
 
         ```
 
         :: insert:
             url: /img/plots/plot_parshap_1.html
 
-        ```pycon
-        >>> atom.plot_parshap(columns=slice(5, 10))
+        ```python
+        atom.plot_parshap(columns=slice(5, 10))
 
         ```
 
@@ -5918,23 +5918,23 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_partial_dependence(kind="average+individual", legend="upper left")
+        atom = ATOMClassifier(X, y)
+        atom.run(["LR", "RF"])
+        atom.plot_partial_dependence(kind="average+individual", legend="upper left")
 
         ```
 
         :: insert:
             url: /img/plots/plot_partial_dependence_1.html
 
-        ```pycon
-        >>> atom.rf.plot_partial_dependence(columns=(3, 4), pair=2)
+        ```python
+        atom.rf.plot_partial_dependence(columns=(3, 4), pair=2)
 
         ```
 
@@ -6191,15 +6191,15 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_permutation_importance(show=10, n_repeats=7)
+        atom = ATOMClassifier(X, y)
+        atom.run(["LR", "RF"])
+        atom.plot_permutation_importance(show=10, n_repeats=7)
 
         ```
 
@@ -6335,43 +6335,43 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.scale()
-        >>> atom.run(["GNB", "RNN", "SGD", "MLP"])
-        >>> atom.voting(models=atom.winners[:2])
-        >>> atom.plot_pipeline()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.scale()
+        atom.run(["GNB", "RNN", "SGD", "MLP"])
+        atom.voting(models=atom.winners[:2])
+        atom.plot_pipeline()
 
         ```
 
         ![plot_pipeline](../../img/plots/plot_pipeline_1.png)
 
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.scale()
-        >>> atom.prune()
-        >>> atom.run("RF", n_trials=30)
+        atom = ATOMClassifier(X, y)
+        atom.scale()
+        atom.prune()
+        atom.run("RF", n_trials=30)
 
-        >>> atom.branch = "undersample"
-        >>> atom.balance("nearmiss")
-        >>> atom.run("RF_undersample")
+        atom.branch = "undersample"
+        atom.balance("nearmiss")
+        atom.run("RF_undersample")
 
-        >>> atom.branch = "oversample_from_master"
-        >>> atom.balance("smote")
-        >>> atom.run("RF_oversample")
+        atom.branch = "oversample_from_master"
+        atom.balance("smote")
+        atom.run("RF_oversample")
 
-        >>> atom.plot_pipeline()
+        atom.plot_pipeline()
 
         ```
 
@@ -6662,17 +6662,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_prc()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_prc()
 
         ```
 
@@ -6793,17 +6793,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_probabilities()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_probabilities()
 
         ```
 
@@ -6943,15 +6943,15 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMRegressor
-        >>> from sklearn.datasets import load_diabetes
+        ```python
+        from atom import ATOMRegressor
+        from sklearn.datasets import load_diabetes
 
-        >>> X, y = load_diabetes(return_X_y=True, as_frame=True)
+        X, y = load_diabetes(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMRegressor(X, y)
-        >>> atom.run(["OLS", "LGB"])
-        >>> atom.plot_residuals()
+        atom = ATOMRegressor(X, y)
+        atom.run(["OLS", "LGB"])
+        atom.plot_residuals()
 
         ```
 
@@ -7094,34 +7094,34 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"])
-        >>> atom.plot_results()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"])
+        atom.plot_results()
 
         ```
 
         :: insert:
             url: /img/plots/plot_results_1.html
 
-        ```pycon
-        >>> atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"], n_bootstrap=5)
-        >>> atom.plot_results()
+        ```python
+        atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"], n_bootstrap=5)
+        atom.plot_results()
 
         ```
 
         :: insert:
             url: /img/plots/plot_results_2.html
 
-        ```pycon
-        >>> atom.plot_results(metric="time_fit+time")
+        ```python
+        atom.plot_results(metric="time_fit+time")
 
         ```
 
@@ -7313,17 +7313,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_roc()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_roc()
 
         ```
 
@@ -7437,15 +7437,15 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.successive_halving(["Tree", "Bag", "RF", "LGB"], n_bootstrap=5)
-        >>> atom.plot_successive_halving()
+        atom = ATOMClassifier(X, y)
+        atom.successive_halving(["Tree", "Bag", "RF", "LGB"], n_bootstrap=5)
+        atom.plot_successive_halving()
 
         ```
 
@@ -7613,17 +7613,17 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        ```python
+        from atom import ATOMClassifier
+        import pandas as pd
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_threshold()
+        atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        atom.impute()
+        atom.encode()
+        atom.run(["LR", "RF"])
+        atom.plot_threshold()
 
         ```
 
@@ -7770,15 +7770,15 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_bar(show=10)
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_bar(show=10)
 
         ```
 
@@ -7885,15 +7885,15 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_beeswarm(show=10)
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_beeswarm(show=10)
 
         ```
 
@@ -8003,22 +8003,22 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_decision(show=10)
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_decision(show=10)
 
         ```
 
         ![plot_shap_decision](../../img/plots/plot_shap_decision_1.png)
 
-        ```pycon
-        >>> atom.plot_shap_decision(index=-1, show=10)
+        ```python
+        atom.plot_shap_decision(index=-1, show=10)
 
         ```
 
@@ -8132,15 +8132,15 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_force(index=-2, matplotlib=True, figsize=(1800, 300))
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_force(index=-2, matplotlib=True, figsize=(1800, 300))
 
         ```
 
@@ -8266,15 +8266,15 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_heatmap(show=10)
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_heatmap(show=10)
 
         ```
 
@@ -8383,15 +8383,15 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_scatter(columns="symmetry error")
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_scatter(columns="symmetry error")
 
         ```
 
@@ -8511,15 +8511,15 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.run("LR")
-        >>> atom.plot_shap_waterfall()
+        atom = ATOMClassifier(X, y)
+        atom.run("LR")
+        atom.plot_shap_waterfall()
 
         ```
 

@@ -4,8 +4,8 @@
 }
 
 
-/* Prevent the selection of >>>, ... and output in code blocks */
-.language-pycon .gp, .language-pycon .go {
+/* Prevent the selection of and ... in code blocks */
+.language-pycon .gp {
     user-select: none;
 }
 

@@ -121,73 +121,33 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_extraction(features=["day"], fmt="%d/%m/%Y", verbose=2)
+        atom = ATOMClassifier(X, y)
+        atom.feature_extraction(features=["day"], fmt="%d/%m/%Y", verbose=2)
 
-        Extracting datetime features...
-         --> Extracting features from column date.
-           --> Creating feature date_day.
-
-        >>> # Note the date_day column
-        >>> print(atom.dataset)
-
-             mean radius  mean texture  ...  date_day  target
-        0         11.300         18.19  ...        31       1
-        1         16.460         20.11  ...        27       0
-        2         11.370         18.89  ...        17       1
-        3          8.598         20.98  ...         3       1
-        4         12.800         17.46  ...         2       1
-        ..           ...           ...  ...       ...     ...
-        564       17.060         21.00  ...         2       0
-        565       11.940         20.76  ...        14       1
-        566       19.590         25.00  ...        28       0
-        567       12.360         18.54  ...        18       1
-        568       18.450         21.91  ...        15       0
-
-        [569 rows x 32 columns]
-
+        # Note the date_day column
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.feature_engineering import FeatureExtractor
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.feature_engineering import FeatureExtractor
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
+        X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
+        X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
 
-        >>> fe = FeatureExtractor(features=["day"], fmt="%Y-%m-%d", verbose=2)
-        >>> X = fe.transform(X)
+        fe = FeatureExtractor(features=["day"], fmt="%Y-%m-%d", verbose=2)
+        X = fe.transform(X)
 
-        Extracting datetime features...
-         --> Extracting features from column date.
-           --> Creating feature date_day.
-
-        >>> # Note the date_day column
-        >>> print(X)
-
-             mean radius  mean texture  ...  worst fractal dimension  date_day
-        0          17.99         10.38  ...                  0.11890         1
-        1          20.57         17.77  ...                  0.08902         2
-        2          19.69         21.25  ...                  0.08758         3
-        3          11.42         20.38  ...                  0.17300         4
-        4          20.29         14.34  ...                  0.07678         5
-        ..           ...           ...  ...                      ...       ...
-        564        21.56         22.39  ...                  0.07115        19
-        565        20.13         28.25  ...                  0.06637        20
-        566        16.60         28.08  ...                  0.07820        21
-        567        20.60         29.33  ...                  0.12400        22
-        568         7.76         24.54  ...                  0.07039        23
-
-        [569 rows x 31 columns]
-
+        # Note the date_day column
+        print(X)
         ```
 
     """
@@ -423,71 +383,31 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_generation(strategy="dfs", n_features=5, verbose=2)
+        atom = ATOMClassifier(X, y)
+        atom.feature_generation(strategy="dfs", n_features=5, verbose=2)
 
-        Fitting FeatureGenerator...
-        Generating new features...
-         --> 5 new features were added.
-
-        >>> # Note the texture error / worst symmetry column
-        >>> print(atom.dataset)
-
-             mean radius  mean texture  ...  texture error / worst symmetry  target
-        0          15.75         19.22  ...                        3.118963       0
-        1          12.10         17.72  ...                        5.418170       1
-        2          20.16         19.66  ...                        2.246481       0
-        3          12.88         18.22  ...                        4.527498       1
-        4          13.03         18.42  ...                       11.786613       1
-        ..           ...           ...  ...                             ...     ...
-        564        21.75         20.99  ...                        4.772326       0
-        565        13.64         16.34  ...                        3.936061       1
-        566        10.08         15.11  ...                        4.323219       1
-        567        12.91         16.33  ...                        3.004630       1
-        568        11.60         18.36  ...                        2.385047       1
-
-        [569 rows x 36 columns]
-
+        # Note the texture error / worst symmetry column
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.feature_engineering import FeatureGenerator
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.feature_engineering import FeatureGenerator
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> fg = FeatureGenerator(strategy="dfs", n_features=5, verbose=2)
-        >>> X = fg.fit_transform(X, y)
+        fg = FeatureGenerator(strategy="dfs", n_features=5, verbose=2)
+        X = fg.fit_transform(X, y)
 
-        Fitting FeatureGenerator...
-        Generating new features...
-         --> 5 new features were added.
-
-        >>> # Note the radius error * worst smoothness column
-        >>> print(X)
-
-             mean radius  ...  radius error * worst smoothness
-        0          17.99  ...                         0.177609
-        1          20.57  ...                         0.067285
-        2          19.69  ...                         0.107665
-        3          11.42  ...                         0.103977
-        4          20.29  ...                         0.104039
-        ..           ...  ...                              ...
-        564        21.56  ...                         0.165816
-        565        20.13  ...                         0.089257
-        566        16.60  ...                         0.051984
-        567        20.60  ...                         0.119790
-        568         7.76  ...                         0.034698
-
-        [569 rows x 35 columns]
-
+        # Note the radius error * worst smoothness column
+        print(X)
         ```
 
     """
@@ -777,72 +697,32 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_grouping({"means": ["mean.+"]}, verbose=2)
+        atom = ATOMClassifier(X, y)
+        atom.feature_grouping({"means": ["mean.+"]}, verbose=2)
 
-        Fitting FeatureGrouper...
-        Grouping features...
-         --> Group means successfully created.
-
-        >>> # Note the mean features are gone and the new std(means) feature
-        >>> print(atom.dataset)
-
-             radius error  texture error  ...  std(means)  target
-        0          0.2949         1.6560  ...  137.553584       1
-        1          0.2351         2.0110  ...   79.830195       1
-        2          0.4302         2.8780  ...   80.330330       1
-        3          0.2345         1.2190  ...  151.858455       1
-        4          0.3511         0.9527  ...  145.769474       1
-        ..            ...            ...  ...         ...     ...
-        564        0.4866         1.9050  ...  116.749243       1
-        565        0.5925         0.6863  ...  378.431333       0
-        566        0.2577         1.0950  ...  141.220243       1
-        567        0.4615         0.9197  ...  257.903846       0
-        568        0.5462         1.5110  ...  194.704033       1
-
-        [569 rows x 27 columns]
-
+        # Note the mean features are gone and the new std(means) feature
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.feature_engineering import FeatureGrouper
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.feature_engineering import FeatureGrouper
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> # Group all features that start with mean
-        >>> fg = FeatureGrouper({"means": ["mean.+"]}, verbose=2)
-        >>> X = fg.transform(X)
+        # Group all features that start with mean
+        fg = FeatureGrouper({"means": ["mean.+"]}, verbose=2)
+        X = fg.transform(X)
 
-        Fitting FeatureGrouper...
-        Grouping features...
-         --> Group means successfully created.
-
-        >>> # Note the mean features are gone and the new std(means) feature
-        >>> print(X)
-
-             radius error  texture error  ...  mode(means)  std(means)
-        0          1.0950         0.9053  ...      0.07871  297.404540
-        1          0.5435         0.7339  ...      0.05667  393.997131
-        2          0.7456         0.7869  ...      0.05999  357.203084
-        3          0.4956         1.1560  ...      0.09744  114.444620
-        4          0.7572         0.7813  ...      0.05883  385.450556
-        ..            ...            ...  ...          ...         ...
-        564        1.1760         1.2560  ...      0.05623  439.441252
-        565        0.7655         2.4630  ...      0.05533  374.274845
-        566        0.4564         1.0750  ...      0.05302  254.320568
-        567        0.7260         1.5950  ...      0.07016  375.376476
-        568        0.3857         1.4280  ...      0.00000   53.739926
-
-        [569 rows x 26 columns]
-
+        # Note the mean features are gone and the new std(means) feature
+        print(X)
         ```
 
     """
@@ -1178,79 +1058,36 @@ class FeatureSelector(
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection(strategy="pca", n_features=12, verbose=2)
+        atom = ATOMClassifier(X, y)
+        atom.feature_selection(strategy="pca", n_features=12, verbose=2)
 
-        Fitting FeatureSelector...
-        Performing feature selection ...
-         --> Applying Principal Component Analysis...
-           --> Scaling features...
-           --> Keeping 12 components.
-           --> Explained variance ratio: 0.97
+        # Note that the column names changed
+        print(atom.dataset)
 
-        >>> # Note that the column names changed
-        >>> print(atom.dataset)
-
-                 pca0      pca1      pca2  ...     pca10     pca11  target
-        0   -2.493723  3.082653  1.318595  ... -0.182142 -0.591784       1
-        1    4.596102 -0.876940 -0.380685  ...  0.224170  1.155544       0
-        2    0.955979 -2.141057 -1.677736  ...  0.306153  0.099138       0
-        3    3.221488  4.209911 -2.818757  ...  0.808883 -0.531868       0
-        4    1.038000  2.451758 -1.753683  ... -0.312883  0.862319       1
-        ..        ...       ...       ...  ...       ...       ...     ...
-        564  3.414827 -3.757253 -1.012369  ...  0.387175  0.283633       0
-        565 -1.191561 -1.276069 -0.871712  ...  0.106362 -0.449361       1
-        566 -2.757000  0.411997 -1.321697  ...  0.185550 -0.025368       1
-        567 -3.252533  0.074827  0.549622  ...  0.693073 -0.058251       1
-        568  1.607258 -2.076465 -1.025986  ... -0.385542  0.103603       0
-        [569 rows x 13 columns]
-
-        >>> atom.plot_pca()
+        atom.plot_pca()
         ```
 
         :: insert:
             url: /img/plots/plot_pca.html
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.feature_engineering import FeatureSelector
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.feature_engineering import FeatureSelector
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> fs = FeatureSelector(strategy="pca", n_features=12, verbose=2)
-        >>> X = fs.fit_transform(X)
+        fs = FeatureSelector(strategy="pca", n_features=12, verbose=2)
+        X = fs.fit_transform(X)
 
-        Fitting FeatureSelector...
-        Performing feature selection ...
-         --> Applying Principal Component Analysis...
-           --> Scaling features...
-           --> Keeping 12 components.
-           --> Explained variance ratio: 0.97
-
-        >>> # Note that the column names changed
-        >>> print(X)
-
-                  pca0       pca1      pca2  ...      pca9     pca10     pca11
-        0     9.192837   1.948583 -1.123166  ... -0.877402  0.262955 -0.859014
-        1     2.387802  -3.768172 -0.529293  ...  1.106995  0.813120  0.157923
-        2     5.733896  -1.075174 -0.551748  ...  0.454275 -0.605604  0.124387
-        3     7.122953  10.275589 -3.232790  ... -1.116975 -1.151514  1.011316
-        4     3.935302  -1.948072  1.389767  ...  0.377704  0.651360 -0.110515
-        ..         ...        ...       ...  ...       ...       ...       ...
-        564   6.439315  -3.576817  2.459487  ...  0.256989 -0.062651  0.123342
-        565   3.793382  -3.584048  2.088476  ... -0.108632  0.244804  0.222753
-        566   1.256179  -1.902297  0.562731  ...  0.520877 -0.840512  0.096473
-        567  10.374794   1.672010 -1.877029  ... -0.089296 -0.178628 -0.697461
-        568  -5.475243  -0.670637  1.490443  ... -0.047726 -0.144094 -0.179496
-        [569 rows x 12 columns]
-
+        # Note that the column names changed
+        print(X)
         ```
 
     """

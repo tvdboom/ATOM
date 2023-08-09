@@ -164,40 +164,20 @@ class AdaBoost(ClassRegModel):
 
     See Also
     --------
-    atom.models:GradientBoosting
+    atom.models:GradientBoostingMachine
     atom.models:RandomForest
     atom.models:XGBoost
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="AdaB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: AdaB
-    Metric: f1
-
-
-    Results for AdaBoost:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9722
-    Time elapsed: 0.108s
-    -------------------------------------------------
-    Total time: 0.108s
-
-
-    Final results ==================== >>
-    Total time: 0.109s
-    -------------------------------------
-    AdaBoost --> f1: 0.9722
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="AdaB", metric="f1", verbose=2)
     ```
 
     """
@@ -257,34 +237,14 @@ class AutomaticRelevanceDetermination(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="ARD", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: ARD
-    Metric: r2
-
-
-    Results for AutomaticRelevanceDetermination:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7275
-    Test evaluation --> r2: 0.7792
-    Time elapsed: 0.059s
-    -------------------------------------------------
-    Total time: 0.059s
-
-
-    Final results ==================== >>
-    Total time: 0.061s
-    -------------------------------------
-    AutomaticRelevanceDetermination --> r2: 0.7792
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="ARD", metric="r2", verbose=2)
     ```
 
     """
@@ -345,34 +305,14 @@ class Bagging(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="Bag", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: Bag
-    Metric: f1
-
-
-    Results for Bagging:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9965
-    Test evaluation --> f1: 0.9722
-    Time elapsed: 0.051s
-    -------------------------------------------------
-    Total time: 0.051s
-
-
-    Final results ==================== >>
-    Total time: 0.051s
-    -------------------------------------
-    Bagging --> f1: 0.9722
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="Bag", metric="f1", verbose=2)
     ```
 
     """
@@ -428,34 +368,14 @@ class BayesianRidge(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="BR", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: BR
-    Metric: r2
-
-
-    Results for BayesianRidge:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7499
-    Test evaluation --> r2: 0.6873
-    Time elapsed: 0.040s
-    -------------------------------------------------
-    Total time: 0.040s
-
-
-    Final results ==================== >>
-    Total time: 0.041s
-    -------------------------------------
-    BayesianRidge --> r2: 0.6873
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="BR", metric="r2", verbose=2)
     ```
 
     """
@@ -512,33 +432,14 @@ class BernoulliNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="BNB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: BNB
-    Metric: f1
-
-
-    Results for BernoulliNB:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.7709
-    Test evaluation --> f1: 0.7717
-    Time elapsed: 0.014s
-    -------------------------------------------------
-    Total time: 0.014s
-
-    Final results ==================== >>
-    Total time: 0.015s
-    -------------------------------------
-    BernoulliNB --> f1: 0.7717
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="BNB", metric="f1", verbose=2)
     ```
 
     """
@@ -604,40 +505,20 @@ class CatBoost(ClassRegModel):
 
     See Also
     --------
-    atom.models:GradientBoosting
+    atom.models:GradientBoostingMachine
     atom.models:LightGBM
     atom.models:XGBoost
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="CatB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: CatB
-    Metric: f1
-
-
-    Results for CatBoost:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.981
-    Test evaluation --> f1: 0.9859
-    Time elapsed: 14.789s
-    -------------------------------------------------
-    Total time: 14.789s
-
-
-    Final results ==================== >>
-    Total time: 14.789s
-    -------------------------------------
-    CatBoost --> f1: 0.9859
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="CatB", metric="f1", verbose=2)
     ```
 
     """
@@ -810,35 +691,15 @@ class CategoricalNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> import numpy as np
+    ```python
+    from atom import ATOMClassifier
+    import numpy as np
 
-    >>> X = np.random.randint(5, size=(100, 100))
-    >>> y = np.random.randint(2, size=100)
+    X = np.random.randint(5, size=(100, 100))
+    y = np.random.randint(2, size=100)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="CatNB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: CatNB
-    Metric: f1
-
-
-    Results for CategoricalNB:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.5714
-    Time elapsed: 0.020s
-    -------------------------------------------------
-    Total time: 0.020s
-
-
-    Final results ==================== >>
-    Total time: 0.020s
-    -------------------------------------
-    CategoricalNB --> f1: 0.5714 ~
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="CatNB", metric="f1", verbose=2)
     ```
 
     """
@@ -891,34 +752,14 @@ class ComplementNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="CNB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: CNB
-    Metric: f1
-
-
-    Results for ComplementNB:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9223
-    Test evaluation --> f1: 0.9189
-    Time elapsed: 0.011s
-    -------------------------------------------------
-    Total time: 0.011s
-
-
-    Final results ==================== >>
-    Total time: 0.012s
-    -------------------------------------
-    ComplementNB --> f1: 0.9189
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="CNB", metric="f1", verbose=2)
     ```
 
     """
@@ -971,34 +812,14 @@ class DecisionTree(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="Tree", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: Tree
-    Metric: f1
-
-
-    Results for DecisionTree:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9275
-    Time elapsed: 0.014s
-    -------------------------------------------------
-    Total time: 0.014s
-
-
-    Final results ==================== >>
-    Total time: 0.014s
-    -------------------------------------
-    DecisionTree --> f1: 0.9275
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="Tree", metric="f1", verbose=2)
     ```
 
     """
@@ -1065,34 +886,14 @@ class Dummy(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="Dummy", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: Dummy
-    Metric: f1
-
-
-    Results for Dummy:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.7709
-    Test evaluation --> f1: 0.7717
-    Time elapsed: 0.006s
-    -------------------------------------------------
-    Total time: 0.006s
-
-
-    Final results ==================== >>
-    Total time: 0.007s
-    -------------------------------------
-    Dummy --> f1: 0.7717
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="Dummy", metric="f1", verbose=2)
     ```
 
     """
@@ -1167,34 +968,14 @@ class ElasticNet(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="EN", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: EN
-    Metric: r2
-
-
-    Results for ElasticNet:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.6551
-    Test evaluation --> r2: 0.5929
-    Time elapsed: 0.021s
-    -------------------------------------------------
-    Total time: 0.021s
-
-
-    Final results ==================== >>
-    Total time: 0.022s
-    -------------------------------------
-    ElasticNet --> r2: 0.5929
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="EN", metric="r2", verbose=2)
     ```
 
     """
@@ -1252,34 +1033,14 @@ class ExtraTree(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="ETree", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: ETree
-    Metric: f1
-
-
-    Results for ExtraTree:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.942
-    Time elapsed: 0.016s
-    -------------------------------------------------
-    Total time: 0.016s
-
-
-    Final results ==================== >>
-    Total time: 0.016s
-    -------------------------------------
-    ExtraTree --> f1: 0.942
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="ETree", metric="f1", verbose=2)
     ```
 
     """
@@ -1366,34 +1127,14 @@ class ExtraTrees(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="ET", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: ET
-    Metric: f1
-
-
-    Results for ExtraTrees:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.993
-    Time elapsed: 0.095s
-    -------------------------------------------------
-    Total time: 0.095s
-
-
-    Final results ==================== >>
-    Total time: 0.095s
-    -------------------------------------
-    ExtraTrees --> f1: 0.993
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="ET", metric="f1", verbose=2)
     ```
 
     """
@@ -1480,34 +1221,14 @@ class GaussianNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="GNB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: GNB
-    Metric: f1
-
-
-    Results for GaussianNB:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9555
-    Test evaluation --> f1: 0.965
-    Time elapsed: 0.009s
-    -------------------------------------------------
-    Total time: 0.009s
-
-
-    Final results ==================== >>
-    Total time: 0.010s
-    -------------------------------------
-    GaussianNB --> f1: 0.965
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="GNB", metric="f1", verbose=2)
     ```
 
     """
@@ -1559,34 +1280,14 @@ class GaussianProcess(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="GP", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: GP
-    Metric: f1
-
-
-    Results for GaussianProcess:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.0548
-    Time elapsed: 1.016s
-    -------------------------------------------------
-    Total time: 1.016s
-
-
-    Final results ==================== >>
-    Total time: 1.017s
-    -------------------------------------
-    GaussianProcess --> f1: 0.0548 ~
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="GP", metric="f1", verbose=2)
     ```
 
     """
@@ -1634,34 +1335,14 @@ class GradientBoostingMachine(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="GBM", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: GBM
-    Metric: f1
-
-
-    Results for GradientBoosting:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9726
-    Time elapsed: 0.275s
-    -------------------------------------------------
-    Total time: 0.275s
-
-
-    Final results ==================== >>
-    Total time: 0.275s
-    -------------------------------------
-    GradientBoosting --> f1: 0.9726
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="GBM", metric="f1", verbose=2)
     ```
 
     """
@@ -1752,34 +1433,14 @@ class HuberRegression(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="Huber", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: Huber
-    Metric: r2
-
-
-    Results for HuberRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7262
-    Test evaluation --> r2: 0.7213
-    Time elapsed: 0.044s
-    -------------------------------------------------
-    Total time: 0.044s
-
-
-    Final results ==================== >>
-    Total time: 0.046s
-    -------------------------------------
-    HuberRegression --> r2: 0.7213
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="Huber", metric="r2", verbose=2)
     ```
 
     """
@@ -1816,12 +1477,12 @@ class HistGradientBoosting(ClassRegModel):
     """Histogram-based Gradient Boosting Machine.
 
     This Histogram-based Gradient Boosting Machine is much faster than
-    the standard [GradientBoosting][] for big datasets (n_samples>=10k).
-    This variation first bins the input samples into integer-valued
-    bins which tremendously reduces the number of splitting points to
-    consider, and allows the algorithm to leverage integer-based data
-    structures (histograms) instead of relying on sorted continuous
-    values when building the trees.
+    the standard [GradientBoostingMachine][] for big datasets
+    (n_samples>=10k). This variation first bins the input samples into
+    integer-valued bins which tremendously reduces the number of
+    splitting points to consider, and allows the algorithm to leverage
+    integer-based data structures (histograms) instead of relying on
+    sorted continuous values when building the trees.
 
     Corresponding estimators are:
 
@@ -1833,39 +1494,19 @@ class HistGradientBoosting(ClassRegModel):
     See Also
     --------
     atom.models:CatBoost
-    atom.models:GradientBoosting
+    atom.models:GradientBoostingMachine
     atom.models:XGBoost
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="hGBM", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: hGBM
-    Metric: f1
-
-
-    Results for HistGradientBoosting:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9655
-    Time elapsed: 1.044s
-    -------------------------------------------------
-    Total time: 1.044s
-
-
-    Final results ==================== >>
-    Total time: 1.044s
-    -------------------------------------
-    HistGradientBoosting --> f1: 0.9655
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="hGBM", metric="f1", verbose=2)
     ```
 
     """
@@ -1934,34 +1575,14 @@ class KNearestNeighbors(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="KNN", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: KNN
-    Metric: f1
-
-
-    Results for KNearestNeighbors:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9845
-    Test evaluation --> f1: 0.9861
-    Time elapsed: 0.187s
-    -------------------------------------------------
-    Total time: 0.187s
-
-
-    Final results ==================== >>
-    Total time: 0.189s
-    -------------------------------------
-    KNearestNeighbors --> f1: 0.9861
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="KNN", metric="f1", verbose=2)
     ```
 
     """
@@ -2025,34 +1646,14 @@ class Lasso(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="Lasso", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: Lasso
-    Metric: r2
-
-
-    Results for Lasso:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.6681
-    Test evaluation --> r2: 0.6466
-    Time elapsed: 0.020s
-    -------------------------------------------------
-    Total time: 0.020s
-
-
-    Final results ==================== >>
-    Total time: 0.021s
-    -------------------------------------
-    Lasso --> r2: 0.6466
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="Lasso", metric="r2", verbose=2)
     ```
 
     """
@@ -2108,34 +1709,14 @@ class LeastAngleRegression(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="Lars", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: Lars
-    Metric: r2
-
-
-    Results for LeastAngleRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7337
-    Test evaluation --> r2: 0.7468
-    Time elapsed: 0.018s
-    -------------------------------------------------
-    Total time: 0.018s
-
-
-    Final results ==================== >>
-    Total time: 0.019s
-    -------------------------------------
-    LeastAngleRegression --> r2: 0.7468
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="Lars", metric="r2", verbose=2)
     ```
 
     """
@@ -2178,39 +1759,19 @@ class LightGBM(ClassRegModel):
     See Also
     --------
     atom.models:CatBoost
-    atom.models:GradientBoosting
+    atom.models:GradientBoostingMachine
     atom.models:XGBoost
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="LGB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: LGB
-    Metric: f1
-
-
-    Results for LightGBM:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.979
-    Time elapsed: 0.465s
-    -------------------------------------------------
-    Total time: 0.465s
-    Final results ==================== >>
-
-
-    Total time: 0.466s
-    -------------------------------------
-    LightGBM --> f1: 0.979
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="LGB", metric="f1", verbose=2)
     ```
 
     """
@@ -2361,34 +1922,14 @@ class LinearDiscriminantAnalysis(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="LDA", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: LDA
-    Metric: f1
-
-
-    Results for LinearDiscriminantAnalysis:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.976
-    Test evaluation --> f1: 0.953
-    Time elapsed: 0.025s
-    -------------------------------------------------
-    Total time: 0.025s
-
-
-    Final results ==================== >>
-    Total time: 0.025s
-    -------------------------------------
-    LinearDiscriminantAnalysis --> f1: 0.953
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="LDA", metric="f1", verbose=2)
     ```
 
     """
@@ -2464,34 +2005,14 @@ class LinearSVM(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="lSVM", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: lSVM
-    Metric: f1
-
-
-    Results for LinearSVM:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9913
-    Test evaluation --> f1: 0.9861
-    Time elapsed: 0.021s
-    -------------------------------------------------
-    Total time: 0.021s
-
-
-    Final results ==================== >>
-    Total time: 0.021s
-    -------------------------------------
-    LinearSVM --> f1: 0.9861
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="lSVM", metric="f1", verbose=2)
     ```
 
     """
@@ -2606,34 +2127,14 @@ class LogisticRegression(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="RF", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: LR
-    Metric: f1
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9895
-    Test evaluation --> f1: 0.993
-    Time elapsed: 0.028s
-    -------------------------------------------------
-    Total time: 0.028s
-
-
-    Final results ==================== >>
-    Total time: 0.028s
-    -------------------------------------
-    LogisticRegression --> f1: 0.993
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="RF", metric="f1", verbose=2)
     ```
 
     """
@@ -2734,34 +2235,14 @@ class MultiLayerPerceptron(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="MLP", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: MLP
-    Metric: f1
-
-
-    Results for MultiLayerPerceptron:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9965
-    Test evaluation --> f1: 0.979
-    Time elapsed: 1.600s
-    -------------------------------------------------
-    Total time: 1.600s
-
-
-    Final results ==================== >>
-    Total time: 1.600s
-    -------------------------------------
-    MultiLayerPerceptron --> f1: 0.979
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="MLP", metric="f1", verbose=2)
     ```
 
     """
@@ -2883,34 +2364,14 @@ class MultinomialNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="MNB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: MNB
-    Metric: f1
-
-
-    Results for MultinomialNB:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.916
-    Test evaluation --> f1: 0.9371
-    Time elapsed: 0.011s
-    -------------------------------------------------
-    Total time: 0.011s
-
-
-    Final results ==================== >>
-    Total time: 0.011s
-    -------------------------------------
-    MultinomialNB --> f1: 0.9371
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="MNB", metric="f1", verbose=2)
     ```
 
     """
@@ -2965,34 +2426,14 @@ class OrdinaryLeastSquares(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="OLS", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: OLS
-    Metric: r2
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7489
-    Test evaluation --> r2: 0.706
-    Time elapsed: 0.023s
-    -------------------------------------------------
-    Total time: 0.023s
-
-
-    Final results ==================== >>
-    Total time: 0.024s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.706
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="OLS", metric="r2", verbose=2)
     ```
 
     """
@@ -3030,32 +2471,14 @@ class OrthogonalMatchingPursuit(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="OMP", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: OMP
-    Metric: r2
-
-
-    Train evaluation --> r2: 0.4751
-    Test evaluation --> r2: 0.4668
-    Time elapsed: 0.028s
-    -------------------------------------------------
-    Total time: 0.028s
-
-
-    Final results ==================== >>
-    Total time: 0.028s
-    -------------------------------------
-    OrthogonalMatchingPursuit --> r2: 0.4668
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="OMP", metric="r2", verbose=2)
     ```
 
     """
@@ -3095,34 +2518,14 @@ class PassiveAggressive(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="PA", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: PA
-    Metric: f1
-
-
-    Results for PassiveAggressive:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9655
-    Time elapsed: 4.549s
-    -------------------------------------------------
-    Total time: 4.549s
-
-
-    Final results ==================== >>
-    Total time: 4.550s
-    -------------------------------------
-    PassiveAggressive --> f1: 0.9655
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="PA", metric="f1", verbose=2)
     ```
 
     """
@@ -3190,34 +2593,14 @@ class Perceptron(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="Perc", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: Perc
-    Metric: f1
-
-
-    Results for Perceptron:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9787
-    Time elapsed: 4.109s
-    -------------------------------------------------
-    Total time: 4.109s
-
-
-    Final results ==================== >>
-    Total time: 4.110s
-    -------------------------------------
-    Perceptron --> f1: 0.9787
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="Perc", metric="f1", verbose=2)
     ```
 
     """
@@ -3296,34 +2679,14 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="QDA", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: QDA
-    Metric: f1
-
-
-    Results for QuadraticDiscriminantAnalysis:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9758
-    Test evaluation --> f1: 0.9718
-    Time elapsed: 0.019s
-    -------------------------------------------------
-    Total time: 0.019s
-
-
-    Final results ==================== >>
-    Total time: 0.020s
-    -------------------------------------
-    QuadraticDiscriminantAnalysis --> f1: 0.9718
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="QDA", metric="f1", verbose=2)
     ```
 
     """
@@ -3381,39 +2744,19 @@ class RadiusNearestNeighbors(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(
-    ...     models="RNN",
-    ...     metric="f1",
-    ...     est_params={"outlier_label": "most_frequent"},
-    ...     verbose=2,
-    ... )
-
-    Training ========================= >>
-    Models: RNN
-    Metric: f1
-
-
-    Results for RadiusNearestNeighbors:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.7717
-    Time elapsed: 0.032s
-    -------------------------------------------------
-    Total time: 0.032s
-
-
-    Final results ==================== >>
-    Total time: 0.032s
-    -------------------------------------
-    RadiusNearestNeighbors --> f1: 0.7717 ~
-
+    atom = ATOMClassifier(X, y)
+    atom.run(
+        models="RNN",
+        metric="f1",
+        est_params={"outlier_label": "most_frequent"},
+        verbose=2,
+    )
     ```
 
     """
@@ -3481,34 +2824,14 @@ class RandomForest(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="RF", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: RF
-    Metric: f1
-
-
-    Results for Random Forest:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9722
-    Time elapsed: 2.815s
-    -------------------------------------------------
-    Total time: 2.815s
-
-
-    Final results ==================== >>
-    Total time: 2.968s
-    -------------------------------------
-    Random Forest --> f1: 0.9722
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="RF", metric="f1", verbose=2)
     ```
 
     """
@@ -3614,34 +2937,14 @@ class Ridge(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import fetch_california_housing
+    ```python
+    from atom import ATOMRegressor
+    from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = fetch_california_housing(return_X_y=True)
+    X, y = fetch_california_housing(return_X_y=True)
 
-    >>> atom = ATOMRegressor(X, y)
-    >>> atom.run(models="Ridge", metric="r2", verbose=2)
-
-    Training ========================= >>
-    Models: Ridge
-    Metric: r2
-
-
-    Results for Ridge:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7331
-    Test evaluation --> r2: 0.7512
-    Time elapsed: 0.021s
-    -------------------------------------------------
-    Total time: 0.021s
-
-
-    Final results ==================== >>
-    Total time: 0.021s
-    -------------------------------------
-    Ridge --> r2: 0.7512
-
+    atom = ATOMRegressor(X, y)
+    atom.run(models="Ridge", metric="r2", verbose=2)
     ```
 
     """
@@ -3703,34 +3006,14 @@ class StochasticGradientDescent(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="SGD", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: SGD
-    Metric: f1
-
-
-    Results for StochasticGradientDescent:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.993
-    Test evaluation --> f1: 0.9929
-    Time elapsed: 4.561s
-    -------------------------------------------------
-    Total time: 4.561s
-
-
-    Final results ==================== >>
-    Total time: 4.562s
-    -------------------------------------
-    StochasticGradientDescent --> f1: 0.9929
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="SGD", metric="f1", verbose=2)
     ```
 
     """
@@ -3829,34 +3112,14 @@ class SupportVectorMachine(ClassRegModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="SVM", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: SVM
-    Metric: f1
-
-
-    Results for SupportVectorMachine:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9896
-    Test evaluation --> f1: 0.9645
-    Time elapsed: 0.027s
-    -------------------------------------------------
-    Total time: 0.027s
-
-
-    Final results ==================== >>
-    Total time: 0.027s
-    -------------------------------------
-    SupportVectorMachine --> f1: 0.9645
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="SVM", metric="f1", verbose=2)
     ```
 
     """
@@ -3966,39 +3229,19 @@ class XGBoost(ClassRegModel):
     See Also
     --------
     atom.models:CatBoost
-    atom.models:GradientBoosting
+    atom.models:GradientBoostingMachine
     atom.models:LightGBM
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="XGB", metric="f1", verbose=2)
-
-    Training ========================= >>
-    Models: XGB
-    Metric: f1
-
-
-    Results for XGBoost:
-    Fit ---------------------------------------------
-    Train evaluation --> f1: 1.0
-    Test evaluation --> f1: 0.9726
-    Time elapsed: 0.359s
-    -------------------------------------------------
-    Total time: 0.359s
-
-
-    Final results ==================== >>
-    Total time: 0.359s
-    -------------------------------------
-    XGBoost --> f1: 0.9726
-
+    atom = ATOMClassifier(X, y)
+    atom.run(models="XGB", metric="f1", verbose=2)
     ```
 
     """
@@ -4171,14 +3414,14 @@ class ARIMA(ForecastModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom import ATOMClassifier
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
+    y = load_airline()
 
-    >>> atom = ATOMClassifier(y)
-    >>> atom.run(models="ARIMA", metric="mape", verbose=2)
+    atom = ATOMClassifier(y)
+    atom.run(models="ARIMA", metric="mape", verbose=2)
 
     Training ========================= >>
     Models: ARIMA
@@ -4332,14 +3575,14 @@ class AutoARIMA(ForecastModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom import ATOMClassifier
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
+    y = load_airline()
 
-    >>> atom = ATOMClassifier(y)
-    >>> atom.run(models="autoarima", metric="mape", verbose=2)
+    atom = ATOMClassifier(y)
+    atom.run(models="autoarima", metric="mape", verbose=2)
 
     Training ========================= >>
     Models: AutoARIMA
@@ -4413,14 +3656,14 @@ class ExponentialSmoothing(ForecastModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom import ATOMClassifier
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
+    y = load_airline()
 
-    >>> atom = ATOMClassifier(y)
-    >>> atom.run(models="ES", metric="mape", verbose=2)
+    atom = ATOMClassifier(y)
+    atom.run(models="ES", metric="mape", verbose=2)
 
     Training ========================= >>
     Models: ES
@@ -4523,14 +3766,14 @@ class ETS(ForecastModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom import ATOMClassifier
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
+    y = load_airline()
 
-    >>> atom = ATOMClassifier(y)
-    >>> atom.run(models="ETS", metric="mape", verbose=2)
+    atom = ATOMClassifier(y)
+    atom.run(models="ETS", metric="mape", verbose=2)
 
     Training ========================= >>
     Models: ETS
@@ -4631,14 +3874,14 @@ class NaiveForecaster(ForecastModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom import ATOMClassifier
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
+    y = load_airline()
 
-    >>> atom = ATOMClassifier(y)
-    >>> atom.run(models="NF", metric="mape", verbose=2)
+    atom = ATOMClassifier(y)
+    atom.run(models="NF", metric="mape", verbose=2)
 
     Training ========================= >>
     Models: NF
@@ -4706,14 +3949,14 @@ class PolynomialTrend(ForecastModel):
 
     Examples
     --------
-    ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom import ATOMClassifier
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
+    y = load_airline()
 
-    >>> atom = ATOMClassifier(y)
-    >>> atom.run(models="PT", metric="mape", verbose=2)
+    atom = ATOMClassifier(y)
+    atom.run(models="PT", metric="mape", verbose=2)
 
     Training ========================= >>
     Models: PT

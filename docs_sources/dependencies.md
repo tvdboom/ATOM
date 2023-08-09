@@ -96,9 +96,9 @@ using `pip install atom-ml[dev]`.
 
 * **[mike](https://github.com/jimporter/mike)** (>=1.1.2)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.4.2)
-* **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=0.4.1)
+* **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=0.5.0)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.22.0)
-* **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.1.0)
+* **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.1.21)
 * **[mkdocs-material-extensions](https://github.com/facelessuser/mkdocs-material-extensions)** (>=1.1.1)
 * **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
 * **[pymdown-extensions](https://github.com/facelessuser/pymdown-extensions)** (>=9.9.2)

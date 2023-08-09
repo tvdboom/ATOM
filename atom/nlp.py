@@ -124,118 +124,51 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import fetch_20newsgroups
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import fetch_20newsgroups
 
-        >>> X, y = fetch_20newsgroups(
-        ...     return_X_y=True,
-        ...     categories=[
-        ...         'alt.atheism',
-        ...         'sci.med',
-        ...         'comp.windows.x',
-        ...     ],
-        ...     shuffle=True,
-        ...     random_state=1,
-        ... )
-        >>> X = np.array(X).reshape(-1, 1)
+        X, y = fetch_20newsgroups(
+            return_X_y=True,
+            categories=[
+                'alt.atheism',
+                'sci.med',
+                'comp.windows.x',
+            ],
+            shuffle=True,
+            random_state=1,
+        )
+        X = np.array(X).reshape(-1, 1)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-        0     From: thssjxy@iitmax.iit.edu (Smile) Subject:...       2
-        1     From: nancyo@fraser.sfu.ca (Nancy Patricia O'C...       0
-        2     From: beck@irzr17.inf.tu-dresden.de (Andre Bec...       1
-        3     From: keith@cco.caltech.edu (Keith Allan Schne...       0
-        4     From: strom@Watson.Ibm.Com (Rob Strom) Subjec...       0
-                                                         ...     ...
-        2841  From: dreitman@oregon.uoregon.edu (Daniel R. R...       3
-        2842  From: ethan@cs.columbia.edu (Ethan Solomita) ...       1
-        2843  From: r0506048@cml3 (Chun-Hung Lin) Subject: ...       1
-        2844  From: eshneken@ux4.cso.uiuc.edu (Edward A Shne...       2
-        2845  From: ibeshir@nyx.cs.du.edu (Ibrahim) Subject...       2
+        atom.textclean(verbose=2)
 
-        [2846 rows x 2 columns]
-
-        >>> atom.textclean(verbose=2)
-
-        Fitting TextCleaner...
-        Cleaning the corpus...
-         --> Decoding unicode characters to ascii.
-         --> Converting text to lower case.
-         --> Dropping 10012 emails from 2830 documents.
-         --> Dropping 0 URL links from 0 documents.
-         --> Dropping 2214 HTML tags from 1304 documents.
-         --> Dropping 2 emojis from 1 documents.
-         --> Dropping 31222 numbers from 2843 documents.
-         --> Dropping punctuation from the text.
-
-        >>> print(atom.dataset)
-
-                                                        corpus  target
-        0     from  smile subject forsale   used guitar amp...       2
-        1     from  nancy patricia oconnor subject re amusi...       0
-        2     from  andre beck subject re animation with xp...       1
-        3     from  keith allan schneider subject re moralt...       0
-        4     from  rob strom subject re socmotss et al pri...       0
-                                                         ...     ...
-        2841  from  daniel r reitman attorney to be subject...       3
-        2842  from  ethan solomita subject forcing a window...       1
-        2843  from r0506048cml3 chunhung lin subject re xma...       1
-        2844  from  edward a shnekendorf subject airline ti...       2
-        2845  from  ibrahim subject terminal for sale orga...       2
-
-        [2846 rows x 2 columns]
-
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.nlp import TextCleaner
-        >>> from sklearn.datasets import fetch_20newsgroups
+        ```python
+        from atom.nlp import TextCleaner
+        from sklearn.datasets import fetch_20newsgroups
 
-        >>> X, y = fetch_20newsgroups(
-        ...     return_X_y=True,
-        ...     categories=[
-        ...         'alt.atheism',
-        ...         'sci.med',
-        ...         'comp.windows.x',
-        ...     ],
-        ...     shuffle=True,
-        ...     random_state=1,
-        ... )
-        >>> X = np.array(X).reshape(-1, 1)
+        X, y = fetch_20newsgroups(
+            return_X_y=True,
+            categories=[
+                'alt.atheism',
+                'sci.med',
+                'comp.windows.x',
+            ],
+            shuffle=True,
+            random_state=1,
+        )
+        X = np.array(X).reshape(-1, 1)
 
-        >>> textcleaner = TextCleaner(verbose=2)
-        >>> X = textcleaner.transform(X)
+        textcleaner = TextCleaner(verbose=2)
+        X = textcleaner.transform(X)
 
-        Cleaning the corpus...
-         --> Decoding unicode characters to ascii.
-         --> Converting text to lower case.
-         --> Dropping 10012 emails from 2830 documents.
-         --> Dropping 0 URL links from 0 documents.
-         --> Dropping 2214 HTML tags from 1304 documents.
-         --> Dropping 2 emojis from 1 documents.
-         --> Dropping 31222 numbers from 2843 documents.
-         --> Dropping punctuation from the text.
-
-        >>> print(X)
-
-                                                         corpus
-        0     from donald mackie  subject re barbecued food...
-        1     from  david stockton subject re krillean phot...
-        2     from  julia miller subject posix message cata...
-        3     from   subject re yet more rushdie re islamic...
-        4     from  joseph a muller subject jfk autograph f...
-                                                         ...
-        2841  from  joel reymont subject motif maling list\...
-        2842  from  daniel paul checkman subject re is msg ...
-        2843  from  ad absurdum per aspera subject re its a...
-        2844  from  ralf subject items for sale organizati...
-        2845  from  walter g seefeld subject klipsch kg1 sp...
-
-        [2846 rows x 1 columns]
-
+        print(X)
         ```
 
     """
@@ -491,95 +424,53 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = [
-        ...    ["I àm in ne'w york"],
-        ...    ["New york is nice"],
-        ...    ["new york"],
-        ...    ["hi there this is a test!"],
-        ...    ["another line..."],
-        ...    ["new york is larger than washington"],
-        ...    ["running the test"],
-        ...    ["this is a test"],
-        ... ]
-        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+        X = [
+           ["I àm in ne'w york"],
+           ["New york is nice"],
+           ["new york"],
+           ["hi there this is a test!"],
+           ["another line..."],
+           ["new york is larger than washington"],
+           ["running the test"],
+           ["this is a test"],
+        ]
+        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-                                       corpus  target
-        0                    running the test       0
-        1            hi there this is a test!       1
-        2                      this is a test       0
-        3  new york is larger than washington       1
-        4                    New york is nice       0
-        5                   I àm in ne'w york       1
-        6                     another line...       1
-        7                            new york       0
+        atom.textnormalize(stopwords="english", lemmatize=True, verbose=2)
 
-        >>> atom.textnormalize(stopwords="english", lemmatize=True, verbose=2)
-
-        Fitting TextNormalizer...
-        Normalizing the corpus...
-         --> Dropping stopwords.
-         --> Applying lemmatization.
-
-        >>> print(atom.dataset)
-
-                                   corpus  target
-        0                     [run, test]       0
-        1                     [hi, test!]       1
-        2                          [test]       0
-        3  [new, york, large, washington]       1
-        4               [New, york, nice]       0
-        5             [I, àm, ne'w, york]       1
-        6              [another, line...]       1
-        7                     [new, york]       0
-
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.nlp import TextNormalizer
+        ```python
+        from atom.nlp import TextNormalizer
 
-        >>> X = [
-        ...    ["I àm in ne'w york"],
-        ...    ["New york is nice"],
-        ...    ["new york"],
-        ...    ["hi there this is a test!"],
-        ...    ["another line..."],
-        ...    ["new york is larger than washington"],
-        ...    ["running the test"],
-        ...    ["this is a test"],
-        ... ]
-        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+        X = [
+           ["I àm in ne'w york"],
+           ["New york is nice"],
+           ["new york"],
+           ["hi there this is a test!"],
+           ["another line..."],
+           ["new york is larger than washington"],
+           ["running the test"],
+           ["this is a test"],
+        ]
+        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        >>> textnormalizer = TextNormalizer(
-        ...     stopwords="english",
-        ...     lemmatize=True,
-        ...     verbose=2,
-        ... )
-        >>> X = textnormalizer.transform(X)
+        textnormalizer = TextNormalizer(
+            stopwords="english",
+            lemmatize=True,
+            verbose=2,
+        )
+        X = textnormalizer.transform(X)
 
-        Fitting TextNormalizer...
-        Normalizing the corpus...
-         --> Dropping stopwords.
-         --> Applying lemmatization.
-
-        >>> print(X)
-
-                                   corpus
-        0             [I, àm, ne'w, york]
-        1               [New, york, nice]
-        2                     [new, york]
-        3                     [hi, test!]
-        4              [another, line...]
-        5  [new, york, large, washington]
-        6                     [run, test]
-        7                          [test]
-
+        print(X)
         ```
 
     """
@@ -758,88 +649,49 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = [
-        ...    ["I àm in ne'w york"],
-        ...    ["New york is nice"],
-        ...    ["new york"],
-        ...    ["hi there this is a test!"],
-        ...    ["another line..."],
-        ...    ["new york is larger than washington"],
-        ...    ["running the test"],
-        ...    ["this is a test"],
-        ... ]
-        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+        X = [
+           ["I àm in ne'w york"],
+           ["New york is nice"],
+           ["new york"],
+           ["hi there this is a test!"],
+           ["another line..."],
+           ["new york is larger than washington"],
+           ["running the test"],
+           ["this is a test"],
+        ]
+        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-                                       corpus  target
-        0                            new york       0
-        1  new york is larger than washington       1
-        2                    New york is nice       0
-        3                   I àm in ne'w york       1
-        4                      this is a test       0
-        5                     another line...       1
-        6                    running the test       0
-        7            hi there this is a test!       1
+        atom.tokenize(verbose=2)
 
-        >>> atom.tokenize(verbose=2)
-
-        Fitting Tokenizer...
-        Tokenizing the corpus...
-
-        >>> print(atom.dataset)
-
-                                              corpus  target
-        0                                [new, york]       0
-        1  [new, york, is, larger, than, washington]       1
-        2                      [New, york, is, nice]       0
-        3                [I, àm, in, ne, ', w, york]       1
-        4                        [this, is, a, test]       0
-        5                       [another, line, ...]       1
-        6                       [running, the, test]       0
-        7          [hi, there, this, is, a, test, !]       1
-
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.nlp import Tokenizer
+        ```python
+        from atom.nlp import Tokenizer
 
-        >>> X = [
-        ...    ["I àm in ne'w york"],
-        ...    ["New york is nice"],
-        ...    ["new york"],
-        ...    ["hi there this is a test!"],
-        ...    ["another line..."],
-        ...    ["new york is larger than washington"],
-        ...    ["running the test"],
-        ...    ["this is a test"],
-        ... ]
-        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+        X = [
+           ["I àm in ne'w york"],
+           ["New york is nice"],
+           ["new york"],
+           ["hi there this is a test!"],
+           ["another line..."],
+           ["new york is larger than washington"],
+           ["running the test"],
+           ["this is a test"],
+        ]
+        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        >>> tokenizer = Tokenizer(bigram_freq=2, verbose=2)
-        >>> X = tokenizer.transform(X)
+        tokenizer = Tokenizer(bigram_freq=2, verbose=2)
+        X = tokenizer.transform(X)
 
-        Fitting Tokenizer...
-        Tokenizing the corpus...
-         --> Creating 5 bigrams on 10 locations.
-
-        >>> print(X)
-
-                                             corpus
-        0               [I, àm, in, ne, ', w, york]
-        1                      [New, york_is, nice]
-        2                                [new_york]
-        3           [hi, there, this_is, a_test, !]
-        4                      [another, line, ...]
-        5  [new, york_is, larger, than, washington]
-        6                      [running, the, test]
-        7                         [this_is, a_test]
-
+        print(X)
         ```
 
     """
@@ -1038,90 +890,49 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
+        ```python
+        from atom import ATOMClassifier
 
-        >>> X = [
-        ...    ["I àm in ne'w york"],
-        ...    ["New york is nice"],
-        ...    ["new york"],
-        ...    ["hi there this is a test!"],
-        ...    ["another line..."],
-        ...    ["new york is larger than washington"],
-        ...    ["running the test"],
-        ...    ["this is a test"],
-        ... ]
-        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+        X = [
+           ["I àm in ne'w york"],
+           ["New york is nice"],
+           ["new york"],
+           ["hi there this is a test!"],
+           ["another line..."],
+           ["new york is larger than washington"],
+           ["running the test"],
+           ["this is a test"],
+        ]
+        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-                                       corpus  target
-        0                            new york       0
-        1                   I àm in ne'w york       1
-        2                      this is a test       0
-        3                    running the test       0
-        4                     another line...       1
-        5            hi there this is a test!       1
-        6                    New york is nice       0
-        7  new york is larger than washington       1
+        atom.vectorize(strategy="tfidf", verbose=2)
 
-        >>> atom.vectorize(strategy="tfidf", verbose=2)
-
-        Fitting Vectorizer...
-        Vectorizing the corpus...
-
-        >>> print(atom.dataset)
-
-           corpus_another  corpus_in  corpus_is  ...  corpus_york  corpus_àm  target
-        0        0.000000   0.000000   0.000000  ...     0.627914   0.000000       0
-        1        0.000000   0.523358   0.000000  ...     0.422242   0.523358       1
-        2        0.000000   0.000000   0.614189  ...     0.000000   0.000000       0
-        3        0.000000   0.000000   0.000000  ...     0.000000   0.000000       0
-        4        0.707107   0.000000   0.000000  ...     0.000000   0.000000       1
-        5        0.000000   0.000000   0.614189  ...     0.000000   0.000000       1
-        6        0.000000   0.000000   0.614189  ...     0.495524   0.000000       0
-        7        0.000000   0.000000   0.614189  ...     0.495524   0.000000       1
-        [8 rows x 13 columns]
-
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.nlp import Vectorizer
+        ```python
+        from atom.nlp import Vectorizer
 
-        >>> X = [
-        ...    ["I àm in ne'w york"],
-        ...    ["New york is nice"],
-        ...    ["new york"],
-        ...    ["hi there this is a test!"],
-        ...    ["another line..."],
-        ...    ["new york is larger than washington"],
-        ...    ["running the test"],
-        ...    ["this is a test"],
-        ... ]
-        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+        X = [
+           ["I àm in ne'w york"],
+           ["New york is nice"],
+           ["new york"],
+           ["hi there this is a test!"],
+           ["another line..."],
+           ["new york is larger than washington"],
+           ["running the test"],
+           ["this is a test"],
+        ]
+        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        >>> vectorizer = Vectorizer(strategy="tfidf", verbose=2)
-        >>> X = vectorizer.fit_transform(X)
+        vectorizer = Vectorizer(strategy="tfidf", verbose=2)
+        X = vectorizer.fit_transform(X)
 
-        Fitting Vectorizer...
-        Vectorizing the corpus...
-
-        >>> print(X)
-
-           corpus_another  corpus_hi  ...  corpus_york  corpus_àm
-        0        0.000000   0.000000  ...     0.343774   0.542162
-        1        0.000000   0.000000  ...     0.415657   0.000000
-        2        0.000000   0.000000  ...     0.659262   0.000000
-        3        0.000000   0.525049  ...     0.000000   0.000000
-        4        0.707107   0.000000  ...     0.000000   0.000000
-        5        0.000000   0.000000  ...     0.304821   0.000000
-        6        0.000000   0.000000  ...     0.000000   0.000000
-        7        0.000000   0.000000  ...     0.000000   0.000000
-
-        [8 rows x 18 columns]
-
+        print(X)
         ```
 
     """

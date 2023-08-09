@@ -130,7 +130,7 @@ document may be about one of religion, politics, finance or education,
 several of the topic classes or all of the topic classes. The target
 column (`atom.y`) could look like this:
 
-```pycon
+```
 0                        [politics]
 1               [religion, finance]
 2    [politics, finance, education]
@@ -152,7 +152,7 @@ negative classes with 0. It is thus comparable to running n_classes
 binary classification tasks. In our example, the target (`atom.y`) is
 converted to:
 
-```pycon
+```
    education  finance  politics  religion
 0          0        0         1         0
 1          0        1         0         1

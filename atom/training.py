@@ -407,58 +407,22 @@ class DirectClassifier(Direct):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import DirectClassifier
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom.training import DirectClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = DirectClassifier(models=["LR", "RF"], metric="auc", verbose=2)
-    >>> runner.run(train, test)
+    runner = DirectClassifier(models=["LR", "RF"], metric="auc", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Models: LR, RF
-    Metric: roc_auc
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.9925
-    Test evaluation --> roc_auc: 0.9871
-    Time elapsed: 0.035s
-    -------------------------------------------------
-    Total time: 0.035s
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 1.0
-    Test evaluation --> roc_auc: 0.9807
-    Time elapsed: 0.137s
-    -------------------------------------------------
-    Total time: 0.137s
-
-
-    Final results ==================== >>
-    Total time: 0.173s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9871 !
-    RandomForest       --> roc_auc: 0.9807
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-        accuracy  average_precision  ...  precision  recall  roc_auc
-    LR    0.9357             0.9923  ...     0.9533  0.9444   0.9325
-    RF    0.9532             0.9810  ...     0.9464  0.9815   0.9431
-
-    [2 rows x 9 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -638,54 +602,19 @@ class DirectForecaster(Direct):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import DirectForecaster
-    >>> from sktime.forecasting.model_selection import temporal_train_test_split
-    >>> from sktime.datasets import load_airline
+    ```python
+    from atom.training import DirectForecaster
+    from sktime.forecasting.model_selection import temporal_train_test_split
+    from sktime.datasets import load_airline
 
-    >>> y = load_airline()
-    >>> train, test = temporal_train_test_split(y, test_size=0.2)
+    y = load_airline()
+    train, test = temporal_train_test_split(y, test_size=0.2)
 
-    >>> runner = DirectForecaster(models=["ES", "ETS"], verbose=2)
-    >>> runner.run(train, test)
+    runner = DirectForecaster(models=["ES", "ETS"], verbose=2)
+    runner.run(train, test)
 
-    Models: OLS, RF
-    Metric: r2
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.5881
-    Test evaluation --> r2: 0.6029
-    Time elapsed: 0.022s
-    -------------------------------------------------
-    Total time: 0.022s
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.981
-    Test evaluation --> r2: 0.8719
-    Time elapsed: 0.838s
-    -------------------------------------------------
-    Total time: 0.838s
-
-
-    Final results ==================== >>
-    Total time: 0.862s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.6029
-    RandomForest         --> r2: 0.8719 !
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-         neg_mean_absolute_error  ...  neg_root_mean_squared_error
-    OLS                  -1.4124  ...                      -1.8109
-    RF                   -0.6569  ...                      -1.0692
-
-    [2 rows x 6 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -865,56 +794,21 @@ class DirectRegressor(Direct):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import DirectRegressor
-    >>> from sklearn.datasets import load_digits
+    ```python
+    from atom.training import DirectRegressor
+    from sklearn.datasets import load_digits
 
-    >>> X, y = load_digits(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_digits(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = DirectClassifier(models=["OLS", "RF"], metric="r2", verbose=2)
-    >>> runner.run(train, test)
+    runner = DirectClassifier(models=["OLS", "RF"], metric="r2", verbose=2)
+    runner.run(train, test)
 
-    Models: OLS, RF
-    Metric: r2
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.5881
-    Test evaluation --> r2: 0.6029
-    Time elapsed: 0.022s
-    -------------------------------------------------
-    Total time: 0.022s
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.981
-    Test evaluation --> r2: 0.8719
-    Time elapsed: 0.838s
-    -------------------------------------------------
-    Total time: 0.838s
-
-
-    Final results ==================== >>
-    Total time: 0.862s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.6029
-    RandomForest         --> r2: 0.8719 !
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-         neg_mean_absolute_error  ...  neg_root_mean_squared_error
-    OLS                  -1.4124  ...                      -1.8109
-    RF                   -0.6569  ...                      -1.0692
-
-    [2 rows x 6 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -1101,83 +995,21 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import SuccessiveHalvingClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom.training import SuccessiveHalvingClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = SuccessiveHalvingClassifier(["LR", "RF"], metric="auc", verbose=2)
-    >>> runner.run(train, test)
+    runner = SuccessiveHalvingClassifier(["LR", "RF"], metric="auc", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Metric: roc_auc
-
-    Run: 0 ================================ >>
-    Models: LR2, RF2
-    Size of training set: 398 (50%)
-    Size of test set: 171
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.984
-    Test evaluation --> roc_auc: 0.9793
-    Time elapsed: 0.018s
-    -------------------------------------------------
-    Total time: 0.018s
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 1.0
-    Test evaluation --> roc_auc: 0.9805
-    Time elapsed: 0.113s
-    -------------------------------------------------
-    Total time: 0.113s
-
-
-    Final results ==================== >>
-    Total time: 0.131s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9793
-    RandomForest       --> roc_auc: 0.9805 !
-
-
-    Run: 1 ================================ >>
-    Models: RF1
-    Size of training set: 398 (100%)
-    Size of test set: 171
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 1.0
-    Test evaluation --> roc_auc: 0.9806
-    Time elapsed: 0.137s
-    -------------------------------------------------
-    Total time: 0.137s
-
-
-    Final results ==================== >>
-    Total time: 0.137s
-    -------------------------------------
-    RandomForest --> roc_auc: 0.9806
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-         accuracy  average_precision   ...  precision  recall  roc_auc
-    LR2    0.9006             0.9878   ...     0.9099  0.9352   0.9793
-    RF2    0.9474             0.9800   ...     0.9381  0.9815   0.9805
-    RF1    0.9532             0.9806   ...     0.9545  0.9722   0.9806
-
-    [3 rows x 9 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -1361,84 +1193,21 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import SuccessiveHalvingRegressor
-    >>> from sklearn.datasets import load_digits
+    ```python
+    from atom.training import SuccessiveHalvingRegressor
+    from sklearn.datasets import load_digits
 
-    >>> X, y = load_digits(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_digits(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
-    >>> runner.run(train, test)
+    runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Metric: r2
-
-
-    Run: 0 =========================== >>
-    Models: OLS2, RF2
-    Size of training set: 398 (50%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7878
-    Test evaluation --> r2: 0.6764
-    Time elapsed: 0.007s
-    -------------------------------------------------
-    Total time: 0.007s
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.9755
-    Test evaluation --> r2: 0.8189
-    Time elapsed: 0.132s
-    -------------------------------------------------
-    Total time: 0.132s
-
-
-    Final results ==================== >>
-    Total time: 0.140s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.6764
-    RandomForest         --> r2: 0.8189 !
-
-
-    Run: 1 =========================== >>
-    Models: RF1
-    Size of training set: 398 (100%)
-    Size of test set: 171
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.9803
-    Test evaluation --> r2: 0.8092
-    Time elapsed: 0.217s
-    -------------------------------------------------
-    Total time: 0.217s
-
-
-    Final results ==================== >>
-    Total time: 0.217s
-    -------------------------------------
-    RandomForest --> r2: 0.8092
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-          neg_mean_absolute_error  ...  neg_root_mean_squared_error
-    OLS2                  -0.1982  ...                      -0.2744
-    RF2                   -0.0970  ...                      -0.2053
-    RF1                   -0.0974  ...                      -0.2107
-
-    [3 rows x 6 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -1622,84 +1391,21 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import SuccessiveHalvingRegressor
-    >>> from sklearn.datasets import load_digits
+    ```python
+    from atom.training import SuccessiveHalvingRegressor
+    from sklearn.datasets import load_digits
 
-    >>> X, y = load_digits(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_digits(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
-    >>> runner.run(train, test)
+    runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Metric: r2
-
-
-    Run: 0 =========================== >>
-    Models: OLS2, RF2
-    Size of training set: 398 (50%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7878
-    Test evaluation --> r2: 0.6764
-    Time elapsed: 0.007s
-    -------------------------------------------------
-    Total time: 0.007s
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.9755
-    Test evaluation --> r2: 0.8189
-    Time elapsed: 0.132s
-    -------------------------------------------------
-    Total time: 0.132s
-
-
-    Final results ==================== >>
-    Total time: 0.140s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.6764
-    RandomForest         --> r2: 0.8189 !
-
-
-    Run: 1 =========================== >>
-    Models: RF1
-    Size of training set: 398 (100%)
-    Size of test set: 171
-
-
-    Results for RandomForest:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.9803
-    Test evaluation --> r2: 0.8092
-    Time elapsed: 0.217s
-    -------------------------------------------------
-    Total time: 0.217s
-
-
-    Final results ==================== >>
-    Total time: 0.217s
-    -------------------------------------
-    RandomForest --> r2: 0.8092
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-          neg_mean_absolute_error  ...  neg_root_mean_squared_error
-    OLS2                  -0.1982  ...                      -0.2744
-    RF2                   -0.0970  ...                      -0.2053
-    RF1                   -0.0974  ...                      -0.2107
-
-    [3 rows x 6 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -1892,139 +1598,21 @@ class TrainSizingClassifier(TrainSizing):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import TrainSizingClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    ```python
+    from atom.training import TrainSizingClassifier
+    from sklearn.datasets import load_breast_cancer
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = TrainSizingClassifier(models="LR", metric="auc", verbose=2)
-    >>> runner.run(train, test)
+    runner = TrainSizingClassifier(models="LR", metric="auc", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Metric: roc_auc
-
-
-    Run: 0 =========================== >>
-    Models: LR02
-    Size of training set: 79 (20%)
-    Size of test set: 171
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.9846
-    Test evaluation --> roc_auc: 0.9737
-    Time elapsed: 0.017s
-    -------------------------------------------------
-    Total time: 0.017s
-
-
-    Final results ==================== >>
-    Total time: 0.018s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9737
-
-
-    Run: 1 =========================== >>
-    Models: LR04
-    Size of training set: 159 (40%)
-    Size of test set: 171
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.9855
-    Test evaluation --> roc_auc: 0.9838
-    Time elapsed: 0.018s
-    -------------------------------------------------
-    Total time: 0.018s
-
-
-    Final results ==================== >>
-    Total time: 0.019s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9838
-
-
-    Run: 2 =========================== >>
-    Models: LR06
-    Size of training set: 238 (60%)
-    Size of test set: 171
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.9898
-    Test evaluation --> roc_auc: 0.9813
-    Time elapsed: 0.018s
-    -------------------------------------------------
-    Total time: 0.018s
-
-
-    Final results ==================== >>
-    Total time: 0.018s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9813
-
-
-    Run: 3 =========================== >>
-    Models: LR08
-    Size of training set: 318 (80%)
-    Size of test set: 171
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.9936
-    Test evaluation --> roc_auc: 0.9816
-    Time elapsed: 0.038s
-    -------------------------------------------------
-    Total time: 0.038s
-
-
-    Final results ==================== >>
-    Total time: 0.038s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9816
-
-
-    Run: 4 =========================== >>
-    Models: LR10
-    Size of training set: 398 (100%)
-    Size of test set: 171
-
-
-    Results for LogisticRegression:
-    Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 0.9925
-    Test evaluation --> roc_auc: 0.9871
-    Time elapsed: 0.040s
-    -------------------------------------------------
-    Total time: 0.040s
-
-
-    Final results ==================== >>
-    Total time: 0.041s
-    -------------------------------------
-    LogisticRegression --> roc_auc: 0.9871
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-          accuracy  average_precision  ...  recall  roc_auc
-    LR02    0.8947             0.9835  ...  0.8981   0.9737
-    LR04    0.9181             0.9907  ...  0.9352   0.9838
-    LR06    0.9415             0.9888  ...  0.9444   0.9813
-    LR08    0.9474             0.9878  ...  0.9630   0.9816
-    LR10    0.9357             0.9923  ...  0.9444   0.9871
-
-    [5 rows x 9 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -2213,139 +1801,21 @@ class TrainSizingForecaster(TrainSizing):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import TrainSizingRegressor
-    >>> from sklearn.datasets import load_digits
+    ```python
+    from atom.training import TrainSizingRegressor
+    from sklearn.datasets import load_digits
 
-    >>> X, y = load_digits(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_digits(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
-    >>> runner.run(train, test)
+    runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Metric: r2
-
-
-    Run: 0 =========================== >>
-    Models: OLS02
-    Size of training set: 79 (20%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.8554
-    Test evaluation --> r2: 0.4273
-    Time elapsed: 0.008s
-    -------------------------------------------------
-    Total time: 0.008s
-
-
-    Final results ==================== >>
-    Total time: 0.107s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.4273 ~
-
-
-    Run: 1 =========================== >>
-    Models: OLS04
-    Size of training set: 159 (40%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7987
-    Test evaluation --> r2: 0.653
-    Time elapsed: 0.008s
-    -------------------------------------------------
-    Total time: 0.008s
-
-
-    Final results ==================== >>
-    Total time: 0.129s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.653
-
-
-    Run: 2 =========================== >>
-    Models: OLS06
-    Size of training set: 238 (60%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7828
-    Test evaluation --> r2: 0.7161
-    Time elapsed: 0.008s
-    -------------------------------------------------
-    Total time: 0.008s
-
-
-    Final results ==================== >>
-    Total time: 0.156s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.7161
-
-
-    Run: 3 =========================== >>
-    Models: OLS08
-    Size of training set: 318 (80%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7866
-    Test evaluation --> r2: 0.7306
-    Time elapsed: 0.009s
-    -------------------------------------------------
-    Total time: 0.009s
-
-
-    Final results ==================== >>
-    Total time: 0.187s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.7306
-
-
-    Run: 4 =========================== >>
-    Models: OLS10
-    Size of training set: 398 (100%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7798
-    Test evaluation --> r2: 0.7394
-    Time elapsed: 0.009s
-    -------------------------------------------------
-    Total time: 0.009s
-
-
-    Final results ==================== >>
-    Total time: 0.226s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.7394
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-           neg_mean_absolute_error  ...  neg_root_mean_squared_error
-    OLS02                  -0.2766  ...                      -0.3650
-    OLS04                  -0.2053  ...                      -0.2841
-    OLS06                  -0.1957  ...                      -0.2570
-    OLS08                  -0.1928  ...                      -0.2504
-    OLS10                  -0.1933  ...                      -0.2463
-
-    [5 rows x 6 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """
@@ -2534,139 +2004,21 @@ class TrainSizingRegressor(TrainSizing):
 
     Examples
     --------
-    ```pycon
-    >>> from atom.training import TrainSizingRegressor
-    >>> from sklearn.datasets import load_digits
+    ```python
+    from atom.training import TrainSizingRegressor
+    from sklearn.datasets import load_digits
 
-    >>> X, y = load_digits(return_X_y=True, as_frame=True)
-    >>> train, test = train_test_split(
-    ...     X.merge(y.to_frame(), left_index=True, right_index=True),
-    ...     test_size=0.3,
-    ... )
+    X, y = load_digits(return_X_y=True, as_frame=True)
+    train, test = train_test_split(
+        X.merge(y.to_frame(), left_index=True, right_index=True),
+        test_size=0.3,
+    )
 
-    >>> runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
-    >>> runner.run(train, test)
+    runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
+    runner.run(train, test)
 
-    Training ========================= >>
-    Metric: r2
-
-
-    Run: 0 =========================== >>
-    Models: OLS02
-    Size of training set: 79 (20%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.8554
-    Test evaluation --> r2: 0.4273
-    Time elapsed: 0.008s
-    -------------------------------------------------
-    Total time: 0.008s
-
-
-    Final results ==================== >>
-    Total time: 0.107s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.4273 ~
-
-
-    Run: 1 =========================== >>
-    Models: OLS04
-    Size of training set: 159 (40%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7987
-    Test evaluation --> r2: 0.653
-    Time elapsed: 0.008s
-    -------------------------------------------------
-    Total time: 0.008s
-
-
-    Final results ==================== >>
-    Total time: 0.129s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.653
-
-
-    Run: 2 =========================== >>
-    Models: OLS06
-    Size of training set: 238 (60%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7828
-    Test evaluation --> r2: 0.7161
-    Time elapsed: 0.008s
-    -------------------------------------------------
-    Total time: 0.008s
-
-
-    Final results ==================== >>
-    Total time: 0.156s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.7161
-
-
-    Run: 3 =========================== >>
-    Models: OLS08
-    Size of training set: 318 (80%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7866
-    Test evaluation --> r2: 0.7306
-    Time elapsed: 0.009s
-    -------------------------------------------------
-    Total time: 0.009s
-
-
-    Final results ==================== >>
-    Total time: 0.187s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.7306
-
-
-    Run: 4 =========================== >>
-    Models: OLS10
-    Size of training set: 398 (100%)
-    Size of test set: 171
-
-
-    Results for OrdinaryLeastSquares:
-    Fit ---------------------------------------------
-    Train evaluation --> r2: 0.7798
-    Test evaluation --> r2: 0.7394
-    Time elapsed: 0.009s
-    -------------------------------------------------
-    Total time: 0.009s
-
-
-    Final results ==================== >>
-    Total time: 0.226s
-    -------------------------------------
-    OrdinaryLeastSquares --> r2: 0.7394
-
-    >>> # Analyze the results
-    >>> runner.evaluate()
-
-           neg_mean_absolute_error  ...  neg_root_mean_squared_error
-    OLS02                  -0.2766  ...                      -0.3650
-    OLS04                  -0.2053  ...                      -0.2841
-    OLS06                  -0.1957  ...                      -0.2570
-    OLS08                  -0.1928  ...                      -0.2504
-    OLS10                  -0.1933  ...                      -0.2463
-
-    [5 rows x 6 columns]
-
+    # Analyze the results
+    runner.evaluate()
     ```
 
     """

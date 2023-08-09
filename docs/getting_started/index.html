@@ -19,13 +19,13 @@
         <link rel="next" href="../user_guide/introduction/">
       
       <link rel="icon" href="../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
     
     
   <title>Getting started - ATOM</title>
 
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.eebd395e.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ecc896b0.min.css">
@@ -3300,22 +3300,14 @@ on top of this section to run this example yourself.</p>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load the Australian Weather dataset</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
 
-<span class="go">             Location  MinTemp  MaxTemp  ...  Temp9am  Temp3pm  RainToday</span>
-<span class="go">0    MelbourneAirport     18.0     26.9  ...     18.5     26.0        Yes</span>
-<span class="go">1            Adelaide     17.2     23.4  ...     17.7     21.9         No</span>
-<span class="go">2              Cairns     18.6     24.6  ...     20.8     24.1        Yes</span>
-<span class="go">3            Portland     13.6     16.8  ...     15.6     16.0        Yes</span>
-<span class="go">4             Walpole     16.4     19.9  ...     17.4     18.1         No</span>
-<span class="go">..                ...      ...      ...  ...      ...      ...        ...</span>
-<span class="go">995            Hobart     12.6     21.8  ...     18.0     18.7         No</span>
-<span class="go">996      PerthAirport      7.1     20.0  ...     14.3     19.7         No</span>
-<span class="go">997        WaggaWagga     10.0     25.9  ...     17.0     24.2         No</span>
-<span class="go">998            Albany     12.9     17.4  ...     15.6     16.8         No</span>
-<span class="go">999           Mildura     -1.0     14.9  ...      4.1     14.5         No</span>
-
-<span class="go">[1000 rows x 21 columns]</span>
+<span class="go">           Location  MinTemp  MaxTemp  Rainfall  Evaporation  Sunshine WindGustDir  WindGustSpeed WindDir9am WindDir3pm  WindSpeed9am  WindSpeed3pm  Humidity9am  Humidity3pm  Pressure9am  Pressure3pm  Cloud9am  Cloud3pm  Temp9am  Temp3pm RainToday  RainTomorrow</span>
+<span class="go">0  MelbourneAirport     18.0     26.9      21.4          7.0       8.9         SSE           41.0          W        SSE           9.0          20.0         95.0         54.0       1019.5       1017.0       8.0       5.0     18.5     26.0       Yes             0</span>
+<span class="go">1          Adelaide     17.2     23.4       0.0          NaN       NaN           S           41.0          S        WSW          13.0          19.0         59.0         36.0       1015.7       1015.7       NaN       NaN     17.7     21.9        No             0</span>
+<span class="go">2            Cairns     18.6     24.6       7.4          3.0       6.1         SSE           54.0        SSE         SE          26.0          35.0         78.0         57.0       1018.7       1016.6       3.0       3.0     20.8     24.1       Yes             0</span>
+<span class="go">3          Portland     13.6     16.8       4.2          1.2       0.0         ESE           39.0        ESE        ESE          17.0          15.0         76.0         74.0       1021.4       1020.5       7.0       8.0     15.6     16.0       Yes             1</span>
+<span class="go">4           Walpole     16.4     19.9       0.0          NaN       NaN          SE           44.0         SE         SE          19.0          30.0         78.0         70.0       1019.4       1018.9       NaN       NaN     17.4     18.1        No             0</span>
 </code></pre></div>
 <p>Initialize the ATOMClassifier or ATOMRegressor class. These two classes
 are convenient wrappers for the whole machine learning pipeline. Contrary
@@ -3328,21 +3320,16 @@ manipulate.</p>
 
 <span class="go">Dataset stats ==================== &gt;&gt;</span>
 <span class="go">Shape: (1000, 22)</span>
-<span class="go">Memory: 434.38 kB</span>
-<span class="go">Scaled: False</span>
-<span class="go">Missing values: 2131 (9.7%)</span>
-<span class="go">Categorical features: 5 (23.8%)</span>
-<span class="go">-------------------------------------</span>
 <span class="go">Train set size: 800</span>
 <span class="go">Test set size: 200</span>
 <span class="go">-------------------------------------</span>
-<span class="go">|   |     dataset |       train |        test |</span>
-<span class="go">| - | ----------- | ----------- | ----------- |</span>
-<span class="go">| 0 |   775 (3.4) |   620 (3.4) |   155 (3.4) |</span>
-<span class="go">| 1 |   225 (1.0) |   180 (1.0) |    45 (1.0) |</span>
+<span class="go">Memory: 434.13 kB</span>
+<span class="go">Scaled: False</span>
+<span class="go">Missing values: 2273 (10.3%)</span>
+<span class="go">Categorical features: 5 (23.8%)</span>
 </code></pre></div>
 <p>Data transformations are applied through atom's methods. For example,
-calling the <a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> method will initialize an
+calling the [impute][atomclassifier-impute] method will initialize an
 <a class="autorefs autorefs-internal" href="../API/data_cleaning/imputer/#imputer">Imputer</a> instance, fit it on the training set and transform the whole
 dataset. The transformations are applied immediately after calling the
 method (no fit and transform commands necessary).</p>
@@ -3351,26 +3338,27 @@ method (no fit and transform commands necessary).</p>
 
 <span class="go">Fitting Imputer...</span>
 <span class="go">Imputing missing values...</span>
-<span class="go"> --&gt; Imputing 1 missing values with median (12.0) in feature MinTemp.</span>
-<span class="go"> --&gt; Imputing 2 missing values with median (22.8) in feature MaxTemp.</span>
-<span class="go"> --&gt; Imputing 5 missing values with median (0.0) in feature Rainfall.</span>
-<span class="go"> --&gt; Imputing 430 missing values with median (4.6) in feature Evaporation.</span>
-<span class="go"> --&gt; Imputing 453 missing values with median (8.2) in feature Sunshine.</span>
-<span class="go"> --&gt; Imputing 65 missing values with most_frequent (W) in feature WindGustDir.</span>
-<span class="go"> --&gt; Imputing 65 missing values with median (39.0) in feature WindGustSpeed.</span>
-<span class="go"> --&gt; Imputing 63 missing values with most_frequent (N) in feature WindDir9am.</span>
-<span class="go"> --&gt; Imputing 24 missing values with most_frequent (WSW) in feature WindDir3pm.</span>
-<span class="go"> --&gt; Imputing 8 missing values with median (13.0) in feature WindSpeed9am.</span>
-<span class="go"> --&gt; Imputing 19 missing values with median (19.0) in feature WindSpeed3pm.</span>
-<span class="go"> --&gt; Imputing 10 missing values with median (70.0) in feature Humidity9am.</span>
-<span class="go"> --&gt; Imputing 19 missing values with median (53.0) in feature Humidity3pm.</span>
-<span class="go"> --&gt; Imputing 94 missing values with median (1017.4) in feature Pressure9am.</span>
-<span class="go"> --&gt; Imputing 96 missing values with median (1015.15) in feature Pressure3pm.</span>
-<span class="go"> --&gt; Imputing 369 missing values with median (6.0) in feature Cloud9am.</span>
-<span class="go"> --&gt; Imputing 386 missing values with median (5.0) in feature Cloud3pm.</span>
-<span class="go"> --&gt; Imputing 3 missing values with median (16.8) in feature Temp9am.</span>
-<span class="go"> --&gt; Imputing 14 missing values with median (21.2) in feature Temp3pm.</span>
-<span class="go"> --&gt; Imputing 5 missing values with most_frequent (No) in feature RainToday.</span>
+<span class="go"> --&gt; Imputing 4 missing values with median (11.6) in feature MinTemp.</span>
+<span class="go"> --&gt; Imputing 3 missing values with median (22.4) in feature MaxTemp.</span>
+<span class="go"> --&gt; Imputing 7 missing values with median (0.0) in feature Rainfall.</span>
+<span class="go"> --&gt; Imputing 425 missing values with median (4.4) in feature Evaporation.</span>
+<span class="go"> --&gt; Imputing 470 missing values with median (8.6) in feature Sunshine.</span>
+<span class="go"> --&gt; Imputing 59 missing values with most_frequent (W) in feature WindGustDir.</span>
+<span class="go"> --&gt; Imputing 57 missing values with median (37.0) in feature WindGustSpeed.</span>
+<span class="go"> --&gt; Imputing 73 missing values with most_frequent (N) in feature WindDir9am.</span>
+<span class="go"> --&gt; Imputing 23 missing values with most_frequent (SE) in feature WindDir3pm.</span>
+<span class="go"> --&gt; Imputing 5 missing values with median (13.0) in feature WindSpeed9am.</span>
+<span class="go"> --&gt; Imputing 16 missing values with median (17.0) in feature WindSpeed3pm.</span>
+<span class="go"> --&gt; Imputing 10 missing values with median (71.0) in feature Humidity9am.</span>
+<span class="go"> --&gt; Imputing 20 missing values with median (52.0) in feature Humidity3pm.</span>
+<span class="go"> --&gt; Imputing 93 missing values with median (1018.2) in feature Pressure9am.</span>
+<span class="go"> --&gt; Imputing 94 missing values with median (1015.65) in feature Pressure3pm.</span>
+<span class="go"> --&gt; Imputing 377 missing values with median (5.0) in feature Cloud9am.</span>
+<span class="go"> --&gt; Imputing 411 missing values with median (4.0) in feature Cloud3pm.</span>
+<span class="go"> --&gt; Imputing 6 missing values with median (16.2) in feature Temp9am.</span>
+<span class="go"> --&gt; Imputing 17 missing values with median (20.8) in feature Temp3pm.</span>
+<span class="go"> --&gt; Imputing 7 missing values with most_frequent (No) in feature RainToday.</span>
+
 <span class="go">Fitting Encoder...</span>
 <span class="go">Encoding categorical columns...</span>
 <span class="go"> --&gt; Target-encoding feature Location. Contains 49 classes.</span>
@@ -3380,9 +3368,10 @@ method (no fit and transform commands necessary).</p>
 <span class="go"> --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.</span>
 </code></pre></div>
 <p>Similarly, models are <a class="autorefs autorefs-internal" href="../user_guide/training/#training">trained and evaluated</a> using the
-<a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier-run">run</a> method. Here, we fit both a <a class="autorefs autorefs-internal" href="../API/models/lda/#lineardiscriminantanalysis">LinearDiscriminantAnalysis</a>
+[run][atomclassifier-run] method. Here, we fit both a <a class="autorefs autorefs-internal" href="../API/models/lda/#lineardiscriminantanalysis">LinearDiscriminantAnalysis</a>
 and <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost">AdaBoost</a> model, and apply <a class="autorefs autorefs-internal" href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="s2">&quot;AdaB&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
 
 <span class="go">Training ========================= &gt;&gt;</span>
 <span class="go">Models: LDA, AdaB</span>
@@ -3392,74 +3381,72 @@ and <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost">Ad
 <span class="go">Running hyperparameter tuning for LinearDiscriminantAnalysis...</span>
 <span class="go">| trial |  solver | shrinkage | roc_auc | best_roc_auc | time_trial | time_ht |    state |</span>
 <span class="go">| ----- | ------- | --------- | ------- | ------------ | ---------- | ------- | -------- |</span>
-<span class="go">| 0     |   eigen |      auto |  0.7888 |       0.7888 |     0.156s |  0.156s | COMPLETE |</span>
-<span class="go">| 1     |    lsqr |       0.9 |  0.7988 |       0.7988 |     0.141s |  0.297s | COMPLETE |</span>
-<span class="go">| 2     |    lsqr |       1.0 |  0.8125 |       0.8125 |     0.141s |  0.438s | COMPLETE |</span>
-<span class="go">| 3     |    lsqr |       0.6 |   0.858 |        0.858 |     0.125s |  0.563s | COMPLETE |</span>
-<span class="go">| 4     |   eigen |       1.0 |   0.782 |        0.858 |     0.125s |  0.688s | COMPLETE |</span>
-<span class="go">| 5     |    lsqr |       0.8 |  0.8396 |        0.858 |     0.141s |  0.828s | COMPLETE |</span>
-<span class="go">| 6     |     svd |       --- |  0.7968 |        0.858 |     0.141s |  0.969s | COMPLETE |</span>
-<span class="go">| 7     |    lsqr |       0.7 |  0.8208 |        0.858 |     0.125s |  1.094s | COMPLETE |</span>
-<span class="go">| 8     |   eigen |       0.9 |  0.8548 |        0.858 |     0.141s |  1.234s | COMPLETE |</span>
-<span class="go">| 9     |   eigen |       0.7 |  0.8401 |        0.858 |     0.125s |  1.359s | COMPLETE |</span>
+<span class="go">| 0     |   eigen |       1.0 |  0.8097 |       0.8097 |     0.157s |  0.157s | COMPLETE |</span>
+<span class="go">| 1     |     svd |       --- |  0.7787 |       0.8097 |     0.150s |  0.307s | COMPLETE |</span>
+<span class="go">| 2     |     svd |       --- |  0.7787 |       0.8097 |     0.002s |  0.309s | COMPLETE |</span>
+<span class="go">| 3     |   eigen |      auto |  0.8682 |       0.8682 |     0.150s |  0.459s | COMPLETE |</span>
+<span class="go">| 4     |   eigen |       0.8 |  0.8184 |       0.8682 |     0.158s |  0.618s | COMPLETE |</span>
+<span class="go">| 5     |     svd |       --- |  0.7787 |       0.8682 |     0.002s |  0.620s | COMPLETE |</span>
+<span class="go">| 6     |     svd |       --- |  0.7787 |       0.8682 |     0.002s |  0.622s | COMPLETE |</span>
+<span class="go">| 7     |     svd |       --- |  0.7787 |       0.8682 |     0.001s |  0.623s | COMPLETE |</span>
+<span class="go">| 8     |   eigen |      auto |  0.8682 |       0.8682 |     0.002s |  0.625s | COMPLETE |</span>
+<span class="go">| 9     |   eigen |       0.7 |  0.8755 |       0.8755 |     0.180s |  0.805s | COMPLETE |</span>
 <span class="go">Hyperparameter tuning ---------------------------</span>
-<span class="go">Best trial --&gt; 3</span>
+<span class="go">Best trial --&gt; 9</span>
 <span class="go">Best parameters:</span>
-<span class="go"> --&gt; solver: lsqr</span>
-<span class="go"> --&gt; shrinkage: 0.6</span>
-<span class="go">Best evaluation --&gt; roc_auc: 0.858</span>
-<span class="go">Time elapsed: 1.359s</span>
+<span class="go"> --&gt; solver: eigen</span>
+<span class="go"> --&gt; shrinkage: 0.7</span>
+<span class="go">Best evaluation --&gt; roc_auc: 0.8755</span>
+<span class="go">Time elapsed: 0.805s</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; roc_auc: 0.8321</span>
-<span class="go">Test evaluation --&gt; roc_auc: 0.8668</span>
-<span class="go">Time elapsed: 0.016s</span>
+<span class="go">Train evaluation --&gt; roc_auc: 0.7739</span>
+<span class="go">Test evaluation --&gt; roc_auc: 0.761</span>
+<span class="go">Time elapsed: 0.018s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 1.375s</span>
+<span class="go">Total time: 0.823s</span>
 
 
 <span class="go">Running hyperparameter tuning for AdaBoost...</span>
 <span class="go">| trial | n_estimators | learning_rate | algorithm | roc_auc | best_roc_auc | time_trial | time_ht |    state |</span>
 <span class="go">| ----- | ------------ | ------------- | --------- | ------- | ------------ | ---------- | ------- | -------- |</span>
-<span class="go">| 0     |          480 |        1.6346 |     SAMME |   0.744 |        0.744 |     0.734s |  0.734s | COMPLETE |</span>
-<span class="go">| 1     |          410 |        6.7512 |     SAMME |  0.3454 |        0.744 |     0.125s |  0.859s | COMPLETE |</span>
-<span class="go">| 2     |          480 |        7.4271 |   SAMME.R |  0.3513 |        0.744 |     0.788s |  1.648s | COMPLETE |</span>
-<span class="go">| 3     |          460 |        0.0238 |   SAMME.R |  0.8365 |       0.8365 |     0.799s |  2.447s | COMPLETE |</span>
-<span class="go">| 4     |          400 |        1.8333 |   SAMME.R |  0.6328 |       0.8365 |     0.672s |  3.118s | COMPLETE |</span>
-<span class="go">| 5     |          420 |        6.7105 |   SAMME.R |  0.3772 |       0.8365 |     0.694s |  3.813s | COMPLETE |</span>
-<span class="go">| 6     |          240 |         0.358 |   SAMME.R |  0.7413 |       0.8365 |     0.469s |  4.282s | COMPLETE |</span>
-<span class="go">| 7     |          320 |        0.2011 |     SAMME |  0.8418 |       0.8418 |     0.531s |  4.813s | COMPLETE |</span>
-<span class="go">| 8     |          260 |        0.1667 |     SAMME |   0.808 |       0.8418 |     0.454s |  5.267s | COMPLETE |</span>
-<span class="go">| 9     |          450 |        0.0464 |     SAMME |  0.8001 |       0.8418 |     0.688s |  5.954s | COMPLETE |</span>
+<span class="go">| 0     |          210 |        0.0379 |     SAMME |  0.8172 |       0.8172 |     0.633s |  0.633s | COMPLETE |</span>
+<span class="go">| 1     |          120 |        0.0619 |     SAMME |  0.7279 |       0.8172 |     0.378s |  1.011s | COMPLETE |</span>
+<span class="go">| 2     |          320 |        1.0432 |   SAMME.R |  0.8255 |       0.8255 |     0.869s |  1.880s | COMPLETE |</span>
+<span class="go">| 3     |          250 |        0.1347 |   SAMME.R |   0.777 |       0.8255 |     0.650s |  2.530s | COMPLETE |</span>
+<span class="go">| 4     |          240 |        0.1499 |     SAMME |  0.8177 |       0.8255 |     0.589s |  3.118s | COMPLETE |</span>
+<span class="go">| 5     |          370 |        0.6899 |     SAMME |  0.8199 |       0.8255 |     0.817s |  3.935s | COMPLETE |</span>
+<span class="go">| 6     |          210 |        6.6439 |     SAMME |   0.783 |       0.8255 |     0.533s |  4.469s | COMPLETE |</span>
+<span class="go">| 7     |           70 |        0.0503 |     SAMME |  0.8114 |       0.8255 |     0.281s |  4.750s | COMPLETE |</span>
+<span class="go">| 8     |           90 |        5.3251 |     SAMME |  0.7427 |       0.8255 |     0.317s |  5.067s | COMPLETE |</span>
+<span class="go">| 9     |          310 |        0.0229 |   SAMME.R |  0.8792 |       0.8792 |     0.755s |  5.822s | COMPLETE |</span>
 <span class="go">Hyperparameter tuning ---------------------------</span>
-<span class="go">Best trial --&gt; 7</span>
+<span class="go">Best trial --&gt; 9</span>
 <span class="go">Best parameters:</span>
-<span class="go"> --&gt; n_estimators: 320</span>
-<span class="go"> --&gt; learning_rate: 0.2011</span>
-<span class="go"> --&gt; algorithm: SAMME</span>
-<span class="go">Best evaluation --&gt; roc_auc: 0.8418</span>
-<span class="go">Time elapsed: 5.954s</span>
+<span class="go"> --&gt; n_estimators: 310</span>
+<span class="go"> --&gt; learning_rate: 0.0229</span>
+<span class="go"> --&gt; algorithm: SAMME.R</span>
+<span class="go">Best evaluation --&gt; roc_auc: 0.8792</span>
+<span class="go">Time elapsed: 5.822s</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; roc_auc: 0.9087</span>
-<span class="go">Test evaluation --&gt; roc_auc: 0.7987</span>
-<span class="go">Time elapsed: 0.453s</span>
+<span class="go">Train evaluation --&gt; roc_auc: 0.7295</span>
+<span class="go">Test evaluation --&gt; roc_auc: 0.7198</span>
+<span class="go">Time elapsed: 0.693s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 6.407s</span>
+<span class="go">Total time: 6.514s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 8.017s</span>
+<span class="go">Total time: 7.501s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">LinearDiscriminantAnalysis --&gt; roc_auc: 0.8668 !</span>
-<span class="go">AdaBoost                   --&gt; roc_auc: 0.7987</span>
+<span class="go">LinearDiscriminantAnalysis --&gt; roc_auc: 0.761 !</span>
+<span class="go">AdaBoost                   --&gt; roc_auc: 0.7198</span>
 </code></pre></div>
 <p>And lastly, analyze the results.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 
-<span class="go">      accuracy  average_precision  ...  recall  roc_auc</span>
-<span class="go">LDA      0.850             0.6893  ...  0.5333   0.8668</span>
-<span class="go">AdaB     0.825             0.6344  ...  0.3556   0.7987</span>
-
-<span class="go">[2 rows x 9 columns]</span>
+<span class="go">      accuracy  average_precision  balanced_accuracy      f1  jaccard  matthews_corrcoef  precision  recall  roc_auc</span>
+<span class="go">LDA       0.84             0.5196             0.7849  0.6667   0.5000             0.5617     0.6531  0.6809   0.7849</span>
+<span class="go">AdaB      0.83             0.4447             0.6751  0.5143   0.3462             0.4656     0.7826  0.3830   0.6751</span>
 </code></pre></div>
 
 
@@ -3486,6 +3473,44 @@ and <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost">Ad
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../about/" class="md-footer__link md-footer__link--prev" aria-label="Previous: About" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                About
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../user_guide/introduction/" class="md-footer__link md-footer__link--next" aria-label="Next: Introduction" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Introduction
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -3564,7 +3589,7 @@ and <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost">Ad
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.220ee61c.min.js"></script>

@@ -46,7 +46,7 @@ class Pipeline(skPipeline):
       not of the Pipeline.
 
     Note: This Pipeline only works with estimators whose parameters
-    for fit, transform, predict, etc... are named X and/or y.
+    for fit, transform, predict, etcare named X and/or y.
 
     See sklearn's [Pipeline][] for a description of the parameters
     and attributes.

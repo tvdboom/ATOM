@@ -24,8 +24,6 @@ import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
 
-from atom.basetransformer import BaseTransformer
-
 
 # Variables ======================================================== >>
 

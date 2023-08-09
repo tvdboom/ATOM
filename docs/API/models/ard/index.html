@@ -19,13 +19,13 @@
         <link rel="next" href="../bag/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
     
     
   <title>AutomaticRelevanceDetermination - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.eebd395e.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
@@ -3341,32 +3341,13 @@ the regression model are assumed to be in Gaussian distributions.</p>
 </div>
 <p><br></p>
 <h2 id="example">Example</h2>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">fetch_california_housing</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">fetch_california_housing</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">fetch_california_housing</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">fetch_california_housing</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;ARD&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-<span class="go">Training ========================= &gt;&gt;</span>
-<span class="go">Models: ARD</span>
-<span class="go">Metric: r2</span>
-
-
-<span class="go">Results for AutomaticRelevanceDetermination:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.7275</span>
-<span class="go">Test evaluation --&gt; r2: 0.7792</span>
-<span class="go">Time elapsed: 0.059s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.059s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.061s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">AutomaticRelevanceDetermination --&gt; r2: 0.7792</span>
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;ARD&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
 <p><br><br></p>
 <h2 id="hyperparameters">Hyperparameters</h2>
@@ -3408,11 +3389,11 @@ the corresponding run also changes.</div><a id='automaticrelevancedetermination-
 <p>For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, the best trial is the trial that
 performed best on the main metric. Use the property's <code>@setter</code>
 to change the best trial. See [here][example-hyperparameter-tuning]
-an example.</div><a id='automaticrelevancedetermination-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-best_trial">best trial</a>.</div><a id='automaticrelevancedetermination-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-best_trial">best trial</a>.</div><a id='automaticrelevancedetermination-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='automaticrelevancedetermination-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='automaticrelevancedetermination-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='automaticrelevancedetermination-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='automaticrelevancedetermination-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='automaticrelevancedetermination-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='automaticrelevancedetermination-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
+an example.</div><a id='automaticrelevancedetermination-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the [best trial][automaticrelevancedetermination-best_trial].</div><a id='automaticrelevancedetermination-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the [best trial][automaticrelevancedetermination-best_trial].</div><a id='automaticrelevancedetermination-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='automaticrelevancedetermination-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='automaticrelevancedetermination-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='automaticrelevancedetermination-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='automaticrelevancedetermination-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='automaticrelevancedetermination-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='automaticrelevancedetermination-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
 <p>The dataframe has shape=(n_bootstrap, metric) and shows the
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
-<a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-score_bootstrap">score_bootstrap</a>.</div><a id='automaticrelevancedetermination-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='automaticrelevancedetermination-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='automaticrelevancedetermination-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='automaticrelevancedetermination-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
+[score_bootstrap][automaticrelevancedetermination-score_bootstrap].</div><a id='automaticrelevancedetermination-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='automaticrelevancedetermination-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='automaticrelevancedetermination-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='automaticrelevancedetermination-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
 <p>The sum of importances for all features is 1. The scores are
 extracted from the estimator's <code>scores_</code>, <code>coef_</code> or
 <code>feature_importances_</code> attribute, checked in that order.
@@ -3457,7 +3438,7 @@ attributes that are never used, saving time and memory.</p>
 <p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> can be called directly from the model.
 The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-score">score</a></td><td>Get a metric score on new data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr></p>
+<p><tr><td>[bootstrapping][automaticrelevancedetermination-bootstrapping]</td><td>Apply a bootstrap algorithm.</td></tr><tr><td>[calibrate][automaticrelevancedetermination-calibrate]</td><td>Calibrate the model.</td></tr><tr><td>[canvas][automaticrelevancedetermination-canvas]</td><td>Create a figure with multiple plots.</td></tr><tr><td>[clear][automaticrelevancedetermination-clear]</td><td>Reset attributes and clear cache from the model.</td></tr><tr><td>[create_app][automaticrelevancedetermination-create_app]</td><td>Create an interactive app to test model predictions.</td></tr><tr><td>[create_dashboard][automaticrelevancedetermination-create_dashboard]</td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td>[cross_validate][automaticrelevancedetermination-cross_validate]</td><td>Evaluate the model using cross-validation.</td></tr><tr><td>[decision_function][automaticrelevancedetermination-decision_function]</td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td>[evaluate][automaticrelevancedetermination-evaluate]</td><td>Get the model's scores for the provided metrics.</td></tr><tr><td>[export_pipeline][automaticrelevancedetermination-export_pipeline]</td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td>[fit][automaticrelevancedetermination-fit]</td><td>Fit and validate the model.</td></tr><tr><td>[full_train][automaticrelevancedetermination-full_train]</td><td>Train the estimator on the complete dataset.</td></tr><tr><td>[get_best_threshold][automaticrelevancedetermination-get_best_threshold]</td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td>[hyperparameter_tuning][automaticrelevancedetermination-hyperparameter_tuning]</td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td>[inverse_transform][automaticrelevancedetermination-inverse_transform]</td><td>Inversely transform new data through the pipeline.</td></tr><tr><td>[log][automaticrelevancedetermination-log]</td><td>Print message and save to log file.</td></tr><tr><td>[predict][automaticrelevancedetermination-predict]</td><td>Get predictions on new data or existing rows.</td></tr><tr><td>[predict_log_proba][automaticrelevancedetermination-predict_log_proba]</td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td>[predict_proba][automaticrelevancedetermination-predict_proba]</td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td>[register][automaticrelevancedetermination-register]</td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td>[reset_aesthetics][automaticrelevancedetermination-reset_aesthetics]</td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td>[save][automaticrelevancedetermination-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[save_estimator][automaticrelevancedetermination-save_estimator]</td><td>Save the estimator to a pickle file.</td></tr><tr><td>[score][automaticrelevancedetermination-score]</td><td>Get a metric score on new data.</td></tr><tr><td>[serve][automaticrelevancedetermination-serve]</td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td>[transform][automaticrelevancedetermination-transform]</td><td>Transform new data through the pipeline.</td></tr><tr><td>[update_layout][automaticrelevancedetermination-update_layout]</td><td>Update the properties of the plot's layout.</td></tr><tr><td>[update_traces][automaticrelevancedetermination-update_traces]</td><td>Update the properties of the plot's traces.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='automaticrelevancedetermination-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1221>[source]</a></span></div>Apply a bootstrap algorithm.</p>
@@ -3536,13 +3517,13 @@ Plot object.
 <p><a id='automaticrelevancedetermination-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1619>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
-memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
+memory before [saving][atomclassifier-save] the instance. The
 affected attributes are:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
-<li><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-create_app">App instance</a></li>
-<li><a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-create_dashboard">Dashboard instance</a></li>
+<li>[App instance][automaticrelevancedetermination-create_app]</li>
+<li>[Dashboard instance][automaticrelevancedetermination-create_dashboard]</li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">prediction attributes</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
@@ -3627,7 +3608,7 @@ for multiclass classification tasks.
 <p><a id='automaticrelevancedetermination-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1874>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the <a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
+<p>Use the [self-get_best_threshold][automaticrelevancedetermination-get_best_threshold] or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
 method to determine a suitable value for the <code>threshold</code>
 parameter.</p>
 </div>
@@ -3648,7 +3629,7 @@ to class labels. Only used when:</p>
 </ul>
 <p>For multilabel classification tasks, it's possible to provide
 a sequence of thresholds (one per target column, as returned
-by the <a class="autorefs autorefs-internal" href="#automaticrelevancedetermination-get_best_threshold">get_best_threshold</a> method).
+by the [get_best_threshold][automaticrelevancedetermination-get_best_threshold] method).
 If float, the same threshold is applied to all target columns.</p>
 <p></div><a id='evaluate-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
 Sample weights corresponding to y in <code>dataset</code>.</p>
@@ -3881,7 +3862,7 @@ Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a> method.
+add the data to the [load][atomclassifier-load] method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4030,6 +4011,44 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../autoarima/" class="md-footer__link md-footer__link--prev" aria-label="Previous: AutoARIMA" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                AutoARIMA
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../bag/" class="md-footer__link md-footer__link--next" aria-label="Next: Bagging" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Bagging
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
@@ -4107,7 +4126,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>

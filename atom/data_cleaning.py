@@ -256,102 +256,34 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.train)
+        atom = ATOMClassifier(X, y)
+        print(atom.train)
 
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0         18.030         16.85  ...                  0.08225       0
-        1         10.950         21.35  ...                  0.09606       0
-        2         14.250         22.15  ...                  0.11320       0
-        3         17.570         15.05  ...                  0.07919       0
-        4         10.600         18.95  ...                  0.07587       1
-        ..           ...           ...  ...                      ...     ...
-        451        8.888         14.64  ...                  0.10840       1
-        452       21.090         26.57  ...                  0.12840       0
-        453       16.160         21.54  ...                  0.07619       0
-        454       11.260         19.83  ...                  0.07613       1
-        455       12.000         15.65  ...                  0.07924       1
+        atom.balance(strategy="smote", verbose=2)
 
-        [456 rows x 31 columns]
-
-        >>> atom.balance(strategy="smote", verbose=2)
-
-        Oversampling with SMOTE...
-            --> Adding 116 samples to class 0.
-
-        >>> # Note that the number of rows has increased
-        >>> print(atom.train)
-
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0      11.420000     20.380000  ...                 0.173000       0
-        1       9.876000     17.270000  ...                 0.073800       1
-        2      13.470000     14.060000  ...                 0.093260       1
-        3      16.300000     15.700000  ...                 0.072300       1
-        4      12.250000     17.940000  ...                 0.081320       1
-        ..           ...           ...  ...                      ...     ...
-        567    12.975558     20.580996  ...                 0.118509       0
-        568    11.786135     17.120749  ...                 0.091266       0
-        569    16.194544     19.737215  ...                 0.106434       0
-        570    16.780524     21.261883  ...                 0.086889       0
-        571    20.705316     22.635645  ...                 0.085362       0
-
-        [572 rows x 31 columns]
-
+        # Note that the number of rows has increased
+        print(atom.train)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Balancer
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.data_cleaning import Balancer
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> print(X)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        print(X)
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0          17.99         10.38  ...          0.4601                  0.11890
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        3          11.42         20.38  ...          0.6638                  0.17300
-        4          20.29         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564        21.56         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566        16.60         28.08  ...          0.2218                  0.07820
-        567        20.60         29.33  ...          0.4087                  0.12400
-        568         7.76         24.54  ...          0.2871                  0.07039
+        balancer = Balancer(strategy="smote", verbose=2)
+        X, y = balancer.transform(X, y)
 
-        [569 rows x 30 columns]
-
-        >>> balancer = Balancer(strategy="smote", verbose=2)
-        >>> X, y = balancer.transform(X, y)
-
-        Oversampling with SMOTE...
-            --> Adding 145 samples to class 0.
-
-        >>> # Note that the number of rows has increased
-        >>> print(X)
-
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0      17.990000     10.380000  ...        0.460100                 0.118900
-        1      20.570000     17.770000  ...        0.275000                 0.089020
-        2      19.690000     21.250000  ...        0.361300                 0.087580
-        3      11.420000     20.380000  ...        0.663800                 0.173000
-        4      20.290000     14.340000  ...        0.236400                 0.076780
-        ..           ...           ...  ...             ...                      ...
-        709    14.824550     17.497674  ...        0.345200                 0.100678
-        710    20.170649     23.997572  ...        0.538881                 0.099281
-        711    21.006050     22.305044  ...        0.277181                 0.076740
-        712    20.791828     25.103989  ...        0.388202                 0.122836
-        713    17.081185     23.560768  ...        0.342508                 0.082558
-
-        [714 rows x 30 columns]
-
+        # Note that the number of rows has increased
+        print(X)
         ```
 
     """
@@ -659,84 +591,32 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> y = ["a" if i else "b" for i in y]
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        y = ["a" if i else "b" for i in y]
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.y)
+        atom = ATOMClassifier(X, y)
+        print(atom.y)
 
-        0      b
-        1      b
-        2      b
-        3      b
-        4      a
-              ..
-        995    b
-        996    a
-        997    a
-        998    b
-        999    b
+        atom.clean(verbose=2)
 
-        Name: target, Length: 1000, dtype: object
-
-        >>> atom.clean(verbose=2)
-
-        Fitting Cleaner...
-        Cleaning the data...
-         --> Label-encoding the target column.
-
-        >>> print(atom.y)
-
-        0      1
-        1      1
-        2      1
-        3      1
-        4      0
-              ..
-        995    1
-        996    0
-        997    0
-        998    1
-        999    1
-
-        Name: target, Length: 1000, dtype: int32
-
+        print(atom.y)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> import numpy as np
-        >>> from atom.data_cleaning import Cleaner
+        ```python
+        import numpy as np
+        from atom.data_cleaning import Cleaner
 
-        >>> y = ["a" if i else "b" for i in np.randint(100)]
+        y = ["a" if i else "b" for i in np.randint(100)]
 
-        >>> cleaner = Cleaner(verbose=2)
-        >>> y = cleaner.fit_transform(y=y)
+        cleaner = Cleaner(verbose=2)
+        y = cleaner.fit_transform(y=y)
 
-        Fitting Cleaner...
-        Cleaning the data...
-         --> Label-encoding the target column.
-
-        >>> print(y)
-
-        0     0
-        1     0
-        2     1
-        3     0
-        4     0
-             ..
-        95    1
-        96    1
-        97    0
-        98    0
-        99    0
-
-        Name: target, Length: 100, dtype: int32
-
+        print(y)
         ```
 
     """
@@ -1115,111 +995,43 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom["mean radius"])
+        atom = ATOMClassifier(X, y)
+        print(atom["mean radius"])
 
-        0      17.99
-        1      20.57
-        2      19.69
-        3      11.42
-        4      20.29
-               ...
-        564    21.56
-        565    20.13
-        566    16.60
-        567    20.60
-        568     7.76
+        atom.discretize(
+            strategy="custom",
+            bins=[13, 18],
+            labels=["small", "medium", "large"],
+            verbose=2,
+            columns="mean radius",
+        )
 
-        Name: mean radius, Length: 569, dtype: float64
-
-        >>> atom.discretize(
-        ...     strategy="custom",
-        ...     bins=[13, 18],
-        ...     labels=["small", "medium", "large"],
-        ...     verbose=2,
-        ...     columns="mean radius",
-        ... )
-
-        Fitting Discretizer...
-        Binning the features...
-         --> Discretizing feature mean radius in 3 bins.
-
-        >>> print(atom["mean radius"])
-
-        0       small
-        1      medium
-        2      medium
-        3      medium
-        4       small
-                ...
-        564     large
-        565     small
-        566     large
-        567     small
-        568     small
-
-        Name: mean radius, Length: 569, dtype: category
-        Categories (3, object): ['small' < 'medium' < 'large']
-
+        print(atom["mean radius"])
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Discretizer
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.data_cleaning import Discretizer
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> print(X["mean radius"])
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        print(X["mean radius"])
 
-        0      17.99
-        1      20.57
-        2      19.69
-        3      11.42
-        4      20.29
-               ...
-        564    21.56
-        565    20.13
-        566    16.60
-        567    20.60
-        568     7.76
+        disc = Discretizer(
+            strategy="custom",
+            bins=[13, 18],
+            labels=["small", "medium", "large"],
+            verbose=2,
+        )
+        X["mean radius"] = disc.fit_transform(X[["mean radius"]])["mean radius"]
 
-        Name: mean radius, Length: 569, dtype: float64
-
-        >>> disc = Discretizer(
-        ...     strategy="custom",
-        ...     bins=[13, 18],
-        ...     labels=["small", "medium", "large"],
-        ...     verbose=2,
-        ... )
-        >>> X["mean radius"] = disc.fit_transform(X[["mean radius"]])["mean radius"]
-
-        Fitting Discretizer...
-        Binning the features...
-         --> Discretizing feature mean radius in 3 bins.
-
-        >>> print(X["mean radius"])
-
-        0       small
-        1      medium
-        2      medium
-        3      medium
-        4       small
-                ...
-        564     large
-        565     small
-        566     large
-        567     small
-        568     small
-
-        Name: mean radius, Length: 569, dtype: category
-        Categories (3, object): ['small' < 'medium' < 'large']
-
+        print(X["mean radius"])
         ```
 
     """
@@ -1498,116 +1310,42 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
-        >>> from numpy.random import randint
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+        from numpy.random import randint
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
-        >>> X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
-        >>> X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
+        X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
+        X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.X)
+        atom = ATOMClassifier(X, y)
+        print(atom.X)
 
-             mean radius  mean texture  ...  cat_feature_2  cat_feature_3
-        0          13.62         23.23  ...             x0             x0
-        1          14.86         16.94  ...             x0             x5
-        2          16.74         21.59  ...             x2            x15
-        3          13.37         16.39  ...             x1            x18
-        4          11.37         18.89  ...             x0            x13
-        ..           ...           ...  ...            ...            ...
-        564        14.06         17.18  ...             x2             x1
-        565        11.29         13.04  ...             x0            x10
-        566        14.26         19.65  ...             x0             x5
-        567        12.05         14.63  ...             x2            x14
-        568        18.81         19.98  ...             x1            x13
+        atom.encode(strategy="target", max_onehot=10, verbose=2)
 
-        [569 rows x 33 columns]
-
-        >>> atom.encode(strategy="target", max_onehot=10, verbose=2)
-
-        Fitting Encoder...
-        Encoding categorical columns...
-         --> Ordinal-encoding feature cat_feature_1. Contains 2 classes.
-         --> OneHot-encoding feature cat_feature_2. Contains 3 classes.
-         --> Target-encoding feature cat_feature_3. Contains 20 classes.
-
-        >>> # Note the one-hot encoded column with name [feature]_[class]
-        >>> print(atom.X)
-
-             mean radius  mean texture  ...  cat_feature_2_x2  cat_feature_3
-        0          13.62         23.23  ...               0.0       0.714286
-        1          14.86         16.94  ...               0.0       0.555556
-        2          16.74         21.59  ...               1.0       0.681818
-        3          13.37         16.39  ...               0.0       0.739130
-        4          11.37         18.89  ...               0.0       0.521739
-        ..           ...           ...  ...               ...            ...
-        564        14.06         17.18  ...               1.0       0.772727
-        565        11.29         13.04  ...               0.0       0.766667
-        566        14.26         19.65  ...               0.0       0.555556
-        567        12.05         14.63  ...               1.0       0.411765
-        568        18.81         19.98  ...               0.0       0.521739
-
-        [569 rows x 35 columns]
-
+        # Note the one-hot encoded column with name [feature]_[class]
+        print(atom.X)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Encoder
-        >>> from sklearn.datasets import load_breast_cancer
-        >>> from numpy.random import randint
+        ```python
+        from atom.data_cleaning import Encoder
+        from sklearn.datasets import load_breast_cancer
+        from numpy.random import randint
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        >>> X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
-        >>> X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
-        >>> X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
-        >>> print(X)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
+        X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
+        X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
+        print(X)
 
-             mean radius  mean texture  ...  cat_feature_2  cat_feature_3
-        0          13.62         23.23  ...             x0             x0
-        1          14.86         16.94  ...             x0             x5
-        2          16.74         21.59  ...             x2            x15
-        3          13.37         16.39  ...             x1            x18
-        4          11.37         18.89  ...             x0            x13
-        ..           ...           ...  ...            ...            ...
-        564        14.06         17.18  ...             x2             x1
-        565        11.29         13.04  ...             x0            x10
-        566        14.26         19.65  ...             x0             x5
-        567        12.05         14.63  ...             x2            x14
-        568        18.81         19.98  ...             x1            x13
+        encoder = Encoder(strategy="target", max_onehot=10, verbose=2)
+        X = encoder.fit_transform(X, y)
 
-        [569 rows x 33 columns]
-
-        >>> encoder = Encoder(strategy="target", max_onehot=10, verbose=2)
-        >>> X = encoder.fit_transform(X, y)
-
-        Fitting Encoder...
-        Encoding categorical columns...
-         --> Ordinal-encoding feature cat_feature_1. Contains 2 classes.
-         --> OneHot-encoding feature cat_feature_2. Contains 3 classes.
-         --> Target-encoding feature cat_feature_3. Contains 20 classes.
-
-        >>> # Note the one-hot encoded column with name [feature]_[class]
-        >>> print(X)
-
-             mean radius  mean texture  ...  cat_feature_2_x2  cat_feature_3
-        0          17.99         10.38  ...               1.0       0.379310
-        1          20.57         17.77  ...               1.0       0.714286
-        2          19.69         21.25  ...               0.0       0.586207
-        3          11.42         20.38  ...               0.0       0.678571
-        4          20.29         14.34  ...               0.0       0.714286
-        ..           ...           ...  ...               ...            ...
-        564        21.56         22.39  ...               0.0       0.580645
-        565        20.13         28.25  ...               0.0       0.518519
-        566        16.60         28.08  ...               1.0       0.600000
-        567        20.60         29.33  ...               1.0       0.586207
-        568         7.76         24.54  ...               1.0       0.678571
-
-        [569 rows x 35 columns]
-
+        # Note the one-hot encoded column with name [feature]_[class]
+        print(X)
         ```
 
     """
@@ -1968,19 +1706,19 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
-        >>> from numpy.random import randint
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+        from numpy.random import randint
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> # Add some random missing values to the data
-        >>> for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
-        >>> X.iat[i, j] = np.nan
+        # Add some random missing values to the data
+        for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
+        X.iat[i, j] = np.nan
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.nans)
+        atom = ATOMClassifier(X, y)
+        print(atom.nans)
 
         mean radius       118
         mean texture      134
@@ -1989,7 +1727,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         dtype: int64
 
-        >>> atom.impute(strat_num="median", max_nan_rows=0.1, verbose=2)
+        atom.impute(strat_num="median", max_nan_rows=0.1, verbose=2)
 
         Fitting Imputer...
         Imputing missing values...
@@ -1999,66 +1737,28 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
          --> Imputing 132 missing values with median (85.86) in feature mean perimeter.
          --> Imputing 137 missing values with median (561.3) in feature mean area.
 
-        >>> print(atom.n_nans)
+        print(atom.n_nans)
 
         0
 
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Imputer
-        >>> from sklearn.datasets import load_breast_cancer
-        >>> from numpy.random import randint
+        ```python
+        from atom.data_cleaning import Imputer
+        from sklearn.datasets import load_breast_cancer
+        from numpy.random import randint
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> # Add some random missing values to the data
-        >>> for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
-        >>> X.iloc[i, j] = np.nan
+        # Add some random missing values to the data
+        for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
+        X.iloc[i, j] = np.nan
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0          17.99           NaN  ...          0.4601                  0.11890
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        3            NaN         20.38  ...          0.6638                  0.17300
-        4            NaN         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564          NaN         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566          NaN           NaN  ...          0.2218                  0.07820
-        567          NaN         29.33  ...          0.4087                  0.12400
-        568          NaN         24.54  ...          0.2871                  0.07039
+        imputer = Imputer(strat_num="median", max_nan_rows=0.1, verbose=2)
+        X, y = imputer.fit_transform(X, y)
 
-        [569 rows x 30 columns]
-
-        >>> imputer = Imputer(strat_num="median", max_nan_rows=0.1, verbose=2)
-        >>> X, y = imputer.fit_transform(X, y)
-
-        Fitting Imputer...
-        Imputing missing values...
-         --> Imputing 135 missing values with median (13.42) in feature mean radius.
-         --> Imputing 133 missing values with median (18.81) in feature mean texture.
-         --> Imputing 129 missing values with median (86.14) in feature mean perimeter.
-         --> Imputing 120 missing values with median (537.9) in feature mean area.
-
-        >>> print(X)
-
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0         17.990         10.38  ...          0.4601                  0.11890
-        1         13.415         17.77  ...          0.2750                  0.08902
-        2         19.690         21.25  ...          0.3613                  0.08758
-        3         11.420         20.38  ...          0.6638                  0.17300
-        4         20.290         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564       21.560         22.39  ...          0.2060                  0.07115
-        565       20.130         28.25  ...          0.2572                  0.06637
-        566       13.415         28.08  ...          0.2218                  0.07820
-        567       13.415         18.81  ...          0.4087                  0.12400
-        568        7.760         24.54  ...          0.2871                  0.07039
-
-        [569 rows x 30 columns]
-
+        print(X)
         ```
 
     """
@@ -2416,63 +2116,29 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0          16.78         18.80  ...                  0.07228       0
-        1          15.34         14.26  ...                  0.09946       0
-        2          14.22         27.85  ...                  0.07796       1
-        3          18.31         18.58  ...                  0.06938       0
-        4          18.49         17.52  ...                  0.09445       0
-        ..           ...           ...  ...                      ...     ...
-        564        13.44         21.58  ...                  0.07146       0
-        565        20.47         20.67  ...                  0.06386       0
-        566        12.98         19.35  ...                  0.09166       1
-        567        14.61         15.69  ...                  0.05695       1
-        568        23.27         22.04  ...                  0.09187       0
-
-        [569 rows x 31 columns]
-
-        >>> atom.plot_distribution(columns=0)
+        atom.plot_distribution(columns=0)
 
         ```
 
         :: insert:
             url: /img/plots/plot_distribution_4.html
 
-        ```pycon
+        ```python
 
-        >>> atom.normalize(verbose=2)
+        atom.normalize(verbose=2)
 
-        Fitting Normalizer...
-        Normalizing features...
+        print(atom.dataset)
 
-        >>> print(atom.dataset)
-
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0       0.868700      0.010820  ...                -0.684572       0
-        1       0.513904     -1.257343  ...                 1.019875       0
-        2       0.200435      1.773390  ...                -0.226619       1
-        3       1.197448     -0.042755  ...                -0.945047       0
-        4       1.233326     -0.310726  ...                 0.786014       0
-        ..           ...           ...  ...                      ...     ...
-        564    -0.041166      0.635293  ...                -0.756291       0
-        565     1.595052      0.440855  ...                -1.497202       0
-        566    -0.193933      0.141884  ...                 0.642613       1
-        567     0.313768     -0.816597  ...                -2.307746       1
-        568     2.022355      0.730259  ...                 0.653756       0
-
-        [569 rows x 31 columns]
-
-
-        >>> atom.plot_distribution(columns=0)
+        atom.plot_distribution(columns=0)
 
         ```
 
@@ -2480,50 +2146,16 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             url: /img/plots/plot_distribution_5.html
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Normalizer
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.data_cleaning import Normalizer
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0          17.99         10.38  ...          0.4601                  0.11890
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        3          11.42         20.38  ...          0.6638                  0.17300
-        4          20.29         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564        21.56         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566        16.60         28.08  ...          0.2218                  0.07820
-        567        20.60         29.33  ...          0.4087                  0.12400
-        568         7.76         24.54  ...          0.2871                  0.07039
+        normalizer = Normalizer(verbose=2)
+        X = normalizer.fit_transform(X)
 
-        [569 rows x 30 columns]
-
-        >>> normalizer = Normalizer(verbose=2)
-        >>> X = normalizer.fit_transform(X)
-
-        Fitting Normalizer...
-        Normalizing features...
-
-        >>> print(X)
-
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0       1.134881     -2.678666  ...        2.197206                 1.723624
-        1       1.619346     -0.264377  ...       -0.121997                 0.537179
-        2       1.464796      0.547806  ...        1.218181                 0.453955
-        3      -0.759262      0.357721  ...        3.250202                 2.517606
-        4       1.571260     -1.233520  ...       -0.943554                -0.279402
-        ..           ...           ...  ...             ...                      ...
-        564     1.781795      0.785604  ...       -1.721528                -0.751459
-        565     1.543335      1.845150  ...       -0.480093                -1.210527
-        566     0.828589      1.817618  ...       -1.301164                -0.170872
-        567     1.624440      2.016299  ...        1.744693                 1.850944
-        568    -2.699432      1.203224  ...        0.103122                -0.820663
-
-        [569 rows x 30 columns]
-
+        print(X)
         ```
 
     """
@@ -2779,106 +2411,35 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0          11.04         14.93  ...                  0.07287       1
-        1          12.46         24.04  ...                  0.20750       0
-        2          13.47         14.06  ...                  0.09326       1
-        3          13.44         21.58  ...                  0.07146       0
-        4          11.93         21.53  ...                  0.08541       1
-        ..           ...           ...  ...                      ...     ...
-        564        14.54         27.54  ...                  0.13410       0
-        565        18.66         17.12  ...                  0.08456       0
-        566        10.95         21.35  ...                  0.09606       0
-        567        17.01         20.26  ...                  0.06469       0
-        568        12.40         17.68  ...                  0.09359       1
+        atom.prune(stratgey="iforest", verbose=2)
 
-        [569 rows x 31 columns]
+        # Note the reduced number of rows
+        print(atom.dataset)
 
-        >>> atom.prune(stratgey="iforest", verbose=2)
-
-        Pruning outliers...
-         --> Dropping 46 outliers.
-
-        >>> # Note the reduced number of rows
-        >>> print(atom.dataset)
-
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0          11.04         14.93  ...                  0.07287       1
-        1          13.47         14.06  ...                  0.09326       1
-        2          13.44         21.58  ...                  0.07146       0
-        3          11.93         21.53  ...                  0.08541       1
-        4          13.21         25.25  ...                  0.06788       1
-        ..           ...           ...  ...                      ...     ...
-        518        14.54         27.54  ...                  0.13410       0
-        519        18.66         17.12  ...                  0.08456       0
-        520        10.95         21.35  ...                  0.09606       0
-        521        17.01         20.26  ...                  0.06469       0
-        522        12.40         17.68  ...                  0.09359       1
-
-        [523 rows x 31 columns]
-
-
-        >>> atom.plot_distribution(columns=0)
-
+        atom.plot_distribution(columns=0)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Normalizer
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.data_cleaning import Normalizer
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0          17.99         10.38  ...          0.4601                  0.11890
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        3          11.42         20.38  ...          0.6638                  0.17300
-        4          20.29         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564        21.56         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566        16.60         28.08  ...          0.2218                  0.07820
-        567        20.60         29.33  ...          0.4087                  0.12400
-        568         7.76         24.54  ...          0.2871                  0.07039
+        normalizer = Normalizer(verbose=2)
+        X = normalizer.fit_transform(X)
 
-        [569 rows x 30 columns]
-
-        >>> normalizer = Normalizer(verbose=2)
-        >>> X = normalizer.fit_transform(X)
-
-        Fitting Pruner...
-        Pruning outliers...
-         --> Dropping 74 outliers.
-
-        >>> # Note the reduced number of rows
-        >>> print(X)
-
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        4          20.29         14.34  ...          0.2364                  0.07678
-        5          12.45         15.70  ...          0.3985                  0.12440
-        6          18.25         19.98  ...          0.3063                  0.08368
-        ..           ...           ...  ...             ...                      ...
-        560        14.05         27.15  ...          0.2250                  0.08321
-        563        20.92         25.09  ...          0.2929                  0.09873
-        564        21.56         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566        16.60         28.08  ...          0.2218                  0.07820
-
-        [495 rows x 30 columns]
-
-
+        # Note the reduced number of rows
+        print(X)
         ```
 
     """
@@ -3145,102 +2706,33 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```pycon
-        >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y)
-        >>> print(atom.dataset)
+        atom = ATOMClassifier(X, y)
+        print(atom.dataset)
 
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0          17.99         10.38  ...                  0.11890       0
-        1          12.25         17.94  ...                  0.08132       1
-        2          13.87         20.70  ...                  0.08492       1
-        3          12.06         12.74  ...                  0.07898       1
-        4          12.62         17.15  ...                  0.07330       1
-        ..           ...           ...  ...                      ...     ...
-        564        11.34         18.61  ...                  0.06783       1
-        565        11.43         17.31  ...                  0.08096       1
-        566        11.06         14.96  ...                  0.09080       1
-        567        13.20         15.82  ...                  0.08385       1
-        568        20.55         20.86  ...                  0.07569       0
+        atom.scale(verbose=2)
 
-        [569 rows x 31 columns]
-
-        >>> atom.scale(verbose=2)
-
-        Fitting Scaler...
-        Scaling features...
-
-        >>> # Note the reduced number of rows
-        >>> print(atom.dataset)
-
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0       1.052603     -2.089926  ...                 1.952598       0
-        1      -0.529046     -0.336627  ...                -0.114004       1
-        2      -0.082657      0.303467  ...                 0.083968       1
-        3      -0.581401     -1.542600  ...                -0.242685       1
-        4      -0.427093     -0.519842  ...                -0.555040       1
-        ..           ...           ...  ...                      ...     ...
-        564    -0.779796     -0.181242  ...                -0.855847       1
-        565    -0.754996     -0.482735  ...                -0.133801       1
-        566    -0.856949     -1.027742  ...                 0.407321       1
-        567    -0.267275     -0.828293  ...                 0.025126       1
-        568     1.758008      0.340573  ...                -0.423609       0
-
-        [569 rows x 31 columns]
-
+        # Note the reduced number of rows
+        print(atom.dataset)
         ```
 
     === "stand-alone"
-        ```pycon
-        >>> from atom.data_cleaning import Scaler
-        >>> from sklearn.datasets import load_breast_cancer
+        ```python
+        from atom.data_cleaning import Scaler
+        from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0          17.99         10.38  ...          0.4601                  0.11890
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        3          11.42         20.38  ...          0.6638                  0.17300
-        4          20.29         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564        21.56         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566        16.60         28.08  ...          0.2218                  0.07820
-        567        20.60         29.33  ...          0.4087                  0.12400
-        568         7.76         24.54  ...          0.2871                  0.07039
+        scaler = Scaler(verbose=2)
+        X = scaler.fit_transform(X)
 
-        [569 rows x 30 columns]
-
-        >>> scaler = Scaler(verbose=2)
-        >>> X = scaler.fit_transform(X)
-
-        Fitting Scaler...
-        Scaling features...
-
-        >>> # Note the reduced number of rows
-        >>> print(X)
-
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0       1.097064     -2.073335  ...        2.750622                 1.937015
-        1       1.829821     -0.353632  ...       -0.243890                 0.281190
-        2       1.579888      0.456187  ...        1.152255                 0.201391
-        3      -0.768909      0.253732  ...        6.046041                 4.935010
-        4       1.750297     -1.151816  ...       -0.868353                -0.397100
-        ..           ...           ...  ...             ...                      ...
-        564     2.110995      0.721473  ...       -1.360158                -0.709091
-        565     1.704854      2.085134  ...       -0.531855                -0.973978
-        566     0.702284      2.045574  ...       -1.104549                -0.318409
-        567     1.838341      2.336457  ...        1.919083                 2.219635
-        568    -1.808401      1.221792  ...       -0.048138                -0.751207
-
-        [569 rows x 30 columns]
-
-
+        # Note the reduced number of rows
+        print(X)
         ```
 
     """

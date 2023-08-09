@@ -19,13 +19,13 @@
         <link rel="next" href="../logging/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
     
     
   <title>Data management - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.eebd395e.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ecc896b0.min.css">
@@ -3500,9 +3500,9 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-</div>
 <p>Avoid duplicate indices in the dataframe. Having them may potentially
 lead to unexpected behavior.</p>
+</div>
 <p><br></p>
 <h2 id="sparse-datasets">Sparse datasets</h2>
 <p>If atom is initialized using a scipy sparse matrix, it is converted
@@ -3514,15 +3514,15 @@ matrix, like for example, the <a class="autorefs autorefs-internal" href="../../
 is sparse. A dataset can only benefit from sparsity when all its
 columns are sparse, hence mixing sparse and non-sparse columns is
 not recommended and can cause estimators to decrease their training
-speed or even crash. Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method
-to convert dense features to sparse and the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a> method to check which models have
+speed or even crash. Use the [shrink][atomclassifier-shrink] method
+to convert dense features to sparse and the [available_models][atomclassifier-available_models] method to check which models have
 native support for sparse matrices.</p>
 <p>Click [here][example-nlp] to see an example that uses sparse data.</p>
 <p><br></p>
 <h2 id="multioutput-tasks">Multioutput tasks</h2>
 <p>Multioutput is a task where there are more than one target column, i.e.
 the goal is to predict multiple targets at the same time. When providing
-a dataframe as target, use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-y">y</a> parameter. Providing
+a dataframe as target, use the [y][atomclassifier-y] parameter. Providing
 <code>y</code> without keyword makes ATOM think you are providing <code>train, test</code> (see
 the <a class="autorefs autorefs-internal" href="#data-sets">data sets</a> section).</p>
 <h3 id="task-types">Task types</h3>
@@ -3541,36 +3541,36 @@ mutually exclusive.</p>
 document may be about one of religion, politics, finance or education,
 several of the topic classes or all of the topic classes. The target
 column (<code>atom.y</code>) could look like this:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="go">0                        [politics]</span>
-<span class="go">1               [religion, finance]</span>
-<span class="go">2    [politics, finance, education]</span>
-<span class="go">3                                []</span>
-<span class="go">4                         [finance]</span>
-<span class="go">5               [finance, religion]</span>
-<span class="go">6                         [finance]</span>
-<span class="go">7               [religion, finance]</span>
-<span class="go">8                       [education]</span>
-<span class="go">9     [finance, religion, politics]</span>
+<div class="language-text highlight"><pre><span></span><code>0                        [politics]
+1               [religion, finance]
+2    [politics, finance, education]
+3                                []
+4                         [finance]
+5               [finance, religion]
+6                         [finance]
+7               [religion, finance]
+8                       [education]
+9     [finance, religion, politics]
 
-<span class="go">Name: target, dtype: object</span>
+Name: target, dtype: object
 </code></pre></div>
 <p>A model can not directly ingest a variable amount of target classes. Use
-the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clean">clean</a> method to assign a binary output to
+the [clean][atomclassifier-clean] method to assign a binary output to
 each class, for every sample. Positive classes are indicated with 1 and
 negative classes with 0. It is thus comparable to running n_classes
 binary classification tasks. In our example, the target (<code>atom.y</code>) is
 converted to:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span class="go">   education  finance  politics  religion</span>
-<span class="go">0          0        0         1         0</span>
-<span class="go">1          0        1         0         1</span>
-<span class="go">2          1        1         1         0</span>
-<span class="go">3          0        0         0         0</span>
-<span class="go">4          0        1         0         0</span>
-<span class="go">5          0        1         0         1</span>
-<span class="go">6          0        1         0         0</span>
-<span class="go">7          0        1         0         1</span>
-<span class="go">8          1        0         0         0</span>
-<span class="go">9          0        1         1         1</span>
+<div class="language-text highlight"><pre><span></span><code>   education  finance  politics  religion
+0          0        0         1         0
+1          0        1         0         1
+2          1        1         1         0
+3          0        0         0         0
+4          0        1         0         0
+5          0        1         0         1
+6          0        1         0         0
+7          0        1         0         1
+8          1        0         0         0
+9          0        1         1         1
 </code></pre></div>
 <h4 id="multiclass-multioutput">Multiclass-multioutput</h4>
 <p>Multiclass-multioutput (also known as multitask classification) is a
@@ -3694,19 +3694,19 @@ cause unexpected model behaviour and break down the plotting methods.</p>
 doesn't include the <a href="#data-sets">holdout set</a>, which is only stored once),
 and one copy of the initial dataset with which the instance is initialized.
 This copy of the original dataset is necessary to avoid data leakage during
-hyperparameter tuning and for some specific methods like <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-cross_validate">cross_validate</a>
-and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-reset">reset</a>). It's created as soon as there are no
+hyperparameter tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
+and [reset][atomclassifier-reset]). It's created as soon as there are no
 branches in the initial state (usually after calling the first data
 transformation). If the dataset is occupying too much memory, consider
-using the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method to convert the dtypes to
+using the [shrink][atomclassifier-shrink] method to convert the dtypes to
 their smallest possible matching dtype.</p>
 <p>Apart from the dataset itself, a model's <a class="autorefs autorefs-internal" href="../predicting/#prediction-attributes">prediction attributes</a> (e.g.
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">predict_train</span></code>), metric scores and <a class="autorefs autorefs-internal" href="../plots/#shap">shap values</a>
 are also stored as attributes of the model to avoid having to recalculate
 them every time they are needed. This data can occupy a considerable amount
 of memory for large datasets. You can delete all these attributes using
-the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method in order to free some memory
-before <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-save">saving</a> the class.</p>
+the [clear][atomclassifier-clear] method in order to free some memory
+before [saving][atomclassifier-save] the class.</p>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
 <p>Performing data transformations is a common requirement of many datasets
@@ -3715,8 +3715,8 @@ classes to apply <a class="autorefs autorefs-internal" href="../data_cleaning/#d
 transformations to the data. This tooling should be able to help you
 apply most of the typically needed transformations to get the data ready
 for modelling. For further fine-tuning, it's also possible to transform
-the data using custom transformers (see the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add">add</a>
-method) or through a function (see the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-apply">apply</a>
+the data using custom transformers (see the [add][atomclassifier-add]
+method) or through a function (see the [apply][atomclassifier-apply]
 method). Remember that all transformations are only applied to the
 dataset in the current branch.</p>
 
@@ -3744,6 +3744,44 @@ dataset in the current branch.</p>
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../nomenclature/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Nomenclature" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Nomenclature
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../logging/" class="md-footer__link md-footer__link--next" aria-label="Next: Logging &amp; Tracking" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Logging & Tracking
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -3822,7 +3860,7 @@ dataset in the current branch.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>

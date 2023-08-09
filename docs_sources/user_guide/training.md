@@ -40,8 +40,8 @@ will train a [RandomForest][]. If you want to run the same model multiple
 times, add a tag after the acronym to differentiate them. the tag must be 
 separated from the accronym by an underscore.
 
-```pycon
->>> atom.run(
+```python
+atom.run(
 ...     models=["RF_1", "RF_2"],
 ...     est_params={
 ...         "RF_1": {"n_estimators": 100},
@@ -232,8 +232,8 @@ this example, both the [XGBoost][] and the [LightGBM][] model use
 200 boosted trees. Make sure all the models do have the specified
 parameters or an exception will be raised!
 
-```pycon
->>> atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
+```python
+atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
 ```
 
 To specify parameters per model, use the model name as key and a dict
@@ -241,8 +241,8 @@ of the parameters as value. In this example, the [XGBoost][] model uses
 `n_estimators=200` and the [MultiLayerPerceptron][] uses one hidden
 layer with 75 neurons.
 
-```pycon
->>> atom.run(
+```python
+atom.run(
 ...     models=["XGB", "MLP"],
 ...     est_params={
 ...         "XGB": {"n_estimators": 200},
@@ -255,8 +255,8 @@ Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding `_fit` at the end of the
 parameter. For example, to change [XGBoost][]'s verbosity, we can run:
 
-```pycon
->>> atom.run(models="XGB", est_params={"verbose_fit": True})
+```python
+atom.run(models="XGB", est_params={"verbose_fit": True})
 ```
 
 !!! note
@@ -318,9 +318,9 @@ Extra things to take into account:
     The hyperparameter tuning output can become quite wide for models
     with many hyperparameters. If you are working in a Jupyter Notebook,
     you can change the output's width running the following code in a cell:
-    ```pycon
-    >>> from IPython.display import display, HTML
-    >>> display(HTML("<style>.container { width:100% !important; }</style>"))
+    ```python
+    from IPython.display import display, HTML
+    display(HTML("<style>.container { width:100% !important; }</style>"))
     ```
 
 Other settings can be changed through the [`ht_params`][directclassifier-ht_params]
@@ -337,8 +337,8 @@ tune other parameters only for specific ones. The following example tunes
 the `n_estimators` parameter for both models but the `max_depth` parameter
 only for the [RandomForest][].
 
-```pycon
->>> atom.run(
+```python
+atom.run(
 ...    models=["ET", "RF"],
 ...    n_trials=30,
 ...    ht_params={"distributions": {"all": "n_estimators", "RF": "max_depth"}},
@@ -351,8 +351,8 @@ It's possible to exclude multiple parameters, but not to combine inclusion
 and exclusion for the same model. For example, to optimize a [RandomForest][]
 using all its predefined parameters except `n_estimators`, run:
 
-```pycon
->>> atom.run(
+```python
+atom.run(
 ...     models="ET",
 ...     n_trials=15,
 ...     ht_params={"distributions": "!n_estimators"},
@@ -365,12 +365,12 @@ sure they are compliant with [optuna's API](https://optuna.readthedocs.io/en/sta
 See every model's individual documentation in ATOM's API section for an
 overview of their hyperparameters and distributions.
 
-```pycon
->>> from optuna.distributions import (
+```python
+from optuna.distributions import (
 ...    IntDistribution, FloatDistribution, CategoricalDistribution
 ... )
 
->>> atom.run(
+atom.run(
 ...     models=["ET", "RF"],
 ...     n_trials=30,
 ...     ht_params={
@@ -389,10 +389,10 @@ Parameters for optuna's [study][] and the study's [optimize][] method can
 be added as kwargs to `ht_params`. For example, to use a different sampler
 or add a custom callback.
 
-```pycon
->>> from optuna.samplers import RandomSampler
+```python
+from optuna.samplers import RandomSampler
 
->>> atom.run(
+atom.run(
 ...     models="LR",
 ...     n_trials=30,
 ...     ht_params={
@@ -434,10 +434,10 @@ The study uses [MedianPruner](https://optuna.readthedocs.io/en/stable/reference/
 as default pruner. You can use any other of optuna's [pruners](https://optuna.readthedocs.io/en/stable/reference/pruners.html)
 through the [`ht_params`][directclassifier-ht_params] parameter.
 
-```pycon
->>> from optuna.pruners import HyperbandPruner
+```python
+from optuna.pruners import HyperbandPruner
 
->>> atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
+atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
 ```
 
 !!! warning

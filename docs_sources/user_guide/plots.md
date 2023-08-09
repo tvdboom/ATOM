@@ -94,23 +94,22 @@ LightGBM model on the train and test set. We could also draw the lines for
 both models in the same axes, but that would clutter the plot too much.
 Click [here][example-advanced-plotting] for more examples.
 
-```pycon
->>> from atom import ATOMClassifier
->>> import pandas as pd
+```python
+from atom import ATOMClassifier
+import pandas as pd
 
->>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
->>> atom = ATOMClassifier(X, y="RainTomorrow")
->>> atom.impute()
->>> atom.encode()
->>> atom.run(["xgb", "lgb"])
+atom = ATOMClassifier(X, y="RainTomorrow")
+atom.impute()
+atom.encode()
+atom.run(["xgb", "lgb"])
 
->>> with atom.canvas(2, 2, title="XGBoost vs LightGBM"):
+with atom.canvas(2, 2, title="XGBoost vs LightGBM"):
 ...     atom.xgb.plot_roc(dataset="both", title="ROC - XGBoost")
 ...     atom.lgb.plot_roc(dataset="both", title="ROC - LightGBM")
 ...     atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
 ...     atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
-
 ```
 
 :: insert:

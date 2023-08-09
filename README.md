@@ -125,7 +125,7 @@ on top of this section to run this example yourself.
 
 Make the necessary imports and load the data.
 
-```pycon
+```python
 import pandas as pd
 from atom import ATOMClassifier
 
@@ -139,7 +139,7 @@ are convenient wrappers for the whole machine learning pipeline. Contrary
 to sklearn's API, they are initialized providing the data you want to
 manipulate.
 
-```pycon
+```python
 atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000, verbose=2)
 ```
 
@@ -150,7 +150,7 @@ instance, fit it on the training set and transform the whole dataset.
 The transformations are applied immediately after calling the method
 (no fit and transform commands necessary).
 
-```pycon
+```python
 atom.impute(strat_num="median", strat_cat="most_frequent")  
 atom.encode(strategy="Target", max_onehot=8)
 ```
@@ -161,13 +161,13 @@ method. Here, we fit both a [LinearDiscriminantAnalysis](https://tvdboom.github.
 and [AdaBoost](https://tvdboom.github.io/ATOM/latest/API/models/adab) model,
 and apply [hyperparameter tuning](https://tvdboom.github.io/ATOM/latest/user_guide/training/#hyperparameter-tuning).
 
-```pycon
+```python
 atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
 ```
 
 And lastly, analyze the results.
 
-```pycon
+```python
 atom.evaluate()
 ```
 

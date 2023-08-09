@@ -78,33 +78,31 @@ There are two ways to achieve this:
 * Using [ATOMModel][] (recommended). With this approach you can pass
   the required model characteristics to the pipeline.
 
-```pycon
->>> from atom import ATOMRegressor, ATOMModel
->>> from sklearn.linear_model import RANSACRegressor
+```python
+from atom import ATOMRegressor, ATOMModel
+from sklearn.linear_model import RANSACRegressor
 
->>> ransac = ATOMModel(
+ransac = ATOMModel(
 ...     models=RANSACRegressor,
 ...     acronym="RANSAC",
 ...     fullname="Random Sample Consensus",
 ...     needs_scaling=True,
 ... )
 
->>> atom = ATOMRegressor(X, y)
->>> atom.run(ransac)
-
+atom = ATOMRegressor(X, y)
+atom.run(ransac)
 ```
 
 * Using the estimator's class or an instance of the class. This approach
   will also call [ATOMModel][] under the hood, but it will leave its
   parameters to their default values.
 
-```pycon
->>> from atom import ATOMRegressor
->>> from sklearn.linear_model import RANSACRegressor
+```python
+from atom import ATOMRegressor
+from sklearn.linear_model import RANSACRegressor
 
->>> atom = ATOMRegressor(X, y)
->>> atom.run(RANSACRegressor)
-
+atom = ATOMRegressor(X, y)
+atom.run(RANSACRegressor)
 ```
 
 Additional things to take into account:

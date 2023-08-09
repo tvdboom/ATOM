@@ -19,13 +19,13 @@
         <link rel="next" href="../featuregenerator/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
     
     
   <title>FeatureExtractor - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.eebd395e.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
@@ -3246,7 +3246,7 @@ year, etc...) from the provided columns. Columns of dtype
 <code>datetime64</code> are used as is. Categorical columns that can be
 successfully converted to a datetime format (less than 30% NaT
 values after conversion) are also used.</p>
-<p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-feature_extraction">feature_extraction</a> method. Read more in the
+<p>This class can be accessed from atom through the [feature_extraction][atomclassifier-feature_extraction] method. Read more in the
 <a class="autorefs autorefs-internal" href="../../../user_guide/feature_engineering/#extracting-datetime-features">user guide</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -3309,69 +3309,31 @@ Number of features seen during fit.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s2">&quot;1/1/2018&quot;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s2">&quot;1/1/2018&quot;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">feature_extraction</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">feature_extraction</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="go">Extracting datetime features...</span>
-<span class="go"> --&gt; Extracting features from column date.</span>
-<span class="go">   --&gt; Creating feature date_day.</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the date_day column</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-
-<span class="go">     mean radius  mean texture  ...  date_day  target</span>
-<span class="go">0         11.300         18.19  ...        31       1</span>
-<span class="go">1         16.460         20.11  ...        27       0</span>
-<span class="go">2         11.370         18.89  ...        17       1</span>
-<span class="go">3          8.598         20.98  ...         3       1</span>
-<span class="go">4         12.800         17.46  ...         2       1</span>
-<span class="go">..           ...           ...  ...       ...     ...</span>
-<span class="go">564       17.060         21.00  ...         2       0</span>
-<span class="go">565       11.940         20.76  ...        14       1</span>
-<span class="go">566       19.590         25.00  ...        28       0</span>
-<span class="go">567       12.360         18.54  ...        18       1</span>
-<span class="go">568       18.450         21.91  ...        15       0</span>
-
-<span class="go">[569 rows x 32 columns]</span>
+<span class="c1"># Note the date_day column</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureExtractor</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureExtractor</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s2">&quot;1/1/2018&quot;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s2">&quot;1/1/2018&quot;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-<span class="go">Extracting datetime features...</span>
-<span class="go"> --&gt; Extracting features from column date.</span>
-<span class="go">   --&gt; Creating feature date_day.</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the date_day column</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-
-<span class="go">     mean radius  mean texture  ...  worst fractal dimension  date_day</span>
-<span class="go">0          17.99         10.38  ...                  0.11890         1</span>
-<span class="go">1          20.57         17.77  ...                  0.08902         2</span>
-<span class="go">2          19.69         21.25  ...                  0.08758         3</span>
-<span class="go">3          11.42         20.38  ...                  0.17300         4</span>
-<span class="go">4          20.29         14.34  ...                  0.07678         5</span>
-<span class="go">..           ...           ...  ...                      ...       ...</span>
-<span class="go">564        21.56         22.39  ...                  0.07115        19</span>
-<span class="go">565        20.13         28.25  ...                  0.06637        20</span>
-<span class="go">566        16.60         28.08  ...                  0.07820        21</span>
-<span class="go">567        20.60         29.33  ...                  0.12400        22</span>
-<span class="go">568         7.76         24.54  ...                  0.07039        23</span>
-
-<span class="go">[569 rows x 31 columns]</span>
+<span class="c1"># Note the date_day column</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3379,7 +3341,7 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-fit">fit</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-get_metadata_routing">get_metadata_routing</a></td><td>Get metadata routing of this object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-transform">transform</a></td><td>Extract the new features.</td></tr></p>
+<p><tr><td>[fit][featureextractor-fit]</td><td>Does nothing.</td></tr><tr><td>[fit_transform][featureextractor-fit_transform]</td><td>Fit to data, then transform it.</td></tr><tr><td>[get_metadata_routing][featureextractor-get_metadata_routing]</td><td>Get metadata routing of this object.</td></tr><tr><td>[get_params][featureextractor-get_params]</td><td>Get parameters for this estimator.</td></tr><tr><td>[inverse_transform][featureextractor-inverse_transform]</td><td>Does nothing.</td></tr><tr><td>[log][featureextractor-log]</td><td>Print message and save to log file.</td></tr><tr><td>[save][featureextractor-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[set_params][featureextractor-set_params]</td><td>Set the parameters of this estimator.</td></tr><tr><td>[transform][featureextractor-transform]</td><td>Extract the new features.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='featureextractor-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L63>[source]</a></span></div>Does nothing.</p>
@@ -3494,7 +3456,7 @@ Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a> method.
+add the data to the [load][atomclassifier-load] method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -3507,7 +3469,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureextractor-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L213>[source]</a></span></div>Extract the new features.</p>
+<p><a id='featureextractor-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L173>[source]</a></span></div>Extract the new features.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3543,6 +3505,44 @@ Transformed feature set.
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../data_cleaning/scaler/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Scaler" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Scaler
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../featuregenerator/" class="md-footer__link md-footer__link--next" aria-label="Next: FeatureGenerator" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                FeatureGenerator
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -3621,7 +3621,7 @@ Transformed feature set.
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
