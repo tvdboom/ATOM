@@ -3499,13 +3499,13 @@ in the instance after <a class="autorefs autorefs-internal" href="../../../user_
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingforecaster-models'></a><strong>models: str | list[str] | None</strong><br><div markdown class='param'>Name of the model(s).</div><a id='trainsizingforecaster-metric'></a><strong>metric: str | list[str] | None</strong><br><div markdown class='param'>Name of the metric(s).</div><a id='trainsizingforecaster-winners'></a><strong>winners: list[<a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a>]</strong><br><div markdown class='param'>Models ordered by performance.</p>
 <p>Performance is measured as the highest score on the model's
-[<code>score_bootstrap</code>][adaboost-score_bootstrap] or
-[<code>score_test</code>][adaboost-score_test] attributes, checked in
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
 is compared.</div><a id='trainsizingforecaster-winner'></a><strong>winner: <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a></strong><br><div markdown class='param'>Best performing model.</p>
 <p>Performance is measured as the highest score on the model's
-[<code>score_bootstrap</code>][adaboost-score_bootstrap] or
-[<code>score_test</code>][adaboost-score_test] attributes, checked in
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
 is compared.</div><a id='trainsizingforecaster-results'></a><strong>results: pd.DataFrame</strong><br><div markdown class='param'>Overview of the training results.</p>
 <p>All durations are in seconds. Columns include:</p>
@@ -3541,7 +3541,7 @@ a custom one, e.g. <code>atom.palette = ["red", "green", "blue"]</code>.</div><a
 <p>Next to the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> methods, the class contains a variety
 of methods to handle the data, run the training, and manage the pipeline.</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[available_models][trainsizingforecaster-available_models]</td><td>Give an overview of the available predefined models.</td></tr><tr><td>[canvas][trainsizingforecaster-canvas]</td><td>Create a figure with multiple plots.</td></tr><tr><td>[clear][trainsizingforecaster-clear]</td><td>Reset attributes and clear cache from all models.</td></tr><tr><td>[delete][trainsizingforecaster-delete]</td><td>Delete models.</td></tr><tr><td>[evaluate][trainsizingforecaster-evaluate]</td><td>Get all models' scores for the provided metrics.</td></tr><tr><td>[export_pipeline][trainsizingforecaster-export_pipeline]</td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td>[get_class_weight][trainsizingforecaster-get_class_weight]</td><td>Return class weights for a balanced data set.</td></tr><tr><td>[get_params][trainsizingforecaster-get_params]</td><td>Get parameters for this estimator.</td></tr><tr><td>[log][trainsizingforecaster-log]</td><td>Print message and save to log file.</td></tr><tr><td>[merge][trainsizingforecaster-merge]</td><td>Merge another instance of the same class into this one.</td></tr><tr><td>[update_layout][trainsizingforecaster-update_layout]</td><td>Update the properties of the plot's layout.</td></tr><tr><td>[update_traces][trainsizingforecaster-update_traces]</td><td>Update the properties of the plot's traces.</td></tr><tr><td>[reset_aesthetics][trainsizingforecaster-reset_aesthetics]</td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td>[run][trainsizingforecaster-run]</td><td>Train and evaluate the models.</td></tr><tr><td>[save][trainsizingforecaster-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[set_params][trainsizingforecaster-set_params]</td><td>Set the parameters of this estimator.</td></tr><tr><td>[stacking][trainsizingforecaster-stacking]</td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td>[voting][trainsizingforecaster-voting]</td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-clear">clear</a></td><td>Reset attributes and clear cache from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-export_pipeline">export_pipeline</a></td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-run">run</a></td><td>Train and evaluate the models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='trainsizingforecaster-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L408>[source]</a></span></div>Give an overview of the available predefined models.</p>
@@ -3614,13 +3614,13 @@ Plot object.
 <p><a id='trainsizingforecaster-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L453>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
-memory before [saving][trainsizingforecaster-save] the instance. The affected
+memory before <a class="autorefs autorefs-internal" href="#trainsizingforecaster-save">saving</a> the instance. The affected
 attributes are:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
-<li>[App instance][adaboost-create_app]</li>
-<li>[Dashboard instance][adaboost-create_dashboard]</li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_app">App instance</a></li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_dashboard">Dashboard instance</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">prediction attributes</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
@@ -3629,7 +3629,7 @@ attributes are:</p>
 <p><a id='trainsizingforecaster-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L474>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
-before [saving][trainsizingforecaster-save]. Deleted models are not removed from
+before <a class="autorefs autorefs-internal" href="#trainsizingforecaster-save">saving</a>. Deleted models are not removed from
 any active <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow experiment</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='delete-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
@@ -3798,7 +3798,7 @@ Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the [load][atomclassifier-load] method.
+add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a> method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>

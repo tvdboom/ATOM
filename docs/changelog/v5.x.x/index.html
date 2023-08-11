@@ -3314,13 +3314,13 @@
 <ul>
 <li>Completely new module for time series. Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/time_series/#time-series">user guide</a>.</li>
 <li>Support for <a href="https://www.python.org/downloads/release/python-3110/">Python 3.11</a>.</li>
-<li>New [update_traces][atomclassifier-update_traces] method to further customize your plots.</li>
+<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-update_traces">update_traces</a> method to further customize your plots.</li>
 </ul>
 <p><strong><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
 <li>The <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featuregrouper/#featuregrouper">FeatureGrouper</a> class no longer accepts a <code>name</code> parameter. Provide
   the group names directly through the <code>group</code> parameter as dict.</li>
-<li>Rework of the [register][adaboost-register] method.</li>
+<li>Rework of the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-register">register</a> method.</li>
 <li>The <code>multioutput</code> attribute is deprecated. Multioutput meta-estimators are
   now assigned automatically.</li>
 <li>Model tags have to be separated from the acronym by an underscore.</li>
@@ -3336,14 +3336,14 @@
 </ul>
 <p><strong><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
-<li>Fixed a bug where the [cross_validate][adaboost-cross_validate] method could
+<li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-cross_validate">cross_validate</a> method could
   fail for pipelines that changed the number of rows.</li>
 <li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> class didn't drop all outlier clusters.</li>
 <li>Fixed a bug where the pipeline could fail for transformers that returned a
   series.</li>
 <li>Fixed a bug where the pipeline could fail for transformers that reset its
   internal attributes during fitting.</li>
-<li>Fixed a bug where the [register][adaboost-register] method failed in Databricks.</li>
+<li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-register">register</a> method failed in Databricks.</li>
 <li>Fixed a bug where tuning hyperparameter for a <code>base_estimator</code> inside a custom
   meta-estimator would fail.</li>
 </ul>
@@ -3368,7 +3368,7 @@
 <h2 id="version-512">Version 5.1.2</h2>
 <p><strong><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
-<li>The default <code>strategy</code> for the [<code>encode</code>][atomclassifier-encode] method has
+<li>The default <code>strategy</code> for the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-encode"><code>encode</code></a> method has
   changed from "LeaveOneOut" to "Target"-encoding. LeaveOneOut is no longer a
   supported strategy.</li>
 </ul>
@@ -3389,13 +3389,13 @@
 </ul>
 <p><strong><img alt="🚀" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
 <ul>
-<li>Added the <code>kwargs</code> parameter to the [save_data][atomclassifier-save_data] method.</li>
+<li>Added the <code>kwargs</code> parameter to the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-save_data">save_data</a> method.</li>
 </ul>
 <p><strong><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
 <li>Fixed an installation issue for systems without an x86 architecture.</li>
 <li>Fixed a bug where <a class="autorefs autorefs-internal" href="../../user_guide/models/#voting">Voting</a> would fail for certain metrics.</li>
-<li>Fixed a bug where the [automl][atomclassifier-automl] method would fail for some transformers.</li>
+<li>Fixed a bug where the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-automl">automl</a> method would fail for some transformers.</li>
 <li>Fixed a bug where the time metric in mlflow was always zero.</li>
 <li>Fixed a bug where shap plots wouldn't display the full column names.</li>
 <li>Fixed a bug where column names where not properly propagated during
@@ -3407,22 +3407,22 @@
 <ul>
 <li>Support for multilabel classification, multiclass-multilabel classification
   and multioutput regression tasks. Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/data_management/#multioutput-tasks">user guide</a>.</li>
-<li>New [backend][atomclassifier-backend] parameter to choose a <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#parallel-execution">parallel execution</a>
+<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend">backend</a> parameter to choose a <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#parallel-execution">parallel execution</a>
   backend.</li>
-<li>New [<code>parallel</code>][directclassifier-parallel] parameter to train multiple models
+<li>New <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-parallel"><code>parallel</code></a> parameter to train multiple models
   simultaneously.</li>
 <li>Integration with <a href="https://www.dagshub.com">DAGsHub</a> to store your mlflow experiments.
   Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/logging/#dagshub-integration">user guide</a>.</li>
-<li>New [serve][adaboost-serve] method to deploy models to a rest API endpoint.</li>
-<li>New [get_best_threshold][adaboost-get_best_threshold] method to calculate the
+<li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-serve">serve</a> method to deploy models to a rest API endpoint.</li>
+<li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-get_best_threshold">get_best_threshold</a> method to calculate the
   optimal threshold for binary and multilabel tasks.</li>
-<li>New [get_sample_weight][atomclassifier-get_sample_weight] method to calculate
+<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-get_sample_weight">get_sample_weight</a> method to calculate
   the sample weights for a balanced data set.</li>
 </ul>
 <p><strong><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
-<li>The <code>report</code> method is renamed to [eda][atomclassifier-eda].</li>
-<li>The <code>ATOMLoader</code> class is deprecated in favor of the [load][atomclassifier-load] method.</li>
+<li>The <code>report</code> method is renamed to <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-eda">eda</a>.</li>
+<li>The <code>ATOMLoader</code> class is deprecated in favor of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-load">load</a> method.</li>
 <li>The <code>errors</code> attribute for runners is deprecated.</li>
 </ul>
 <p><strong><img alt="🚀" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
@@ -3459,21 +3459,21 @@
 <li>Accelerate your pipelines with <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#accelerating-pipelines">sklearnex</a>.</li>
 <li>New <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featuregrouper/#featuregrouper">FeatureGrouper</a> class to extract statistical features from
   similar groups.</li>
-<li>New [create_app][adaboost-create_app] method to create a nice front-end
+<li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-create_app">create_app</a> method to create a nice front-end
   for model predictions.</li>
-<li>New [inverse_transform][atomclassifier-inverse_transform] method for
+<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-inverse_transform">inverse_transform</a> method for
   atom and models.</li>
 <li>New linear model: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.OrthogonalMatchingPursuit.html">OrthogonalMatchingPursuit</a>.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a> method now accepts time metrics.</li>
 </ul>
 <p><strong><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
-<li>The <code>gpu</code> parameter is deprecated in favor of [<code>device</code>][atomclassifier-device]
-  and [<code>engine</code>][atomclassifier-engine].</li>
+<li>The <code>gpu</code> parameter is deprecated in favor of <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a>
+  and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a>.</li>
 <li>Refactor of the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a>, <a class="autorefs autorefs-internal" href="../../API/data_cleaning/discretizer/#discretizer">Discretizer</a>, <a class="autorefs autorefs-internal" href="../../API/data_cleaning/encoder/#encoder">Encoder</a> and <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a>
   classes.</li>
 <li>Refactor of all <a class="autorefs autorefs-internal" href="../../user_guide/plots/#shap">shap plots</a>.</li>
-<li>Refactor of the [apply][atomclassifier-apply] method.</li>
+<li>Refactor of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-apply">apply</a> method.</li>
 <li>The <code>plot_scatter_matrix</code> method is renamed to <a class="autorefs autorefs-internal" href="../../API/plots/plot_relationships/#plot_relationships">plot_relationships</a>.</li>
 <li>The <code>kSVM</code> model is renamed to <a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine">SVM</a>.</li>
 <li>Multidimensional datasets are no longer supported. Check the <a class="autorefs autorefs-internal" href="../../user_guide/models/#deep-learning">deep learning</a>
@@ -3481,10 +3481,10 @@
 <li>The <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters are
   deprecated. Metric functions are now created using <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>'s
   default parameters.</li>
-<li>The <code>drop</code> method is removed from atom. Use the reworked [apply][atomclassifier-apply]
+<li>The <code>drop</code> method is removed from atom. Use the reworked <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-apply">apply</a>
   method instead.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../user_guide/predicting/#prediction-methods">prediction methods</a> can no longer be called from atom.</li>
-<li>The dashboard method for models is now called [create_dashboard][adaboost-create_dashboard].</li>
+<li>The dashboard method for models is now called <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-create_dashboard">create_dashboard</a>.</li>
 </ul>
 <p><strong><img alt="🚀" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
 <ul>
@@ -3493,7 +3493,7 @@
 <li>The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/normalizer/#normalizer">Normalizer</a> class can now be accelerated with <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#gpu-acceleration">GPU</a>.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a> class now ignores binary columns (only 0s and 1s).</li>
 <li>The <code>models</code> parameter in plot and utility methods now accepts model indices.</li>
-<li>The [transform][atomclassifier-transform] method now also transforms
+<li>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-transform">transform</a> method now also transforms
   only <code>y</code> when <code>X</code> has a default value.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../user_guide/predicting/#prediction-methods">prediction methods</a> now return pandas objects.</li>
 <li>Dependency versions are checked with originals after unpickling.</li>
@@ -3506,7 +3506,7 @@
 <ul>
 <li>The <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class no longer raises a warning for highly
   fragmented dataframes.</li>
-<li>Fixed a bug where models could not call the [score][adaboost-score] function.</li>
+<li>Fixed a bug where models could not call the <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-score">score</a> function.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/encoder/#encoder">Encoder</a> class no longer fails when the user provides ordinal
   values that are not present during fitting.</li>
 <li>Fixed a bug with the <code>max_nan_rows</code> parameter in the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/imputer/#imputer">Imputer</a> class.</li>

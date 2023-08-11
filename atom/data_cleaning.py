@@ -2127,23 +2127,12 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         atom.plot_distribution(columns=0)
 
-        ```
-
-        :: insert:
-            url: /img/plots/plot_distribution_4.html
-
-        ```python
-
         atom.normalize(verbose=2)
 
         print(atom.dataset)
 
         atom.plot_distribution(columns=0)
-
         ```
-
-        :: insert:
-            url: /img/plots/plot_distribution_5.html
 
     === "stand-alone"
         ```python

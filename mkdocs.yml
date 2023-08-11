@@ -81,7 +81,7 @@ plugins:
     - mkdocs-simple-hooks:
           hooks:
               on_page_markdown: docs_sources.scripts.autodocs:render
-              on_page_content: docs_sources.scripts.autodocs:convert_plotly
+              on_page_content: docs_sources.scripts.autodocs:corrections
               on_post_build: docs_sources.scripts.autodocs:clean_search
 
 markdown_extensions:

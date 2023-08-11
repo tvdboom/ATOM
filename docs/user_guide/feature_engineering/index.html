@@ -3343,7 +3343,7 @@ e.g. <code class="language-python highlight"><span class="n">atom</span><span cl
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Like the [add][atomclassifier-add] method, the feature engineering
+<p>Like the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add">add</a> method, the feature engineering
 methods accept the <code>columns</code> parameter to only transform a subset of the
 dataset's features, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span><span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span></code>.</p>
 </div>
@@ -3355,7 +3355,7 @@ categorical features is not an option since the encoding does not
 capture the relationship between the different moments in time. The
 <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class creates new features extracting datetime
 elements (e.g. day, month, year, hour...) from the columns. It can be
-accessed from atom through the [feature_extraction][atomclassifier-feature_extraction]
+accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-feature_extraction">feature_extraction</a>
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
 they create, e.g. <code>x0_day</code> for the day element of <code>x0</code>.</p>
@@ -3387,7 +3387,7 @@ for an overview of the available formats.</p>
 <h2 id="generating-new-features">Generating new features</h2>
 <p>The <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featuregenerator/#featuregenerator">FeatureGenerator</a> class creates new non-linear features based
 on the original feature set. It can be accessed from atom through the
-[feature_generation][atomclassifier-feature_generation] method. You
+<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-feature_generation">feature_generation</a> method. You
 can choose between two strategies: Deep Feature Synthesis and Genetic
 Feature Generation.</p>
 <p><strong>Deep Feature Synthesis</strong><br>
@@ -3441,7 +3441,7 @@ is to reduce the number of columns in the dataset, avoiding the
 <h2 id="selecting-useful-features">Selecting useful features</h2>
 <p>The <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> class provides tooling to select the relevant
 features from a dataset. It can be accessed from atom through the
-[feature_selection][atomclassifier-feature_selection] method.</p>
+<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-feature_selection">feature_selection</a> method.</p>
 <p><br></p>
 <h3 id="standard-strategies">Standard strategies</h3>
 <p><a name="univariate"></a>
@@ -3463,7 +3463,7 @@ the variance of each dimension. The new features are called <code>pca0</code>,
 <li>If the data is [sparse][sparse datasets] (often the case for term-document
   matrices, see <a class="autorefs autorefs-internal" href="../../API/nlp/vectorizer/#vectorizer">Vectorizer</a>), the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">TruncatedSVD</a>.
   Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis">documentation</a>.</li>
-<li>If [<code>engine</code>][featureselector-engine] is "sklearnex" or "cuml", the estimator
+<li>If <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector-engine"><code>engine</code></a> is "sklearnex" or "cuml", the estimator
   used is the package's PCA implementation. Sparse data is not supported for
   neither engine.</li>
 </ul>

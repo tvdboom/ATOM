@@ -3397,7 +3397,7 @@ take hours to run on a single processor. However, if you offload those
 tasks to a GPU, you can reduce training time to minutes instead.</p>
 <p>Training transformers and models in atom using a GPU is as easy as
 initializing the instance with parameter <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code>. The
-[<code>device</code>][atomclassifier-device] parameter accepts any string that
+<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a> parameter accepts any string that
 follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector. Examples are:</p>
 <ul>
 <li>device="cpu" (use CPU)</li>
@@ -3405,7 +3405,7 @@ follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/Environmen
 <li>device="gpu:0" (use first GPU)</li>
 <li>device="gpu:1" (use second GPU)</li>
 </ul>
-<p>Use the [<code>engine</code>][atomclassifier-engine] parameter to choose between the
+<p>Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a> parameter to choose between the
 cuML and sklearnex execution engines. The <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a>, <a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> and
 <a class="autorefs autorefs-internal" href="../../API/models/catb/#catboost">CatBoost</a> models come with their own GPU engine. Setting device="gpu"
 is sufficient to accelerate them with GPU, regardless of the engine parameter.</p>
@@ -3484,7 +3484,7 @@ type.</p>
 </ul>
 <h2 id="parallel-execution">Parallel execution</h2>
 <p>Another way to accelerate your pipelines is executing processes in parallel.
-Use the [<code>backend</code>][atomclassifier-backend] parameter to select one of several
+Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend"><code>backend</code></a> parameter to select one of several
 parallelization backends.</p>
 <ul>
 <li><strong>loky:</strong> Used by default, can induce some communication and memory overhead
@@ -3517,7 +3517,7 @@ datasets (&lt;3M rows).</p>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The [<code>njobs</code>][atomclassifier-n_jobs] parameter sets the number of cores
+<p>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-n_jobs"><code>njobs</code></a> parameter sets the number of cores
 for the individual models as well as for parallel training. You won't
 gain much training two models in parallel with 2 cores, when the models
 also parallelize computations internally. Instead, use parallel training

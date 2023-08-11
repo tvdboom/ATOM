@@ -87,33 +87,29 @@ by side, for example to make it easier to compare similar results. The canvas
 method is a `@contextmanager`, i.e. it's used through Python's `with` command.
 Plots in a canvas ignore the legend, figsize, filename and display parameters.
 Instead, specify these parameters in the canvas. If a variable is assigned to
-the canvas (e.g. `#!python with atom.canvas() as fig`), it yields the resulting figure.
+the canvas (e.g. `#!python with atom.canvas() as fig`), it yields the resulting
+figure.
 
 For example, we can use a canvas to compare the results of a XGBoost and
 LightGBM model on the train and test set. We could also draw the lines for
 both models in the same axes, but that would clutter the plot too much.
 Click [here][example-advanced-plotting] for more examples.
 
-```python
+```pycon
 from atom import ATOMClassifier
-import pandas as pd
+from sklearn.datasets import make_classification
 
-X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
 
-atom = ATOMClassifier(X, y="RainTomorrow")
-atom.impute()
-atom.encode()
-atom.run(["xgb", "lgb"])
+atom = ATOMClassifier(X, y)
+atom.run(["XGB", "LGB"])
 
 with atom.canvas(2, 2, title="XGBoost vs LightGBM"):
-...     atom.xgb.plot_roc(dataset="both", title="ROC - XGBoost")
-...     atom.lgb.plot_roc(dataset="both", title="ROC - LightGBM")
-...     atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
-...     atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
+    atom.xgb.plot_roc(dataset="train+test", title="ROC - XGBoost")
+    atom.lgb.plot_roc(dataset="train+test", title="ROC - LightGBM")
+    atom.xgb.plot_prc(dataset="train+test", title="PRC - XGBoost")
+    atom.lgb.plot_prc(dataset="train+test", title="PRC - LightGBM")
 ```
-
-:: insert:
-    url: /img/plots/canvas.html
 
 <br>
 

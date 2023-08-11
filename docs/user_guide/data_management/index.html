@@ -3514,15 +3514,15 @@ matrix, like for example, the <a class="autorefs autorefs-internal" href="../../
 is sparse. A dataset can only benefit from sparsity when all its
 columns are sparse, hence mixing sparse and non-sparse columns is
 not recommended and can cause estimators to decrease their training
-speed or even crash. Use the [shrink][atomclassifier-shrink] method
-to convert dense features to sparse and the [available_models][atomclassifier-available_models] method to check which models have
+speed or even crash. Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method
+to convert dense features to sparse and the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a> method to check which models have
 native support for sparse matrices.</p>
 <p>Click [here][example-nlp] to see an example that uses sparse data.</p>
 <p><br></p>
 <h2 id="multioutput-tasks">Multioutput tasks</h2>
 <p>Multioutput is a task where there are more than one target column, i.e.
 the goal is to predict multiple targets at the same time. When providing
-a dataframe as target, use the [y][atomclassifier-y] parameter. Providing
+a dataframe as target, use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-y">y</a> parameter. Providing
 <code>y</code> without keyword makes ATOM think you are providing <code>train, test</code> (see
 the <a class="autorefs autorefs-internal" href="#data-sets">data sets</a> section).</p>
 <h3 id="task-types">Task types</h3>
@@ -3555,7 +3555,7 @@ column (<code>atom.y</code>) could look like this:</p>
 Name: target, dtype: object
 </code></pre></div>
 <p>A model can not directly ingest a variable amount of target classes. Use
-the [clean][atomclassifier-clean] method to assign a binary output to
+the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clean">clean</a> method to assign a binary output to
 each class, for every sample. Positive classes are indicated with 1 and
 negative classes with 0. It is thus comparable to running n_classes
 binary classification tasks. In our example, the target (<code>atom.y</code>) is
@@ -3694,19 +3694,19 @@ cause unexpected model behaviour and break down the plotting methods.</p>
 doesn't include the <a href="#data-sets">holdout set</a>, which is only stored once),
 and one copy of the initial dataset with which the instance is initialized.
 This copy of the original dataset is necessary to avoid data leakage during
-hyperparameter tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
-and [reset][atomclassifier-reset]). It's created as soon as there are no
+hyperparameter tuning and for some specific methods like <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-cross_validate">cross_validate</a>
+and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-reset">reset</a>). It's created as soon as there are no
 branches in the initial state (usually after calling the first data
 transformation). If the dataset is occupying too much memory, consider
-using the [shrink][atomclassifier-shrink] method to convert the dtypes to
+using the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method to convert the dtypes to
 their smallest possible matching dtype.</p>
 <p>Apart from the dataset itself, a model's <a class="autorefs autorefs-internal" href="../predicting/#prediction-attributes">prediction attributes</a> (e.g.
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">predict_train</span></code>), metric scores and <a class="autorefs autorefs-internal" href="../plots/#shap">shap values</a>
 are also stored as attributes of the model to avoid having to recalculate
 them every time they are needed. This data can occupy a considerable amount
 of memory for large datasets. You can delete all these attributes using
-the [clear][atomclassifier-clear] method in order to free some memory
-before [saving][atomclassifier-save] the class.</p>
+the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method in order to free some memory
+before <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-save">saving</a> the class.</p>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
 <p>Performing data transformations is a common requirement of many datasets
@@ -3715,8 +3715,8 @@ classes to apply <a class="autorefs autorefs-internal" href="../data_cleaning/#d
 transformations to the data. This tooling should be able to help you
 apply most of the typically needed transformations to get the data ready
 for modelling. For further fine-tuning, it's also possible to transform
-the data using custom transformers (see the [add][atomclassifier-add]
-method) or through a function (see the [apply][atomclassifier-apply]
+the data using custom transformers (see the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add">add</a>
+method) or through a function (see the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-apply">apply</a>
 method). Remember that all transformations are only applied to the
 dataset in the current branch.</p>
 

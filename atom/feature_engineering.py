@@ -1073,9 +1073,6 @@ class FeatureSelector(
         atom.plot_pca()
         ```
 
-        :: insert:
-            url: /img/plots/plot_pca.html
-
     === "stand-alone"
         ```python
         from atom.feature_engineering import FeatureSelector

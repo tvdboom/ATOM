@@ -3264,11 +3264,11 @@ should only be applied on the training set are excluded from this step
 in sklearn's and sktime's API.</p>
 <p>For classification and regression tasks:</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[decision_function][adaboost-decision_function]</td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td>[predict][adaboost-predict]</td><td>Get predictions on new data or existing rows.</td></tr><tr><td>[predict_log_proba][adaboost-predict_log_proba]</td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td>[predict_proba][adaboost-predict_proba]</td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td>[score][adaboost-score]</td><td>Get a metric score on new data.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-score">score</a></td><td>Get a metric score on new data.</td></tr></p>
 </table>
 <p>For forecast tasks:</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[predict][arima-predict]</td><td>Get predictions on new data or existing rows.</td></tr><tr><td>[predict_interval][arima-predict_interval]</td><td>Get prediction intervals on new data or existing rows.</td></tr><tr><td>[predict_proba][arima-predict_proba]</td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td>[predict_quantiles][arima-predict_quantiles]</td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td>[predict_var][arima-predict_var]</td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td>[score][arima-score]</td><td>Get a metric score on new data.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_interval">predict_interval</a></td><td>Get prediction intervals on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_proba">predict_proba</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_quantiles">predict_quantiles</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_var">predict_var</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-score">score</a></td><td>Get a metric score on new data.</td></tr></p>
 </table>
 <h2 id="prediction-attributes">Prediction attributes</h2>
 <p>The prediction methods can be calculated on the train, test and
@@ -3277,7 +3277,7 @@ holdout set. You can access them through attributes of the form
 or <code>atom.mnb.predict_holdout</code>. The results are cached after the
 first call to avoid consequent expensive calculations (lazy properties).
 This mechanism can increase the size of the instance for large datasets.
-Use the [clear][atomclassifier-clear] method if you need to free
+Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method if you need to free
 the memory.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>

@@ -248,34 +248,6 @@ class DummyTrainer:
     engine: str
 
 
-def insert(config: dict) -> str:
-    """Insert a string from another file at location.
-
-    Parameters
-    ----------
-    config: dict
-        Options to configure. Choose from:
-
-        - url: Path to the file to insert.
-
-    Returns
-    -------
-    str
-        Content of the file to insert.
-
-    """
-    content = ""
-    url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
-    try:
-        with open(url, 'r', encoding="utf-8") as f:
-            content = f.read()
-
-    except FileNotFoundError:
-        warnings.warn(f"File not found: {url}.")
-
-    return content
-
-
 class AutoDocs:
     """Parses an object to documentation in markdown/html.
 
@@ -323,7 +295,7 @@ class AutoDocs:
         "Notes",
         "References",
         "Examples",
-        "\Z",
+        r"\Z",
     )
 
     def __init__(self, obj: Callable, method: Optional[Callable] = None):
@@ -609,7 +581,7 @@ class AutoDocs:
 
             elif match := self.get_block(name):
                 # Headers start with letter, * or [ after new line
-                for header in re.findall("^[\[*\w].*?$", match, re.M):
+                for header in re.findall(r"^[\[*\w].*?$", match, re.M):
                     # Check that the default value in docstring matches the real one
                     if default := re.search("(?<=default=).+?$", header):
                         try:
@@ -633,7 +605,7 @@ class AutoDocs:
                     pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
                     body = re.search(pattern, match, re.S | re.M).group()
 
-                    header = header.replace("*", "\*")  # Use literal * for args/kwargs
+                    header = header.replace("*", r"\*")  # Use literal * for args/kwargs
                     text = f"<div markdown class='param'>{self.parse_body(body)}</div>"
 
                     obj_name = header.split(":")[0]
@@ -901,11 +873,11 @@ def types_conversion(dtype: str) -> str:
     return dtype
 
 
-def convert_plotly(html: str, **kwargs) -> str:
-    """Prepare plotly plots from the html page.
+def corrections(html: str, **kwargs) -> str:
+    """Make last minute corrections to the page.
 
-    This function changes the size of plotly plots to fit the
-    screen's width.
+    This function adjusts the url to the download sources and changes
+    the size of plotly plots to fit the screen's width.
 
     Parameters
     ----------
@@ -924,9 +896,12 @@ def convert_plotly(html: str, **kwargs) -> str:
         Modified html source text of page.
 
     """
+    # Swap url to example datasets
+    html = html.replace("./datasets/", "docs_source/examples/datasets/")
+
     # Correct sizes of the plot to adjust to frame
-    html = re.sub('(?<=style="height:\d+?px; width:)\d+?px(?=;")', "100%", html)
-    html = re.sub('(?<="showlegend":\w+?),"width":\d+?,"height":\d+?(?=[},])', "", html)
+    html = re.sub(r'(?<=style="height:\d+?px; width:)\d+?px(?=;")', "100%", html)
+    html = re.sub(r'(?<="showlegend":\w+?),"width":\d+?,"height":\d+?(?=[},])', "", html)
 
     return html
 
@@ -948,10 +923,10 @@ def clean_search(config: MkDocsConfig):
 
     for elem in search["docs"]:
         # Remove plotly graphs
-        elem["text"] = re.sub("window\.PLOTLYENV.*?\)\s*?}\s*?", "", elem["text"], flags=re.S)
+        elem["text"] = re.sub(r"window\.PLOTLYENV.*?\)\s*?}\s*?", "", elem["text"], flags=re.S)
 
         # Remove mkdocs-jupyter css
-        elem["text"] = re.sub("\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
+        elem["text"] = re.sub(r"\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
 
     with open(f"{config.data['site_dir']}/search/search_index.json", 'w') as f:
         json.dump(search, f)
@@ -987,7 +962,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     # Skip regex check for very long docs
     if len(markdown) < 1e5:
-        for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
+        for match in re.finditer(r"\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
             anchor = match.group(1)
             link = match.group(2)
 

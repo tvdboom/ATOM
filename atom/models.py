@@ -170,13 +170,13 @@ class AdaBoost(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="AdaB", metric="f1", verbose=2)
     ```
 
@@ -237,13 +237,13 @@ class AutomaticRelevanceDetermination(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="ARD", metric="r2", verbose=2)
     ```
 
@@ -305,13 +305,13 @@ class Bagging(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="Bag", metric="f1", verbose=2)
     ```
 
@@ -368,13 +368,13 @@ class BayesianRidge(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="BR", metric="r2", verbose=2)
     ```
 
@@ -432,13 +432,13 @@ class BernoulliNB(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="BNB", metric="f1", verbose=2)
     ```
 
@@ -511,13 +511,13 @@ class CatBoost(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="CatB", metric="f1", verbose=2)
     ```
 
@@ -691,14 +691,14 @@ class CategoricalNB(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     import numpy as np
 
     X = np.random.randint(5, size=(100, 100))
     y = np.random.randint(2, size=100)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="CatNB", metric="f1", verbose=2)
     ```
 
@@ -752,13 +752,13 @@ class ComplementNB(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="CNB", metric="f1", verbose=2)
     ```
 
@@ -812,13 +812,13 @@ class DecisionTree(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="Tree", metric="f1", verbose=2)
     ```
 
@@ -886,13 +886,13 @@ class Dummy(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="Dummy", metric="f1", verbose=2)
     ```
 
@@ -968,13 +968,13 @@ class ElasticNet(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="EN", metric="r2", verbose=2)
     ```
 
@@ -1033,13 +1033,13 @@ class ExtraTree(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="ETree", metric="f1", verbose=2)
     ```
 
@@ -1127,13 +1127,13 @@ class ExtraTrees(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="ET", metric="f1", verbose=2)
     ```
 
@@ -1221,13 +1221,13 @@ class GaussianNB(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="GNB", metric="f1", verbose=2)
     ```
 
@@ -1280,13 +1280,13 @@ class GaussianProcess(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="GP", metric="f1", verbose=2)
     ```
 
@@ -1335,13 +1335,13 @@ class GradientBoostingMachine(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="GBM", metric="f1", verbose=2)
     ```
 
@@ -1433,13 +1433,13 @@ class HuberRegression(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="Huber", metric="r2", verbose=2)
     ```
 
@@ -1499,13 +1499,13 @@ class HistGradientBoosting(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="hGBM", metric="f1", verbose=2)
     ```
 
@@ -1575,13 +1575,13 @@ class KNearestNeighbors(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="KNN", metric="f1", verbose=2)
     ```
 
@@ -1646,13 +1646,13 @@ class Lasso(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="Lasso", metric="r2", verbose=2)
     ```
 
@@ -1709,13 +1709,13 @@ class LeastAngleRegression(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="Lars", metric="r2", verbose=2)
     ```
 
@@ -1764,13 +1764,13 @@ class LightGBM(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="LGB", metric="f1", verbose=2)
     ```
 
@@ -1796,7 +1796,12 @@ class LightGBM(ClassRegModel):
             Estimator instance.
 
         """
+        # Custom lightgbm mapping for warnings
+        # PYTHONWARNINGS doesn't work since they go from C/C++ code to stdout
+        warns = dict(always=2, default=1, error=0, ignore=-1)
+
         return self._est_class(
+            verbose=params.pop("verbose", warns.get(self.warnings, -1)),
             n_jobs=params.pop("n_jobs", self.n_jobs),
             device=params.pop("device", "gpu" if self._gpu else "cpu"),
             gpu_device_id=params.pop("gpu_device_id", self._device_id or -1),
@@ -1922,13 +1927,13 @@ class LinearDiscriminantAnalysis(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="LDA", metric="f1", verbose=2)
     ```
 
@@ -2005,13 +2010,13 @@ class LinearSVM(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="lSVM", metric="f1", verbose=2)
     ```
 
@@ -2127,13 +2132,13 @@ class LogisticRegression(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="RF", metric="f1", verbose=2)
     ```
 
@@ -2235,13 +2240,13 @@ class MultiLayerPerceptron(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="MLP", metric="f1", verbose=2)
     ```
 
@@ -2364,13 +2369,13 @@ class MultinomialNB(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="MNB", metric="f1", verbose=2)
     ```
 
@@ -2426,13 +2431,13 @@ class OrdinaryLeastSquares(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="OLS", metric="r2", verbose=2)
     ```
 
@@ -2471,13 +2476,13 @@ class OrthogonalMatchingPursuit(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="OMP", metric="r2", verbose=2)
     ```
 
@@ -2518,13 +2523,13 @@ class PassiveAggressive(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="PA", metric="f1", verbose=2)
     ```
 
@@ -2593,13 +2598,13 @@ class Perceptron(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="Perc", metric="f1", verbose=2)
     ```
 
@@ -2679,13 +2684,13 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="QDA", metric="f1", verbose=2)
     ```
 
@@ -2744,13 +2749,13 @@ class RadiusNearestNeighbors(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(
         models="RNN",
         metric="f1",
@@ -2824,13 +2829,13 @@ class RandomForest(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="RF", metric="f1", verbose=2)
     ```
 
@@ -2937,13 +2942,13 @@ class Ridge(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
     X, y = fetch_california_housing(return_X_y=True)
 
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.run(models="Ridge", metric="r2", verbose=2)
     ```
 
@@ -3006,13 +3011,13 @@ class StochasticGradientDescent(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="SGD", metric="f1", verbose=2)
     ```
 
@@ -3112,13 +3117,13 @@ class SupportVectorMachine(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="SVM", metric="f1", verbose=2)
     ```
 
@@ -3234,13 +3239,13 @@ class XGBoost(ClassRegModel):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="XGB", metric="f1", verbose=2)
     ```
 
@@ -3414,34 +3419,14 @@ class ARIMA(ForecastModel):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
-    from sktime.datasets import load_airline
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_longley
 
-    y = load_airline()
+    _, X = load_longley()
 
-    atom = ATOMClassifier(y)
-    atom.run(models="ARIMA", metric="mape", verbose=2)
-
-    Training ========================= >>
-    Models: ARIMA
-    Metric: neg_mean_absolute_percentage_error
-
-
-    Results for ARIMA:
-    Fit ---------------------------------------------
-    Train evaluation --> neg_mean_absolute_percentage_error: -0.0142
-    Test evaluation --> neg_mean_absolute_percentage_error: -0.0271
-    Time elapsed: 0.257s
-    -------------------------------------------------
-    Total time: 0.257s
-
-
-    Final results ==================== >>
-    Total time: 0.257s
-    -------------------------------------
-    ARIMA --> neg_mean_absolute_percentage_error: -0.0271
-
+    atom = ATOMForecaster(X)
+    atom.run(models="ARIMA", verbose=2)
     ```
 
     """
@@ -3575,34 +3560,14 @@ class AutoARIMA(ForecastModel):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
-    from sktime.datasets import load_airline
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_longley
 
-    y = load_airline()
+    _, X = load_longley()
 
-    atom = ATOMClassifier(y)
-    atom.run(models="autoarima", metric="mape", verbose=2)
-
-    Training ========================= >>
-    Models: AutoARIMA
-    Metric: neg_mean_absolute_percentage_error
-
-
-    Results for AutoARIMA:
-    Fit ---------------------------------------------
-    Train evaluation --> neg_mean_absolute_percentage_error: -0.0771
-    Test evaluation --> neg_mean_absolute_percentage_error: -0.1311
-    Time elapsed: 2.975s
-    -------------------------------------------------
-    Total time: 2.975s
-
-
-    Final results ==================== >>
-    Total time: 2.976s
-    -------------------------------------
-    AutoARIMA --> neg_mean_absolute_percentage_error: -0.1311
-
+    atom = ATOMForecaster(X, random_state=1)
+    atom.run(models="autoarima", verbose=2)
     ```
 
     """
@@ -3656,34 +3621,14 @@ class ExponentialSmoothing(ForecastModel):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
+    ```pycon
+    from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
     y = load_airline()
 
-    atom = ATOMClassifier(y)
-    atom.run(models="ES", metric="mape", verbose=2)
-
-    Training ========================= >>
-    Models: ES
-    Metric: neg_mean_absolute_percentage_error
-
-
-    Results for ExponentialSmoothing:
-    Fit ---------------------------------------------
-    Train evaluation --> neg_mean_absolute_percentage_error: -0.0888
-    Test evaluation --> neg_mean_absolute_percentage_error: -0.1935
-    Time elapsed: 0.137s
-    -------------------------------------------------
-    Total time: 0.137s
-
-
-    Final results ==================== >>
-    Total time: 0.138s
-    -------------------------------------
-    ExponentialSmoothing --> neg_mean_absolute_percentage_error: -0.1935
-
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="ES", verbose=2)
     ```
 
     """
@@ -3766,33 +3711,14 @@ class ETS(ForecastModel):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
+    ```pycon
+    from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
     y = load_airline()
 
-    atom = ATOMClassifier(y)
-    atom.run(models="ETS", metric="mape", verbose=2)
-
-    Training ========================= >>
-    Models: ETS
-    Metric: neg_mean_absolute_percentage_error
-
-
-    Results for ETS:
-    Fit ---------------------------------------------
-    Train evaluation --> neg_mean_absolute_percentage_error: -0.0858
-    Test evaluation --> neg_mean_absolute_percentage_error: -0.2305
-    Time elapsed: 0.019s
-    -------------------------------------------------
-    Total time: 0.019s
-
-
-    Final results ==================== >>
-    Total time: 0.021s
-    -------------------------------------
-    ETS --> neg_mean_absolute_percentage_error: -0.2305
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="ETS", verbose=2)
 
     ```
 
@@ -3874,33 +3800,14 @@ class NaiveForecaster(ForecastModel):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
+    ```pycon
+    from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
     y = load_airline()
 
-    atom = ATOMClassifier(y)
-    atom.run(models="NF", metric="mape", verbose=2)
-
-    Training ========================= >>
-    Models: NF
-    Metric: neg_mean_absolute_percentage_error
-
-
-    Results for NaiveForecaster:
-    Fit ---------------------------------------------
-    Train evaluation --> neg_mean_absolute_percentage_error: -0.0858
-    Test evaluation --> neg_mean_absolute_percentage_error: -0.2305
-    Time elapsed: 0.029s
-    -------------------------------------------------
-    Total time: 0.029s
-
-
-    Final results ==================== >>
-    Total time: 0.031s
-    -------------------------------------
-    NaiveForecaster --> neg_mean_absolute_percentage_error: -0.2305
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="NF", verbose=2)
 
     ```
 
@@ -3949,34 +3856,14 @@ class PolynomialTrend(ForecastModel):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
+    ```pycon
+    from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
     y = load_airline()
 
-    atom = ATOMClassifier(y)
-    atom.run(models="PT", metric="mape", verbose=2)
-
-    Training ========================= >>
-    Models: PT
-    Metric: neg_mean_absolute_percentage_error
-
-
-    Results for PolynomialTrend:
-    Fit ---------------------------------------------
-    Train evaluation --> neg_mean_absolute_percentage_error: -0.1255
-    Test evaluation --> neg_mean_absolute_percentage_error: -0.107
-    Time elapsed: 0.013s
-    -------------------------------------------------
-    Total time: 0.013s
-
-
-    Final results ==================== >>
-    Total time: 0.015s
-    -------------------------------------
-    PolynomialTrend --> neg_mean_absolute_percentage_error: -0.107
-
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="PT", verbose=2)
     ```
 
     """

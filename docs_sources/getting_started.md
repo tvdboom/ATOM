@@ -83,7 +83,7 @@ import pandas as pd
 from atom import ATOMClassifier
 
 # Load the Australian Weather dataset
-X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")
+X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)
 print(X.head())
 ```
 
@@ -95,9 +95,9 @@ manipulate.
 ```pycon
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
-X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")  # hide
+X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 
-atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000, verbose=2)
+atom = ATOMClassifier(X, y="RainTomorrow", verbose=2)
 ```
 
 Data transformations are applied through atom's methods. For example,
@@ -109,9 +109,9 @@ method (no fit and transform commands necessary).
 ```pycon
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
-X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")  # hide
+X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 
-atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000)  # hide
+atom = ATOMClassifier(X, y="RainTomorrow")  # hide
 atom.verbose = 2  # hide
 
 atom.impute(strat_num="median", strat_cat="most_frequent")  
@@ -119,21 +119,21 @@ atom.encode(strategy="Target", max_onehot=8)
 ```
 
 Similarly, models are [trained and evaluated][training] using the
-[run][atomclassifier-run] method. Here, we fit both a [LinearDiscriminantAnalysis][]
-and [AdaBoost][] model, and apply [hyperparameter tuning][].
+[run][atomclassifier-run] method. Here, we fit both a [LogisticRegression][]
+and [LinearDiscriminantAnalysis][] model, and apply [hyperparameter tuning][].
 
 ```pycon
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
-X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")  # hide
+X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 
-atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000)  # hide
+atom = ATOMClassifier(X, y="RainTomorrow")  # hide
 
 atom.impute(strat_num="median", strat_cat="most_frequent")  # hide 
 atom.encode(strategy="Target", max_onehot=8)  # hide
 atom.verbose = 2  # hide
 
-atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
+atom.run(models=["LR", "LDA"], metric="auc", n_trials=6)
 ```
 
 And lastly, analyze the results.
@@ -141,14 +141,16 @@ And lastly, analyze the results.
 ```pycon
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
-X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")  # hide
+X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 
-atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000)  # hide
+atom = ATOMClassifier(X, y="RainTomorrow")  # hide
 
 atom.impute(strat_num="median", strat_cat="most_frequent")  # hide 
 atom.encode(strategy="Target", max_onehot=8)  # hide
 
-atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)  # hide
+atom.run(models=["LR", "LDA"], metric="auc", n_trials=6)  # hide
 
-atom.evaluate()
+print(atom.evaluate())
+
+atom.plot_lift()
 ```

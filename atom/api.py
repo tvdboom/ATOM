@@ -83,11 +83,11 @@ def ATOMModel(
     from sklearn.datasets import load_diabetes
     from sklearn.linear_model import RANSACRegressor
 
-    ransac =  ATOMModel(
-         estimator=RANSACRegressor(),
-         name="RANSAC",
-         needs_scaling=False,
-     )
+    ransac = ATOMModel(
+        estimator=RANSACRegressor(),
+        name="RANSAC",
+        needs_scaling=False,
+    )
 
     X, y = load_diabetes(return_X_y=True, as_frame=True)
 
@@ -284,7 +284,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -295,18 +295,15 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     # Apply data cleaning and feature engineering methods
     atom.balance(strategy="smote")
-
-    atom.feature_selection(strategy="rfecv", solver="xgb", n_features=22)
+    atom.feature_selection(strategy="rfe", solver="lr", n_features=22)
 
     # Train models
-    atom.run(
-       models=["LR", "RF", "XGB"],
-       metric="precision",
-       n_bootstrap=4,
-    )
+    atom.run(models=["LR", "RF", "XGB"])
 
     # Analyze the results
-    atom.evaluate()
+    print(atom.results)
+
+    print(atom.evaluate())
     ```
 
     """
@@ -506,31 +503,22 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     Examples
     --------
-    ```python
-    from atom import ATOMClassifier
-    from sklearn.datasets import load_breast_cancer
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
 
-    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    y = load_airline()
 
     # Initialize atom
-    atom = ATOMClassifier(X, y, n_jobs=2, verbose=2)
-    ```
-
-    ```python
-    # Apply data cleaning and feature engineering methods
-    atom.balance(strategy="smote")
-
-    atom.feature_selection(strategy="rfecv", solver="xgb", n_features=22)
+    atom = ATOMForecaster(y, verbose=2)
 
     # Train models
-    atom.run(
-       models=["LR", "RF", "XGB"],
-       metric="precision",
-       n_bootstrap=4,
-    )
+    atom.run(models=["NF", "ES", "ETS"])
 
     # Analyze the results
-    atom.evaluate()
+    print(atom.results)
+
+    print(atom.evaluate())
     ```
 
     """
@@ -737,29 +725,26 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import load_diabetes
 
     X, y = load_diabetes(return_X_y=True, as_frame=True)
 
     # Initialize atom
-    atom = ATOMRegressor(X, y, n_jobs=2, verbose=2)
+    atom = ATOMRegressor(X, y, verbose=2)
 
     # Apply data cleaning and feature engineering methods
     atom.scale()
-
     atom.feature_selection(strategy="rfecv", solver="xgb", n_features=12)
 
     # Train models
-    atom.run(
-       models=["LR", "RF", "XGB"],
-       metric="precision",
-       n_bootstrap=4,
-    )
+    atom.run(models=["OLS", "RF", "XGB"])
 
     # Analyze the results
-    atom.evaluate()
+    print(atom.results)
+
+    print(atom.evaluate())
     ```
 
     """

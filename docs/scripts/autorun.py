@@ -10,12 +10,28 @@ Description: Module containing the automatic example rendering.
 from __future__ import annotations
 
 import ast
+import os
+import re
+import shutil
 import sys
+from base64 import b64encode
 from code import InteractiveInterpreter
 from io import StringIO
+from uuid import uuid4
 
+import matplotlib
+import plotly.io as pio
 from markdown import Markdown
 from pymdownx.superfences import SuperFencesException
+
+
+# Avoid plot rendering
+matplotlib.use("Agg")
+pio.renderers.default = "pdf"
+
+# Directory in which to store all plots from the examples
+shutil.rmtree(DIR_EXAMPLES := "docs_sources/img/examples/", ignore_errors=True)
+os.mkdir(DIR_EXAMPLES)
 
 
 class StreamOut:
@@ -46,10 +62,8 @@ class StreamOut:
         self.stdout = None
 
 
-def get_code(src: str) -> str:
-    """Get the code, nicely formatted.
-
-    Adds or ... in front of every line.
+def execute(src: str) -> tuple[list[str], list[str]]:
+    """Get the code with output.
 
     Parameters
     ----------
@@ -58,63 +72,107 @@ def get_code(src: str) -> str:
 
     Returns
     -------
-    str
-        Formatted source.
+    list of str
+        Blocks of formatted code with output.
+
+    list of str
+        Figures corresponding to every code block (can be empty).
 
     """
-    code = []
-    for i, line in enumerate(src.split("\n")):
-        if "# hide" in line:
-            continue
-        elif line == "":
-            code.append("")
-        elif not line.startswith(" "):
-            code.append(f">>> {line}")
+
+    def draw(code: str) -> str:
+        """Draw the code nicely formatted.
+
+        Parameters
+        ----------
+        code: str
+            Line of code to format.
+
+        Returns
+        -------
+        str
+            Formatted code.
+
+        """
+        if code == "":
+            return code
+        elif not any(code.startswith(x) for x in (" ", ")", "]", "}")):
+            return f">>> {code}"
         else:
-            code.append(f"... {line}")
+            return f"... {code}"
 
-    return "\n".join(code)
+    def latest_file() -> str | None:
+        """Get the most recent file from the plots directory.
 
+        Returns
+        -------
+        str or None
+            Name of the file. Returns None if the dir is empty.
 
-def get_output(src: str) -> str:
-    """Get the code's output.
+        """
+        if files := [os.path.join(DIR_EXAMPLES, f) for f in os.listdir(DIR_EXAMPLES)]:
+            return os.path.basename(max(files, key=os.path.getmtime))
 
-    Parameters
-    ----------
-    src: str
-        Source code.
+    import time
+    t = time.time()
 
-    Returns
-    -------
-    str
-        Code output.
-
-    """
-    output = []
     ipy = InteractiveInterpreter()
 
-    tree = ast.parse(src)
     lines = src.split("\n")
+    tree = {x.lineno: x for x in ast.parse(src).body}
 
-    for node in tree.body:
-        payload = "\n".join(lines[node.lineno - 1: node.end_lineno])
+    end_line = 0
+    output, figures = [[]], []
+    for i, line in enumerate(lines, start=1):
+        if node := tree.get(i):
+            end_line = node.end_lineno
 
-        # Skip plotting since it's not rendered
-        if ".plot_" in payload:
-            continue
+            # Get complete code block
+            block = lines[node.lineno - 1: end_line]
 
-        try:
+            if "# hide" not in line:
+                output[-1].extend([draw(code) for code in block])
+
+            # Add filename parameter to plot call to save figure
+            if ".plot_" in line or ".canvas(" in line:
+                f, arguments = block[0].split("(", 1)
+                if arguments.startswith(")"):
+                    # There are no other arguments
+                    block[0] = f'{f}(filename="{DIR_EXAMPLES}{uuid4()}")'
+                else:
+                    # Attach filename after other arguments
+                    args, close = arguments.rsplit(")", 1)
+                    block[0] = f'{f}({args}, filename="{DIR_EXAMPLES}{uuid4()}"){close}'
+
             # Capture anything sent to stdout
             with StreamOut() as stream:
-                ipy.runsource(payload)
+                # Add \n at end to exit contextmanagers
+                ipy.runsource("\n".join(block) + "\n")
 
                 if text := stream.read():
-                    output.append(text)
+                    # Omit plot's output
+                    if not text.startswith("{'application/pdf'"):
+                        output[-1].append(f"\n{text}")
 
-        except Exception as e:
-            raise SuperFencesException from e
+            if ".plot_" in line or ".canvas(" in line:
+                if end_line < len(lines):
+                    output.append([])  # Add new code block
 
-    return "\n".join(output)
+                if (f := latest_file()).endswith(".html"):
+                    with open(f"{DIR_EXAMPLES}{f}", 'r', encoding="utf-8") as file:
+                        figures.append(file.read())
+                else:
+                    with open(f"{DIR_EXAMPLES}{f}", 'rb') as file:
+                        img = b64encode(file.read()).decode("utf-8")
+                    figures.append(f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>")
+
+        elif i > end_line:
+            output[-1].append(draw(line))
+
+    print(block)
+    print(f"Seconds: {time.time() - t}\n")
+
+    return output, figures
 
 
 def formatter(
@@ -142,7 +200,7 @@ def formatter(
         Additional options for the formatter.
 
     md: markdown.Markdown
-        Markdown object (in case you want access to metadata).
+        Markdown object.
 
     **kwargs
         Additional keyword arguments for the formatter.
@@ -153,14 +211,44 @@ def formatter(
         Source formatted to HTML.
 
     """
-    src = src.strip()
-    extension = md.preprocessors["fenced_code_block"].extension.superfences[0]
 
-    return extension["formatter"](
-        src=f"{get_code(src)}\n\n{get_output(src)}",
-        class_name=css_class,
-        language="pycon",
-        md=md,
-        options=options,
-        **kwargs
-    )
+    def to_html(code: list[str]) -> str:
+        """Convert a code block to html.
+
+        Parameters
+        ----------
+        code: list of str
+            List of commands.
+
+        Returns
+        -------
+        str
+            Clean representation of the code.
+
+        """
+        return md.preprocessors["fenced_code_block"].extension.superfences[0]["formatter"](
+            src="\n".join(code),
+            class_name=css_class,
+            language=language,
+            md=md,
+            options=options,
+            **kwargs
+        )
+
+    try:
+        output, figures = execute(src.strip())
+
+        render = []
+        for i in range(max(len(output), len(figures))):
+            source = ""
+            if i < len(output):
+                source += to_html(output[i])
+            if i < len(figures):
+                source += figures[i]
+
+            render.append(source)
+
+    except Exception as e:
+        raise SuperFencesException from e
+
+    return "<br>".join(render)

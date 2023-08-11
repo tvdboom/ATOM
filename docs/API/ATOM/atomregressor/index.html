@@ -3392,7 +3392,7 @@
 
 <h1 id="atomregressor">ATOMRegressor</h1>
 <hr />
-<p><a id='ATOMRegressor'></a><div class='sign'><em>class</em> atom.api.<strong style='color:#008AB8'>ATOMRegressor</strong>(*arrays, y=-1, index=False, shuffle=True, n_rows=1, test_size=0.2, holdout_size=None, n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L589>[source]</a></span></div>Main class for regression tasks.</p>
+<p><a id='ATOMRegressor'></a><div class='sign'><em>class</em> atom.api.<strong style='color:#008AB8'>ATOMRegressor</strong>(*arrays, y=-1, index=False, shuffle=True, n_rows=1, test_size=0.2, holdout_size=None, n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L581>[source]</a></span></div>Main class for regression tasks.</p>
 <p>Apply all data transformations and model management provided by
 the package on a given dataset. Note that, contrary to sklearn's
 API, the instance contains the dataset on which to perform the
@@ -3593,8 +3593,8 @@ etc...).</div><a id='atomregressor-dataset'></a><strong>dataset: dataframe</stro
 <p>A data set is considered scaled when it has mean=0 and std=1,
 or when there is a scaler in the pipeline. Binary columns (only
 0s and 1s) are excluded from the calculation.</div><a id='atomregressor-duplicates'></a><strong>duplicates: series</strong><br><div markdown class='param'>Number of duplicate rows in the dataset.</div><a id='atomregressor-missing'></a><strong>missing: list</strong><br><div markdown class='param'>Values that are considered "missing".</p>
-<p>These values are used by the [clean][atomregressor-clean] and
-[impute][atomregressor-impute] methods. Default values are: None, NaN,
+<p>These values are used by the <a class="autorefs autorefs-internal" href="#atomregressor-clean">clean</a> and
+<a class="autorefs autorefs-internal" href="#atomregressor-impute">impute</a> methods. Default values are: None, NaN,
 +inf, -inf, "", "?", "None", "NA", "nan", "NaN" and "inf".
 Note that None, NaN, +inf and -inf are always considered
 missing since they are incompatible with sklearn estimators.</div><a id='atomregressor-nans'></a><strong>nans: series | None</strong><br><div markdown class='param'>Columns with the number of missing values in them.</div><a id='atomregressor-n_nans'></a><strong>n_nans: int | None</strong><br><div markdown class='param'>Number of samples containing missing values.</div><a id='atomregressor-numerical'></a><strong>numerical: series</strong><br><div markdown class='param'>Names of the numerical features in the dataset.</div><a id='atomregressor-n_numerical'></a><strong>n_numerical: int</strong><br><div markdown class='param'>Number of numerical features in the dataset.</div><a id='atomregressor-categorical'></a><strong>categorical: series</strong><br><div markdown class='param'>Names of the categorical features in the dataset.</div><a id='atomregressor-n_categorical'></a><strong>n_categorical: int</strong><br><div markdown class='param'>Number of categorical features in the dataset.</div><a id='atomregressor-outliers'></a><strong>outliers: pd.series | None</strong><br><div markdown class='param'>Columns in training set with amount of outlier values.</div><a id='atomregressor-n_outliers'></a><strong>n_outliers: int | None</strong><br><div markdown class='param'>Number of samples in the training set containing outliers.</div></td></tr></p>
@@ -3612,13 +3612,13 @@ The new branch is split from the current branch. Use <code>__from__</code>
 to split the new branch from any other existing branch. Read
 more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#branches">user guide</a>.</div><a id='atomregressor-models'></a><strong>models: str | list[str] | None</strong><br><div markdown class='param'>Name of the model(s).</div><a id='atomregressor-metric'></a><strong>metric: str | list[str] | None</strong><br><div markdown class='param'>Name of the metric(s).</div><a id='atomregressor-winners'></a><strong>winners: list[<a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a>]</strong><br><div markdown class='param'>Models ordered by performance.</p>
 <p>Performance is measured as the highest score on the model's
-[<code>score_bootstrap</code>][adaboost-score_bootstrap] or
-[<code>score_test</code>][adaboost-score_test] attributes, checked in
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
 is compared.</div><a id='atomregressor-winner'></a><strong>winner: <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a></strong><br><div markdown class='param'>Best performing model.</p>
 <p>Performance is measured as the highest score on the model's
-[<code>score_bootstrap</code>][adaboost-score_bootstrap] or
-[<code>score_test</code>][adaboost-score_test] attributes, checked in
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
 is compared.</div><a id='atomregressor-results'></a><strong>results: pd.DataFrame</strong><br><div markdown class='param'>Overview of the training results.</p>
 <p>All durations are in seconds. Columns include:</p>
@@ -3654,7 +3654,7 @@ a custom one, e.g. <code>atom.palette = ["red", "green", "blue"]</code>.</div><a
 <p>Next to the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> methods, the class contains a variety
 of utility methods to handle the data and manage the pipeline.</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[add][atomregressor-add]</td><td>Add a transformer to the pipeline.</td></tr><tr><td>[apply][atomregressor-apply]</td><td>Apply a function to the dataset.</td></tr><tr><td>[automl][atomregressor-automl]</td><td>Search for an optimized pipeline in an automated fashion.</td></tr><tr><td>[available_models][atomregressor-available_models]</td><td>Give an overview of the available predefined models.</td></tr><tr><td>[canvas][atomregressor-canvas]</td><td>Create a figure with multiple plots.</td></tr><tr><td>[clear][atomregressor-clear]</td><td>Reset attributes and clear cache from all models.</td></tr><tr><td>[delete][atomregressor-delete]</td><td>Delete models.</td></tr><tr><td>[distribution][atomregressor-distribution]</td><td>Get statistics on column distributions.</td></tr><tr><td>[eda][atomregressor-eda]</td><td>Create an Exploratory Data Analysis report.</td></tr><tr><td>[evaluate][atomregressor-evaluate]</td><td>Get all models' scores for the provided metrics.</td></tr><tr><td>[export_pipeline][atomregressor-export_pipeline]</td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td>[get_class_weight][atomregressor-get_class_weight]</td><td>Return class weights for a balanced data set.</td></tr><tr><td>[get_sample_weight][atomregressor-get_sample_weight]</td><td>Return sample weights for a balanced data set.</td></tr><tr><td>[inverse_transform][atomregressor-inverse_transform]</td><td>Inversely transform new data through the pipeline.</td></tr><tr><td>[load][atomregressor-load]</td><td>Loads an atom instance from a pickle file.</td></tr><tr><td>[log][atomregressor-log]</td><td>Print message and save to log file.</td></tr><tr><td>[merge][atomregressor-merge]</td><td>Merge another instance of the same class into this one.</td></tr><tr><td>[update_layout][atomregressor-update_layout]</td><td>Update the properties of the plot's layout.</td></tr><tr><td>[update_traces][atomregressor-update_traces]</td><td>Update the properties of the plot's traces.</td></tr><tr><td>[reset][atomregressor-reset]</td><td>Reset the instance to it's initial state.</td></tr><tr><td>[reset_aesthetics][atomregressor-reset_aesthetics]</td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td>[save][atomregressor-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[save_data][atomregressor-save_data]</td><td>Save the data in the current branch to a <code>.csv</code> file.</td></tr><tr><td>[shrink][atomregressor-shrink]</td><td>Converts the columns to the smallest possible matching dtype.</td></tr><tr><td>[stacking][atomregressor-stacking]</td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td>[stats][atomregressor-stats]</td><td>Print basic information about the dataset.</td></tr><tr><td>[status][atomregressor-status]</td><td>Get an overview of the branches and models.</td></tr><tr><td>[transform][atomregressor-transform]</td><td>Transform new data through the pipeline.</td></tr><tr><td>[voting][atomregressor-voting]</td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-add">add</a></td><td>Add a transformer to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-apply">apply</a></td><td>Apply a function to the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-automl">automl</a></td><td>Search for an optimized pipeline in an automated fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-clear">clear</a></td><td>Reset attributes and clear cache from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-distribution">distribution</a></td><td>Get statistics on column distributions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-eda">eda</a></td><td>Create an Exploratory Data Analysis report.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-export_pipeline">export_pipeline</a></td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-get_sample_weight">get_sample_weight</a></td><td>Return sample weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-load">load</a></td><td>Loads an atom instance from a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-reset">reset</a></td><td>Reset the instance to it's initial state.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-save_data">save_data</a></td><td>Save the data in the current branch to a <code>.csv</code> file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-shrink">shrink</a></td><td>Converts the columns to the smallest possible matching dtype.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-stats">stats</a></td><td>Print basic information about the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-status">status</a></td><td>Get an overview of the branches and models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='atomregressor-add'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1110>[source]</a></span></div>Add a transformer to the pipeline.</p>
@@ -3754,7 +3754,7 @@ Automating the machine learning often provides faster, more
 accurate outputs than hand-coded algorithms. ATOM uses the
 <a href="https://evalml.alteryx.com/en/stable/index.html">evalML</a> package for AutoML optimization. The resulting
 transformers and final estimator are merged with atom's pipeline
-(check the [<code>pipeline</code>][atomregressor-pipeline] and [<code>models</code>][atomregressor-models]
+(check the <a class="autorefs autorefs-internal" href="#atomregressor-pipeline"><code>pipeline</code></a> and <a class="autorefs autorefs-internal" href="#atomregressor-models"><code>models</code></a>
 attributes after the method finishes running). The created
 <a href="https://evalml.alteryx.com/en/stable/autoapi/evalml/automl/index.html#evalml.automl.AutoMLSearch">AutoMLSearch</a> instance can be accessed through the <code>evalml</code>
 attribute.</p>
@@ -3839,13 +3839,13 @@ Plot object.
 <p><a id='atomregressor-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L453>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
-memory before [saving][atomregressor-save] the instance. The affected
+memory before <a class="autorefs autorefs-internal" href="#atomregressor-save">saving</a> the instance. The affected
 attributes are:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
-<li>[App instance][adaboost-create_app]</li>
-<li>[Dashboard instance][adaboost-create_dashboard]</li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_app">App instance</a></li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_dashboard">Dashboard instance</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">prediction attributes</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
@@ -3854,7 +3854,7 @@ attributes are:</p>
 <p><a id='atomregressor-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L474>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
-before [saving][atomregressor-save]. Deleted models are not removed from
+before <a class="autorefs autorefs-internal" href="#atomregressor-save">saving</a>. Deleted models are not removed from
 any active <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow experiment</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='delete-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
@@ -4041,7 +4041,7 @@ Original target column. Only returned if provided.
 </table>
 <p><br><br></p>
 <p><a id='atomregressor-load'></a><div class='sign'><em>function</em> atom.atom.<strong style='color:#008AB8'>load</strong>(filename, data=None, transform_data=True, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L592>[source]</a></span></div>Loads an atom instance from a pickle file.</p>
-<p>If the instance was [saved][atomregressor-save] using <code>save_data=False</code>,
+<p>If the instance was <a class="autorefs autorefs-internal" href="#atomregressor-save">saved</a> using <code>save_data=False</code>,
 it's possible to load new data into it and apply all data
 transformations.</p>
 <div class="admonition note">
@@ -4151,7 +4151,7 @@ Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the [load][atomclassifier-load] method.
+add the data to the <a class="autorefs autorefs-internal" href="../atomclassifier/#atomclassifier-load">load</a> method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4271,11 +4271,11 @@ cleaning classes are attached to atom after running. Read more in the
 <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#data-cleaning">user guide</a>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the [eda][atomclassifier-eda] method to examine the data and
+<p>Use the <a class="autorefs autorefs-internal" href="../atomclassifier/#atomclassifier-eda">eda</a> method to examine the data and
 help you determine suitable parameters for the data cleaning methods.</p>
 </div>
 <table style="font-size: 0.9em">
-<p><tr><td>[clean][atomregressor-clean]</td><td>Applies standard data cleaning steps on the dataset.</td></tr><tr><td>[discretize][atomregressor-discretize]</td><td>Bin continuous data into intervals.</td></tr><tr><td>[encode][atomregressor-encode]</td><td>Perform encoding of categorical features.</td></tr><tr><td>[impute][atomregressor-impute]</td><td>Handle missing values in the dataset.</td></tr><tr><td>[normalize][atomregressor-normalize]</td><td>Transform the data to follow a Normal/Gaussian distribution.</td></tr><tr><td>[prune][atomregressor-prune]</td><td>Prune outliers from the training set.</td></tr><tr><td>[scale][atomregressor-scale]</td><td>Scale the data.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-clean">clean</a></td><td>Applies standard data cleaning steps on the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-discretize">discretize</a></td><td>Bin continuous data into intervals.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-encode">encode</a></td><td>Perform encoding of categorical features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-impute">impute</a></td><td>Handle missing values in the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-normalize">normalize</a></td><td>Transform the data to follow a Normal/Gaussian distribution.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-prune">prune</a></td><td>Prune outliers from the training set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-scale">scale</a></td><td>Scale the data.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='atomregressor-clean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(drop_types=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1286>[source]</a></span></div>Applies standard data cleaning steps on the dataset.</p>
@@ -4318,12 +4318,12 @@ value in order to prevent too high cardinality.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This method only encodes the categorical features. It does
-not encode the target column! Use the [clean][atomregressor-clean]
+not encode the target column! Use the <a class="autorefs autorefs-internal" href="#atomregressor-clean">clean</a>
 method for that.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the [categorical][atomregressor-categorical] attribute  for a
+<p>Use the <a class="autorefs autorefs-internal" href="#atomregressor-categorical">categorical</a> attribute  for a
 list of the categorical features in the dataset.</p>
 </div>
 <p><br><br></p>
@@ -4335,7 +4335,7 @@ considered "missing values".</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/imputer/#imputer">Imputer</a> class for a description of the parameters.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the [nans][atomregressor-nans] attribute to check the amount of
+<p>Use the <a class="autorefs autorefs-internal" href="#atomregressor-nans">nans</a> attribute to check the amount of
 missing values per column.</p>
 </div>
 <p><br><br></p>
@@ -4365,7 +4365,7 @@ the test set.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the [outliers][atomregressor-outliers] attribute to check the
+<p>Use the <a class="autorefs autorefs-internal" href="#atomregressor-outliers">outliers</a> attribute to check the
 number of outliers per column.</p>
 </div>
 <p><br><br></p>
@@ -4374,7 +4374,7 @@ number of outliers per column.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> class for a description of the parameters.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the [scaled][atomregressor-scaled] attribute to check whether
+<p>Use the <a class="autorefs autorefs-internal" href="#atomregressor-scaled">scaled</a> attribute to check whether
 the dataset is scaled.</p>
 </div>
 <p><br></p>
@@ -4385,7 +4385,7 @@ text to meaningful numeric values, ready to be ingested by a model. All
 transformations are applied only on the column in the dataset called
 <code>corpus</code>. Read more in the <a class="autorefs autorefs-internal" href="#nlp">user guide</a>.</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[textclean][atomregressor-textclean]</td><td>Applies standard text cleaning to the corpus.</td></tr><tr><td>[textnormalize][atomregressor-textnormalize]</td><td>Normalize the corpus.</td></tr><tr><td>[tokenize][atomregressor-tokenize]</td><td>Tokenize the corpus.</td></tr><tr><td>[vectorize][atomregressor-vectorize]</td><td>Vectorize the corpus.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-textclean">textclean</a></td><td>Applies standard text cleaning to the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-textnormalize">textnormalize</a></td><td>Normalize the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-tokenize">tokenize</a></td><td>Tokenize the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-vectorize">vectorize</a></td><td>Vectorize the corpus.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='atomregressor-textclean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1554>[source]</a></span></div>Applies standard text cleaning to the corpus.</p>
@@ -4432,7 +4432,7 @@ from datetime columns, create new non-linear features transforming
 the existing ones, group similar features or, if the dataset is too
 large, remove features. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/feature_engineering/#feature-engineering">user guide</a>.</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[feature_extraction][atomregressor-feature_extraction]</td><td>Extract features from datetime columns.</td></tr><tr><td>[feature_generation][atomregressor-feature_generation]</td><td>Generate new features.</td></tr><tr><td>[feature_grouping][atomregressor-feature_grouping]</td><td>Extract statistics from similar features.</td></tr><tr><td>[feature_selection][atomregressor-feature_selection]</td><td>Reduce the number of features in the data.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-feature_extraction">feature_extraction</a></td><td>Extract features from datetime columns.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-feature_generation">feature_generation</a></td><td>Generate new features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-feature_grouping">feature_grouping</a></td><td>Extract statistics from similar features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-feature_selection">feature_selection</a></td><td>Reduce the number of features in the data.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='atomregressor-feature_extraction'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=['day', 'month', 'year'], fmt=None, encoding_type="ordinal", drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1706>[source]</a></span></div>Extract features from datetime columns.</p>
@@ -4484,12 +4484,12 @@ their performance is evaluated against a selected metric. There are
 three methods to call the three different training approaches. Read
 more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
 <table style="font-size: 0.9em">
-<p><tr><td>[run][atomregressor-run]</td><td>Train and evaluate the models in a direct fashion.</td></tr><tr><td>[successive_halving][atomregressor-successive_halving]</td><td>Fit the models in a successive halving fashion.</td></tr><tr><td>[train_sizing][atomregressor-train_sizing]</td><td>Train and evaluate the models in a train sizing fashion.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-run">run</a></td><td>Train and evaluate the models in a direct fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-successive_halving">successive_halving</a></td><td>Fit the models in a successive halving fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-train_sizing">train_sizing</a></td><td>Train and evaluate the models in a train sizing fashion.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='atomregressor-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1941>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
-<p>Contrary to [successive_halving][atomregressor-successive_halving] and
-[train_sizing][atomregressor-train_sizing], the direct approach only
+<p>Contrary to <a class="autorefs autorefs-internal" href="#atomregressor-successive_halving">successive_halving</a> and
+<a class="autorefs autorefs-internal" href="#atomregressor-train_sizing">train_sizing</a>, the direct approach only
 iterates once over the models, using the full dataset.</p>
 <p>The following steps are applied to every model:</p>
 <ol>

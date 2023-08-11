@@ -501,7 +501,7 @@ class TrialsCallback:
     def __call__(self, study: Study, trial: FrozenTrial):
         # The trial values are None when it fails
         if len(self.T._metric) == 1:
-            score = [trial.value or np.NaN]
+            score = [trial.value if trial.value is not None else np.NaN]
         else:
             score = trial.values or [np.NaN] * len(self.T._metric)
 
@@ -1927,9 +1927,9 @@ def check_is_fitted(
     if not is_fitted:
         if exception:
             raise NotFittedError(
-                f"This {type(estimator).__name__} instance is not"
-                " fitted yet. Call 'fit' or 'run' with appropriate"
-                " arguments before using this estimator."
+                f"This {type(estimator).__name__} instance is not fitted yet. "
+                f"Call {'run' if hasattr(estimator, 'run') else 'fit'} with "
+                "appropriate arguments before using this estimator."
             )
         else:
             return False

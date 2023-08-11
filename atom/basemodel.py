@@ -617,6 +617,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             for attribute in ("decision_function", "predict_proba", "predict"):
                 if hasattr(self.estimator, attribute):
                     attr = attribute
+                    break
 
         y_true = getattr(self, f"y_{dataset}")
         y_pred = getattr(self, f"{attr}_{dataset}")
