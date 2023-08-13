@@ -121,11 +121,14 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
+        import pandas as pd
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        # Add a datetime column
         X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
 
         atom = ATOMClassifier(X, y)
@@ -136,11 +139,14 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
+        import pandas as pd
         from atom.feature_engineering import FeatureExtractor
         from sklearn.datasets import load_breast_cancer
 
         X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        # Add a datetime column
         X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
 
         fe = FeatureExtractor(features=["day"], fmt="%Y-%m-%d", verbose=2)
@@ -383,7 +389,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -397,7 +403,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.feature_engineering import FeatureGenerator
         from sklearn.datasets import load_breast_cancer
 
@@ -697,7 +703,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -711,7 +717,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.feature_engineering import FeatureGrouper
         from sklearn.datasets import load_breast_cancer
 
@@ -1058,7 +1064,7 @@ class FeatureSelector(
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1074,7 +1080,7 @@ class FeatureSelector(
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.feature_engineering import FeatureSelector
         from sklearn.datasets import load_breast_cancer
 

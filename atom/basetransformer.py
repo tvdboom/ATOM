@@ -913,9 +913,15 @@ class BaseTransformer:
                 X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
                 X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
-            elif isinstance(arrays[1], (int, str)) or n_cols(arrays[1]) == 1:
-                # arrays=(X, y)
-                sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
+            elif isinstance(arrays[1], (*INT_TYPES, str)) or n_cols(arrays[1]) == 1:
+                try:
+                    # arrays=(X, y)
+                    sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
+                except ValueError:
+                    # arrays=(train, test) for forecast
+                    X_train, y_train = self._prepare_input(y=arrays[0])
+                    X_test, y_test = self._prepare_input(y=arrays[1])
+                    sets = _has_data_sets(X_train, y_train, X_test, y_test)
             else:
                 # arrays=(train, test)
                 X_train, y_train = self._prepare_input(arrays[0], y=y)

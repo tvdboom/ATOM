@@ -124,23 +124,20 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
+        import numpy as np
         from atom import ATOMClassifier
         from sklearn.datasets import fetch_20newsgroups
 
         X, y = fetch_20newsgroups(
             return_X_y=True,
-            categories=[
-                'alt.atheism',
-                'sci.med',
-                'comp.windows.x',
-            ],
+            categories=["alt.atheism", "sci.med", "comp.windows.x"],
             shuffle=True,
             random_state=1,
         )
         X = np.array(X).reshape(-1, 1)
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.dataset)
 
         atom.textclean(verbose=2)
@@ -149,17 +146,14 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
+        import numpy as np
         from atom.nlp import TextCleaner
         from sklearn.datasets import fetch_20newsgroups
 
         X, y = fetch_20newsgroups(
             return_X_y=True,
-            categories=[
-                'alt.atheism',
-                'sci.med',
-                'comp.windows.x',
-            ],
+            categories=["alt.atheism", "sci.med", "comp.windows.x"],
             shuffle=True,
             random_state=1,
         )
@@ -424,7 +418,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
 
         X = [
@@ -439,7 +433,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ]
         y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, test_size=2, random_state=1)
         print(atom.dataset)
 
         atom.textnormalize(stopwords="english", lemmatize=True, verbose=2)
@@ -448,7 +442,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.nlp import TextNormalizer
 
         X = [
@@ -461,7 +455,6 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
            ["running the test"],
            ["this is a test"],
         ]
-        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
         textnormalizer = TextNormalizer(
             stopwords="english",
@@ -649,7 +642,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
 
         X = [
@@ -664,7 +657,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ]
         y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, test_size=2, random_state=1)
         print(atom.dataset)
 
         atom.tokenize(verbose=2)
@@ -673,7 +666,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.nlp import Tokenizer
 
         X = [
@@ -686,7 +679,6 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
            ["running the test"],
            ["this is a test"],
         ]
-        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
         tokenizer = Tokenizer(bigram_freq=2, verbose=2)
         X = tokenizer.transform(X)
@@ -890,7 +882,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
 
         X = [
@@ -905,7 +897,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ]
         y = [1, 0, 0, 1, 1, 1, 0, 0]
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, test_size=2, random_state=1)
         print(atom.dataset)
 
         atom.vectorize(strategy="tfidf", verbose=2)
@@ -914,7 +906,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.nlp import Vectorizer
 
         X = [
@@ -927,7 +919,6 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
            ["running the test"],
            ["this is a test"],
         ]
-        y = [1, 0, 0, 1, 1, 1, 0, 0]
 
         vectorizer = Vectorizer(strategy="tfidf", verbose=2)
         X = vectorizer.fit_transform(X)

@@ -78,16 +78,19 @@ There are two ways to achieve this:
 * Using [ATOMModel][] (recommended). With this approach you can pass
   the required model characteristics to the pipeline.
 
-```python
+```pycon
 from atom import ATOMRegressor, ATOMModel
+from sklearn.datasets import load_diabetes
 from sklearn.linear_model import RANSACRegressor
 
 ransac = ATOMModel(
-...     models=RANSACRegressor,
-...     acronym="RANSAC",
-...     fullname="Random Sample Consensus",
-...     needs_scaling=True,
-... )
+    estimator=RANSACRegressor,
+    acronym="RANSAC",
+    fullname="Random Sample Consensus",
+    needs_scaling=True,
+)
+
+X, y = load_diabetes(return_X_y=True, as_frame=True)
 
 atom = ATOMRegressor(X, y)
 atom.run(ransac)
@@ -97,9 +100,12 @@ atom.run(ransac)
   will also call [ATOMModel][] under the hood, but it will leave its
   parameters to their default values.
 
-```python
+```pycon
 from atom import ATOMRegressor
+from sklearn.datasets import load_diabetes
 from sklearn.linear_model import RANSACRegressor
+
+X, y = load_diabetes(return_X_y=True, as_frame=True)
 
 atom = ATOMRegressor(X, y)
 atom.run(RANSACRegressor)

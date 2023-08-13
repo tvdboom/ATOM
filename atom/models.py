@@ -4020,7 +4020,7 @@ class Voting(ClassRegModel):
 
 # Variables ======================================================== >>
 
-# List of available models
+# Available models
 MODELS = ClassMap(
     AdaBoost,
     ARIMA,
@@ -4069,8 +4069,8 @@ MODELS = ClassMap(
     key="acronym",
 )
 
-# List of available ensembles
+# Available ensembles
 ENSEMBLES = ClassMap(Stacking, Voting, key="acronym")
 
-# List of all models + ensembles
+# Available models + ensembles
 MODELS_ENSEMBLES = ClassMap(*MODELS, *ENSEMBLES, key="acronym")

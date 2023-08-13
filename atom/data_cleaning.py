@@ -256,13 +256,13 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.train)
 
         atom.balance(strategy="smote", verbose=2)
@@ -272,7 +272,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.data_cleaning import Balancer
         from sklearn.datasets import load_breast_cancer
 
@@ -591,14 +591,14 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
         y = ["a" if i else "b" for i in y]
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.y)
 
         atom.clean(verbose=2)
@@ -607,11 +607,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
-        import numpy as np
+        ```pycon
         from atom.data_cleaning import Cleaner
+        from numpy.random import randint
 
-        y = ["a" if i else "b" for i in np.randint(100)]
+        y = ["a" if i else "b" for i in range(randint(100))]
 
         cleaner = Cleaner(verbose=2)
         y = cleaner.fit_transform(y=y)
@@ -995,13 +995,13 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom["mean radius"])
 
         atom.discretize(
@@ -1016,7 +1016,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.data_cleaning import Discretizer
         from sklearn.datasets import load_breast_cancer
 
@@ -1310,7 +1310,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
         from numpy.random import randint
@@ -1320,7 +1320,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
         X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.X)
 
         atom.encode(strategy="target", max_onehot=10, verbose=2)
@@ -1330,7 +1330,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.data_cleaning import Encoder
         from sklearn.datasets import load_breast_cancer
         from numpy.random import randint
@@ -1706,54 +1706,38 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
+        import numpy as np
         from atom import ATOMClassifier
-        from sklearn.datasets import load_breast_cancer
         from numpy.random import randint
+        from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         # Add some random missing values to the data
-        for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
-        X.iat[i, j] = np.nan
+        for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600)):
+            X.iat[i, j] = np.NaN
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.nans)
-
-        mean radius       118
-        mean texture      134
-        mean perimeter    135
-        mean area         140
-
-        dtype: int64
 
         atom.impute(strat_num="median", max_nan_rows=0.1, verbose=2)
 
-        Fitting Imputer...
-        Imputing missing values...
-         --> Dropping 3 samples for containing more than 3 missing values.
-         --> Imputing 115 missing values with median (13.3) in feature mean radius.
-         --> Imputing 131 missing values with median (18.8) in feature mean texture.
-         --> Imputing 132 missing values with median (85.86) in feature mean perimeter.
-         --> Imputing 137 missing values with median (561.3) in feature mean area.
-
         print(atom.n_nans)
-
-        0
-
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
+        import numpy as np
         from atom.data_cleaning import Imputer
-        from sklearn.datasets import load_breast_cancer
         from numpy.random import randint
+        from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         # Add some random missing values to the data
-        for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
-        X.iloc[i, j] = np.nan
+        for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600)):
+            X.iloc[i, j] = np.nan
 
         imputer = Imputer(strat_num="median", max_nan_rows=0.1, verbose=2)
         X, y = imputer.fit_transform(X, y)
@@ -2116,13 +2100,13 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.dataset)
 
         atom.plot_distribution(columns=0)
@@ -2135,7 +2119,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.data_cleaning import Normalizer
         from sklearn.datasets import load_breast_cancer
 
@@ -2400,13 +2384,13 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.dataset)
 
         atom.prune(stratgey="iforest", verbose=2)
@@ -2418,7 +2402,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.data_cleaning import Normalizer
         from sklearn.datasets import load_breast_cancer
 
@@ -2695,13 +2679,13 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     --------
 
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        atom = ATOMClassifier(X, y)
+        atom = ATOMClassifier(X, y, random_state=1)
         print(atom.dataset)
 
         atom.scale(verbose=2)
@@ -2711,7 +2695,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.data_cleaning import Scaler
         from sklearn.datasets import load_breast_cancer
 

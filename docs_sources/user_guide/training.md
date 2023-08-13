@@ -42,12 +42,12 @@ separated from the accronym by an underscore.
 
 ```python
 atom.run(
-...     models=["RF_1", "RF_2"],
-...     est_params={
-...         "RF_1": {"n_estimators": 100},
-...         "RF_2": {"n_estimators": 200},
-...     }
-... )
+    models=["RF_1", "RF_2"],
+    est_params={
+        "RF_1": {"n_estimators": 100},
+        "RF_2": {"n_estimators": 200},
+    }
+)
 ```
 
 For example, this pipeline fits two Random Forest models, one with 100
@@ -243,12 +243,12 @@ layer with 75 neurons.
 
 ```python
 atom.run(
-...     models=["XGB", "MLP"],
-...     est_params={
-...         "XGB": {"n_estimators": 200},
-...         "MLP": {"hidden_layer_sizes": (75,)},
-...     }
-... )
+    models=["XGB", "MLP"],
+    est_params={
+        "XGB": {"n_estimators": 200},
+        "MLP": {"hidden_layer_sizes": (75,)},
+    }
+)
 ```
 
 Some estimators allow you to pass extra parameters to the fit method
@@ -339,10 +339,10 @@ only for the [RandomForest][].
 
 ```python
 atom.run(
-...    models=["ET", "RF"],
-...    n_trials=30,
-...    ht_params={"distributions": {"all": "n_estimators", "RF": "max_depth"}},
-... )
+    models=["ET", "RF"],
+    n_trials=30,
+    ht_params={"distributions": {"all": "n_estimators", "RF": "max_depth"}},
+)
 ```
 
 Like the [`columns`][atomclassifier-add] parameter in atom's methods, you
@@ -353,10 +353,10 @@ using all its predefined parameters except `n_estimators`, run:
 
 ```python
 atom.run(
-...     models="ET",
-...     n_trials=15,
-...     ht_params={"distributions": "!n_estimators"},
-... )
+    models="ET",
+    n_trials=15,
+    ht_params={"distributions": "!n_estimators"},
+)
 ```
 
 If just the parameter name is provided, the predefined distribution is
@@ -367,22 +367,22 @@ overview of their hyperparameters and distributions.
 
 ```python
 from optuna.distributions import (
-...    IntDistribution, FloatDistribution, CategoricalDistribution
-... )
+    IntDistribution, FloatDistribution, CategoricalDistribution
+)
 
 atom.run(
-...     models=["ET", "RF"],
-...     n_trials=30,
-...     ht_params={
-...         "dimensions": {
-...             "all": {"n_estimators": IntDistribution(10, 100, step=10),
-...             "RF": {
-...                 "max_depth": IntDistribution(1, 10),
-...                 "max_features": CategoricalDistribution(["sqrt", "log2"]),
-...            },
-...         },
-...     },
-... )
+    models=["ET", "RF"],
+    n_trials=30,
+    ht_params={
+        "dimensions": {
+            "all": {"n_estimators": IntDistribution(10, 100, step=10)},
+            "RF": {
+                "max_depth": IntDistribution(1, 10),
+                "max_features": CategoricalDistribution(["sqrt", "log2"]),
+           },
+        },
+    }
+)
 ```
 
 Parameters for optuna's [study][] and the study's [optimize][] method can
@@ -393,13 +393,13 @@ or add a custom callback.
 from optuna.samplers import RandomSampler
 
 atom.run(
-...     models="LR",
-...     n_trials=30,
-...     ht_params={
-...         "sampler": RandomSampler(seed=atom.random_state),
-...         "callbacks": custom_callback(),
-...     },
-... )
+    models="LR",
+    n_trials=30,
+    ht_params={
+        "sampler": RandomSampler(seed=atom.random_state),
+        "callbacks": custom_callback(),
+    },
+)
 ```
 
 !!! note

@@ -229,6 +229,9 @@ def formatter(
             **kwargs
         )
 
+    # First line of markdown page
+    print(md.lines[0])
+
     try:
         output, figures = execute(src.strip())
 
@@ -243,6 +246,6 @@ def formatter(
             render.append(source)
 
     except Exception as e:
-        raise SuperFencesException from e
+        raise SuperFencesException(f"Exception raised running code:\n{src}") from e
 
     return "<br>".join(render)

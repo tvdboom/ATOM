@@ -407,22 +407,25 @@ class DirectClassifier(Direct):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import DirectClassifier
-    from sklearn.model_selection import train_test_split
     from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
     train, test = train_test_split(
         X.merge(y.to_frame(), left_index=True, right_index=True),
         test_size=0.3,
     )
 
-    runner = DirectClassifier(models=["LR", "RF"], metric="auc", verbose=2)
+    runner = DirectClassifier(models=["LR", "RF"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -602,19 +605,22 @@ class DirectForecaster(Direct):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import DirectForecaster
-    from sktime.forecasting.model_selection import temporal_train_test_split
     from sktime.datasets import load_airline
+    from sktime.forecasting.model_selection import temporal_train_test_split
 
     y = load_airline()
+
     train, test = temporal_train_test_split(y, test_size=0.2)
 
     runner = DirectForecaster(models=["ES", "ETS"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -794,21 +800,25 @@ class DirectRegressor(Direct):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import DirectRegressor
     from sklearn.datasets import load_digits
+    from sklearn.model_selection import train_test_split
 
     X, y = load_digits(return_X_y=True, as_frame=True)
+
     train, test = train_test_split(
         X.merge(y.to_frame(), left_index=True, right_index=True),
         test_size=0.3,
     )
 
-    runner = DirectClassifier(models=["OLS", "RF"], metric="r2", verbose=2)
+    runner = DirectRegressor(models=["OLS", "RF"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -995,21 +1005,25 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import SuccessiveHalvingClassifier
     from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
     train, test = train_test_split(
         X.merge(y.to_frame(), left_index=True, right_index=True),
         test_size=0.3,
     )
 
-    runner = SuccessiveHalvingClassifier(["LR", "RF"], metric="auc", verbose=2)
+    runner = SuccessiveHalvingClassifier(["LR", "RF"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -1193,21 +1207,22 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     Examples
     --------
-    ```python
-    from atom.training import SuccessiveHalvingRegressor
-    from sklearn.datasets import load_digits
+    ```pycon
+    from atom.training import SuccessiveHalvingForecaster
+    from sktime.datasets import load_airline
+    from sktime.forecasting.model_selection import temporal_train_test_split
 
-    X, y = load_digits(return_X_y=True, as_frame=True)
-    train, test = train_test_split(
-        X.merge(y.to_frame(), left_index=True, right_index=True),
-        test_size=0.3,
-    )
+    y = load_airline()
 
-    runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
+    train, test = temporal_train_test_split(y, test_size=0.2)
+
+    runner = SuccessiveHalvingForecaster(["ETS", "ES"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -1391,21 +1406,25 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import SuccessiveHalvingRegressor
     from sklearn.datasets import load_digits
+    from sklearn.model_selection import train_test_split
 
     X, y = load_digits(return_X_y=True, as_frame=True)
+
     train, test = train_test_split(
         X.merge(y.to_frame(), left_index=True, right_index=True),
         test_size=0.3,
     )
 
-    runner = SuccessiveHalvingRegressor(["OLS", "RF"], metric="r2", verbose=2)
+    runner = SuccessiveHalvingRegressor(["OLS", "RF"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -1598,21 +1617,25 @@ class TrainSizingClassifier(TrainSizing):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import TrainSizingClassifier
     from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
 
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
     train, test = train_test_split(
         X.merge(y.to_frame(), left_index=True, right_index=True),
         test_size=0.3,
     )
 
-    runner = TrainSizingClassifier(models="LR", metric="auc", verbose=2)
+    runner = TrainSizingClassifier(models="LR", verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -1801,21 +1824,22 @@ class TrainSizingForecaster(TrainSizing):
 
     Examples
     --------
-    ```python
-    from atom.training import TrainSizingRegressor
-    from sklearn.datasets import load_digits
+    ```pycon
+    from atom.training import TrainSizingForecaster
+    from sktime.datasets import load_airline
+    from sktime.forecasting.model_selection import temporal_train_test_split
 
-    X, y = load_digits(return_X_y=True, as_frame=True)
-    train, test = train_test_split(
-        X.merge(y.to_frame(), left_index=True, right_index=True),
-        test_size=0.3,
-    )
+    y = load_airline()
 
-    runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
+    train, test = temporal_train_test_split(y, test_size=0.2)
+
+    runner = TrainSizingForecaster(["ETS", "ES"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
@@ -2004,21 +2028,25 @@ class TrainSizingRegressor(TrainSizing):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom.training import TrainSizingRegressor
     from sklearn.datasets import load_digits
+    from sklearn.model_selection import train_test_split
 
     X, y = load_digits(return_X_y=True, as_frame=True)
+
     train, test = train_test_split(
         X.merge(y.to_frame(), left_index=True, right_index=True),
         test_size=0.3,
     )
 
-    runner = TrainSizingRegressor(models="OLS", metric="r2", verbose=2)
+    runner = TrainSizingRegressor(models="OLS", verbose=2)
     runner.run(train, test)
 
     # Analyze the results
-    runner.evaluate()
+    print(runner.results)
+
+    print(runner.evaluate())
     ```
 
     """
