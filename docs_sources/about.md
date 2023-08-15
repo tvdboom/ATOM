@@ -136,7 +136,7 @@ ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by provid
 core project contributors with a set of developer tools free of charge.
 
 <div align="center" markdown>
-  [![JetBrains](img/jetbrains.png){ .icon width="200" height="200" }](https://www.jetbrains.com)
+  [![JetBrains](img/jetbrains.png){ .icon width="200" height="200" }](https://www.jetbrains.com/community/opensource/#support)
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   [![PyCharm](img/pycharm.png){ .icon width="200" height="200" }](https://www.jetbrains.com/pycharm/)
 </div>

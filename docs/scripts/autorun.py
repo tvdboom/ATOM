@@ -113,9 +113,6 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         if files := [os.path.join(DIR_EXAMPLES, f) for f in os.listdir(DIR_EXAMPLES)]:
             return os.path.basename(max(files, key=os.path.getmtime))
 
-    import time
-    t = time.time()
-
     ipy = InteractiveInterpreter()
 
     lines = src.split("\n")
@@ -168,9 +165,6 @@ def execute(src: str) -> tuple[list[str], list[str]]:
 
         elif i > end_line:
             output[-1].append(draw(line))
-
-    print(block)
-    print(f"Seconds: {time.time() - t}\n")
 
     return output, figures
 
@@ -235,6 +229,9 @@ def formatter(
             **kwargs
         )
 
+    # First line of markdown page
+    print(md.lines[0])
+
     try:
         output, figures = execute(src.strip())
 
@@ -249,6 +246,6 @@ def formatter(
             render.append(source)
 
     except Exception as e:
-        raise SuperFencesException from e
+        raise SuperFencesException(f"Exception raised running code:\n{src}") from e
 
     return "<br>".join(render)

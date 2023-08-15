@@ -14,7 +14,7 @@ from collections import defaultdict
 from copy import deepcopy
 from platform import machine, platform, python_build, python_version
 from typing import Callable
-
+from pyarrow.lib import ArrowInvalid
 import dill as pickle
 import numpy as np
 import pandas as pd
@@ -120,8 +120,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
         if "gpu" in self.device.lower():
             self.log("GPU training enabled.", 1)
-        if self.engine != "sklearn":
-            self.log(f"Execution engine: {self.engine}.", 1)
+        if (data := self.engine.get("data")) != "numpy":
+            self.log(f"Data execution engine: {data}.", 1)
+        if (models := self.engine.get("models")) != "sklearn":
+            self.log(f"Models execution engine: {models}.", 1)
         if self.backend == "ray" or self.n_jobs > 1:
             self.log(f"Parallelization backend: {self.backend}", 1)
         if self.experiment:
@@ -262,7 +264,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.categorical)
 
     @property
-    def outliers(self) -> pd.series | None:
+    def outliers(self) -> SERIES | None:
         """Columns in training set with amount of outlier values."""
         if not is_sparse(self.X):
             z_scores = self.train.select_dtypes(include=["number"]).apply(stats.zscore)
@@ -905,9 +907,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         else:
             nans = self.nans.sum()
             n_categorical = self.n_categorical
-            outliers = self.outliers.sum()
-            try:
-                # Can fail for unhashable columns (e.g. multilabel with lists)
+            try:  # Fails for pyarrow dtypes
+                outliers = self.outliers.sum()
+            except ArrowInvalid:
+                outliers = None
+                self.log(
+                    "Unable to calculate the number of outlier values. "
+                    "Incompatible operation with the pyarrrow data engine.", 3
+                )
+            try:  # Can fail for unhashable columns (e.g. multilabel with lists)
                 duplicates = self.dataset.duplicated().sum()
             except TypeError:
                 duplicates = None

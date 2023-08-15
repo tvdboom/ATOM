@@ -721,7 +721,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         from atom.feature_engineering import FeatureGrouper
         from sklearn.datasets import load_breast_cancer
 
-        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
 
         # Group all features that start with mean
         fg = FeatureGrouper({"means": ["mean.+"]}, verbose=2)
@@ -997,21 +997,32 @@ class FeatureSelector(
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "sklearnex"
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "sklearnex"
+            - "cuml"
 
     backend: str, default="loky"
-        Parallelization backend. Choose from:
+        Parallelization backend. Read more in the
+        [user guide][parallel-execution]. Choose from:
 
         - "loky": Single-node, process-based parallelism.
         - "multiprocessing": Legacy single-node, process-based
-          parallelism. Less robust than 'loky'.
+          parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
@@ -1108,7 +1119,7 @@ class FeatureSelector(
         max_correlation: FLOAT | None = 1.0,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         backend: str = "loky",
         verbose: INT = 0,
         logger: str | Logger | None = None,

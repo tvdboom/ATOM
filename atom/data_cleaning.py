@@ -540,13 +540,23 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -633,7 +643,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_missing_target: bool = True,
         encode_target: bool = True,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
@@ -702,10 +712,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.encode_target:
                 for col in get_cols(y):
                     if isinstance(col.iloc[0], SEQUENCE_TYPES):  # Multilabel
-                        self._estimators[col.name] = MultiLabelBinarizer().fit(col)
+                        est = self._get_est_class("MultiLabelBinarizer", "preprocessing")
+                        self._estimators[col.name] = est().fit(col)
                     elif list(uq := np.unique(col)) != list(range(col.nunique())):
-                        estimator = self._get_est_class("LabelEncoder", "preprocessing")
-                        self._estimators[col.name] = estimator().fit(col)
+                        est = self._get_est_class("LabelEncoder", "preprocessing")
+                        self._estimators[col.name] = est().fit(col)
                         self.mapping.update(
                             {col.name: {str(it(v)): i for i, v in enumerate(uq)}}
                         )
@@ -952,13 +963,23 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1045,7 +1066,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         bins: INT | SEQUENCE | dict = 5,
         labels: SEQUENCE | dict | None = None,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
@@ -1662,13 +1683,23 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1757,7 +1788,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         max_nan_rows: SCALAR | None = None,
         max_nan_cols: FLOAT | None = None,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
@@ -2053,13 +2084,23 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2140,7 +2181,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: str = "yeojohnson",
         *,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
@@ -2342,14 +2383,24 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "sklearnex"
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "sklearnex"
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2427,7 +2478,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,
@@ -2636,13 +2687,23 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2718,7 +2779,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         include_binary: bool = False,
         *,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,

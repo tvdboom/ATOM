@@ -20,8 +20,8 @@ from sklearn.datasets import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-from sktime.datasets import load_airline
-
+from sktime.datasets import load_airline, load_longley
+from sktime.forecasting.model_selection import temporal_train_test_split
 from atom.utils import (
     DATAFRAME, FEATURES, TARGET, merge, n_cols, to_df, to_pandas,
 )
@@ -61,12 +61,12 @@ def change_current_dir(tmp_path: Callable, monkeypatch: Callable):
     monkeypatch.chdir(tmp_path)
 
 
-def get_train_test(X: FEATURES, y: TARGET) -> tuple[DATAFRAME, DATAFRAME]:
+def get_train_test(X: FEATURES | None, y: TARGET) -> tuple[PANDAS, PANDAS]:
     """Get train and test sets from X and y.
 
     Parameters
     ----------
-    X: dataframe-like
+    X: dataframe-like or None
         Feature set.
 
     y: int, str, dict, sequence or dataframe
@@ -74,18 +74,21 @@ def get_train_test(X: FEATURES, y: TARGET) -> tuple[DATAFRAME, DATAFRAME]:
 
     Returns
     -------
-    dataframe
+    series or dataframe
         Training set.
 
-    dataframe
+    series or dataframe
         Test set.
 
     """
-    return train_test_split(
-        merge(to_df(X), to_pandas(y, columns=[f"y{i}" for i in range(n_cols(y))])),
-        test_size=0.3,
-        random_state=1,
-    )
+    if X is not None:
+        return train_test_split(
+            merge(to_df(X), to_pandas(y, columns=[f"y{i}" for i in range(n_cols(y))])),
+            test_size=0.3,
+            random_state=1,
+        )
+    else:
+        return temporal_train_test_split(y, test_size=0.3)
 
 
 # Sklearn datasets as np.array
@@ -275,11 +278,13 @@ y_multireg = merge(
     pd.Series(shuffle(y_reg.values, random_state=3), name="c"),
 )
 
+# Time series datasets
+y_fc = load_airline()
+y_ex, X_ex = load_longley()
+
 # Train and test sets per task
 bin_train, bin_test = get_train_test(X_bin, y_bin)
 class_train, class_test = get_train_test(X_class, y_class)
 reg_train, reg_test = get_train_test(X_reg, y_reg)
 label_train, label_test = get_train_test(X_label, y_label)
-
-# Time series datasets
-y_fc = load_airline()
+fc_train, fc_test = get_train_test(None, y_fc)

@@ -3240,7 +3240,7 @@
 
 <h1 id="featuregrouper">FeatureGrouper</h1>
 <hr />
-<p><a id='FeatureGrouper'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureGrouper</strong>(group, operators=None, drop_columns=True, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L634>[source]</a></span></div>Extract statistics from similar features.</p>
+<p><a id='FeatureGrouper'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureGrouper</strong>(group, operators=None, drop_columns=True, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L640>[source]</a></span></div>Extract statistics from similar features.</p>
 <p>Replace groups of features with related characteristics with new
 features that summarize statistical properties of te group. The
 statistical operators are calculated over every row of the group.
@@ -3298,30 +3298,69 @@ Number of features seen during fit.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">feature_grouping</span><span class="p">({</span><span class="s2">&quot;means&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;mean.+&quot;</span><span class="p">]},</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">feature_grouping</span><span class="p">({</span><span class="s2">&quot;means&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;mean.+&quot;</span><span class="p">]},</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="c1"># Note the mean features are gone and the new std(means) feature</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+<span class="go">Fitting FeatureGrouper...</span>
+<span class="go">Grouping features...</span>
+<span class="go"> --&gt; Group means successfully created.</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the mean features are gone and the new std(means) feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+<span class="go">     radius error  texture error  perimeter error  area error  smoothness error  compactness error  concavity error  concave points error  symmetry error  ...  worst symmetry  worst fractal dimension  min(means)  max(means)  mean(means)  median(means)  mode(means)  std(means)  target</span>
+<span class="go">0          0.1935         1.9620            1.243       10.21          0.012430           0.054160         0.077530              0.010220         0.02309  ...          0.3322                  0.14860    0.021680       203.9    28.677214       0.177150     0.021680   60.568324       1</span>
+<span class="go">1          0.9948         0.8509            7.222      153.10          0.006369           0.042430         0.042660              0.015080         0.02335  ...          0.3690                  0.08815    0.061210      2010.0   222.852611       0.286550     0.061210  597.894633       0</span>
+<span class="go">2          1.0000         0.6336            6.971      119.30          0.009406           0.030550         0.043440              0.027940         0.03156  ...          0.2443                  0.06251    0.051760      1157.0   131.907727       0.146700     0.051760  343.689776       0</span>
+<span class="go">3          0.2130         0.5914            1.545       18.52          0.005367           0.022390         0.030490              0.012620         0.01377  ...          0.2807                  0.10710    0.054390       559.2    68.252398       0.148750     0.054390  165.695672       0</span>
+<span class="go">4          0.2102         0.4336            1.391       17.40          0.004133           0.016950         0.016520              0.006659         0.01371  ...          0.2380                  0.08718    0.025630       568.9    68.403752       0.116230     0.025630  168.801339       1</span>
+<span class="go">..            ...            ...              ...         ...               ...                ...              ...                   ...             ...  ...             ...                      ...         ...         ...          ...            ...          ...         ...     ...</span>
+<span class="go">564        0.1913         0.9027            1.208       11.86          0.006513           0.008061         0.002817              0.004972         0.01502  ...          0.2615                  0.08269    0.006643       329.6    42.256462       0.142050     0.006643   97.758047       1</span>
+<span class="go">565        0.5959         0.6342            3.797       71.00          0.004649           0.018000         0.027490              0.012670         0.01365  ...          0.3379                  0.08950    0.056470      1169.0   133.496018       0.157750     0.056470  347.145995       0</span>
+<span class="go">566        0.2713         1.2170            1.893       24.28          0.005080           0.013700         0.007276              0.009073         0.01350  ...          0.2404                  0.06428    0.026020       685.9    81.451573       0.138275     0.026020  203.441630       1</span>
+<span class="go">567        0.2727         0.9429            1.831       18.15          0.009282           0.009216         0.020630              0.008965         0.02183  ...          0.2400                  0.06641    0.022300       394.1    49.664606       0.116495     0.022300  116.745361       1</span>
+<span class="go">568        0.2315         0.9112            1.727       20.52          0.005356           0.016790         0.019710              0.006370         0.01414  ...          0.2345                  0.06464    0.017370       646.1    78.013934       0.120325     0.017370  191.318947       1</span>
+
+<span class="go">[569 rows x 27 columns]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureGrouper</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureGrouper</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="c1"># Group all features that start with mean</span>
-<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGrouper</span><span class="p">({</span><span class="s2">&quot;means&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;mean.+&quot;</span><span class="p">]},</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Group all features that start with mean</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGrouper</span><span class="p">({</span><span class="s2">&quot;means&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;mean.+&quot;</span><span class="p">]},</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-<span class="c1"># Note the mean features are gone and the new std(means) feature</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="go">Grouping features...</span>
+<span class="go"> --&gt; Group means successfully created.</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the mean features are gone and the new std(means) feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="go">     radius error  texture error  perimeter error  area error  smoothness error  compactness error  concavity error  concave points error  symmetry error  ...  worst concave points  worst symmetry  worst fractal dimension  min(means)  max(means)  mean(means)  median(means)  mode(means)  std(means)</span>
+<span class="go">0          1.0950         0.9053            8.589      153.40          0.006399            0.04904          0.05373               0.01587         0.03003  ...                0.2654          0.4601                  0.11890     0.07871      1001.0   115.333381        0.28885      0.07871  297.404540</span>
+<span class="go">1          0.5435         0.7339            3.398       74.08          0.005225            0.01308          0.01860               0.01340         0.01389  ...                0.1860          0.2750                  0.08902     0.05667      1326.0   149.779832        0.13405      0.05667  393.997131</span>
+<span class="go">2          0.7456         0.7869            4.585       94.03          0.006150            0.04006          0.03832               0.02058         0.02250  ...                0.2430          0.3613                  0.08758     0.05999      1203.0   137.480169        0.20215      0.05999  357.203084</span>
+<span class="go">3          0.4956         1.1560            3.445       27.23          0.009110            0.07458          0.05661               0.01867         0.05963  ...                0.2575          0.6638                  0.17300     0.09744       386.1    49.661014        0.27180      0.09744  114.444620</span>
+<span class="go">4          0.7572         0.7813            5.438       94.44          0.011490            0.02461          0.05688               0.01885         0.01756  ...                0.1625          0.2364                  0.07678     0.05883      1297.0   146.750513        0.18945      0.05883  385.450556</span>
+<span class="go">..            ...            ...              ...         ...               ...                ...              ...                   ...             ...  ...                   ...             ...                      ...         ...         ...          ...            ...          ...         ...</span>
+<span class="go">564        1.1760         1.2560            7.673      158.70          0.010300            0.02891          0.05198               0.02454         0.01114  ...                0.2216          0.2060                  0.07115     0.05623      1479.0   166.578853        0.20825      0.05623  439.441252</span>
+<span class="go">565        0.7655         2.4630            5.203       99.04          0.005769            0.02423          0.03950               0.01678         0.01898  ...                0.1628          0.2572                  0.06637     0.05533      1261.0   144.125364        0.15960      0.05533  374.274845</span>
+<span class="go">566        0.4564         1.0750            3.425       48.55          0.005903            0.03731          0.04730               0.01557         0.01318  ...                0.1418          0.2218                  0.07820     0.05302       858.1   101.162786        0.13065      0.05302  254.320568</span>
+<span class="go">567        0.7260         1.5950            5.772       86.22          0.006522            0.06158          0.07117               0.01664         0.02324  ...                0.2650          0.4087                  0.12400     0.07016      1265.0   145.623806        0.31420      0.07016  375.376476</span>
+<span class="go">568        0.3857         1.4280            2.548       19.15          0.007189            0.00466          0.00000               0.00000         0.02676  ...                0.0000          0.2871                  0.07039     0.00000       181.0    26.153379        0.10877      0.00000   53.739926</span>
+
+<span class="go">[569 rows x 26 columns]</span>
 </code></pre></div>
 </div>
 </div>
@@ -3425,7 +3464,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregrouper-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L971>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='featuregrouper-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L977>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3437,7 +3476,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregrouper-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1004>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='featuregrouper-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1010>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3457,7 +3496,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregrouper-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L747>[source]</a></span></div>Group features.</p>
+<p><a id='featuregrouper-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L753>[source]</a></span></div>Group features.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

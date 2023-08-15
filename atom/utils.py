@@ -9,6 +9,7 @@ Description: Module containing utility constants, classes and functions.
 
 from __future__ import annotations
 
+import os
 import pprint
 import sys
 import tempfile
@@ -33,7 +34,6 @@ import mlflow
 import modin.pandas as md
 import numpy as np
 import pandas as pd
-import pandas as bk
 import plotly.graph_objects as go
 import scipy.sparse as sps
 from IPython.display import display
@@ -64,8 +64,6 @@ FLOAT_TYPES = (float, np.floating)
 SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
 INDEX_TYPES = (pd.Index, md.Index)
 TS_INDEX_TYPES = (
-    pd.RangeIndex,
-    md.RangeIndex,
     pd.PeriodIndex,
     md.PeriodIndex,
     pd.DatetimeIndex,
@@ -90,7 +88,7 @@ SEQUENCE = Union[SEQUENCE_TYPES]
 FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
 TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
-# Attributes shared between atom and a pd.DataFrame
+# Attributes shared between atom and a dataframe
 DF_ATTRS = (
     "size",
     "head",
@@ -178,6 +176,24 @@ class DataConfig:
     shuffle: bool = True
     stratify: bool | INT | str | SEQUENCE = True
     test_size: SCALAR = 0.2
+
+
+class PandasModin:
+    """Utility class to select the right data engine.
+
+    Returns pandas or modin depending on the env variable
+    ATOM_DATA_ENGINE, which is set in BaseTransformer.py.
+
+    """
+    def __getattr__(self, item: str) -> Any:
+        if os.environ.get("ATOM_DATA_ENGINE") == "modin":
+            return getattr(md, item)
+        else:
+            return getattr(pd, item)
+
+
+# This instance is used by ATOM to access the data engine
+bk = PandasModin()
 
 
 class CatBMetric:
@@ -1421,14 +1437,14 @@ def variable_return(
         return X, y
 
 
-def is_sparse(df: DATAFRAME) -> bool:
+def is_sparse(obj: PANDAS) -> bool:
     """Check if the dataframe is sparse.
 
     A data set is considered sparse if any of its columns is sparse.
 
     Parameters
     ----------
-    df: dataframe
+    obj: series or dataframe
         Data set to check.
 
     Returns
@@ -1437,7 +1453,7 @@ def is_sparse(df: DATAFRAME) -> bool:
         Whether the data set is sparse.
 
     """
-    return any(bk.api.types.is_sparse(df[col]) for col in df)
+    return any(pd.api.types.is_sparse(col) for col in get_cols(obj))
 
 
 def check_empty(obj: PANDAS) -> PANDAS | None:
@@ -1755,21 +1771,25 @@ def to_df(
         Dataset as dataframe of type given by the backend.
 
     """
-    if data is not None and not isinstance(data, bk.DataFrame):
-        # Assign default column names (dict already has column names)
-        if not isinstance(data, (dict, PANDAS_TYPES)) and columns is None:
-            columns = [f"x{str(i)}" for i in range(n_cols(data))]
+    if data is not None:
+        if not isinstance(data, bk.DataFrame):
+            # Assign default column names (dict already has column names)
+            if not isinstance(data, (dict, PANDAS_TYPES)) and columns is None:
+                columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
-        if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-            data = data.to_pandas()  # Convert cuML to pandas
-        elif sps.issparse(data):
-            # Create dataframe from sparse matrix
-            data = bk.DataFrame.sparse.from_spmatrix(data, index, columns)
-        else:
-            data = bk.DataFrame(data, index, columns)
+            if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
+                data = data.to_pandas()  # Convert cuML to pandas
+            elif sps.issparse(data):
+                # Create dataframe from sparse matrix
+                data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+            else:
+                data = pd.DataFrame(data, index, columns)
 
-        if dtype is not None:
-            data = data.astype(dtype)
+            if dtype is not None:
+                data = data.astype(dtype)
+
+        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow" and not is_sparse(data):
+            data = data.convert_dtypes(infer_objects=False, dtype_backend="pyarrow")
 
     return data
 
@@ -1803,17 +1823,21 @@ def to_series(
         Sequence as series of type given by the backend.
 
     """
-    if data is not None and not isinstance(data, bk.Series):
-        if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-            data = data.to_pandas()  # Convert cuML to pandas
-        else:
-            # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
-            data = bk.Series(
-                data=np.array(data, dtype="object").ravel().tolist(),
-                index=index,
-                name=getattr(data, "name", name),
-                dtype=dtype,
-            )
+    if data is not None:
+        if not isinstance(data, bk.Series):
+            if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
+                data = data.to_pandas()  # Convert cuML to pandas
+            else:
+                # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
+                data = pd.Series(
+                    data=np.array(data, dtype="object").ravel().tolist(),
+                    index=index,
+                    name=getattr(data, "name", name),
+                    dtype=dtype,
+                )
+
+        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow" and not is_sparse(data):
+            data = data.convert_dtypes(infer_objects=False, dtype_backend="pyarrow")
 
     return data
 

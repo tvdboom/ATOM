@@ -21,15 +21,15 @@ import pandas as pd
 import pytest
 from sklearn.naive_bayes import GaussianNB
 from sklearnex.svm import SVC
-
+from sklearnex import get_config
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.basetransformer import BaseTransformer
-from atom.training import DirectClassifier
+from atom.training import DirectClassifier, DirectForecaster
 from atom.utils import merge
 
 from .conftest import (
     X10, X_bin, X_bin_array, X_idx, X_label, X_sparse, X_text, bin_test,
-    bin_train, y10, y_bin, y_bin_array, y_fc, y_idx, y_label,
+    bin_train, y10, y_bin, y_bin_array, y_fc, y_idx, y_label, fc_train, fc_test
 )
 
 
@@ -63,54 +63,70 @@ def test_device_parameter():
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
 
 
+def test_engine_parameter_invalid():
+    """Assert that an error is raised when engine is invalid."""
+    with pytest.raises(ValueError, match=".*with keys 'data'.*"):
+        BaseTransformer(engine="invalid")
+
+    with pytest.raises(ValueError, match=".*Choose from: numpy.*"):
+        BaseTransformer(engine={"data": "invalid"})
+
+    with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
+        BaseTransformer(engine={"models": "invalid"})
+
+
+@patch("ray.init")
+def test_engine_parameter_modin(ray):
+    """Assert that ray is initialized when modin is data backend."""
+    BaseTransformer(engine={"data": "modin"})
+    assert ray.is_called_once
+
+
+def test_engine_parameter_env_var():
+    """Assert that the environment variable is set."""
+    base = BaseTransformer(engine={"data": "pyarrow"})
+    assert os.environ["ATOM_DATA_ENGINE"] == "pyarrow"
+    assert base.engine["models"] == "sklearn"
+
+    base = BaseTransformer(engine={"models": "sklearn"})  # No data key
+    assert os.environ["ATOM_DATA_ENGINE"] == "numpy"
+    assert base.engine["data"] == "numpy"
+
+
 @patch.dict("sys.modules", {"sklearnex": None})
 def test_engine_parameter_no_sklearnex():
     """Assert that an error is raised when sklearnex is not installed."""
     with pytest.raises(ModuleNotFoundError, match=".*import scikit-learn-intelex.*"):
-        BaseTransformer(engine="sklearnex")
+        BaseTransformer(engine={"models": "sklearnex"})
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
-    from sklearnex import get_config
-
-    BaseTransformer(device="gpu", engine="sklearnex")
+    BaseTransformer(device="gpu", engine={"models": "sklearnex"})
     assert get_config()["target_offload"] == "gpu"
-
-
-def test_engine_parameter_cuml_with_cpu():
-    """Assert that an error is raised when device='cpu' and engine='cuml'."""
-    with pytest.raises(ValueError, match=".*only supports sklearn.*"):
-        BaseTransformer(device="cpu", engine="cuml")
 
 
 def test_engine_parameter_no_cuml():
     """Assert that an error is raised when cuml is not installed."""
     with pytest.raises(ModuleNotFoundError, match=".*Failed to import cuml.*"):
-        BaseTransformer(device="gpu", engine="cuml")
+        BaseTransformer(device="gpu", engine={"models": "cuml"})
 
 
-def test_engine_parameter_invalid():
-    """Assert that an error is raised when engine is invalid."""
-    with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
-        BaseTransformer(engine="invalid")
-
-
-def test_backend_invalid():
+def test_backend_parameter_invalid():
     """Assert that an error is raised when backend is invalid."""
     with pytest.raises(ValueError, match=".*the backend parameter.*"):
         BaseTransformer(backend="invalid")
 
 
 @patch("ray.init")
-def test_backend_ray(ray):
+def test_backend_parameter_ray(ray):
     """Assert that ray is initialized when selected."""
     BaseTransformer(backend="ray")
     assert ray.is_called_once
 
 
-def test_backend():
+def test_backend_parameter():
     """Assert that other backends can be specified."""
     base = BaseTransformer(backend="threading")
     assert base.backend == "threading"
@@ -223,13 +239,13 @@ def test_inherit():
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
-    base = BaseTransformer(device="cpu", engine="sklearnex")
+    base = BaseTransformer(device="cpu", engine={"models": "sklearnex"})
     assert base._get_est_class("SVC", "svm") == SVC
 
 
 def test_get_est_class_from_default():
     """Assert that the class is retrieved from sklearn when import fails."""
-    base = BaseTransformer(device="cpu", engine="sklearnex")
+    base = BaseTransformer(device="cpu", engine={"models": "sklearnex"})
     assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
 
 
@@ -634,7 +650,7 @@ def test_test_size_int():
 def test_error_message_impossible_stratification():
     """Assert that the correct error is shown when stratification fails."""
     with pytest.raises(ValueError, match=".*stratify=False.*"):
-        ATOMClassifier(X_label, y=y_label, stratify=True, random_state=1)
+        ATOMClassifier(X_label[:100], y=y_label[:100], stratify=True, random_state=1)
 
 
 def test_input_is_X_y():
@@ -666,6 +682,13 @@ def test_input_is_train_test_with_parameter_y():
     """Assert that input X works can be combined with y."""
     atom = ATOMClassifier(bin_train, bin_test, y="mean texture", random_state=1)
     assert atom.target == "mean texture"
+
+
+def test_input_is_train_test_for_forecast():
+    """Assert that input train, test works for forecast tasks."""
+    trainer = DirectForecaster("ES", random_state=1)
+    trainer.run(fc_train, fc_test)
+    pd.testing.assert_series_equal(trainer.y, pd.concat([fc_train, fc_test]))
 
 
 def test_input_is_3_tuples():

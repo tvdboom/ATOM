@@ -54,7 +54,7 @@ from atom.utils import (
     bk, check_canvas, check_dependency, check_hyperparams, check_predict_proba,
     composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
     has_attr, has_task, is_binary, is_multioutput, it, lst, plot_from_model,
-    rnd, to_rgb,
+    rnd, to_rgb, SERIES
 )
 
 
@@ -2016,7 +2016,7 @@ class DataPlot(BasePlot):
 
         """
 
-        def get_text(column: bk.Series) -> bk.Series:
+        def get_text(column: SERIES) -> SERIES:
             """Get the complete corpus as sequence of tokens.
 
             Parameters

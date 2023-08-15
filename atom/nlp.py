@@ -836,13 +836,23 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -936,7 +946,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         return_sparse: bool = True,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,

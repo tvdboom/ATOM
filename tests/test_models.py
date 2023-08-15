@@ -107,7 +107,7 @@ def test_all_models_regression():
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_models_sklearnex_classification():
     """Assert the sklearnex engine works for classification tasks."""
-    atom = ATOMClassifier(X_bin, y_bin, device="cpu", engine="sklearnex", random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, engine={"models": "sklearnex"}, random_state=1)
     atom.run(
         models=["KNN", "LR", "RF", "SVM"],
         n_trials=2,
@@ -118,7 +118,7 @@ def test_models_sklearnex_classification():
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_models_sklearnex_regression():
     """Assert the sklearnex engine works for regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, device="cpu", engine="sklearnex", random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, engine={"models": "sklearnex"}, random_state=1)
     atom.run(
         models=["EN", "KNN", "Lasso", "OLS", "RF", "Ridge", "SVM"],
         n_trials=2,
@@ -129,7 +129,7 @@ def test_models_sklearnex_regression():
 @patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
 def test_models_cuml_classification():
     """Assert that all classification models can be called with cuml."""
-    atom = ATOMClassifier(X_bin, y_bin, device="gpu", engine="cuml", random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, engine={"models": "cuml"}, random_state=1)
     atom.run(
         models=["!CatB", "!LGB", "!XGB"],
         n_trials=1,
@@ -152,7 +152,7 @@ def test_models_cuml_classification():
 @patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
 def test_models_cuml_regression():
     """Assert that all regression models can be called with cuml."""
-    atom = ATOMRegressor(X_reg, y_reg, device="gpu", engine="cuml", random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, engine={"models": "cuml"}, random_state=1)
     atom.run(
         models=["!CatB", "!LGB", "!XGB"],
         n_trials=1,

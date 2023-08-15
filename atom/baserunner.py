@@ -687,7 +687,7 @@ class BaseRunner(BaseTracker):
             )
 
         weights = compute_sample_weight("balanced", y=getattr(self, dataset.lower()))
-        return bk.Series(weights, name="sample_weight").round(3)
+        return pd.Series(weights, name="sample_weight").round(3)
 
     @composed(crash, method_to_log)
     def merge(self, other: Any, /, suffix: str = "2"):

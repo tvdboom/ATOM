@@ -3322,7 +3322,7 @@
 
 <h1 id="directregressor">DirectRegressor</h1>
 <hr />
-<p><a id='DirectRegressor'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>DirectRegressor</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L651>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
+<p><a id='DirectRegressor'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>DirectRegressor</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L657>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
 <p>The following steps are applied to every model:</p>
 <ol>
 <li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
@@ -3460,20 +3460,64 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 </div>
 <p><br></p>
 <h2 id="example">Example</h2>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.training</span> <span class="kn">import</span> <span class="n">DirectRegressor</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_digits</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.training</span> <span class="kn">import</span> <span class="n">DirectRegressor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_digits</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_digits</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">X</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-    <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_digits</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">runner</span> <span class="o">=</span> <span class="n">DirectClassifier</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;OLS&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">X</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
 
-<span class="c1"># Analyze the results</span>
-<span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span> <span class="o">=</span> <span class="n">DirectRegressor</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;OLS&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+
+
+<span class="go">Training ========================= &gt;&gt;</span>
+<span class="go">Models: OLS, RF</span>
+<span class="go">Metric: r2</span>
+
+
+<span class="go">Results for OrdinaryLeastSquares:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.5972</span>
+<span class="go">Test evaluation --&gt; r2: 0.5754</span>
+<span class="go">Time elapsed: 0.056s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 0.056s</span>
+
+
+<span class="go">Results for RandomForest:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.9805</span>
+<span class="go">Test evaluation --&gt; r2: 0.8625</span>
+<span class="go">Time elapsed: 1.584s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 1.584s</span>
+
+
+<span class="go">Final results ==================== &gt;&gt;</span>
+<span class="go">Total time: 1.643s</span>
+<span class="go">-------------------------------------</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.5754</span>
+<span class="go">RandomForest         --&gt; r2: 0.8625 !</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
+
+<span class="go">     score_train  score_test  time_fit      time</span>
+<span class="go">OLS       0.5972      0.5754  0.055659  0.055659</span>
+<span class="go">RF        0.9805      0.8625  1.584442  1.584442</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
+
+<span class="go">     neg_mean_absolute_error  neg_mean_absolute_percentage_error  neg_mean_squared_error      r2  neg_root_mean_squared_error</span>
+<span class="go">OLS                  -1.4280                       -6.917622e+14                 -3.2884  0.5754                      -1.8134</span>
+<span class="go">RF                   -0.6461                       -1.991592e+14                 -1.0646  0.8625                      -1.0318</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -3720,7 +3764,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directregressor-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L971>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='directregressor-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L977>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3783,7 +3827,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='directregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1004>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='directregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1010>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>

@@ -3303,32 +3303,102 @@ Target values mapped to their respective encoded integer.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">train</span><span class="p">)</span>
 
-<span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst perimeter  worst area  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension  target</span>
+<span class="go">0          13.48         20.82           88.40      559.2          0.10160           0.12550         0.10630             0.054390         0.1720  ...           107.30       740.4            0.1610            0.42250          0.50300               0.22580          0.2807                  0.10710       0</span>
+<span class="go">1          18.31         20.58          120.80     1052.0          0.10680           0.12480         0.15690             0.094510         0.1860  ...           142.20      1493.0            0.1492            0.25360          0.37590               0.15100          0.3074                  0.07863       0</span>
+<span class="go">2          17.93         24.48          115.20      998.9          0.08855           0.07027         0.05699             0.047440         0.1538  ...           135.10      1320.0            0.1315            0.18060          0.20800               0.11360          0.2504                  0.07948       0</span>
+<span class="go">3          15.13         29.81           96.71      719.5          0.08320           0.04605         0.04686             0.027390         0.1852  ...           110.10       931.4            0.1148            0.09866          0.15470               0.06575          0.3233                  0.06165       0</span>
+<span class="go">4           8.95         15.76           58.74      245.2          0.09462           0.12430         0.09263             0.023080         0.1305  ...            63.34       270.0            0.1179            0.18790          0.15440               0.03846          0.1652                  0.07722       1</span>
+<span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...              ...         ...               ...                ...              ...                   ...             ...                      ...     ...</span>
+<span class="go">451        19.73         19.82          130.70     1206.0          0.10620           0.18490         0.24170             0.097400         0.1733  ...           159.80      1933.0            0.1710            0.59550          0.84890               0.25070          0.2749                  0.12970       0</span>
+<span class="go">452        12.72         13.78           81.78      492.1          0.09667           0.08393         0.01288             0.019240         0.1638  ...            88.54       553.7            0.1298            0.14720          0.05233               0.06343          0.2369                  0.06922       1</span>
+<span class="go">453        11.51         23.93           74.52      403.5          0.09261           0.10210         0.11120             0.041050         0.1388  ...            82.28       474.2            0.1298            0.25170          0.36300               0.09653          0.2112                  0.08732       1</span>
+<span class="go">454        10.75         14.97           68.26      355.3          0.07793           0.05139         0.02251             0.007875         0.1399  ...            77.79       441.2            0.1076            0.12230          0.09755               0.03413          0.2300                  0.06769       1</span>
+<span class="go">455        25.22         24.91          171.50     1878.0          0.10630           0.26650         0.33390             0.184500         0.1829  ...           211.70      2562.0            0.1573            0.60760          0.64760               0.28670          0.2355                  0.10510       0</span>
 
-<span class="c1"># Note that the number of rows has increased</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">train</span><span class="p">)</span>
+<span class="go">[456 rows x 31 columns]</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="go">Oversampling with SMOTE...</span>
+<span class="go"> --&gt; Adding 116 samples to class 0.</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the number of rows has increased</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">train</span><span class="p">)</span>
+
+<span class="go">     mean radius  mean texture  mean perimeter    mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst perimeter   worst area  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension  target</span>
+<span class="go">0      13.480000     20.820000       88.400000   559.200000         0.101600          0.125500        0.106300             0.054390       0.172000  ...       107.300000   740.400000          0.161000           0.422500         0.503000              0.225800        0.280700                 0.107100       0</span>
+<span class="go">1      18.310000     20.580000      120.800000  1052.000000         0.106800          0.124800        0.156900             0.094510       0.186000  ...       142.200000  1493.000000          0.149200           0.253600         0.375900              0.151000        0.307400                 0.078630       0</span>
+<span class="go">2      17.930000     24.480000      115.200000   998.900000         0.088550          0.070270        0.056990             0.047440       0.153800  ...       135.100000  1320.000000          0.131500           0.180600         0.208000              0.113600        0.250400                 0.079480       0</span>
+<span class="go">3      15.130000     29.810000       96.710000   719.500000         0.083200          0.046050        0.046860             0.027390       0.185200  ...       110.100000   931.400000          0.114800           0.098660         0.154700              0.065750        0.323300                 0.061650       0</span>
+<span class="go">4       8.950000     15.760000       58.740000   245.200000         0.094620          0.124300        0.092630             0.023080       0.130500  ...        63.340000   270.000000          0.117900           0.187900         0.154400              0.038460        0.165200                 0.077220       1</span>
+<span class="go">..           ...           ...             ...          ...              ...               ...             ...                  ...            ...  ...              ...          ...               ...                ...              ...                   ...             ...                      ...     ...</span>
+<span class="go">567    15.182945     22.486774       98.949465   711.386079         0.092513          0.102732        0.113923             0.069481       0.179224  ...       107.689157   826.276172          0.126730           0.199259         0.295172              0.142325        0.265352                 0.068318       0</span>
+<span class="go">568    19.990378     20.622944      130.491182  1253.735467         0.091583          0.117753        0.117236             0.082771       0.202428  ...       167.456689  1995.896044          0.132457           0.289652         0.332006              0.182989        0.299088                 0.084150       0</span>
+<span class="go">569    18.158121     18.928220      119.907435  1027.331092         0.113149          0.147089        0.171862             0.103942       0.209306  ...       135.286302  1319.270051          0.127029           0.233493         0.260138              0.133851        0.302406                 0.079535       0</span>
+<span class="go">570    23.733233     26.433751      158.185672  1724.145541         0.098008          0.193789        0.231158             0.139527       0.188817  ...       207.483796  2844.559632          0.150495           0.463361         0.599077              0.266433        0.290828                 0.091542       0</span>
+<span class="go">571    17.669575     16.375717      115.468589   968.552411         0.093636          0.109983        0.101005             0.075283       0.174505  ...       133.767576  1227.195245          0.118221           0.264624         0.249798              0.135098        0.268044                 0.076533       0</span>
+
+<span class="go">[572 rows x 31 columns]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Balancer</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Balancer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-<span class="n">balancer</span> <span class="o">=</span> <span class="n">Balancer</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">balancer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst texture  worst perimeter  worst area  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension</span>
+<span class="go">0          17.99         10.38          122.80     1001.0          0.11840           0.27760         0.30010              0.14710         0.2419  ...          17.33           184.60      2019.0           0.16220            0.66560           0.7119                0.2654          0.4601                  0.11890</span>
+<span class="go">1          20.57         17.77          132.90     1326.0          0.08474           0.07864         0.08690              0.07017         0.1812  ...          23.41           158.80      1956.0           0.12380            0.18660           0.2416                0.1860          0.2750                  0.08902</span>
+<span class="go">2          19.69         21.25          130.00     1203.0          0.10960           0.15990         0.19740              0.12790         0.2069  ...          25.53           152.50      1709.0           0.14440            0.42450           0.4504                0.2430          0.3613                  0.08758</span>
+<span class="go">3          11.42         20.38           77.58      386.1          0.14250           0.28390         0.24140              0.10520         0.2597  ...          26.50            98.87       567.7           0.20980            0.86630           0.6869                0.2575          0.6638                  0.17300</span>
+<span class="go">4          20.29         14.34          135.10     1297.0          0.10030           0.13280         0.19800              0.10430         0.1809  ...          16.67           152.20      1575.0           0.13740            0.20500           0.4000                0.1625          0.2364                  0.07678</span>
+<span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...            ...              ...         ...               ...                ...              ...                   ...             ...                      ...</span>
+<span class="go">564        21.56         22.39          142.00     1479.0          0.11100           0.11590         0.24390              0.13890         0.1726  ...          26.40           166.10      2027.0           0.14100            0.21130           0.4107                0.2216          0.2060                  0.07115</span>
+<span class="go">565        20.13         28.25          131.20     1261.0          0.09780           0.10340         0.14400              0.09791         0.1752  ...          38.25           155.00      1731.0           0.11660            0.19220           0.3215                0.1628          0.2572                  0.06637</span>
+<span class="go">566        16.60         28.08          108.30      858.1          0.08455           0.10230         0.09251              0.05302         0.1590  ...          34.12           126.70      1124.0           0.11390            0.30940           0.3403                0.1418          0.2218                  0.07820</span>
+<span class="go">567        20.60         29.33          140.10     1265.0          0.11780           0.27700         0.35140              0.15200         0.2397  ...          39.42           184.60      1821.0           0.16500            0.86810           0.9387                0.2650          0.4087                  0.12400</span>
+<span class="go">568         7.76         24.54           47.92      181.0          0.05263           0.04362         0.00000              0.00000         0.1587  ...          30.37            59.16       268.6           0.08996            0.06444           0.0000                0.0000          0.2871                  0.07039</span>
 
-<span class="c1"># Note that the number of rows has increased</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="go">[569 rows x 30 columns]</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">balancer</span> <span class="o">=</span> <span class="n">Balancer</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">balancer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+<span class="go">Oversampling with SMOTE...</span>
+<span class="go"> --&gt; Adding 145 samples to class 0.</span>
+
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the number of rows has increased</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="go">     mean radius  mean texture  mean perimeter    mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst texture  worst perimeter   worst area  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension</span>
+<span class="go">0      17.990000     10.380000      122.800000  1001.000000         0.118400          0.277600        0.300100             0.147100       0.241900  ...      17.330000       184.600000  2019.000000          0.162200           0.665600         0.711900              0.265400        0.460100                 0.118900</span>
+<span class="go">1      20.570000     17.770000      132.900000  1326.000000         0.084740          0.078640        0.086900             0.070170       0.181200  ...      23.410000       158.800000  1956.000000          0.123800           0.186600         0.241600              0.186000        0.275000                 0.089020</span>
+<span class="go">2      19.690000     21.250000      130.000000  1203.000000         0.109600          0.159900        0.197400             0.127900       0.206900  ...      25.530000       152.500000  1709.000000          0.144400           0.424500         0.450400              0.243000        0.361300                 0.087580</span>
+<span class="go">3      11.420000     20.380000       77.580000   386.100000         0.142500          0.283900        0.241400             0.105200       0.259700  ...      26.500000        98.870000   567.700000          0.209800           0.866300         0.686900              0.257500        0.663800                 0.173000</span>
+<span class="go">4      20.290000     14.340000      135.100000  1297.000000         0.100300          0.132800        0.198000             0.104300       0.180900  ...      16.670000       152.200000  1575.000000          0.137400           0.205000         0.400000              0.162500        0.236400                 0.076780</span>
+<span class="go">..           ...           ...             ...          ...              ...               ...             ...                  ...            ...  ...            ...              ...          ...               ...                ...              ...                   ...             ...                      ...</span>
+<span class="go">709    17.286323     22.734795      114.032344   944.307264         0.088762          0.124285        0.101277             0.071814       0.199017  ...      28.751068       136.962476  1292.977890          0.118952           0.309770         0.280132              0.156679        0.296277                 0.075686</span>
+<span class="go">710    20.408104     22.445706      133.532483  1289.707481         0.092148          0.112102        0.102724             0.079914       0.163179  ...      27.592348       160.562074  1774.958330          0.131043           0.232929         0.275478              0.175090        0.260519                 0.067249</span>
+<span class="go">711    14.427974     21.933336       96.083397   650.033277         0.108305          0.175922        0.180923             0.084479       0.197918  ...      29.970411       117.784541   969.559392          0.153476           0.548984         0.563169              0.180396        0.317441                 0.111730</span>
+<span class="go">712    15.157286     18.354757       99.620300   706.429869         0.108581          0.142566        0.142387             0.075476       0.189359  ...      25.914272       116.184142   951.820964          0.145223           0.305545         0.348707              0.156067        0.266982                 0.089233</span>
+<span class="go">713    17.098130     26.696789      112.906541   903.082197         0.115868          0.146084        0.223943             0.114584       0.217005  ...      34.359318       137.005596  1355.364347          0.158623           0.359025         0.517125              0.188589        0.340979                 0.084845</span>
+
+<span class="go">[714 rows x 30 columns]</span>
 </code></pre></div>
 </div>
 </div>
@@ -3432,7 +3502,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='balancer-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L971>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='balancer-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L977>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3444,7 +3514,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='balancer-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1004>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='balancer-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1010>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>

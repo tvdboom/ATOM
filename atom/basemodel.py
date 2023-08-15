@@ -107,22 +107,34 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "sklearnex"
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "sklearnex"
+            - "cuml"
 
     backend: str, default="loky"
-        Parallelization backend. Choose from:
+        Parallelization backend. Read more in the
+        [user guide][parallel-execution]. Choose from:
 
-        - "loky"
-        - "multiprocessing"
-        - "threading"
-        - "ray"
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than `loky`.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -164,7 +176,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         metric: ClassMap | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         backend: str = "loky",
         verbose: INT = 0,
         warnings: bool | str = False,

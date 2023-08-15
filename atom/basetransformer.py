@@ -37,7 +37,7 @@ from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
     PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk,
     composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
-    to_df, to_pandas,
+    to_df, to_pandas, pd
 )
 
 
@@ -54,7 +54,7 @@ class BaseTransformer:
 
         - n_jobs: Number of cores to use for parallel processing.
         - device: Device on which to train the estimators.
-        - engine: Execution engine to use for the estimators.
+        - engine: Execution engine to use for data and estimators.
         - backend: Parallelization backend.
         - verbose: Verbosity level of the output.
         - warnings: Whether to show or suppress encountered warnings.
@@ -116,37 +116,62 @@ class BaseTransformer:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
 
     @property
-    def engine(self) -> str:
+    def engine(self) -> dict:
         """Execution engine for estimators."""
         return self._engine
 
     @engine.setter
-    def engine(self, value: str):
-        if value.lower() == "sklearnex":
-            if not find_spec("sklearnex"):
-                raise ModuleNotFoundError(
-                    "Failed to import scikit-learn-intelex. Package is not installed. "
-                    "Note that the library only supports CPUs with a x86 architecture."
-                )
-            else:
-                import sklearnex
-                sklearnex.set_config("auto" if "cpu" in self.device else self.device)
-        elif value.lower() == "cuml":
-            if "cpu" in self.device:
-                raise ValueError(
-                    f"Invalid value for the engine parameter. device="
-                    f"{self.device} only supports sklearn or sklearnex."
-                )
-            elif not find_spec("cuml"):
-                raise ModuleNotFoundError(
-                    "Failed to import cuml. Package is not installed. Refer "
-                    "to: https://rapids.ai/start.html#rapids-release-selector."
-                )
-        elif value.lower() != "sklearn":
+    def engine(self, value: dict | None):
+        if not value:
+            value = {"data": "numpy", "models": "sklearn"}
+        elif "data" not in value and "models" not in value:
             raise ValueError(
-                "Invalid value for the engine parameter, got "
-                f"{value}. Choose from: sklearn, sklearnex, cuml."
+                f"Invalid value for the engine parameter, got {value}. "
+                "The value should be a dict with keys 'data' and/or 'models'."
             )
+
+        if data := value.get("data"):
+            if data.lower() == "modin":
+                if not ray.is_initialized():
+                    ray.init(
+                        runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
+                        log_to_driver=False,
+                    )
+            elif data.lower() not in ("numpy", "pyarrow"):
+                raise ValueError(
+                    "Invalid value for the data key of the engine parameter, "
+                    f"got {data}. Choose from: numpy, pyarrow, modin."
+                )
+        else:
+            value["data"] = "numpy"
+
+        # Update env variable to use for PandasModin in utils.py
+        os.environ["ATOM_DATA_ENGINE"] = value["data"].lower()
+
+        if models := value.get("models"):
+            if models.lower() == "sklearnex":
+                if not find_spec("sklearnex"):
+                    raise ModuleNotFoundError(
+                        "Failed to import scikit-learn-intelex. The library is "
+                        "not installed. Note that the library only supports CPUs "
+                        "with a x86 architecture."
+                    )
+                else:
+                    import sklearnex
+                    sklearnex.set_config("auto" if "cpu" in self.device else self.device)
+            elif models.lower() == "cuml":
+                if not find_spec("cuml"):
+                    raise ModuleNotFoundError(
+                        "Failed to import cuml. Package is not installed. Refer "
+                        "to: https://rapids.ai/start.html#rapids-release-selector."
+                    )
+            elif models.lower() != "sklearn":
+                raise ValueError(
+                    "Invalid value for the models key of the engine parameter, "
+                    f"got {models}. Choose from: sklearn, sklearnex, cuml."
+                )
+        else:
+            value["models"] = "sklearn"
 
         self._engine = value
 
@@ -163,24 +188,9 @@ class BaseTransformer:
                 f"{value}. Choose from: {', '.join(opts)}."
             )
         elif value.lower() == "ray":
-            import modin.pandas as md
-
-            # Overwrite utils backend with modin
-            for module in sys.modules:
-                if module.startswith("atom."):
-                    setattr(sys.modules[module], "bk", md)
-
             register_ray()  # Register ray as joblib backend
             if not ray.is_initialized():
-                ray.init(
-                    runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
-                    log_to_driver=False,
-                )
-        else:
-            # Overwrite utils backend with pandas
-            for module in sys.modules:
-                if module.startswith("atom."):
-                    setattr(sys.modules[module], "bk", pd)
+                ray.init(log_to_driver=False)
 
         self._backend = value
 
@@ -218,6 +228,7 @@ class BaseTransformer:
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
         warnings.filterwarnings("ignore", category=UserWarning, module=".*sktime.*")
+        warnings.filterwarnings("ignore", category=ResourceWarning, module=".*ray.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
         warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*shap.*")
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
@@ -383,7 +394,7 @@ class BaseTransformer:
 
         """
         try:
-            return getattr(import_module(f"{self.engine}.{module}"), name)
+            return getattr(import_module(f"{self.engine['models']}.{module}"), name)
         except (ModuleNotFoundError, AttributeError):
             return getattr(import_module(f"sklearn.{module}"), name)
 
@@ -917,11 +928,14 @@ class BaseTransformer:
                 try:
                     # arrays=(X, y)
                     sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
-                except ValueError:
-                    # arrays=(train, test) for forecast
-                    X_train, y_train = self._prepare_input(y=arrays[0])
-                    X_test, y_test = self._prepare_input(y=arrays[1])
-                    sets = _has_data_sets(X_train, y_train, X_test, y_test)
+                except ValueError as ex:
+                    if self.goal == "fc":
+                        # arrays=(train, test) for forecast
+                        X_train, y_train = self._prepare_input(y=arrays[0])
+                        X_test, y_test = self._prepare_input(y=arrays[1])
+                        sets = _has_data_sets(X_train, y_train, X_test, y_test)
+                    else:
+                        raise ex
             else:
                 # arrays=(train, test)
                 X_train, y_train = self._prepare_input(arrays[0], y=y)

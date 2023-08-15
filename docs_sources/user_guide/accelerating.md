@@ -1,6 +1,25 @@
 # Accelerating pipelines
 ------------------------
 
+## Data acceleration
+
+[pyarrow](https://arrow.apache.org/docs/python/index.html). Read more about
+its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.html).
+
+!!! warning
+    The pyarrow backend doesn't work for [sparse datasets][]. If the
+    dataset has any sparse columns, the type conversion is skipped silently.
+
+[modin](https://modin.readthedocs.io/en/stable/), a multi-threading, drop-in replacement for pandas, that uses Ray as backend.
+
+!!! warning
+    Using modin as data backend can be considerably less performant than numpy
+    for small datasets (<3M rows).
+
+## Model acceleration
+
+
+
 ## CPU acceleration
 
 With the [Intel® Extension for Scikit-learn](https://intel.github.io/scikit-learn-intelex/index.html)
@@ -162,13 +181,8 @@ parallelization backends.
   block or an expensive call to a library such as numpy).
 * **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework
   that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
-  Selecting the ray backend also parallelizes the data using [modin][], a
-  multi-threading, drop-in replacement for pandas, that uses Ray as backend.
   See [here][example-ray-backend] an example use case.
 
-!!! warning
-    Using [modin][] can be considerably less performant than pandas for small
-    datasets (<3M rows).
 
 The parallelization backend is applied in the following cases:
 

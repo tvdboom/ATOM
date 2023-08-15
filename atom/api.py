@@ -227,27 +227,34 @@ class ATOMClassifier(BaseTransformer, ATOM):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "sklearnex"
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "sklearnex"
+            - "cuml"
 
     backend: str, default="loky"
-        Parallelization backend. Choose from:
+        Parallelization backend. Read more in the
+        [user guide][parallel-execution]. Choose from:
 
         - "loky": Single-node, process-based parallelism.
         - "multiprocessing": Legacy single-node, process-based
-          parallelism. Less robust than 'loky'.
+          parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
-
-        Selecting the ray backend also parallelizes the data using
-        [modin][], a multi-threading, drop-in replacement for pandas,
-        that uses Ray as backend.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -320,7 +327,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         backend: str = "loky",
         verbose: INT = 0,
         warnings: bool | str = False,
@@ -446,27 +453,34 @@ class ATOMForecaster(BaseTransformer, ATOM):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "sklearnex"
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "sklearnex"
+            - "cuml"
 
     backend: str, default="loky"
-        Parallelization backend. Choose from:
+        Parallelization backend. Read more in the
+        [user guide][parallel-execution]. Choose from:
 
         - "loky": Single-node, process-based parallelism.
         - "multiprocessing": Legacy single-node, process-based
-          parallelism. Less robust than 'loky'.
+          parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
-
-        Selecting the ray backend also parallelizes the data using
-        [modin][], a multi-threading, drop-in replacement for pandas,
-        that uses Ray as backend.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -532,7 +546,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         backend: str = "loky",
         verbose: INT = 0,
         warnings: bool | str = False,
@@ -668,27 +682,34 @@ class ATOMRegressor(BaseTransformer, ATOM):
         e.g. `device="gpu"` to use the GPU. Read more in the
         [user guide][accelerating-pipelines].
 
-    engine: str, default="sklearn"
-        Execution engine to use for the estimators. Refer to the
-        [user guide][accelerating-pipelines] for an explanation
-        regarding every choice. Choose from:
+    engine: dict or None, default=None
+        Execution engine to use for [data][data-acceleration] and
+        [models][model-acceleration]. The value should be a dictionary
+        with keys `data` and/or `models`, with their corresponding
+        choice as values. If None, the default options are selected.
+        Choose from:
 
-        - "sklearn" (only if device="cpu")
-        - "sklearnex"
-        - "cuml" (only if device="gpu")
+        - "data":
+
+            - "numpy" (default)
+            - "pyarrow"
+            - "modin"
+
+        - "models":
+
+            - "sklearn" (default)
+            - "sklearnex"
+            - "cuml"
 
     backend: str, default="loky"
-        Parallelization backend. Choose from:
+        Parallelization backend. Read more in the
+        [user guide][parallel-execution]. Choose from:
 
         - "loky": Single-node, process-based parallelism.
         - "multiprocessing": Legacy single-node, process-based
-          parallelism. Less robust than 'loky'.
+          parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
-
-        Selecting the ray backend also parallelizes the data using
-        [modin][], a multi-threading, drop-in replacement for pandas,
-        that uses Ray as backend.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -760,7 +781,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: str = "sklearn",
+        engine: dict | None = None,
         backend: str = "loky",
         verbose: INT = 0,
         warnings: bool | str = False,

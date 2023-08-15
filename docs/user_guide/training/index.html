@@ -3420,12 +3420,12 @@ will train a <a class="autorefs autorefs-internal" href="../../API/models/rf/#ra
 times, add a tag after the acronym to differentiate them. the tag must be 
 separated from the accronym by an underscore.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF_1&quot;</span><span class="p">,</span> <span class="s2">&quot;RF_2&quot;</span><span class="p">],</span>
-<span class="o">...</span>     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
-<span class="o">...</span>         <span class="s2">&quot;RF_1&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
-<span class="o">...</span>         <span class="s2">&quot;RF_2&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
-<span class="o">...</span>     <span class="p">}</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF_1&quot;</span><span class="p">,</span> <span class="s2">&quot;RF_2&quot;</span><span class="p">],</span>
+    <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;RF_1&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+        <span class="s2">&quot;RF_2&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 </code></pre></div>
 <p>For example, this pipeline fits two Random Forest models, one with 100
 and the other with 200 decision trees. The models can be accessed through
@@ -3601,12 +3601,12 @@ of the parameters as value. In this example, the <a class="autorefs autorefs-int
 <code>n_estimators=200</code> and the <a class="autorefs autorefs-internal" href="../../API/models/mlp/#multilayerperceptron">MultiLayerPerceptron</a> uses one hidden
 layer with 75 neurons.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">],</span>
-<span class="o">...</span>     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
-<span class="o">...</span>         <span class="s2">&quot;XGB&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
-<span class="o">...</span>         <span class="s2">&quot;MLP&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hidden_layer_sizes&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">75</span><span class="p">,)},</span>
-<span class="o">...</span>     <span class="p">}</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">],</span>
+    <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;XGB&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
+        <span class="s2">&quot;MLP&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hidden_layer_sizes&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">75</span><span class="p">,)},</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 </code></pre></div>
 <p>Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding <code>_fit</code> at the end of the
@@ -3691,10 +3691,10 @@ tune other parameters only for specific ones. The following example tunes
 the <code>n_estimators</code> parameter for both models but the <code>max_depth</code> parameter
 only for the <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="o">...</span>    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
-<span class="o">...</span>    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="o">...</span>    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
+<span class="p">)</span>
 </code></pre></div>
 <p>Like the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add"><code>columns</code></a> parameter in atom's methods, you
 can exclude parameters from the optimization adding <code>!</code> before its name.
@@ -3702,10 +3702,10 @@ It's possible to exclude multiple parameters, but not to combine inclusion
 and exclusion for the same model. For example, to optimize a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>
 using all its predefined parameters except <code>n_estimators</code>, run:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span>
-<span class="o">...</span>     <span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-<span class="o">...</span>     <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">},</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span>
+    <span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;distributions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">},</span>
+<span class="p">)</span>
 </code></pre></div>
 <p>If just the parameter name is provided, the predefined distribution is
 used. It's also possible to provide custom distributions spaces, but make
@@ -3713,22 +3713,22 @@ sure they are compliant with <a href="https://optuna.readthedocs.io/en/stable/re
 See every model's individual documentation in ATOM's API section for an
 overview of their hyperparameters and distributions.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">optuna.distributions</span> <span class="kn">import</span> <span class="p">(</span>
-<span class="o">...</span>    <span class="n">IntDistribution</span><span class="p">,</span> <span class="n">FloatDistribution</span><span class="p">,</span> <span class="n">CategoricalDistribution</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">IntDistribution</span><span class="p">,</span> <span class="n">FloatDistribution</span><span class="p">,</span> <span class="n">CategoricalDistribution</span>
+<span class="p">)</span>
 
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
-<span class="o">...</span>     <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="o">...</span>     <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
-<span class="o">...</span>         <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span>
-<span class="o">...</span>             <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-<span class="o">...</span>             <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">{</span>
-<span class="o">...</span>                 <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-<span class="o">...</span>                 <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="n">CategoricalDistribution</span><span class="p">([</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">]),</span>
-<span class="o">...</span>            <span class="p">},</span>
-<span class="o">...</span>         <span class="p">},</span>
-<span class="o">...</span>     <span class="p">},</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">10</span><span class="p">)},</span>
+            <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="n">IntDistribution</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="n">CategoricalDistribution</span><span class="p">([</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">]),</span>
+           <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 </code></pre></div>
 <p>Parameters for optuna's <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html">study</a> and the study's <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize">optimize</a> method can
 be added as kwargs to <code>ht_params</code>. For example, to use a different sampler
@@ -3736,13 +3736,13 @@ or add a custom callback.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">optuna.samplers</span> <span class="kn">import</span> <span class="n">RandomSampler</span>
 
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<span class="o">...</span>     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
-<span class="o">...</span>     <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="o">...</span>     <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
-<span class="o">...</span>         <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="n">RandomSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">atom</span><span class="o">.</span><span class="n">random_state</span><span class="p">),</span>
-<span class="o">...</span>         <span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">(),</span>
-<span class="o">...</span>     <span class="p">},</span>
-<span class="o">...</span> <span class="p">)</span>
+    <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
+    <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="n">RandomSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">atom</span><span class="o">.</span><span class="n">random_state</span><span class="p">),</span>
+        <span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">(),</span>
+    <span class="p">},</span>
+<span class="p">)</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>

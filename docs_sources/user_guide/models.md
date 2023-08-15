@@ -83,12 +83,7 @@ from atom import ATOMRegressor, ATOMModel
 from sklearn.datasets import load_diabetes
 from sklearn.linear_model import RANSACRegressor
 
-ransac = ATOMModel(
-    estimator=RANSACRegressor,
-    acronym="RANSAC",
-    fullname="Random Sample Consensus",
-    needs_scaling=True,
-)
+ransac = ATOMModel(RANSACRegressor, name="RANSAC", needs_scaling=True)
 
 X, y = load_diabetes(return_X_y=True, as_frame=True)
 
