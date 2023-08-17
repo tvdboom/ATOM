@@ -48,13 +48,14 @@ from sklearn.metrics import (
 from sklearn.utils import _safe_indexing
 from sklearn.utils._bunch import Bunch
 from sklearn.utils.metaestimators import available_if
+from sktime.forecasting.base import ForecastingHorizon
 
 from atom.utils import (
-    DATAFRAME, FLOAT, INDEX, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model,
-    bk, check_canvas, check_dependency, check_hyperparams, check_predict_proba,
-    composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
-    has_attr, has_task, is_binary, is_multioutput, it, lst, plot_from_model,
-    rnd, to_rgb, SERIES
+    DATAFRAME, FEATURES, FLOAT, INDEX, INT, INT_TYPES, PALETTE, SCALAR,
+    SEQUENCE, SERIES, Model, bk, check_canvas, check_dependency,
+    check_hyperparams, check_predict_proba, composed, crash, divide,
+    get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
+    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -4979,7 +4980,7 @@ class PredictionPlot(BasePlot):
             if isinstance(fh, str):
                 # Get fh and corresponding X from data set
                 datasets = self._get_set(fh, max_one=False)
-                fh = pd.concat([getattr(m, ds) for ds in datasets]).index
+                fh = bk.concat([getattr(m, ds) for ds in datasets]).index
                 X = m.X.loc[fh]
 
             y_pred = m.predict(fh, X)

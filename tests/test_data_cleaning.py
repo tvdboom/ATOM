@@ -50,7 +50,6 @@ def test_inverse_transform():
 
 # Test Balancer ==================================================== >>
 
-
 def test_balance_multioutput_task():
     """Assert that an error is raised for multioutput tasks."""
     with pytest.raises(ValueError, match=".*not support multioutput.*"):
@@ -138,11 +137,21 @@ def test_balancer_attach_attribute():
 
 # Test Cleaner ==================================================== >>
 
-def test_cleaner_drop_invalid_column_type():
+def test_cleaner_convert_dtypes():
+    """Assert that column dtypes are converted."""
+    X = X_bin.copy()
+    X["object_col"] = "2"
+    assert X["object_col"].dtype == "object"
+    X, y = Cleaner(convert_dtypes=True).fit_transform(X, y_bin)
+    assert X["object_col"].dtype == "string"
+    assert y.dtype == "Int32"  # Nullable dtype
+
+
+def test_cleaner_drop_invalid_dtypes():
     """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
-    X = Cleaner(drop_types="datetime64[ns]").fit_transform(X)
+    X = Cleaner(drop_dtypes="datetime64[ns]").fit_transform(X)
     assert "datetime_col" not in X.columns
 
 
@@ -151,7 +160,7 @@ def test_cleaner_drop_invalid_column_list_types():
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
     X["string_col"] = [str(i) for i in range(len(X))]  # String column
-    cleaner = Cleaner(drop_types=["datetime64[ns]", "object"])
+    cleaner = Cleaner(drop_dtypes=["datetime64[ns]", "object"])
     X = cleaner.fit_transform(X)
     assert "datetime_col" not in X.columns
     assert "string_col" not in X.columns
@@ -178,7 +187,7 @@ def test_cleaner_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()
     X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
-    X = Cleaner().fit_transform(X)
+    X = Cleaner(convert_dtypes=False).fit_transform(X)
     series = pd.Series([str(i) for i in range(len(X))], name="string_col")
     pd.testing.assert_series_equal(X["string_col"], series)
 
@@ -223,7 +232,7 @@ def test_cleaner_multiclass_multioutput():
 
 def test_cleaner_inverse_transform():
     """Assert that the inverse_transform method works."""
-    cleaner = Cleaner().fit(y=y10_str)
+    cleaner = Cleaner(convert_dtypes=False).fit(y=y10_str)
     y = cleaner.inverse_transform(y=cleaner.transform(y=y10_str))
     pd.testing.assert_series_equal(pd.Series(y10_str, name="target"), y)
 
@@ -231,7 +240,7 @@ def test_cleaner_inverse_transform():
 def test_cleaner_inverse_transform_multilabel():
     """Assert that the inverse_transform method works for multilabel."""
     y = pd.DataFrame({"a": y10_label, "b": y10, "c": y10_label})
-    cleaner = Cleaner().fit(y=y)
+    cleaner = Cleaner(convert_dtypes=False).fit(y=y)
     y_new = cleaner.inverse_transform(y=cleaner.transform(y=y))
     pd.testing.assert_frame_equal(y_new, y)
 
@@ -483,7 +492,7 @@ def test_imputing_all_missing_values_numeric(missing):
     assert X.isna().sum().sum() == 0
 
 
-@pytest.mark.parametrize("missing", ["", "?", "NaN", "NA", "nan", "inf"])
+@pytest.mark.parametrize("missing", [None, np.nan, pd.NA, np.inf, "", "?", "NA", "inf"])
 def test_imputing_all_missing_values_categorical(missing):
     """Assert that all missing values are imputed in categorical columns."""
     X = [[missing, "a", "a"], ["b", "c", missing], ["b", "a", "c"], ["c", "a", "a"]]

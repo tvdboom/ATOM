@@ -20,8 +20,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn.naive_bayes import GaussianNB
-from sklearnex.svm import SVC
 from sklearnex import get_config
+from sklearnex.svm import SVC
+
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier, DirectForecaster
@@ -29,7 +30,8 @@ from atom.utils import merge
 
 from .conftest import (
     X10, X_bin, X_bin_array, X_idx, X_label, X_sparse, X_text, bin_test,
-    bin_train, y10, y_bin, y_bin_array, y_fc, y_idx, y_label, fc_train, fc_test
+    bin_train, fc_test, fc_train, y10, y_bin, y_bin_array, y_fc, y_idx,
+    y_label,
 )
 
 

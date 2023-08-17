@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import os
 import random
-import sys
 import warnings
 from copy import deepcopy
 from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
-from logging import DEBUG, FileHandler, Formatter, Logger, getLogger, NullHandler
+from logging import (
+    DEBUG, FileHandler, Formatter, Logger, NullHandler, getLogger,
+)
 from multiprocessing import cpu_count
 from typing import Any, Callable
 
@@ -25,7 +26,6 @@ import dagshub
 import dill as pickle
 import mlflow
 import numpy as np
-import optuna.logging
 import ray
 import requests
 from dagshub.auth.token_auth import HTTPBearerAuth
@@ -35,9 +35,8 @@ from sktime.datatypes import check_is_mtype
 
 from atom.utils import (
     DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk,
-    composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
-    to_df, to_pandas, pd
+    SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk, composed, crash,
+    get_cols, lst, merge, method_to_log, n_cols, pd, sign, to_df, to_pandas,
 )
 
 
@@ -227,6 +226,7 @@ class BaseTransformer:
             self._warnings = value
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
+        warnings.filterwarnings("ignore", category=FutureWarning, module=".*pandas.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*sktime.*")
         warnings.filterwarnings("ignore", category=ResourceWarning, module=".*ray.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")

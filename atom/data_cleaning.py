@@ -41,14 +41,14 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import FunctionTransformer, MultiLabelBinarizer
+from sklearn.preprocessing import FunctionTransformer
 
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, FEATURES, FLOAT, INT, PANDAS, SCALAR, SEQUENCE,
-    SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict, Estimator, bk,
-    check_is_fitted, composed, crash, get_cols, it, lst, merge, method_to_log,
-    n_cols, sign, to_df, to_series, variable_return,
+    DATAFRAME, DATAFRAME_TYPES, FEATURES, FLOAT, INT, MISSING_VALUES, PANDAS,
+    SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict,
+    Estimator, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
+    method_to_log, n_cols, sign, to_df, to_series, variable_return,
 )
 
 
@@ -497,6 +497,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     Use the parameters to choose which transformations to perform.
     The available steps are:
 
+    - Convert dtypes to the best possible types.
     - Drop columns with specific data types.
     - Remove characters from column names.
     - Strip categorical features from white spaces.
@@ -510,7 +511,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    drop_types: str, sequence or None, default=None
+    convert_dtypes: bool, default=True
+        Convert the column's data types to the best possible types
+        that support `pd.NA`.
+
+    drop_dtypes: str, sequence or None, default=None
         Columns with these data types are dropped from the dataset.
 
     drop_chars: str or None, default=None
@@ -574,8 +579,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     missing: list
         Values that are considered "missing". Default values are: "",
-        "?", "NA", "nan", "NaN", "none", "None", "inf", "-inf". Note
-        that `None`, `NaN`, `+inf` and `-inf` are always considered
+        "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf".
+        Note that `None`, `NaN`, `+inf` and `-inf` are always considered
         missing since they are incompatible with sklearn estimators.
 
     mapping: dict
@@ -636,7 +641,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        drop_types: str | SEQUENCE | None = None,
+        convert_dtypes: bool = True,
+        drop_dtypes: str | SEQUENCE | None = None,
         drop_chars: str | None = None,
         strip_categorical: bool = True,
         drop_duplicates: bool = False,
@@ -648,7 +654,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
-        self.drop_types = drop_types
+        self.convert_dtypes = convert_dtypes
+        self.drop_dtypes = drop_dtypes
         self.drop_chars = drop_chars
         self.strip_categorical = strip_categorical
         self.drop_duplicates = drop_duplicates
@@ -656,7 +663,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.encode_target = encode_target
 
         self.mapping = {}
-        self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
+        self.missing = ["", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"]
         self._estimators = {}
         self._is_fitted = False
 
@@ -707,7 +714,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
 
             if self.drop_missing_target:
-                y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna(axis=0)
+                y = y.replace(self.missing + MISSING_VALUES, np.NaN).dropna(axis=0)
 
             if self.encode_target:
                 for col in get_cols(y):
@@ -765,19 +772,21 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if X is not None:
             # Replace all missing values with NaN
-            X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+            X = X.replace(self.missing + MISSING_VALUES, np.NaN)
 
             for name, column in X.items():
+                dtype = column.dtype.name
+
                 # Drop features with invalid data type
-                if column.dtype.name in lst(self.drop_types):
+                if dtype in lst(self.drop_dtypes):
                     self.log(
-                        f" --> Dropping feature {name} for having a "
-                        f"prohibited type: {column.dtype.name}.", 2
+                        f" --> Dropping feature {name} for "
+                        f"having a prohibited type: {dtype}.", 2
                     )
                     X = X.drop(name, axis=1)
                     continue
 
-                elif column.dtype.name in ("object", "category"):
+                elif any(t in dtype for t in ("object", "category", "string")):
                     if self.strip_categorical:
                         # Strip strings from blank spaces
                         X[name] = column.apply(
@@ -792,6 +801,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.drop_duplicates:
                 X = X.drop_duplicates(ignore_index=True)
 
+            if self.convert_dtypes:
+                X = X.convert_dtypes()
+
         if y is not None:
             if self.drop_chars:
                 if isinstance(y, SERIES_TYPES):
@@ -802,7 +814,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             # Delete samples with NaN in target
             if self.drop_missing_target:
                 length = len(y)  # Save original length to count deleted rows later
-                y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+                y = y.replace(self.missing + MISSING_VALUES, np.NaN).dropna()
 
                 if X is not None:
                     X = X[X.index.isin(y.index)]  # Select only indices that remain
@@ -836,6 +848,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                         y_transformed = merge(y_transformed, col)
 
                 y = y_transformed
+
+            if self.convert_dtypes:
+                y = y.convert_dtypes()
 
         return variable_return(X, y)
 
@@ -1717,8 +1732,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     missing: list
         Values that are considered "missing". Default values are: "",
-        "?", "NA", "nan", "NaN", "none", "None", "inf", "-inf". Note
-        that `None`, `NaN`, `+inf` and `-inf` are always considered
+        "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf".
+        Note that `None`, `NaN`, `+inf` and `-inf` are always considered
         missing since they are incompatible with sklearn estimators.
 
     feature_names_in_: np.array
@@ -1798,7 +1813,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.max_nan_rows = max_nan_rows
         self.max_nan_cols = max_nan_cols
 
-        self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
+        self.missing = ["", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"]
         self._max_nan_rows = None
         self._drop_cols = []
         self._imputers = {}
@@ -1860,7 +1875,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Fitting Imputer...", 1)
 
         # Replace all missing values with NaN
-        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+        X = X.replace(self.missing + MISSING_VALUES, np.NaN)
 
         # Drop rows with too many NaN values
         if self._max_nan_rows is not None:
@@ -1880,7 +1895,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         # Load the imputer class from sklearn or cuml (different modules)
         estimator = self._get_est_class(
             name="SimpleImputer",
-            module="preprocessing" if self.engine == "cuml" else "impute",
+            module="preprocessing" if self.engine["models"] == "cuml" else "impute",
         )
 
         # Assign an imputer to each column
@@ -1959,7 +1974,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Imputing missing values...", 1)
 
         # Replace all missing values with NaN
-        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+        X = X.replace(self.missing + MISSING_VALUES, np.NaN)
 
         # Drop rows with too many missing values
         if self._max_nan_rows is not None:
@@ -2584,7 +2599,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         outliers = []
         for strat in lst(self.strategy):
             if strat.lower() == "zscore":
-                z_scores = np.array(zscore(objective, nan_policy="propagate"))
+                # stats.zscore only works with np types, therefore convert
+                z_scores = zscore(objective.values.astype(float), nan_policy="propagate")
 
                 if not isinstance(self.method, str):
                     cond = np.abs(z_scores) > self.max_sigma

@@ -9,7 +9,6 @@ Description: Module containing the BaseTrainer class.
 
 from __future__ import annotations
 
-import re
 import tempfile
 import traceback
 from datetime import datetime as dt
@@ -27,7 +26,7 @@ from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
 from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
-from atom.models import MODELS, CatBoost, CustomModel, LightGBM, XGBoost
+from atom.models import MODELS, CustomModel
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     SEQUENCE_TYPES, ClassMap, DataConfig, Model, check_dependency,
@@ -214,13 +213,17 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                         # Check if the model supports the task
                         if self.goal not in inc[-1]._estimators:
                             # Forecast task can use regression models
-                            if not (self.goal == "fc" and "reg" in inc[-1]._estimators):
+                            if self.goal == "fc" and "reg" in inc[-1]._estimators:
+                                pass  # TODO
+                            else:
                                 raise ValueError(
                                     f"The {instance._fullname} model is "
                                     f"not available for {self.task} tasks!"
                                 )
+
             elif isinstance(model, BaseModel):  # For reruns
                 inc.append(model)
+
             else:  # Model is a custom estimator
                 inc.append(CustomModel(estimator=model, **kwargs))
 

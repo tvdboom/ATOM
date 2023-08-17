@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable
 
+import pandas as pd
 from joblib.memory import Memory
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
@@ -24,9 +25,8 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, SERIES, ClassMap, CustomDict,
-    Model, bk, check_is_fitted, composed, crash, divide, export_pipeline, flt,
+    Model, check_is_fitted, composed, crash, divide, export_pipeline, flt,
     get_best_score, get_versions, has_task, is_multioutput, lst, method_to_log,
-    pd,
 )
 
 

@@ -25,11 +25,10 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
 from unittest.mock import patch
-
+from pandas.core.dtypes.cast import convert_dtypes
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -87,6 +86,9 @@ PANDAS = Union[PANDAS_TYPES]
 SEQUENCE = Union[SEQUENCE_TYPES]
 FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
 TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
+
+# Always considered missing values
+MISSING_VALUES = [None, pd.NA, pd.NaT, np.inf, -np.inf]
 
 # Attributes shared between atom and a dataframe
 DF_ATTRS = (
@@ -1789,7 +1791,12 @@ def to_df(
                 data = data.astype(dtype)
 
         if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow" and not is_sparse(data):
-            data = data.convert_dtypes(infer_objects=False, dtype_backend="pyarrow")
+            data = data.astype(
+                {
+                    name: convert_dtypes(column, dtype_backend="pyarrow")
+                    for name, column in data.items()
+                }
+            )
 
     return data
 
@@ -1837,7 +1844,7 @@ def to_series(
                 )
 
         if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow" and not is_sparse(data):
-            data = data.convert_dtypes(infer_objects=False, dtype_backend="pyarrow")
+            data = data.astype(convert_dtypes(data, dtype_backend="pyarrow"))
 
     return data
 

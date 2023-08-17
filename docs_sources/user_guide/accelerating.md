@@ -18,7 +18,14 @@ its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.htm
 
 ## Model acceleration
 
-
+!!! warning
+    * Accelerated estimators almost never support [sparse datasets][].
+      Refer to their respective documentation to check which ones do.
+    * Accelerated estimators sometimes use slightly different hyperparameters
+      than their sklearn counterparts.
+    * ATOM does not support multi-GPU training. If there is more than one
+      GPU on the machine and the `device` parameter does not specify which
+      one to use, the first one is used by default.
 
 ## CPU acceleration
 
@@ -97,15 +104,6 @@ Use the [`engine`][atomclassifier-engine] parameter to choose between the
 cuML and sklearnex execution engines. The [XGBoost][], [LightGBM][] and
 [CatBoost][] models come with their own GPU engine. Setting device="gpu"
 is sufficient to accelerate them with GPU, regardless of the engine parameter.
-
-!!! warning
-    * GPU accelerated estimators almost never support [sparse datasets][].
-      Refer to their respective documentation to check which ones do.
-    * GPU accelerated estimators often use slightly different hyperparameters
-      than their CPU counterparts.
-    * ATOM does not support multi-GPU training. If there is more than one
-      GPU on the machine and the `device` parameter does not specify which
-      one to use, the first one is used by default.
 
 !!! example
     [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)<br><br>
