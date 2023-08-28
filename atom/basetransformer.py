@@ -17,7 +17,7 @@ from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
 from logging import (
-    DEBUG, FileHandler, Formatter, Logger, NullHandler, getLogger,
+    DEBUG, FileHandler, Formatter, Logger, getLogger,
 )
 from multiprocessing import cpu_count
 from typing import Any, Callable
@@ -162,8 +162,11 @@ class BaseTransformer:
                 if not find_spec("cuml"):
                     raise ModuleNotFoundError(
                         "Failed to import cuml. Package is not installed. Refer "
-                        "to: https://rapids.ai/start.html#rapids-release-selector."
+                        "to: https://rapids.ai/start.html#install."
                     )
+                else:
+                    import cuml
+                    cuml.internals.memory_utils.set_global_output_type("numpy")
             elif models.lower() != "sklearn":
                 raise ValueError(
                     "Invalid value for the models key of the engine parameter, "
@@ -234,8 +237,8 @@ class BaseTransformer:
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
 
     @property
-    def logger(self) -> Logger:
-        """Logger of this class."""
+    def logger(self) -> Logger | None:
+        """Logger for this instance."""
         return self._logger
 
     @logger.setter
@@ -250,20 +253,26 @@ class BaseTransformer:
             "evalml",
         ]
 
-        if isinstance(value, Logger):
-            logger = value
+        # Clear existing handlers for external loggers
+        for name in external_loggers:
+            for handler in (log := getLogger(name)).handlers:
+                handler.close()
+            log.handlers.clear()
+
+        if not value:
+            logger = None
         else:
-            logger = getLogger(self.__class__.__name__)
-            logger.setLevel(DEBUG)
+            if isinstance(value, Logger):
+                logger = value
+            else:
+                logger = getLogger(self.__class__.__name__)
+                logger.setLevel(DEBUG)
 
-            # Clear existing handlers
-            for name in [logger.name] + external_loggers:
-                for handler in (log := getLogger(name)).handlers:
+                # Clear existing handlers for current logger
+                for handler in logger.handlers:
                     handler.close()
-                log.handlers.clear()
+                logger.handlers.clear()
 
-            # Setup file handler
-            if isinstance(value, str):
                 # Prepare the FileHandler
                 if not value.endswith(".log"):
                     value += ".log"
@@ -271,16 +280,12 @@ class BaseTransformer:
                     current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
                     value = value.replace("auto", self.__class__.__name__ + "_" + current)
 
-                formatter = Formatter("%(asctime)s - %(levelname)s: %(message)s")
+                fh = FileHandler(value)
+                fh.setFormatter(Formatter("%(asctime)s - %(levelname)s: %(message)s"))
 
-                handler = FileHandler(value)
-                handler.setFormatter(formatter)
-            else:
-                handler = NullHandler()
-
-            # Redirect loggers to file handler
-            for log in [logger.name] + external_loggers:
-                getLogger(log).addHandler(handler)
+                # Redirect loggers to file handler
+                for log in [logger.name] + external_loggers:
+                    getLogger(log).addHandler(fh)
 
         self._logger = logger
 
@@ -751,6 +756,8 @@ class BaseTransformer:
             else:
                 test_size = self.test_size
 
+            splitter = self._get_est_class("train_test_split", "model_selection")
+
             try:
                 # Define holdout set size
                 if self.holdout_size:
@@ -766,7 +773,7 @@ class BaseTransformer:
                             f"got {self.holdout_size}."
                         )
 
-                    data, holdout = train_test_split(
+                    data, holdout = splitter(
                         data,
                         test_size=holdout_size,
                         random_state=self.random_state,
@@ -777,7 +784,7 @@ class BaseTransformer:
                 else:
                     holdout = None
 
-                train, test = train_test_split(
+                train, test = splitter(
                     data,
                     test_size=test_size,
                     random_state=self.random_state,
@@ -1018,8 +1025,9 @@ class BaseTransformer:
         elif severity == "info" and self.verbose >= level:
             print(msg)
 
-        for text in str(msg).split("\n"):
-            getattr(self.logger, severity)(str(text))
+        if self.logger:
+            for text in str(msg).split("\n"):
+                getattr(self.logger, severity)(str(text))
 
     @composed(crash, method_to_log)
     def save(self, filename: str = "auto", *, save_data: bool = True):

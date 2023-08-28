@@ -395,7 +395,7 @@ class DirectClassifier(Direct):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -613,7 +613,7 @@ class DirectForecaster(Direct):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -828,7 +828,7 @@ class DirectRegressor(Direct):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -1053,7 +1053,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -1275,7 +1275,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -1494,7 +1494,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -1725,7 +1725,7 @@ class TrainSizingClassifier(TrainSizing):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -1952,7 +1952,7 @@ class TrainSizingForecaster(TrainSizing):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
@@ -2176,7 +2176,7 @@ class TrainSizingRegressor(TrainSizing):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 

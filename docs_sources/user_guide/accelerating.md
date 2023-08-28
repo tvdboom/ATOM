@@ -19,8 +19,6 @@ its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.htm
 ## Model acceleration
 
 !!! warning
-    * Accelerated estimators almost never support [sparse datasets][].
-      Refer to their respective documentation to check which ones do.
     * Accelerated estimators sometimes use slightly different hyperparameters
       than their sklearn counterparts.
     * ATOM does not support multi-GPU training. If there is more than one
@@ -40,6 +38,11 @@ Intel platforms at launch time.
 
 Select `#!python engine="sklearnex"` in atom's constructor to make use
 of this feature. See [here][example-accelerating-pipelines] an example.
+
+!!! warning
+    sklearnex estimators almost never support [sparse datasets][] nor
+    [multioutput tasks][]. Refer to [this page](https://intel.github.io/scikit-learn-intelex/algorithms.html)
+    to check which ones do.
 
 ### Prerequisites
 
@@ -105,6 +108,9 @@ cuML and sklearnex execution engines. The [XGBoost][], [LightGBM][] and
 [CatBoost][] models come with their own GPU engine. Setting device="gpu"
 is sufficient to accelerate them with GPU, regardless of the engine parameter.
 
+!!! warning
+    cuml estimators don't support [multioutput tasks][].
+
 !!! example
     [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)<br><br>
     Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
@@ -135,7 +141,7 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
 * [Discretizer][] (only for cuML with strategy!="custom")
 * [Imputer][] (only for cuML with strat_num!="knn")
 * [Normalizer][] (only for cuML)
-* [Pruner][] (only for strategy="dbscan")
+* [Pruner][] (only for strategy="dbscan" and "hdbscan")
 * [Scaler][] (only for cuML)
 * [Vectorizer][] (only for cuML)
 * [FeatureSelector][] (only for strategy="pca" and dense datasets)

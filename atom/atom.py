@@ -19,7 +19,6 @@ import dill as pickle
 import numpy as np
 import pandas as pd
 from scipy import stats
-from sklearn.preprocessing import FunctionTransformer
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
@@ -45,12 +44,12 @@ from atom.training import (
     TrainSizingRegressor,
 )
 from atom.utils import (
-    DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
-    TS_INDEX_TYPES, ClassMap, DataConfig, Predictor, Runner, Transformer,
-    __version__, bk, check_dependency, check_is_fitted, check_scaling,
+    DATAFRAME, FEATURES, INT, MISSING_VALUES, PANDAS, SCALAR, SEQUENCE, SERIES,
+    TARGET, TS_INDEX_TYPES, ClassMap, DataConfig, Predictor, Runner,
+    Transformer, __version__, check_dependency, check_is_fitted, check_scaling,
     composed, crash, custom_transform, fit_one, flt, get_cols,
     get_custom_scorer, has_task, infer_task, is_multioutput, is_sparse, lst,
-    method_to_log, sign, variable_return, MISSING_VALUES
+    method_to_log, sign, variable_return,
 )
 
 
@@ -846,7 +845,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         }
 
         # Convert selected columns to the best nullable dtype
-        data = self.dataset[self.branch._get_columns(columns)]
+        data = self.dataset[self.branch._get_columns(columns)]  # TODO: .convert_dtypes()
 
         for name, column in data.items():
             if pd.api.types.is_sparse(column):
@@ -892,11 +891,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         from pandas.core.dtypes.cast import convert_dtypes
         print(self.dtypes)
         self.branch.dataset = self.branch.dataset.astype(
-                {
-                    name: convert_dtypes(column, dtype_backend="pyarrow")
-                    for name, column in data.items()
-                }
-            )
+            {
+                name: convert_dtypes(column, dtype_backend="pyarrow")
+                for name, column in data.items()
+            }
+        )
 
         self.log("The column dtypes are successfully converted.", 1)
 
@@ -1264,8 +1263,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Additional keyword arguments for the inverse function.
 
         """
+        estimator = self._get_est_class("FunctionTransformer", "preprocessing")
+
         columns = kwargs.pop("columns", None)
-        function_transformer = FunctionTransformer(
+        function_transformer = estimator(
             func=func,
             inverse_func=inverse_func,
             kw_args=kw_args,

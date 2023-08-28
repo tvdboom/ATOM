@@ -180,28 +180,32 @@ class BaseRunner(BaseTracker):
             return flt(self._metric.keys())
 
     @property
-    def winners(self) -> list[Model]:
+    def winners(self) -> list[Model] | None:
         """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
         [`score_bootstrap`][adaboost-score_bootstrap] or
         [`score_test`][adaboost-score_test] attributes, checked in
         that order. For [multi-metric runs][], only the main metric
-        is compared.
+        is compared. Ties are resolved looking at the lowest
+        [time_fit][adaboost-time_fit].
 
         """
         if self._models:  # Returns None if not fitted
-            return sorted(self._models, key=lambda x: get_best_score(x), reverse=True)
+            return sorted(
+                self._models, key=lambda x: (get_best_score(x), x.time_fit), reverse=True
+            )
 
     @property
-    def winner(self) -> Model:
+    def winner(self) -> Model | None:
         """Best performing model.
 
         Performance is measured as the highest score on the model's
         [`score_bootstrap`][adaboost-score_bootstrap] or
         [`score_test`][adaboost-score_test] attributes, checked in
         that order. For [multi-metric runs][], only the main metric
-        is compared.
+        is compared. Ties are resolved looking at the lowest
+        [time_fit][adaboost-time_fit].
 
         """
         if self._models:  # Returns None if not fitted

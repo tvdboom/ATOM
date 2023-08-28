@@ -169,6 +169,8 @@ And lastly, analyze the results.
 
 ```python
 atom.evaluate()
+
+atom.plot_lift()
 ```
 
 <br><br>

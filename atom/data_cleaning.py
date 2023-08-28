@@ -41,7 +41,6 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import FunctionTransformer
 
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
@@ -226,7 +225,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -571,7 +570,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -1004,7 +1003,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -1207,8 +1206,10 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 else:
                     bins = [-np.inf] + list(bins) + [np.inf]
 
+                estimator = self._get_est_class("FunctionTransformer", "preprocessing")
+
                 # Make of cut a transformer
-                self._discretizers[col] = FunctionTransformer(
+                self._discretizers[col] = estimator(
                     func=bk.cut,
                     kw_args={"bins": bins, "labels": get_labels(labels, bins)},
                 ).fit(X[[col]])
@@ -1316,7 +1317,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -1724,7 +1725,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -2124,7 +2125,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 1 to print basic information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -2425,7 +2426,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -2728,7 +2729,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         - 1 to print basic information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 

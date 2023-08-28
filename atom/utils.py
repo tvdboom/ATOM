@@ -28,7 +28,7 @@ from itertools import cycle
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
 from unittest.mock import patch
-from pandas.core.dtypes.cast import convert_dtypes
+
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -41,6 +41,7 @@ from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from pandas.api.types import is_numeric_dtype
+from pandas.core.dtypes.cast import convert_dtypes
 from shap import Explainer, Explanation
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
@@ -2046,7 +2047,7 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
                 scorer.name = key
                 break
 
-    else:  # Scoring is a function with signature metric(y, y_pred)
+    else:  # Scoring is a function with signature metric(y_true, y_pred)
         scorer = make_scorer(score_func=metric)
         scorer.name = scorer._score_func.__name__
 
@@ -2851,7 +2852,7 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
 
         except Exception as ex:
             # If exception is not same as last, write to log
-            if ex is not cache["last_exception"]:
+            if ex is not cache["last_exception"] and args[0].logger:
                 cache["last_exception"] = ex
                 args[0].logger.exception("Exception encountered:")
 
@@ -2865,9 +2866,10 @@ def method_to_log(f: Callable) -> Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs) -> Any:
-        if f.__name__ != "__init__":
-            args[0].logger.info("")
-        args[0].logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
+        if args[0].logger:
+            if f.__name__ != "__init__":
+                args[0].logger.info("")
+            args[0].logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
 
         return f(*args, **kwargs)
 

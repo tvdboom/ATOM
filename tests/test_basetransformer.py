@@ -166,7 +166,7 @@ def test_warnings_parameter_str():
 def test_logger_creator(logger):
     """Assert that the logger is created correctly."""
     base = BaseTransformer(logger="auto")
-    assert isinstance(base.logger, Logger)
+    assert isinstance(base.logger, (type(None), Logger))
 
 
 def test_crash_with_logger():

@@ -99,7 +99,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -347,7 +347,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -678,7 +678,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -1034,7 +1034,7 @@ class FeatureSelector(
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -1415,8 +1415,9 @@ class FeatureSelector(
             # The PCA and TruncatedSVD both get all possible components to use
             # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
-                # No TruncatedSVD from cuml since it can't handle sparse input
-                self._estimator = TruncatedSVD(
+                estimator = self._get_est_class("TruncatedSVD", "decomposition")
+
+                self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     algorithm="randomized" if self.solver is None else self.solver,
                     random_state=self.random_state,
@@ -1427,12 +1428,16 @@ class FeatureSelector(
                     self.scaler = Scaler()
                     X = self.scaler.fit_transform(X)
 
+                if self.solver is None:
+                    solver = sign(estimator)["svd_solver"].default
+                else:
+                    solver = self.solver
+
                 estimator = self._get_est_class("PCA", "decomposition")
 
-                s = lambda p: sign(estimator)[p].default
                 self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
-                    svd_solver=s("svd_solver") if self.solver is None else self.solver,
+                    svd_solver=solver,
                     random_state=self.random_state,
                     **self.kwargs,
                 )

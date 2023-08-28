@@ -152,7 +152,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 

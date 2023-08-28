@@ -104,7 +104,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -404,7 +404,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -617,7 +617,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
@@ -862,7 +862,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
+        - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
