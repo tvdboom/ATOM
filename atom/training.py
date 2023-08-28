@@ -352,10 +352,10 @@ class DirectClassifier(Direct):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -363,7 +363,7 @@ class DirectClassifier(Direct):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -570,10 +570,10 @@ class DirectForecaster(Direct):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -581,7 +581,7 @@ class DirectForecaster(Direct):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -785,10 +785,10 @@ class DirectRegressor(Direct):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -796,7 +796,7 @@ class DirectRegressor(Direct):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -1010,10 +1010,10 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1021,7 +1021,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -1232,10 +1232,10 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1243,7 +1243,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -1451,10 +1451,10 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1462,7 +1462,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -1682,10 +1682,10 @@ class TrainSizingClassifier(TrainSizing):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1693,7 +1693,7 @@ class TrainSizingClassifier(TrainSizing):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -1909,10 +1909,10 @@ class TrainSizingForecaster(TrainSizing):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1920,7 +1920,7 @@ class TrainSizingForecaster(TrainSizing):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -2133,10 +2133,10 @@ class TrainSizingRegressor(TrainSizing):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -2144,7 +2144,7 @@ class TrainSizingRegressor(TrainSizing):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"

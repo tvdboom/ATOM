@@ -998,10 +998,10 @@ class FeatureSelector(
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1009,7 +1009,7 @@ class FeatureSelector(
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -1411,35 +1411,31 @@ class FeatureSelector(
             self._estimator = SelectKBest(solver, k=self._n_features).fit(X, y)
 
         elif self.strategy.lower() == "pca":
-            # The PCA and TruncatedSVD both get all possible components to use
-            # for the plots (n_components must be < n_features and <= n_rows)
-            if is_sparse(X):
-                estimator = self._get_est_class("TruncatedSVD", "decomposition")
-
-                self._estimator = estimator(
-                    n_components=min(len(X), X.shape[1] - 1),
-                    algorithm="randomized" if self.solver is None else self.solver,
-                    random_state=self.random_state,
-                    **self.kwargs,
-                )
-            else:
+            if not is_sparse(X):
+                # PCA requires the features to be scaled
                 if not check_scaling(X):
                     self.scaler = Scaler()
                     X = self.scaler.fit_transform(X)
 
                 estimator = self._get_est_class("PCA", "decomposition")
+                solver_param = "svd_solver"
+            else:
+                estimator = self._get_est_class("TruncatedSVD", "decomposition")
+                solver_param = "algorithm"
 
-                if self.solver is None:
-                    solver = sign(estimator)["svd_solver"].default
-                else:
-                    solver = self.solver
+            if self.solver is None:
+                solver = sign(estimator)[solver_param].default
+            else:
+                solver = self.solver
 
-                self._estimator = estimator(
-                    n_components=min(len(X), X.shape[1] - 1),
-                    svd_solver=solver,
-                    random_state=self.random_state,
-                    **self.kwargs,
-                )
+            # The PCA and TruncatedSVD both get all possible components to use
+            # for the plots (n_components must be < n_features and <= n_rows)
+            self._estimator = estimator(
+                n_components=min(len(X), X.shape[1] - 1),
+                **{solver_param: solver},
+                random_state=self.random_state,
+                **self.kwargs,
+            )
 
             self._estimator.fit(X)
             self._estimator._comps = min(

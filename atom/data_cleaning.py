@@ -546,10 +546,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -557,7 +557,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "cuml"
@@ -979,10 +979,10 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -990,7 +990,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "cuml"
@@ -1701,10 +1701,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -1712,7 +1712,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "cuml"
@@ -1896,7 +1896,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         # Load the imputer class from sklearn or cuml (different modules)
         estimator = self._get_est_class(
             name="SimpleImputer",
-            module="preprocessing" if self.engine["models"] == "cuml" else "impute",
+            module="preprocessing" if self.engine["estimator"] == "cuml" else "impute",
         )
 
         # Assign an imputer to each column
@@ -2102,10 +2102,10 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -2113,7 +2113,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "cuml"
@@ -2401,10 +2401,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -2412,7 +2412,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -2706,10 +2706,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -2717,7 +2717,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "cuml"

@@ -16,7 +16,11 @@ its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.htm
     Using modin as data backend can be considerably less performant than numpy
     for small datasets (<3M rows).
 
-## Model acceleration
+## Estimator acceleration
+
+Only transformers and predictors are converted to the 
+Metrics are not accelerated, to use a metric from cuML, use atom.rtun(metric=cuml_accuracy)...
+
 
 !!! warning
     * Accelerated estimators sometimes use slightly different hyperparameters

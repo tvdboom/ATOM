@@ -838,10 +838,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -849,7 +849,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "cuml"

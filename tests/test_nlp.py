@@ -192,7 +192,7 @@ def test_hashing():
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
 def test_gpu():
     """Assert that the gpu implementation calls the get method of matrix."""
-    vectorizer = Vectorizer(device="gpu", engine={"models": "cuml"})
+    vectorizer = Vectorizer(device="gpu", engine={"estimator": "cuml"})
     pytest.raises(ValueError, vectorizer.fit_transform, X_text)
 
 

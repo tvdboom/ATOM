@@ -120,8 +120,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             self.log("GPU training enabled.", 1)
         if (data := self.engine.get("data")) != "numpy":
             self.log(f"Data engine: {data}.", 1)
-        if (models := self.engine.get("models")) != "sklearn":
-            self.log(f"Models engine: {models}.", 1)
+        if (models := self.engine.get("estimator")) != "sklearn":
+            self.log(f"Estimator engine: {models}.", 1)
         if self.backend == "ray" or self.n_jobs > 1:
             self.log(f"Parallelization backend: {self.backend}", 1)
         if self.experiment:

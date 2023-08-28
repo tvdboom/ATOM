@@ -55,7 +55,7 @@ class BaseTransformer:
         - backend: Parallelization backend.
         - verbose: Verbosity level of the output.
         - warnings: Whether to show or suppress encountered warnings.
-        - logger: Name of the log file or Logger object.
+        - logger: Name of the log file, Logger object or None.
         - experiment: Name of the mlflow experiment used for tracking.
         - random_state: Seed used by the random number generator.
 
@@ -120,8 +120,8 @@ class BaseTransformer:
     @engine.setter
     def engine(self, value: dict | None):
         if not value:
-            value = {"data": "numpy", "models": "sklearn"}
-        elif "data" not in value and "models" not in value:
+            value = {"data": "numpy", "estimator": "sklearn"}
+        elif "data" not in value and "estimator" not in value:
             raise ValueError(
                 f"Invalid value for the engine parameter, got {value}. "
                 "The value should be a dict with keys 'data' and/or 'models'."
@@ -145,7 +145,7 @@ class BaseTransformer:
         # Update env variable to use for PandasModin in utils.py
         os.environ["ATOM_DATA_ENGINE"] = value["data"].lower()
 
-        if models := value.get("models"):
+        if models := value.get("estimator"):
             if models.lower() == "sklearnex":
                 if not find_spec("sklearnex"):
                     raise ModuleNotFoundError(
@@ -171,7 +171,7 @@ class BaseTransformer:
                     f"got {models}. Choose from: sklearn, sklearnex, cuml."
                 )
         else:
-            value["models"] = "sklearn"
+            value["estimator"] = "sklearn"
 
         self._engine = value
 

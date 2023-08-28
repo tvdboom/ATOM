@@ -229,10 +229,10 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -240,7 +240,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -455,10 +455,10 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -466,7 +466,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"
@@ -684,10 +684,10 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [models][model-acceleration]. The value should be a dictionary
-        with keys `data` and/or `models`, with their corresponding
-        choice as values. If None, the default options are selected.
-        Choose from:
+        [estimators][estimator-acceleration]. The value should be a
+        dictionary with keys `data` and/or `estimator`, with their
+        corresponding choice as values. If None, the default options
+        are selected. Choose from:
 
         - "data":
 
@@ -695,7 +695,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - "pyarrow"
             - "modin"
 
-        - "models":
+        - "estimator":
 
             - "sklearn" (default)
             - "sklearnex"

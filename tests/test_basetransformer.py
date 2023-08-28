@@ -74,7 +74,7 @@ def test_engine_parameter_invalid():
         BaseTransformer(engine={"data": "invalid"})
 
     with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
-        BaseTransformer(engine={"models": "invalid"})
+        BaseTransformer(engine={"estimator": "invalid"})
 
 
 @patch("ray.init")
@@ -88,9 +88,9 @@ def test_engine_parameter_env_var():
     """Assert that the environment variable is set."""
     base = BaseTransformer(engine={"data": "pyarrow"})
     assert os.environ["ATOM_DATA_ENGINE"] == "pyarrow"
-    assert base.engine["models"] == "sklearn"
+    assert base.engine["estimator"] == "sklearn"
 
-    base = BaseTransformer(engine={"models": "sklearn"})  # No data key
+    base = BaseTransformer(engine={"estimator": "sklearn"})  # No data key
     assert os.environ["ATOM_DATA_ENGINE"] == "numpy"
     assert base.engine["data"] == "numpy"
 
@@ -99,20 +99,20 @@ def test_engine_parameter_env_var():
 def test_engine_parameter_no_sklearnex():
     """Assert that an error is raised when sklearnex is not installed."""
     with pytest.raises(ModuleNotFoundError, match=".*import scikit-learn-intelex.*"):
-        BaseTransformer(engine={"models": "sklearnex"})
+        BaseTransformer(engine={"estimator": "sklearnex"})
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
-    BaseTransformer(device="gpu", engine={"models": "sklearnex"})
+    BaseTransformer(device="gpu", engine={"estimator": "sklearnex"})
     assert get_config()["target_offload"] == "gpu"
 
 
 def test_engine_parameter_no_cuml():
     """Assert that an error is raised when cuml is not installed."""
     with pytest.raises(ModuleNotFoundError, match=".*Failed to import cuml.*"):
-        BaseTransformer(device="gpu", engine={"models": "cuml"})
+        BaseTransformer(device="gpu", engine={"estimator": "cuml"})
 
 
 def test_backend_parameter_invalid():
@@ -241,13 +241,13 @@ def test_inherit():
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
-    base = BaseTransformer(device="cpu", engine={"models": "sklearnex"})
+    base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
     assert base._get_est_class("SVC", "svm") == SVC
 
 
 def test_get_est_class_from_default():
     """Assert that the class is retrieved from sklearn when import fails."""
-    base = BaseTransformer(device="cpu", engine={"models": "sklearnex"})
+    base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
     assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
 
 

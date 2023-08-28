@@ -1623,7 +1623,7 @@ class KNearestNeighbors(ClassRegModel):
 
         if self._gpu:
             dist.pop("algorithm")  # Only 'brute' is supported
-            if self.engine["models"] == "cuml":
+            if self.engine["estimator"] == "cuml":
                 dist.pop("weights")  # Only 'uniform' is supported
                 dist.pop("leaf_size")
                 dist.pop("p")
@@ -2082,7 +2082,7 @@ class LinearSVM(ClassRegModel):
             Estimator instance.
 
         """
-        if self.engine["models"] == "cuml" and self.goal == "class":
+        if self.engine["estimator"] == "cuml" and self.goal == "class":
             return self._est_class(probability=params.pop("probability", True), **params)
         else:
             return super()._get_est(**params)
@@ -2106,7 +2106,7 @@ class LinearSVM(ClassRegModel):
         dist["C"] = Float(1e-3, 100, log=True)
         dist["dual"] = Cat([True, False])
 
-        if self.engine["models"] == "cuml":
+        if self.engine["estimator"] == "cuml":
             dist.pop("dual")
 
         return dist
@@ -2213,7 +2213,7 @@ class LogisticRegression(ClassRegModel):
         if self._gpu:
             dist.pop("solver")
             dist.pop("penalty")  # Only 'l2' is supported
-        elif self.engine["models"] == "sklearnex":
+        elif self.engine["estimator"] == "sklearnex":
             dist["solver"] = Cat(["lbfgs", "newton-cg"])
 
         return dist
@@ -2891,7 +2891,7 @@ class RandomForest(ClassRegModel):
         if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
-            if self.engine["models"] == "cuml":
+            if self.engine["estimator"] == "cuml":
                 criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
             else:
                 criterion = ["squared_error", "absolute_error", "poisson"]
@@ -2908,10 +2908,10 @@ class RandomForest(ClassRegModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.engine["models"] == "sklearnex":
+        if self.engine["estimator"] == "sklearnex":
             dist.pop("criterion")
             dist.pop("ccp_alpha")
-        elif self.engine["models"] == "cuml":
+        elif self.engine["estimator"] == "cuml":
             dist.replace_key("criterion", "split_criterion")
             dist["max_depth"] = Int(1, 17)
             dist["max_features"] = Cat(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
@@ -2983,9 +2983,9 @@ class Ridge(ClassRegModel):
             solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
         )
 
-        if self.engine["models"] == "sklearnex":
+        if self.engine["estimator"] == "sklearnex":
             dist.pop("solver")  # Only supports 'auto'
-        elif self.engine["models"] == "cuml":
+        elif self.engine["estimator"] == "cuml":
             dist["solver"] = Cat(["eig", "svd", "cd"])
 
         return dist
@@ -3186,7 +3186,7 @@ class SupportVectorMachine(ClassRegModel):
             Estimator instance.
 
         """
-        if self.engine["models"] == "cuml" and self.goal == "class":
+        if self.engine["estimator"] == "cuml" and self.goal == "class":
             return self._est_class(
                 probability=params.pop("probability", True),
                 random_state=params.pop("random_state", self.random_state),
@@ -3213,7 +3213,7 @@ class SupportVectorMachine(ClassRegModel):
             shrinking=Cat([True, False]),
         )
 
-        if self.engine["models"] == "cuml":
+        if self.engine["estimator"] == "cuml":
             dist.pop("epsilon")
             dist.pop("shrinking")
 

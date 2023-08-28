@@ -2026,7 +2026,6 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
             scorer.name = custom_acronyms[metric]
         elif metric in custom_scorers:
             scorer = make_scorer(custom_scorers[metric])
-            scorer.name = scorer._score_func.__name__
         else:
             raise ValueError(
                 f"Unknown value for the metric parameter, got {metric}. "
@@ -2049,6 +2048,9 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
 
     else:  # Scoring is a function with signature metric(y_true, y_pred)
         scorer = make_scorer(score_func=metric)
+
+    # If no name was assigned, use the name of the function
+    if not hasattr(scorer, name):
         scorer.name = scorer._score_func.__name__
 
     return scorer
