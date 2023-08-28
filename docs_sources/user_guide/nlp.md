@@ -97,7 +97,7 @@ class. It can be accessed from atom through the [vectorize][atomclassifier-vecto
 method.
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here][gpu-acceleration]
+    All strategies can utilize GPU speed-up. Click [here][estimator-acceleration]
     for further information about GPU acceleration.
 
 <br style="display: block; margin-top: 2em; content: ' '">

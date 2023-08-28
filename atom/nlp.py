@@ -831,10 +831,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         in X (besides `corpus`) that are non-sparse.
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and

@@ -3322,7 +3322,7 @@
 
 <h1 id="trainsizingclassifier">TrainSizingClassifier</h1>
 <hr />
-<p><a id='TrainSizingClassifier'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingClassifier</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine="sklearn", backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1462>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
+<p><a id='TrainSizingClassifier'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingClassifier</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine=None, backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1570>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
 <p>The following steps are applied to every model (per iteration):</p>
 <ol>
 <li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
@@ -3422,18 +3422,43 @@ Number of cores to use for parallel processing.</p>
 <li>If &lt;-1: Use number of cores - 1 + <code>n_jobs</code>.</li>
 </ul>
 <p></div><a id='trainsizingclassifier-device'></a><strong>device: str, default="cpu"</strong><br><div markdown class='param'>
-Device on which to train the estimators. Use any string
-that follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector,
-e.g. <code>device="gpu"</code> to use the GPU. Read more in the
-<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#accelerating-pipelines">user guide</a>.</p>
-<p></div><a id='trainsizingclassifier-engine'></a><strong>engine: str, default="sklearn"</strong><br><div markdown class='param'>
-Execution engine to use for the estimators. Refer to the
-<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#accelerating-pipelines">user guide</a> for an explanation
-regarding every choice. Choose from:</p>
+Device on which to run the estimators. Use any string that
+follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector, e.g.
+<code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code> to use the GPU. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#gpu-acceleration">user guide</a>.</p>
+<p></div><a id='trainsizingclassifier-engine'></a><strong>engine: dict or None, default=None</strong><br><div markdown class='param'>
+Execution engine to use for <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#data-acceleration">data</a> and
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#estimator-acceleration">estimators</a>. The value should be a
+dictionary with keys <code>data</code> and/or <code>estimator</code>, with their
+corresponding choice as values. If None, the default options
+are selected. Choose from:</p>
 <ul>
-<li>"sklearn" (only if device="cpu")</li>
+<li>
+<p>"data":</p>
+<ul>
+<li>"numpy" (default)</li>
+<li>"pyarrow"</li>
+<li>"modin"</li>
+</ul>
+</li>
+<li>
+<p>"estimator":</p>
+<ul>
+<li>"sklearn" (default)</li>
 <li>"sklearnex"</li>
-<li>"cuml" (only if device="gpu")</li>
+<li>"cuml"</li>
+</ul>
+</li>
+</ul>
+<p></div><a id='trainsizingclassifier-backend'></a><strong>backend: str, default="loky"</strong><br><div markdown class='param'>
+Parallelization backend. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#parallel-execution">user guide</a>. Choose from:</p>
+<ul>
+<li>"loky": Single-node, process-based parallelism.</li>
+<li>"multiprocessing": Legacy single-node, process-based
+  parallelism. Less robust than <code>loky</code>.</li>
+<li>"threading": Single-node, thread-based parallelism.</li>
+<li>"ray": Multi-node, process-based parallelism.</li>
 </ul>
 <p></div><a id='trainsizingclassifier-verbose'></a><strong>verbose: int, default=0</strong><br><div markdown class='param'>
 Verbosity level of the class. Choose from:</p>
@@ -3473,150 +3498,24 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 </div>
 <p><br></p>
 <h2 id="example">Example</h2>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.training</span> <span class="kn">import</span> <span class="n">TrainSizingClassifier</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom.training import TrainSizingClassifier</span>
+<span class="go">from sklearn.datasets import load_breast_cancer</span>
+<span class="go">from sklearn.model_selection import train_test_split</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">X, y = load_breast_cancer(return_X_y=True, as_frame=True)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">X</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="go">train, test = train_test_split(</span>
+<span class="go">    X.merge(y.to_frame(), left_index=True, right_index=True),</span>
+<span class="go">    test_size=0.3,</span>
+<span class="go">)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span> <span class="o">=</span> <span class="n">TrainSizingClassifier</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+<span class="go">runner = TrainSizingClassifier(models=&quot;LR&quot;, verbose=2)</span>
+<span class="go">runner.run(train, test)</span>
 
+<span class="go"># Analyze the results</span>
+<span class="go">print(runner.results)</span>
 
-<span class="go">Training ========================= &gt;&gt;</span>
-<span class="go">Metric: f1</span>
-
-
-<span class="go">Run: 0 =========================== &gt;&gt;</span>
-<span class="go">Models: LR02</span>
-<span class="go">Size of training set: 79 (20%)</span>
-<span class="go">Size of test set: 171</span>
-
-
-<span class="go">Results for LogisticRegression:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9892</span>
-<span class="go">Test evaluation --&gt; f1: 0.9818</span>
-<span class="go">Time elapsed: 0.021s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.021s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.022s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9818</span>
-
-
-<span class="go">Run: 1 =========================== &gt;&gt;</span>
-<span class="go">Models: LR04</span>
-<span class="go">Size of training set: 159 (40%)</span>
-<span class="go">Size of test set: 171</span>
-
-
-<span class="go">Results for LogisticRegression:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9948</span>
-<span class="go">Test evaluation --&gt; f1: 0.9818</span>
-<span class="go">Time elapsed: 0.020s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.020s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.022s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9818</span>
-
-
-<span class="go">Run: 2 =========================== &gt;&gt;</span>
-<span class="go">Models: LR06</span>
-<span class="go">Size of training set: 238 (60%)</span>
-<span class="go">Size of test set: 171</span>
-
-
-<span class="go">Results for LogisticRegression:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9966</span>
-<span class="go">Test evaluation --&gt; f1: 0.9909</span>
-<span class="go">Time elapsed: 0.021s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.021s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.023s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9909</span>
-
-
-<span class="go">Run: 3 =========================== &gt;&gt;</span>
-<span class="go">Models: LR08</span>
-<span class="go">Size of training set: 318 (80%)</span>
-<span class="go">Size of test set: 171</span>
-
-
-<span class="go">Results for LogisticRegression:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9949</span>
-<span class="go">Test evaluation --&gt; f1: 0.9864</span>
-<span class="go">Time elapsed: 0.028s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.028s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.030s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9864</span>
-
-
-<span class="go">Run: 4 =========================== &gt;&gt;</span>
-<span class="go">Models: LR10</span>
-<span class="go">Size of training set: 398 (100%)</span>
-<span class="go">Size of test set: 171</span>
-
-
-<span class="go">Results for LogisticRegression:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9899</span>
-<span class="go">Test evaluation --&gt; f1: 0.9909</span>
-<span class="go">Time elapsed: 0.030s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.030s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.031s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9909</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
-
-<span class="go">            score_train  score_test  time_fit      time</span>
-<span class="go">frac model                                             </span>
-<span class="go">0.2  LR02        0.9892      0.9818  0.021018  0.021018</span>
-<span class="go">0.4  LR04        0.9948      0.9818  0.020019  0.020019</span>
-<span class="go">0.6  LR06        0.9966      0.9909  0.021018  0.021018</span>
-<span class="go">0.8  LR08        0.9949      0.9864  0.028312  0.028312</span>
-<span class="go">1.0  LR10        0.9899      0.9909  0.030250  0.030250</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
-
-<span class="go">      accuracy  average_precision  balanced_accuracy      f1  jaccard  matthews_corrcoef  precision  recall  roc_auc</span>
-<span class="go">LR02    0.9766             0.9991             0.9782  0.9818   0.9643             0.9493     0.9908   0.973   0.9983</span>
-<span class="go">LR04    0.9766             0.9993             0.9782  0.9818   0.9643             0.9493     0.9908   0.973   0.9986</span>
-<span class="go">LR06    0.9883             0.9995             0.9910  0.9909   0.9820             0.9748     1.0000   0.982   0.9991</span>
-<span class="go">LR08    0.9825             0.9994             0.9827  0.9864   0.9732             0.9617     0.9909   0.982   0.9989</span>
-<span class="go">LR10    0.9883             0.9997             0.9910  0.9909   0.9820             0.9748     1.0000   0.982   0.9994</span>
+<span class="go">print(runner.evaluate())</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -3632,17 +3531,19 @@ attributes accordingly.</p>
 <p>The utility attributes are used to access information about the models
 in the instance after <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">training</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingclassifier-models'></a><strong>models: str | list[str] | None</strong><br><div markdown class='param'>Name of the model(s).</div><a id='trainsizingclassifier-metric'></a><strong>metric: str | list[str] | None</strong><br><div markdown class='param'>Name of the metric(s).</div><a id='trainsizingclassifier-winners'></a><strong>winners: list[<a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a>]</strong><br><div markdown class='param'>Models ordered by performance.</p>
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingclassifier-models'></a><strong>models: str | list[str] | None</strong><br><div markdown class='param'>Name of the model(s).</div><a id='trainsizingclassifier-metric'></a><strong>metric: str | list[str] | None</strong><br><div markdown class='param'>Name of the metric(s).</div><a id='trainsizingclassifier-winners'></a><strong>winners: list[<a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a>] | None</strong><br><div markdown class='param'>Models ordered by performance.</p>
 <p>Performance is measured as the highest score on the model's
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
-is compared.</div><a id='trainsizingclassifier-winner'></a><strong>winner: <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a></strong><br><div markdown class='param'>Best performing model.</p>
+is compared. Ties are resolved looking at the lowest
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-time_fit">time_fit</a>.</div><a id='trainsizingclassifier-winner'></a><strong>winner: <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a> | None</strong><br><div markdown class='param'>Best performing model.</p>
 <p>Performance is measured as the highest score on the model's
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
-is compared.</div><a id='trainsizingclassifier-results'></a><strong>results: pd.DataFrame</strong><br><div markdown class='param'>Overview of the training results.</p>
+is compared. Ties are resolved looking at the lowest
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-time_fit">time_fit</a>.</div><a id='trainsizingclassifier-results'></a><strong>results: pd.DataFrame</strong><br><div markdown class='param'>Overview of the training results.</p>
 <p>All durations are in seconds. Columns include:</p>
 <ul>
 <li><strong>score_ht:</strong> Score obtained by the hyperparameter tuning.</li>
@@ -3679,7 +3580,7 @@ of methods to handle the data, run the training, and manage the pipeline.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-clear">clear</a></td><td>Reset attributes and clear cache from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-export_pipeline">export_pipeline</a></td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-run">run</a></td><td>Train and evaluate the models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingclassifier-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='trainsizingclassifier-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L408>[source]</a></span></div>Give an overview of the available predefined models.</p>
+<p><a id='trainsizingclassifier-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L412>[source]</a></span></div>Give an overview of the available predefined models.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='available_models-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
 Information about the available <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>. Columns
@@ -3701,7 +3602,7 @@ include:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1014>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='trainsizingclassifier-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1015>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -3746,7 +3647,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L453>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
+<p><a id='trainsizingclassifier-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L457>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="#trainsizingclassifier-save">saving</a> the instance. The affected
@@ -3761,7 +3662,7 @@ attributes are:</p>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L474>[source]</a></span></div>Delete models.</p>
+<p><a id='trainsizingclassifier-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L478>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
 before <a class="autorefs autorefs-internal" href="#trainsizingclassifier-save">saving</a>. Deleted models are not removed from
@@ -3772,7 +3673,7 @@ Models to delete. If None, all models are deleted.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L501>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<p><a id='trainsizingclassifier-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L505>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric to calculate. If None, it returns an overview of
@@ -3799,7 +3700,7 @@ Scores of the models.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L559>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
+<p><a id='trainsizingclassifier-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L563>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
 <p>Optionally, you can add a model as final estimator. The
 returned pipeline is already fitted on the training set.</p>
 <div class="admonition info">
@@ -3838,7 +3739,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L622>[source]</a></span></div>Return class weights for a balanced data set.</p>
+<p><a id='trainsizingclassifier-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L626>[source]</a></span></div>Return class weights for a balanced data set.</p>
 <p>Statistically, the class weights re-balance the data set so
 that the sampled data set represents the target population
 as closely as possible. The returned weights are inversely
@@ -3863,7 +3764,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L977>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='trainsizingclassifier-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L999>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3875,7 +3776,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L692>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p><a id='trainsizingclassifier-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L696>[source]</a></span></div>Merge another instance of the same class into this one.</p>
 <p>Branches, models, metrics and attributes of the other instance
 are merged into this one. If there are branches and/or models
 with the same name, they are merged adding the <code>suffix</code>
@@ -3893,7 +3794,7 @@ to the end of their names.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1120>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='trainsizingclassifier-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1121>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -3902,7 +3803,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1134>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='trainsizingclassifier-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1135>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">
@@ -3911,7 +3812,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1107>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='trainsizingclassifier-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1108>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
 <p><a id='trainsizingclassifier-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(*arrays)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L188>[source]</a></span></div>Train and evaluate the models.</p>
 <p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
@@ -3926,7 +3827,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1010>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='trainsizingclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1033>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3946,7 +3847,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L754>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<p><a id='trainsizingclassifier-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L758>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one
@@ -3966,7 +3867,7 @@ parameter.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingclassifier-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L832>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<p><a id='trainsizingclassifier-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L836>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one

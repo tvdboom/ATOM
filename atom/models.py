@@ -499,7 +499,7 @@ class CatBoost(ClassRegModel):
           `use_best_model=False` parameter to avoid this behavior or use
           a [holdout set][data-sets] to evaluate the final estimator.
         * [In-training validation][] and [pruning][] are disabled when
-          `device="gpu"`.
+          `#!python device="gpu"`.
 
     !!! note
         ATOM uses CatBoost's `n_estimators` parameter instead of
@@ -1757,8 +1757,8 @@ class LightGBM(ClassRegModel):
     Read more in LightGBM's [documentation][lgbdocs].
 
     !!! info
-        Using LightGBM's [GPU acceleration][] requires
-        [additional software dependencies][lgb_gpu].
+        Using LightGBM's [GPU acceleration][estimator-acceleration]
+        requires [additional software dependencies][lgb_gpu].
 
     See Also
     --------

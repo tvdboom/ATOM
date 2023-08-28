@@ -577,11 +577,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cpu-acceleration" class="md-nav__link">
-    CPU acceleration
+  <a href="#gpu-acceleration" class="md-nav__link">
+    GPU acceleration
   </a>
   
-    <nav class="md-nav" aria-label="CPU acceleration">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-acceleration" class="md-nav__link">
+    Data acceleration
+  </a>
+  
+    <nav class="md-nav" aria-label="Data acceleration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numpy" class="md-nav__link">
+    numpy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pyarrow" class="md-nav__link">
+    pyarrow
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modin" class="md-nav__link">
+    modin
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estimator-acceleration" class="md-nav__link">
+    Estimator acceleration
+  </a>
+  
+    <nav class="md-nav" aria-label="Estimator acceleration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sklearn" class="md-nav__link">
+    sklearn
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sklearnex" class="md-nav__link">
+    sklearnex
+  </a>
+  
+    <nav class="md-nav" aria-label="sklearnex">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -602,13 +658,13 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#gpu-acceleration" class="md-nav__link">
-    GPU acceleration
+        
+          <li class="md-nav__item">
+  <a href="#cuml" class="md-nav__link">
+    cuML
   </a>
   
-    <nav class="md-nav" aria-label="GPU acceleration">
+    <nav class="md-nav" aria-label="cuML">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -622,6 +678,11 @@
   <a href="#supported-estimators_1" class="md-nav__link">
     Supported estimators
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3252,11 +3313,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cpu-acceleration" class="md-nav__link">
-    CPU acceleration
+  <a href="#gpu-acceleration" class="md-nav__link">
+    GPU acceleration
   </a>
   
-    <nav class="md-nav" aria-label="CPU acceleration">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-acceleration" class="md-nav__link">
+    Data acceleration
+  </a>
+  
+    <nav class="md-nav" aria-label="Data acceleration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numpy" class="md-nav__link">
+    numpy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pyarrow" class="md-nav__link">
+    pyarrow
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modin" class="md-nav__link">
+    modin
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estimator-acceleration" class="md-nav__link">
+    Estimator acceleration
+  </a>
+  
+    <nav class="md-nav" aria-label="Estimator acceleration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sklearn" class="md-nav__link">
+    sklearn
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sklearnex" class="md-nav__link">
+    sklearnex
+  </a>
+  
+    <nav class="md-nav" aria-label="sklearnex">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3277,13 +3394,13 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#gpu-acceleration" class="md-nav__link">
-    GPU acceleration
+        
+          <li class="md-nav__item">
+  <a href="#cuml" class="md-nav__link">
+    cuML
   </a>
   
-    <nav class="md-nav" aria-label="GPU acceleration">
+    <nav class="md-nav" aria-label="cuML">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3297,6 +3414,11 @@
   <a href="#supported-estimators_1" class="md-nav__link">
     Supported estimators
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3332,61 +3454,20 @@
 
 <h1 id="accelerating-pipelines">Accelerating pipelines</h1>
 <hr />
-<h2 id="cpu-acceleration">CPU acceleration</h2>
-<p>With the <a href="https://intel.github.io/scikit-learn-intelex/index.html">Intel® Extension for Scikit-learn</a>
-package (or sklearnex, for brevity) you can accelerate your sklearn
-models and transformers, keeping full conformance with sklearn's API.
-Sklearnex is a free software AI accelerator that offers you a way to
-make sklearn code 10–100 times faster. The software acceleration is
-achieved through the use of vector instructions, IA hardware-specific
-memory optimizations, threading, and optimizations for all upcoming
-Intel platforms at launch time.</p>
-<p>Select <code class="language-python highlight"><span class="n">engine</span><span class="o">=</span><span class="s2">&quot;sklearnex&quot;</span></code> in atom's constructor to make use
-of this feature. See [here][example-accelerating-pipelines] an example.</p>
-<h3 id="prerequisites">Prerequisites</h3>
+<p>For very large datasets, ATOM offers various ways to accelerate its
+pipeline:</p>
 <ul>
-<li>Operating System:<ul>
-<li>Linux (Ubuntu, Fedora, etc...)</li>
-<li>Windows 8.1+</li>
-<li>macOS</li>
+<li><a class="autorefs autorefs-internal" href="#gpu-acceleration">Run estimators on GPU</a></li>
+<li><a class="autorefs autorefs-internal" href="#data-acceleration">Use a faster data engine</a></li>
+<li><a class="autorefs autorefs-internal" href="#estimator-acceleration">Use a faster estimator engine</a></li>
+<li><a class="autorefs autorefs-internal" href="#parallel-execution">Run processes in parallel</a></li>
 </ul>
-</li>
-<li>CPU:<ul>
-<li>Processor must have x86 architecture.</li>
-<li>Processor must support at least one of SSE2, AVX, AVX2, AVX512 instruction sets.</li>
-<li>ARM* architecture is not supported.</li>
-</ul>
-</li>
-<li>Libraries:<ul>
-<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with atom when the processor has x86 architecture)</li>
-</ul>
-</li>
-</ul>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<ul>
-<li>Intel® processors provide better performance than other CPUs.</li>
-</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Performance improvements are usually noticeable for datasets larger 
+than ~5M rows. For smaller datasets, using other values than the
+default can even harm performance!</p>
 </div>
-<p><br></p>
-<h3 id="supported-estimators">Supported estimators</h3>
-<p><strong>Transformers</strong></p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> (only for strategy="dbscan")</li>
-<li><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca" and dense datasets)</li>
-</ul>
-<p><strong>Models</strong></p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/knn/#knearestneighbors">KNearestNeighbors</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/lasso/#lasso">Lasso</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">LogisticRegression</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/ols/#ordinaryleastsquares">OrdinaryLeastSquares</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/ridge/#ridge">Ridge</a> (only for regression tasks)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine">SupportVectorMachine</a></li>
-</ul>
-<p><br><br></p>
 <h2 id="gpu-acceleration">GPU acceleration</h2>
 <p>Graphics Processing Units (GPUs) can significantly accelerate
 calculations for preprocessing steps or training machine learning
@@ -3395,7 +3476,7 @@ multiplications and other operations that can take advantage of a
 GPU's massively parallel architecture. Training on large datasets can
 take hours to run on a single processor. However, if you offload those
 tasks to a GPU, you can reduce training time to minutes instead.</p>
-<p>Training transformers and models in atom using a GPU is as easy as
+<p>Running transformers and models in atom using a GPU is as easy as
 initializing the instance with parameter <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code>. The
 <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a> parameter accepts any string that
 follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector. Examples are:</p>
@@ -3405,21 +3486,15 @@ follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/Environmen
 <li>device="gpu:0" (use first GPU)</li>
 <li>device="gpu:1" (use second GPU)</li>
 </ul>
-<p>Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a> parameter to choose between the
-cuML and sklearnex execution engines. The <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a>, <a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> and
-<a class="autorefs autorefs-internal" href="../../API/models/catb/#catboost">CatBoost</a> models come with their own GPU engine. Setting device="gpu"
-is sufficient to accelerate them with GPU, regardless of the engine parameter.</p>
+<p>Combine GPU acceleration with the <a class="autorefs autorefs-internal" href="#cuml">cuml</a> and <a class="autorefs autorefs-internal" href="#sklearnex">sklearnex</a> estimator engines.
+The <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a>, <a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> and <a class="autorefs autorefs-internal" href="../../API/models/catb/#catboost">CatBoost</a> models come with their own GPU
+engine. Setting <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code> is sufficient to accelerate them with GPU,
+regardless of the engine parameter.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<ul>
-<li>GPU accelerated estimators almost never support <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a>.
-  Refer to their respective documentation to check which ones do.</li>
-<li>GPU accelerated estimators often use slightly different hyperparameters
-  than their CPU counterparts.</li>
-<li>ATOM does not support multi-GPU training. If there is more than one
-  GPU on the machine and the <code>device</code> parameter does not specify which
-  one to use, the first one is used by default.</li>
-</ul>
+<p>ATOM does not support multi-GPU training. If there is more than one
+GPU on the machine and the <code>device</code> parameter does not specify which
+one to use, the first one is used by default.</p>
 </div>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
@@ -3428,59 +3503,171 @@ Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
 the badge above and run the notebook! Make sure to choose the GPU compute
 type.</p>
 </div>
-<h3 id="prerequisites_1">Prerequisites</h3>
+<h2 id="data-acceleration">Data acceleration</h2>
+<p>The data engine can be specified through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a>
+parameter, which takes a dict with a key <code>data</code> that accepts three values:
+numpy, pyarrow and modin.</p>
+<h3 id="numpy">numpy</h3>
+<p>ATOM uses <a href="https://pandas.pydata.org/docs/index.html"><code>pandas</code></a> as the
+default library for data handling, which in turn, uses <a href="https://numpy.org/"><code>numpy</code></a>
+for all data processing.</p>
+<h3 id="pyarrow">pyarrow</h3>
+<p><a href="https://arrow.apache.org/docs/python/index.html">PyArrow</a> is a library
+that provides a way to work with Apache Arrow memory structures. Apache
+Arrow is a cross-language, platform-independent, in-memory data format
+that provides an efficient and fast way to serialize and deserialize
+data. Pandas offers <a href="https://pandas.pydata.org/docs/user_guide/pyarrow.html">native integration</a>
+with pyarrow, which atom uses when specifying the pyarrow data engine.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The pyarrow backend doesn't work for <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a>. If the
+dataset has any sparse columns, an exception is raised.</p>
+</div>
+<h3 id="modin">modin</h3>
+<p>The <a href="https://modin.readthedocs.io/en/stable/">modin</a> library is a multi-threading, drop-in replacement for
+pandas, that uses <a href="https://www.ray.io/">Ray</a> as backend.</p>
+<h2 id="estimator-acceleration">Estimator acceleration</h2>
+<p>The estimator engine can be specified through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a>
+parameter, which takes a dict with a key <code>estimator</code> that accepts three
+values: sklearn, sklearnex and cuml. Read <a class="autorefs autorefs-internal" href="#gpu-acceleration">here</a> how to
+run the estimators on GPU instead of CPU.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Estimators accelerated with sklearnex or cuML sometimes use slightly
+different hyperparameters than their sklearn counterparts.</p>
+</div>
+<h3 id="sklearn">sklearn</h3>
+<p>This is the default option, which uses the standard estimators from
+<a href="https://scikit-learn.org/stable/">sklearn</a>. Sklearn does not support
+training on GPU.</p>
+<h3 id="sklearnex">sklearnex</h3>
+<p>The <a href="https://intel.github.io/scikit-learn-intelex/index.html">Intel® Extension for Scikit-learn</a> package (or sklearnex, for
+brevity) accelerates sklearn models and transformers, keeping full
+conformance with sklearn's API. Sklearnex is a free software AI
+accelerator that offers a way to make sklearn code 10–100 times faster.
+The software acceleration is achieved through the use of vector
+instructions, IA hardware-specific memory optimizations, threading, and
+optimizations for all upcoming Intel platforms at launch time. See
+[here][example-accelerating-pipelines] an example using the sklearnex
+engine.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>sklearnex estimators almost never support <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a> nor
+<a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>. Refer to <a href="https://intel.github.io/scikit-learn-intelex/algorithms.html">this page</a>
+to check which ones do.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Intel® processors provide better performance than other CPUs.</p>
+</div>
+<h4 id="prerequisites">Prerequisites</h4>
+<ul>
+<li>Operating System:<ul>
+<li>Linux (Ubuntu, Fedora, etc...)</li>
+<li>Windows 8.1+</li>
+<li>macOS (no GPU support)</li>
+</ul>
+</li>
+<li>CPU:<ul>
+<li>Processor must have x86 architecture.</li>
+<li>Processor must support at least one of SSE2, AVX, AVX2, AVX512 instruction sets.</li>
+<li>ARM* architecture is not supported.</li>
+</ul>
+</li>
+<li>GPU:<ul>
+<li>All Intel® integrated and discrete GPUs.</li>
+<li>Intel® GPU drivers.</li>
+</ul>
+</li>
+<li>Libraries:<ul>
+<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2023.2.1 (automatically installed with atom when the processor has x86 architecture)</li>
+<li><a href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">dpcpp_cpp_rt</a>&gt;=2023.2  (only for GPU acceleration)</li>
+</ul>
+</li>
+</ul>
+<p><br></p>
+<h4 id="supported-estimators">Supported estimators</h4>
+<p><strong>Transformers</strong></p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> (only for strategy="dbscan")</li>
+<li><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca" and dense datasets)</li>
+</ul>
+<p><strong>Models</strong></p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a> (only for CPU acceleration)</li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/knn/#knearestneighbors">KNearestNeighbors</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/lasso/#lasso">Lasso</a> (only for CPU acceleration)</li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">LogisticRegression</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/ols/#ordinaryleastsquares">OrdinaryLeastSquares</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/ridge/#ridge">Ridge</a> (only for regression tasks and CPU acceleration)</li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine">SupportVectorMachine</a> (GPU acceleration only supports classification tasks)</li>
+</ul>
+<h3 id="cuml">cuML</h3>
+<p>Only transformers and predictors are converted to the requested engine.
+Metrics are not accelerated, to use a metric from cuML, insert it directly in the
+<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run"><code>run</code></a> method:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="kn">from</span> <span class="nn">cuml.metrics</span> <span class="kn">import</span> <span class="n">accuracy_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_classification</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_classification</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;estimator&quot;</span><span class="p">:</span> <span class="s2">&quot;cuml&quot;</span><span class="p">},</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">accuracy_score</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>cuml estimators don't support <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>.</p>
+</div>
+<h4 id="prerequisites_1">Prerequisites</h4>
 <ul>
 <li>Operating System:<ul>
 <li>Ubuntu 18.04/20.04 or CentOS 7/8 with gcc/++ 9.0+</li>
 <li>Windows 10+ with WSL2 (see <a href="https://developer.nvidia.com/blog/run-rapids-on-microsoft-windows-10-using-wsl-2-the-windows-subsystem-for-linux/">here</a> a tutorial)</li>
 </ul>
 </li>
-<li>GPU: <ul>
-<li>For sklearnex: All Intel® integrated and discrete GPUs.</li>
-<li>For cuML: NVIDIA Pascal™ or better with <a href="https://developer.nvidia.com/cuda-gpus">compute capability</a> 6.0+</li>
+<li>GPU:<ul>
+<li>NVIDIA Pascal™ or better with <a href="https://developer.nvidia.com/cuda-gpus">compute capability</a> 6.0+</li>
 </ul>
 </li>
 <li>Drivers:<ul>
-<li>For sklearnex: Intel® GPU drivers.</li>
-<li>For cuML: CUDA &amp; NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5</li>
+<li>CUDA &amp; NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5</li>
 </ul>
 </li>
 <li>Libraries:<ul>
-<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with atom when the processor has x86 architecture)</li>
-<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=22.10</li>
+<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=23.08</li>
 </ul>
 </li>
 </ul>
-<h3 id="supported-estimators_1">Supported estimators</h3>
+<p><br></p>
+<h4 id="supported-estimators_1">Supported estimators</h4>
 <p><strong>Transformers</strong></p>
 <ul>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a> (only for cuML with encode_target=True)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/discretizer/#discretizer">Discretizer</a> (only for cuML with strategy!="custom")</li>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/imputer/#imputer">Imputer</a> (only for cuML with strat_num!="knn")</li>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/normalizer/#normalizer">Normalizer</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> (only for strategy="dbscan")</li>
-<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/nlp/vectorizer/#vectorizer">Vectorizer</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca" and dense datasets)</li>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/discretizer/#discretizer">Discretizer</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/imputer/#imputer">Imputer</a> (only for strat_num!="knn")</li>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/normalizer/#normalizer">Normalizer</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> (only for strategy="dbscan" and "hdbscan")</li>
+<li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/nlp/vectorizer/#vectorizer">Vectorizer</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca")</li>
 </ul>
 <p><strong>Models</strong></p>
 <ul>
-<li><a class="autorefs autorefs-internal" href="../../API/models/bnb/#bernoullinb">BernoulliNB</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/catb/#catboost">CatBoost</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/catnb/#categoricalnb">CategoricalNB</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/gnb/#gaussiannb">GaussianNB</a> (only for cuML)</li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/bnb/#bernoullinb">BernoulliNB</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/catnb/#categoricalnb">CategoricalNB</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/gnb/#gaussiannb">GaussianNB</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/knn/#knearestneighbors">KNearestNeighbors</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/lasso/#lasso">Lasso</a> (only for cuML)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> (requires <a href="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html">extra installations</a>)</li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/lsvm/#linearsvm">LinearSVM</a> (only for cuML)</li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/lasso/#lasso">Lasso</a></li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/lsvm/#linearsvm">LinearSVM</a></li>
 <li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">LogisticRegression</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/mnb/#multinomialnb">MultinomialNB</a> (only for cuML)</li>
+<li><a class="autorefs autorefs-internal" href="../../API/models/mnb/#multinomialnb">MultinomialNB</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/ols/#ordinaryleastsquares">OrdinaryLeastSquares</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/ridge/#ridge">Ridge</a> (only for regression tasks)</li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine">SupportVectorMachine</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a></li>
 </ul>
 <h2 id="parallel-execution">Parallel execution</h2>
 <p>Another way to accelerate your pipelines is executing processes in parallel.
@@ -3499,15 +3686,8 @@ parallelization backends.</p>
   block or an expensive call to a library such as numpy).</li>
 <li><strong>ray:</strong> <a href="https://www.ray.io/">Ray</a> is an open-source unified compute framework
   that makes it easy to scale AI and Python workloads. Read more about Ray <a href="https://docs.ray.io/en/latest/ray-core/walkthrough.html">here</a>.
-  Selecting the ray backend also parallelizes the data using <a href="https://modin.readthedocs.io/en/stable/">modin</a>, a
-  multi-threading, drop-in replacement for pandas, that uses Ray as backend.
   See [here][example-ray-backend] an example use case.</li>
 </ul>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Using <a href="https://modin.readthedocs.io/en/stable/">modin</a> can be considerably less performant than pandas for small
-datasets (&lt;3M rows).</p>
-</div>
 <p>The parallelization backend is applied in the following cases:</p>
 <ul>
 <li>In every individual estimator that uses parallelization internally.</li>

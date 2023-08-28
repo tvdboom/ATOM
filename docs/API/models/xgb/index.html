@@ -3342,33 +3342,13 @@ problems in a fast and accurate way.</p>
 </div>
 <p><br></p>
 <h2 id="example">Example</h2>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom import ATOMClassifier</span>
+<span class="go">from sklearn.datasets import load_breast_cancer</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">X, y = load_breast_cancer(return_X_y=True, as_frame=True)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-
-<span class="go">Training ========================= &gt;&gt;</span>
-<span class="go">Models: XGB</span>
-<span class="go">Metric: f1</span>
-
-
-<span class="go">Results for XGBoost:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 1.0</span>
-<span class="go">Test evaluation --&gt; f1: 0.951</span>
-<span class="go">Time elapsed: 0.353s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.353s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.354s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">XGBoost --&gt; f1: 0.951</span>
+<span class="go">atom = ATOMClassifier(X, y, random_state=1)</span>
+<span class="go">atom.run(models=&quot;XGB&quot;, metric=&quot;f1&quot;, verbose=2)</span>
 </code></pre></div>
 <p><br><br></p>
 <h2 id="hyperparameters">Hyperparameters</h2>
@@ -3508,7 +3488,7 @@ The remaining utility methods can be found hereunder.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#xgboost-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-score">score</a></td><td>Get a metric score on new data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#xgboost-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='xgboost-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1222>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='xgboost-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1234>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -3519,7 +3499,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1580>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='xgboost-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1592>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -3536,7 +3516,7 @@ another, independent set for testing.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1014>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='xgboost-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1015>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -3581,7 +3561,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1620>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p><a id='xgboost-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1632>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
@@ -3596,7 +3576,7 @@ affected attributes are:</p>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='xgboost-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1651>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='xgboost-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1663>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -3608,7 +3588,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1715>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='xgboost-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1727>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -3639,7 +3619,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1818>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='xgboost-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1830>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the solution's
 performance.</p>
@@ -3653,7 +3633,7 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2855>[source]</a></span></div>Get confidence scores on new data or existing rows.</p>
+<p><a id='xgboost-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2867>[source]</a></span></div>Get confidence scores on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>decision_function</code> method.</p>
@@ -3672,7 +3652,7 @@ for multiclass classification tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1875>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='xgboost-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1887>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="#xgboost-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
@@ -3705,7 +3685,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1994>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
+<p><a id='xgboost-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2006>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that, if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -3740,7 +3720,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1106>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='xgboost-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1118>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -3755,7 +3735,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2042>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='xgboost-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2054>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -3778,7 +3758,7 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2084>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
+<p><a id='xgboost-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2096>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
 <p>Only available for models with a <code>predict_proba</code> method in a
 binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <table class="table_params">
@@ -3790,7 +3770,7 @@ Best threshold or list of thresholds for multilabel tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L800>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='xgboost-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L812>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -3803,7 +3783,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2125>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='xgboost-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2137>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -3835,7 +3815,7 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L977>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='xgboost-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L999>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3847,7 +3827,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2890>[source]</a></span></div>Get predictions on new data or existing rows.</p>
+<p><a id='xgboost-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2902>[source]</a></span></div>Get predictions on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict</code> method.</p>
@@ -3865,7 +3845,7 @@ n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/d
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2924>[source]</a></span></div>Get class log-probabilities on new data or existing rows.</p>
+<p><a id='xgboost-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2936>[source]</a></span></div>Get class log-probabilities on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict_log_proba</code> method.</p>
@@ -3883,7 +3863,7 @@ n_classes).
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2958>[source]</a></span></div>Get class probabilities on new data or existing rows.</p>
+<p><a id='xgboost-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2970>[source]</a></span></div>Get class probabilities on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict_proba</code> method.</p>
@@ -3902,7 +3882,7 @@ for <a class="autorefs autorefs-internal" href="../../../user_guide/data_managem
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="None", archive_existing_versions=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2186>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p><a id='xgboost-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="None", archive_existing_versions=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2198>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
 <p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
 enabled using one of the following URI schemes: databricks,
 http, https, postgresql, mysql, sqlite, mssql.</p>
@@ -3920,9 +3900,9 @@ moved to the "Archived" stage. Only valid when <code>stage</code> is
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1107>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='xgboost-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1108>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='xgboost-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1010>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='xgboost-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1033>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3933,14 +3913,14 @@ add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomc
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2234>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='xgboost-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2246>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y=None, metric=None, sample_weight=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2993>[source]</a></span></div>Get a metric score on new data.</p>
+<p><a id='xgboost-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y=None, metric=None, sample_weight=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L3005>[source]</a></span></div>Get a metric score on new data.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped.</p>
@@ -3980,7 +3960,7 @@ Metric score of X with respect to y.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2252>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
+<p><a id='xgboost-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2264>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
 <p>The complete pipeline is served with the model. The inference
 data must be supplied as json to the HTTP request, e.g.
 <code>requests.get("http://127.0.0.1:8000/", json=X.to_json())</code>.
@@ -4002,7 +3982,7 @@ Port for HTTP server.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2324>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='xgboost-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2336>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be
@@ -4034,7 +4014,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1120>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='xgboost-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1121>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -4043,7 +4023,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='xgboost-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1134>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='xgboost-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1135>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">

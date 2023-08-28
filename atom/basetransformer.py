@@ -50,7 +50,7 @@ class BaseTransformer:
         Standard keyword arguments for the classes. Can include:
 
         - n_jobs: Number of cores to use for parallel processing.
-        - device: Device on which to train the estimators.
+        - device: Device on which to run the estimators.
         - engine: Execution engine to use for data and estimators.
         - backend: Parallelization backend.
         - verbose: Verbosity level of the output.
@@ -103,13 +103,13 @@ class BaseTransformer:
 
     @property
     def device(self) -> str:
-        """Device on which to train the estimators."""
+        """Device on which to run the estimators."""
         return self._device
 
     @device.setter
     def device(self, value: str):
-        self._device = value
-        if "gpu" in value.lower():
+        self._device = value.lower()
+        if "gpu" in self._device:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
 
     @property
@@ -155,7 +155,7 @@ class BaseTransformer:
                     )
                 else:
                     import sklearnex
-                    sklearnex.set_config("auto" if "cpu" in self.device else self.device)
+                    sklearnex.set_config(self.device if "gpu" in self.device else "auto")
             elif models.lower() == "cuml":
                 if not find_spec("cuml"):
                     raise ModuleNotFoundError(
@@ -163,8 +163,13 @@ class BaseTransformer:
                         "to: https://rapids.ai/start.html#install."
                     )
                 else:
-                    import cuml
-                    cuml.internals.memory_utils.set_global_output_type("numpy")
+                    from cuml.common.device_selection import set_global_device_type
+                    set_global_device_type("gpu" if "gpu" in self.device else "cpu")
+
+                    # See https://github.com/rapidsai/cuml/issues/5564
+                    from cuml.internals.memory_util import set_global_output_type
+                    set_global_output_type("numpy")
+
             elif models.lower() != "sklearn":
                 raise ValueError(
                     "Invalid value for the models key of the engine parameter, "

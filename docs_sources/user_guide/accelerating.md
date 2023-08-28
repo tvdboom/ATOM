@@ -1,103 +1,19 @@
 # Accelerating pipelines
 ------------------------
 
-## Data acceleration
+For very large datasets, ATOM offers various ways to accelerate its
+pipeline:
 
-[pyarrow](https://arrow.apache.org/docs/python/index.html). Read more about
-its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.html).
-
-!!! warning
-    The pyarrow backend doesn't work for [sparse datasets][]. If the
-    dataset has any sparse columns, an exception is raised.
-
-[modin](https://modin.readthedocs.io/en/stable/), a multi-threading, drop-in replacement for pandas, that uses Ray as backend.
+ - [Run estimators on GPU][gpu-acceleration]
+ - [Use a faster data engine][data-acceleration]
+ - [Use a faster estimator engine][estimator-acceleration]
+ - [Run processes in parallel][parallel-execution]
 
 !!! warning
-    Using modin as data backend can be considerably less performant than numpy
-    for small datasets (<3M rows).
+    Performance improvements are usually noticeable for datasets larger 
+    than ~5M rows. For smaller datasets, using other values than the
+    default can even harm performance!
 
-## Estimator acceleration
-
-Only transformers and predictors are converted to the requested engine. Metrics
-are not accelerated, to use a metric from cuML, insert it directly in the
-[`run`][atomclassifier-run] method:
-
-```python
-from atom import ATOMClassifier
-from cuml.metrics import accuracy_score
-from sklearn.datasets import make_classification
-
-X, y = make_classification(n_samples=100, random_state=1)
-
-atom = ATOMClassifier(X, y, engine={"estimator": "cuml"}, verbose=2)
-atom.run("LR", metric=accuracy_score)
-```
-
-
-!!! warning
-    * Accelerated estimators sometimes use slightly different hyperparameters
-      than their sklearn counterparts.
-    * ATOM does not support multi-GPU training. If there is more than one
-      GPU on the machine and the `device` parameter does not specify which
-      one to use, the first one is used by default.
-
-## CPU acceleration
-
-With the [Intel® Extension for Scikit-learn](https://intel.github.io/scikit-learn-intelex/index.html)
-package (or sklearnex, for brevity) you can accelerate your sklearn
-models and transformers, keeping full conformance with sklearn's API.
-Sklearnex is a free software AI accelerator that offers you a way to
-make sklearn code 10–100 times faster. The software acceleration is
-achieved through the use of vector instructions, IA hardware-specific
-memory optimizations, threading, and optimizations for all upcoming
-Intel platforms at launch time.
-
-Select `#!python engine="sklearnex"` in atom's constructor to make use
-of this feature. See [here][example-accelerating-pipelines] an example.
-
-!!! warning
-    sklearnex estimators almost never support [sparse datasets][] nor
-    [multioutput tasks][]. Refer to [this page](https://intel.github.io/scikit-learn-intelex/algorithms.html)
-    to check which ones do.
-
-### Prerequisites
-
-* Operating System:
-    - Linux (Ubuntu, Fedora, etc...)
-    - Windows 8.1+
-    - macOS
-* CPU:
-    - Processor must have x86 architecture.
-    - Processor must support at least one of SSE2, AVX, AVX2, AVX512 instruction sets.
-    - ARM* architecture is not supported.
-* Libraries:
-    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with atom when the processor has x86 architecture)
-
-!!! tip
-    * Intel® processors provide better performance than other CPUs.
-
-<br>
-
-### Supported estimators
-
-**Transformers**
-
-* [Pruner][] (only for strategy="dbscan")
-* [FeatureSelector][] (only for strategy="pca" and dense datasets)
-
-**Models**
-
-* [ElasticNet][]
-* [KNearestNeighbors][]
-* [Lasso][]
-* [LogisticRegression][]
-* [OrdinaryLeastSquares][]
-* [RandomForest][]
-* [Ridge][] (only for regression tasks)
-* [SupportVectorMachine][]
-
-
-<br><br>
 
 ## GPU acceleration
 
@@ -109,7 +25,7 @@ GPU's massively parallel architecture. Training on large datasets can
 take hours to run on a single processor. However, if you offload those
 tasks to a GPU, you can reduce training time to minutes instead.
 
-Training transformers and models in atom using a GPU is as easy as
+Running transformers and models in atom using a GPU is as easy as
 initializing the instance with parameter `#!python device="gpu"`. The
 [`device`][atomclassifier-device] parameter accepts any string that
 follows the [SYCL_DEVICE_FILTER][] filter selector. Examples are:
@@ -119,13 +35,15 @@ follows the [SYCL_DEVICE_FILTER][] filter selector. Examples are:
 * device="gpu:0" (use first GPU)
 * device="gpu:1" (use second GPU)
 
-Use the [`engine`][atomclassifier-engine] parameter to choose between the
-cuML and sklearnex execution engines. The [XGBoost][], [LightGBM][] and
-[CatBoost][] models come with their own GPU engine. Setting device="gpu"
-is sufficient to accelerate them with GPU, regardless of the engine parameter.
+Combine GPU acceleration with the [cuml][] and [sklearnex][] estimator engines.
+The [XGBoost][], [LightGBM][] and [CatBoost][] models come with their own GPU
+engine. Setting `#!python device="gpu"` is sufficient to accelerate them with GPU,
+regardless of the engine parameter.
 
 !!! warning
-    cuml estimators don't support [multioutput tasks][].
+    ATOM does not support multi-GPU training. If there is more than one
+    GPU on the machine and the `device` parameter does not specify which
+    one to use, the first one is used by default.
 
 !!! example
     [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)<br><br>
@@ -134,53 +52,172 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
     type.
 
 
-### Prerequisites
+## Data acceleration
+
+The data engine can be specified through the [`engine`][atomclassifier-engine]
+parameter, which takes a dict with a key `data` that accepts three values:
+[numpy][], [pyarrow][] and [modin][].
+
+
+### numpy
+
+ATOM uses [`pandas`](https://pandas.pydata.org/docs/index.html) as the
+default library for data handling, which in turn, uses [`numpy`](https://numpy.org/)
+for all data processing.
+
+
+### pyarrow
+
+[PyArrow](https://arrow.apache.org/docs/python/index.html) is a library
+that provides a way to work with Apache Arrow memory structures. Apache
+Arrow is a cross-language, platform-independent, in-memory data format
+that provides an efficient and fast way to serialize and deserialize
+data. Pandas offers [native integration](https://pandas.pydata.org/docs/user_guide/pyarrow.html)
+with pyarrow, which atom uses when specifying the pyarrow data engine.
+
+!!! warning
+    The pyarrow backend doesn't work for [sparse datasets][]. If the
+    dataset has any sparse columns, an exception is raised.
+
+
+### modin
+
+The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement for
+pandas, that uses [Ray](https://www.ray.io/) as backend.
+
+
+## Estimator acceleration
+
+The estimator engine can be specified through the [`engine`][atomclassifier-engine]
+parameter, which takes a dict with a key `estimator` that accepts three
+values: [sklearn][], [sklearnex][] and [cuml][]. Read [here][gpu-acceleration]
+how to run the estimators on GPU instead of CPU.
+
+!!! warning
+    Estimators accelerated with sklearnex or cuML sometimes use slightly
+    different hyperparameters than their sklearn counterparts.
+
+### sklearn
+
+This is the default option, which uses the standard estimators from
+[sklearn](https://scikit-learn.org/stable/). Sklearn does not support
+training on GPU.
+
+
+### sklearnex
+
+The [Intel® Extension for Scikit-learn](https://intel.github.io/scikit-learn-intelex/index.html) package (or sklearnex, for
+brevity) accelerates sklearn models and transformers, keeping full
+conformance with sklearn's API. Sklearnex is a free software AI
+accelerator that offers a way to make sklearn code 10–100 times faster.
+The software acceleration is achieved through the use of vector
+instructions, IA hardware-specific memory optimizations, threading, and
+optimizations for all upcoming Intel platforms at launch time. See
+[here][example-accelerating-pipelines] an example using the sklearnex
+engine.
+
+!!! warning
+    sklearnex estimators don't support [sparse datasets][] nor
+    [multioutput tasks][].
+
+!!! tip
+    Intel® processors provide better performance than other CPUs.
+
+#### Prerequisites
+
+* Operating System:
+    - Linux (Ubuntu, Fedora, etc...)
+    - Windows 8.1+
+    - macOS (no GPU support)
+* CPU:
+    - Processor must have x86 architecture.
+    - Processor must support at least one of SSE2, AVX, AVX2, AVX512 instruction sets.
+    - ARM* architecture is not supported.
+* GPU:
+    - All Intel® integrated and discrete GPUs.
+    - Intel® GPU drivers.
+* Libraries:
+    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2023.2.1 (automatically installed with atom when the processor has x86 architecture)
+    - [dpcpp_cpp_rt](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html)>=2023.2  (only for GPU acceleration)
+
+#### Supported estimators
+
+* [Pruner][] (only for strategy="dbscan")
+* [FeatureSelector][] (only for strategy="pca" and dense datasets)
+
+* [ElasticNet][] (only for CPU acceleration)
+* [KNearestNeighbors][]
+* [Lasso][] (only for CPU acceleration)
+* [LogisticRegression][]
+* [OrdinaryLeastSquares][]
+* [RandomForest][]
+* [Ridge][] (only for regression tasks and CPU acceleration)
+* [SupportVectorMachine][] (GPU acceleration only supports classification tasks)
+
+
+### cuML
+
+[cuML](https://github.com/rapidsai/cuml) is the machine learning library
+of the [RAPIDS](https://rapids.ai/) project. cuML enables you to run
+traditional tabular ML tasks on GPUs without going into the details of
+CUDA programming. For large datasets, these GPU-based implementations can
+complete 10-50x faster than their CPU equivalents.
+
+!!! warning
+    cuML estimators don't support [multioutput tasks][].
+
+!!! tip
+    Only transformers and predictors are converted to the requested engine.
+    To use a metric from cuML, insert it directly in the [`run`][atomclassifier-run]
+    method:
+
+    ```python
+    from atom import ATOMClassifier
+    from cuml.metrics import accuracy_score
+    from sklearn.datasets import make_classification
+    
+    X, y = make_classification(n_samples=100, random_state=1)
+    
+    atom = ATOMClassifier(X, y, engine={"estimator": "cuml"}, verbose=2)
+    atom.run("LR", metric=accuracy_score)
+    ```
+
+#### Prerequisites
 
 * Operating System:
     - Ubuntu 18.04/20.04 or CentOS 7/8 with gcc/++ 9.0+
     - Windows 10+ with WSL2 (see [here](https://developer.nvidia.com/blog/run-rapids-on-microsoft-windows-10-using-wsl-2-the-windows-subsystem-for-linux/) a tutorial)
-* GPU: 
-    - For sklearnex: All Intel® integrated and discrete GPUs.
-    - For cuML: NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
+* GPU:
+    - NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
 * Drivers:
-    - For sklearnex: Intel® GPU drivers.
-    - For cuML: CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
+    - CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
 * Libraries:
-    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with atom when the processor has x86 architecture)
-    - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=22.10
+    - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=23.08
 
-### Supported estimators
+#### Supported estimators
 
-**Transformers**
-
-* [Cleaner][] (only for cuML with encode_target=True)
-* [Discretizer][] (only for cuML with strategy!="custom")
-* [Imputer][] (only for cuML with strat_num!="knn")
-* [Normalizer][] (only for cuML)
+* [Cleaner][]
+* [Discretizer][]
+* [Imputer][] (only for strat_num!="knn")
+* [Normalizer][]
 * [Pruner][] (only for strategy="dbscan" and "hdbscan")
-* [Scaler][] (only for cuML)
-* [Vectorizer][] (only for cuML)
-* [FeatureSelector][] (only for strategy="pca" and dense datasets)
+* [Scaler][]
+* [Vectorizer][]
+* [FeatureSelector][] (only for strategy="pca")
 
-
-**Models**
-
-* [BernoulliNB][] (only for cuML)
-* [CatBoost][]
-* [CategoricalNB][] (only for cuML)
-* [ElasticNet][] (only for cuML)
-* [GaussianNB][] (only for cuML)
+* [BernoulliNB][]
+* [CategoricalNB][]
+* [ElasticNet][]
+* [GaussianNB][]
 * [KNearestNeighbors][]
-* [Lasso][] (only for cuML)
-* [LightGBM][] (requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html))
-* [LinearSVM][] (only for cuML)
+* [Lasso][]
+* [LinearSVM][]
 * [LogisticRegression][]
-* [MultinomialNB][] (only for cuML)
+* [MultinomialNB][]
 * [OrdinaryLeastSquares][]
 * [RandomForest][]
 * [Ridge][] (only for regression tasks)
 * [SupportVectorMachine][]
-* [XGBoost][]
 
 
 ## Parallel execution

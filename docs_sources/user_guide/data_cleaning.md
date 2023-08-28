@@ -210,5 +210,5 @@ quickly scale atom's dataset using one of sklearn's scalers. It can be
 accessed from atom through the [scale][atomclassifier-scale] method. 
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here][gpu-acceleration]
-    for further information about GPU implementation.
+    All strategies can utilize GPU speed-up. Click [here][estimator-acceleration]
+    for further information about GPU acceleration.

@@ -3240,7 +3240,7 @@
 
 <h1 id="encoder">Encoder</h1>
 <hr />
-<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1220>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1257>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the column:</p>
 <ul>
 <li>If n_classes=2 or ordinal feature, use Ordinal-encoding.</li>
@@ -3323,116 +3323,40 @@ Number of features seen during fit.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">randint</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom import ATOMClassifier</span>
+<span class="go">from sklearn.datasets import load_breast_cancer</span>
+<span class="go">from numpy.random import randint</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
+<span class="go">X, y = load_breast_cancer(return_X_y=True, as_frame=True)</span>
+<span class="go">X[&quot;cat_feature_1&quot;] = [f&quot;x{i}&quot; for i in randint(0, 2, len(X))]</span>
+<span class="go">X[&quot;cat_feature_2&quot;] = [f&quot;x{i}&quot; for i in randint(0, 3, len(X))]</span>
+<span class="go">X[&quot;cat_feature_3&quot;] = [f&quot;x{i}&quot; for i in randint(0, 20, len(X))]</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+<span class="go">atom = ATOMClassifier(X, y, random_state=1)</span>
+<span class="go">print(atom.X)</span>
 
-<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension  cat_feature_1  cat_feature_2  cat_feature_3</span>
-<span class="go">0          13.48         20.82           88.40      559.2          0.10160           0.12550         0.10630              0.05439         0.1720  ...            0.1610            0.42250           0.5030               0.22580          0.2807                  0.10710             x1             x2             x2</span>
-<span class="go">1          18.31         20.58          120.80     1052.0          0.10680           0.12480         0.15690              0.09451         0.1860  ...            0.1492            0.25360           0.3759               0.15100          0.3074                  0.07863             x0             x1            x15</span>
-<span class="go">2          17.93         24.48          115.20      998.9          0.08855           0.07027         0.05699              0.04744         0.1538  ...            0.1315            0.18060           0.2080               0.11360          0.2504                  0.07948             x1             x0             x6</span>
-<span class="go">3          15.13         29.81           96.71      719.5          0.08320           0.04605         0.04686              0.02739         0.1852  ...            0.1148            0.09866           0.1547               0.06575          0.3233                  0.06165             x0             x0            x12</span>
-<span class="go">4           8.95         15.76           58.74      245.2          0.09462           0.12430         0.09263              0.02308         0.1305  ...            0.1179            0.18790           0.1544               0.03846          0.1652                  0.07722             x0             x0             x2</span>
-<span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...               ...                ...              ...                   ...             ...                      ...            ...            ...            ...</span>
-<span class="go">564        14.34         13.47           92.51      641.2          0.09906           0.07624         0.05724              0.04603         0.2075  ...            0.1297            0.15250           0.1632               0.10870          0.3062                  0.06072             x1             x1             x4</span>
-<span class="go">565        13.17         21.81           85.42      531.5          0.09714           0.10470         0.08259              0.05252         0.1746  ...            0.1503            0.39040           0.3728               0.16070          0.3693                  0.09618             x1             x2            x19</span>
-<span class="go">566        17.30         17.08          113.00      928.2          0.10080           0.10410         0.12660              0.08353         0.1813  ...            0.1416            0.24050           0.3378               0.18570          0.3138                  0.08113             x1             x2            x12</span>
-<span class="go">567        17.68         20.74          117.40      963.7          0.11150           0.16650         0.18550              0.10540         0.1971  ...            0.1418            0.34980           0.3583               0.15150          0.2463                  0.07738             x0             x0            x12</span>
-<span class="go">568        14.80         17.66           95.88      674.8          0.09179           0.08890         0.04069              0.02260         0.1893  ...            0.1226            0.18810           0.2060               0.08308          0.3600                  0.07285             x0             x0            x10</span>
+<span class="go">atom.encode(strategy=&quot;target&quot;, max_onehot=10, verbose=2)</span>
 
-<span class="go">[569 rows x 33 columns]</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-<span class="go">Fitting Encoder...</span>
-<span class="go">Encoding categorical columns...</span>
-<span class="go"> --&gt; Ordinal-encoding feature cat_feature_1. Contains 2 classes.</span>
-<span class="go"> --&gt; OneHot-encoding feature cat_feature_2. Contains 3 classes.</span>
-<span class="go"> --&gt; Target-encoding feature cat_feature_3. Contains 20 classes.</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-
-<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst concavity  worst concave points  worst symmetry  worst fractal dimension  cat_feature_1  cat_feature_2_x0  cat_feature_2_x1  cat_feature_2_x2  cat_feature_3</span>
-<span class="go">0          13.48         20.82           88.40      559.2          0.10160           0.12550         0.10630              0.05439         0.1720  ...           0.5030               0.22580          0.2807                  0.10710            1.0               0.0               0.0               1.0       0.554578</span>
-<span class="go">1          18.31         20.58          120.80     1052.0          0.10680           0.12480         0.15690              0.09451         0.1860  ...           0.3759               0.15100          0.3074                  0.07863            0.0               0.0               1.0               0.0       0.664876</span>
-<span class="go">2          17.93         24.48          115.20      998.9          0.08855           0.07027         0.05699              0.04744         0.1538  ...           0.2080               0.11360          0.2504                  0.07948            1.0               1.0               0.0               0.0       0.622917</span>
-<span class="go">3          15.13         29.81           96.71      719.5          0.08320           0.04605         0.04686              0.02739         0.1852  ...           0.1547               0.06575          0.3233                  0.06165            0.0               1.0               0.0               0.0       0.610614</span>
-<span class="go">4           8.95         15.76           58.74      245.2          0.09462           0.12430         0.09263              0.02308         0.1305  ...           0.1544               0.03846          0.1652                  0.07722            0.0               1.0               0.0               0.0       0.554578</span>
-<span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...              ...                   ...             ...                      ...            ...               ...               ...               ...            ...</span>
-<span class="go">564        14.34         13.47           92.51      641.2          0.09906           0.07624         0.05724              0.04603         0.2075  ...           0.1632               0.10870          0.3062                  0.06072            1.0               0.0               1.0               0.0       0.641543</span>
-<span class="go">565        13.17         21.81           85.42      531.5          0.09714           0.10470         0.08259              0.05252         0.1746  ...           0.3728               0.16070          0.3693                  0.09618            1.0               0.0               0.0               1.0       0.683364</span>
-<span class="go">566        17.30         17.08          113.00      928.2          0.10080           0.10410         0.12660              0.08353         0.1813  ...           0.3378               0.18570          0.3138                  0.08113            1.0               0.0               0.0               1.0       0.610614</span>
-<span class="go">567        17.68         20.74          117.40      963.7          0.11150           0.16650         0.18550              0.10540         0.1971  ...           0.3583               0.15150          0.2463                  0.07738            0.0               1.0               0.0               0.0       0.610614</span>
-<span class="go">568        14.80         17.66           95.88      674.8          0.09179           0.08890         0.04069              0.02260         0.1893  ...           0.2060               0.08308          0.3600                  0.07285            0.0               1.0               0.0               0.0       0.557258</span>
-
-<span class="go">[569 rows x 35 columns]</span>
+<span class="go"># Note the one-hot encoded column with name [feature]_[class]</span>
+<span class="go">print(atom.X)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Encoder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">randint</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom.data_cleaning import Encoder</span>
+<span class="go">from sklearn.datasets import load_breast_cancer</span>
+<span class="go">from numpy.random import randint</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;cat_feature_3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="go">X, y = load_breast_cancer(return_X_y=True, as_frame=True)</span>
+<span class="go">X[&quot;cat_feature_1&quot;] = [f&quot;x{i}&quot; for i in randint(0, 2, len(X))]</span>
+<span class="go">X[&quot;cat_feature_2&quot;] = [f&quot;x{i}&quot; for i in randint(0, 3, len(X))]</span>
+<span class="go">X[&quot;cat_feature_3&quot;] = [f&quot;x{i}&quot; for i in randint(0, 20, len(X))]</span>
+<span class="go">print(X)</span>
 
-<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension  cat_feature_1  cat_feature_2  cat_feature_3</span>
-<span class="go">0          17.99         10.38          122.80     1001.0          0.11840           0.27760         0.30010              0.14710         0.2419  ...           0.16220            0.66560           0.7119                0.2654          0.4601                  0.11890             x1             x2             x5</span>
-<span class="go">1          20.57         17.77          132.90     1326.0          0.08474           0.07864         0.08690              0.07017         0.1812  ...           0.12380            0.18660           0.2416                0.1860          0.2750                  0.08902             x1             x2            x13</span>
-<span class="go">2          19.69         21.25          130.00     1203.0          0.10960           0.15990         0.19740              0.12790         0.2069  ...           0.14440            0.42450           0.4504                0.2430          0.3613                  0.08758             x0             x0            x15</span>
-<span class="go">3          11.42         20.38           77.58      386.1          0.14250           0.28390         0.24140              0.10520         0.2597  ...           0.20980            0.86630           0.6869                0.2575          0.6638                  0.17300             x0             x2            x10</span>
-<span class="go">4          20.29         14.34          135.10     1297.0          0.10030           0.13280         0.19800              0.10430         0.1809  ...           0.13740            0.20500           0.4000                0.1625          0.2364                  0.07678             x1             x1            x17</span>
-<span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...               ...                ...              ...                   ...             ...                      ...            ...            ...            ...</span>
-<span class="go">564        21.56         22.39          142.00     1479.0          0.11100           0.11590         0.24390              0.13890         0.1726  ...           0.14100            0.21130           0.4107                0.2216          0.2060                  0.07115             x1             x1            x12</span>
-<span class="go">565        20.13         28.25          131.20     1261.0          0.09780           0.10340         0.14400              0.09791         0.1752  ...           0.11660            0.19220           0.3215                0.1628          0.2572                  0.06637             x0             x2            x14</span>
-<span class="go">566        16.60         28.08          108.30      858.1          0.08455           0.10230         0.09251              0.05302         0.1590  ...           0.11390            0.30940           0.3403                0.1418          0.2218                  0.07820             x0             x1             x3</span>
-<span class="go">567        20.60         29.33          140.10     1265.0          0.11780           0.27700         0.35140              0.15200         0.2397  ...           0.16500            0.86810           0.9387                0.2650          0.4087                  0.12400             x1             x0             x2</span>
-<span class="go">568         7.76         24.54           47.92      181.0          0.05263           0.04362         0.00000              0.00000         0.1587  ...           0.08996            0.06444           0.0000                0.0000          0.2871                  0.07039             x1             x1            x11</span>
+<span class="go">encoder = Encoder(strategy=&quot;target&quot;, max_onehot=10, verbose=2)</span>
+<span class="go">X = encoder.fit_transform(X, y)</span>
 
-<span class="go">[569 rows x 33 columns]</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-
-<span class="go">Fitting Encoder...</span>
-<span class="go">Encoding categorical columns...</span>
-<span class="go"> --&gt; Ordinal-encoding feature cat_feature_1. Contains 2 classes.</span>
-<span class="go"> --&gt; OneHot-encoding feature cat_feature_2. Contains 3 classes.</span>
-<span class="go"> --&gt; Target-encoding feature cat_feature_3. Contains 20 classes.</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the one-hot encoded column with name [feature]_[class]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-
-<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst concavity  worst concave points  worst symmetry  worst fractal dimension  cat_feature_1  cat_feature_2_x0  cat_feature_2_x1  cat_feature_2_x2  cat_feature_3</span>
-<span class="go">0          17.99         10.38          122.80     1001.0          0.11840           0.27760         0.30010              0.14710         0.2419  ...           0.7119                0.2654          0.4601                  0.11890            1.0               0.0               0.0               1.0       0.645086</span>
-<span class="go">1          20.57         17.77          132.90     1326.0          0.08474           0.07864         0.08690              0.07017         0.1812  ...           0.2416                0.1860          0.2750                  0.08902            1.0               0.0               0.0               1.0       0.604148</span>
-<span class="go">2          19.69         21.25          130.00     1203.0          0.10960           0.15990         0.19740              0.12790         0.2069  ...           0.4504                0.2430          0.3613                  0.08758            0.0               1.0               0.0               0.0       0.675079</span>
-<span class="go">3          11.42         20.38           77.58      386.1          0.14250           0.28390         0.24140              0.10520         0.2597  ...           0.6869                0.2575          0.6638                  0.17300            0.0               0.0               0.0               1.0       0.706297</span>
-<span class="go">4          20.29         14.34          135.10     1297.0          0.10030           0.13280         0.19800              0.10430         0.1809  ...           0.4000                0.1625          0.2364                  0.07678            1.0               0.0               1.0               0.0       0.716566</span>
-<span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...              ...                   ...             ...                      ...            ...               ...               ...               ...            ...</span>
-<span class="go">564        21.56         22.39          142.00     1479.0          0.11100           0.11590         0.24390              0.13890         0.1726  ...           0.4107                0.2216          0.2060                  0.07115            1.0               0.0               1.0               0.0       0.598024</span>
-<span class="go">565        20.13         28.25          131.20     1261.0          0.09780           0.10340         0.14400              0.09791         0.1752  ...           0.3215                0.1628          0.2572                  0.06637            0.0               0.0               0.0               1.0       0.683185</span>
-<span class="go">566        16.60         28.08          108.30      858.1          0.08455           0.10230         0.09251              0.05302         0.1590  ...           0.3403                0.1418          0.2218                  0.07820            0.0               0.0               1.0               0.0       0.472908</span>
-<span class="go">567        20.60         29.33          140.10     1265.0          0.11780           0.27700         0.35140              0.15200         0.2397  ...           0.9387                0.2650          0.4087                  0.12400            1.0               1.0               0.0               0.0       0.585452</span>
-<span class="go">568         7.76         24.54           47.92      181.0          0.05263           0.04362         0.00000              0.00000         0.1587  ...           0.0000                0.0000          0.2871                  0.07039            1.0               0.0               1.0               0.0       0.516759</span>
-
-<span class="go">[569 rows x 35 columns]</span>
+<span class="go"># Note the one-hot encoded column with name [feature]_[class]</span>
+<span class="go">print(X)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3443,7 +3367,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#encoder-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-get_metadata_routing">get_metadata_routing</a></td><td>Get metadata routing of this object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-transform">transform</a></td><td>Encode the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='encoder-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1384>[source]</a></span></div>Fit to data.</p>
+<p><a id='encoder-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1421>[source]</a></span></div>Fit to data.</p>
 <p>Note that leaving y=None can lead to errors if the <code>strategy</code>
 encoder requires target values. For multioutput tasks, only
 the first target column is used to fit the encoder.</p>
@@ -3466,7 +3390,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L108>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='encoder-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L107>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3510,7 +3434,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L149>[source]</a></span></div>Does nothing.</p>
+<p><a id='encoder-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L148>[source]</a></span></div>Does nothing.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3534,7 +3458,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L977>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='encoder-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L999>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3546,7 +3470,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1010>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='encoder-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1033>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3566,7 +3490,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1555>[source]</a></span></div>Encode the data.</p>
+<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1592>[source]</a></span></div>Encode the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

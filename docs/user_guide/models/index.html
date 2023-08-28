@@ -3382,30 +3382,30 @@ There are two ways to achieve this:</p>
 <li>Using <a class="autorefs autorefs-internal" href="../../API/ATOM/atommodel/#atommodel">ATOMModel</a> (recommended). With this approach you can pass
   the required model characteristics to the pipeline.</li>
 </ul>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_diabetes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom import ATOMRegressor, ATOMModel</span>
+<span class="go">from sklearn.datasets import load_diabetes</span>
+<span class="go">from sklearn.linear_model import RANSACRegressor</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ransac</span> <span class="o">=</span> <span class="n">ATOMModel</span><span class="p">(</span><span class="n">RANSACRegressor</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;RANSAC&quot;</span><span class="p">,</span> <span class="n">needs_scaling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">ransac = ATOMModel(RANSACRegressor, name=&quot;RANSAC&quot;, needs_scaling=True)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_diabetes</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">X, y = load_diabetes(return_X_y=True, as_frame=True)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">ransac</span><span class="p">)</span>
+<span class="go">atom = ATOMRegressor(X, y)</span>
+<span class="go">atom.run(ransac)</span>
 </code></pre></div>
 <ul>
 <li>Using the estimator's class or an instance of the class. This approach
   will also call <a class="autorefs autorefs-internal" href="../../API/ATOM/atommodel/#atommodel">ATOMModel</a> under the hood, but it will leave its
   parameters to their default values.</li>
 </ul>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_diabetes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom import ATOMRegressor</span>
+<span class="go">from sklearn.datasets import load_diabetes</span>
+<span class="go">from sklearn.linear_model import RANSACRegressor</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_diabetes</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">X, y = load_diabetes(return_X_y=True, as_frame=True)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">RANSACRegressor</span><span class="p">)</span>
+<span class="go">atom = ATOMRegressor(X, y)</span>
+<span class="go">atom.run(RANSACRegressor)</span>
 </code></pre></div>
 <p>Additional things to take into account:</p>
 <ul>

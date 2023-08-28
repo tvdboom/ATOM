@@ -45,8 +45,8 @@ them on the [Slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/
 
 ??? faq "Can I train models through atom using a GPU?"
     Yes. Refer to the [user guide][gpu-acceleration] to see what algorithms
-    and models have a GPU implementation. Be aware that it requires additional
-    software and hardware dependencies.
+    and models have a GPU implementation. Be aware that it could require
+    additional software and hardware dependencies.
 
 ??? faq "How are numerical and categorical columns differentiated?"
     The columns are separated using a dataframe's [select_dtypes](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)

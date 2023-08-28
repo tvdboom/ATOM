@@ -539,10 +539,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         is not provided.
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
@@ -972,10 +972,10 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If dict: Labels per column, where the key is the column's name.
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
@@ -1694,10 +1694,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         (if more, the column is removed). If None, ignore this step.
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
@@ -2095,10 +2095,10 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - "[quantile][]": Transform features using quantiles information.
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
@@ -2394,10 +2394,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         if strategy="zscore".
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
@@ -2699,10 +2699,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to scale binary columns (only 0s and 1s).
 
     device: str, default="cpu"
-        Device on which to train the estimators. Use any string
-        that follows the [SYCL_DEVICE_FILTER][] filter selector,
-        e.g. `device="gpu"` to use the GPU. Read more in the
-        [user guide][accelerating-pipelines].
+        Device on which to run the estimators. Use any string that
+        follows the [SYCL_DEVICE_FILTER][] filter selector, e.g.
+        `#!python device="gpu"` to use the GPU. Read more in the
+        [user guide][gpu-acceleration].
 
     engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and

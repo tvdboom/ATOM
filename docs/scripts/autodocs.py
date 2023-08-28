@@ -33,7 +33,6 @@ CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
-    modin="https://modin.readthedocs.io/en/stable/",
     warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
     datetimeindex="https://pandas.pydata.org/docs/reference/api/pandas.DatetimeIndex.html",
     # ATOM

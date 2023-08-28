@@ -3263,54 +3263,20 @@ Clone of the provided estimator with custom attributes.</p>
 <p></div></td></tr></p>
 </table>
 <h2 id="example">Example</h2>
-<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_diabetes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">from atom import ATOMRegressor, ATOMModel</span>
+<span class="go">from sklearn.datasets import load_diabetes</span>
+<span class="go">from sklearn.linear_model import RANSACRegressor</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ransac</span> <span class="o">=</span> <span class="n">ATOMModel</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">estimator</span><span class="o">=</span><span class="n">RANSACRegressor</span><span class="p">(),</span>
-<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;RANSAC&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">needs_scaling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="go">ransac = ATOMModel(</span>
+<span class="go">    estimator=RANSACRegressor(),</span>
+<span class="go">    name=&quot;RANSAC&quot;,</span>
+<span class="go">    needs_scaling=False,</span>
+<span class="go">)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_diabetes</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">X, y = load_diabetes(return_X_y=True, as_frame=True)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-<span class="go">&lt;&lt; ================== ATOM ================== &gt;&gt;</span>
-<span class="go">Algorithm task: regression.</span>
-
-<span class="go">Dataset stats ==================== &gt;&gt;</span>
-<span class="go">Shape: (442, 11)</span>
-<span class="go">Train set size: 354</span>
-<span class="go">Test set size: 88</span>
-<span class="go">-------------------------------------</span>
-<span class="go">Memory: 39.02 kB</span>
-<span class="go">Scaled: False</span>
-<span class="go">Outlier values: 12 (0.3%)</span>
-
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">ransac</span><span class="p">)</span>
-
-
-<span class="go">Training ========================= &gt;&gt;</span>
-<span class="go">Models: RANSAC</span>
-<span class="go">Metric: r2</span>
-
-
-<span class="go">Results for RANSACRegressor:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.2372</span>
-<span class="go">Test evaluation --&gt; r2: 0.171</span>
-<span class="go">Time elapsed: 0.057s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Total time: 0.057s</span>
-
-
-<span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.058s</span>
-<span class="go">-------------------------------------</span>
-<span class="go">RANSACRegressor --&gt; r2: 0.171 ~</span>
+<span class="go">atom = ATOMRegressor(X, y, verbose=2)</span>
+<span class="go">atom.run(ransac)</span>
 </code></pre></div>
 
 
