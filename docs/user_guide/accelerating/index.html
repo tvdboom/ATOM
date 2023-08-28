@@ -3506,7 +3506,7 @@ type.</p>
 <h2 id="data-acceleration">Data acceleration</h2>
 <p>The data engine can be specified through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a>
 parameter, which takes a dict with a key <code>data</code> that accepts three values:
-numpy, pyarrow and modin.</p>
+<a class="autorefs autorefs-internal" href="#numpy">numpy</a>, <a class="autorefs autorefs-internal" href="#pyarrow">pyarrow</a> and <a class="autorefs autorefs-internal" href="#modin">modin</a>.</p>
 <h3 id="numpy">numpy</h3>
 <p>ATOM uses <a href="https://pandas.pydata.org/docs/index.html"><code>pandas</code></a> as the
 default library for data handling, which in turn, uses <a href="https://numpy.org/"><code>numpy</code></a>
@@ -3529,8 +3529,8 @@ pandas, that uses <a href="https://www.ray.io/">Ray</a> as backend.</p>
 <h2 id="estimator-acceleration">Estimator acceleration</h2>
 <p>The estimator engine can be specified through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a>
 parameter, which takes a dict with a key <code>estimator</code> that accepts three
-values: sklearn, sklearnex and cuml. Read <a class="autorefs autorefs-internal" href="#gpu-acceleration">here</a> how to
-run the estimators on GPU instead of CPU.</p>
+values: <a class="autorefs autorefs-internal" href="#sklearn">sklearn</a>, <a class="autorefs autorefs-internal" href="#sklearnex">sklearnex</a> and <a class="autorefs autorefs-internal" href="#cuml">cuml</a>. Read <a class="autorefs autorefs-internal" href="#gpu-acceleration">here</a>
+how to run the estimators on GPU instead of CPU.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Estimators accelerated with sklearnex or cuML sometimes use slightly
@@ -3552,9 +3552,8 @@ optimizations for all upcoming Intel platforms at launch time. See
 engine.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>sklearnex estimators almost never support <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a> nor
-<a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>. Refer to <a href="https://intel.github.io/scikit-learn-intelex/algorithms.html">this page</a>
-to check which ones do.</p>
+<p>sklearnex estimators don't support <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a> nor
+<a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -3585,16 +3584,15 @@ to check which ones do.</p>
 </ul>
 </li>
 </ul>
-<p><br></p>
 <h4 id="supported-estimators">Supported estimators</h4>
-<p><strong>Transformers</strong></p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> (only for strategy="dbscan")</li>
-<li><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca" and dense datasets)</li>
-</ul>
-<p><strong>Models</strong></p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a> (only for CPU acceleration)</li>
+<li>
+<p><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca" and dense datasets)</p>
+</li>
+<li>
+<p><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a> (only for CPU acceleration)</p>
+</li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/knn/#knearestneighbors">KNearestNeighbors</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/lasso/#lasso">Lasso</a> (only for CPU acceleration)</li>
 <li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">LogisticRegression</a></li>
@@ -3604,9 +3602,26 @@ to check which ones do.</p>
 <li><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine">SupportVectorMachine</a> (GPU acceleration only supports classification tasks)</li>
 </ul>
 <h3 id="cuml">cuML</h3>
+<p><a href="https://github.com/rapidsai/cuml">cuML</a> is the machine learning library
+of the <a href="https://rapids.ai/">RAPIDS</a> project. cuML enables you to run
+traditional tabular ML tasks on GPUs without going into the details of
+CUDA programming. For large datasets, these GPU-based implementations can
+complete 10-50x faster than their CPU equivalents.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<ul>
+<li>cuML estimators don't support <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>.</li>
+<li>Install cuML using <code>pip install --extra-index-url=https://pypi.nvidia.com
+  cuml-cu11</code> or <code>pip install --extra-index-url=https://pypi.nvidia.com
+  cuml-cu12</code> depending on your CUDA version. Read more about RAPIDS'
+  installation <a href="https://docs.rapids.ai/install">here</a>.</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
 <p>Only transformers and predictors are converted to the requested engine.
-Metrics are not accelerated, to use a metric from cuML, insert it directly in the
-<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run"><code>run</code></a> method:</p>
+To use a metric from cuML, insert it directly in the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run"><code>run</code></a>
+method:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 <span class="kn">from</span> <span class="nn">cuml.metrics</span> <span class="kn">import</span> <span class="n">accuracy_score</span>
 <span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_classification</span>
@@ -3616,9 +3631,6 @@ Metrics are not accelerated, to use a metric from cuML, insert it directly in th
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;estimator&quot;</span><span class="p">:</span> <span class="s2">&quot;cuml&quot;</span><span class="p">},</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">accuracy_score</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>cuml estimators don't support <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>.</p>
 </div>
 <h4 id="prerequisites_1">Prerequisites</h4>
 <ul>
@@ -3640,9 +3652,7 @@ Metrics are not accelerated, to use a metric from cuML, insert it directly in th
 </ul>
 </li>
 </ul>
-<p><br></p>
 <h4 id="supported-estimators_1">Supported estimators</h4>
-<p><strong>Transformers</strong></p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/discretizer/#discretizer">Discretizer</a></li>
@@ -3651,11 +3661,12 @@ Metrics are not accelerated, to use a metric from cuML, insert it directly in th
 <li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a> (only for strategy="dbscan" and "hdbscan")</li>
 <li><a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/nlp/vectorizer/#vectorizer">Vectorizer</a></li>
-<li><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca")</li>
-</ul>
-<p><strong>Models</strong></p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../API/models/bnb/#bernoullinb">BernoulliNB</a></li>
+<li>
+<p><a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a> (only for strategy="pca")</p>
+</li>
+<li>
+<p><a class="autorefs autorefs-internal" href="../../API/models/bnb/#bernoullinb">BernoulliNB</a></p>
+</li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/catnb/#categoricalnb">CategoricalNB</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/en/#elasticnet">ElasticNet</a></li>
 <li><a class="autorefs autorefs-internal" href="../../API/models/gnb/#gaussiannb">GaussianNB</a></li>

@@ -167,7 +167,7 @@ class BaseTransformer:
                     set_global_device_type("gpu" if "gpu" in self.device else "cpu")
 
                     # See https://github.com/rapidsai/cuml/issues/5564
-                    from cuml.internals.memory_util import set_global_output_type
+                    from cuml.internals.memory_utils import set_global_output_type
                     set_global_output_type("numpy")
 
             elif models.lower() != "sklearn":
