@@ -756,8 +756,6 @@ class BaseTransformer:
             else:
                 test_size = self.test_size
 
-            splitter = self._get_est_class("train_test_split", "model_selection")
-
             try:
                 # Define holdout set size
                 if self.holdout_size:
@@ -773,7 +771,7 @@ class BaseTransformer:
                             f"got {self.holdout_size}."
                         )
 
-                    data, holdout = splitter(
+                    data, holdout = train_test_split(
                         data,
                         test_size=holdout_size,
                         random_state=self.random_state,
@@ -784,7 +782,7 @@ class BaseTransformer:
                 else:
                     holdout = None
 
-                train, test = splitter(
+                train, test = train_test_split(
                     data,
                     test_size=test_size,
                     random_state=self.random_state,

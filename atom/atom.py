@@ -274,8 +274,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
             data = self.train.select_dtypes(include=["number"])
-            z_scores = (np.abs(stats.zscore(data.values.astype(float))) > 3)
-            return (z_scores.abs() > 3).any(axis=1).sum()
+            return (np.abs(stats.zscore(data.values.astype(float))) > 3).any(axis=1).sum()
 
     @property
     def classes(self) -> pd.DataFrame | None:
