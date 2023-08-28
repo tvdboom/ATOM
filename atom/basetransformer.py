@@ -16,9 +16,7 @@ from copy import deepcopy
 from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
-from logging import (
-    DEBUG, FileHandler, Formatter, Logger, getLogger,
-)
+from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from typing import Any, Callable
 

@@ -22,7 +22,6 @@ import pandas as pd
 from gplearn.genetic import SymbolicTransformer
 from scipy import stats
 from sklearn.base import BaseEstimator, is_regressor
-from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_selection import (
     RFE, RFECV, SelectFromModel, SelectKBest, SequentialFeatureSelector, chi2,
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -1428,12 +1427,12 @@ class FeatureSelector(
                     self.scaler = Scaler()
                     X = self.scaler.fit_transform(X)
 
+                estimator = self._get_est_class("PCA", "decomposition")
+
                 if self.solver is None:
                     solver = sign(estimator)["svd_solver"].default
                 else:
                     solver = self.solver
-
-                estimator = self._get_est_class("PCA", "decomposition")
 
                 self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
