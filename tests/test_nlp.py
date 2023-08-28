@@ -188,7 +188,7 @@ def test_hashing():
     assert "hash1" in X
 
 
-@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__", "internals"])})
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
 def test_gpu():
     """Assert that the gpu implementation calls the get method of matrix."""

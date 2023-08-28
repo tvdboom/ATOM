@@ -49,7 +49,7 @@ from atom.utils import (
     Transformer, __version__, check_dependency, check_is_fitted, check_scaling,
     composed, crash, custom_transform, fit_one, flt, get_cols,
     get_custom_scorer, has_task, infer_task, is_multioutput, is_sparse, lst,
-    method_to_log, sign, variable_return,
+    method_to_log, sign, variable_return, to_pyarrow
 )
 
 
@@ -843,21 +843,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             "float": [(x.name, np.finfo(x.type).min, np.finfo(x.type).max) for x in t3],
         }
 
-        # Convert selected columns to the best nullable dtype
-        data = self.dataset[self.branch._get_columns(columns)]  # TODO: .convert_dtypes()
+        data = self.dataset[self.branch._get_columns(columns)]
+
+        # Convert back since convert_dtypes doesn't work properly for pyarrow dtypes
+        data = data.astype({n: to_pyarrow(c, inverse=True) for n, c in data.items()})
+
+        # Convert to the best nullable dtype
+        data = data.convert_dtypes()
 
         for name, column in data.items():
             if pd.api.types.is_sparse(column):
                 old_t = column.dtype.subtype
             else:
                 old_t = column.dtype
-
-            # TODO: Finish shrink for pyarrow
-            if "pyarrow" in old_t.name:
-                column = column.astype(column.to_numpy().dtype)
-
-            # TODO: Finish shrink for pyarrow
-            column = column.convert_dtypes()
 
             if old_t.name.startswith("string"):
                 if str2cat and column.nunique() <= int(len(column) * 0.3):
@@ -886,21 +884,16 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 get_data(r[0]) for r in t if r[1] <= column.min() and r[2] >= column.max()
             )
 
-        # TODO: Finish shrink for pyarrow
-        from pandas.core.dtypes.cast import convert_dtypes
-        print(self.dtypes)
-        self.branch.dataset = self.branch.dataset.astype(
-            {
-                name: convert_dtypes(column, dtype_backend="pyarrow")
-                for name, column in data.items()
-            }
-        )
+        if self.engine["data"] == "pyarrow":
+            self.branch.dataset = self.branch.dataset.astype(
+                {name: to_pyarrow(col) for name, col in self.branch._data.items()}
+            )
 
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
     def stats(self, _vb: INT = -2, /):
-        """Print basic information about the dataset.
+        """Display basic information about the dataset.
 
         Parameters
         ----------

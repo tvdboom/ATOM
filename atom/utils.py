@@ -41,7 +41,6 @@ from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from pandas.api.types import is_numeric_dtype
-from pandas.core.dtypes.cast import convert_dtypes
 from shap import Explainer, Explanation
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
@@ -1744,6 +1743,32 @@ def n_cols(data: FEATURES | TARGET | None) -> int:
             return array.ndim  # Can be 0 when input is a dict
 
 
+def to_pyarrow(column: SERIES, inverse: bool = False) -> str:
+    """Get the pyarrow dtype corresponding to a series.
+
+    Parameters
+    ----------
+    column: series
+        Column to get the dtype from. If it already has a pyarrow
+        dtype, return original dtype.
+
+    inverse: bool, default=False
+        Whether to convert to pyarrow or back from pyarrow.
+
+    Returns
+    -------
+    str
+        Name of the converted dtype.
+
+    """
+    if not inverse and not column.dtype.name.endswith("[pyarrow]"):
+        return f"{column.dtype.name}[pyarrow]"
+    elif inverse and column.dtype.name.endswith("[pyarrow]"):
+        return column.dtype.name[:-9]
+
+    return column.dtype.name
+
+
 def to_df(
     data: FEATURES | None,
     index: SEQUENCE | None = None,
@@ -1791,13 +1816,8 @@ def to_df(
             if dtype is not None:
                 data = data.astype(dtype)
 
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow" and not is_sparse(data):
-            data = data.astype(
-                {
-                    name: convert_dtypes(column, dtype_backend="pyarrow")
-                    for name, column in data.items()
-                }
-            )
+        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
+            data = data.astype({name: to_pyarrow(col) for name, col in data.items()})
 
     return data
 
@@ -1844,8 +1864,8 @@ def to_series(
                     dtype=dtype,
                 )
 
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow" and not is_sparse(data):
-            data = data.astype(convert_dtypes(data, dtype_backend="pyarrow"))
+        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
+            data = data.astype(to_pyarrow(data))
 
     return data
 
@@ -2050,7 +2070,7 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
         scorer = make_scorer(score_func=metric)
 
     # If no name was assigned, use the name of the function
-    if not hasattr(scorer, name):
+    if not hasattr(scorer, "name"):
         scorer.name = scorer._score_func.__name__
 
     return scorer

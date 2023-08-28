@@ -375,19 +375,22 @@ def test_save_data():
 
 def test_shrink_dtypes_excluded():
     """Assert that some dtypes are excluded from changing."""
-    atom = ATOMClassifier(X10_str2, y10, random_state=1)
-    assert atom.dtypes[3].name == "bool"
+    X = X_bin.copy()
+    X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
+
+    atom = ATOMClassifier(X, y_bin, random_state=1)
+    assert atom.dtypes[-2].name == "datetime64[ns]"
     atom.shrink()
-    assert atom.dtypes[3].name == "bool"
+    assert atom.dtypes[-2].name == "datetime64[ns]"  # Unchanged
 
 
-def test_shrink_obj2cat():
-    """Assert that the obj2cat parameter works as intended."""
+def test_shrink_str2cat():
+    """Assert that the str2cat parameter works as intended."""
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
-    atom.shrink(obj2cat=False)
-    assert atom.dtypes[2].name == "object"
+    atom.shrink(str2cat=False)
+    assert atom.dtypes[2].name == "string"
 
-    atom.shrink()
+    atom.shrink(str2cat=True)
     assert atom.dtypes[2].name == "category"
 
 
@@ -395,12 +398,12 @@ def test_shrink_int2uint():
     """Assert that the int2uint parameter works as intended."""
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
     assert atom.dtypes[0].name == "int64"
-    atom.shrink()
-    assert atom.dtypes[0].name == "int8"
 
-    assert atom.dtypes[0].name == "int8"
+    atom.shrink(int2uint=False)
+    assert atom.dtypes[0].name == "Int8"
+
     atom.shrink(int2uint=True)
-    assert atom.dtypes[0].name == "uint8"
+    assert atom.dtypes[0].name == "UInt8"
 
 
 def test_shrink_sparse_arrays():
@@ -408,15 +411,15 @@ def test_shrink_sparse_arrays():
     atom = ATOMClassifier(X_sparse, y10, random_state=1)
     assert atom.dtypes[0].name == "Sparse[int64, 0]"
     atom.shrink()
-    assert atom.dtypes[0].name == "Sparse[int8, 0]"
+    assert atom.dtypes[0].name == "Sparse[Int8, 0]"
 
 
 def test_shrink_dtypes_unchanged():
     """Assert that optimal dtypes are left unchanged."""
-    atom = ATOMClassifier(X_bin.astype("float32"), y_bin, random_state=1)
-    assert atom.dtypes[3].name == "float32"
+    atom = ATOMClassifier(X_bin.astype("Float32"), y_bin, random_state=1)
+    assert atom.dtypes[3].name == "Float32"
     atom.shrink()
-    assert atom.dtypes[3].name == "float32"
+    assert atom.dtypes[3].name == "Float32"
 
 
 def test_shrink_dense2sparse():
@@ -424,17 +427,25 @@ def test_shrink_dense2sparse():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dtypes[0].name == "float64"
     atom.shrink(dense2sparse=True)
-    assert atom.dtypes[0].name.startswith("Sparse[float32")
+    assert atom.dtypes[0].name.startswith("Sparse[Float32")
+
+
+def test_shrink_pyarrow():
+    """Assert that it works with the pyarrow data backend."""
+    atom = ATOMClassifier(X_bin, y_bin, engine={"data": "pyarrow"}, random_state=1)
+    assert atom.dtypes[0].name == "double[pyarrow]"
+    atom.shrink()
+    assert atom.dtypes[0].name == "float[pyarrow]"
 
 
 def test_shrink_exclude_columns():
     """Assert that columns can be excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dtypes[0].name == "float64"
-    assert atom.dtypes[-1].name != "int8"
+    assert atom.dtypes[-1].name != "Int8"
     atom.shrink(columns=-1)
     assert atom.dtypes[0].name == "float64"
-    assert atom.dtypes[-1].name == "int8"
+    assert atom.dtypes[-1].name == "Int8"
 
 
 def test_stats_mixed_sparse_dense():

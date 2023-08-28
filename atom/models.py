@@ -2983,10 +2983,11 @@ class Ridge(ClassRegModel):
             solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
         )
 
-        if self.engine["estimator"] == "sklearnex":
-            dist.pop("solver")  # Only supports 'auto'
-        elif self.engine["estimator"] == "cuml":
-            dist["solver"] = Cat(["eig", "svd", "cd"])
+        if self.goal == "reg":
+            if self.engine["estimator"] == "sklearnex":
+                dist.pop("solver")  # Only supports 'auto'
+            elif self.engine["estimator"] == "cuml":
+                dist["solver"] = Cat(["eig", "svd", "cd"])
 
         return dist
 

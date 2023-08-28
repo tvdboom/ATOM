@@ -285,7 +285,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def _est_class(self) -> Predictor:
         """Return the estimator's class (not instance)."""
         try:
-            module = import_module(f"{self.engine['models']}.{self._module}")
+            module = import_module(f"{self.engine['estimator']}.{self._module}")
             cls = self._estimators.get(self.goal, self._estimators.get("reg"))
         except (ModuleNotFoundError, AttributeError):
             if "sklearn" in self.supports_engines:

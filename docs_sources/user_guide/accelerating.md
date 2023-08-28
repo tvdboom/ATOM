@@ -8,7 +8,7 @@ its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.htm
 
 !!! warning
     The pyarrow backend doesn't work for [sparse datasets][]. If the
-    dataset has any sparse columns, the type conversion is skipped silently.
+    dataset has any sparse columns, an exception is raised.
 
 [modin](https://modin.readthedocs.io/en/stable/), a multi-threading, drop-in replacement for pandas, that uses Ray as backend.
 
@@ -18,8 +18,20 @@ its functionalities [here](https://pandas.pydata.org/docs/user_guide/pyarrow.htm
 
 ## Estimator acceleration
 
-Only transformers and predictors are converted to the 
-Metrics are not accelerated, to use a metric from cuML, use atom.rtun(metric=cuml_accuracy)...
+Only transformers and predictors are converted to the requested engine. Metrics
+are not accelerated, to use a metric from cuML, insert it directly in the
+[`run`][atomclassifier-run] method:
+
+```python
+from atom import ATOMClassifier
+from cuml.metrics import accuracy_score
+from sklearn.datasets import make_classification
+
+X, y = make_classification(n_samples=100, random_state=1)
+
+atom = ATOMClassifier(X, y, engine={"estimator": "cuml"}, verbose=2)
+atom.run("LR", metric=accuracy_score)
+```
 
 
 !!! warning

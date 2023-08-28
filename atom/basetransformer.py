@@ -124,7 +124,7 @@ class BaseTransformer:
         elif "data" not in value and "estimator" not in value:
             raise ValueError(
                 f"Invalid value for the engine parameter, got {value}. "
-                "The value should be a dict with keys 'data' and/or 'models'."
+                "The value should be a dict with keys 'data' and/or 'estimator'."
             )
 
         if data := value.get("data"):
@@ -397,7 +397,7 @@ class BaseTransformer:
 
         """
         try:
-            return getattr(import_module(f"{self.engine['models']}.{module}"), name)
+            return getattr(import_module(f"{self.engine['estimator']}.{module}"), name)
         except (ModuleNotFoundError, AttributeError):
             return getattr(import_module(f"sklearn.{module}"), name)
 
