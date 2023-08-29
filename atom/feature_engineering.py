@@ -13,7 +13,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 from random import sample
-from typing import Callable
+from typing import Callable, Literal
 
 import featuretools as ft
 import joblib
@@ -27,6 +27,7 @@ from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
 )
 from sklearn.model_selection import cross_val_score
+from typeguard import typechecked
 from zoofs import (
     DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
     HarrisHawkOptimization, ParticleSwarmOptimization,
@@ -36,14 +37,18 @@ from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.plots import FeatureSelectorPlot
-from atom.utils import (
-    DATAFRAME, FEATURES, FLOAT, INT, INT_TYPES, SCALAR, SEQUENCE,
-    SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict, check_is_fitted,
-    check_scaling, composed, crash, get_custom_scorer, infer_task, is_sparse,
-    lst, merge, method_to_log, sign, to_df,
+from atom.utils.types import (
+    BOOL, DATAFRAME, ENGINE, FEATURES, FLOAT, INT, INT_TYPES, SCALAR, SEQUENCE,
+    SEQUENCE_TYPES, SERIES_TYPES, TARGET,
+)
+from atom.utils.utils import (
+    CustomDict, check_is_fitted, check_scaling, composed, crash,
+    get_custom_scorer, infer_task, is_sparse, lst, merge, method_to_log, sign,
+    to_df,
 )
 
 
+@typechecked
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract features from datetime columns.
 
@@ -165,8 +170,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         fmt: str | SEQUENCE | None = None,
         *,
         encoding_type: str = "ordinal",
-        drop_columns: bool = True,
-        verbose: INT = 0,
+        drop_columns: BOOL = True,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -287,6 +292,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     """Generate new features.
 
@@ -426,7 +432,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         n_features: INT | None = None,
         operators: str | SEQUENCE | None = None,
         n_jobs: INT = 1,
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
         **kwargs,
@@ -636,6 +642,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract statistics from similar features.
 
@@ -739,8 +746,8 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         group: dict[str, str | SEQUENCE],
         *,
         operators: str | SEQUENCE | None = None,
-        drop_columns: bool = True,
-        verbose: INT = 0,
+        drop_columns: BOOL = True,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -832,6 +839,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class FeatureSelector(
     BaseEstimator,
     TransformerMixin,
@@ -996,22 +1004,21 @@ class FeatureSelector(
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -1118,9 +1125,9 @@ class FeatureSelector(
         max_correlation: FLOAT | None = 1.0,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
         **kwargs,
@@ -1247,7 +1254,13 @@ class FeatureSelector(
                     if solver in MODELS:
                         model = MODELS[solver](
                             goal=goal,
-                            **{x: getattr(self, x, False) for x in BaseTransformer.attrs},
+                            n_jobs=self.n_jobs,
+                            device=self.device,
+                            engine=self.engine,
+                            backend=self.backend,
+                            verbose=self.verbose,
+                            logger=self.logger,
+                            random_state=self.random_state,
                         )
                         model.task = infer_task(y, goal)
                         solver = model._get_est()

@@ -19,14 +19,18 @@ from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
+from typeguard import typechecked
 
-from atom.utils import (
-    DATAFRAME, FEATURES, FLOAT, SEQUENCE, SERIES, TARGET, Estimator,
+from atom.utils.types import (
+    BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, SEQUENCE, SERIES, TARGET, INT
+)
+from atom.utils.utils import (
     check_is_fitted, fit_one, fit_transform_one, transform_one,
     variable_return,
 )
 
 
+@typechecked
 class Pipeline(skPipeline):
     """Custom Pipeline class.
 
@@ -55,10 +59,10 @@ class Pipeline(skPipeline):
 
     def __init__(
         self,
-        steps: list[tuple[str, Estimator]],
+        steps: list[tuple[str, ESTIMATOR]],
         *,
         memory: str | Memory | None = None,
-        verbose: bool = False,
+        verbose: BOOL = False,
     ):
         super().__init__(steps, memory=memory, verbose=verbose)
 
@@ -85,14 +89,14 @@ class Pipeline(skPipeline):
         self._memory_fit = self._memory.cache(fit_transform_one)
         self._memory_transform = self._memory.cache(transform_one)
 
-    def _can_transform(self) -> bool:
+    def _can_transform(self) -> BOOL:
         """Check if the pipeline can use the transform method."""
         return (
             self._final_estimator is None or self._final_estimator == "passthrough"
             or hasattr(self._final_estimator, "transform")
         )
 
-    def _can_inverse_transform(self) -> bool:
+    def _can_inverse_transform(self) -> BOOL:
         """Check if the pipeline can use the transform method."""
         return all(
             est is None or est == "passthrough" or hasattr(est, "inverse_transform")
@@ -101,10 +105,10 @@ class Pipeline(skPipeline):
 
     def _iter(
         self,
-        with_final: bool = True,
-        filter_passthrough: bool = True,
-        filter_train_only: bool = True,
-    ) -> Generator[int, str, Estimator]:
+        with_final: BOOL = True,
+        filter_passthrough: BOOL = True,
+        filter_train_only: BOOL = True,
+    ) -> Generator[INT, str, ESTIMATOR]:
         """Generate (idx, name, estimator) tuples from self.steps.
 
         By default, estimators that are only applied on the training
@@ -136,7 +140,8 @@ class Pipeline(skPipeline):
         """
         it = super()._iter(with_final, filter_passthrough)
         if filter_train_only:
-            return filter(lambda x: not getattr(x[-1], "_train_only", False), it)
+            no_train_only = filter(lambda x: not getattr(x[-1], "_train_only", False), it)
+            return (x for x in no_train_only)
         else:
             return it
 

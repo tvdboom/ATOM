@@ -12,7 +12,7 @@ import pytest
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
-from atom.utils import merge
+from atom.utils.utils import merge
 
 from .conftest import (
     X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,

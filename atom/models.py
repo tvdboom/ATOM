@@ -84,9 +84,9 @@ from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel, ForecastModel
 from atom.pipeline import Pipeline
-from atom.utils import (
-    DATAFRAME, SERIES, CatBMetric, ClassMap, CustomDict, LGBMetric, Predictor,
-    XGBMetric, sign,
+from atom.utils.types import DATAFRAME, PREDICTOR, SERIES
+from atom.utils.utils import (
+    CatBMetric, ClassMap, CustomDict, LGBMetric, XGBMetric, sign,
 )
 
 
@@ -136,12 +136,12 @@ class CustomModel(ClassRegModel):
         """Return the estimator's class."""
         return self._est
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the model's estimator with unpacked parameters.
 
         Returns
         -------
-        Predictor
+        PREDICTOR
             Estimator instance.
 
         """
@@ -561,7 +561,7 @@ class CatBoost(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the estimator instance.
 
         Parameters
@@ -593,7 +593,7 @@ class CatBoost(ClassRegModel):
 
     def _fit_estimator(
         self,
-        estimator: Predictor,
+        estimator: PREDICTOR,
         data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
         validation: tuple[DATAFRAME, SERIES] | None = None,
@@ -1791,7 +1791,7 @@ class LightGBM(ClassRegModel):
     _module = "lightgbm.sklearn"
     _estimators = CustomDict({"class": "LGBMClassifier", "reg": "LGBMRegressor"})
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -1815,7 +1815,7 @@ class LightGBM(ClassRegModel):
 
     def _fit_estimator(
         self,
-        estimator: Predictor,
+        estimator: PREDICTOR,
         data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
         validation: tuple[DATAFRAME, SERIES] | None = None,
@@ -2068,7 +2068,7 @@ class LinearSVM(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the estimator instance.
 
         Parameters
@@ -3178,7 +3178,7 @@ class SupportVectorMachine(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -3267,7 +3267,7 @@ class XGBoost(ClassRegModel):
     _module = "xgboost"
     _estimators = CustomDict({"class": "XGBClassifier", "reg": "XGBRegressor"})
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -3292,7 +3292,7 @@ class XGBoost(ClassRegModel):
 
     def _fit_estimator(
         self,
-        estimator: Predictor,
+        estimator: PREDICTOR,
         data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
         validation: tuple[DATAFRAME, SERIES] | None = None,
@@ -3931,7 +3931,7 @@ class Stacking(ClassRegModel):
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -3996,7 +3996,7 @@ class Voting(ClassRegModel):
                         f"a predict_proba method, got {m._fullname}."
                     )
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the model's estimator with unpacked parameters.
 
         Returns

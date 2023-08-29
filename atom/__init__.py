@@ -8,4 +8,4 @@ Description: Import API and version.
 """
 
 from atom.api import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
-from atom.utils import __version__
+from atom.utils.constants import __version__

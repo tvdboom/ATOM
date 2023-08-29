@@ -164,7 +164,8 @@ CUDA programming. For large datasets, these GPU-based implementations can
 complete 10-50x faster than their CPU equivalents.
 
 !!! warning
-    * cuML estimators don't support [multioutput tasks][].
+    * cuML estimators don't support [multioutput tasks][] nor the [pyarrow][]
+      data engine.
     * Install cuML using `pip install --extra-index-url=https://pypi.nvidia.com
       cuml-cu11` or `pip install --extra-index-url=https://pypi.nvidia.com
       cuml-cu12` depending on your CUDA version. Read more about RAPIDS'

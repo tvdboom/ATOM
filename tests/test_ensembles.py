@@ -19,7 +19,7 @@ from atom.ensembles import (
     StackingClassifier, StackingRegressor, VotingClassifier, VotingRegressor,
 )
 from atom.pipeline import Pipeline
-from atom.utils import check_is_fitted
+from atom.utils.utils import check_is_fitted
 
 from .conftest import X_bin, X_reg, y_bin, y_reg
 

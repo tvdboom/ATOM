@@ -19,7 +19,7 @@ from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
     Scaler,
 )
-from atom.utils import NotFittedError, check_scaling, to_df
+from atom.utils.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
@@ -695,7 +695,7 @@ def test_invalid_strategy_parameter():
 
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
-    pruner = Pruner(strategy="iforest", method="min_max")
+    pruner = Pruner(strategy="iforest", method="minmax")
     with pytest.raises(ValueError, match=".*accepts another method.*"):
         pruner.transform(X_bin)
 
@@ -736,9 +736,9 @@ def test_drop_pruner():
     assert len(X) + 2 == len(X10)
 
 
-def test_min_max_pruner():
-    """Assert that the method works as intended when strategy="min_max"."""
-    X = Pruner(method="min_max", max_sigma=2).transform(X10)
+def test_minmax_pruner():
+    """Assert that the method works as intended when strategy="minmax"."""
+    X = Pruner(method="minmax", max_sigma=2).transform(X10)
     assert X.iat[3, 0] == 0.23  # Max of column
     assert X.iat[5, 1] == 2  # Min of column
 
@@ -752,7 +752,7 @@ def test_value_pruner():
 
 def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
-    X, y = Pruner(method="min_max", max_sigma=2).transform(X10_str, y10)
+    X, y = Pruner(method="minmax", max_sigma=2).transform(X10_str, y10)
     pd.testing.assert_series_equal(X["x1"], to_df(X10_str)["x1"])
 
 

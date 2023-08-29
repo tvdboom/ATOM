@@ -26,7 +26,7 @@ from sklearnex.svm import SVC
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier, DirectForecaster
-from atom.utils import merge
+from atom.utils.utils import merge
 
 from .conftest import (
     X10, X_bin, X_bin_array, X_idx, X_label, X_sparse, X_text, bin_test,
@@ -203,7 +203,7 @@ def test_experiment_dagshub(dagshub, request, token, _):
     assert "dagshub" not in mlflow.get_tracking_uri()
 
 
-def test_random_state_setter():
+def test_random_state_negative_int():
     """Assert that an error is raised for a negative random_state."""
     with pytest.raises(ValueError, match=".*random_state parameter.*"):
         BaseTransformer(random_state=-1)

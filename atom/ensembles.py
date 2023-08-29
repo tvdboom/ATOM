@@ -24,8 +24,10 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
+from typeguard import typechecked
 
-from atom.utils import FEATURES, INT, SEQUENCE, Predictor, check_is_fitted
+from atom.utils.types import BOOL, FEATURES, INT, PREDICTOR, SEQUENCE
+from atom.utils.utils import check_is_fitted
 
 
 class BaseEnsemble:
@@ -47,6 +49,7 @@ class BaseEnsemble:
                 self.feature_names_in_ = est.feature_names_in_
 
 
+@typechecked
 class BaseVoting(BaseEnsemble):
     """Base class for the voting estimators."""
 
@@ -110,6 +113,7 @@ class BaseVoting(BaseEnsemble):
         return self
 
 
+@typechecked
 class BaseStacking(BaseEnsemble):
     """Base class for the stacking estimators."""
 
@@ -214,6 +218,7 @@ class BaseStacking(BaseEnsemble):
         return self
 
 
+@typechecked
 class VotingClassifier(BaseVoting, VC):
     """Soft Voting/Majority Rule classifier.
 
@@ -230,13 +235,13 @@ class VotingClassifier(BaseVoting, VC):
 
     def __init__(
         self,
-        estimators: list[tuple[str, Predictor]],
+        estimators: list[tuple[str, PREDICTOR]],
         *,
         voting: str = "hard",
         weights: SEQUENCE | None = None,
         n_jobs: INT | None = None,
-        flatten_transform: bool = True,
-        verbose: bool = False,
+        flatten_transform: BOOL = True,
+        verbose: BOOL = False,
     ):
         super().__init__(
             estimators,
@@ -323,6 +328,7 @@ class VotingClassifier(BaseVoting, VC):
             )
 
 
+@typechecked
 class VotingRegressor(BaseVoting, VR):
     """Soft Voting/Majority Rule regressor.
 
@@ -338,11 +344,11 @@ class VotingRegressor(BaseVoting, VR):
 
     def __init__(
         self,
-        estimators: list[tuple[str, Predictor]],
+        estimators: list[tuple[str, PREDICTOR]],
         *,
         weights: SEQUENCE | None = None,
         n_jobs: INT | None = None,
-        verbose: bool = False,
+        verbose: BOOL = False,
     ):
         super().__init__(
             estimators,
@@ -357,6 +363,7 @@ class VotingRegressor(BaseVoting, VR):
             self._get_fitted_attrs()
 
 
+@typechecked
 class StackingClassifier(BaseStacking, SC):
     """Stack of estimators with a final classifier.
 
@@ -402,6 +409,7 @@ class StackingClassifier(BaseStacking, SC):
         return super().fit(X, self._label_encoder.transform(y), sample_weight)
 
 
+@typechecked
 class StackingRegressor(BaseStacking, SR):
     """Stack of estimators with a final regressor.
 

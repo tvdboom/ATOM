@@ -30,14 +30,19 @@ from dagshub.auth.token_auth import HTTPBearerAuth
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
 from sktime.datatypes import check_is_mtype
+from typeguard import typechecked
 
-from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk, composed, crash,
-    get_cols, lst, merge, method_to_log, n_cols, pd, sign, to_df, to_pandas,
+from atom.utils.types import (
+    BOOL, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
+    PREDICTOR, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET,
+)
+from atom.utils.utils import (
+    bk, composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
+    to_df, to_pandas,
 )
 
 
+@typechecked
 class BaseTransformer:
     """Base class for transformers in the package.
 
@@ -108,8 +113,8 @@ class BaseTransformer:
 
     @device.setter
     def device(self, value: str):
-        self._device = value.lower()
-        if "gpu" in self._device:
+        self._device = value
+        if "gpu" in value.lower():
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
 
     @property
@@ -146,6 +151,8 @@ class BaseTransformer:
         os.environ["ATOM_DATA_ENGINE"] = value["data"].lower()
 
         if models := value.get("estimator"):
+            device = self.device.lower()
+
             if models.lower() == "sklearnex":
                 if not find_spec("sklearnex"):
                     raise ModuleNotFoundError(
@@ -155,7 +162,7 @@ class BaseTransformer:
                     )
                 else:
                     import sklearnex
-                    sklearnex.set_config(self.device if "gpu" in self.device else "auto")
+                    sklearnex.set_config(device if "gpu" in device else "auto")
             elif models.lower() == "cuml":
                 if not find_spec("cuml"):
                     raise ModuleNotFoundError(
@@ -163,11 +170,15 @@ class BaseTransformer:
                         "to: https://rapids.ai/start.html#install."
                     )
                 else:
-                    from cuml.common.device_selection import set_global_device_type
-                    set_global_device_type("gpu" if "gpu" in self.device else "cpu")
+                    from cuml.common.device_selection import (
+                        set_global_device_type,
+                    )
+                    set_global_device_type("gpu" if "gpu" in device else "cpu")
 
                     # See https://github.com/rapidsai/cuml/issues/5564
-                    from cuml.internals.memory_utils import set_global_output_type
+                    from cuml.internals.memory_utils import (
+                        set_global_output_type,
+                    )
                     set_global_output_type("numpy")
 
             elif models.lower() != "sklearn":
@@ -219,8 +230,8 @@ class BaseTransformer:
         return self._warnings
 
     @warnings.setter
-    def warnings(self, value: bool | str):
-        if isinstance(value, bool):
+    def warnings(self, value: BOOL | str):
+        if isinstance(value, BOOL):
             self._warnings = "default" if value else "ignore"
         else:
             options = ("default", "error", "ignore", "always", "module", "once")
@@ -381,7 +392,7 @@ class BaseTransformer:
 
         return obj
 
-    def _get_est_class(self, name: str, module: str) -> Predictor:
+    def _get_est_class(self, name: str, module: str) -> PREDICTOR:
         """Import a class from a module.
 
         When the import fails, for example if atom uses sklearnex and
@@ -554,7 +565,7 @@ class BaseTransformer:
             if -df.shape[1] <= self._config.index <= df.shape[1]:
                 df = df.set_index(df.columns[self._config.index], drop=True)
             else:
-                raise ValueError(
+                raise IndexError(
                     f"Invalid value for the index parameter. Value {self._config.index} "
                     f"is out of range for a dataset with {df.shape[1]} columns."
                 )
@@ -636,8 +647,8 @@ class BaseTransformer:
         self,
         arrays: SEQUENCE,
         y: TARGET = -1,
-        use_n_rows: bool = True,
-    ) -> tuple[DATAFRAME, list[INDEX], DATAFRAME | None]:
+        use_n_rows: BOOL = True,
+    ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -726,7 +737,7 @@ class BaseTransformer:
             # If the index is a sequence, assign it before shuffling
             if isinstance(self._config.index, SEQUENCE_TYPES):
                 if len(self._config.index) != len(data):
-                    raise ValueError(
+                    raise IndexError(
                         "Invalid value for the index parameter. Length of "
                         f"index ({len(self._config.index)}) doesn't match "
                         f"that of the dataset ({len(data)})."
@@ -862,7 +873,7 @@ class BaseTransformer:
                     len_data += len(holdout)
 
                 if len(self._config.index) != len_data:
-                    raise ValueError(
+                    raise IndexError(
                         "Invalid value for the index parameter. Length of "
                         f"index ({len(self._config.index)}) doesn't match "
                         f"that of the data sets ({len_data})."
@@ -1045,7 +1056,7 @@ class BaseTransformer:
             add the data to the [load][atomclassifier-load] method.
 
         """
-        if not save_data and hasattr(self, "dataset"):
+        if not save_data and hasattr(self, "_branches"):
             data = {}
             for branch in self._branches:
                 data[branch.name] = dict(
@@ -1064,7 +1075,7 @@ class BaseTransformer:
             pickle.dump(self, f)
 
         # Restore the data to the attributes
-        if not save_data and hasattr(self, "dataset"):
+        if not save_data and hasattr(self, "_branches"):
             for branch in self._branches:
                 branch._data = data[branch.name]["data"]
                 branch._holdout = data[branch.name]["holdout"]

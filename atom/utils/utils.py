@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing utility constants, classes and functions.
+Description: Module containing utility classes.
 
 """
 
@@ -26,7 +26,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType
-from typing import Any, Callable, Protocol, Union
+from typing import Any, Callable
 from unittest.mock import patch
 
 import mlflow
@@ -49,76 +49,13 @@ from sklearn.metrics import (
 from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.utils import _print_elapsed_time
 
-
-# Constants ======================================================== >>
-
-# Current library version
-__version__ = "6.0.0"
-
-# Group of variable types for isinstance
-# TODO: From Python 3.10, add typeguard.typechecked back
-# TODO: From Python 3.10, isinstance accepts pipe operator (change by then)
-INT_TYPES = (int, np.integer)
-FLOAT_TYPES = (float, np.floating)
-SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
-INDEX_TYPES = (pd.Index, md.Index)
-TS_INDEX_TYPES = (
-    pd.PeriodIndex,
-    md.PeriodIndex,
-    pd.DatetimeIndex,
-    md.DatetimeIndex,
-    pd.TimedeltaIndex,
-    md.TimedeltaIndex,
+from atom.utils.constants import __version__
+from atom.utils.types import (
+    BRANCH, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT,
+    INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES, PREDICTOR,
+    SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES, TARGET,
+    TRANSFORMER,
 )
-SERIES_TYPES = (pd.Series, md.Series)
-DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
-PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
-SEQUENCE_TYPES = (list, tuple, np.ndarray, *INDEX_TYPES, *SERIES_TYPES)
-
-# Groups of variable types for type hinting
-INT = Union[INT_TYPES]
-FLOAT = Union[FLOAT_TYPES]
-SCALAR = Union[SCALAR_TYPES]
-INDEX = Union[INDEX_TYPES]
-SERIES = Union[SERIES_TYPES]
-DATAFRAME = Union[DATAFRAME_TYPES]
-PANDAS = Union[PANDAS_TYPES]
-SEQUENCE = Union[SEQUENCE_TYPES]
-FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
-TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
-
-# Always considered missing values
-MISSING_VALUES = [None, pd.NA, pd.NaT, np.inf, -np.inf]
-
-# Attributes shared between atom and a dataframe
-DF_ATTRS = (
-    "size",
-    "head",
-    "tail",
-    "loc",
-    "iloc",
-    "describe",
-    "iterrows",
-    "dtypes",
-    "at",
-    "iat",
-    "memory_usage",
-    "empty",
-    "ndim",
-)
-
-# Default color palette (discrete color, continuous scale)
-PALETTE = {
-    "rgb(0, 98, 98)": "Teal",
-    "rgb(56, 166, 165)": "Teal",
-    "rgb(115, 175, 72)": "Greens",
-    "rgb(237, 173, 8)": "Oranges",
-    "rgb(225, 124, 5)": "Oranges",
-    "rgb(204, 80, 62)": "OrRd",
-    "rgb(148, 52, 110)": "PuRd",
-    "rgb(111, 64, 112)": "Purples",
-    "rgb(102, 102, 102)": "Greys",
-}
 
 
 # Classes ========================================================== >>
@@ -132,39 +69,6 @@ class NotFittedError(ValueError, AttributeError):
     """
 
 
-class Scorer(Protocol):
-    """Protocol for all scorers."""
-    def _score(self, method_caller, clf, X, y, sample_weight=None): ...
-
-
-class Transformer(Protocol):
-    """Protocol for all predictors."""
-    def fit(self, **params): ...
-    def transform(self, **params): ...
-
-
-class Predictor(Protocol):
-    """Protocol for all predictors."""
-    def fit(self, **params): ...
-    def predict(self, **params): ...
-
-
-class Estimator(Protocol):
-    """Protocol for all estimators."""
-    def fit(self, **params): ...
-
-
-class Model(Protocol):
-    """Protocol for all models."""
-    def est_class(self): ...
-    def get_estimator(self, **params): ...
-
-
-class Runner(Protocol):
-    """Protocol for all runners."""
-    def run(self, **params): ...
-
-
 @dataclass
 class DataConfig:
     """Stores the data configuration.
@@ -174,9 +78,9 @@ class DataConfig:
     the one adopted by trainers.
 
     """
-    index: bool | INT | str | SEQUENCE = True
+    index: INDEX_SELECTOR = True
     shuffle: bool = True
-    stratify: bool | INT | str | SEQUENCE = True
+    stratify: INDEX_SELECTOR = True
     test_size: SCALAR = 0.2
 
 
@@ -210,7 +114,7 @@ class CatBMetric:
         Model's task.
 
     """
-    def __init__(self, scorer: Scorer, task: str):
+    def __init__(self, scorer: SCORER, task: str):
         self.scorer = scorer
         self.task = task
 
@@ -298,7 +202,7 @@ class LGBMetric:
         Model's task.
 
     """
-    def __init__(self, scorer: Scorer, task: str):
+    def __init__(self, scorer: SCORER, task: str):
         self.scorer = scorer
         self.task = task
 
@@ -361,7 +265,7 @@ class XGBMetric:
         Model's task.
 
     """
-    def __init__(self, scorer: Scorer, task: str):
+    def __init__(self, scorer: SCORER, task: str):
         self.scorer = scorer
         self.task = task
 
@@ -507,7 +411,7 @@ class TrialsCallback:
 
     """
 
-    def __init__(self, model: Model, n_jobs: INT):
+    def __init__(self, model: MODEL, n_jobs: INT):
         self.T = model
         self.n_jobs = n_jobs
 
@@ -789,9 +693,9 @@ class ShapExplanation:
 
     def __init__(
         self,
-        estimator: Predictor,
+        estimator: PREDICTOR,
         task: str,
-        branch: Any,
+        branch: BRANCH,
         random_state: INT | None = None,
     ):
         self.estimator = estimator
@@ -1511,7 +1415,7 @@ def check_canvas(is_canvas: bool, method: str):
         )
 
 
-def check_hyperparams(models: Model | SEQUENCE, method: str) -> list[Model]:
+def check_hyperparams(models: MODEL | SEQUENCE, method: str) -> list[MODEL]:
     """Check if the models ran hyperparameter tuning.
 
     If no models did, raise an exception.
@@ -1604,7 +1508,7 @@ def check_scaling(X: PANDAS, pipeline: Any | None = None) -> bool:
 
 
 @contextmanager
-def keep_attrs(estimator: Estimator):
+def keep_attrs(estimator: ESTIMATOR):
     """Contextmanager to save an estimator's custom attributes.
 
     ATOM's pipeline uses two custom attributes for its transformers:
@@ -1668,7 +1572,7 @@ def get_corpus(df: DATAFRAME) -> SERIES:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
-def get_best_score(item: Model | SERIES, metric: int = 0) -> FLOAT:
+def get_best_score(item: MODEL | SERIES, metric: int = 0) -> FLOAT:
     """Returns the best score for a model.
 
     The best score is the `score_bootstrap` or `score_test`, checked
@@ -1912,7 +1816,7 @@ def to_pandas(
 
 
 def check_is_fitted(
-    estimator: Estimator,
+    estimator: ESTIMATOR,
     exception: bool = True,
     attributes: str | SEQUENCE | None = None,
 ) -> bool:
@@ -1989,7 +1893,7 @@ def check_is_fitted(
     return True
 
 
-def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
+def get_custom_scorer(metric: str | Callable | SCORER) -> SCORER:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -2130,7 +2034,7 @@ def is_multioutput(task) -> bool:
 
 
 def get_feature_importance(
-    est: Predictor,
+    est: PREDICTOR,
     attributes: SEQUENCE | None = None,
 ) -> np.ndarray | None:
     """Return the feature importance from an estimator.
@@ -2188,7 +2092,7 @@ def get_feature_importance(
         return np.abs(data.flatten())
 
 
-def export_pipeline(pipeline: pd.Series, model: Model | None, memory, verbose) -> Any:
+def export_pipeline(pipeline: pd.Series, model: MODEL | None, memory, verbose) -> Any:
     """Export a pipeline to a sklearn-like object.
 
     Optionally, you can add a model as final estimator.
@@ -2317,7 +2221,7 @@ def name_cols(
 
 
 def reorder_cols(
-    transformer: Transformer,
+    transformer: TRANSFORMER,
     df: DATAFRAME,
     original_df: DATAFRAME,
     col_names: list[str],
@@ -2330,7 +2234,7 @@ def reorder_cols(
 
     Parameters
     ----------
-    transformer: Transformer
+    transformer: TRANSFORMER
         Instance that transformed `df`.
 
     df: dataframe
@@ -2396,7 +2300,7 @@ def reorder_cols(
 
 
 def fit_one(
-    transformer: Transformer,
+    transformer: TRANSFORMER,
     X: FEATURES | None = None,
     y: TARGET | None = None,
     message: str | None = None,
@@ -2406,7 +2310,7 @@ def fit_one(
 
     Parameters
     ----------
-    transformer: Transformer
+    transformer: TRANSFORMER
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2463,7 +2367,7 @@ def fit_one(
 
 
 def transform_one(
-    transformer: Transformer,
+    transformer: TRANSFORMER,
     X: FEATURES | None = None,
     y: TARGET | None = None,
     method: str = "transform",
@@ -2472,7 +2376,7 @@ def transform_one(
 
     Parameters
     ----------
-    transformer: Transformer
+    transformer: TRANSFORMER
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2607,7 +2511,7 @@ def transform_one(
 
 
 def fit_transform_one(
-    transformer: Transformer,
+    transformer: TRANSFORMER,
     X: FEATURES | None = None,
     y: TARGET | None = None,
     message: str | None = None,
@@ -2617,7 +2521,7 @@ def fit_transform_one(
 
     Parameters
     ----------
-    transformer: Transformer
+    transformer: TRANSFORMER
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2659,8 +2563,8 @@ def fit_transform_one(
 
 
 def custom_transform(
-    transformer: Transformer,
-    branch: Any,
+    transformer: TRANSFORMER,
+    branch: BRANCH,
     data: tuple[DATAFRAME, SERIES] | None = None,
     verbose: int | None = None,
     method: str = "transform",
@@ -2672,7 +2576,7 @@ def custom_transform(
 
     Parameters
     ----------
-    transformer: Transformer
+    transformer: TRANSFORMER
         Estimator to apply to the data.
 
     branch: Branch

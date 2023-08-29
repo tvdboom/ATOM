@@ -13,6 +13,7 @@ import re
 import unicodedata
 from logging import Logger
 from string import punctuation
+from typing import Literal
 
 import nltk
 import pandas as pd
@@ -23,16 +24,20 @@ from nltk.collocations import (
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
+from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
-from atom.utils import (
-    DATAFRAME, FEATURES, INT, SCALAR, SEQUENCE, TARGET, CustomDict,
-    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
+from atom.utils.types import (
+    BOOL, DATAFRAME, ENGINE, FEATURES, SCALAR, SEQUENCE, TARGET,
+)
+from atom.utils.utils import (
+    CustomDict, check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
     method_to_log, to_df,
 )
 
 
+@typechecked
 class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Applies standard text cleaning to the corpus.
 
@@ -172,20 +177,20 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        decode: bool = True,
-        lower_case: bool = True,
-        drop_email: bool = True,
+        decode: BOOL = True,
+        lower_case: BOOL = True,
+        drop_email: BOOL = True,
         regex_email: str | None = None,
-        drop_url: bool = True,
+        drop_url: BOOL = True,
         regex_url: str | None = None,
-        drop_html: bool = True,
+        drop_html: BOOL = True,
         regex_html: str | None = None,
-        drop_emoji: bool = True,
+        drop_emoji: BOOL = True,
         regex_emoji: str | None = None,
-        drop_number: bool = True,
+        drop_number: BOOL = True,
         regex_number: str | None = None,
-        drop_punctuation: bool = True,
-        verbose: INT = 0,
+        drop_punctuation: BOOL = True,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -361,6 +366,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
@@ -473,11 +479,11 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        stopwords: bool | str = True,
+        stopwords: BOOL | str = True,
         custom_stopwords: SEQUENCE | None = None,
-        stem: bool | str = False,
-        lemmatize: bool = True,
-        verbose: INT = 0,
+        stem: BOOL | str = False,
+        lemmatize: BOOL = True,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -573,6 +579,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Tokenize the corpus.
 
@@ -696,7 +703,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         trigram_freq: SCALAR | None = None,
         quadgram_freq: SCALAR | None = None,
         *,
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -800,6 +807,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Vectorize text data.
 
@@ -836,22 +844,21 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "cuml"
 
     verbose: int, default=0
@@ -944,10 +951,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "bow",
         *,
-        return_sparse: bool = True,
+        return_sparse: BOOL = True,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):

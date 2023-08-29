@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 from sklearn.base import BaseEstimator
 
-from atom.utils import (
+from atom.utils.utils import (
     ClassMap, CustomDict, NotFittedError, check_is_fitted, time_to_str, to_df,
     to_series,
 )

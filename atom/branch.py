@@ -14,15 +14,19 @@ from copy import copy
 from functools import cached_property
 
 import pandas as pd
+from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
-from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    SEQUENCE, SERIES, SERIES_TYPES, TARGET, CustomDict, bk, custom_transform,
-    flt, get_cols, lst, merge, to_pandas,
+from atom.utils.types import (
+    BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES,
+    PANDAS, SEQUENCE, SERIES_TYPES, SLICE, TARGET,
+)
+from atom.utils.utils import (
+    CustomDict, bk, custom_transform, flt, get_cols, lst, merge, to_pandas,
 )
 
 
+@typechecked
 class Branch:
     """Contains information corresponding to a branch.
 
@@ -60,7 +64,7 @@ class Branch:
         data: DATAFRAME | None = None,
         index: list[INT, INDEX, INDEX] | None = None,
         holdout: DATAFRAME | None = None,
-        parent: Branch | None = None,
+        parent: BRANCH | None = None,
     ):
         self._data = data
         self._idx = index
@@ -331,27 +335,27 @@ class Branch:
         self._data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self) -> tuple[int, int]:
+    def shape(self) -> tuple[INT, INT]:
         """Shape of the dataset (n_rows, n_columns)."""
         return self._data.shape
 
     @property
-    def columns(self) -> SERIES:
+    def columns(self) -> INDEX:
         """Name of all the columns."""
         return self._data.columns
 
     @property
-    def n_columns(self) -> int:
+    def n_columns(self) -> INT:
         """Number of columns."""
         return len(self.columns)
 
     @property
-    def features(self) -> SERIES:
+    def features(self) -> INDEX:
         """Name of the features."""
         return self.columns[:-self._idx[0]]
 
     @property
-    def n_features(self) -> int:
+    def n_features(self) -> INT:
         """Number of features."""
         return len(self.features)
 
@@ -364,8 +368,8 @@ class Branch:
 
     def _get_rows(
         self,
-        index: INT | str | slice | SEQUENCE | None,
-        return_test: bool = True,
+        index: SLICE | None,
+        return_test: BOOL = True,
     ) -> list:
         """Get a subset of the rows in the dataset.
 
@@ -377,8 +381,8 @@ class Branch:
         Parameters
         ----------
         index: int, str, slice, sequence or None, default=None
-            Names or indices of the rows to select. If None, returns
-            the complete dataset or the test set.
+            Rows to select. If None, returns the complete dataset or the
+            test set.
 
         return_test: bool, default=True
             Whether to return the test or the complete dataset when no
@@ -437,7 +441,7 @@ class Branch:
                     if -len(indices) <= idx <= len(indices):
                         inc.append(indices[idx])
                     else:
-                        raise ValueError(
+                        raise IndexError(
                             f"Invalid value for the index parameter. Value {index} is "
                             f"out of range for a dataset with {len(indices)} rows."
                         )
@@ -472,9 +476,9 @@ class Branch:
 
     def _get_columns(
         self,
-        columns: INT | str | slice | SEQUENCE | None = None,
-        include_target: bool = True,
-        only_numerical: bool = False,
+        columns: SLICE | None = None,
+        include_target: BOOL = True,
+        only_numerical: BOOL = False,
     ) -> list[str] | tuple[list[str] | list[str]]:
         """Get a subset of the columns.
 
@@ -588,7 +592,7 @@ class Branch:
     def _get_target(
         self,
         target: INT | str | tuple,
-        only_columns: bool = False,
+        only_columns: BOOL = False,
     ) -> str | tuple[INT, INT]:
         """Get a target column and/or class in target column.
 

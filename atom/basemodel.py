@@ -15,7 +15,7 @@ from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
 from logging import Logger
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 from unittest.mock import patch
 
 import dill as pickle
@@ -32,7 +32,7 @@ from optuna import TrialPruned, create_study
 from optuna.samplers import NSGAIISampler, TPESampler
 from optuna.study import Study
 from optuna.terminator import report_cross_validation_scores
-from optuna.trial import Trial, TrialState
+from optuna.trial import FrozenTrial, Trial, TrialState
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_curve
@@ -50,16 +50,21 @@ from sktime.forecasting.compose import make_reduction
 from sktime.forecasting.model_selection import SingleWindowSplitter
 from sktime.proba.normal import Normal
 from starlette.requests import Request
+from typeguard import TypeCheckError, typechecked
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
-from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, DF_ATTRS, FEATURES, FLOAT, FLOAT_TYPES, INDEX,
-    INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET, ClassMap,
-    CustomDict, DataConfig, PlotCallback, Predictor, Scorer, ShapExplanation,
+from atom.utils.constants import DF_ATTRS
+from atom.utils.types import (
+    BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, ENGINE, FEATURES, FLOAT,
+    FLOAT_TYPES, GOAL, INDEX, INT, INT_TYPES, METRIC_SELECTOR, PANDAS,
+    PREDICTOR, SCALAR, SCORER, SEQUENCE, SERIES, SLICE, TARGET,
+)
+from atom.utils.utils import (
+    ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
     TrialsCallback, bk, check_dependency, check_empty, check_scaling, composed,
     crash, custom_transform, estimator_has_attr, export_pipeline,
     fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
@@ -69,6 +74,7 @@ from atom.utils import (
 )
 
 
+@typechecked
 class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     """Base class for all models.
 
@@ -78,7 +84,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         Name for the model. If None, the name is the same as the
         model's acronym.
 
-    goal: str, default="class"
+    goal: goal, default="class"
         Model's goal. Choose from "class" for classification or
         "reg" for regression.
 
@@ -107,22 +113,21 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -169,17 +174,17 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def __init__(
         self,
         name: str | None = None,
-        goal: str = "class",
+        goal: GOAL = "class",
         config: DataConfig | None = None,
-        og: Any | None = None,
-        branch: Any | None = None,
+        og: BRANCH | None = None,
+        branch: BRANCH | None = None,
         metric: ClassMap | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
-        warnings: bool | str = False,
+        verbose: Literal[0, 1, 2] = 0,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -257,19 +262,14 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
             )
 
-    def __contains__(self, item: str) -> bool:
+    def __contains__(self, item: str) -> BOOL:
         return item in self.dataset
 
     def __getitem__(self, item: INT | str | list) -> PANDAS:
         if isinstance(item, INT_TYPES):
             return self.dataset[self.columns[item]]
-        elif isinstance(item, (str, list)):
-            return self.dataset[item]  # Get a subset of the dataset
         else:
-            raise TypeError(
-                f"'{self.__class__.__name__}' object is only "
-                "subscriptable with types int, str or list."
-            )
+            return self.dataset[item]  # Get a subset of the dataset
 
     @property
     def _fullname(self) -> str:
@@ -277,12 +277,12 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self.__class__.__name__
 
     @property
-    def _gpu(self) -> bool:
+    def _gpu(self) -> BOOL:
         """Return whether the model uses a GPU implementation."""
         return "gpu" in self.device.lower()
 
     @property
-    def _est_class(self) -> Predictor:
+    def _est_class(self) -> PREDICTOR:
         """Return the estimator's class (not instance)."""
         try:
             module = import_module(f"{self.engine['estimator']}.{self._module}")
@@ -395,7 +395,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         return deepcopy(params)
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, **params) -> PREDICTOR:
         """Get the estimator instance.
 
         Use the multioutput meta-estimator if the estimator has
@@ -441,12 +441,12 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     def _fit_estimator(
         self,
-        estimator: Predictor,
+        estimator: PREDICTOR,
         data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME, SERIES] = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
-    ) -> Predictor:
+    ) -> PREDICTOR:
         """Fit the estimator and perform in-training validation.
 
         In-training evaluation is performed on models with the
@@ -644,8 +644,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     def _score_from_est(
         self,
-        scorer: Scorer,
-        estimator: Predictor,
+        scorer: SCORER,
+        estimator: PREDICTOR,
         X: DATAFRAME,
         y: PANDAS,
         **kwargs,
@@ -688,7 +688,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     def _score_from_pred(
         self,
-        scorer: Scorer,
+        scorer: SCORER,
         y_true: PANDAS,
         y_pred: PANDAS,
         **kwargs,
@@ -736,7 +736,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     @lru_cache
     def _get_score(
         self,
-        scorer: Scorer,
+        scorer: SCORER,
         dataset: str,
         threshold: tuple[FLOAT] | None = None,
         sample_weight: tuple | None = None,
@@ -810,7 +810,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return result
 
     @composed(crash, method_to_log)
-    def hyperparameter_tuning(self, n_trials: INT, reset: bool = False):
+    def hyperparameter_tuning(self, n_trials: INT, reset: BOOL = False):
         """Run the hyperparameter tuning algorithm.
 
         Search for the best combination of hyperparameters. The function
@@ -844,10 +844,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             """
 
             def fit_model(
-                estimator: Predictor,
+                estimator: PREDICTOR,
                 train_idx: np.ndarray,
                 val_idx: np.ndarray,
-            ) -> tuple[Predictor, list[FLOAT]]:
+            ) -> tuple[PREDICTOR, list[FLOAT]]:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -1232,7 +1232,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     )
 
     @composed(crash, method_to_log)
-    def bootstrapping(self, n_bootstrap: INT, reset: bool = False):
+    def bootstrapping(self, n_bootstrap: INT, reset: BOOL = False):
         """Apply a bootstrap algorithm.
 
         Take bootstrapped samples from the training set and test them
@@ -1343,7 +1343,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return self._trials.sort_index()  # Can be in disorder for n_jobs>1
 
     @property
-    def best_trial(self) -> Trial | None:
+    def best_trial(self) -> FrozenTrial | None:
         """Trial that returned the highest score.
 
         For [multi-metric runs][], the best trial is the trial that
@@ -1379,13 +1379,13 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return self.trials.at[self.best_trial.number, "score"]
 
     @property
-    def time_ht(self) -> INT | None:
+    def time_ht(self) -> FLOAT | None:
         """Duration of the hyperparameter tuning (in seconds)."""
         if self.trials is not None:
             return self.trials.iat[-1, -2]
 
     @property
-    def estimator(self) -> Predictor:
+    def estimator(self) -> PREDICTOR:
         """Estimator fitted on the training set."""
         return self._estimator
 
@@ -1416,7 +1416,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return flt([self._get_score(m, "holdout") for m in self._metric])
 
     @property
-    def time_fit(self) -> INT:
+    def time_fit(self) -> FLOAT:
         """Duration of the model fitting on the train set (in seconds)."""
         return self._time_fit
 
@@ -1439,13 +1439,13 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return flt(self.bootstrap.mean().tolist())
 
     @property
-    def time_bootstrap(self) -> INT | None:
+    def time_bootstrap(self) -> FLOAT | None:
         """Duration of the bootstrapping (in seconds)."""
         if self._time_bootstrap:
             return self._time_bootstrap
 
     @property
-    def time(self) -> INT:
+    def time(self) -> FLOAT:
         """Total duration of the run (in seconds)."""
         return (self.time_ht or 0) + self._time_fit + self._time_bootstrap
 
@@ -1887,7 +1887,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     @crash
     def evaluate(
         self,
-        metric: str | Callable | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         dataset: str = "test",
         *,
         threshold: FLOAT | SEQUENCE = 0.5,
@@ -2007,7 +2007,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def export_pipeline(
         self,
         *,
-        memory: bool | str | Memory | None = None,
+        memory: BOOL | str | Memory | None = None,
         verbose: INT | None = None,
     ) -> Pipeline:
         """Export the model's pipeline to a sklearn-like object.
@@ -2052,7 +2052,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return export_pipeline(self.pipeline, self, memory=memory, verbose=verbose)
 
     @composed(crash, method_to_log)
-    def full_train(self, *, include_holdout: bool = False):
+    def full_train(self, *, include_holdout: BOOL = False):
         """Train the estimator on the complete dataset.
 
         In some cases it might be desirable to use all available data
@@ -2754,9 +2754,9 @@ class ClassRegModel(BaseModel):
 
     def _prediction(
         self,
-        X: slice | TARGET | FEATURES,
+        X: slice | FEATURES | TARGET,
         y: TARGET | None = None,
-        metric: str | Callable | None = None,
+        metric: METRIC_SELECTOR = None,
         sample_weight: SEQUENCE | None = None,
         verbose: INT | None = None,
         method: str = "predict",
@@ -2812,7 +2812,7 @@ class ClassRegModel(BaseModel):
         try:
             # Duck type _get_rows -> raises an error if X can't select indices
             rows = self.branch._get_rows(X, return_test=True)
-        except (ValueError, TypeError, IndexError, KeyError):
+        except (ValueError, TypeError, IndexError, KeyError, TypeCheckError):
             rows = None
 
             # When there is a pipeline, apply transformations first
@@ -2868,7 +2868,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def decision_function(
         self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
+        X: SLICE | FEATURES,
         verbose: INT | None = None,
     ) -> PANDAS:
         """Get confidence scores on new data or existing rows.
@@ -2882,7 +2882,7 @@ class ClassRegModel(BaseModel):
         Parameters
         ----------
         X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
+            Names or positions of rows in the dataset, or new feature
             set with shape=(n_samples, n_features).
 
         verbose: int or None, default=None
@@ -2903,7 +2903,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict(
         self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
+        X: SLICE | FEATURES,
         verbose: INT | None = None,
     ) -> PANDAS:
         """Get predictions on new data or existing rows.
@@ -2937,7 +2937,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_log_proba(
         self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
+        X: SLICE | FEATURES,
         verbose: INT | None = None,
     ) -> DATAFRAME:
         """Get class log-probabilities on new data or existing rows.
@@ -2951,7 +2951,7 @@ class ClassRegModel(BaseModel):
         Parameters
         ----------
         X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
+            Names or positions of rows in the dataset, or new feature
             set with shape=(n_samples, n_features).
 
         verbose: int or None, default=None
@@ -2971,7 +2971,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_proba(
         self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
+        X: SLICE | FEATURES,
         verbose: INT | None = None,
     ) -> DATAFRAME:
         """Get class probabilities on new data or existing rows.
@@ -3006,7 +3006,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def score(
         self,
-        X: INT | str | slice | SEQUENCE | FEATURES,
+        X: SLICE | FEATURES,
         y: TARGET | None = None,
         metric: str | Callable | None = None,
         sample_weight: SEQUENCE | None = None,
@@ -3028,7 +3028,7 @@ class ClassRegModel(BaseModel):
         Parameters
         ----------
         X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
+            Names or positions of rows in the dataset, or new feature
             set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence, dataframe or None, default=None

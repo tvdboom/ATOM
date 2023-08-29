@@ -23,9 +23,8 @@ from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
 from sktime.forecasting.model_selection import temporal_train_test_split
 
-from atom.utils import (
-    DATAFRAME, FEATURES, PANDAS, TARGET, merge, n_cols, to_df, to_pandas,
-)
+from atom.utils.types import DATAFRAME, FEATURES, PANDAS, TARGET
+from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 
 class DummyTransformer:

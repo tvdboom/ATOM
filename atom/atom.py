@@ -13,7 +13,8 @@ import tempfile
 from collections import defaultdict
 from copy import deepcopy
 from platform import machine, platform, python_build, python_version
-from typing import Callable
+from types import MappingProxyType
+from typing import Callable, Literal
 
 import dill as pickle
 import numpy as np
@@ -21,6 +22,7 @@ import pandas as pd
 from scipy import stats
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
+from typeguard import typechecked
 
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
@@ -43,16 +45,21 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingForecaster,
     TrainSizingRegressor,
 )
-from atom.utils import (
-    DATAFRAME, FEATURES, INT, MISSING_VALUES, PANDAS, SCALAR, SEQUENCE, SERIES,
-    TARGET, TS_INDEX_TYPES, ClassMap, DataConfig, Predictor, Runner,
-    Transformer, __version__, check_dependency, check_is_fitted, check_scaling,
+from atom.utils.constants import MISSING_VALUES, __version__
+from atom.utils.types import (
+    BOOL, DATAFRAME, DATASET, FEATURES, INDEX, INDEX_SELECTOR, INT,
+    METRIC_SELECTOR, PANDAS, PREDICTOR, RUNNER, SCALAR, SEQUENCE, SERIES,
+    SLICE, TARGET, TRANSFORMER, TS_INDEX_TYPES,
+)
+from atom.utils.utils import (
+    ClassMap, DataConfig, check_dependency, check_is_fitted, check_scaling,
     composed, crash, custom_transform, fit_one, flt, get_cols,
     get_custom_scorer, has_task, infer_task, is_multioutput, is_sparse, lst,
-    method_to_log, sign, variable_return, to_pyarrow
+    method_to_log, sign, to_pyarrow, variable_return,
 )
 
 
+@typechecked
 class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, ShapPlot):
     """ATOM base class.
 
@@ -73,9 +80,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         arrays,
         *,
         y: TARGET = -1,
-        index: bool | INT | str | SEQUENCE = False,
-        shuffle: bool = True,
-        stratify: bool | INT | str | SEQUENCE = True,
+        index: INDEX_SELECTOR = False,
+        shuffle: BOOL = True,
+        stratify: INDEX_SELECTOR = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,
@@ -153,7 +160,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return out
 
-    def __iter__(self) -> Transformer:
+    def __iter__(self) -> TRANSFORMER:
         yield from self.pipeline.values
 
     # Utility properties =========================================== >>
@@ -210,7 +217,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._missing = list(value)
 
     @property
-    def scaled(self) -> bool:
+    def scaled(self) -> BOOL:
         """Whether the feature set is scaled.
 
         A data set is considered scaled when it has mean=0 and std=1,
@@ -221,7 +228,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return check_scaling(self.X, pipeline=self.pipeline)
 
     @property
-    def duplicates(self) -> SERIES:
+    def duplicates(self) -> INT:
         """Number of duplicate rows in the dataset."""
         return self.dataset.duplicated().sum()
 
@@ -242,17 +249,17 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return len(nans[nans > 0])
 
     @property
-    def numerical(self) -> SERIES:
+    def numerical(self) -> INDEX:
         """Names of the numerical features in the dataset."""
         return self.X.select_dtypes(include=["number"]).columns
 
     @property
-    def n_numerical(self) -> int:
+    def n_numerical(self) -> INT:
         """Number of numerical features in the dataset."""
         return len(self.numerical)
 
     @property
-    def categorical(self) -> SERIES:
+    def categorical(self) -> INDEX:
         """Names of the categorical features in the dataset."""
         return self.X.select_dtypes(include=["object", "category"]).columns
 
@@ -262,15 +269,16 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.categorical)
 
     @property
-    def outliers(self) -> SERIES | None:
+    def outliers(self) -> pd.Series | None:
         """Columns in training set with amount of outlier values."""
         if not is_sparse(self.X):
             data = self.train.select_dtypes(include=["number"])
-            z_scores = (np.abs(stats.zscore(data.values.astype(float))) > 3).sum(axis=0)
+            z_scores = (np.abs(stats.zscore(data.values.astype(float))) > 3)
+            z_scores = pd.Series(z_scores.sum(axis=0), index=data.columns)
             return z_scores[z_scores > 0]
 
     @property
-    def n_outliers(self) -> int | None:
+    def n_outliers(self) -> INT | None:
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
             data = self.train.select_dtypes(include=["number"])
@@ -298,7 +306,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
-    def n_classes(self) -> int | SERIES | None:
+    def n_classes(self) -> INT | SERIES | None:
         """Number of classes in the target column(s)."""
         if self.goal.startswith("class"):
             return self.y.nunique(dropna=False)
@@ -401,7 +409,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         distributions: str | SEQUENCE | None = None,
         *,
-        columns: INT | str | slice | SEQUENCE | None = None,
+        columns: SLICE | None = None,
     ) -> pd.DataFrame:
         """Get statistics on column distributions.
 
@@ -595,9 +603,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         filename: str,
         data: SEQUENCE | None = None,
         *,
-        transform_data: bool = True,
+        transform_data: BOOL = True,
         verbose: INT | None = None,
-    ):
+    ) -> ATOM:
         """Loads an atom instance from a pickle file.
 
         If the instance was [saved][self-save] using `save_data=False`,
@@ -659,10 +667,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             atom = pickle.load(f)
 
         # Check if atom instance
-        if atom.__class__.__name__ not in ("ATOMClassifier", "ATOMRegressor"):
+        if not atom.__class__.__name__.startswith("ATOM"):
             raise ValueError(
-                "The loaded class is not a ATOMClassifier nor "
-                f"ATOMRegressor instance, got {atom.__class__.__name__}."
+                "The loaded class is not a ATOMClassifier, ATOMRegressor nor "
+                f"ATOMForecaster instance, got {atom.__class__.__name__}."
             )
 
         # Reassign the transformer attributes (warnings random_state, etc...)
@@ -678,14 +686,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 )
 
             # Prepare the provided data
-            data, idx, atom.holdout = atom._get_data(data, use_n_rows=transform_data)
+            dataset, idx, atom.holdout = atom._get_data(data, use_n_rows=transform_data)
 
             # Apply transformations per branch
             step = {}  # Current step in the pipeline per branch
             for b1 in atom._branches:
                 # Provide the input data if not already filled from another branch
                 if b1._data is None:
-                    b1._data, b1._idx = data, idx
+                    b1._data, b1._idx = dataset, idx
 
                 if transform_data:
                     if len(atom._branches) > 2 and not b1.pipeline.empty:
@@ -736,7 +744,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
     @composed(crash, method_to_log)
-    def save_data(self, filename: str = "auto", *, dataset: str = "dataset", **kwargs):
+    def save_data(
+        self,
+        filename: str = "auto",
+        *,
+        dataset: DATASET = "dataset",
+        **kwargs,
+    ):
         """Save the data in the current branch to a `.csv` file.
 
         Parameters
@@ -763,11 +777,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def shrink(
         self,
         *,
-        int2bool: bool = False,
-        int2uint: bool = False,
-        str2cat: bool = False,
-        dense2sparse: bool = False,
-        columns: INT | str | slice | SEQUENCE | None = None,
+        int2bool: BOOL = False,
+        int2uint: BOOL = False,
+        str2cat: BOOL = False,
+        dense2sparse: BOOL = False,
+        columns: SLICE | None = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
 
@@ -1020,7 +1034,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Base transformers ============================================ >>
 
-    def _prepare_kwargs(self, kwargs: dict, params: list[str] | None = None) -> dict:
+    def _prepare_kwargs(
+        self,
+        kwargs: dict,
+        params: MappingProxyType | None = None,
+    ) -> dict:
         """Return kwargs with atom's values if not specified.
 
         This method is used for all transformers and runners to pass
@@ -1031,8 +1049,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         kwargs: dict
             Keyword arguments specified in the function call.
 
-        params: list or None
+        params: mappingproxy or None, default=None
             Parameters in the class' signature.
+
+        Returns
+        -------
+        dict
+            Converted properties.
 
         """
         for attr in BaseTransformer.attrs:
@@ -1043,8 +1066,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     def _add_transformer(
         self,
-        transformer: Transformer,
-        columns: INT | str | slice | SEQUENCE | None = None,
+        transformer: TRANSFORMER,
+        columns: SLICE | None = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -1134,9 +1157,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def add(
         self,
-        transformer: Transformer,
+        transformer: TRANSFORMER,
         *,
-        columns: INT | str | slice | SEQUENCE | None = None,
+        columns: SLICE | None = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -1217,8 +1240,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def apply(
         self,
-        func: Callable[[DATAFRAME, ...], DATAFRAME],
-        inverse_func: Callable[[DATAFRAME, ...], DATAFRAME] | None = None,
+        func: Callable[..., DATAFRAME],
+        inverse_func: Callable[..., DATAFRAME] | None = None,
         *,
         kw_args: dict | None = None,
         inv_kw_args: dict | None = None,
@@ -1444,8 +1467,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def impute(
         self,
-        strat_num: SCALAR | str = "drop",
-        strat_cat: str = "drop",
+        strat_num: SCALAR | Literal["drop", "mean", "knn", "most_frequent"] = "drop",
+        strat_cat: Literal["drop", "most_frequent"] | str = "drop",
         *,
         max_nan_rows: SCALAR | None = None,
         max_nan_cols: SCALAR | None = None,
@@ -1480,7 +1503,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._add_transformer(imputer, columns=columns)
 
     @composed(crash, method_to_log)
-    def normalize(self, strategy: str = "yeojohnson", **kwargs):
+    def normalize(
+        self,
+        strategy: Literal["yeojohnson", "boxcox", "quantile"] = "yeojohnson",
+        **kwargs,
+    ):
         """Transform the data to follow a Normal/Gaussian distribution.
 
         This transformation is useful for modeling issues related
@@ -1514,7 +1541,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         strategy: str | SEQUENCE = "zscore",
         *,
-        method: SCALAR | str = "drop",
+        method: SCALAR | Literal["drop", "minmax"] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         **kwargs,
@@ -1895,7 +1922,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Training methods ============================================= >>
 
-    def _check(self, metric: str | Callable | SEQUENCE) -> str | Callable | SEQUENCE:
+    def _check(self, metric: METRIC_SELECTOR) -> METRIC_SELECTOR:
         """Check whether the provided metric is valid.
 
         If there was a previous run, check that the provided metric
@@ -1903,8 +1930,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         Parameters
         ----------
-        metric: str, func, scorer or sequence
-            Metric provided for the run.
+        metric: str, func, scorer, sequence or None
+            Metric provided for the run. If None, get the existing
+            metric or use the default.
 
         Returns
         -------
@@ -1928,7 +1956,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return metric
 
-    def _run(self, trainer: Runner):
+    def _run(self, trainer: RUNNER):
         """Train and evaluate the models.
 
         If all models failed, catch the errors and pass them to the
@@ -1970,15 +1998,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def run(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         est_params: dict | None = None,
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
         """Train and evaluate the models in a direct fashion.
@@ -2025,8 +2053,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def successive_halving(
         self,
-        models: str | Predictor | SEQUENCE,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE,
+        metric: METRIC_SELECTOR = None,
         *,
         skip_runs: INT = 0,
         est_params: dict | SEQUENCE | None = None,
@@ -2034,7 +2062,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -2088,8 +2116,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def train_sizing(
         self,
-        models: str | Callable | Predictor | SEQUENCE,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | Callable | PREDICTOR | SEQUENCE,
+        metric: METRIC_SELECTOR = None,
         *,
         train_sizes: INT | SEQUENCE = 5,
         est_params: dict | SEQUENCE | None = None,
@@ -2097,7 +2125,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
         """Train and evaluate the models in a train sizing fashion.

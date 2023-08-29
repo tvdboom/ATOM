@@ -114,7 +114,7 @@ ignore = [
 ]
 per-file-ignores = [
     "__init__.py: F401",  # Imported but unused
-    "utils.py: E704",  # Multiple statements on one line (def)
+    "types.py: E704",  # Multiple statements on one line (def)
 ]
 
 [tool.isort]

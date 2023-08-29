@@ -26,7 +26,7 @@ from sklearn.multioutput import ClassifierChain
 from sklearn.tree import DecisionTreeClassifier
 
 from atom import ATOMClassifier, ATOMModel, ATOMRegressor
-from atom.utils import check_is_fitted, check_scaling, rnd
+from atom.utils.utils import check_is_fitted, check_scaling, rnd
 
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
@@ -76,8 +76,6 @@ def test_getitem():
     pd.testing.assert_series_equal(atom.tree["alcohol"], atom["alcohol"])
     pd.testing.assert_series_equal(atom.tree[0], atom[0])
     assert isinstance(atom.tree[["alcohol", "ash"]], pd.DataFrame)
-    with pytest.raises(TypeError, match=".*subscriptable with types.*"):
-        print(atom.tree[(1, 2)])
 
 
 # Test training ==================================================== >>

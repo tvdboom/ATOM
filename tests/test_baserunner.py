@@ -17,7 +17,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
-from atom.utils import NotFittedError, merge
+from atom.utils.utils import NotFittedError, merge
 
 from .conftest import (
     X10, X_bin, X_class, X_reg, bin_test, bin_train, y10, y_bin, y_class,

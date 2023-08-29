@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from logging import Logger
+from typing import Literal
 
 import numpy as np
 from category_encoders.backward_difference import BackwardDifferenceEncoder
@@ -41,16 +42,21 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
+from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
-from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, FEATURES, FLOAT, INT, MISSING_VALUES, PANDAS,
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict,
-    Estimator, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
+from atom.utils.constants import MISSING_VALUES
+from atom.utils.types import (
+    BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, ESTIMATOR, FEATURES, FLOAT, INT,
+    PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, TARGET,
+)
+from atom.utils.utils import (
+    CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
     method_to_log, n_cols, sign, to_df, to_series, variable_return,
 )
 
 
+@typechecked
 class TransformerMixin:
     """Mixin class for all transformers in ATOM.
 
@@ -186,6 +192,7 @@ class TransformerMixin:
         return variable_return(X, y)
 
 
+@typechecked
 class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Balance the number of samples per class in the target column.
 
@@ -291,10 +298,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str | Estimator = "ADASYN",
+        strategy: str | ESTIMATOR = "ADASYN",
         *,
         n_jobs: INT = 1,
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
         **kwargs,
@@ -490,6 +497,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X, y
 
 
+@typechecked
 class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Applies standard data cleaning steps on a dataset.
 
@@ -544,22 +552,21 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "cuml"
 
     verbose: int, default=0
@@ -640,16 +647,16 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        convert_dtypes: bool = True,
+        convert_dtypes: BOOL = True,
         drop_dtypes: str | SEQUENCE | None = None,
         drop_chars: str | None = None,
-        strip_categorical: bool = True,
-        drop_duplicates: bool = False,
-        drop_missing_target: bool = True,
-        encode_target: bool = True,
+        strip_categorical: BOOL = True,
+        drop_duplicates: BOOL = False,
+        drop_missing_target: BOOL = True,
+        encode_target: BOOL = True,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -922,6 +929,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         return variable_return(X, y)
 
 
+@typechecked
 class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Bin continuous data into intervals.
 
@@ -977,22 +985,21 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "cuml"
 
     verbose: int, default=0
@@ -1080,8 +1087,8 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         bins: INT | SEQUENCE | dict = 5,
         labels: SEQUENCE | dict | None = None,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
     ):
@@ -1254,6 +1261,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
@@ -1391,13 +1399,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str | Estimator = "Target",
+        strategy: str | ESTIMATOR = "Target",
         *,
         max_onehot: INT | None = 10,
         ordinal: dict[str, SEQUENCE] | None = None,
         infrequent_to_value: SCALAR | None = None,
         value: str = "infrequent",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -1654,6 +1662,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Handle missing values in the data.
 
@@ -1699,22 +1708,21 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "cuml"
 
     verbose: int, default=0
@@ -1798,14 +1806,14 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strat_num: SCALAR | str = "drop",
-        strat_cat: str = "drop",
+        strat_num: SCALAR | Literal["drop", "mean", "knn", "most_frequent"] = "drop",
+        strat_cat: Literal["drop", "most_frequent"] | str = "drop",
         *,
         max_nan_rows: SCALAR | None = None,
         max_nan_cols: FLOAT | None = None,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -2063,6 +2071,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         return variable_return(X, y)
 
 
+@typechecked
 class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Transform the data to follow a Normal/Gaussian distribution.
 
@@ -2100,22 +2109,21 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "cuml"
 
     verbose: int, default=0
@@ -2194,11 +2202,11 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str = "yeojohnson",
+        strategy: Literal["yeojohnson", "boxcox", "quantile"] = "yeojohnson",
         *,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
         **kwargs,
@@ -2344,6 +2352,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+@typechecked
 class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Prune outliers from the data.
 
@@ -2380,7 +2389,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         accepts another method than "drop". Choose from:
 
         - "drop": Drop any sample with outlier values.
-        - "min_max": Replace outlier with the min/max of the column.
+        - "minmax": Replace outlier with the min/max of the column.
         - Any numerical value with which to replace the outliers.
 
     max_sigma: int or float, default=3
@@ -2399,22 +2408,21 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -2490,12 +2498,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str | SEQUENCE = "zscore",
         *,
-        method: SCALAR | str = "drop",
+        method: SCALAR | Literal["drop", "minmax"] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -2567,10 +2575,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
 
         if isinstance(self.method, str):
-            if self.method.lower() not in ("drop", "min_max"):
+            if self.method.lower() not in ("drop", "minmax"):
                 raise ValueError(
                     "Invalid value for the method parameter."
-                    "Choose from: drop, min_max."
+                    "Choose from: drop, minmax."
                 )
 
         if self.max_sigma <= 0:
@@ -2611,7 +2619,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                         f"values with {self.method}.", 2
                     )
 
-                elif self.method.lower() == "min_max":
+                elif self.method.lower() == "minmax":
                     counts = 0
                     for i, col in enumerate(objective):
                         # Replace outliers with NaN and after that with max,
@@ -2676,6 +2684,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             return X, y
 
 
+@typechecked
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
@@ -2704,22 +2713,21 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "cuml"
 
     verbose: int, default=0
@@ -2796,8 +2804,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         include_binary: bool = False,
         *,
         device: str = "cpu",
-        engine: dict | None = None,
-        verbose: INT = 0,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):

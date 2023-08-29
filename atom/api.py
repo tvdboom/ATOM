@@ -10,24 +10,30 @@ Description: Module containing the API classes.
 from __future__ import annotations
 
 from logging import Logger
+from typing import Literal
 
 from sklearn.base import clone
+from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
-from atom.utils import INT, SCALAR, SEQUENCE, TARGET, Predictor
+from atom.utils.types import (
+    BACKEND, BOOL, ENGINE, GOAL, INDEX_SELECTOR, INT, PREDICTOR, SCALAR,
+    TARGET,
+)
 
 
+@typechecked
 def ATOMModel(
-    estimator: Predictor,
+    estimator: PREDICTOR,
     name: str | None = None,
     *,
     acronym: str | None = None,
-    needs_scaling: bool = False,
-    native_multilabel: bool = False,
-    native_multioutput: bool = False,
+    needs_scaling: BOOL = False,
+    native_multilabel: BOOL = False,
+    native_multioutput: BOOL = False,
     has_validation: str | None = None,
-) -> Predictor:
+) -> PREDICTOR:
     """Convert an estimator to a model that can be ingested by atom.
 
     This function adds the relevant attributes to the estimator so
@@ -111,6 +117,7 @@ def ATOMModel(
     return estimator
 
 
+@typechecked
 class ATOMClassifier(BaseTransformer, ATOM):
     """Main class for classification tasks.
 
@@ -227,22 +234,21 @@ class ATOMClassifier(BaseTransformer, ATOM):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -319,18 +325,18 @@ class ATOMClassifier(BaseTransformer, ATOM):
         self,
         *arrays,
         y: TARGET = -1,
-        index: bool | INT | str | SEQUENCE = False,
-        shuffle: bool = True,
-        stratify: bool | INT | str | SEQUENCE = True,
+        index: INDEX_SELECTOR = False,
+        shuffle: BOOL = True,
+        stratify: INDEX_SELECTOR = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
-        backend: str = "loky",
-        verbose: INT = 0,
-        warnings: bool | str = False,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        backend: BACKEND = "loky",
+        verbose: Literal[0, 1, 2] = 0,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -347,7 +353,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "class"
+        self.goal: GOAL = "class"
         ATOM.__init__(
             self,
             arrays=arrays,
@@ -361,6 +367,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
 
+@typechecked
 class ATOMForecaster(BaseTransformer, ATOM):
     """Main class for forecasting tasks.
 
@@ -453,22 +460,21 @@ class ATOMForecaster(BaseTransformer, ATOM):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -546,10 +552,10 @@ class ATOMForecaster(BaseTransformer, ATOM):
         holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
-        backend: str = "loky",
-        verbose: INT = 0,
-        warnings: bool | str = False,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        backend: BACKEND = "loky",
+        verbose: Literal[0, 1, 2] = 0,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -566,7 +572,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "fc"
+        self.goal: GOAL = "fc"
         ATOM.__init__(
             self,
             arrays=arrays,
@@ -580,6 +586,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         )
 
 
+@typechecked
 class ATOMRegressor(BaseTransformer, ATOM):
     """Main class for regression tasks.
 
@@ -682,22 +689,21 @@ class ATOMRegressor(BaseTransformer, ATOM):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -774,17 +780,17 @@ class ATOMRegressor(BaseTransformer, ATOM):
         self,
         *arrays,
         y: TARGET = -1,
-        index: bool | INT | str | SEQUENCE = False,
-        shuffle: bool = True,
+        index: INDEX_SELECTOR = False,
+        shuffle: BOOL = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
-        backend: str = "loky",
-        verbose: INT = 0,
-        warnings: bool | str = False,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        backend: BACKEND = "loky",
+        verbose: Literal[0, 1, 2] = 0,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -801,7 +807,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "reg"
+        self.goal: GOAL = "reg"
         ATOM.__init__(
             self,
             arrays=arrays,

@@ -50,6 +50,7 @@ CUSTOM_URLS = dict(
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
     trial="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html",
+    frozentrial="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.FrozenTrial.html",
     normal="https://github.com/sktime/sktime/blob/b29e147b54959a53cc96e5be9c3f819717aa38e7/sktime/proba/normal.py#L13",
     forecastinghorizon="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.base.ForecastingHorizon.html#sktime.forecasting.base.ForecastingHorizon",
     interface="https://gradio.app/docs/#interface",
@@ -863,6 +864,7 @@ def types_conversion(dtype: str) -> str:
         "Model": "[model][models]",
         "Study": "[Study][]",
         "Trial": "[Trial][]",
+        "FrozenTrial": "[FrozenTrial][]",
         "Normal": "[Normal][]",
     }
 

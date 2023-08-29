@@ -10,12 +10,13 @@ Description: Module containing the BaseRunner class.
 from __future__ import annotations
 
 import re
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 from joblib.memory import Memory
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
+from typeguard import typechecked
 
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
@@ -23,13 +24,19 @@ from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
-from atom.utils import (
-    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, SERIES, ClassMap, CustomDict,
-    Model, check_is_fitted, composed, crash, divide, export_pipeline, flt,
-    get_best_score, get_versions, has_task, is_multioutput, lst, method_to_log,
+from atom.utils.constants import DF_ATTRS
+from atom.utils.types import (
+    BOOL, BRANCH, FLOAT, INT, INT_TYPES, METRIC_SELECTOR, MODEL, SEQUENCE,
+    SERIES,
+)
+from atom.utils.utils import (
+    ClassMap, CustomDict, check_is_fitted, composed, crash, divide,
+    export_pipeline, flt, get_best_score, get_versions, has_task,
+    is_multioutput, lst, method_to_log,
 )
 
 
+@typechecked
 class BaseRunner(BaseTracker):
     """Base class for runners.
 
@@ -89,7 +96,7 @@ class BaseRunner(BaseTracker):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __contains__(self, item: str) -> bool:
+    def __contains__(self, item: str) -> BOOL:
         if self.dataset is None:
             return False
         else:
@@ -180,7 +187,7 @@ class BaseRunner(BaseTracker):
             return flt(self._metric.keys())
 
     @property
-    def winners(self) -> list[Model] | None:
+    def winners(self) -> list[MODEL] | None:
         """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
@@ -197,7 +204,7 @@ class BaseRunner(BaseTracker):
             )
 
     @property
-    def winner(self) -> Model | None:
+    def winner(self) -> MODEL | None:
         """Best performing model.
 
         Performance is measured as the highest score on the model's
@@ -234,7 +241,7 @@ class BaseRunner(BaseTracker):
 
         """
 
-        def frac(m: Model) -> FLOAT:
+        def frac(m: MODEL) -> FLOAT:
             """Return the fraction of the train set used.
 
             Parameters
@@ -274,10 +281,10 @@ class BaseRunner(BaseTracker):
 
     def _get_models(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
-        ensembles: bool = True,
-        branch: Branch | None = None,
-    ) -> list[Model]:
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        ensembles: BOOL = True,
+        branch: BRANCH | None = None,
+    ) -> list[MODEL]:
         """Get models.
 
         Models can be selected by name, index or regex pattern. If a
@@ -478,7 +485,7 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log)
     def delete(
         self,
-        models: INT | str | slice | Model | SEQUENCE | None = None
+        models: INT | str | slice | MODEL | SEQUENCE | None = None
     ):
         """Delete models.
 
@@ -505,7 +512,7 @@ class BaseRunner(BaseTracker):
     @crash
     def evaluate(
         self,
-        metric: str | Callable | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         dataset: str = "test",
         *,
         threshold: FLOAT | SEQUENCE = 0.5,
@@ -563,9 +570,9 @@ class BaseRunner(BaseTracker):
     @crash
     def export_pipeline(
         self,
-        model: str | Model | None = None,
+        model: str | MODEL | None = None,
         *,
-        memory: bool | str | Memory | None = None,
+        memory: BOOL | str | Memory | None = None,
         verbose: INT | None = None,
     ) -> Pipeline:
         """Export the pipeline to a sklearn-like object.

@@ -21,6 +21,7 @@ import ray
 from joblib import Parallel, delayed
 from optuna import Study, create_study
 from sklearn.utils.validation import check_memory
+from typeguard import typechecked
 
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
@@ -28,12 +29,14 @@ from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
-from atom.utils import (
-    SEQUENCE_TYPES, ClassMap, DataConfig, Model, check_dependency,
-    get_best_score, get_custom_scorer, lst, sign, time_to_str,
+from atom.utils.types import MODEL, SEQUENCE_TYPES
+from atom.utils.utils import (
+    ClassMap, DataConfig, check_dependency, get_best_score, get_custom_scorer,
+    lst, sign, time_to_str,
 )
 
 
+@typechecked
 class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot):
     """Base class for trainers.
 
@@ -318,7 +321,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
     def _core_iteration(self):
         """Fit and evaluate all models and displays final results."""
 
-        def execute_model(m: Model) -> Model | None:
+        def execute_model(m: MODEL) -> MODEL | None:
             """Executes a single model.
 
             Runs hyperparameter tuning, training and bootstrap for one

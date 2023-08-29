@@ -16,7 +16,6 @@ from datetime import datetime
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
-from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,13 +48,18 @@ from sklearn.utils import _safe_indexing
 from sklearn.utils._bunch import Bunch
 from sklearn.utils.metaestimators import available_if
 from sktime.forecasting.base import ForecastingHorizon
+from typeguard import typechecked
 
-from atom.utils import (
-    DATAFRAME, FEATURES, FLOAT, INDEX, INT, INT_TYPES, PALETTE, SCALAR,
-    SEQUENCE, SERIES, Model, bk, check_canvas, check_dependency,
-    check_hyperparams, check_predict_proba, composed, crash, divide,
-    get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
-    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
+from atom.utils.constants import PALETTE
+from atom.utils.types import (
+    BOOL, DATAFRAME, FEATURES, FLOAT, INDEX, INT, INT_TYPES, METRIC_SELECTOR,
+    MODEL, SCALAR, SEQUENCE, SERIES, SLICE,
+)
+from atom.utils.utils import (
+    bk, check_canvas, check_dependency, check_hyperparams, check_predict_proba,
+    composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
+    has_attr, has_task, is_binary, is_multioutput, it, lst, plot_from_model,
+    rnd, to_rgb,
 )
 
 
@@ -71,6 +75,7 @@ class Aesthetics:
     marker_size: INT  # Size of the markers
 
 
+@typechecked
 class BaseFigure:
     """Base plotly figure.
 
@@ -118,9 +123,9 @@ class BaseFigure:
         horizontal_spacing: FLOAT = 0.05,
         vertical_spacing: FLOAT = 0.07,
         palette: str | SEQUENCE = "Prism",
-        is_canvas: bool = False,
+        is_canvas: BOOL = False,
         backend: str = "plotly",
-        create_figure: bool = True,
+        create_figure: BOOL = True,
     ):
         self.rows = rows
         self.cols = cols
@@ -234,7 +239,7 @@ class BaseFigure:
         else:
             return self.style[element].setdefault(name, next(getattr(self, element)))
 
-    def showlegend(self, name: str, legend: str | dict | None) -> bool:
+    def showlegend(self, name: str, legend: str | dict | None) -> BOOL:
         """Get whether the trace should be showed in the legend.
 
         If there's already a trace with the same name, it's not
@@ -343,6 +348,7 @@ class BaseFigure:
         return xaxis, yaxis
 
 
+@typechecked
 class BasePlot:
     """Base class for all plotting methods.
 
@@ -502,7 +508,7 @@ class BasePlot:
             return df.index
 
     @staticmethod
-    def _get_show(show: INT | None, model: Model | list[Model]) -> INT:
+    def _get_show(show: INT | None, model: MODEL | list[MODEL]) -> INT:
         """Check and return the number of features to show.
 
         Parameters
@@ -533,7 +539,7 @@ class BasePlot:
     @staticmethod
     def _get_hyperparams(
         params: str | slice | SEQUENCE | None,
-        model: Model,
+        model: MODEL,
     ) -> list[str]:
         """Check and return a model's hyperparameters.
 
@@ -581,7 +587,7 @@ class BasePlot:
     def _get_metric(
         self,
         metric: INT | str | SEQUENCE,
-        max_one: bool,
+        max_one: BOOL,
     ) -> INT | str | list[INT]:
         """Check and return the provided metric index.
 
@@ -637,8 +643,8 @@ class BasePlot:
     def _get_set(
         self,
         dataset: str | SEQUENCE,
-        max_one: bool,
-        allow_holdout: bool = True,
+        max_one: BOOL,
+        allow_holdout: BOOL = True,
     ) -> str | list[str]:
         """Check and return the provided data set.
 
@@ -1024,7 +1030,7 @@ class BasePlot:
         legend: str | dict | None = "out",
         figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
-        display: bool = True,
+        display: BOOL = True,
     ):
         """Create a figure with multiple plots.
 
@@ -1147,6 +1153,7 @@ class BasePlot:
         self._custom_traces = kwargs
 
 
+@typechecked
 class FeatureSelectorPlot(BasePlot):
     """Feature selection plots.
 
@@ -1555,6 +1562,7 @@ class FeatureSelectorPlot(BasePlot):
         )
 
 
+@typechecked
 class DataPlot(BasePlot):
     """Data plots.
 
@@ -1701,7 +1709,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_distribution(
         self,
-        columns: INT | str | slice | SEQUENCE = 0,
+        columns: SLICE = 0,
         distributions: str | SEQUENCE | None = None,
         show: INT | None = None,
         *,
@@ -1921,7 +1929,7 @@ class DataPlot(BasePlot):
     def plot_ngrams(
         self,
         ngram: INT | str = "bigram",
-        index: INT | str | slice | SEQUENCE | None = None,
+        index: SLICE | None = None,
         show: INT = 10,
         *,
         title: str | dict | None = None,
@@ -2098,7 +2106,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_qq(
         self,
-        columns: INT | str | slice | SEQUENCE = 0,
+        columns: SLICE = 0,
         distributions: str | SEQUENCE = "norm",
         *,
         title: str | dict | None = None,
@@ -2382,7 +2390,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_wordcloud(
         self,
-        index: INT | str | slice | SEQUENCE | None = None,
+        index: SLICE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -2512,6 +2520,7 @@ class DataPlot(BasePlot):
         )
 
 
+@typechecked
 class HTPlot(BasePlot):
     """Hyperparameter tuning plots.
 
@@ -2526,7 +2535,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_edf(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
@@ -2671,7 +2680,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_hyperparameter_importance(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         metric: int | str = 0,
         show: INT | None = None,
         *,
@@ -2815,7 +2824,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_hyperparameters(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         params: str | slice | SEQUENCE = (0, 1),
         metric: int | str = 0,
         *,
@@ -3020,7 +3029,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_parallel_coordinate(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         params: str | slice | SEQUENCE | None = None,
         metric: INT | str = 0,
         *,
@@ -3191,7 +3200,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_pareto_front(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         metric: str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
@@ -3342,7 +3351,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_slice(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         params: str | slice | SEQUENCE | None = None,
         metric: INT | str | SEQUENCE | None = None,
         *,
@@ -3497,7 +3506,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_terminator_improvement(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
@@ -3624,7 +3633,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_timeline(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
@@ -3777,7 +3786,7 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_trials(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
@@ -3932,6 +3941,7 @@ class HTPlot(BasePlot):
         )
 
 
+@typechecked
 class PredictionPlot(BasePlot):
     """Prediction plots.
 
@@ -3947,7 +3957,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_calibration(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         n_bins: INT = 10,
         target: INT | str = 0,
@@ -4133,7 +4143,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_confusion_matrix(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str = "test",
         target: INT | str = 0,
         threshold: FLOAT = 0.5,
@@ -4340,7 +4350,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_det(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         target: INT | str = 0,
         *,
@@ -4460,7 +4470,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_errors(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str = "test",
         target: INT | str = 0,
         *,
@@ -4601,7 +4611,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_evals(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
@@ -4717,7 +4727,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_feature_importance(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         show: INT | None = None,
         *,
         title: str | dict | None = None,
@@ -4851,7 +4861,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(check_fitted=False))
     def plot_forecast(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         fh: int | str | range | SEQUENCE | ForecastingHorizon = "test",
         X: FEATURES | None = None,
         target: INT | str = 0,
@@ -5058,7 +5068,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_gains(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         target: INT | str = 0,
         *,
@@ -5180,7 +5190,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_learning_curve(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
@@ -5334,7 +5344,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_lift(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         target: INT | str = 0,
         *,
@@ -5455,8 +5465,8 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_parshap(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
-        columns: INT | str | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        columns: SLICE | None = None,
         target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
@@ -5653,8 +5663,8 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_partial_dependence(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
-        columns: INT | str | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        columns: SLICE | None = None,
         kind: str | SEQUENCE = "average",
         pair: int | str | None = None,
         target: INT | str = 1,
@@ -5945,7 +5955,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_permutation_importance(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         show: INT | None = None,
         n_repeats: INT = 10,
         *,
@@ -6090,7 +6100,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(check_fitted=False))
     def plot_pipeline(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: bool | None = None,
         *,
@@ -6398,7 +6408,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_prc(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         target: INT | str = 0,
         *,
@@ -6522,7 +6532,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_probabilities(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str = "test",
         target: INT | str | tuple = 1,
         *,
@@ -6663,7 +6673,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_residuals(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str = "test",
         target: INT | str = 0,
         *,
@@ -6813,7 +6823,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_results(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
@@ -6899,7 +6909,7 @@ class PredictionPlot(BasePlot):
 
         """
 
-        def get_std(model: Model, metric: int) -> SCALAR:
+        def get_std(model: MODEL, metric: int) -> SCALAR:
             """Get the standard deviation of the bootstrap scores.
 
             Parameters
@@ -7014,7 +7024,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_roc(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
         target: INT | str = 0,
         *,
@@ -7137,7 +7147,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_successive_halving(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
         metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
@@ -7293,8 +7303,8 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_threshold(
         self,
-        models: INT | str | Model | slice | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         dataset: str = "test",
         target: INT | str = 0,
         steps: INT = 100,
@@ -7433,6 +7443,7 @@ class PredictionPlot(BasePlot):
         )
 
 
+@typechecked
 class ShapPlot(BasePlot):
     """Shap plots.
 
@@ -7446,8 +7457,8 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_bar(
         self,
-        models: INT | str | Model | None = None,
-        index: INT | str | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | None = None,
+        index: SLICE | None = None,
         show: INT | None = None,
         target: INT | str | tuple = 1,
         *,
@@ -7560,7 +7571,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_beeswarm(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         index: slice | SEQUENCE | None = None,
         show: INT | None = None,
         target: INT | str | tuple = 1,
@@ -7671,8 +7682,8 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_decision(
         self,
-        models: INT | str | Model | None = None,
-        index: INT | str | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | None = None,
+        index: SLICE | None = None,
         show: INT | None = None,
         target: INT | str | tuple = 1,
         *,
@@ -7795,8 +7806,8 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_force(
         self,
-        models: INT | str | Model | None = None,
-        index: INT | str | slice | SEQUENCE | None = None,
+        models: INT | str | MODEL | None = None,
+        index: SLICE | None = None,
         target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
@@ -7923,7 +7934,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_heatmap(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         index: slice | SEQUENCE | None = None,
         show: INT | None = None,
         target: INT | str | tuple = 1,
@@ -8038,7 +8049,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_scatter(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         index: slice | SEQUENCE | None = None,
         columns: INT | str = 0,
         target: INT | str | tuple = 1,
@@ -8156,7 +8167,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_waterfall(
         self,
-        models: INT | str | Model | None = None,
+        models: INT | str | MODEL | None = None,
         index: INT | str | None = None,
         show: INT | None = None,
         target: INT | str | tuple = 1,

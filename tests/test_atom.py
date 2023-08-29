@@ -29,7 +29,7 @@ from sktime.transformations.series.summarize import WindowSummarizer
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.data_cleaning import Cleaner, Pruner
 from atom.training import DirectClassifier
-from atom.utils import check_scaling
+from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
@@ -280,7 +280,7 @@ def test_load_no_atom():
     """Assert that an error is raised when the instance is not atom."""
     trainer = DirectClassifier("LR", random_state=1)
     trainer.save("trainer")
-    with pytest.raises(ValueError, match=".*ATOMClassifier nor ATOMRegressor.*"):
+    with pytest.raises(ValueError, match=".*ATOMClassifier, ATOMRegressor nor.*"):
         ATOMClassifier.load("trainer")
 
 

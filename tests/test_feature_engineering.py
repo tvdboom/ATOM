@@ -15,7 +15,7 @@ from sklearn.tree import DecisionTreeClassifier
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
-from atom.utils import to_df
+from atom.utils.utils import to_df
 
 from .conftest import (
     X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_reg,

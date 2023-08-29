@@ -11,19 +11,23 @@ from __future__ import annotations
 
 from copy import copy
 from logging import Logger
-from typing import Callable
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
+from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
-from atom.utils import (
-    INT, INT_TYPES, SEQUENCE, ClassMap, Predictor, composed, crash,
-    get_best_score, infer_task, lst, method_to_log,
+from atom.utils.types import (
+    BOOL, ENGINE, GOAL, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR, SEQUENCE,
+)
+from atom.utils.utils import (
+    ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
 )
 
 
+@typechecked
 class Direct(BaseEstimator, BaseTrainer):
     """Direct training approach.
 
@@ -75,6 +79,7 @@ class Direct(BaseEstimator, BaseTrainer):
         self._core_iteration()
 
 
+@typechecked
 class SuccessiveHalving(BaseEstimator, BaseTrainer):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -165,6 +170,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
         self._models = models  # Restore all models
 
 
+@typechecked
 class TrainSizing(BaseEstimator, BaseTrainer):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -245,6 +251,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self._models = models  # Restore original models
 
 
+@typechecked
 class DirectClassifier(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -350,22 +357,21 @@ class DirectClassifier(Direct):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -440,26 +446,26 @@ class DirectClassifier(Direct):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         est_params: dict | SEQUENCE | None = None,
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: bool = False,
-        errors: str = "skip",
+        parallel: BOOL = False,
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
-        warnings: bool | str = False,
+        verbose: Literal[0, 1, 2] = 0,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "class"
+        self.goal: GOAL = "class"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, verbose,
@@ -467,6 +473,7 @@ class DirectClassifier(Direct):
         )
 
 
+@typechecked
 class DirectForecaster(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -568,22 +575,21 @@ class DirectForecaster(Direct):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -655,26 +661,26 @@ class DirectForecaster(Direct):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         est_params: dict | SEQUENCE | None = None,
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: bool = False,
-        errors: str = "skip",
+        parallel: BOOL = False,
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
-        warnings: bool | str = False,
+        verbose: Literal[0, 1, 2] = 0,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "fc"
+        self.goal: GOAL = "fc"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
@@ -682,6 +688,7 @@ class DirectForecaster(Direct):
         )
 
 
+@typechecked
 class DirectRegressor(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -783,22 +790,21 @@ class DirectRegressor(Direct):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -873,26 +879,26 @@ class DirectRegressor(Direct):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         est_params: dict | SEQUENCE | None = None,
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "reg"
+        self.goal: GOAL = "reg"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
@@ -900,6 +906,7 @@ class DirectRegressor(Direct):
         )
 
 
+@typechecked
 class SuccessiveHalvingClassifier(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1008,22 +1015,21 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -1098,8 +1104,8 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         skip_runs: INT = 0,
         est_params: dict | SEQUENCE | None = None,
@@ -1107,18 +1113,18 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "class"
+        self.goal: GOAL = "class"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1126,6 +1132,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         )
 
 
+@typechecked
 class SuccessiveHalvingForecaster(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1230,22 +1237,21 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -1317,8 +1323,8 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         skip_runs: INT = 0,
         est_params: dict | SEQUENCE | None = None,
@@ -1326,18 +1332,18 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "fc"
+        self.goal: GOAL = "fc"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1345,6 +1351,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         )
 
 
+@typechecked
 class SuccessiveHalvingRegressor(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1449,22 +1456,21 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -1539,8 +1545,8 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         skip_runs: INT = 0,
         est_params: dict | SEQUENCE | None = None,
@@ -1548,18 +1554,18 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "reg"
+        self.goal: GOAL = "reg"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1567,6 +1573,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         )
 
 
+@typechecked
 class TrainSizingClassifier(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -1680,22 +1687,21 @@ class TrainSizingClassifier(TrainSizing):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -1770,8 +1776,8 @@ class TrainSizingClassifier(TrainSizing):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         train_sizes: INT | SEQUENCE = 5,
         est_params: dict | SEQUENCE | None = None,
@@ -1779,18 +1785,18 @@ class TrainSizingClassifier(TrainSizing):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "class"
+        self.goal: GOAL = "class"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1798,6 +1804,7 @@ class TrainSizingClassifier(TrainSizing):
         )
 
 
+@typechecked
 class TrainSizingForecaster(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -1907,22 +1914,21 @@ class TrainSizingForecaster(TrainSizing):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -1994,8 +2000,8 @@ class TrainSizingForecaster(TrainSizing):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         train_sizes: INT | SEQUENCE = 5,
         est_params: dict | SEQUENCE | None = None,
@@ -2003,18 +2009,18 @@ class TrainSizingForecaster(TrainSizing):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "fc"
+        self.goal: GOAL = "fc"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -2022,6 +2028,7 @@ class TrainSizingForecaster(TrainSizing):
         )
 
 
+@typechecked
 class TrainSizingRegressor(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -2131,22 +2138,21 @@ class TrainSizingRegressor(TrainSizing):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default options
-        are selected. Choose from:
+        corresponding choice as values. Choose from:
 
         - "data":
 
-            - "numpy" (default)
+            - "numpy"
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn" (default)
+            - "sklearn"
             - "sklearnex"
             - "cuml"
 
@@ -2221,8 +2227,8 @@ class TrainSizingRegressor(TrainSizing):
 
     def __init__(
         self,
-        models: str | Predictor | SEQUENCE | None = None,
-        metric: str | Callable | SEQUENCE | None = None,
+        models: str | PREDICTOR | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
         *,
         train_sizes: INT | SEQUENCE = 5,
         est_params: dict | SEQUENCE | None = None,
@@ -2230,18 +2236,18 @@ class TrainSizingRegressor(TrainSizing):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        errors: str = "skip",
+        errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
-        engine: dict | None = None,
+        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
-        verbose: INT = 0,
+        verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal = "reg"
+        self.goal: GOAL = "reg"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
