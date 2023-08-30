@@ -17,7 +17,7 @@ from importlib import import_module
 from logging import Logger
 from typing import Any, Callable, Literal
 from unittest.mock import patch
-
+from typeguard import TypeCheckError
 import dill as pickle
 import mlflow
 import numpy as np
@@ -56,12 +56,12 @@ from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
-from atom.plots import HTPlot, PredictionPlot, ShapPlot
+from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, ENGINE, FEATURES, FLOAT,
-    FLOAT_TYPES, GOAL, INDEX, INT, INT_TYPES, METRIC_SELECTOR, PANDAS,
-    PREDICTOR, SCALAR, SCORER, SEQUENCE, SERIES, SLICE, TARGET,
+    FLOAT_TYPES, INDEX, INT, INT_TYPES, METRIC_SELECTOR, PANDAS,
+    PREDICTOR, SCALAR, SCORER, SEQUENCE, SERIES, SLICE, TARGET, WARNINGS,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
@@ -75,7 +75,7 @@ from atom.utils.utils import (
 
 
 @typechecked
-class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
+class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     """Base class for all models.
 
     Parameters
@@ -174,7 +174,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def __init__(
         self,
         name: str | None = None,
-        goal: GOAL = "class",
+        goal: Literal["class", "reg", "fc"] = "class",
         config: DataConfig | None = None,
         og: BRANCH | None = None,
         branch: BRANCH | None = None,
@@ -184,7 +184,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -277,15 +277,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self.__class__.__name__
 
     @property
-    def _gpu(self) -> BOOL:
-        """Return whether the model uses a GPU implementation."""
-        return "gpu" in self.device.lower()
-
-    @property
     def _est_class(self) -> PREDICTOR:
         """Return the estimator's class (not instance)."""
         try:
-            module = import_module(f"{self.engine['estimator']}.{self._module}")
+            engine = self.engine.get("estimator", "sklearn")
+            module = import_module(f"{engine}.{self._module}")
             cls = self._estimators.get(self.goal, self._estimators.get("reg"))
         except (ModuleNotFoundError, AttributeError):
             if "sklearn" in self.supports_engines:
@@ -442,9 +438,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def _fit_estimator(
         self,
         estimator: PREDICTOR,
-        data: tuple[DATAFRAME, SERIES],
+        data: tuple[DATAFRAME, PANDAS],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME, SERIES] | None = None,
+        validation: tuple[DATAFRAME, PANDAS] | None = None,
         trial: Trial | None = None,
     ) -> PREDICTOR:
         """Fit the estimator and perform in-training validation.
@@ -581,7 +577,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
                     out += " ~"
 
-        except AttributeError:  # Fails when model failed but errors="keep"
+        except TypeCheckError:  # Fails when model failed but errors="keep"
             out = "FAIL"
 
         return out
@@ -692,7 +688,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         y_true: PANDAS,
         y_pred: PANDAS,
         **kwargs,
-    ) -> FLOAT:
+    ) -> SCALAR:
         """Calculate the metric score from predicted values.
 
         Since sklearn metrics don't support multiclass-multioutput
@@ -715,7 +711,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        float
+        int or float
             Calculated score.
 
         """
@@ -740,7 +736,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         dataset: str,
         threshold: tuple[FLOAT] | None = None,
         sample_weight: tuple | None = None,
-    ) -> FLOAT:
+    ) -> SCALAR:
         """Calculate a metric score using the prediction attributes.
 
         The method results are cached to avoid recalculation of the
@@ -771,7 +767,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        float
+        int or float
             Metric score on the selected data set.
 
         """
@@ -886,7 +882,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 y_val = self.og.y_train.iloc[val_idx]
 
                 # Transform subsets if there is a pipeline
-                if len(pl := self.export_pipeline(verbose=0)[:-1]) > 0:
+                if len(pl := export_pipeline(self.pipeline, verbose=0)) > 0:
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
@@ -1401,17 +1397,17 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._evals
 
     @property
-    def score_train(self) -> FLOAT | list[FLOAT]:
+    def score_train(self) -> SCALAR | list[SCALAR]:
         """Metric score on the training set."""
         return flt([self._get_score(m, "train") for m in self._metric])
 
     @property
-    def score_test(self) -> FLOAT | list[FLOAT]:
+    def score_test(self) -> SCALAR | list[SCALAR]:
         """Metric score on the test set."""
         return flt([self._get_score(m, "test") for m in self._metric])
 
     @property
-    def score_holdout(self) -> FLOAT | list[FLOAT]:
+    def score_holdout(self) -> SCALAR | list[SCALAR]:
         """Metric score on the holdout set."""
         return flt([self._get_score(m, "holdout") for m in self._metric])
 
@@ -1433,7 +1429,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self._bootstrap
 
     @property
-    def score_bootstrap(self) -> FLOAT | list[FLOAT] | None:
+    def score_bootstrap(self) -> SCALAR | list[SCALAR] | None:
         """Mean metric score on the bootstrapped samples."""
         if self.bootstrap is not None:
             return flt(self.bootstrap.mean().tolist())
@@ -2141,7 +2137,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         y: TARGET | None = None,
         *,
         verbose: INT | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, SERIES]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2200,7 +2196,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self,
         name: str | None = None,
         stage: str = "None",
-        archive_existing_versions: bool = False,
+        archive_existing_versions: BOOL = False,
     ):
         """Register the model in [mlflow's model registry][registry].
 
@@ -2340,7 +2336,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         y: TARGET | None = None,
         *,
         verbose: INT | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, SERIES]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -3490,7 +3486,7 @@ class ForecastModel(BaseModel):
         self,
         fh: int | SEQUENCE | ForecastingHorizon,
         X: FEATURES | None = None,
-        marginal: bool = True,
+        marginal: BOOL = True,
         verbose: INT | None = None,
     ) -> Normal:
         """Get probabilistic forecasts on new data or existing rows.
@@ -3624,7 +3620,7 @@ class ForecastModel(BaseModel):
         self,
         fh: int | SEQUENCE | ForecastingHorizon,
         X: FEATURES | None = None,
-        cov: bool = False,
+        cov: BOOL = False,
         verbose: INT | None = None,
     ) -> DATAFRAME:
         """Get probabilistic forecasts on new data or existing rows.

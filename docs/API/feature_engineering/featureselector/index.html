@@ -1212,7 +1212,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/directforecaster/" class="md-nav__link">
-        DirectRegressor
+        DirectForecaster
       </a>
     </li>
   
@@ -1254,7 +1254,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/successivehalvingforecaster/" class="md-nav__link">
-        SuccessiveHalvingRegressor
+        SuccessiveHalvingForecaster
       </a>
     </li>
   
@@ -1296,7 +1296,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/trainsizingforecaster/" class="md-nav__link">
-        TrainSizingRegressor
+        TrainSizingForecaster
       </a>
     </li>
   
@@ -3240,7 +3240,7 @@
 
 <h1 id="featureselector">FeatureSelector</h1>
 <hr />
-<p><a id='FeatureSelector'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureSelector</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, n_jobs=1, device="cpu", engine=None, backend="loky", verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L835>[source]</a></span></div>Reduce the number of features in the data.</p>
+<p><a id='FeatureSelector'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureSelector</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, n_jobs=1, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, backend="loky", verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L842>[source]</a></span></div>Reduce the number of features in the data.</p>
 <p>Apply feature selection or dimensionality reduction, either to
 improve the estimators' accuracy or to boost their performance on
 very high-dimensional datasets. Additionally, remove multicollinear
@@ -3413,17 +3413,16 @@ Device on which to run the estimators. Use any string that
 follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector, e.g.
 <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code> to use the GPU. Read more in the
 <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#gpu-acceleration">user guide</a>.</p>
-<p></div><a id='featureselector-engine'></a><strong>engine: dict or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='featureselector-engine'></a><strong>engine: dict, default={"data": "numpy", "estimator": "sklearn"}</strong><br><div markdown class='param'>
 Execution engine to use for <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#data-acceleration">data</a> and
 <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#estimator-acceleration">estimators</a>. The value should be a
 dictionary with keys <code>data</code> and/or <code>estimator</code>, with their
-corresponding choice as values. If None, the default options
-are selected. Choose from:</p>
+corresponding choice as values. Choose from:</p>
 <ul>
 <li>
 <p>"data":</p>
 <ul>
-<li>"numpy" (default)</li>
+<li>"numpy"</li>
 <li>"pyarrow"</li>
 <li>"modin"</li>
 </ul>
@@ -3431,7 +3430,7 @@ are selected. Choose from:</p>
 <li>
 <p>"estimator":</p>
 <ul>
-<li>"sklearn" (default)</li>
+<li>"sklearn"</li>
 <li>"sklearnex"</li>
 <li>"cuml"</li>
 </ul>
@@ -3529,7 +3528,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#featureselector-fit">fit</a></td><td>Fit the feature selector to the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-get_metadata_routing">get_metadata_routing</a></td><td>Get metadata routing of this object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-plot_components">plot_components</a></td><td>Plot the explained variance ratio per component.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-plot_pca">plot_pca</a></td><td>Plot the explained variance ratio vs number of components.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-plot_rfecv">plot_rfecv</a></td><td>Plot the rfecv results.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-transform">transform</a></td><td>Transform the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='featureselector-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1156>[source]</a></span></div>Fit the feature selector to the data.</p>
+<p><a id='featureselector-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1163>[source]</a></span></div>Fit the feature selector to the data.</p>
 <p>The univariate, sfm (when model is not fitted), sfs, rfe and
 rfecv strategies need a target column. Leaving it None raises
 an exception.</p>
@@ -3553,7 +3552,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L107>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='featureselector-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L114>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3597,7 +3596,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L148>[source]</a></span></div>Does nothing.</p>
+<p><a id='featureselector-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L155>[source]</a></span></div>Does nothing.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -3621,7 +3620,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L999>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='featureselector-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L969>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3633,7 +3632,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-plot_components'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_components</strong>(show=None, title=None, legend="lower right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1158>[source]</a></span></div>Plot the explained variance ratio per component.</p>
+<p><a id='featureselector-plot_components'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_components</strong>(show=None, title=None, legend="lower right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/featureselectionplot.py#L31>[source]</a></span></div>Plot the explained variance ratio per component.</p>
 <p>Kept components are colored and discarted components are
 transparent. This plot is available only when feature selection
 was applied with strategy="pca".</p>
@@ -3670,7 +3669,7 @@ Plot object. Only returned if <code>display=None</code>.</p>
 <p></div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-plot_pca'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_pca</strong>(title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1284>[source]</a></span></div>Plot the explained variance ratio vs number of components.</p>
+<p><a id='featureselector-plot_pca'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_pca</strong>(title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/featureselectionplot.py#L157>[source]</a></span></div>Plot the explained variance ratio vs number of components.</p>
 <p>If the underlying estimator is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a> (for dense datasets),
 all possible components are plotted. If the underlying estimator
 is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">TruncatedSVD</a> (for sparse datasets), it only shows the
@@ -3701,7 +3700,7 @@ Plot object. Only returned if <code>display=None</code>.</p>
 <p></div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-plot_rfecv'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_rfecv</strong>(title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1401>[source]</a></span></div>Plot the rfecv results.</p>
+<p><a id='featureselector-plot_rfecv'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_rfecv</strong>(title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/featureselectionplot.py#L274>[source]</a></span></div>Plot the rfecv results.</p>
 <p>Plot the scores obtained by the estimator fitted on every
 subset of the dataset. Only available when feature selection
 was applied with strategy="rfecv".</p>
@@ -3735,9 +3734,9 @@ Plot object. Only returned if <code>display=None</code>.</p>
 <p></div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1108>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='featureselector-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1078>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='featureselector-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1033>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='featureselector-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1003>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3757,7 +3756,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1571>[source]</a></span></div>Transform the data.</p>
+<p><a id='featureselector-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1584>[source]</a></span></div>Transform the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3768,7 +3767,7 @@ Transformed feature set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1121>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='featureselector-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1091>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -3777,7 +3776,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1135>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='featureselector-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1105>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">

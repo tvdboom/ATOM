@@ -14,7 +14,7 @@ import pprint
 import sys
 import tempfile
 import warnings
-from collections import OrderedDict, deque
+from collections import deque
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from copy import copy, deepcopy
@@ -25,10 +25,10 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from types import GeneratorType
+from types import GeneratorType, MappingProxyType
 from typing import Any, Callable
 from unittest.mock import patch
-
+from joblib import Memory
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -54,7 +54,7 @@ from atom.utils.types import (
     BRANCH, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT,
     INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES, PREDICTOR,
     SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES, TARGET,
-    TRANSFORMER,
+    TRANSFORMER, BOOL
 )
 
 
@@ -118,9 +118,10 @@ class CatBMetric:
         self.scorer = scorer
         self.task = task
 
-    @staticmethod
-    def get_final_error(error: FLOAT, weight: FLOAT) -> FLOAT:
+    def get_final_error(self, error: FLOAT, weight: FLOAT) -> FLOAT:
         """Returns final value of metric based on error and weight.
+
+        Can't be a `staticmethod` because of CatBoost's implementation.
 
         Parameters
         ----------
@@ -1253,7 +1254,7 @@ def to_rgb(c: str) -> str:
     return c
 
 
-def sign(obj: Callable) -> OrderedDict:
+def sign(obj: Callable) -> MappingProxyType:
     """Get the parameters of an object.
 
     Parameters
@@ -1263,7 +1264,7 @@ def sign(obj: Callable) -> OrderedDict:
 
     Returns
     -------
-    OrderedDict
+    mappingproxy
         Object's parameters.
 
     """
@@ -1315,7 +1316,7 @@ def get_cols(elem: PANDAS) -> list[SERIES]:
 def variable_return(
     X: DATAFRAME | None,
     y: SERIES | None,
-) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
+) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1326,7 +1327,7 @@ def variable_return(
     X: dataframe or None
         Feature set.
 
-    y: series or None
+    y: series, dataframe or None
         Target column.
 
     Returns
@@ -1666,7 +1667,10 @@ def to_pyarrow(column: SERIES, inverse: bool = False) -> str:
 
     """
     if not inverse and not column.dtype.name.endswith("[pyarrow]"):
-        return f"{column.dtype.name}[pyarrow]"
+        if column.dtype.name == "object":
+            return "string[pyarrow]"  # pyarrow doesn't support object
+        else:
+            return f"{column.dtype.name}[pyarrow]"
     elif inverse and column.dtype.name.endswith("[pyarrow]"):
         return column.dtype.name[:-9]
 
@@ -2092,7 +2096,12 @@ def get_feature_importance(
         return np.abs(data.flatten())
 
 
-def export_pipeline(pipeline: pd.Series, model: MODEL | None, memory, verbose) -> Any:
+def export_pipeline(
+    pipeline: pd.Series,
+    model: MODEL | None = None,
+    memory: BOOL | str | Memory | None = None,
+    verbose: INT | None = None,
+) -> Any:
     """Export a pipeline to a sklearn-like object.
 
     Optionally, you can add a model as final estimator.
@@ -2516,7 +2525,7 @@ def fit_transform_one(
     y: TARGET | None = None,
     message: str | None = None,
     **fit_params,
-) -> tuple[DATAFRAME | None, SERIES | None]:
+) -> tuple[DATAFRAME | None, SERIES | None, TRANSFORMER]:
     """Fit and transform the data using one estimator.
 
     Parameters
@@ -2565,10 +2574,10 @@ def fit_transform_one(
 def custom_transform(
     transformer: TRANSFORMER,
     branch: BRANCH,
-    data: tuple[DATAFRAME, SERIES] | None = None,
+    data: tuple[DATAFRAME, PANDAS] | None = None,
     verbose: int | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME, SERIES]:
+) -> tuple[DATAFRAME, PANDAS]:
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -2600,8 +2609,8 @@ def custom_transform(
     dataframe
         Feature set.
 
-    series
-        Target column.
+    series or dataframe
+        Target column(s).
 
     """
     # Select provided data or from the branch

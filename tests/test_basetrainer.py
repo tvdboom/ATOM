@@ -315,13 +315,6 @@ def test_ht_params_invalid_key():
         trainer.run(bin_train, bin_test)
 
 
-def test_errors_invalid():
-    """Assert that an error is raised when errors is invalid."""
-    trainer = DirectClassifier(models="LR", errors="invalid", random_state=1)
-    with pytest.raises(ValueError, match=".*errors parameter.*"):
-        trainer.run(bin_train, bin_test)
-
-
 # Test _core_iteration ============================================= >>
 
 def test_sequence_parameters():

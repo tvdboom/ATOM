@@ -348,7 +348,7 @@ def test_get_rows_by_exact_match():
 def test_get_rows_by_int():
     """Assert that rows can be retrieved by their index position."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=".*out of range.*"):
+    with pytest.raises(IndexError, match=".*out of range.*"):
         atom.branch._get_rows(index=1000)
     assert atom.branch._get_rows(index=100) == [atom.X.index[100]]
 

@@ -188,8 +188,14 @@ def test_hashing():
     assert "hash1" in X
 
 
-@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__", "internals"])})
-@patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
+@patch.dict(
+    "sys.modules", {
+        "cuml": MagicMock(spec=["__spec__"]),
+        "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
+        "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
+        "cuml.feature_extraction.text": MagicMock(),
+    }
+)
 def test_gpu():
     """Assert that the gpu implementation calls the get method of matrix."""
     vectorizer = Vectorizer(device="gpu", engine={"estimator": "cuml"})

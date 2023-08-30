@@ -97,13 +97,10 @@ class BaseRunner(BaseTracker):
         return len(self.dataset)
 
     def __contains__(self, item: str) -> BOOL:
-        if self.dataset is None:
-            return False
-        else:
-            return item in self.dataset
+        return item in self.dataset
 
     def __getitem__(self, item: INT | str | list) -> Any:
-        if self.dataset is None:
+        if self.dataset.empty:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
@@ -122,18 +119,13 @@ class BaseRunner(BaseTracker):
                     f"{self.__class__.__name__} object has no "
                     f"branch, model or column called {item}."
                 )
-        elif isinstance(item, list):
-            return self.dataset[item]  # Get subset of dataset
         else:
-            raise TypeError(
-                f"{self.__class__.__name__} is only "
-                "subscriptable with types int, str or list."
-            )
+            return self.dataset[item]  # Get subset of dataset
 
     # Utility properties =========================================== >>
 
     @property
-    def og(self) -> Branch:
+    def og(self) -> BRANCH:
         """Branch containing the original dataset.
 
         This branch contains the data prior to any transformations.
@@ -144,7 +136,7 @@ class BaseRunner(BaseTracker):
         return self._og or self.branch
 
     @property
-    def branch(self) -> Branch:
+    def branch(self) -> BRANCH:
         """Current active branch.
 
         Use the property's `@setter` to change the branch or to create

@@ -1318,7 +1318,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/training/directforecaster/" class="md-nav__link">
-        DirectRegressor
+        DirectForecaster
       </a>
     </li>
   
@@ -1360,7 +1360,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/training/successivehalvingforecaster/" class="md-nav__link">
-        SuccessiveHalvingRegressor
+        SuccessiveHalvingForecaster
       </a>
     </li>
   
@@ -1402,7 +1402,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/training/trainsizingforecaster/" class="md-nav__link">
-        TrainSizingRegressor
+        TrainSizingForecaster
       </a>
     </li>
   
@@ -3520,8 +3520,12 @@ data. Pandas offers <a href="https://pandas.pydata.org/docs/user_guide/pyarrow.h
 with pyarrow, which atom uses when specifying the pyarrow data engine.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The pyarrow backend doesn't work for <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a>. If the
-dataset has any sparse columns, an exception is raised.</p>
+<ul>
+<li>The pyarrow backend doesn't work for <a class="autorefs autorefs-internal" href="../data_management/#sparse-datasets">sparse datasets</a>. If the
+  dataset has any sparse columns, an exception is raised.</li>
+<li>The <a class="autorefs autorefs-internal" href="../../API/models/lgb/#lightgbm">LightGBM</a> and <a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a> models don't support pyarrow
+  dtypes.</li>
+</ul>
 </div>
 <h3 id="modin">modin</h3>
 <p>The <a href="https://modin.readthedocs.io/en/stable/">modin</a> library is a multi-threading, drop-in replacement for
@@ -3610,7 +3614,8 @@ complete 10-50x faster than their CPU equivalents.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <ul>
-<li>cuML estimators don't support <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>.</li>
+<li>cuML estimators don't support <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a> nor the <a class="autorefs autorefs-internal" href="#pyarrow">pyarrow</a>
+  data engine.</li>
 <li>Install cuML using <code>pip install --extra-index-url=https://pypi.nvidia.com
   cuml-cu11</code> or <code>pip install --extra-index-url=https://pypi.nvidia.com
   cuml-cu12</code> depending on your CUDA version. Read more about RAPIDS'

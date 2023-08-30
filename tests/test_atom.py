@@ -501,13 +501,6 @@ def test_custom_params_to_method():
     assert atom.pipeline[0].verbose == 2
 
 
-def test_add_no_transformer():
-    """Assert that an error is raised if the estimator has no estimator."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(AttributeError, match=".*should have a transform method.*"):
-        atom.add(RandomForestClassifier())
-
-
 def test_add_basetransformer_params_are_attached():
     """Assert that the n_jobs and random_state params from atom are used."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

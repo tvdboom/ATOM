@@ -18,8 +18,8 @@ from typeguard import typechecked
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
-    BACKEND, BOOL, ENGINE, GOAL, INDEX_SELECTOR, INT, PREDICTOR, SCALAR,
-    TARGET,
+    BACKEND, BOOL, ENGINE, INDEX_SELECTOR, INT, PREDICTOR, SCALAR,
+    TARGET, WARNINGS,
 )
 
 
@@ -160,7 +160,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
     y: int, str, dict, sequence or dataframe, default=-1
         Target column corresponding to X.
 
-        - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
         - If sequence: Target array with shape=(n_samples,) or
@@ -336,7 +335,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -353,7 +352,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal: GOAL = "class"
+        self.goal = "class"
         ATOM.__init__(
             self,
             arrays=arrays,
@@ -555,7 +554,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -572,7 +571,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal: GOAL = "fc"
+        self.goal = "fc"
         ATOM.__init__(
             self,
             arrays=arrays,
@@ -790,7 +789,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
@@ -807,7 +806,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal: GOAL = "reg"
+        self.goal = "reg"
         ATOM.__init__(
             self,
             arrays=arrays,

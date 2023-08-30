@@ -9,7 +9,9 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from typing import Callable, Literal, Protocol, TypedDict, Union
+from typing import (
+    Callable, Literal, Protocol, TypedDict, Union, runtime_checkable,
+)
 
 import modin.pandas as md
 import numpy as np
@@ -55,8 +57,6 @@ SEQUENCE = Union[SEQUENCE_TYPES]
 FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
 TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
-BACKEND = Literal["loky", "multiprocessing", "threading", "ray"]
-
 DATASET = Literal[
     "dataset",
     "train",
@@ -73,19 +73,40 @@ DATASET = Literal[
 ]
 
 # Selection of rows or columns by name or position
-SLICE = Union[INT | str | slice | SEQUENCE]
+SLICE = Union[INT, str, slice, SEQUENCE]
 
 # Assignment of index or stratify parameter
-INDEX_SELECTOR = Union[bool | INT | str | SEQUENCE]
+INDEX_SELECTOR = Union[bool, INT, str, SEQUENCE]
 
-# Allowed values for the goal attribute
-GOAL = Literal["class", "reg", "fc"]
+# Types to initialize a metric
+METRIC_SELECTOR = (str, Callable[..., SCALAR], SEQUENCE, None)
 
-# Metric selectors
-METRIC_SELECTOR = Union[str, Callable[..., SCALAR], SEQUENCE | None]
+# Allowed values for BaseTransformer parameter
+BACKEND = Literal["loky", "multiprocessing", "threading", "ray"]
+WARNINGS = Literal["default", "error", "ignore", "always", "module", "once"]
 
-# Pruning strategies
-PRUNING = Literal["zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"]
+# Data cleaning parameters
+STRAT_NUM = SCALAR | Literal["drop", "mean", "median", "knn", "most_frequent"]
+DISCRETIZER_STRATS = Literal["uniform", "quantile", "kmeans", "custom"]
+PRUNER_STRATS = Literal[
+    "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"
+]
+SCALER_STRATS = Literal["standard", "minmax", "maxabs", "robust"]
+
+
+# Plotting parameters
+LEGEND = Literal[
+    "upper left",
+    "lower left",
+    "upper right",
+    "lower right",
+    "upper center",
+    "lower center",
+    "center left",
+    "center right",
+    "center",
+    "out",
+]
 
 
 # Classes for type hinting ========================================= >>
@@ -96,28 +117,32 @@ class ENGINE(TypedDict, total=False):
     estimator: Literal["sklearn", "sklearnex", "cuml"]
 
 
+@runtime_checkable
 class SCORER(Protocol):
     """Protocol for all scorers."""
     def _score(self, method_caller, clf, X, y, sample_weight=None): ...
 
 
+@runtime_checkable
 class TRANSFORMER(Protocol):
     """Protocol for all predictors."""
-    def fit(self, **params): ...
     def transform(self, **params): ...
 
 
+@runtime_checkable
 class PREDICTOR(Protocol):
     """Protocol for all predictors."""
     def fit(self, **params): ...
     def predict(self, **params): ...
 
 
+@runtime_checkable
 class ESTIMATOR(Protocol):
     """Protocol for all estimators."""
     def fit(self, **params): ...
 
 
+@runtime_checkable
 class BRANCH(Protocol):
     """Protocol for the Branch class."""
     def _get_rows(self, **params): ...
@@ -125,12 +150,14 @@ class BRANCH(Protocol):
     def _get_target(self, **params): ...
 
 
+@runtime_checkable
 class MODEL(Protocol):
     """Protocol for all models."""
-    def est_class(self): ...
-    def get_estimator(self, **params): ...
+    def _est_class(self): ...
+    def _get_est(self, **params): ...
 
 
+@runtime_checkable
 class RUNNER(Protocol):
     """Protocol for all runners."""
     def run(self, **params): ...

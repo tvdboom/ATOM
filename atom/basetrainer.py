@@ -13,7 +13,7 @@ import tempfile
 import traceback
 from datetime import datetime as dt
 from typing import Any
-
+from typeguard import TypeCheckError
 import joblib
 import mlflow
 import numpy as np
@@ -28,7 +28,7 @@ from atom.baserunner import BaseRunner
 from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
-from atom.plots import HTPlot, PredictionPlot, ShapPlot
+from atom.plots import RunnerPlot
 from atom.utils.types import MODEL, SEQUENCE_TYPES
 from atom.utils.utils import (
     ClassMap, DataConfig, check_dependency, get_best_score, get_custom_scorer,
@@ -37,7 +37,7 @@ from atom.utils.utils import (
 
 
 @typechecked
-class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot):
+class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
     """Base class for trainers.
 
     Implements methods to check the validity of the parameters,
@@ -432,7 +432,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
             try:
                 scores.append(get_best_score(model))
-            except AttributeError:  # Fails when model failed but errors="keep"
+            except TypeCheckError:  # Fails when model failed but errors="keep"
                 scores.append(-np.inf)
 
             maxlen = max(maxlen, len(names[-1]))

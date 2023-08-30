@@ -76,8 +76,10 @@ data. Pandas offers [native integration](https://pandas.pydata.org/docs/user_gui
 with pyarrow, which atom uses when specifying the pyarrow data engine.
 
 !!! warning
-    The pyarrow backend doesn't work for [sparse datasets][]. If the
-    dataset has any sparse columns, an exception is raised.
+    - The pyarrow backend doesn't work for [sparse datasets][]. If the
+      dataset has any sparse columns, an exception is raised.
+    - The [LightGBM][] and [XGBoost][] models don't support pyarrow
+      dtypes.
 
 
 ### modin

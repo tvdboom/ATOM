@@ -1288,7 +1288,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/directforecaster/" class="md-nav__link">
-        DirectRegressor
+        DirectForecaster
       </a>
     </li>
   
@@ -1330,7 +1330,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/successivehalvingforecaster/" class="md-nav__link">
-        SuccessiveHalvingRegressor
+        SuccessiveHalvingForecaster
       </a>
     </li>
   
@@ -1372,7 +1372,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/trainsizingforecaster/" class="md-nav__link">
-        TrainSizingRegressor
+        TrainSizingForecaster
       </a>
     </li>
   
@@ -3392,7 +3392,7 @@
 
 <h1 id="atomclassifier">ATOMClassifier</h1>
 <hr />
-<p><a id='ATOMClassifier'></a><div class='sign'><em>class</em> atom.api.<strong style='color:#008AB8'>ATOMClassifier</strong>(*arrays, y=-1, index=False, shuffle=True, stratify=True, n_rows=1, test_size=0.2, holdout_size=None, n_jobs=1, device="cpu", engine=None, backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L114>[source]</a></span></div>Main class for classification tasks.</p>
+<p><a id='ATOMClassifier'></a><div class='sign'><em>class</em> atom.api.<strong style='color:#008AB8'>ATOMClassifier</strong>(*arrays, y=-1, index=False, shuffle=True, stratify=True, n_rows=1, test_size=0.2, holdout_size=None, n_jobs=1, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, backend="loky", verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L120>[source]</a></span></div>Main class for classification tasks.</p>
 <p>Apply all data transformations and model management provided by
 the package on a given dataset. Note that, contrary to sklearn's
 API, the instance contains the dataset on which to perform the
@@ -3427,7 +3427,6 @@ Target column corresponding to X.</p>
 <p></div><a id='atomclassifier-y'></a><strong>y: int, str, dict, sequence or dataframe, default=-1</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
-<li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>If sequence: Target array with shape=(n_samples,) or
@@ -3496,17 +3495,16 @@ Device on which to run the estimators. Use any string that
 follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector, e.g.
 <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code> to use the GPU. Read more in the
 <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#gpu-acceleration">user guide</a>.</p>
-<p></div><a id='atomclassifier-engine'></a><strong>engine: dict or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='atomclassifier-engine'></a><strong>engine: dict, default={"data": "numpy", "estimator": "sklearn"}</strong><br><div markdown class='param'>
 Execution engine to use for <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#data-acceleration">data</a> and
 <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#estimator-acceleration">estimators</a>. The value should be a
 dictionary with keys <code>data</code> and/or <code>estimator</code>, with their
-corresponding choice as values. If None, the default options
-are selected. Choose from:</p>
+corresponding choice as values. Choose from:</p>
 <ul>
 <li>
 <p>"data":</p>
 <ul>
-<li>"numpy" (default)</li>
+<li>"numpy"</li>
 <li>"pyarrow"</li>
 <li>"modin"</li>
 </ul>
@@ -3514,7 +3512,7 @@ are selected. Choose from:</p>
 <li>
 <p>"estimator":</p>
 <ul>
-<li>"sklearn" (default)</li>
+<li>"sklearn"</li>
 <li>"sklearnex"</li>
 <li>"cuml"</li>
 </ul>
@@ -3611,15 +3609,15 @@ attributes accordingly.</p>
 visualize the pipeline, use the <a class="autorefs autorefs-internal" href="../../plots/plot_pipeline/#plot_pipeline">plot_pipeline</a> method.</div><a id='atomclassifier-mapping'></a><strong>mapping: dict</strong><br><div markdown class='param'>Encoded values and their respective mapped values.</p>
 <p>The column name is the key to its mapping dictionary. Only for
 columns mapped to a single column (e.g. Ordinal, Leave-one-out,
-etc...).</div><a id='atomclassifier-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.</div><a id='atomclassifier-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.</div><a id='atomclassifier-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.</div><a id='atomclassifier-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.</div><a id='atomclassifier-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).</div><a id='atomclassifier-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.</div><a id='atomclassifier-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='atomclassifier-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.</div><a id='atomclassifier-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='atomclassifier-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='atomclassifier-columns'></a><strong>columns: series</strong><br><div markdown class='param'>Name of all the columns.</div><a id='atomclassifier-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='atomclassifier-features'></a><strong>features: series</strong><br><div markdown class='param'>Name of the features.</div><a id='atomclassifier-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='atomclassifier-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).</div><a id='atomclassifier-scaled'></a><strong>scaled: bool</strong><br><div markdown class='param'>Whether the feature set is scaled.</p>
+etc...).</div><a id='atomclassifier-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.</div><a id='atomclassifier-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.</div><a id='atomclassifier-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.</div><a id='atomclassifier-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.</div><a id='atomclassifier-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).</div><a id='atomclassifier-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.</div><a id='atomclassifier-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='atomclassifier-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.</div><a id='atomclassifier-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='atomclassifier-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='atomclassifier-columns'></a><strong>columns: index</strong><br><div markdown class='param'>Name of all the columns.</div><a id='atomclassifier-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='atomclassifier-features'></a><strong>features: index</strong><br><div markdown class='param'>Name of the features.</div><a id='atomclassifier-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='atomclassifier-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).</div><a id='atomclassifier-scaled'></a><strong>scaled: bool</strong><br><div markdown class='param'>Whether the feature set is scaled.</p>
 <p>A data set is considered scaled when it has mean=0 and std=1,
 or when there is a scaler in the pipeline. Binary columns (only
-0s and 1s) are excluded from the calculation.</div><a id='atomclassifier-duplicates'></a><strong>duplicates: series</strong><br><div markdown class='param'>Number of duplicate rows in the dataset.</div><a id='atomclassifier-missing'></a><strong>missing: list</strong><br><div markdown class='param'>Values that are considered "missing".</p>
+0s and 1s) are excluded from the calculation.</div><a id='atomclassifier-duplicates'></a><strong>duplicates: int</strong><br><div markdown class='param'>Number of duplicate rows in the dataset.</div><a id='atomclassifier-missing'></a><strong>missing: list</strong><br><div markdown class='param'>Values that are considered "missing".</p>
 <p>These values are used by the <a class="autorefs autorefs-internal" href="#atomclassifier-clean">clean</a> and
 <a class="autorefs autorefs-internal" href="#atomclassifier-impute">impute</a> methods. Default values are: None, NaN,
 NaT, +inf, -inf, "", "?", "None", "NA", "nan", "NaN", "NaT",
 "inf". Note that None, NaN, +inf and -inf are always considered
-missing since they are incompatible with sklearn estimators.</div><a id='atomclassifier-nans'></a><strong>nans: series | None</strong><br><div markdown class='param'>Columns with the number of missing values in them.</div><a id='atomclassifier-n_nans'></a><strong>n_nans: int | None</strong><br><div markdown class='param'>Number of samples containing missing values.</div><a id='atomclassifier-numerical'></a><strong>numerical: series</strong><br><div markdown class='param'>Names of the numerical features in the dataset.</div><a id='atomclassifier-n_numerical'></a><strong>n_numerical: int</strong><br><div markdown class='param'>Number of numerical features in the dataset.</div><a id='atomclassifier-categorical'></a><strong>categorical: series</strong><br><div markdown class='param'>Names of the categorical features in the dataset.</div><a id='atomclassifier-n_categorical'></a><strong>n_categorical: int</strong><br><div markdown class='param'>Number of categorical features in the dataset.</div><a id='atomclassifier-outliers'></a><strong>outliers: series | None</strong><br><div markdown class='param'>Columns in training set with amount of outlier values.</div><a id='atomclassifier-n_outliers'></a><strong>n_outliers: int | None</strong><br><div markdown class='param'>Number of samples in the training set containing outliers.</div><a id='atomclassifier-classes'></a><strong>classes: pd.DataFrame | None</strong><br><div markdown class='param'>Distribution of target classes per data set.</div><a id='atomclassifier-n_classes'></a><strong>n_classes: int | series | None</strong><br><div markdown class='param'>Number of classes in the target column(s).</div></td></tr></p>
+missing since they are incompatible with sklearn estimators.</div><a id='atomclassifier-nans'></a><strong>nans: series | None</strong><br><div markdown class='param'>Columns with the number of missing values in them.</div><a id='atomclassifier-n_nans'></a><strong>n_nans: int | None</strong><br><div markdown class='param'>Number of samples containing missing values.</div><a id='atomclassifier-numerical'></a><strong>numerical: index</strong><br><div markdown class='param'>Names of the numerical features in the dataset.</div><a id='atomclassifier-n_numerical'></a><strong>n_numerical: int</strong><br><div markdown class='param'>Number of numerical features in the dataset.</div><a id='atomclassifier-categorical'></a><strong>categorical: index</strong><br><div markdown class='param'>Names of the categorical features in the dataset.</div><a id='atomclassifier-n_categorical'></a><strong>n_categorical: int</strong><br><div markdown class='param'>Number of categorical features in the dataset.</div><a id='atomclassifier-outliers'></a><strong>outliers: pd.Series | None</strong><br><div markdown class='param'>Columns in training set with amount of outlier values.</div><a id='atomclassifier-n_outliers'></a><strong>n_outliers: int | None</strong><br><div markdown class='param'>Number of samples in the training set containing outliers.</div><a id='atomclassifier-classes'></a><strong>classes: pd.DataFrame | None</strong><br><div markdown class='param'>Distribution of target classes per data set.</div><a id='atomclassifier-n_classes'></a><strong>n_classes: int | series | None</strong><br><div markdown class='param'>Number of classes in the target column(s).</div></td></tr></p>
 </table>
 <p><br></p>
 <h3 id="utility-attributes">Utility attributes</h3>
@@ -3669,7 +3667,7 @@ experiment are tracked. Read more in the <a class="autorefs autorefs-internal" h
 <p>The plot attributes are used to customize the plot's aesthetics. Read
 more in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">user guide</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='atomclassifier-palette'></a><strong>palette: str | SEQUENCE</strong><br><div markdown class='param'>Color palette.</p>
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='atomclassifier-palette'></a><strong>palette: str | sequence</strong><br><div markdown class='param'>Color palette.</p>
 <p>Specify one of plotly's <a href="https://plotly.com/python/discrete-color/">built-in palettes</a> or create
 a custom one, e.g. <code>atom.palette = ["red", "green", "blue"]</code>.</div><a id='atomclassifier-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.</div><a id='atomclassifier-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for the labels, legend and hover information.</div><a id='atomclassifier-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.</div><a id='atomclassifier-line_width'></a><strong>line_width: int</strong><br><div markdown class='param'>Width of the line plots.</div><a id='atomclassifier-marker_size'></a><strong>marker_size: int</strong><br><div markdown class='param'>Size of the markers.</div></td></tr></p>
 </table>
@@ -3681,7 +3679,7 @@ of utility methods to handle the data and manage the pipeline.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-add">add</a></td><td>Add a transformer to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-apply">apply</a></td><td>Apply a function to the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-automl">automl</a></td><td>Search for an optimized pipeline in an automated fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-clear">clear</a></td><td>Reset attributes and clear cache from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-distribution">distribution</a></td><td>Get statistics on column distributions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-eda">eda</a></td><td>Create an Exploratory Data Analysis report.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-export_pipeline">export_pipeline</a></td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-get_sample_weight">get_sample_weight</a></td><td>Return sample weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-load">load</a></td><td>Loads an atom instance from a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-reset">reset</a></td><td>Reset the instance to it's initial state.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-save_data">save_data</a></td><td>Save the data in the current branch to a <code>.csv</code> file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-shrink">shrink</a></td><td>Converts the columns to the smallest possible matching dtype.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-stats">stats</a></td><td>Display basic information about the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-status">status</a></td><td>Get an overview of the branches and models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomclassifier-add'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1134>[source]</a></span></div>Add a transformer to the pipeline.</p>
+<p><a id='atomclassifier-add'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1156>[source]</a></span></div>Add a transformer to the pipeline.</p>
 <p>If the transformer is not fitted, it is fitted on the complete
 training set. Afterwards, the data set is transformed and the
 estimator is added to atom's pipeline. If the estimator is
@@ -3744,10 +3742,9 @@ Additional keyword arguments for the transformer's fit method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-apply'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>apply</strong>(func, inverse_func=None, kw_args=None, inv_kw_args=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1217>[source]</a></span></div>Apply a function to the dataset.</p>
-<p>The function should have signature <code>func(dataset, **kw_args) -&gt;
-dataset</code>. This method is useful for stateless transformations
-such as taking the log, doing custom scaling, etc...</p>
+<p><a id='atomclassifier-apply'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>apply</strong>(func, inverse_func=None, kw_args=None, inv_kw_args=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1239>[source]</a></span></div>Apply a function to the dataset.</p>
+<p>This method is useful for stateless transformations such as
+taking the log, doing custom scaling, etc...</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This approach is preferred over changing the dataset directly
@@ -3760,7 +3757,8 @@ stored in the pipeline.</p>
 </div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='apply-func'></a><strong>func: callable</strong><br><div markdown class='param'>
-Function to apply.</p>
+Function to apply with signature <code>func(dataset, **kw_args) -&gt;
+dataset</code>.</p>
 <p></div><a id='apply-inverse_func'></a><strong>inverse_func: callable or None, default=None</strong><br><div markdown class='param'>
 Inverse function of <code>func</code>. If None, the inverse_transform
 method returns the input unchanged.</p>
@@ -3771,7 +3769,7 @@ Additional keyword arguments for the inverse function.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-automl'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>automl</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L308>[source]</a></span></div>Search for an optimized pipeline in an automated fashion.</p>
+<p><a id='atomclassifier-automl'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>automl</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L315>[source]</a></span></div>Search for an optimized pipeline in an automated fashion.</p>
 <p>Automated machine learning (AutoML) automates the selection,
 composition and parameterization of machine learning pipelines.
 Automating the machine learning often provides faster, more
@@ -3793,7 +3791,7 @@ Additional keyword arguments for the AutoMLSearch instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L412>[source]</a></span></div>Give an overview of the available predefined models.</p>
+<p><a id='atomclassifier-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L411>[source]</a></span></div>Give an overview of the available predefined models.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='available_models-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
 Information about the available <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>. Columns
@@ -3815,7 +3813,7 @@ include:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1015>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='atomclassifier-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L985>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -3860,7 +3858,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L457>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
+<p><a id='atomclassifier-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L456>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="#atomclassifier-save">saving</a> the instance. The affected
@@ -3875,7 +3873,7 @@ attributes are:</p>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='atomclassifier-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L478>[source]</a></span></div>Delete models.</p>
+<p><a id='atomclassifier-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L477>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
 before <a class="autorefs autorefs-internal" href="#atomclassifier-save">saving</a>. Deleted models are not removed from
@@ -3886,7 +3884,7 @@ Models to delete. If None, all models are deleted.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-distribution'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>distribution</strong>(distributions=None, columns=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L399>[source]</a></span></div>Get statistics on column distributions.</p>
+<p><a id='atomclassifier-distribution'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>distribution</strong>(distributions=None, columns=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L406>[source]</a></span></div>Get statistics on column distributions.</p>
 <p>Compute the <a href="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test">Kolmogorov-Smirnov test</a> for various
 distributions against columns in the dataset. Only for numerical
 columns. Missing values are ignored.</p>
@@ -3916,7 +3914,7 @@ Statistic results with multiindex levels:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-eda'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>eda</strong>(dataset="dataset", n_rows=None, filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L480>[source]</a></span></div>Create an Exploratory Data Analysis report.</p>
+<p><a id='atomclassifier-eda'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>eda</strong>(dataset="dataset", n_rows=None, filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L487>[source]</a></span></div>Create an Exploratory Data Analysis report.</p>
 <p>ATOM uses the <a href="https://github.com/ydataai/ydata-profiling">ydata-profiling</a> package for the EDA.
 The report is rendered directly in the notebook. The created
 <a href="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html">ProfileReport</a> instance can be accessed through the <code>report</code>
@@ -3940,7 +3938,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L505>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<p><a id='atomclassifier-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L504>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric to calculate. If None, it returns an overview of
@@ -3967,7 +3965,7 @@ Scores of the models.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L563>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
+<p><a id='atomclassifier-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L562>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
 <p>Optionally, you can add a model as final estimator. The
 returned pipeline is already fitted on the training set.</p>
 <div class="admonition info">
@@ -4006,7 +4004,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L626>[source]</a></span></div>Return class weights for a balanced data set.</p>
+<p><a id='atomclassifier-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L625>[source]</a></span></div>Return class weights for a balanced data set.</p>
 <p>Statistically, the class weights re-balance the data set so
 that the sampled data set represents the target population
 as closely as possible. The returned weights are inversely
@@ -4021,7 +4019,7 @@ returned for <a class="autorefs autorefs-internal" href="../../../user_guide/dat
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-get_sample_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_sample_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L666>[source]</a></span></div>Return sample weights for a balanced data set.</p>
+<p><a id='atomclassifier-get_sample_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_sample_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L665>[source]</a></span></div>Return sample weights for a balanced data set.</p>
 <p>The returned weights are inversely proportional to the class
 frequencies in the selected data set. For <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>,
 the weights of each column of <code>y</code> will be multiplied.</p>
@@ -4034,7 +4032,7 @@ Sequence of weights with shape=(n_samples,).
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L533>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='atomclassifier-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L540>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -4064,7 +4062,7 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-load'></a><div class='sign'><em>function</em> atom.atom.<strong style='color:#008AB8'>load</strong>(filename, data=None, transform_data=True, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L592>[source]</a></span></div>Loads an atom instance from a pickle file.</p>
+<p><a id='atomclassifier-load'></a><div class='sign'><em>function</em> atom.atom.<strong style='color:#008AB8'>load</strong>(filename, data=None, transform_data=True, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L599>[source]</a></span></div>Loads an atom instance from a pickle file.</p>
 <p>If the instance was <a class="autorefs autorefs-internal" href="#atomclassifier-save">saved</a> using <code>save_data=False</code>,
 it's possible to load new data into it and apply all data
 transformations.</p>
@@ -4114,7 +4112,7 @@ Unpickled atom instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L999>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='atomclassifier-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L969>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -4126,7 +4124,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L696>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p><a id='atomclassifier-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L695>[source]</a></span></div>Merge another instance of the same class into this one.</p>
 <p>Branches, models, metrics and attributes of the other instance
 are merged into this one. If there are branches and/or models
 with the same name, they are merged adding the <code>suffix</code>
@@ -4144,7 +4142,7 @@ to the end of their names.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1121>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='atomclassifier-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1091>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -4153,7 +4151,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1135>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='atomclassifier-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1105>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">
@@ -4162,13 +4160,13 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-reset'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L719>[source]</a></span></div>Reset the instance to it's initial state.</p>
+<p><a id='atomclassifier-reset'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L726>[source]</a></span></div>Reset the instance to it's initial state.</p>
 <p>Deletes all branches and models. The dataset is also reset
 to its form after initialization.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1108>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='atomclassifier-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1078>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1033>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='atomclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1003>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -4179,7 +4177,7 @@ add the data to the <a class="autorefs autorefs-internal" href="#atomclassifier-
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-save_data'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_data</strong>(filename="auto", dataset="dataset", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L738>[source]</a></span></div>Save the data in the current branch to a <code>.csv</code> file.</p>
+<p><a id='atomclassifier-save_data'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_data</strong>(filename="auto", dataset="dataset", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L745>[source]</a></span></div>Save the data in the current branch to a <code>.csv</code> file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_data-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -4190,7 +4188,7 @@ Additional keyword arguments for pandas' <a href="https://pandas.pydata.org/docs
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-shrink'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>shrink</strong>(int2bool=False, int2uint=False, str2cat=False, dense2sparse=False, columns=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L762>[source]</a></span></div>Converts the columns to the smallest possible matching dtype.</p>
+<p><a id='atomclassifier-shrink'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>shrink</strong>(int2bool=False, int2uint=False, str2cat=False, dense2sparse=False, columns=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L775>[source]</a></span></div>Converts the columns to the smallest possible matching dtype.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='shrink-int2bool'></a><strong>int2bool: bool, default=False</strong><br><div markdown class='param'>
 Whether to convert <code>int</code> columns to <code>bool</code> type. Only if the
@@ -4211,7 +4209,7 @@ shrink. If None, transform all columns.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L758>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<p><a id='atomclassifier-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L757>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one
@@ -4231,18 +4229,18 @@ parameter.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-stats'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stats</strong>(_vb=-2)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L894>[source]</a></span></div>Display basic information about the dataset.</p>
+<p><a id='atomclassifier-stats'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stats</strong>(_vb=-2)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L907>[source]</a></span></div>Display basic information about the dataset.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='stats-_vb'></a><strong>_vb: int, default=-2</strong><br><div markdown class='param'>
 Internal parameter to always print if called by user.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-status'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>status</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L958>[source]</a></span></div>Get an overview of the branches and models.</p>
+<p><a id='atomclassifier-status'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>status</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L971>[source]</a></span></div>Get an overview of the branches and models.</p>
 <p>This method prints the same information as the __repr__ and
 also saves it to the logger.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L968>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='atomclassifier-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L981>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be
@@ -4272,7 +4270,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomclassifier-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L836>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<p><a id='atomclassifier-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L835>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one
@@ -4305,7 +4303,7 @@ help you determine suitable parameters for the data cleaning methods.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-balance">balance</a></td><td>Balance the number of rows per class in the target column.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-clean">clean</a></td><td>Applies standard data cleaning steps on the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-discretize">discretize</a></td><td>Bin continuous data into intervals.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-encode">encode</a></td><td>Perform encoding of categorical features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-impute">impute</a></td><td>Handle missing values in the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-normalize">normalize</a></td><td>Transform the data to follow a Normal/Gaussian distribution.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-prune">prune</a></td><td>Prune outliers from the training set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-scale">scale</a></td><td>Scale the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomclassifier-balance'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>balance</strong>(strategy="adasyn", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1272>[source]</a></span></div>Balance the number of rows per class in the target column.</p>
+<p><a id='atomclassifier-balance'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>balance</strong>(strategy="adasyn", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1294>[source]</a></span></div>Balance the number of rows per class in the target column.</p>
 <p>When oversampling, the newly created samples have an increasing
 integer index for numerical indices, and an index of the form
 [estimator]_N for non-numerical indices, where N stands for the
@@ -4326,7 +4324,7 @@ N-th sample in the data set.</p>
 of the target class distribution per data set.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomclassifier-clean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(convert_dtypes=True, drop_dtypes=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1312>[source]</a></span></div>Applies standard data cleaning steps on the dataset.</p>
+<p><a id='atomclassifier-clean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(convert_dtypes=True, drop_dtypes=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1334>[source]</a></span></div>Applies standard data cleaning steps on the dataset.</p>
 <p>Use the parameters to choose which transformations to perform.
 The available steps are:</p>
 <ul>
@@ -4340,7 +4338,7 @@ The available steps are:</p>
 </ul>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/cleaner/#cleaner">Cleaner</a> class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-discretize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>discretize</strong>(strategy="quantile", bins=5, labels=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1359>[source]</a></span></div>Bin continuous data into intervals.</p>
+<p><a id='atomclassifier-discretize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>discretize</strong>(strategy="quantile", bins=5, labels=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1381>[source]</a></span></div>Bin continuous data into intervals.</p>
 <p>For each feature, the bin edges are computed during fit
 and, together with the number of bins, they will define the
 intervals. Ignores numerical columns.</p>
@@ -4351,7 +4349,7 @@ intervals. Ignores numerical columns.</p>
 distribution and decide on the bins.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomclassifier-encode'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>encode</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="rare", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1391>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='atomclassifier-encode'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>encode</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="rare", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1413>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the
 column:</p>
 <ul>
@@ -4376,7 +4374,7 @@ method for that.</p>
 list of the categorical features in the dataset.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomclassifier-impute'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>impute</strong>(strat_num="drop", strat_cat="drop", max_nan_rows=None, max_nan_cols=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1444>[source]</a></span></div>Handle missing values in the dataset.</p>
+<p><a id='atomclassifier-impute'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>impute</strong>(strat_num="drop", strat_cat="drop", max_nan_rows=None, max_nan_cols=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1466>[source]</a></span></div>Handle missing values in the dataset.</p>
 <p>Impute or remove missing values according to the selected
 strategy. Also removes rows and columns with too many missing
 values. Use the <code>missing</code> attribute to customize what are
@@ -4388,7 +4386,7 @@ considered "missing values".</p>
 missing values per column.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomclassifier-normalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>normalize</strong>(strategy="yeojohnson", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1482>[source]</a></span></div>Transform the data to follow a Normal/Gaussian distribution.</p>
+<p><a id='atomclassifier-normalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>normalize</strong>(strategy="yeojohnson", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1504>[source]</a></span></div>Transform the data to follow a Normal/Gaussian distribution.</p>
 <p>This transformation is useful for modeling issues related
 to heteroscedasticity (non-constant variance), or other
 situations where normality is desired. Missing values are
@@ -4401,7 +4399,7 @@ categorical columns.</p>
 distribution.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomclassifier-prune'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>prune</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1512>[source]</a></span></div>Prune outliers from the training set.</p>
+<p><a id='atomclassifier-prune'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>prune</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1538>[source]</a></span></div>Prune outliers from the training set.</p>
 <p>Replace or remove outliers. The definition of outlier depends
 on the selected strategy and can greatly differ from one
 another. Ignores categorical columns.</p>
@@ -4418,7 +4416,7 @@ the test set.</p>
 number of outliers per column.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomclassifier-scale'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>scale</strong>(strategy="standard", include_binary=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1556>[source]</a></span></div>Scale the data.</p>
+<p><a id='atomclassifier-scale'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>scale</strong>(strategy="standard", include_binary=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1582>[source]</a></span></div>Scale the data.</p>
 <p>Apply one of sklearn's scalers. Categorical columns are ignored.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> class for a description of the parameters.</p>
 <div class="admonition tip">
@@ -4437,7 +4435,7 @@ transformations are applied only on the column in the dataset called
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-textclean">textclean</a></td><td>Applies standard text cleaning to the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-textnormalize">textnormalize</a></td><td>Normalize the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-tokenize">tokenize</a></td><td>Tokenize the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-vectorize">vectorize</a></td><td>Vectorize the corpus.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomclassifier-textclean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1583>[source]</a></span></div>Applies standard text cleaning to the corpus.</p>
+<p><a id='atomclassifier-textclean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1609>[source]</a></span></div>Applies standard text cleaning to the corpus.</p>
 <p>Transformations include normalizing characters and dropping
 noise from the text (emails, HTML tags, URLs, etc...). The
 transformations are applied on the column named <code>corpus</code>, in
@@ -4446,7 +4444,7 @@ column with that name, an exception is raised.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/textcleaner/#textcleaner">TextCleaner</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-textnormalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textnormalize</strong>(stopwords=True, custom_stopwords=None, stem=False, lemmatize=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1636>[source]</a></span></div>Normalize the corpus.</p>
+<p><a id='atomclassifier-textnormalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textnormalize</strong>(stopwords=True, custom_stopwords=None, stem=False, lemmatize=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1662>[source]</a></span></div>Normalize the corpus.</p>
 <p>Convert words to a more uniform standard. The transformations
 are applied on the column named <code>corpus</code>, in the same order the
 parameters are presented. If there is no column with that name,
@@ -4455,7 +4453,7 @@ words are separated by spaces.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/textnormalizer/#textnormalizer">TextNormalizer</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-tokenize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1669>[source]</a></span></div>Tokenize the corpus.</p>
+<p><a id='atomclassifier-tokenize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1695>[source]</a></span></div>Tokenize the corpus.</p>
 <p>Convert documents into sequences of words. Additionally,
 create n-grams (represented by words united with underscores,
 e.g. "New_York") based on their frequency in the corpus. The
@@ -4463,7 +4461,7 @@ transformations are applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/tokenizer/#tokenizer">Tokenizer</a> class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-vectorize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>vectorize</strong>(strategy="bow", return_sparse=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1702>[source]</a></span></div>Vectorize the corpus.</p>
+<p><a id='atomclassifier-vectorize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>vectorize</strong>(strategy="bow", return_sparse=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1728>[source]</a></span></div>Vectorize the corpus.</p>
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
@@ -4484,7 +4482,7 @@ large, remove features. Read more in the <a class="autorefs autorefs-internal" h
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-feature_extraction">feature_extraction</a></td><td>Extract features from datetime columns.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-feature_generation">feature_generation</a></td><td>Generate new features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-feature_grouping">feature_grouping</a></td><td>Extract statistics from similar features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-feature_selection">feature_selection</a></td><td>Reduce the number of features in the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomclassifier-feature_extraction'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=['day', 'month', 'year'], fmt=None, encoding_type="ordinal", drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1735>[source]</a></span></div>Extract features from datetime columns.</p>
+<p><a id='atomclassifier-feature_extraction'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=['day', 'month', 'year'], fmt=None, encoding_type="ordinal", drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1761>[source]</a></span></div>Extract features from datetime columns.</p>
 <p>Create new features extracting datetime elements (day, month,
 year, etc...) from the provided columns. Columns of dtype
 <code>datetime64</code> are used as is. Categorical columns that can be
@@ -4493,13 +4491,13 @@ values after conversion) are also used.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-feature_generation'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_generation</strong>(strategy="dfs", n_features=None, operators=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1768>[source]</a></span></div>Generate new features.</p>
+<p><a id='atomclassifier-feature_generation'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_generation</strong>(strategy="dfs", n_features=None, operators=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1794>[source]</a></span></div>Generate new features.</p>
 <p>Create new combinations of existing features to capture the
 non-linear relations between the original features.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../feature_engineering/featuregenerator/#featuregenerator">FeatureGenerator</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-feature_grouping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_grouping</strong>(group, operators=None, drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1801>[source]</a></span></div>Extract statistics from similar features.</p>
+<p><a id='atomclassifier-feature_grouping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_grouping</strong>(group, operators=None, drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1827>[source]</a></span></div>Extract statistics from similar features.</p>
 <p>Replace groups of features with related characteristics with new
 features that summarize statistical properties of te group. The
 statistical operators are calculated over every row of the group.
@@ -4508,7 +4506,7 @@ method.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../feature_engineering/featuregrouper/#featuregrouper">FeatureGrouper</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-feature_selection'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_selection</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1833>[source]</a></span></div>Reduce the number of features in the data.</p>
+<p><a id='atomclassifier-feature_selection'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_selection</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1859>[source]</a></span></div>Reduce the number of features in the data.</p>
 <p>Apply feature selection or dimensionality reduction, either to
 improve the estimators' accuracy or to boost their performance
 on very high-dimensional datasets. Additionally, remove
@@ -4536,7 +4534,7 @@ more in the <a class="autorefs autorefs-internal" href="../../../user_guide/trai
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-run">run</a></td><td>Train and evaluate the models in a direct fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-successive_halving">successive_halving</a></td><td>Fit the models in a successive halving fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-train_sizing">train_sizing</a></td><td>Train and evaluate the models in a train sizing fashion.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomclassifier-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1970>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
+<p><a id='atomclassifier-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1997>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
 <p>Contrary to <a class="autorefs autorefs-internal" href="#atomclassifier-successive_halving">successive_halving</a> and
 <a class="autorefs autorefs-internal" href="#atomclassifier-train_sizing">train_sizing</a>, the direct approach only
 iterates once over the models, using the full dataset.</p>
@@ -4553,7 +4551,7 @@ iterates once over the models, using the full dataset.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/directclassifier/#directclassifier">DirectClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/directregressor/#directregressor">DirectRegressor</a> class for a
 description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2025>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
+<p><a id='atomclassifier-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2052>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
 <p>The successive halving technique is a bandit-based algorithm
 that fits N models to 1/N of the data. The best half are
 selected to go to the next iteration where the process is
@@ -4576,7 +4574,7 @@ models.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/successivehalvingclassifier/#successivehalvingclassifier">SuccessiveHalvingClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/successivehalvingregressor/#successivehalvingregressor">SuccessiveHalvingRegressor</a>
 class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2088>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
+<p><a id='atomclassifier-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2115>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
 <p>When training models, there is usually a trade-off between
 model performance and computation time, that is regulated by
 the number of samples in the training set. This method can be

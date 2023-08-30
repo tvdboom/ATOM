@@ -20,7 +20,8 @@ from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    BOOL, ENGINE, GOAL, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR, SEQUENCE,
+    BOOL, ENGINE, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR, SEQUENCE,
+    WARNINGS,
 )
 from atom.utils.utils import (
     ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
@@ -341,7 +342,7 @@ class DirectClassifier(Direct):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -460,12 +461,12 @@ class DirectClassifier(Direct):
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "class"
+        self.goal = "class"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, verbose,
@@ -559,7 +560,7 @@ class DirectForecaster(Direct):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -675,12 +676,12 @@ class DirectForecaster(Direct):
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "fc"
+        self.goal = "fc"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
@@ -774,7 +775,7 @@ class DirectRegressor(Direct):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -886,19 +887,19 @@ class DirectRegressor(Direct):
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: bool = False,
+        parallel: BOOL = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: bool | str = False,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "reg"
+        self.goal = "reg"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
@@ -999,7 +1000,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -1112,19 +1113,19 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: bool = False,
+        parallel: BOOL = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: str = "loky",
         verbose: Literal[0, 1, 2] = 0,
-        warnings: bool | str = False,
+        warnings: BOOL | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "class"
+        self.goal = "class"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1221,7 +1222,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -1343,7 +1344,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "fc"
+        self.goal = "fc"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1440,7 +1441,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -1565,7 +1566,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "reg"
+        self.goal = "reg"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1671,7 +1672,7 @@ class TrainSizingClassifier(TrainSizing):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -1796,7 +1797,7 @@ class TrainSizingClassifier(TrainSizing):
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "class"
+        self.goal = "class"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1898,7 +1899,7 @@ class TrainSizingForecaster(TrainSizing):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -2020,7 +2021,7 @@ class TrainSizingForecaster(TrainSizing):
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "fc"
+        self.goal = "fc"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -2122,7 +2123,7 @@ class TrainSizingRegressor(TrainSizing):
         - "keep": Keep the model in its state at failure. Note that
           this model can break down many other methods after training.
           This option is useful to be able to rerun hyperparameter
-          optimization after failure without losing previous succesfull
+          optimization after failure without losing previous successful
           trials.
 
     n_jobs: int, default=1
@@ -2247,7 +2248,7 @@ class TrainSizingRegressor(TrainSizing):
         experiment: str | None = None,
         random_state: INT | None = None,
     ):
-        self.goal: GOAL = "reg"
+        self.goal = "reg"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,

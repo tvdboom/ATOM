@@ -115,7 +115,7 @@ def test_models_sklearnex_classification():
     )
 
 
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
+@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support.")
 def test_models_sklearnex_regression():
     """Assert the sklearnex engine works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, engine={"estimator": "sklearnex"}, random_state=1)
@@ -126,7 +126,13 @@ def test_models_sklearnex_regression():
     )
 
 
-@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__", "internals"])})
+@patch.dict(
+    "sys.modules", {
+        "cuml": MagicMock(spec=["__spec__"]),
+        "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
+        "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
+    }
+)
 def test_models_cuml_classification():
     """Assert that all classification models can be called with cuml."""
     atom = ATOMClassifier(X_bin, y_bin, engine={"estimator": "cuml"}, random_state=1)
@@ -149,7 +155,13 @@ def test_models_cuml_classification():
     )
 
 
-@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__", "internals"])})
+@patch.dict(
+    "sys.modules", {
+        "cuml": MagicMock(spec=["__spec__"]),
+        "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
+        "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
+    }
+)
 def test_models_cuml_regression():
     """Assert that all regression models can be called with cuml."""
     atom = ATOMRegressor(X_reg, y_reg, engine={"estimator": "cuml"}, random_state=1)

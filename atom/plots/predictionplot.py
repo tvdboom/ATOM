@@ -1,0 +1,3546 @@
+# -*- coding: utf-8 -*-
+
+"""
+Automated Tool for Optimized Modelling (ATOM)
+Author: Mavs
+Description: Module containing the PredictionPlot class.
+
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from functools import reduce
+from itertools import chain
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from joblib import Parallel, delayed
+from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
+from scipy import stats
+from scipy.stats.mstats import mquantiles
+from sklearn.calibration import calibration_curve
+from sklearn.inspection import partial_dependence, permutation_importance
+from sklearn.metrics import (
+    confusion_matrix, det_curve, precision_recall_curve, roc_curve,
+)
+from sklearn.utils import _safe_indexing
+from sklearn.utils.metaestimators import available_if
+from sktime.forecasting.base import ForecastingHorizon
+from typeguard import typechecked
+
+from atom.plots.base import BasePlot
+from atom.utils.constants import PALETTE
+from atom.utils.types import (
+    FEATURES, FLOAT, INT, LEGEND, METRIC_SELECTOR, MODEL, SCALAR, SEQUENCE,
+    SLICE,
+)
+from atom.utils.utils import (
+    bk, check_canvas, check_dependency, check_predict_proba, composed, crash,
+    divide, get_best_score, get_custom_scorer, has_task, is_binary,
+    is_multioutput, lst, plot_from_model, rnd,
+)
+
+
+@typechecked
+class PredictionPlot(BasePlot):
+    """Prediction plots.
+
+    Plots that use the model's predictions. These plots are accessible
+    from the runners or from the models. If called from a runner, the
+    `models` parameter has to be specified (if None, uses all models).
+    If called from a model, that model is used and the `models` parameter
+    becomes unavailable.
+
+    """
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_calibration(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        n_bins: INT = 10,
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: LEGEND | dict | None = "upper left",
+        figsize: tuple[INT, INT] = (900, 900),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the calibration curve for a binary classifier.
+
+        Well calibrated classifiers are probabilistic classifiers for
+        which the output of the `predict_proba` method can be directly
+        interpreted as a confidence level. For instance a well
+        calibrated (binary) classifier should classify the samples such
+        that among the samples to which it gave a `predict_proba` value
+        close to 0.8, approx. 80% actually belong to the positive class.
+        Read more in sklearn's [documentation][calibration].
+
+        This figure shows two plots: the calibration curve, where the
+        x-axis represents the average predicted probability in each bin
+        and the y-axis is the fraction of positives, i.e. the proportion
+        of samples whose class is the positive class (in each bin); and
+        a distribution of all predicted probabilities of the classifier.
+        This plot is available only for models with a `predict_proba`
+        method in a binary or [multilabel][] classification task.
+
+        !!! tip
+            Use the [calibrate][adaboost-calibrate] method to calibrate
+            the winning model.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        n_bins: int, default=10
+            Number of bins used for calibration. Minimum of 5 required.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 900)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_lift
+        atom.plots:PredictionPlot.plot_prc
+        atom.plots:PredictionPlot.plot_roc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["RF", "LGB"])
+        atom.plot_calibration()
+        ```
+
+        """
+        check_predict_proba(models, "plot_calibration")
+        dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        if n_bins < 5:
+            raise ValueError(
+                "Invalid value for the n_bins parameter."
+                f"Value should be >=5, got {n_bins}."
+            )
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
+        for m in models:
+            for ds in dataset:
+                y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
+
+                # Get calibration (frac of positives and predicted values)
+                frac_pos, pred = calibration_curve(y_true, y_pred, n_bins=n_bins)
+
+                fig.add_trace(
+                    self._draw_line(
+                        x=pred,
+                        y=frac_pos,
+                        parent=m.name,
+                        child=ds,
+                        mode="lines+markers",
+                        marker_symbol="circle",
+                        legend=legend,
+                        xaxis=xaxis2,
+                        yaxis=yaxis,
+                    )
+                )
+
+                fig.add_trace(
+                    go.Histogram(
+                        x=y_pred,
+                        xbins=dict(start=0, end=1, size=1. / n_bins),
+                        marker=dict(
+                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                        ),
+                        name=m.name,
+                        legendgroup=m.name,
+                        showlegend=False,
+                        xaxis=xaxis2,
+                        yaxis=yaxis2,
+                    )
+                )
+
+        self._draw_straight_line(y="diagonal", xaxis=xaxis2, yaxis=yaxis)
+
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}",
+                f"xaxis{xaxis2[1:]}_showgrid": True,
+                "barmode": "overlay",
+            }
+        )
+
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel="Predicted value",
+            ylabel="Count",
+            xlim=(0, 1),
+        )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            ylabel="Fraction of positives",
+            ylim=(-0.05, 1.05),
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_calibration",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("class"))
+    @composed(crash, plot_from_model)
+    def plot_confusion_matrix(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str = "test",
+        target: INT | str = 0,
+        threshold: FLOAT = 0.5,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[INT, INT] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a model's confusion matrix.
+
+        For one model, the plot shows a heatmap. For multiple models,
+        it compares TP, FP, FN and TN in a barplot (not implemented
+        for multiclass classification tasks). This plot is available
+        only for classification tasks.
+
+        !!! tip
+            Fill the `threshold` parameter with the result from the
+            model's `get_best_threshold` method to optimize the results.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the confusion matrix. Choose
+            from:` "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multioutput tasks][].
+
+        threshold: float, default=0.5
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only for binary classification tasks.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the plot's type.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_calibration
+        atom.plots:PredictionPlot.plot_threshold
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=100, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, test_size=0.4)
+        atom.run(["LR", "RF"])
+        atom.lr.plot_confusion_matrix()  # For one model
+        atom.plot_confusion_matrix()  # For multiple models
+        ```
+
+        """
+        ds = self._get_set(dataset, max_one=True)
+        target = self.branch._get_target(target, only_columns=True)
+
+        if self.task.startswith("multiclass") and len(models) > 1:
+            raise NotImplementedError(
+                "The plot_confusion_matrix method does not support "
+                "the comparison of multiple models for multiclass "
+                "or multiclass-multioutput classification tasks."
+            )
+
+        labels = np.array(
+            (("True negatives", "False positives"), ("False negatives", "True positives"))
+        )
+
+        fig = self._get_figure()
+        if len(models) == 1:
+            xaxis, yaxis = BasePlot._fig.get_axes(
+                x=(0, 0.87),
+                coloraxis=dict(
+                    colorscale="Blues",
+                    cmin=0,
+                    cmax=100,
+                    title="Percentage of samples",
+                    font_size=self.label_fontsize,
+                ),
+            )
+        else:
+            xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for m in models:
+            y_true, y_pred = m._get_pred(ds, target, attr="predict")
+            if threshold != 0.5:
+                y_pred = (y_pred > threshold).astype("int")
+
+            cm = confusion_matrix(y_true, y_pred)
+            if len(models) == 1:  # Create matrix heatmap
+                ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
+                xaxis, yaxis = BasePlot._fig.get_axes(
+                    x=(0, 0.87),
+                    coloraxis=dict(
+                        colorscale="Blues",
+                        cmin=0,
+                        cmax=100,
+                        title="Percentage of samples",
+                        font_size=self.label_fontsize,
+                    ),
+                )
+
+                fig.add_trace(
+                    go.Heatmap(
+                        x=ticks,
+                        y=ticks,
+                        z=100. * cm / cm.sum(axis=1)[:, np.newaxis],
+                        coloraxis=f"coloraxis{xaxis[1:]}",
+                        text=cm,
+                        customdata=labels,
+                        texttemplate="%{text}<br>(%{z:.2f}%)",
+                        textfont=dict(size=self.label_fontsize),
+                        hovertemplate=(
+                            "<b>%{customdata}</b><br>" if is_binary(self.task) else ""
+                            "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
+                        ),
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+                fig.update_layout(
+                    {
+                        "template": "plotly_white",
+                        f"yaxis{yaxis[1:]}_autorange": "reversed",
+                        f"xaxis{xaxis[1:]}_showgrid": False,
+                        f"yaxis{yaxis[1:]}_showgrid": False,
+                    }
+                )
+
+            else:
+                color = BasePlot._fig.get_elem(m.name)
+                fig.add_trace(
+                    go.Bar(
+                        x=cm.ravel(),
+                        y=labels.ravel(),
+                        orientation="h",
+                        marker=dict(
+                            color=f"rgba({color[4:-1]}, 0.2)",
+                            line=dict(width=2, color=color),
+                        ),
+                        hovertemplate="%{x}<extra></extra>",
+                        name=m.name,
+                        legendgroup=m.name,
+                        showlegend=BasePlot._fig.showlegend(m.name, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+                fig.update_layout(bargroupgap=0.05)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Predicted label" if len(models) == 1 else "Count",
+            ylabel="True label" if len(models) == 1 else None,
+            title=title,
+            legend=legend,
+            figsize=figsize or ((800, 800) if len(models) == 1 else (900, 600)),
+            plotname="plot_confusion_matrix",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_det(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ):
+        """Plot the Detection Error Tradeoff curve.
+
+        Read more about [DET][] in sklearn's documentation. Only
+        available for binary classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_gains
+        atom.plots:PredictionPlot.plot_roc
+        atom.plots:PredictionPlot.plot_prc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_det()
+        ```
+
+        """
+        dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            for ds in dataset:
+                # Get fpr-fnr pairs for different thresholds
+                fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
+
+                fig.add_trace(
+                    self._draw_line(
+                        x=fpr,
+                        y=fnr,
+                        mode="lines",
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="FPR",
+            ylabel="FNR",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_det",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("reg"))
+    @composed(crash, plot_from_model)
+    def plot_errors(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a model's prediction errors.
+
+        Plot the actual targets from a set against the predicted values
+        generated by the regressor. A linear fit is made on the data.
+        The gray, intersected line shows the identity line. This plot
+        can be useful to detect noise or heteroscedasticity along a
+        range of the target domain. This plot is available only for
+        regression tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multioutput tasks][].
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_residuals
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMRegressor
+        from sklearn.datasets import load_diabetes
+
+        X, y = load_diabetes(return_X_y=True, as_frame=True)
+
+        atom = ATOMRegressor(X, y)
+        atom.run(["OLS", "LGB"])
+        atom.plot_errors()
+        ```
+
+        """
+        ds = self._get_set(dataset, max_one=True)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            y_true, y_pred = m._get_pred(ds, target)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=y_true,
+                    y=y_pred,
+                    mode="markers",
+                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+            # Fit the points using linear regression
+            from atom.models import OrdinaryLeastSquares
+            model = OrdinaryLeastSquares(goal=self.goal, branch=m.branch)._get_est()
+            model.fit(y_true.values.reshape(-1, 1), y_pred)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
+                    y=model.predict(x[:, np.newaxis]),
+                    mode="lines",
+                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                    hovertemplate="(%{x}, %{y})<extra></extra>",
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            xlabel="True value",
+            title=title,
+            legend=legend,
+            ylabel="Predicted value",
+            figsize=figsize,
+            plotname="plot_errors",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model(ensembles=False))
+    def plot_evals(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot evaluation curves.
+
+        The evaluation curves are the main metric scores achieved by the
+        models at every iteration of the training process. This plot is
+        available only for models that allow [in-training validation][].
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the evaluation curves. Use a
+            sequence or add `+` between options to select more than one.
+            Choose from: "train" or "test".
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HyperparameterTuningPlot.plot_trials
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["XGB", "LGB"])
+        atom.plot_evals()
+        ```
+
+        """
+        dataset = self._get_set(dataset, max_one=False, allow_holdout=False)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            if not m.evals:
+                raise ValueError(
+                    "Invalid value for the models parameter. Model "
+                    f"{m.name} has no in-training validation."
+                )
+
+            for ds in dataset:
+                fig.add_trace(
+                    self._draw_line(
+                        x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
+                        y=m.evals[f"{self._metric[0].name}_{ds}"],
+                        marker_symbol="circle",
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        BasePlot._fig.used_models.append(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Iterations",
+            ylabel=self._metric[0].name,
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_evals",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_feature_importance(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a model's feature importance.
+
+        The sum of importances for all features (per model) is 1.
+        This plot is available only for models whose estimator has
+        a `scores_`, `feature_importances_` or `coef` attribute.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        show: int or None, default=None
+            Number of features (ordered by importance) to show. If
+            None, it shows all features.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_parshap
+        atom.plots:PredictionPlot.plot_partial_dependence
+        atom.plots:PredictionPlot.plot_permutation_importance
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_feature_importance(show=10)
+        ```
+
+        """
+        show = self._get_show(show, models)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            if (fi := m.feature_importance) is None:
+                raise ValueError(
+                    "Invalid value for the models parameter. The estimator "
+                    f"{m.estimator.__class__.__name__} has no feature_importances_ "
+                    "nor coef_ attribute."
+                )
+
+            fig.add_trace(
+                go.Bar(
+                    x=fi,
+                    y=fi.index,
+                    orientation="h",
+                    marker=dict(
+                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                    ),
+                    hovertemplate="%{x}<extra></extra>",
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                "bargroupgap": 0.05,
+            }
+        )
+
+        # Unique number of features over all branches
+        n_fxs = len(set([fx for m in models for fx in m.features]))
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Normalized feature importance",
+            ylim=(n_fxs - show - 0.5, n_fxs - 0.5),
+            title=title,
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
+            plotname="plot_feature_importance",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @composed(crash, plot_from_model(check_fitted=False))
+    def plot_forecast(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        fh: int | str | range | SEQUENCE | ForecastingHorizon = "test",
+        X: FEATURES | None = None,
+        target: INT | str = 0,
+        plot_interval: bool = True,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a time series with model forecasts.
+
+        This plot is only available for forecasting tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected. If no
+            models are selected, only the target column is plotted.
+
+        fh: int, str, range, sequence or [ForecastingHorizon][], default="test"
+            Forecast horizon for which to plot the predictions. If
+            string, choose from: "train", "test" or "holdout". Use a
+            sequence or add `+` between options to select more than one.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to fh. This parameter
+            is ignored if fh is a data set.
+
+        target: int or str, default=0
+            Target column to look at. Only for [multivariate][] tasks.
+
+        plot_interval: bool, default=True
+            Whether to plot prediction intervals instead of the exact
+            prediction values. If True, the plotted estimators should
+            have a `predict_interval` method.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_lift
+        atom.plots:PredictionPlot.plot_prc
+        atom.plots:PredictionPlot.plot_roc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_forecast()
+        atom.run(
+            models="arima",
+            est_params={"order": (1, 1, 0), "seasonal_order": (0, 1, 0, 12)},
+        )
+        atom.plot_forecast()
+        atom.plot_forecast(fh="train+test", plot_interval=False)
+
+        # Forecast the next 4 years starting from the test set
+        atom.plot_forecast(fh=range(1, 48))
+        ```
+
+        """
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        # Draw original time series
+        for ds in ("train", "test"):
+            fig.add_trace(
+                go.Scatter(
+                    x=self._get_plot_index(getattr(self, ds)),
+                    y=getattr(self, ds)[target],
+                    mode="lines+markers",
+                    line=dict(
+                        width=2,
+                        color="black",
+                        dash=BasePlot._fig.get_elem(ds, "dash"),
+                    ),
+                    opacity=0.6,
+                    name=ds,
+                    showlegend=False if models else BasePlot._fig.showlegend(ds, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        # Draw predictions
+        for m in models:
+            if isinstance(fh, str):
+                # Get fh and corresponding X from data set
+                datasets = self._get_set(fh, max_one=False)
+                fh = bk.concat([getattr(m, ds) for ds in datasets]).index
+                X = m.X.loc[fh]
+
+            y_pred = m.predict(fh, X)
+            if is_multioutput(self.task):
+                y_pred = y_pred[target]
+
+            fig.add_trace(
+                self._draw_line(
+                    x=self._get_plot_index(y_pred),
+                    y=y_pred,
+                    mode="lines+markers",
+                    parent=m.name,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+            if plot_interval:
+                try:
+                    y_pred = m.predict_interval(fh, X)
+                except NotImplementedError:
+                    continue  # Fails for some models like ES
+
+                if is_multioutput(self.task):
+                    # Select interval of target column for multivariate
+                    y = y_pred.iloc[:, y_pred.columns.get_loc(target)]
+                else:
+                    y = y_pred  # Univariate
+
+                fig.add_traces(
+                    [
+                        go.Scatter(
+                            x=self._get_plot_index(y_pred),
+                            y=y.iloc[:, 1],
+                            mode="lines",
+                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            hovertemplate=f"%{{y}}<extra>{m.name} - upper bound</extra>",
+                            legendgroup=m.name,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                        go.Scatter(
+                            x=self._get_plot_index(y_pred),
+                            y=y.iloc[:, 0],
+                            mode="lines",
+                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            fill="tonexty",
+                            fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
+                            hovertemplate=f"%{{y}}<extra>{m.name} - lower bound</extra>",
+                            legendgroup=m.name,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    ]
+                )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup" if plot_interval else "toggleitem",
+            xlabel=self.y.index.name,
+            ylabel=target,
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_forecast",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_gains(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the cumulative gains curve.
+
+        This plot is available only for binary and [multilabel][]
+        classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_det
+        atom.plots:PredictionPlot.plot_lift
+        atom.plots:PredictionPlot.plot_roc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_gains()
+        ```
+
+        """
+        dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            for ds in dataset:
+                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
+
+                fig.add_trace(
+                    self._draw_line(
+                        x=np.arange(start=1, stop=len(y_true) + 1) / len(y_true),
+                        y=np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum(),
+                        mode="lines",
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Fraction of sample",
+            ylabel="Gain",
+            xlim=(0, 1),
+            ylim=(0, 1.02),
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_gains",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model(ensembles=False))
+    def plot_learning_curve(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the learning curve: score vs number of training samples.
+
+        This plot is available only for models fitted using
+        [train sizing][]. [Ensembles][] are ignored.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        metric: int, str, sequence or None, default=None
+            Metric to plot (only for multi-metric runs). Use a sequence
+            or add `+` between options to select more than one. If None,
+            the metric used to run the pipeline is selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_results
+        atom.plots:PredictionPlot.plot_successive_halving
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.train_sizing(["LR", "RF"], n_bootstrap=5)
+        atom.plot_learning_curve()
+        ```
+
+        """
+        metric = self._get_metric(metric, max_one=False)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for met in metric:
+            x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+            for m in models:
+                x[m._group].append(m._train_idx)
+                y[m._group].append(get_best_score(m, met))
+                if m.bootstrap is not None:
+                    std[m._group].append(m.bootstrap.iloc[:, met].std())
+
+            for group in x:
+                fig.add_trace(
+                    self._draw_line(
+                        x=x[group],
+                        y=y[group],
+                        mode="lines+markers",
+                        marker_symbol="circle",
+                        error_y=dict(type="data", array=std[group], visible=True),
+                        parent=group,
+                        child=self._metric[met].name,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+                # Add error bands
+                if m.bootstrap is not None:
+                    fillcolor = f"rgba{BasePlot._fig.get_elem(group)[3:-1]}, 0.2)"
+                    fig.add_traces(
+                        [
+                            go.Scatter(
+                                x=x[group],
+                                y=np.add(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                hovertemplate="%{y}<extra>upper bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                            go.Scatter(
+                                x=x[group],
+                                y=np.subtract(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                fill="tonexty",
+                                fillcolor=fillcolor,
+                                hovertemplate="%{y}<extra>lower bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                        ]
+                    )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            title=title,
+            legend=legend,
+            xlabel="Number of training samples",
+            ylabel="Score",
+            figsize=figsize,
+            plotname="plot_learning_curve",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_lift(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the lift curve.
+
+        Only available for binary classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_det
+        atom.plots:PredictionPlot.plot_gains
+        atom.plots:PredictionPlot.plot_prc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_lift()
+        ```
+
+        """
+        dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            for ds in dataset:
+                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
+
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                fig.add_trace(
+                    self._draw_line(
+                        x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
+                        y=gains / x,
+                        mode="lines",
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        self._draw_straight_line(y=1, xaxis=xaxis, yaxis=yaxis)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Fraction of sample",
+            ylabel="Lift",
+            xlim=(0, 1),
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_lift",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_parshap(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        columns: SLICE | None = None,
+        target: INT | str | tuple = 1,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the partial correlation of shap values.
+
+        Plots the train and test correlation between the shap value of
+        every feature with its target value, after removing the effect
+        of all other features (partial correlation). This plot is
+        useful to identify the features that are contributing most to
+        overfitting. Features that lie below the bisector (diagonal
+        line) performed worse on the test set than on the training set.
+        If the estimator has a `scores_`, `feature_importances_` or
+        `coef_` attribute, its normalized values are shown in a color
+        map.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        columns: int, str, slice, sequence or None, default=None
+            Features to plot. If None, it plots all features.
+
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_feature_importance
+        atom.plots:PredictionPlot.plot_partial_dependence
+        atom.plots:PredictionPlot.plot_permutation_importance
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["GNB", "RF"])
+        atom.rf.plot_parshap(legend=None)
+        atom.plot_parshap(columns=slice(5, 10))
+        ```
+
+        """
+        target = self.branch._get_target(target)
+
+        fig = self._get_figure()
+
+        # Colorbar is only needed when a model has feature_importance
+        if all(m.feature_importance is None for m in models):
+            xaxis, yaxis = BasePlot._fig.get_axes()
+        else:
+            xaxis, yaxis = BasePlot._fig.get_axes(
+                x=(0, 0.87),
+                coloraxis=dict(
+                    colorscale="Reds",
+                    title="Normalized feature importance",
+                    font_size=self.label_fontsize,
+                )
+            )
+
+        for m in models:
+            parshap = {}
+            fxs = m.branch._get_columns(columns, include_target=False)
+
+            for ds in ("train", "test"):
+                # Calculating shap values is computationally expensive,
+                # therefore select a random subsample for large data sets
+                if len(data := getattr(m, ds)) > 500:
+                    data = data.sample(500, random_state=self.random_state)
+
+                # Replace data with the calculated shap values
+                explanation = m._shap.get_explanation(data[m.features], target)
+                data[m.features] = explanation.values
+
+                parshap[ds] = pd.Series(index=fxs, dtype=float)
+                for fx in fxs:
+                    # All other features are covariates
+                    covariates = [f for f in data.columns[:-1] if f != fx]
+                    cols = [fx, data.columns[-1], *covariates]
+
+                    # Compute covariance
+                    V = data[cols].cov()
+
+                    # Inverse covariance matrix
+                    Vi = np.linalg.pinv(V, hermitian=True)
+                    diag = Vi.diagonal()
+
+                    D = np.diag(np.sqrt(1 / diag))
+
+                    # Partial correlation matrix
+                    partial_corr = -1 * (D @ Vi @ D)  # @ is matrix multiplication
+
+                    # Semi-partial correlation matrix
+                    with np.errstate(divide="ignore"):
+                        V_sqrt = np.sqrt(np.diag(V))[..., None]
+                        Vi_sqrt = np.sqrt(np.abs(diag - Vi ** 2 / diag[..., None])).T
+                        semi_partial_correlation = partial_corr / V_sqrt / Vi_sqrt
+
+                    # X covariates are removed
+                    parshap[ds][fx] = semi_partial_correlation[1, 0]
+
+            # Get the feature importance or coefficients
+            if m.feature_importance is not None:
+                color = m.feature_importance.loc[fxs]
+            else:
+                color = BasePlot._fig.get_elem("parshap")
+
+            fig.add_trace(
+                go.Scatter(
+                    x=parshap["train"],
+                    y=parshap["test"],
+                    mode="markers+text",
+                    marker=dict(
+                        color=color,
+                        size=self.marker_size,
+                        coloraxis=f"coloraxis{xaxis[1:]}",
+                        line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
+                    ),
+                    text=m.features,
+                    textposition="top center",
+                    customdata=(data := None if isinstance(color, str) else list(color)),
+                    hovertemplate=(
+                        f"%{{text}}<br>(%{{x}}, %{{y}})"
+                        f"{'<br>Feature importance: %{customdata:.4f}' if data else ''}"
+                        f"<extra>{m.name}</extra>"
+                    ),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Training set",
+            ylabel="Test set",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_parshap",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_partial_dependence(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        columns: SLICE | None = None,
+        kind: str | SEQUENCE = "average",
+        pair: int | str | None = None,
+        target: INT | str = 1,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the partial dependence of features.
+
+        The partial dependence of a feature (or a set of features)
+        corresponds to the response of the model for each possible
+        value of the feature. The plot can take two forms:
+
+        - If `pair` is None: Single feature partial dependence lines.
+          The deciles of the feature values are shown with tick marks
+          on the bottom.
+        - If `pair` is defined: Two-way partial dependence plots are
+          plotted as contour plots (only allowed for a single model).
+
+        Read more about partial dependence on sklearn's
+        [documentation][partial_dependence]. This plot is not available
+        for multilabel nor multiclass-multioutput classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        columns: int, str, slice, sequence or None, default=None
+            Features to get the partial dependence from. If None, it
+            uses the first 3 features in the dataset.
+
+        kind: str or sequence, default="average"
+            Kind of depedence to plot. Use a sequence or add `+` between
+            options to select more than one. Choose from:
+
+            - "average": Partial dependence averaged across all samples
+              in the dataset.
+            - "individual": Partial dependence for up to 50 random
+              samples (Individual Conditional Expectation).
+
+            This parameter is ignored when plotting feature pairs.
+
+        pair: int, str or None, default=None
+            Feature with which to pair the features selected by
+            `columns`. If specified, the resulting figure displays
+            contour plots. Only allowed when plotting a single model.
+            If None, the plots show the partial dependece of single
+            features.
+
+        target: int or str, default=1
+            Class in the target column to look at (only for multiclass
+            classification tasks).
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_feature_importance
+        atom.plots:PredictionPlot.plot_parshap
+        atom.plots:PredictionPlot.plot_permutation_importance
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_partial_dependence(kind="average+individual", legend="upper left")
+        atom.rf.plot_partial_dependence(columns=(3, 4), pair=2)
+        ```
+
+        """
+        if any(self.task.startswith(t) for t in ("multilabel", "multiclass-multioutput")):
+            raise PermissionError(
+                "The plot_partial_dependence method is not available for multilabel "
+                f"nor multiclass-multioutput classification tasks, got {self.task}."
+            )
+        elif self.task.startswith("multiclass"):
+            _, target = self.branch._get_target(target)
+        else:
+            target = 0
+
+        kind = "+".join(lst(kind)).lower()
+        if any(k not in ("average", "individual") for k in kind.split("+")):
+            raise ValueError(
+                f"Invalid value for the kind parameter, got {kind}. "
+                "Choose from: average, individual."
+            )
+
+        axes, names = [], []
+        fig = self._get_figure()
+        for m in models:
+            color = BasePlot._fig.get_elem(m.name)
+
+            # Since every model can have different fxs, select them
+            # every time and make sure the models use the same fxs
+            cols = m.branch._get_columns(
+                columns=(0, 1, 2) if columns is None else columns,
+                include_target=False,
+            )
+
+            if not names:
+                names = cols
+            elif names != cols:
+                raise ValueError(
+                    "Invalid value for the columns parameter. Not all "
+                    f"models use the same features, got {names} and {cols}."
+                )
+
+            if pair is not None:
+                if len(models) > 1:
+                    raise ValueError(
+                        f"Invalid value for the pair parameter, got {pair}. "
+                        "The value must be None when plotting multiple models"
+                    )
+                else:
+                    pair = m.branch._get_columns(pair, include_target=False)
+                    cols = [(c, pair[0]) for c in cols]
+            else:
+                cols = [(c,) for c in cols]
+
+            # Create new axes
+            if not axes:
+                for i, col in enumerate(cols):
+                    # Calculate the distance between subplots
+                    offset = divide(0.025, len(cols) - 1)
+
+                    # Calculate the size of the subplot
+                    size = (1 - ((offset * 2) * (len(cols) - 1))) / len(cols)
+
+                    # Determine the position for the axes
+                    x_pos = i % len(cols) * (size + 2 * offset)
+
+                    xaxis, yaxis = BasePlot._fig.get_axes(x=(x_pos, rnd(x_pos + size)))
+                    axes.append((xaxis, yaxis))
+
+            # Compute averaged predictions
+            predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                delayed(partial_dependence)(
+                    estimator=m.estimator,
+                    X=m.X_test,
+                    features=col,
+                    kind="both" if "individual" in kind else "average",
+                ) for col in cols
+            )
+
+            # Compute deciles for ticks (only if line plots)
+            if len(cols[0]) == 1:
+                deciles = {}
+                for fx in chain.from_iterable(cols):
+                    if fx not in deciles:  # Skip if the feature is repeated
+                        X_col = _safe_indexing(m.X_test, fx, axis=1)
+                        deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
+
+            for i, (ax, fx, pred) in enumerate(zip(axes, cols, predictions)):
+                # Draw line or contour plot
+                if len(pred["values"]) == 1:
+                    # For both average and individual: draw ticks on the horizontal axis
+                    for line in deciles[fx[0]]:
+                        fig.add_shape(
+                            type="line",
+                            x0=line,
+                            x1=line,
+                            xref=ax[0],
+                            y0=0,
+                            y1=0.05,
+                            yref=f"{axes[0][1]} domain",
+                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            opacity=0.6,
+                            layer="below",
+                        )
+
+                    # Draw the mean of the individual lines
+                    if "average" in kind:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=pred["values"][0],
+                                y=pred["average"][target].ravel(),
+                                mode="lines",
+                                line=dict(width=2, color=color),
+                                name=m.name,
+                                legendgroup=m.name,
+                                showlegend=BasePlot._fig.showlegend(m.name, legend),
+                                xaxis=ax[0],
+                                yaxis=axes[0][1],
+                            )
+                        )
+
+                    # Draw all individual (per sample) lines (ICE)
+                    if "individual" in kind:
+                        # Select up to 50 random samples to plot
+                        idx = np.random.choice(
+                            list(range(len(pred["individual"][target]))),
+                            size=min(len(pred["individual"][target]), 50),
+                            replace=False,
+                        )
+                        for sample in pred["individual"][target, idx, :]:
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=pred["values"][0],
+                                    y=sample,
+                                    mode="lines",
+                                    line=dict(width=0.5, color=color),
+                                    name=m.name,
+                                    legendgroup=m.name,
+                                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                                    xaxis=ax[0],
+                                    yaxis=axes[0][1],
+                                )
+                            )
+
+                else:
+                    colorscale = PALETTE.get(BasePlot._fig.get_elem(m.name), "Teal")
+                    fig.add_trace(
+                        go.Contour(
+                            x=pred["values"][0],
+                            y=pred["values"][1],
+                            z=pred["average"][target],
+                            contours=dict(
+                                showlabels=True,
+                                labelfont=dict(size=self.tick_fontsize, color="white")
+                            ),
+                            hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
+                            hoverongaps=False,
+                            colorscale=colorscale,
+                            showscale=False,
+                            showlegend=False,
+                            xaxis=ax[0],
+                            yaxis=axes[0][1],
+                        )
+                    )
+
+                self._plot(
+                    ax=(f"xaxis{ax[0][1:]}", f"yaxis{ax[1][1:]}"),
+                    xlabel=fx[0],
+                    ylabel=(fx[1] if len(fx) > 1 else "Score") if i == 0 else None,
+                )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            groupclick="togglegroup",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_partial_dependence",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_permutation_importance(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        n_repeats: INT = 10,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the feature permutation importance of models.
+
+        !!! warning
+            This method can be slow. Results are cached to fasten
+            repeated calls.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        show: int or None, default=None
+            Number of features (ordered by importance) to show. If
+            None, it shows all features.
+
+        n_repeats: int, default=10
+            Number of times to permute each feature.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_feature_importance
+        atom.plots:PredictionPlot.plot_partial_dependence
+        atom.plots:PredictionPlot.plot_parshap
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_permutation_importance(show=10, n_repeats=7)
+        ```
+
+        """
+        show = self._get_show(show, models)
+
+        if n_repeats <= 0:
+            raise ValueError(
+                "Invalid value for the n_repeats parameter."
+                f"Value should be >0, got {n_repeats}."
+            )
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for m in models:
+            # Permutation importances returns Bunch object
+            permutations = self._memory.cache(permutation_importance)(
+                estimator=m.estimator,
+                X=m.X_test,
+                y=m.y_test,
+                scoring=self._metric[0],
+                n_repeats=n_repeats,
+                n_jobs=self.n_jobs,
+                random_state=self.random_state,
+            )
+
+            fig.add_trace(
+                go.Box(
+                    x=permutations["importances"].ravel(),
+                    y=list(np.array([[fx] * n_repeats for fx in m.features]).ravel()),
+                    marker_color=BasePlot._fig.get_elem(m.name),
+                    boxpoints="outliers",
+                    orientation="h",
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                "boxmode": "group",
+            }
+        )
+
+        # Unique number of features over all branches
+        n_fxs = len(set([fx for m in models for fx in m.features]))
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Score",
+            ylim=(n_fxs - show - 0.5, n_fxs - 0.5),
+            title=title,
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
+            plotname="plot_permutation_importance",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model(check_fitted=False))
+    def plot_pipeline(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        draw_hyperparameter_tuning: bool = True,
+        color_branches: bool | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: LEGEND | dict | None = None,
+        figsize: tuple[INT, INT] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
+        """Plot a diagram of the pipeline.
+
+        !!! warning
+            This plot uses the [schemdraw][] package, which is
+            incompatible with [plotly][]. The returned plot is
+            therefore a [matplotlib figure][pltfigure].
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models for which to draw the pipeline. If None, all
+            pipelines are plotted.
+
+        draw_hyperparameter_tuning: bool, default=True
+            Whether to draw if the models used Hyperparameter Tuning.
+
+        color_branches: bool or None, default=None
+            Whether to draw every branch in a different color. If None,
+            branches are colored when there is more than one.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the pipeline drawn.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as png. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [plt.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_wordcloud
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["GNB", "RNN", "SGD", "MLP"])
+        atom.voting(models=atom.winners[:2])
+        atom.plot_pipeline()
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.scale()
+        atom.prune()
+        atom.run("RF", n_trials=30)
+
+        atom.branch = "undersample"
+        atom.balance("nearmiss")
+        atom.run("RF_undersample")
+
+        atom.branch = "oversample_from_master"
+        atom.balance("smote")
+        atom.run("RF_oversample")
+
+        atom.plot_pipeline()
+        ```
+
+        """
+
+        def get_length(pl, i):
+            """Get the maximum length of the name of a block."""
+            if len(pl) > i:
+                return max(len(pl[i].__class__.__name__) * 0.5, 7)
+            else:
+                return 0
+
+        def check_y(xy):
+            """Return y unless there is something right, then jump."""
+            while any(pos[0] > xy[0] and pos[1] == xy[1] for pos in positions.values()):
+                xy = Point((xy[0], xy[1] + height))
+
+            return xy[1]
+
+        def add_wire(x, y):
+            """Draw a connecting wire between two estimators."""
+            d.add(
+                Wire(shape="z", k=(x - d.here[0]) / (length + 1), arrow="->")
+                .to((x, y))
+                .color(branch["color"])
+            )
+
+            # Update arrowhead manually
+            d.elements[-1].segments[-1].arrowwidth = 0.3
+            d.elements[-1].segments[-1].arrowlength = 0.5
+
+        check_dependency("schemdraw")
+        from schemdraw import Drawing
+        from schemdraw.flow import Data, RoundBox, Subroutine, Wire
+        from schemdraw.util import Point
+
+        fig = self._get_figure(backend="matplotlib")
+        check_canvas(BasePlot._fig.is_canvas, "plot_pipeline")
+
+        # Define branches to plot (if called from model, it's only one)
+        branches = []
+        for branch in getattr(self, "_branches", [self.branch]):
+            draw_models, draw_ensembles = [], []
+            for m in models:
+                if m.branch is branch:
+                    if m.acronym not in ("Stack", "Vote"):
+                        draw_models.append(m)
+                    else:
+                        draw_ensembles.append(m)
+
+                        # Additionally, add all dependent models (if not already there)
+                        draw_models.extend([i for i in m._models if i not in draw_models])
+
+            if not models or draw_models:
+                branches.append(
+                    {
+                        "name": branch.name,
+                        "pipeline": list(branch.pipeline),
+                        "models": draw_models,
+                        "ensembles": draw_ensembles,
+                    }
+                )
+
+        # Define colors per branch
+        for branch in branches:
+            if color_branches or (color_branches is None and len(branches) > 1):
+                color = next(BasePlot._fig.palette)
+
+                # Convert back to format accepted by matplotlib
+                branch["color"] = unconvert_from_RGB_255(unlabel_rgb(color))
+            else:
+                branch["color"] = "black"
+
+        # Create schematic drawing
+        d = Drawing(unit=1, backend="matplotlib")
+        d.config(fontsize=self.tick_fontsize)
+        d.add(Subroutine(w=8, s=0.7).label("Raw data"))
+
+        height = 3  # Height of every block
+        length = 5  # Minimum arrow length
+
+        # Define the x-position for every block
+        x_pos = [d.here[0] + length]
+        for i in range(max(len(b["pipeline"]) for b in branches)):
+            len_block = reduce(max, [get_length(b["pipeline"], i) for b in branches])
+            x_pos.append(x_pos[-1] + length + len_block)
+
+        # Add positions for scaling, hyperparameter tuning and models
+        x_pos.extend([x_pos[-1], x_pos[-1]])
+        if any(m.scaler for m in models):
+            x_pos[-1] = x_pos[-2] = x_pos[-3] + length + 7
+        if draw_hyperparameter_tuning and any(m.trials is not None for m in models):
+            x_pos[-1] = x_pos[-2] + length + 11
+
+        positions = {0: d.here}  # Contains the position of every element
+        for branch in branches:
+            d.here = positions[0]
+
+            for i, est in enumerate(branch["pipeline"]):
+                # If the estimator has already been seen, don't draw
+                if id(est) in positions:
+                    # Change location to estimator's end
+                    d.here = positions[id(est)]
+                    continue
+
+                # Draw transformer
+                add_wire(x_pos[i], check_y(d.here))
+                d.add(
+                    RoundBox(w=max(len(est.__class__.__name__) * 0.5, 7))
+                    .label(est.__class__.__name__, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(est)] = d.here
+
+            for model in branch["models"]:
+                # Position at last transformer or at start
+                if branch["pipeline"]:
+                    d.here = positions[id(est)]
+                else:
+                    d.here = positions[0]
+
+                # For a single branch, center models
+                if len(branches) == 1:
+                    offset = height * (len(branch["models"]) - 1) / 2
+                else:
+                    offset = 0
+
+                # Draw automated feature scaling
+                if model.scaler:
+                    add_wire(x_pos[-3], check_y((d.here[0], d.here[1] - offset)))
+                    d.add(
+                        RoundBox(w=7)
+                        .label("Scaler", color="k")
+                        .color(branch["color"])
+                        .drop("E")
+                    )
+                    offset = 0
+
+                # Draw hyperparameter tuning
+                if draw_hyperparameter_tuning and model.trials is not None:
+                    add_wire(x_pos[-2], check_y((d.here[0], d.here[1] - offset)))
+                    d.add(
+                        Data(w=11)
+                        .label("Hyperparameter\nTuning", color="k")
+                        .color(branch["color"])
+                        .drop("E")
+                    )
+                    offset = 0
+
+                # Remove classifier/regressor from model's name
+                name = model.estimator.__class__.__name__
+                if name.lower().endswith("classifier"):
+                    name = name[:-10]
+                elif name.lower().endswith("regressor"):
+                    name = name[:-9]
+
+                # Draw model
+                add_wire(x_pos[-1], check_y((d.here[0], d.here[1] - offset)))
+                d.add(
+                    Data(w=max(len(name) * 0.5, 7))
+                    .label(name, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(model)] = d.here
+
+        # Draw ensembles
+        max_pos = max(pos[0] for pos in positions.values())  # Max length model names
+        for branch in branches:
+            for model in branch["ensembles"]:
+                # Determine y-position of the ensemble
+                y_pos = [positions[id(m)][1] for m in model._models]
+                offset = height / 2 * (len(branch["ensembles"]) - 1)
+                y = min(y_pos) + (max(y_pos) - min(y_pos)) * 0.5 - offset
+                y = check_y((max_pos + length, max(min(y_pos), y)))
+
+                d.here = (max_pos + length, y)
+
+                d.add(
+                    Data(w=max(len(model._fullname) * 0.5, 7))
+                    .label(model._fullname, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(model)] = d.here
+
+                # Draw a wire from every model to the ensemble
+                for m in model._models:
+                    d.here = positions[id(m)]
+                    add_wire(max_pos + length, y)
+
+        if not figsize:
+            dpi, bbox = fig.get_dpi(), d.get_bbox()
+            figsize = (dpi * bbox.xmax // 4, (dpi / 2) * (bbox.ymax - bbox.ymin))
+
+        d.draw(canvas=plt.gca(), showframe=False, show=False)
+        plt.axis("off")
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=plt.gca(),
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_pipeline",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_prc(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower left",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the precision-recall curve.
+
+        Read more about [PRC][] in sklearn's documentation. Only
+        available for binary classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_det
+        atom.plots:PredictionPlot.plot_lift
+        atom.plots:PredictionPlot.plot_roc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_prc()
+        ```
+
+        """
+        dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            for ds in dataset:
+                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
+
+                # Get precision-recall pairs for different thresholds
+                prec, rec, _ = precision_recall_curve(y_true, y_pred)
+
+                fig.add_trace(
+                    self._draw_line(
+                        x=rec,
+                        y=prec,
+                        mode="lines",
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        self._draw_straight_line(sum(m.y_test) / len(m.y_test), xaxis=xaxis, yaxis=yaxis)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Recall",
+            ylabel="Precision",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_prc",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("class"))
+    @composed(crash, plot_from_model)
+    def plot_probabilities(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str = "test",
+        target: INT | str | tuple = 1,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the probability distribution of the target classes.
+
+        This plot is available only for models with a `predict_proba`
+        method in classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        target: int, str or tuple, default=1
+            Probability of being that class in the target column. For
+            multioutput tasks, the value should be a tuple of the form
+            (column, class).
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_confusion_matrix
+        atom.plots:PredictionPlot.plot_results
+        atom.plots:PredictionPlot.plot_threshold
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_probabilities()
+        ```
+
+        """
+        check_predict_proba(models, "plot_probabilities")
+        ds = self._get_set(dataset, max_one=True)
+        col, cls = self.branch._get_target(target)
+        col = lst(self.target)[col]
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            y_true, y_pred = getattr(m, f"y_{ds}"), getattr(m, f"predict_proba_{ds}")
+            for value in np.unique(m.dataset[col]):
+                # Get indices per class
+                if is_multioutput(self.task):
+                    if self.task.startswith("multilabel"):
+                        hist = y_pred.loc[y_true[col] == value, col]
+                    else:
+                        hist = y_pred.loc[cls, col].loc[y_true[col] == value]
+                else:
+                    hist = y_pred.loc[y_true == value, str(cls)]
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=(x := np.linspace(0, 1, 100)),
+                        y=stats.gaussian_kde(hist)(x),
+                        mode="lines",
+                        line=dict(
+                            width=2,
+                            color=BasePlot._fig.get_elem(m.name),
+                            dash=BasePlot._fig.get_elem(ds, "dash"),
+                        ),
+                        fill="tonexty",
+                        fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
+                        fillpattern=dict(shape=BasePlot._fig.get_elem(value, "shape")),
+                        name=f"{col}={value}",
+                        legendgroup=m.name,
+                        legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
+                        showlegend=BasePlot._fig.showlegend(f"{m.name}-{value}", legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="toggleitem",
+            xlabel="Probability",
+            ylabel="Probability density",
+            xlim=(0, 1),
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_probabilities",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("reg"))
+    @composed(crash, plot_from_model)
+    def plot_residuals(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a model's residuals.
+
+        The plot shows the residuals (difference between the predicted
+        and the true value) on the vertical axis and the independent
+        variable on the horizontal axis. The gray, intersected line
+        shows the identity line. This plot can be useful to analyze the
+        variance of the error of the regressor. If the points are
+        randomly dispersed around the horizontal axis, a linear
+        regression model is appropriate for the data; otherwise, a
+        non-linear model is more appropriate. This plot is only
+        available for regression tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multioutput tasks][].
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_errors
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMRegressor
+        from sklearn.datasets import load_diabetes
+
+        X, y = load_diabetes(return_X_y=True, as_frame=True)
+
+        atom = ATOMRegressor(X, y)
+        atom.run(["OLS", "LGB"])
+        atom.plot_residuals()
+        ```
+
+        """
+        ds = self._get_set(dataset, max_one=True)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes(x=(0, 0.69))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(x=(0.71, 1.0))
+        for m in models:
+            y_true, y_pred = m._get_pred(ds, target)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=y_true,
+                    y=(res := np.subtract(y_true, y_pred)),
+                    mode="markers",
+                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+            fig.add_trace(
+                go.Histogram(
+                    y=res,
+                    bingroup="residuals",
+                    marker=dict(
+                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                    ),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis2,
+                    yaxis=yaxis,
+                )
+            )
+
+        self._draw_straight_line(y=0, xaxis=xaxis, yaxis=yaxis)
+
+        fig.update_layout({f"yaxis{xaxis[1:]}_showgrid": True, "barmode": "overlay"})
+
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel="Distribution",
+            title=title,
+        )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            ylabel="Residuals",
+            xlabel="True value",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_residuals",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model)
+    def plot_results(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the model results.
+
+        If all models applied bootstrap, the plot is a boxplot. If
+        not, the plot is a barplot. Models are ordered based on
+        their score from the top down. The score is either the
+        `score_bootstrap` or `score_test` attribute of the model,
+        selected in that order.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        metric: int, str, sequence or None, default=None
+            Metric to plot (only for multi-metric runs). Other available
+            options are "time_bo", "time_fit", "time_bootstrap" and
+            "time". If str, add `+` between options to select more than
+            one. If None, the metric used to run the pipeline is selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of models.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_confusion_matrix
+        atom.plots:PredictionPlot.plot_probabilities
+        atom.plots:PredictionPlot.plot_threshold
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"])
+        atom.plot_results()
+
+        atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"], n_bootstrap=5)
+        atom.plot_results()
+        atom.plot_results(metric="time_fit+time")
+        ```
+
+        """
+
+        def get_std(model: MODEL, metric: int) -> SCALAR:
+            """Get the standard deviation of the bootstrap scores.
+
+            Parameters
+            ----------
+            model: Model
+                 Model to get the std from.
+
+            metric: int
+                Index of the metric to get it from.
+
+            Returns
+            -------
+            int or float
+                Standard deviation score or 0 if not bootstrapped.
+
+            """
+            if model.bootstrap is None:
+                return 0
+            else:
+                return model.bootstrap.iloc[:, metric].std()
+
+        metric = self._get_metric(metric, max_one=False)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for met in metric:
+            if isinstance(met, str):
+                color = BasePlot._fig.get_elem(met)
+                fig.add_trace(
+                    go.Bar(
+                        x=[getattr(m, met) for m in models],
+                        y=[m.name for m in models],
+                        orientation="h",
+                        marker=dict(
+                            color=f"rgba({color[4:-1]}, 0.2)",
+                            line=dict(width=2, color=color),
+                        ),
+                        hovertemplate=f"%{{x}}<extra>{met}</extra>",
+                        name=met,
+                        legendgroup=met,
+                        showlegend=BasePlot._fig.showlegend(met, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+            else:
+                name = self._metric[met].name
+                color = BasePlot._fig.get_elem()
+
+                if all(m.score_bootstrap for m in models):
+                    x = np.array([m.bootstrap.iloc[:, met] for m in models]).ravel()
+                    y = np.array([[m.name] * len(m.bootstrap) for m in models]).ravel()
+                    fig.add_trace(
+                        go.Box(
+                            x=x,
+                            y=list(y),
+                            marker_color=color,
+                            boxpoints="outliers",
+                            orientation="h",
+                            name=name,
+                            legendgroup=name,
+                            showlegend=BasePlot._fig.showlegend(name, legend),
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    )
+                else:
+                    fig.add_trace(
+                        go.Bar(
+                            x=[get_best_score(m, met) for m in models],
+                            y=[m.name for m in models],
+                            error_x=dict(
+                                type="data",
+                                array=[get_std(m, met) for m in models],
+                            ),
+                            orientation="h",
+                            marker=dict(
+                                color=f"rgba({color[4:-1]}, 0.2)",
+                                line=dict(width=2, color=color),
+                            ),
+                            hovertemplate="%{x}<extra></extra>",
+                            name=name,
+                            legendgroup=name,
+                            showlegend=BasePlot._fig.showlegend(name, legend),
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    )
+
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                "bargroupgap": 0.05,
+                "boxmode": "group",
+            }
+        )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="time (s)" if all(isinstance(m, str) for m in metric) else "Score",
+            title=title,
+            legend=legend,
+            figsize=figsize or (900, 400 + len(models) * 50),
+            plotname="plot_results",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_roc(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the Receiver Operating Characteristics curve.
+
+        Read more about [ROC][] in sklearn's documentation. Only
+        available for classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_gains
+        atom.plots:PredictionPlot.plot_lift
+        atom.plots:PredictionPlot.plot_prc
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_roc()
+        ```
+
+        """
+        dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+        for m in models:
+            for ds in dataset:
+                # Get False (True) Positive Rate as arrays
+                fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
+
+                fig.add_trace(
+                    self._draw_line(
+                        x=fpr,
+                        y=tpr,
+                        mode="lines",
+                        parent=m.name,
+                        child=ds,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlim=(-0.03, 1.03),
+            ylim=(-0.03, 1.03),
+            xlabel="FPR",
+            ylabel="TPR",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_roc",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model(ensembles=False))
+    def plot_successive_halving(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot scores per iteration of the successive halving.
+
+        Only use with models fitted using [successive halving][].
+        [Ensembles][] are ignored.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        metric: int, str, sequence or None, default=None
+            Metric to plot (only for multi-metric runs). Use a sequence
+            or add `+` between options to select more than one. If None,
+            the metric used to run the pipeline is selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_learning_curve
+        atom.plots:PredictionPlot.plot_results
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.successive_halving(["Tree", "Bag", "RF", "LGB"], n_bootstrap=5)
+        atom.plot_successive_halving()
+        ```
+
+        """
+        metric = self._get_metric(metric, max_one=False)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for met in metric:
+            x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+            for m in models:
+                x[m._group].append(len(m.branch._idx[1]) // m._train_idx)
+                y[m._group].append(get_best_score(m, met))
+                if m.bootstrap is not None:
+                    std[m._group].append(m.bootstrap.iloc[:, met].std())
+
+            for group in x:
+                fig.add_trace(
+                    self._draw_line(
+                        x=x[group],
+                        y=y[group],
+                        mode="lines+markers",
+                        marker_symbol="circle",
+                        error_y=dict(type="data", array=std[group], visible=True),
+                        parent=group,
+                        child=self._metric[met].name,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+                # Add error bands
+                if m.bootstrap is not None:
+                    fillcolor = f"rgba{BasePlot._fig.get_elem(group)[3:-1]}, 0.2)"
+                    fig.add_traces(
+                        [
+                            go.Scatter(
+                                x=x[group],
+                                y=np.add(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                hovertemplate="%{y}<extra>upper bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                            go.Scatter(
+                                x=x[group],
+                                y=np.subtract(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                fill="tonexty",
+                                fillcolor=fillcolor,
+                                hovertemplate="%{y}<extra>lower bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                        ]
+                    )
+
+        fig.update_layout({f"xaxis{yaxis[1:]}": dict(dtick=1, autorange="reversed")})
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            title=title,
+            legend=legend,
+            xlabel="n_models",
+            ylabel="Score",
+            figsize=figsize,
+            plotname="plot_successive_halving",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, plot_from_model)
+    def plot_threshold(
+        self,
+        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        metric: METRIC_SELECTOR = None,
+        dataset: str = "test",
+        target: INT | str = 0,
+        steps: INT = 100,
+        *,
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower left",
+        figsize: tuple[INT, INT] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
+        """Plot metric performances against threshold values.
+
+        This plot is available only for models with a `predict_proba`
+        method in a binary or [multilabel][] classification task.
+
+        Parameters
+        ----------
+        models: int, str, Model, slice, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        metric: str, func, scorer, sequence or None, default=None
+            Metric to plot. Choose from any of sklearn's scorers, a
+            function with signature `metric(y_true, y_pred)`, a scorer
+            object or a sequence of these. Use a sequence or add `+`
+            between options to select more than one. If None, the
+            metric used to run the pipeline is selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        steps: int, default=100
+            Number of thresholds measured.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_calibration
+        atom.plots:PredictionPlot.plot_confusion_matrix
+        atom.plots:PredictionPlot.plot_probabilities
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["LR", "RF"])
+        atom.plot_threshold()
+        ```
+
+        """
+        check_predict_proba(models, "plot_threshold")
+        ds = self._get_set(dataset, max_one=True)
+        target = self.branch._get_target(target, only_columns=True)
+
+        # Get all metric functions from the input
+        if metric is None:
+            metrics = [m._score_func for m in self._metric]
+        else:
+            metrics = []
+            for m in lst(metric):
+                if isinstance(m, str):
+                    metrics.extend(m.split("+"))
+                else:
+                    metrics.append(m)
+            metrics = [get_custom_scorer(m)._score_func for m in metrics]
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        steps = np.linspace(0, 1, steps)
+        for m in models:
+            y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
+            for met in metrics:
+                fig.add_trace(
+                    self._draw_line(
+                        x=steps,
+                        y=[met(y_true, y_pred >= step) for step in steps],
+                        parent=m.name,
+                        child=met.__name__,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        BasePlot._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Threshold",
+            ylabel="Score",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_threshold",
+            filename=filename,
+            display=display,
+        )

@@ -36,9 +36,7 @@ from atom.feature_engineering import (
 )
 from atom.models import MODELS
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
-from atom.plots import (
-    DataPlot, FeatureSelectorPlot, HTPlot, PredictionPlot, ShapPlot,
-)
+from atom.plots import ATOMPlot
 from atom.training import (
     DirectClassifier, DirectForecaster, DirectRegressor,
     SuccessiveHalvingClassifier, SuccessiveHalvingForecaster,
@@ -47,9 +45,10 @@ from atom.training import (
 )
 from atom.utils.constants import MISSING_VALUES, __version__
 from atom.utils.types import (
-    BOOL, DATAFRAME, DATASET, FEATURES, INDEX, INDEX_SELECTOR, INT,
-    METRIC_SELECTOR, PANDAS, PREDICTOR, RUNNER, SCALAR, SEQUENCE, SERIES,
-    SLICE, TARGET, TRANSFORMER, TS_INDEX_TYPES,
+    BOOL, DATAFRAME, DATASET, DISCRETIZER_STRATS, ESTIMATOR, FEATURES, INDEX,
+    INDEX_SELECTOR, INT, METRIC_SELECTOR, PANDAS, PREDICTOR, PRUNER_STRATS,
+    RUNNER, SCALAR, SCALER_STRATS, SEQUENCE, SERIES, SLICE, STRAT_NUM, TARGET,
+    TRANSFORMER, TS_INDEX_TYPES,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, check_dependency, check_is_fitted, check_scaling,
@@ -60,7 +59,7 @@ from atom.utils.utils import (
 
 
 @typechecked
-class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, ShapPlot):
+class ATOM(BaseRunner, ATOMPlot):
     """ATOM base class.
 
     The ATOM class is a convenient wrapper for all data cleaning,
@@ -160,7 +159,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return out
 
-    def __iter__(self) -> TRANSFORMER:
+    def __iter__(self) -> TRANSFORMER | None:
         yield from self.pipeline.values
 
     # Utility properties =========================================== >>
@@ -545,7 +544,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         y: TARGET | None = None,
         *,
         verbose: INT | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, SERIES]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -898,7 +897,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 get_data(r[0]) for r in t if r[1] <= column.min() and r[2] >= column.max()
             )
 
-        if self.engine["data"] == "pyarrow":
+        if self.engine.get("data") == "pyarrow":
             self.branch.dataset = self.branch.dataset.astype(
                 {name: to_pyarrow(col) for name, col in self.branch._data.items()}
             )
@@ -986,7 +985,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         y: TARGET | None = None,
         *,
         verbose: INT | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, SERIES]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -1068,7 +1067,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         transformer: TRANSFORMER,
         columns: SLICE | None = None,
-        train_only: bool = False,
+        train_only: BOOL = False,
         **fit_params,
     ):
         """Add a transformer to the pipeline.
@@ -1105,9 +1104,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 "after it has been used to train models. Create a "
                 "new branch to continue the pipeline."
             )
-
-        if not hasattr(transformer, "transform"):
-            raise AttributeError("Added transformers should have a transform method!")
 
         # Add BaseTransformer params to the estimator if left to default
         transformer = self._inherit(transformer)
@@ -1160,7 +1156,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         transformer: TRANSFORMER,
         *,
         columns: SLICE | None = None,
-        train_only: bool = False,
+        train_only: BOOL = False,
         **fit_params,
     ):
         """Add a transformer to the pipeline.
@@ -1249,9 +1245,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     ):
         """Apply a function to the dataset.
 
-        The function should have signature `func(dataset, **kw_args) ->
-        dataset`. This method is useful for stateless transformations
-        such as taking the log, doing custom scaling, etc...
+        This method is useful for stateless transformations such as
+        taking the log, doing custom scaling, etc...
 
         !!! note
             This approach is preferred over changing the dataset directly
@@ -1265,7 +1260,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         Parameters
         ----------
         func: callable
-            Function to apply.
+            Function to apply with signature `func(dataset, **kw_args) ->
+            dataset`.
 
         inverse_func: callable or None, default=None
             Inverse function of `func`. If None, the inverse_transform
@@ -1336,13 +1332,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def clean(
         self,
         *,
-        convert_dtypes: bool = True,
+        convert_dtypes: BOOL = True,
         drop_dtypes: str | SEQUENCE | None = None,
         drop_chars: str | None = None,
-        strip_categorical: bool = True,
-        drop_duplicates: bool = False,
-        drop_missing_target: bool = True,
-        encode_target: bool = True,
+        strip_categorical: BOOL = True,
+        drop_duplicates: BOOL = False,
+        drop_missing_target: BOOL = True,
+        encode_target: BOOL = True,
         **kwargs,
     ):
         """Applies standard data cleaning steps on the dataset.
@@ -1382,7 +1378,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def discretize(
         self,
-        strategy: str = "quantile",
+        strategy: DISCRETIZER_STRATS = "quantile",
         *,
         bins: INT | SEQUENCE | dict = 5,
         labels: SEQUENCE | dict | None = None,
@@ -1467,7 +1463,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def impute(
         self,
-        strat_num: SCALAR | Literal["drop", "mean", "knn", "most_frequent"] = "drop",
+        strat_num: STRAT_NUM = "drop",
         strat_cat: Literal["drop", "most_frequent"] | str = "drop",
         *,
         max_nan_rows: SCALAR | None = None,
@@ -1539,11 +1535,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log)
     def prune(
         self,
-        strategy: str | SEQUENCE = "zscore",
+        strategy: PRUNER_STRATS | SEQUENCE = "zscore",
         *,
         method: SCALAR | Literal["drop", "minmax"] = "drop",
         max_sigma: SCALAR = 3,
-        include_target: bool = False,
+        include_target: BOOL = False,
         **kwargs,
     ):
         """Prune outliers from the training set.
@@ -1581,7 +1577,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
     @composed(crash, method_to_log)
-    def scale(self, strategy: str = "standard", include_binary: bool = False, **kwargs):
+    def scale(
+        self,
+        strategy: SCALER_STRATS = "standard",
+        include_binary: BOOL = False,
+        **kwargs,
+    ):
         """Scale the data.
 
         Apply one of sklearn's scalers. Categorical columns are ignored.
@@ -1611,19 +1612,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def textclean(
         self,
         *,
-        decode: bool = True,
-        lower_case: bool = True,
-        drop_email: bool = True,
+        decode: BOOL = True,
+        lower_case: BOOL = True,
+        drop_email: BOOL = True,
         regex_email: str | None = None,
-        drop_url: bool = True,
+        drop_url: BOOL = True,
         regex_url: str | None = None,
-        drop_html: bool = True,
+        drop_html: BOOL = True,
         regex_html: str | None = None,
-        drop_emoji: bool = True,
+        drop_emoji: BOOL = True,
         regex_emoji: str | None = None,
-        drop_number: bool = True,
+        drop_number: BOOL = True,
         regex_number: str | None = None,
-        drop_punctuation: bool = True,
+        drop_punctuation: BOOL = True,
         **kwargs,
     ):
         """Applies standard text cleaning to the corpus.
@@ -1664,10 +1665,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def textnormalize(
         self,
         *,
-        stopwords: bool | str = True,
+        stopwords: BOOL | str = True,
         custom_stopwords: SEQUENCE | None = None,
-        stem: bool | str = False,
-        lemmatize: bool = True,
+        stem: BOOL | str = False,
+        lemmatize: BOOL = True,
         **kwargs,
     ):
         """Normalize the corpus.
@@ -1727,7 +1728,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.branch.quadgrams = tokenizer.quadgrams
 
     @composed(crash, method_to_log)
-    def vectorize(self, strategy: str = "bow", *, return_sparse: bool = True, **kwargs):
+    def vectorize(
+        self,
+        strategy: Literal["bow", "tfidf", "hashing"] = "bow",
+        *,
+        return_sparse: BOOL = True,
+        **kwargs,
+    ):
         """Vectorize the corpus.
 
         Transform the corpus into meaningful vectors of numbers. The
@@ -1766,7 +1773,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         fmt: str | SEQUENCE | None = None,
         *,
         encoding_type: str = "ordinal",
-        drop_columns: bool = True,
+        drop_columns: BOOL = True,
         **kwargs,
     ):
         """Extract features from datetime columns.
@@ -1831,7 +1838,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         group: dict[str, str | SEQUENCE],
         *,
         operators: str | SEQUENCE | None = None,
-        drop_columns: bool = True,
+        drop_columns: BOOL = True,
         **kwargs,
     ):
         """Extract statistics from similar features.
@@ -1862,7 +1869,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         strategy: str | None = None,
         *,
-        solver: str | Callable | None = None,
+        solver: str | ESTIMATOR | None = None,
         n_features: SCALAR | None = None,
         min_repeated: SCALAR | None = 2,
         max_repeated: SCALAR | None = 1.0,
@@ -2005,7 +2012,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | SEQUENCE = 0,
-        parallel: bool = False,
+        parallel: BOOL = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
@@ -2061,7 +2068,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: bool = False,
+        parallel: BOOL = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
@@ -2124,7 +2131,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: bool = False,
+        parallel: BOOL = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):

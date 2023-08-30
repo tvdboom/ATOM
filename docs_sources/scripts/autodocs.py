@@ -788,7 +788,6 @@ def render(markdown: str, **kwargs) -> str:
         Modified markdown/html source text of page.
 
     """
-
     autodocs = None
     while match := re.search("(:: )(\w.*?)(?=::|\n\n|\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))
@@ -855,13 +854,16 @@ def types_conversion(dtype: str) -> str:
     """
     types = {
         "CustomDict": "dict",
+        "BOOL": "bool",
         "INT": "int",
         "FLOAT": "float",
+        "INDEX": "index",
         "SERIES": "series",
+        "SEQUENCE": "sequence",
         "DATAFRAME": "dataframe",
         "PANDAS": "series | dataframe",
-        "Branch": "[Branch][branches]",
-        "Model": "[model][models]",
+        "BRANCH": "[Branch][branches]",
+        "MODEL": "[model][models]",
         "Study": "[Study][]",
         "Trial": "[Trial][]",
         "FrozenTrial": "[FrozenTrial][]",

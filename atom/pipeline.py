@@ -22,7 +22,8 @@ from sklearn.utils.validation import check_memory
 from typeguard import typechecked
 
 from atom.utils.types import (
-    BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, SEQUENCE, SERIES, TARGET, INT
+    BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, INT, PANDAS, SEQUENCE, SERIES,
+    TARGET,
 )
 from atom.utils.utils import (
     check_is_fitted, fit_one, fit_transform_one, transform_one,
@@ -261,7 +262,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
         """Transform the data.
 
         Call `transform` on each transformer in the pipeline. The
@@ -304,7 +305,7 @@ class Pipeline(skPipeline):
         X: FEATURES | None = None,
         y: TARGET | None = None,
         **fit_params,
-    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
         """Fit the pipeline and transform the data.
 
         Parameters
@@ -314,13 +315,15 @@ class Pipeline(skPipeline):
             X is ignored. None
             if the estimator only uses y.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -330,7 +333,7 @@ class Pipeline(skPipeline):
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
@@ -352,7 +355,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the
@@ -364,20 +367,22 @@ class Pipeline(skPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored. None if the pipeline only uses y.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """

@@ -65,41 +65,27 @@ def test_device_parameter():
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
 
 
-def test_engine_parameter_invalid():
-    """Assert that an error is raised when engine is invalid."""
-    with pytest.raises(ValueError, match=".*with keys 'data'.*"):
-        BaseTransformer(engine="invalid")
-
-    with pytest.raises(ValueError, match=".*Choose from: numpy.*"):
-        BaseTransformer(engine={"data": "invalid"})
-
-    with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
-        BaseTransformer(engine={"estimator": "invalid"})
-
-
 @patch("ray.init")
 def test_engine_parameter_modin(ray):
     """Assert that ray is initialized when modin is data backend."""
-    BaseTransformer(engine={"data": "modin"})
+    BaseTransformer(device="cpu", engine={"data": "modin"})
     assert ray.is_called_once
 
 
 def test_engine_parameter_env_var():
     """Assert that the environment variable is set."""
-    base = BaseTransformer(engine={"data": "pyarrow"})
+    BaseTransformer(device="cpu", engine={"data": "pyarrow"})
     assert os.environ["ATOM_DATA_ENGINE"] == "pyarrow"
-    assert base.engine["estimator"] == "sklearn"
 
-    base = BaseTransformer(engine={"estimator": "sklearn"})  # No data key
+    BaseTransformer(device="cpu", engine={"estimator": "sklearn"})  # No data key
     assert os.environ["ATOM_DATA_ENGINE"] == "numpy"
-    assert base.engine["data"] == "numpy"
 
 
 @patch.dict("sys.modules", {"sklearnex": None})
 def test_engine_parameter_no_sklearnex():
     """Assert that an error is raised when sklearnex is not installed."""
     with pytest.raises(ModuleNotFoundError, match=".*import scikit-learn-intelex.*"):
-        BaseTransformer(engine={"estimator": "sklearnex"})
+        BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
@@ -115,12 +101,6 @@ def test_engine_parameter_no_cuml():
         BaseTransformer(device="gpu", engine={"estimator": "cuml"})
 
 
-def test_backend_parameter_invalid():
-    """Assert that an error is raised when backend is invalid."""
-    with pytest.raises(ValueError, match=".*the backend parameter.*"):
-        BaseTransformer(backend="invalid")
-
-
 @patch("ray.init")
 def test_backend_parameter_ray(ray):
     """Assert that ray is initialized when selected."""
@@ -134,13 +114,6 @@ def test_backend_parameter():
     assert base.backend == "threading"
 
 
-@pytest.mark.parametrize("verbose", [-2, 3])
-def test_verbose_parameter(verbose):
-    """Assert that the verbose parameter is in correct range."""
-    with pytest.raises(ValueError, match=".*verbose parameter.*"):
-        BaseTransformer(verbose=verbose)
-
-
 def test_warnings_parameter_bool():
     """Assert that the warnings parameter works for a bool."""
     base = BaseTransformer(warnings=True)
@@ -148,12 +121,6 @@ def test_warnings_parameter_bool():
 
     base = BaseTransformer(warnings=False)
     assert base.warnings == "ignore"
-
-
-def test_warnings_parameter_invalid_str():
-    """Assert that an error is raised for an invalid string for warnings."""
-    with pytest.raises(ValueError, match=".*warnings parameter.*"):
-        BaseTransformer(warnings="test")
 
 
 def test_warnings_parameter_str():
@@ -432,7 +399,7 @@ def test_index_is_False():
 
 def test_index_is_int_invalid():
     """Assert that an error is raised when the index is an invalid int."""
-    with pytest.raises(ValueError, match=".*is out of range.*"):
+    with pytest.raises(IndexError, match=".*is out of range.*"):
         ATOMClassifier(X_bin, y_bin, index=1000, random_state=1)
 
 
@@ -466,7 +433,7 @@ def test_index_is_target():
 
 def test_index_is_sequence_no_data_sets_invalid_length():
     """Assert that an error is raised when len(index) != len(data)."""
-    with pytest.raises(ValueError, match=".*Length of index.*"):
+    with pytest.raises(IndexError, match=".*Length of index.*"):
         ATOMClassifier(X_bin, y_bin, index=[1, 2, 3], random_state=1)
 
 
@@ -479,7 +446,7 @@ def test_index_is_sequence_no_data_sets():
 
 def test_index_is_sequence_has_data_sets_invalid_length():
     """Assert that an error is raised when len(index) != len(data)."""
-    with pytest.raises(ValueError, match=".*Length of index.*"):
+    with pytest.raises(IndexError, match=".*Length of index.*"):
         ATOMClassifier(bin_train, bin_test, index=[1, 2, 3], random_state=1)
 
 
@@ -652,7 +619,7 @@ def test_test_size_int():
 def test_error_message_impossible_stratification():
     """Assert that the correct error is shown when stratification fails."""
     with pytest.raises(ValueError, match=".*stratify=False.*"):
-        ATOMClassifier(X_label[:100], y=y_label[:100], stratify=True, random_state=1)
+        ATOMClassifier(X_label[:50], y=y_label[:50], stratify=True, random_state=1)
 
 
 def test_input_is_X_y():

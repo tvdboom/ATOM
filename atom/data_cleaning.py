@@ -47,8 +47,9 @@ from typeguard import typechecked
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import MISSING_VALUES
 from atom.utils.types import (
-    BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, ESTIMATOR, FEATURES, FLOAT, INT,
-    PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, TARGET,
+    BOOL, DATAFRAME, DATAFRAME_TYPES, DISCRETIZER_STRATS, ENGINE, ESTIMATOR,
+    FEATURES, FLOAT, INT, PANDAS, PRUNER_STRATS, SCALAR, SCALER_STRATS,
+    SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, STRAT_NUM, TARGET,
 )
 from atom.utils.utils import (
     CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -1082,7 +1083,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str = "quantile",
+        strategy: DISCRETIZER_STRATS = "quantile",
         *,
         bins: INT | SEQUENCE | dict = 5,
         labels: SEQUENCE | dict | None = None,
@@ -1151,12 +1152,6 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_n_features(X, reset=True)
         self._num_cols = list(X.select_dtypes(include="number"))
 
-        if self.strategy.lower() not in ("uniform", "quantile", "kmeans", "custom"):
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Choose from: uniform, quantile, kmeans, custom."
-            )
-
         self.log("Fitting Discretizer...", 1)
 
         labels = {} if self.labels is None else self.labels
@@ -1173,7 +1168,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 bins = self.bins
 
-            if self.strategy.lower() != "custom":
+            if self.strategy != "custom":
                 if isinstance(bins, SEQUENCE_TYPES):
                     try:
                         bins = bins[i]  # Fetch the i-th bin for the i-th column
@@ -1186,15 +1181,16 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 estimator = self._get_est_class("KBinsDiscretizer", "preprocessing")
 
-                # cuML implementation has no random_state
+                # cuML implementation has no subsample and random_state
                 kwargs = {}
-                if "random_state" in sign(estimator):
+                if "subsample" in sign(estimator):
+                    kwargs["subsample"] = 200000
                     kwargs["random_state"] = self.random_state
 
                 self._discretizers[col] = estimator(
                     n_bins=bins,
                     encode="ordinal",
-                    strategy=self.strategy.lower(),
+                    strategy=self.strategy,
                     **kwargs,
                 ).fit(X[[col]])
 
@@ -1806,7 +1802,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strat_num: SCALAR | Literal["drop", "mean", "knn", "most_frequent"] = "drop",
+        strat_num: STRAT_NUM = "drop",
         strat_cat: Literal["drop", "most_frequent"] | str = "drop",
         *,
         max_nan_rows: SCALAR | None = None,
@@ -1853,12 +1849,6 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._num_cols = list(X.select_dtypes(include="number"))
 
         # Check input Parameters
-        strategies = ["drop", "mean", "median", "knn", "most_frequent"]
-        if isinstance(self.strat_num, str) and self.strat_num.lower() not in strategies:
-            raise ValueError(
-                "Unknown strategy for the strat_num parameter, got "
-                f"{self.strat_num}. Choose from: {', '.join(strategies)}."
-            )
         if self.max_nan_rows:
             if self.max_nan_rows < 0:
                 raise ValueError(
@@ -1902,10 +1892,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._imputers = {}
 
         # Load the imputer class from sklearn or cuml (different modules)
-        estimator = self._get_est_class(
-            name="SimpleImputer",
-            module="preprocessing" if self.engine["estimator"] == "cuml" else "impute",
-        )
+        module = "preprocessing" if self.engine.get("estimator") == "cuml" else "impute"
+        estimator = self._get_est_class("SimpleImputer", module)
 
         # Assign an imputer to each column
         for name, column in X.items():
@@ -2496,11 +2484,11 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str | SEQUENCE = "zscore",
+        strategy: PRUNER_STRATS | SEQUENCE = "zscore",
         *,
         method: SCALAR | Literal["drop", "minmax"] = "drop",
         max_sigma: SCALAR = 3,
-        include_target: bool = False,
+        include_target: BOOL = False,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         verbose: Literal[0, 1, 2] = 0,
@@ -2800,8 +2788,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str = "standard",
-        include_binary: bool = False,
+        strategy: SCALER_STRATS = "standard",
+        include_binary: BOOL = False,
         *,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
@@ -2853,14 +2841,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
             robust="RobustScaler",
         )
 
-        if self.strategy in strategies:
-            estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
-            self._estimator = estimator(**self.kwargs)
-        else:
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(strategies)}."
-            )
+        estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
+        self._estimator = estimator(**self.kwargs)
 
         self.log("Fitting Scaler...", 1)
         self._estimator.fit(X[self._num_cols])

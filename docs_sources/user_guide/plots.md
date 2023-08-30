@@ -147,7 +147,7 @@ depend on the task at hand.
 
 ### Feature selection plots
 
-:: atom.plots:FeatureSelectorPlot
+:: atom.plots:FeatureSelectionPlot
     :: methods:
         toc_only: True
         solo_link: True
@@ -171,7 +171,7 @@ depend on the task at hand.
 
 ### Hyperparameter tuning plots
 
-:: atom.plots:HTPlot
+:: atom.plots:HyperparameterTuningPlot
     :: methods:
         toc_only: True
         solo_link: True

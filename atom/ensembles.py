@@ -381,7 +381,7 @@ class StackingClassifier(BaseStacking, SC):
         X: FEATURES,
         y: SEQUENCE,
         sample_weight: SEQUENCE | None = None,
-    ) -> VotingRegressor:
+    ) -> StackingClassifier:
         """Fit the estimators, skipping prefit ones.
 
         Parameters

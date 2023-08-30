@@ -1162,7 +1162,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/directforecaster/" class="md-nav__link">
-        DirectRegressor
+        DirectForecaster
       </a>
     </li>
   
@@ -1204,7 +1204,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/successivehalvingforecaster/" class="md-nav__link">
-        SuccessiveHalvingRegressor
+        SuccessiveHalvingForecaster
       </a>
     </li>
   
@@ -1246,7 +1246,7 @@
   
     <li class="md-nav__item">
       <a href="../../training/trainsizingforecaster/" class="md-nav__link">
-        TrainSizingRegressor
+        TrainSizingForecaster
       </a>
     </li>
   
@@ -3374,7 +3374,7 @@ method.</p>
 <p></div><a id='bernoullinb-mapping'></a><strong>mapping: dict</strong><br><div markdown class='param'>Encoded values and their respective mapped values.</p>
 <p>The column name is the key to its mapping dictionary. Only for
 columns mapped to a single column (e.g. Ordinal, Leave-one-out,
-etc...).</div><a id='bernoullinb-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.</div><a id='bernoullinb-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.</div><a id='bernoullinb-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.</div><a id='bernoullinb-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.</div><a id='bernoullinb-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).</div><a id='bernoullinb-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.</div><a id='bernoullinb-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='bernoullinb-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.</div><a id='bernoullinb-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='bernoullinb-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='bernoullinb-columns'></a><strong>columns: series</strong><br><div markdown class='param'>Name of all the columns.</div><a id='bernoullinb-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='bernoullinb-features'></a><strong>features: series</strong><br><div markdown class='param'>Name of the features.</div><a id='bernoullinb-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='bernoullinb-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).</div></td></tr></p>
+etc...).</div><a id='bernoullinb-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.</div><a id='bernoullinb-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.</div><a id='bernoullinb-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.</div><a id='bernoullinb-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.</div><a id='bernoullinb-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).</div><a id='bernoullinb-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.</div><a id='bernoullinb-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='bernoullinb-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.</div><a id='bernoullinb-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='bernoullinb-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='bernoullinb-columns'></a><strong>columns: index</strong><br><div markdown class='param'>Name of all the columns.</div><a id='bernoullinb-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='bernoullinb-features'></a><strong>features: index</strong><br><div markdown class='param'>Name of the features.</div><a id='bernoullinb-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='bernoullinb-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).</div></td></tr></p>
 </table>
 <p><br></p>
 <h3 id="utility-attributes">Utility attributes</h3>
@@ -3391,16 +3391,16 @@ the corresponding run also changes.</div><a id='bernoullinb-study'></a><strong>s
 <li><strong>score:</strong> Objective score(s) of the trial.</li>
 <li><strong>time_trial:</strong> Duration of the trial.</li>
 <li><strong>time_ht:</strong> Duration of the hyperparameter tuning.</li>
-<li><strong>state:</strong> Trial's state (COMPLETE, PRUNED, FAIL).</div><a id='bernoullinb-best_trial'></a><strong>best_trial: <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html">Trial</a> | None</strong><br><div markdown class='param'>Trial that returned the highest score.</li>
+<li><strong>state:</strong> Trial's state (COMPLETE, PRUNED, FAIL).</div><a id='bernoullinb-best_trial'></a><strong>best_trial: Frozen<a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html">Trial</a> | None</strong><br><div markdown class='param'>Trial that returned the highest score.</li>
 </ul>
 <p>For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, the best trial is the trial that
 performed best on the main metric. Use the property's <code>@setter</code>
 to change the best trial. See [here][example-hyperparameter-tuning]
-an example.</div><a id='bernoullinb-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#bernoullinb-best_trial">best trial</a>.</div><a id='bernoullinb-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#bernoullinb-best_trial">best trial</a>.</div><a id='bernoullinb-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='bernoullinb-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='bernoullinb-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='bernoullinb-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='bernoullinb-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='bernoullinb-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='bernoullinb-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
+an example.</div><a id='bernoullinb-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#bernoullinb-best_trial">best trial</a>.</div><a id='bernoullinb-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#bernoullinb-best_trial">best trial</a>.</div><a id='bernoullinb-time_ht'></a><strong>time_ht: float | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='bernoullinb-estimator'></a><strong>estimator: PREDICTOR</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='bernoullinb-score_train'></a><strong>score_train: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='bernoullinb-score_test'></a><strong>score_test: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='bernoullinb-score_holdout'></a><strong>score_holdout: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='bernoullinb-time_fit'></a><strong>time_fit: float</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='bernoullinb-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
 <p>The dataframe has shape=(n_bootstrap, metric) and shows the
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
-<a class="autorefs autorefs-internal" href="#bernoullinb-score_bootstrap">score_bootstrap</a>.</div><a id='bernoullinb-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='bernoullinb-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='bernoullinb-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='bernoullinb-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
+<a class="autorefs autorefs-internal" href="#bernoullinb-score_bootstrap">score_bootstrap</a>.</div><a id='bernoullinb-score_bootstrap'></a><strong>score_bootstrap: SCALAR | list[SCALAR] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='bernoullinb-time_bootstrap'></a><strong>time_bootstrap: float | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='bernoullinb-time'></a><strong>time: float</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='bernoullinb-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
 <p>The sum of importances for all features is 1. The scores are
 extracted from the estimator's <code>scores_</code>, <code>coef_</code> or
 <code>feature_importances_</code> attribute, checked in that order.
@@ -3484,7 +3484,7 @@ The remaining utility methods can be found hereunder.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-score">score</a></td><td>Get a metric score on new data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#bernoullinb-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='bernoullinb-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1234>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='bernoullinb-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1230>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -3495,7 +3495,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1592>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='bernoullinb-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1588>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -3512,7 +3512,7 @@ another, independent set for testing.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1015>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='bernoullinb-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L985>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -3557,7 +3557,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1632>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p><a id='bernoullinb-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1628>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
@@ -3572,7 +3572,7 @@ affected attributes are:</p>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='bernoullinb-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1663>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='bernoullinb-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1659>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -3584,7 +3584,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1727>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='bernoullinb-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1723>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -3615,7 +3615,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1830>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='bernoullinb-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1826>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the solution's
 performance.</p>
@@ -3629,14 +3629,14 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2867>[source]</a></span></div>Get confidence scores on new data or existing rows.</p>
+<p><a id='bernoullinb-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2863>[source]</a></span></div>Get confidence scores on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>decision_function</code> method.</p>
 <p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='decision_function-X'></a><strong>X: int, str, slice, sequence or dataframe-like</strong><br><div markdown class='param'>
-Names or indices of rows in the dataset, or new feature
+Names or positions of rows in the dataset, or new feature
 set with shape=(n_samples, n_features).</p>
 <p></div><a id='decision_function-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
 Verbosity level of the output. If None, it uses the
@@ -3648,7 +3648,7 @@ for multiclass classification tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1887>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='bernoullinb-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1883>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="#bernoullinb-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
@@ -3681,7 +3681,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2006>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
+<p><a id='bernoullinb-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2002>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that, if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -3716,7 +3716,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1118>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='bernoullinb-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1114>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -3731,7 +3731,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2054>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='bernoullinb-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2050>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -3754,7 +3754,7 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2096>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
+<p><a id='bernoullinb-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2092>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
 <p>Only available for models with a <code>predict_proba</code> method in a
 binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <table class="table_params">
@@ -3766,7 +3766,7 @@ Best threshold or list of thresholds for multilabel tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L812>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='bernoullinb-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L808>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -3779,7 +3779,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2137>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='bernoullinb-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2133>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -3811,7 +3811,7 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L999>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='bernoullinb-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L969>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3823,7 +3823,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2902>[source]</a></span></div>Get predictions on new data or existing rows.</p>
+<p><a id='bernoullinb-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2898>[source]</a></span></div>Get predictions on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict</code> method.</p>
@@ -3841,14 +3841,14 @@ n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/d
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2936>[source]</a></span></div>Get class log-probabilities on new data or existing rows.</p>
+<p><a id='bernoullinb-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2932>[source]</a></span></div>Get class log-probabilities on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict_log_proba</code> method.</p>
 <p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict_log_proba-X'></a><strong>X: int, str, slice, sequence or dataframe-like</strong><br><div markdown class='param'>
-Names or indices of rows in the dataset, or new feature
+Names or positions of rows in the dataset, or new feature
 set with shape=(n_samples, n_features).</p>
 <p></div><a id='predict_log_proba-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
 Verbosity level of the output. If None, it uses the
@@ -3859,7 +3859,7 @@ n_classes).
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2970>[source]</a></span></div>Get class probabilities on new data or existing rows.</p>
+<p><a id='bernoullinb-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2966>[source]</a></span></div>Get class probabilities on new data or existing rows.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict_proba</code> method.</p>
@@ -3878,7 +3878,7 @@ for <a class="autorefs autorefs-internal" href="../../../user_guide/data_managem
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="None", archive_existing_versions=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2198>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p><a id='bernoullinb-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="None", archive_existing_versions=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2194>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
 <p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
 enabled using one of the following URI schemes: databricks,
 http, https, postgresql, mysql, sqlite, mssql.</p>
@@ -3896,9 +3896,9 @@ moved to the "Archived" stage. Only valid when <code>stage</code> is
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1108>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='bernoullinb-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1078>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='bernoullinb-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1033>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='bernoullinb-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L1003>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3909,14 +3909,14 @@ add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomc
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2246>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='bernoullinb-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2242>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y=None, metric=None, sample_weight=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L3005>[source]</a></span></div>Get a metric score on new data.</p>
+<p><a id='bernoullinb-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y=None, metric=None, sample_weight=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L3001>[source]</a></span></div>Get a metric score on new data.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped.</p>
@@ -3929,7 +3929,7 @@ by sklearn's score method for estimators.</p>
 </div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='score-X'></a><strong>X: int, str, slice, sequence or dataframe-like</strong><br><div markdown class='param'>
-Names or indices of rows in the dataset, or new feature
+Names or positions of rows in the dataset, or new feature
 set with shape=(n_samples, n_features).</p>
 <p></div><a id='score-y'></a><strong>y: int, str, dict, sequence, dataframe or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
@@ -3956,7 +3956,7 @@ Metric score of X with respect to y.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2264>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
+<p><a id='bernoullinb-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2260>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
 <p>The complete pipeline is served with the model. The inference
 data must be supplied as json to the HTTP request, e.g.
 <code>requests.get("http://127.0.0.1:8000/", json=X.to_json())</code>.
@@ -3978,7 +3978,7 @@ Port for HTTP server.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2336>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='bernoullinb-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2332>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be
@@ -4010,7 +4010,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1121>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='bernoullinb-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1091>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -4019,7 +4019,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='bernoullinb-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1135>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='bernoullinb-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1105>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">

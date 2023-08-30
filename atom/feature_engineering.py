@@ -13,7 +13,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 from random import sample
-from typing import Callable, Literal
+from typing import Literal
 
 import featuretools as ft
 import joblib
@@ -36,10 +36,10 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
-from atom.plots import FeatureSelectorPlot
+from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
-    BOOL, DATAFRAME, ENGINE, FEATURES, FLOAT, INT, INT_TYPES, SCALAR, SEQUENCE,
-    SEQUENCE_TYPES, SERIES_TYPES, TARGET,
+    BOOL, DATAFRAME, ENGINE, ESTIMATOR, FEATURES, FLOAT, INT, INT_TYPES,
+    SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, TARGET,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, check_scaling, composed, crash,
@@ -844,7 +844,7 @@ class FeatureSelector(
     BaseEstimator,
     TransformerMixin,
     BaseTransformer,
-    FeatureSelectorPlot,
+    FeatureSelectionPlot,
 ):
     """Reduce the number of features in the data.
 
@@ -1118,7 +1118,7 @@ class FeatureSelector(
         self,
         strategy: str | None = None,
         *,
-        solver: str | Callable | None = None,
+        solver: str | ESTIMATOR | None = None,
         n_features: SCALAR | None = None,
         min_repeated: SCALAR | None = 2,
         max_repeated: SCALAR | None = 1.0,

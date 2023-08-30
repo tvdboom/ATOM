@@ -455,13 +455,6 @@ def test_kwargs_parameters():
 
 # Test Imputer ===================================================== >>
 
-def test_strat_num_parameter():
-    """Assert that the strat_num parameter is set correctly."""
-    imputer = Imputer(strat_num="invalid")
-    with pytest.raises(ValueError, match=".*Unknown strategy for the strat_num.*"):
-        imputer.fit(X_bin, y_bin)
-
-
 def test_invalid_max_nan_rows():
     """Assert that an error is raised for invalid max_nan_rows."""
     imputer = Imputer(max_nan_rows=-2)
@@ -623,13 +616,6 @@ def test_normalizer_check_is_fitted():
     pytest.raises(NotFittedError, Normalizer().transform, X_bin)
 
 
-def test_normalizer_invalid_strategy():
-    """Assert that an error is raised when strategy is invalid."""
-    normalizer = Normalizer(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        normalizer.fit(X_bin)
-
-
 @pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_normalizer_all_strategies(strategy):
     """Assert that all strategies work as intended."""
@@ -697,13 +683,6 @@ def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
     pruner = Pruner(strategy="iforest", method="minmax")
     with pytest.raises(ValueError, match=".*accepts another method.*"):
-        pruner.transform(X_bin)
-
-
-def test_invalid_method_parameter():
-    """Assert that an error is raised for an invalid method parameter."""
-    pruner = Pruner(method="invalid")
-    with pytest.raises(ValueError, match=".*value for the method parameter.*"):
         pruner.transform(X_bin)
 
 

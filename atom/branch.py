@@ -43,8 +43,8 @@ class Branch:
     name: str
         Name of the branch.
 
-    data: dataframe or None, default=None
-        Complete dataset.
+    data: dataframe, default=pd.DataFrame()
+        Complete dataset. Defaults to an empty frame if not provided.
 
     index: list or None, default=None
         A list containing the number of target columns, the indices of
@@ -61,7 +61,7 @@ class Branch:
     def __init__(
         self,
         name: str,
-        data: DATAFRAME | None = None,
+        data: DATAFRAME = pd.DataFrame(),
         index: list[INT, INDEX, INDEX] | None = None,
         holdout: DATAFRAME | None = None,
         parent: BRANCH | None = None,
@@ -69,7 +69,7 @@ class Branch:
         self._data = data
         self._idx = index
         self._holdout = holdout
-        self._pipeline = pd.Series(data=[], dtype="object")
+        self._pipeline = pd.Series(dtype="object")
         self._mapping = CustomDict()
 
         # If a parent branch is provided, transfer its attrs to this one
@@ -87,7 +87,7 @@ class Branch:
         return f"Branch({self.name})"
 
     def __bool__(self):
-        return self._data is not None
+        return not self._data.empty
 
     @property
     def name(self) -> str:
@@ -172,7 +172,7 @@ class Branch:
         value = to_pandas(
             data=value,
             index=side.index if side_name else None,
-            name=getattr(under, "name", None) if under_name else None,
+            name=getattr(under, "name", None) if under_name else "target",
             columns=getattr(under, "columns", None) if under_name else None,
             dtype=under.dtypes if under_name else None,
         )

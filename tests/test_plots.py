@@ -14,7 +14,8 @@ import pytest
 from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.plots import Aesthetics, BaseFigure, BasePlot
+from atom.plots.base import Aesthetics, BaseFigure, BasePlot
+from atom.utils.types import LEGEND
 from atom.utils.utils import NotFittedError
 
 from .conftest import (
@@ -262,7 +263,7 @@ def test_get_set_multiple():
         atom._get_set(dataset="train+test", max_one=True)
 
 
-@patch("atom.plots.go.Figure.show")
+@patch("atom.plots.base.go.Figure.show")
 def test_custom_title_and_legend(func):
     """Assert that title and legend can be customized."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -271,31 +272,12 @@ def test_custom_title_and_legend(func):
     func.assert_called_once()
 
 
-@pytest.mark.parametrize("legend", [
-    "upper left",
-    "lower left",
-    "upper right",
-    "lower right",
-    "upper center",
-    "lower center",
-    "center left",
-    "center right",
-    "center",
-    "out",
-])
+@pytest.mark.parametrize("legend", LEGEND.__args__)
 def test_custom_legend_position(legend):
     """Assert that the legend position can be specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     atom.plot_roc(legend=legend, display=False)
-
-
-def test_custom_legend_position_invalid():
-    """Assert that an error is raised when the legend position is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    with pytest.raises(ValueError, match=".*the legend parameter.*"):
-        atom.plot_roc(legend="invalid", display=False)
 
 
 @patch("mlflow.tracking.MlflowClient.log_figure")
@@ -309,7 +291,7 @@ def test_figure_to_mlflow(mlflow):
     assert mlflow.call_count == 3
 
 
-@patch("atom.plots.go.Figure.write_html")
+@patch("atom.plots.base.go.Figure.write_html")
 def test_figure_is_saved_html(func):
     """Assert that the figure is saved as .html by default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -317,7 +299,7 @@ def test_figure_is_saved_html(func):
     func.assert_called_with("plot_correlation.html")
 
 
-@patch("atom.plots.go.Figure.write_image")
+@patch("atom.plots.base.go.Figure.write_image")
 def test_figure_is_saved_png(func):
     """Assert that the figure is saved as .png if specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -325,7 +307,7 @@ def test_figure_is_saved_png(func):
     func.assert_called_with("corr.png")
 
 
-@patch("atom.plots.plt.Figure.savefig")
+@patch("atom.plots.base.plt.Figure.savefig")
 def test_figure_is_saved_png_plt(func):
     """Assert that the figure is saved as .png if specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -368,7 +350,7 @@ def test_canvas_too_many_plots():
             atom.plot_prc()
 
 
-@patch("atom.plots.go.Figure.write_html")
+@patch("atom.plots.base.go.Figure.write_html")
 def test_figure_is_saved_canvas(func):
     """Assert that the figure is only saved after finishing the canvas."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -426,7 +408,7 @@ def test_plot_only_one_model():
         atom.plot_shap_beeswarm(display=False)
 
 
-# Test FeatureSelectorPlot ========================================= >>
+# Test FeatureSelectionPlot ========================================= >>
 
 @pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
@@ -517,7 +499,7 @@ def test_plot_wordcloud():
     atom.plot_wordcloud(display=False)  # When corpus are tokens
 
 
-# Test HTPlot =========================================================== >>
+# Test HyperparameterTuningPlot ==================================== >>
 
 def test_plot_edf():
     """Assert that the plot_edf method works."""

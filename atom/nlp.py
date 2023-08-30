@@ -949,7 +949,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str = "bow",
+        strategy: Literal["bow", "tfidf", "hashing"] = "bow",
         *,
         return_sparse: BOOL = True,
         device: str = "cpu",
@@ -1001,17 +1001,11 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             hashing="HashingVectorizer",
         )
 
-        if self.strategy in strategies:
-            estimator = self._get_est_class(
-                name=strategies[self.strategy],
-                module="feature_extraction.text",
-            )
-            self._estimator = estimator(**self.kwargs)
-        else:
-            raise ValueError(
-                "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: {', '.join(strategies)}."
-            )
+        estimator = self._get_est_class(
+            name=strategies[self.strategy],
+            module="feature_extraction.text",
+        )
+        self._estimator = estimator(**self.kwargs)
 
         self.log("Fitting Vectorizer...", 1)
         self._estimator.fit(X[corpus])

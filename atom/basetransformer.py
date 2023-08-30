@@ -18,7 +18,7 @@ from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 import dagshub
 import dill as pickle
@@ -33,8 +33,8 @@ from sktime.datatypes import check_is_mtype
 from typeguard import typechecked
 
 from atom.utils.types import (
-    BOOL, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    PREDICTOR, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET,
+    BACKEND, BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, ESTIMATOR, FEATURES,
+    INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, WARNINGS,
 )
 from atom.utils.utils import (
     bk, composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
@@ -101,7 +101,8 @@ class BaseTransformer:
             # Final check for negative input
             if value < 1:
                 raise ValueError(
-                    f"Invalid value for the n_jobs parameter, got {value}.", 1
+                    "Invalid value for the n_jobs parameter, "
+                    f"got {value}. Value should be >=0.", 1
                 )
 
         self._n_jobs = value
@@ -118,92 +119,55 @@ class BaseTransformer:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
 
     @property
-    def engine(self) -> dict:
+    def engine(self) -> ENGINE:
         """Execution engine for estimators."""
         return self._engine
 
     @engine.setter
-    def engine(self, value: dict | None):
-        if not value:
-            value = {"data": "numpy", "estimator": "sklearn"}
-        elif "data" not in value and "estimator" not in value:
-            raise ValueError(
-                f"Invalid value for the engine parameter, got {value}. "
-                "The value should be a dict with keys 'data' and/or 'estimator'."
+    def engine(self, value: ENGINE):
+        if value.get("data") == "modin" and not ray.is_initialized():
+            ray.init(
+                runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
+                log_to_driver=False,
             )
 
-        if data := value.get("data"):
-            if data.lower() == "modin":
-                if not ray.is_initialized():
-                    ray.init(
-                        runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
-                        log_to_driver=False,
-                    )
-            elif data.lower() not in ("numpy", "pyarrow"):
-                raise ValueError(
-                    "Invalid value for the data key of the engine parameter, "
-                    f"got {data}. Choose from: numpy, pyarrow, modin."
-                )
-        else:
-            value["data"] = "numpy"
-
         # Update env variable to use for PandasModin in utils.py
-        os.environ["ATOM_DATA_ENGINE"] = value["data"].lower()
+        os.environ["ATOM_DATA_ENGINE"] = value.get("data", "numpy")
 
-        if models := value.get("estimator"):
-            device = self.device.lower()
-
-            if models.lower() == "sklearnex":
-                if not find_spec("sklearnex"):
-                    raise ModuleNotFoundError(
-                        "Failed to import scikit-learn-intelex. The library is "
-                        "not installed. Note that the library only supports CPUs "
-                        "with a x86 architecture."
-                    )
-                else:
-                    import sklearnex
-                    sklearnex.set_config(device if "gpu" in device else "auto")
-            elif models.lower() == "cuml":
-                if not find_spec("cuml"):
-                    raise ModuleNotFoundError(
-                        "Failed to import cuml. Package is not installed. Refer "
-                        "to: https://rapids.ai/start.html#install."
-                    )
-                else:
-                    from cuml.common.device_selection import (
-                        set_global_device_type,
-                    )
-                    set_global_device_type("gpu" if "gpu" in device else "cpu")
-
-                    # See https://github.com/rapidsai/cuml/issues/5564
-                    from cuml.internals.memory_utils import (
-                        set_global_output_type,
-                    )
-                    set_global_output_type("numpy")
-
-            elif models.lower() != "sklearn":
-                raise ValueError(
-                    "Invalid value for the models key of the engine parameter, "
-                    f"got {models}. Choose from: sklearn, sklearnex, cuml."
+        if value.get("estimator") == "sklearnex":
+            if not find_spec("sklearnex"):
+                raise ModuleNotFoundError(
+                    "Failed to import scikit-learn-intelex. The library is "
+                    "not installed. Note that the library only supports CPUs "
+                    "with a x86 architecture."
                 )
-        else:
-            value["estimator"] = "sklearn"
+            else:
+                import sklearnex
+                sklearnex.set_config(self.device.lower() if self._gpu else "auto")
+        elif value.get("estimator") == "cuml":
+            if not find_spec("cuml"):
+                raise ModuleNotFoundError(
+                    "Failed to import cuml. Package is not installed. Refer "
+                    "to: https://rapids.ai/start.html#install."
+                )
+            else:
+                from cuml.common.device_selection import set_global_device_type
+                set_global_device_type("gpu" if self._gpu else "cpu")
+
+                # See https://github.com/rapidsai/cuml/issues/5564
+                from cuml.internals.memory_utils import set_global_output_type
+                set_global_output_type("numpy")
 
         self._engine = value
 
     @property
-    def backend(self) -> str:
+    def backend(self) -> BACKEND:
         """Parallelization backend."""
         return self._backend
 
     @backend.setter
-    def backend(self, value: str):
-        if value.lower() not in (opts := ("loky", "multiprocessing", "threading", "ray")):
-            raise ValueError(
-                f"Invalid value for the backend parameter, got "
-                f"{value}. Choose from: {', '.join(opts)}."
-            )
-        elif value.lower() == "ray":
+    def backend(self, value: BACKEND):
+        if value == "ray":
             register_ray()  # Register ray as joblib backend
             if not ray.is_initialized():
                 ray.init(log_to_driver=False)
@@ -211,35 +175,24 @@ class BaseTransformer:
         self._backend = value
 
     @property
-    def verbose(self) -> INT:
+    def verbose(self) -> Literal[0, 1, 2]:
         """Verbosity level of the output."""
         return self._verbose
 
     @verbose.setter
-    def verbose(self, value: INT):
-        if value < 0 or value > 2:
-            raise ValueError(
-                "Invalid value for the verbose parameter. Value"
-                f" should be between 0 and 2, got {value}."
-            )
+    def verbose(self, value: Literal[0, 1, 2]):
         self._verbose = value
 
     @property
-    def warnings(self) -> str:
+    def warnings(self) -> WARNINGS:
         """Whether to show or suppress encountered warnings."""
         return self._warnings
 
     @warnings.setter
-    def warnings(self, value: BOOL | str):
+    def warnings(self, value: BOOL | WARNINGS):
         if isinstance(value, BOOL):
             self._warnings = "default" if value else "ignore"
         else:
-            options = ("default", "error", "ignore", "always", "module", "once")
-            if value not in options:
-                raise ValueError(
-                    "Invalid value for the warnings parameter, got "
-                    f"{value}. Choose from: {', '.join(options)}."
-                )
             self._warnings = value
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
@@ -336,7 +289,7 @@ class BaseTransformer:
             mlflow.set_experiment(value)
 
     @property
-    def random_state(self) -> INT:
+    def random_state(self) -> INT | None:
         """Seed used by the random number generator."""
         return self._random_state
 
@@ -350,6 +303,11 @@ class BaseTransformer:
         random.seed(value)
         np.random.seed(value)
         self._random_state = value
+
+    @property
+    def _gpu(self) -> BOOL:
+        """Return whether the instance uses a GPU implementation."""
+        return "gpu" in self.device.lower()
 
     @property
     def _device_id(self) -> int:
@@ -392,7 +350,7 @@ class BaseTransformer:
 
         return obj
 
-    def _get_est_class(self, name: str, module: str) -> PREDICTOR:
+    def _get_est_class(self, name: str, module: str) -> ESTIMATOR:
         """Import a class from a module.
 
         When the import fails, for example if atom uses sklearnex and
@@ -408,12 +366,13 @@ class BaseTransformer:
 
         Returns
         -------
-        Predictor
+        Estimator
             Class of the estimator.
 
         """
         try:
-            return getattr(import_module(f"{self.engine['estimator']}.{module}"), name)
+            engine = self.engine.get("estimator", "sklearn")
+            return getattr(import_module(f"{engine}.{module}"), name)
         except (ModuleNotFoundError, AttributeError):
             return getattr(import_module(f"sklearn.{module}"), name)
 
@@ -925,7 +884,7 @@ class BaseTransformer:
             if self.goal == "fc" and not isinstance(y, (INT, str)):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._prepare_input(y=y))
-            elif self.branch._data is None:
+            elif self.branch._data.empty:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
                     "successfully. See the documentation for the allowed formats."
@@ -1042,7 +1001,7 @@ class BaseTransformer:
                 getattr(self.logger, severity)(str(text))
 
     @composed(crash, method_to_log)
-    def save(self, filename: str = "auto", *, save_data: bool = True):
+    def save(self, filename: str = "auto", *, save_data: BOOL = True):
         """Save the instance to a pickle file.
 
         Parameters

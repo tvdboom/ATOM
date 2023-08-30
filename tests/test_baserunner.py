@@ -169,13 +169,6 @@ def test_getitem_list():
     assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
 
 
-def test_getitem_invalid_type():
-    """Assert that an error is raised when getitem is invalid type."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(TypeError, match=".*subscriptable with types.*"):
-        print(atom[2.3])
-
-
 # Test utility properties ========================================== >>
 
 def test_branch_property():
@@ -303,8 +296,8 @@ def test_get_models_by_slice():
 def test_get_models_winner():
     """Assert that the winner is returned when used as name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR_1", "LR_2"])
-    assert atom._get_models(models="winner") == [atom.lr_1]
+    atom.run(["LR", "LDA"])
+    assert atom._get_models(models="winner") == [atom.lr]
 
 
 def test_get_models_by_str():
@@ -349,7 +342,7 @@ def test_get_models_wrong_type():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
     with pytest.raises(TypeError, match=".*type for the models parameter.*"):
-        atom._get_models(models=atom)
+        atom._get_models(models=[atom])
 
 
 def test_get_models_include_or_exclude():

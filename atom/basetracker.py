@@ -7,6 +7,8 @@ Description: Module containing the BaseTracker class.
 
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from typeguard import typechecked

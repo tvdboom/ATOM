@@ -48,6 +48,7 @@ packages are necessary for its correct functioning.
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.42.1)
 * **[sktime](http://www.sktime.net/en/latest/)** (>=0.20.1)
+* **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=4.1.3)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
 
@@ -67,7 +68,7 @@ additional libraries. You can install all the optional dependencies using
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)
-* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.3.1)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.5.1)
 
 
 ### Development

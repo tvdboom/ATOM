@@ -43,6 +43,7 @@ dependencies = [
     "scipy>=1.10.1",
     "shap>=0.42.1",
     "sktime>=0.20.1",
+    "typeguard>=4.1.3",
     "zoofs>=0.1.26",
 ]
 
@@ -50,7 +51,7 @@ dependencies = [
 full = [
     "botorch>=0.8.5",
     "catboost>=1.2",
-#    "evalml>=0.79.0",
+#    "evalml>=0.79.0",  Clashes with category-encoders
     "explainerdashboard>=0.4.3",
     "gradio>=3.19.1",
     "lightgbm>=3.3.5",
@@ -58,7 +59,7 @@ full = [
     "schemdraw>=0.16",
     "wordcloud>=1.9.2",
     "xgboost>=1.7.4",
-    "ydata-profiling>=4.3.1",
+#    "ydata-profiling>=4.5.1",  Clashes with typeguard
 ]
 
 [tool.pdm.dev-dependencies]
@@ -94,7 +95,7 @@ dev = [
 
 [tool.pdm.version]
 source = "file"
-path = "atom/utils.py"
+path = "atom/utils/constants.py"
 
 [tool.pdm.build]
 includes = ["atom"]
