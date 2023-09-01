@@ -1,7 +1,7 @@
 # plot_edf
 ----------
 
-:: atom.plots:HTPlot.plot_edf
+:: atom.plots:HyperparameterTuningPlot.plot_edf
     :: signature
     :: head
     :: table:

@@ -12,7 +12,6 @@ from __future__ import annotations
 import importlib
 import json
 import os
-import warnings
 from dataclasses import dataclass
 from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
@@ -412,7 +411,7 @@ class AutoDocs:
         # Get signature without self, cls and type hints
         sign = []
         for k, v in params.items():
-            if k not in ("cls", "self"):
+            if k not in ("cls", "self") and not k.startswith("_"):
                 if v.default == Parameter.empty:
                     if '**' in str(v):
                         sign.append(f"**{k}")  # Add ** to kwargs
@@ -581,19 +580,22 @@ class AutoDocs:
 
             elif match := self.get_block(name):
                 # Headers start with letter, * or [ after new line
-                for header in re.findall(r"^[\[*\w].*?$", match, re.M):
+                for header in re.findall(r"^[\[a-zA-Z*].*?$", match, re.M):
                     # Check that the default value in docstring matches the real one
                     if default := re.search("(?<=default=).+?$", header):
                         try:
                             param = header.split(":")[0]
                             real = signature(self.obj).parameters[param]
 
+                            # String representation uses single quotes
                             default = str(default.group()).replace('"', "'")
+
+                            # Remove quotes for string values
                             if default.startswith("'") and default.endswith("'"):
                                 default = default[1:-1]
 
                             if default != str(real.default):
-                                warnings.warn(
+                                raise ValueError(
                                     f"Default value {default} of parameter {param} "
                                     f"of object {self.obj} doesn't match the value "
                                     f"in the docstring: {real.default}."

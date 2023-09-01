@@ -469,13 +469,6 @@ def test_get_class_weight_regression():
         atom.get_class_weight()
 
 
-def test_class_weight_invalid_dataset():
-    """Assert that an error is raised if invalid value for dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*the dataset parameter.*"):
-        atom.get_class_weight("invalid")
-
-
 def test_get_class_weight():
     """Assert that the get_class_weight method returns a dict of the classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -495,13 +488,6 @@ def test_get_sample_weights_regression():
         atom.get_sample_weight()
 
 
-def test_sample_weight_invalid_dataset():
-    """Assert that an error is raised if invalid value for dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*the dataset parameter.*"):
-        atom.get_sample_weight("invalid")
-
-
 def test_get_sample_weight():
     """Assert that the get_sample_weight method returns a series."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -518,7 +504,7 @@ def test_merge_invalid_class():
     """Assert that an error is raised when the class is not a trainer."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(TypeError, match=".*Expecting a.*"):
-        atom.merge(LDA())
+        atom.merge(ATOMRegressor(X_reg, y_reg, random_state=1))
 
 
 def test_merge_different_dataset():

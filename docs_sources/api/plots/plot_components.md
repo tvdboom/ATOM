@@ -1,7 +1,7 @@
 # plot_components
 -----------------
 
-:: atom.plots:FeatureSelectorPlot.plot_components
+:: atom.plots:FeatureSelectionPlot.plot_components
     :: signature
     :: head
     :: table:

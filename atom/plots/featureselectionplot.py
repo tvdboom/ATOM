@@ -16,10 +16,9 @@ from typeguard import typechecked
 
 from atom.plots.base import BasePlot
 from atom.utils.types import INT, LEGEND
-from atom.utils.utils import crash, has_attr
+from atom.utils.utils import composed, crash, has_attr
 
 
-@typechecked
 class FeatureSelectionPlot(BasePlot):
     """Feature selection plots.
 
@@ -29,7 +28,7 @@ class FeatureSelectionPlot(BasePlot):
     """
 
     @available_if(has_attr("pca"))
-    @crash
+    @composed(crash, typechecked)
     def plot_components(
         self,
         show: INT | None = None,
@@ -155,7 +154,7 @@ class FeatureSelectionPlot(BasePlot):
         )
 
     @available_if(has_attr("pca"))
-    @crash
+    @composed(crash, typechecked)
     def plot_pca(
         self,
         *,
@@ -272,7 +271,7 @@ class FeatureSelectionPlot(BasePlot):
         )
 
     @available_if(has_attr("rfecv"))
-    @crash
+    @composed(crash, typechecked)
     def plot_rfecv(
         self,
         *,

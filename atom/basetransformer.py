@@ -34,11 +34,12 @@ from typeguard import typechecked
 
 from atom.utils.types import (
     BACKEND, BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, ESTIMATOR, FEATURES,
-    INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, WARNINGS,
+    INDEX, INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SEVERITY,
+    TARGET, WARNINGS,
 )
 from atom.utils.utils import (
     bk, composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
-    to_df, to_pandas,
+    to_df, to_pandas, IndexConfig
 )
 
 
@@ -381,7 +382,7 @@ class BaseTransformer:
         X: Callable | FEATURES | None = None,
         y: TARGET | None = None,
         columns: SEQUENCE | None = None,
-    ) -> tuple[DATAFRAME | None, PANDAS | None]:
+    ) -> (DATAFRAME | None, PANDAS | None):
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -607,7 +608,7 @@ class BaseTransformer:
         arrays: SEQUENCE,
         y: TARGET = -1,
         use_n_rows: BOOL = True,
-    ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
+    ) -> (DATAFRAME, IndexConfig, DATAFRAME | None):
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -629,7 +630,7 @@ class BaseTransformer:
         dataframe
             Dataset containing the train and test sets.
 
-        list or Index
+        IndexConfig
             Indices of the train and test sets.
 
         dataframe or None
@@ -670,7 +671,7 @@ class BaseTransformer:
         def _no_data_sets(
             X: DATAFRAME,
             y: PANDAS,
-        ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
+        ) -> (DATAFRAME, IndexConfig, DATAFRAME | None):
             """Generate data sets from one dataset.
 
             Additionally, assigns an index, shuffles the data, selects
@@ -687,8 +688,14 @@ class BaseTransformer:
 
             Returns
             -------
-            tuple
-                Data, indices and holdout.
+            dataframe
+                Dataset containing the train and test sets.
+
+            IndexConfig
+                Indices of the train and test sets.
+
+            dataframe or None
+                Holdout data set. Returns None if not specified.
 
             """
             data = merge(X, y)
@@ -765,8 +772,11 @@ class BaseTransformer:
 
                 data = self._set_index(bk.concat([train, test]), y)
 
-                # [number of target columns, train indices, test indices]
-                idx = [len(get_cols(y)), data.index[:-len(test)], data.index[-len(test):]]
+                idx = IndexConfig(
+                    train_idx=data.index[:-len(test)],
+                    test_idx=data.index[-len(test):],
+                    n_cols=len(get_cols(y)),
+                )
 
             except ValueError as ex:
                 # Clarify common error with stratification for multioutput tasks
@@ -789,7 +799,7 @@ class BaseTransformer:
             y_test: PANDAS,
             X_holdout: DATAFRAME | None = None,
             y_holdout: PANDAS | None = None,
-        ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
+        ) -> (DATAFRAME, IndexConfig, DATAFRAME | None):
             """Generate data sets from provided sets.
 
             Additionally, assigns an index, shuffles the data and
@@ -817,8 +827,14 @@ class BaseTransformer:
 
             Returns
             -------
-            tuple
-                Data, indices and holdout.
+            dataframe
+                Dataset containing the train and test sets.
+
+            IndexConfig
+                Indices of the train and test sets.
+
+            dataframe or None
+                Holdout data set. Returns None if not specified.
 
             """
             train = merge(X_train, y_train)
@@ -869,12 +885,11 @@ class BaseTransformer:
 
             data = self._set_index(bk.concat([train, test]), y_train)
 
-            # [number of target columns, train indices, test indices]
-            idx = [
-                len(get_cols(y_train)),
-                data.index[:len(train)],
-                data.index[-len(test):],
-            ]
+            idx = IndexConfig(
+                train_idx=data.index[:len(train)],
+                test_idx=data.index[-len(test):],
+                n_cols=len(get_cols(y_train)),
+            )
 
             return data, idx, holdout
 
@@ -966,8 +981,8 @@ class BaseTransformer:
 
         return sets
 
-    @crash
-    def log(self, msg: SCALAR | str, level: INT = 0, severity: str = "info"):
+    @composed(crash, typechecked)
+    def log(self, msg: SCALAR | str, level: INT = 0, severity: SEVERITY = "info"):
         """Print message and save to log file.
 
         Parameters
@@ -983,12 +998,6 @@ class BaseTransformer:
             warning, error, critical.
 
         """
-        if severity not in ("debug", "info", "warning", "error", "critical"):
-            raise ValueError(
-                "Invalid value for the severity parameter. Choose "
-                "from: debug, info, warning, error, critical."
-            )
-
         if severity in ("error", "critical"):
             raise UserWarning(msg)
         elif severity == "warning":
@@ -1000,7 +1009,7 @@ class BaseTransformer:
             for text in str(msg).split("\n"):
                 getattr(self.logger, severity)(str(text))
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def save(self, filename: str = "auto", *, save_data: BOOL = True):
         """Save the instance to a pickle file.
 

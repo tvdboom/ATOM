@@ -10,7 +10,7 @@ Description: Module containing the BaseRunner class.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 from joblib.memory import Memory
@@ -26,8 +26,8 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    BOOL, BRANCH, FLOAT, INT, INT_TYPES, METRIC_SELECTOR, MODEL, SEQUENCE,
-    SERIES,
+    BOOL, BRANCH, FLOAT, INT, INT_TYPES, METRIC_SELECTOR, MODEL, RUNNER,
+    SEQUENCE, SERIES,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, check_is_fitted, composed, crash, divide,
@@ -474,7 +474,7 @@ class BaseRunner(BaseTracker):
         for model in self._models:
             model.clear()
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def delete(
         self,
         models: INT | str | slice | MODEL | SEQUENCE | None = None
@@ -501,11 +501,11 @@ class BaseRunner(BaseTracker):
                 self._delete_models(m.name)
                 self.log(f" --> Model {m.name} successfully deleted.", 1)
 
-    @crash
+    @composed(crash, typechecked)
     def evaluate(
         self,
         metric: METRIC_SELECTOR = None,
-        dataset: str = "test",
+        dataset: Literal["train", "test", "holdout"] = "test",
         *,
         threshold: FLOAT | SEQUENCE = 0.5,
         sample_weight: SEQUENCE | None = None,
@@ -559,7 +559,7 @@ class BaseRunner(BaseTracker):
 
         return pd.DataFrame(evaluations)
 
-    @crash
+    @composed(crash, typechecked)
     def export_pipeline(
         self,
         model: str | MODEL | None = None,
@@ -576,13 +576,12 @@ class BaseRunner(BaseTracker):
             The returned pipeline behaves similarly to sklearn's
             [Pipeline][], and additionally:
 
-            - Accepts transformers that change the target column.
             - Accepts transformers that drop rows.
-            - Accepts transformers that only are fitted on a subset of
-              the provided dataset.
-            - Always returns pandas objects.
-            - Uses transformers that are only applied on the training
-              set to fit the pipeline, not to make predictions.
+            - Accepts transformers that only are fitted on a subset
+              of the provided dataset.
+            - Accepts transformers that apply only on the target column.
+            - Uses transformers that apply only on the training set to
+              fit the pipeline, not to make predictions on new data.
 
         Parameters
         ----------
@@ -594,10 +593,11 @@ class BaseRunner(BaseTracker):
 
         memory: bool, str, Memory or None, default=None
             Used to cache the fitted transformers of the pipeline.
-                - If None or False: No caching is performed.
-                - If True: A default temp directory is used.
-                - If str: Path to the caching directory.
-                - If Memory: Object with the joblib.Memory interface.
+
+            - If None or False: No caching is performed.
+            - If True: A default temp directory is used.
+            - If str: Path to the caching directory.
+            - If Memory: Object with the joblib.Memory interface.
 
         verbose: int or None, default=None
             Verbosity level of the transformers in the pipeline. If
@@ -623,8 +623,11 @@ class BaseRunner(BaseTracker):
         return export_pipeline(pipeline, model, memory, verbose)
 
     @available_if(has_task("class"))
-    @crash
-    def get_class_weight(self, dataset: str = "train") -> CustomDict:
+    @composed(crash, typechecked)
+    def get_class_weight(
+        self,
+        dataset: Literal["train", "test", "holdout"] = "train",
+    ) -> CustomDict:
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
@@ -645,13 +648,7 @@ class BaseRunner(BaseTracker):
             returned for [multioutput tasks][].
 
         """
-        if dataset.lower() not in ("train", "test", "dataset"):
-            raise ValueError(
-                f"Invalid value for the dataset parameter, got {dataset}. "
-                "Choose from: train, test, dataset."
-            )
-
-        y = self.classes[dataset.lower()]
+        y = self.classes[dataset]
         if is_multioutput(self.task):
             weights = {
                 t: {i: round(divide(sum(y.loc[t]), v), 3) for i, v in y.items()}
@@ -663,8 +660,11 @@ class BaseRunner(BaseTracker):
         return CustomDict(weights)
 
     @available_if(has_task("class"))
-    @crash
-    def get_sample_weight(self, dataset: str = "train") -> SERIES:
+    @composed(crash, typechecked)
+    def get_sample_weight(
+        self,
+        dataset: Literal["train", "test", "holdout"] = "train",
+    ) -> SERIES:
         """Return sample weights for a balanced data set.
 
         The returned weights are inversely proportional to the class
@@ -683,17 +683,11 @@ class BaseRunner(BaseTracker):
             Sequence of weights with shape=(n_samples,).
 
         """
-        if dataset.lower() not in ("train", "test", "dataset"):
-            raise ValueError(
-                f"Invalid value for the dataset parameter, got {dataset}. "
-                "Choose from: train, test, dataset."
-            )
-
-        weights = compute_sample_weight("balanced", y=getattr(self, dataset.lower()))
+        weights = compute_sample_weight("balanced", y=getattr(self, dataset))
         return pd.Series(weights, name="sample_weight").round(3)
 
-    @composed(crash, method_to_log)
-    def merge(self, other: Any, /, suffix: str = "2"):
+    @composed(crash, method_to_log, typechecked)
+    def merge(self, other: RUNNER, /, suffix: str = "2"):
         """Merge another instance of the same class into this one.
 
         Branches, models, metrics and attributes of the other instance
@@ -754,7 +748,7 @@ class BaseRunner(BaseTracker):
         if hasattr(self, "missing"):
             self.missing.extend([x for x in other.missing if x not in self.missing])
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def stacking(
         self,
         models: slice | SEQUENCE | None = None,
@@ -784,12 +778,12 @@ class BaseRunner(BaseTracker):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
+        m = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
 
-        if len(models) < 2:
+        if len(m) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Stacking model should "
-                f"contain at least two underlying estimators, got only {models[0]}."
+                f"contain at least two underlying estimators, got only {m[0]}."
             )
 
         if not name.lower().startswith("stack"):
@@ -828,11 +822,11 @@ class BaseRunner(BaseTracker):
 
                 kwargs["final_estimator"] = model._get_est()
 
-        self._models.append(Stacking(models=models, name=name, **kw_model, **kwargs))
+        self._models.append(Stacking(models=m, name=name, **kw_model, **kwargs))
 
         self[name].fit()
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def voting(
         self,
         models: slice | SEQUENCE | None = None,
@@ -860,12 +854,12 @@ class BaseRunner(BaseTracker):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
+        m = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
 
-        if len(models) < 2:
+        if len(m) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Voting model should "
-                f"contain at least two underlying estimators, got only {models[0]}."
+                f"contain at least two underlying estimators, got only {m[0]}."
             )
 
         if not name.lower().startswith("vote"):
@@ -880,7 +874,7 @@ class BaseRunner(BaseTracker):
 
         self._models.append(
             Voting(
-                models=models,
+                models=m,
                 name=name,
                 goal=self.goal,
                 config=self._config,

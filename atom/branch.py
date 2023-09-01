@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from copy import copy
 from functools import cached_property
+from typing import Hashable
 
 import pandas as pd
 from typeguard import typechecked
@@ -22,7 +23,7 @@ from atom.utils.types import (
     PANDAS, SEQUENCE, SERIES_TYPES, SLICE, TARGET,
 )
 from atom.utils.utils import (
-    CustomDict, bk, custom_transform, flt, get_cols, lst, merge, to_pandas,
+    CustomDict, bk, custom_transform, flt, get_cols, lst, merge, to_pandas, IndexConfig
 )
 
 
@@ -46,9 +47,9 @@ class Branch:
     data: dataframe, default=pd.DataFrame()
         Complete dataset. Defaults to an empty frame if not provided.
 
-    index: list or None, default=None
-        A list containing the number of target columns, the indices of
-        the train set and the indices of the test set.
+    index: IndexConfig or None, default=None
+        Dataclass containing the indices in the train and test set, as
+        well as the number of target columns.
 
     holdout: dataframe or None, default=None
         Holdout dataset.
@@ -62,7 +63,7 @@ class Branch:
         self,
         name: str,
         data: DATAFRAME = pd.DataFrame(),
-        index: list[INT, INDEX, INDEX] | None = None,
+        index: IndexConfig | None = None,
         holdout: DATAFRAME | None = None,
         parent: BRANCH | None = None,
     ):
@@ -244,30 +245,30 @@ class Branch:
     @property
     def train(self) -> DATAFRAME:
         """Training set."""
-        return self._data.loc[self._idx[1]]
+        return self._data.loc[self._idx.train_idx]
 
     @train.setter
     def train(self, value: FEATURES):
         df = self._check_setter("train", value)
         self._data = bk.concat([df, self.test])
-        self._idx[1] = self._data.index[:len(df)]
+        self._idx.train_idx = self._data.index[:len(df)]
 
     @property
     def test(self) -> DATAFRAME:
         """Test set."""
-        return self._data.loc[self._idx[2]]
+        return self._data.loc[self._idx.test_idx]
 
     @test.setter
     def test(self, value: FEATURES):
         df = self._check_setter("test", value)
         self._data = bk.concat([self.train, df])
-        self._idx[2] = self._data.index[-len(df):]
+        self._idx.test_idx = self._data.index[-len(df):]
 
     @cached_property
     def holdout(self) -> DATAFRAME | None:
         """Holdout set."""
         if self._holdout is not None:
-            X, y = self._holdout.iloc[:, :-self._idx[0]], self._holdout[self.target]
+            X, y = self._holdout.iloc[:, :-self._idx.n_cols], self._holdout[self.target]
             for transformer in self.pipeline:
                 if not transformer._train_only:
                     X, y = custom_transform(transformer, self, (X, y), verbose=0)
@@ -335,7 +336,7 @@ class Branch:
         self._data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self) -> tuple[INT, INT]:
+    def shape(self) -> (INT, INT):
         """Shape of the dataset (n_rows, n_columns)."""
         return self._data.shape
 
@@ -352,7 +353,7 @@ class Branch:
     @property
     def features(self) -> INDEX:
         """Name of the features."""
-        return self.columns[:-self._idx[0]]
+        return self.columns[:-self._idx.n_cols]
 
     @property
     def n_features(self) -> INT:
@@ -362,7 +363,7 @@ class Branch:
     @property
     def target(self) -> str | list[str]:
         """Name of the target column(s)."""
-        return flt(list(self.columns[-self._idx[0]:]))
+        return flt(list(self.columns[-self._idx.n_cols:]))
 
     # Utility methods ============================================== >>
 
@@ -370,7 +371,7 @@ class Branch:
         self,
         index: SLICE | None,
         return_test: BOOL = True,
-    ) -> list:
+    ) -> list[Hashable]:
         """Get a subset of the rows in the dataset.
 
         Rows can be selected by name, index or regex pattern. If a
@@ -424,13 +425,14 @@ class Branch:
                 )
 
         indices = list(self.dataset.index)
+
         # Note that this call caches the holdout calculation!
         if self.holdout is not None:
             indices += list(self.holdout.index)
 
         inc, exc = [], []
         if index is None:
-            inc = list(self._idx[2]) if return_test else list(self.X.index)
+            inc = list(self._idx.test_idx) if return_test else list(self.X.index)
         elif isinstance(index, slice):
             inc = indices[index]
         else:
@@ -479,7 +481,7 @@ class Branch:
         columns: SLICE | None = None,
         include_target: BOOL = True,
         only_numerical: BOOL = False,
-    ) -> list[str] | tuple[list[str] | list[str]]:
+    ) -> list[str]:
         """Get a subset of the columns.
 
         Columns can be selected by name, index or regex pattern. If a

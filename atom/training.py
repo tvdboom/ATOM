@@ -20,15 +20,14 @@ from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    BOOL, ENGINE, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR, SEQUENCE,
-    WARNINGS,
+    BACKEND, BOOL, ENGINE, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR,
+    SEQUENCE, WARNINGS,
 )
 from atom.utils.utils import (
     ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
 )
 
 
-@typechecked
 class Direct(BaseEstimator, BaseTrainer):
     """Direct training approach.
 
@@ -51,7 +50,7 @@ class Direct(BaseEstimator, BaseTrainer):
             warnings, logger, experiment, random_state,
         )
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def run(self, *arrays):
         """Train and evaluate the models.
 
@@ -80,7 +79,6 @@ class Direct(BaseEstimator, BaseTrainer):
         self._core_iteration()
 
 
-@typechecked
 class SuccessiveHalving(BaseEstimator, BaseTrainer):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -101,7 +99,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
             warnings, logger, experiment, random_state,
         )
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def run(self, *arrays):
         """Train and evaluate the models.
 
@@ -171,7 +169,6 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
         self._models = models  # Restore all models
 
 
-@typechecked
 class TrainSizing(BaseEstimator, BaseTrainer):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -192,7 +189,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
             warnings, logger, experiment, random_state,
         )
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def run(self, *arrays):
         """Train and evaluate the models.
 
@@ -252,7 +249,6 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self._models = models  # Restore original models
 
 
-@typechecked
 class DirectClassifier(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -459,7 +455,7 @@ class DirectClassifier(Direct):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -474,7 +470,6 @@ class DirectClassifier(Direct):
         )
 
 
-@typechecked
 class DirectForecaster(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -674,7 +669,7 @@ class DirectForecaster(Direct):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -689,7 +684,6 @@ class DirectForecaster(Direct):
         )
 
 
-@typechecked
 class DirectRegressor(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -892,7 +886,7 @@ class DirectRegressor(Direct):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | str = False,
         logger: str | Logger | None = None,
@@ -907,7 +901,6 @@ class DirectRegressor(Direct):
         )
 
 
-@typechecked
 class SuccessiveHalvingClassifier(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1118,7 +1111,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | str = False,
         logger: str | Logger | None = None,
@@ -1133,7 +1126,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         )
 
 
-@typechecked
 class SuccessiveHalvingForecaster(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1337,7 +1329,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -1352,7 +1344,6 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         )
 
 
-@typechecked
 class SuccessiveHalvingRegressor(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1559,7 +1550,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -1574,7 +1565,6 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         )
 
 
-@typechecked
 class TrainSizingClassifier(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -1790,7 +1780,7 @@ class TrainSizingClassifier(TrainSizing):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -1805,7 +1795,6 @@ class TrainSizingClassifier(TrainSizing):
         )
 
 
-@typechecked
 class TrainSizingForecaster(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -2014,7 +2003,7 @@ class TrainSizingForecaster(TrainSizing):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -2029,7 +2018,6 @@ class TrainSizingForecaster(TrainSizing):
         )
 
 
-@typechecked
 class TrainSizingRegressor(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -2241,7 +2229,7 @@ class TrainSizingRegressor(TrainSizing):
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,

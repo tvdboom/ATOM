@@ -57,7 +57,6 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class TransformerMixin:
     """Mixin class for all transformers in ATOM.
 
@@ -111,7 +110,7 @@ class TransformerMixin:
 
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit_transform(
         self,
         X: FEATURES | None = None,
@@ -152,7 +151,7 @@ class TransformerMixin:
         """
         return self.fit(X, y, **fit_params).transform(X, y)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -193,7 +192,6 @@ class TransformerMixin:
         return variable_return(X, y)
 
 
-@typechecked
 class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Balance the number of samples per class in the target column.
 
@@ -319,12 +317,8 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.mapping = {}
         self._is_fitted = True
 
-    @composed(crash, method_to_log)
-    def transform(
-        self,
-        X: FEATURES,
-        y: TARGET = -1,
-    ) -> tuple[DATAFRAME, PANDAS]:
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: FEATURES, y: TARGET = -1) -> (DATAFRAME, PANDAS):
         """Balance the data.
 
         Parameters
@@ -498,7 +492,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X, y
 
 
-@typechecked
 class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Applies standard data cleaning steps on a dataset.
 
@@ -674,7 +667,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimators = {}
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES | None = None, y: TARGET | None = None) -> Cleaner:
         """Fit to data.
 
@@ -738,7 +731,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(
         self,
         X: FEATURES | None = None,
@@ -861,7 +854,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         return variable_return(X, y)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -930,7 +923,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         return variable_return(X, y)
 
 
-@typechecked
 class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Bin continuous data into intervals.
 
@@ -1110,7 +1102,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._labels = {}
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Discretizer:
         """Fit to data.
 
@@ -1220,7 +1212,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Bin the data into intervals.
 
@@ -1257,7 +1249,6 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
@@ -1422,8 +1413,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._encoders = {}
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
-    def fit(self, X: FEATURES, y: TARGET = None) -> Encoder:
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Encoder:
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
@@ -1593,7 +1584,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Encode the data.
 
@@ -1658,7 +1649,6 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Handle missing values in the data.
 
@@ -1825,7 +1815,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._num_cols = []
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Imputer:
         """Fit to data.
 
@@ -1928,7 +1918,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(
         self,
         X: FEATURES,
@@ -2059,7 +2049,6 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         return variable_return(X, y)
 
 
-@typechecked
 class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Transform the data to follow a Normal/Gaussian distribution.
 
@@ -2213,7 +2202,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Normalizer:
         """Fit to data.
 
@@ -2271,7 +2260,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
@@ -2305,7 +2294,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         return X
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def inverse_transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the inverse transformation to the data.
 
@@ -2340,7 +2329,6 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Prune outliers from the data.
 
@@ -2504,7 +2492,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._is_fitted = True
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(
         self,
         X: FEATURES,
@@ -2540,7 +2528,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
         # Estimators with their modules
-        strategies = CustomDict(
+        strategies = dict(
             iforest=["IsolationForest", "ensemble"],
             ee=["EllipticEnvelope", "covariance"],
             lof=["LocalOutlierFactor", "neighbors"],
@@ -2551,22 +2539,15 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         )
 
         for strat in lst(self.strategy):
-            if strat.lower() not in ["zscore"] + list(strategies):
+            if strat not in ["zscore"] + list(strategies):
                 raise ValueError(
                     "Invalid value for the strategy parameter. "
                     f"Choose from: zscore, {', '.join(strategies)}."
                 )
-            if str(self.method).lower() != "drop" and strat.lower() != "zscore":
+            if strat != "zscore" and str(self.method) != "drop":
                 raise ValueError(
                     "Invalid value for the method parameter. Only the zscore "
                     f"strategy accepts another method than 'drop', got {self.method}."
-                )
-
-        if isinstance(self.method, str):
-            if self.method.lower() not in ("drop", "minmax"):
-                raise ValueError(
-                    "Invalid value for the method parameter."
-                    "Choose from: drop, minmax."
                 )
 
         if self.max_sigma <= 0:
@@ -2672,7 +2653,6 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             return X, y
 
 
-@typechecked
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
@@ -2806,7 +2786,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Scaler:
         """Fit to data.
 
@@ -2853,7 +2833,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Perform standardization by centering and scaling.
 
@@ -2887,7 +2867,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         return X
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def inverse_transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the inverse transformation to the data.
 

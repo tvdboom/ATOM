@@ -519,7 +519,7 @@ def test_feature_importance_property():
     assert len(atom.tree.feature_importance) == X_bin.shape[1]
 
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
-    atom.run("LDA")
+    atom.run("LDA", errors="raise")
     assert len(atom.lda.feature_importance) == X_label.shape[1]
 
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
@@ -823,22 +823,6 @@ def test_create_dashboard_multioutput():
         atom.tree.create_dashboard()
 
 
-def test_create_dashboard_dataset_no_holdout():
-    """Assert that an error is raised when there's no holdout set."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree")
-    with pytest.raises(ValueError, match=".*No holdout data set.*"):
-        atom.tree.create_dashboard(dataset="holdout")
-
-
-def test_create_dashboard_invalid_dataset():
-    """Assert that an error is raised when dataset is invalid."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree")
-    with pytest.raises(ValueError, match=".*dataset parameter.*"):
-        atom.tree.create_dashboard(dataset="invalid")
-
-
 @patch("explainerdashboard.ExplainerDashboard")
 def test_create_dashboard_binary(func):
     """Assert that the create_dashboard method calls the underlying package."""
@@ -1016,22 +1000,6 @@ def test_full_train_new_mlflow_run():
     run = atom.gnb._run
     atom.gnb.full_train()
     assert atom.gnb._run is not run
-
-
-def test_get_best_threshold_no_predict_proba():
-    """Assert that an error is raised when the model has no predict_proba."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("SVM")
-    with pytest.raises(ValueError, match=".*with a predict_proba method.*"):
-        atom.svm.get_best_threshold()
-
-
-def test_get_best_threshold_invalid_dataset():
-    """Assert that an error is raised when dataset is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Dummy")
-    with pytest.raises(ValueError, match=".*dataset parameter.*"):
-        atom.dummy.get_best_threshold("invalid")
 
 
 def test_get_best_threshold_binary():

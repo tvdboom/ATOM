@@ -42,7 +42,6 @@ class Aesthetics:
     marker_size: INT  # Size of the markers
 
 
-@typechecked
 class BaseFigure:
     """Base plotly figure.
 
@@ -141,7 +140,7 @@ class BaseFigure:
             )
 
     @property
-    def grid(self) -> tuple[INT, INT]:
+    def grid(self) -> (INT, INT):
         """Position of the current axes on the grid.
 
         Returns
@@ -241,7 +240,7 @@ class BaseFigure:
         x: tuple[SCALAR, SCALAR] = (0, 1),
         y: tuple[SCALAR, SCALAR] = (0, 1),
         coloraxis: dict | None = None,
-    ) -> tuple[str, str]:
+    ) -> (str, str):
         """Create and update the plot's axes.
 
         Parameters
@@ -319,7 +318,6 @@ class BaseFigure:
         return xaxis, yaxis
 
 
-@typechecked
 class BasePlot:
     """Base class for all plotting methods.
 
@@ -637,7 +635,7 @@ class BasePlot:
             Selected data set(s).
 
         """
-        for ds in (dataset := "+".join(lst(dataset)).lower().split("+")):
+        for ds in (sets := "+".join(lst(dataset)).lower().split("+")):
             if ds == "holdout":
                 if allow_holdout:
                     if self.holdout is None:
@@ -652,17 +650,17 @@ class BasePlot:
                     )
             elif ds not in ("train", "test"):
                 raise ValueError(
-                    "Invalid value for the dataset parameter, got {ds}. "
+                    f"Invalid value for the dataset parameter, got {ds}. "
                     f"Choose from: train, test{', holdout' if allow_holdout else ''}."
                 )
 
-        if max_one and len(dataset) > 1:
+        if max_one and len(sets) > 1:
             raise ValueError(
                 "Invalid value for the dataset parameter, got "
                 f"{dataset}. Only one data set is allowed."
             )
 
-        return dataset[0] if max_one else dataset
+        return sets[0] if max_one else sets
 
     def _get_figure(self, **kwargs) -> go.Figure | plt.Figure | None:
         """Return existing figure if in canvas, else a new figure.

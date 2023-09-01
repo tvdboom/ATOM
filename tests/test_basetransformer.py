@@ -515,8 +515,8 @@ def test_data_already_set():
     trainer.run(bin_train, bin_test)
     trainer.run()
     pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
-    pd.testing.assert_index_equal(trainer.branch._idx[1], bin_train.index)
-    pd.testing.assert_index_equal(trainer.branch._idx[2], bin_test.index)
+    pd.testing.assert_index_equal(trainer.branch._idx.train_idx, bin_train.index)
+    pd.testing.assert_index_equal(trainer.branch._idx.test_idx, bin_test.index)
 
 
 def test_input_is_X():
@@ -793,12 +793,6 @@ def test_invalid_index_forecast():
 
 
 # Test log ========================================================= >>
-
-def test_log_invalid_severity():
-    """Assert that an error is raised when the severity is invalid."""
-    with pytest.raises(ValueError, match=".*severity parameter.*"):
-        BaseTransformer(logger="log").log("test", severity="invalid")
-
 
 def test_log_severity_error():
     """Assert that an error is raised when the severity is error."""

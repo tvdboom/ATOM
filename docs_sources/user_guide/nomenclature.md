@@ -122,8 +122,8 @@ returned number must correspond with a better score. See sklearn's
 <div markdown style="margin: -1em 0 0 1.2em">
 A one-dimensional, indexable array of type [list](https://docs.python.org/3/library/functions.html#func-list),
 [tuple](https://docs.python.org/3/library/functions.html#func-tuple),
-[np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html)
-or [series][]. This is the standard input format for a dataset's target column.
+[np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html),
+[index][] or [series][]. This is the standard input format for a dataset's target column.
 </div>
 
 <div id="series"><strong>series</strong></div>

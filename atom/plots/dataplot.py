@@ -23,11 +23,10 @@ from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import INT, LEGEND, SEQUENCE, SERIES, SLICE
 from atom.utils.utils import (
-    check_dependency, crash, divide, get_corpus, lst, rnd,
+    check_dependency, composed, crash, divide, get_corpus, lst, rnd,
 )
 
 
-@typechecked
 class DataPlot(BasePlot):
     """Data plots.
 
@@ -37,7 +36,7 @@ class DataPlot(BasePlot):
 
     """
 
-    @crash
+    @composed(crash, typechecked)
     def plot_correlation(
         self,
         columns: slice | SEQUENCE | None = None,
@@ -171,7 +170,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @crash
+    @composed(crash, typechecked)
     def plot_distribution(
         self,
         columns: SLICE = 0,
@@ -390,7 +389,7 @@ class DataPlot(BasePlot):
                 display=display,
             )
 
-    @crash
+    @composed(crash, typechecked)
     def plot_ngrams(
         self,
         ngram: INT | str = "bigram",
@@ -568,7 +567,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @crash
+    @composed(crash, typechecked)
     def plot_qq(
         self,
         columns: SLICE = 0,
@@ -689,7 +688,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @crash
+    @composed(crash, typechecked)
     def plot_relationships(
         self,
         columns: slice | SEQUENCE = (0, 1, 2),
@@ -852,7 +851,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @crash
+    @composed(crash, typechecked)
     def plot_wordcloud(
         self,
         index: SLICE | None = None,

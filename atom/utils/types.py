@@ -57,19 +57,9 @@ SEQUENCE = Union[SEQUENCE_TYPES]
 FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
 TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
-DATASET = Literal[
-    "dataset",
-    "train",
-    "test",
-    "holdout",
-    "X",
-    "y",
-    "X_train",
-    "X_test",
-    "X_holdout",
-    "y_train",
-    "y_test",
-    "y_holdout",
+DATASETS = Literal[
+    "dataset", "train", "test", "holdout", "X", "y", "X_train",
+    "X_test", "X_holdout", "y_train", "y_test", "y_holdout",
 ]
 
 # Selection of rows or columns by name or position
@@ -81,9 +71,13 @@ INDEX_SELECTOR = Union[bool, INT, str, SEQUENCE]
 # Types to initialize a metric
 METRIC_SELECTOR = (str, Callable[..., SCALAR], SEQUENCE, None)
 
+# Allowed values for method selection
+METHOD_SELECTOR = Literal["predict", "predict_proba", "decision_function", "thresh"]
+
 # Allowed values for BaseTransformer parameter
 BACKEND = Literal["loky", "multiprocessing", "threading", "ray"]
 WARNINGS = Literal["default", "error", "ignore", "always", "module", "once"]
+SEVERITY = Literal["debug", "info", "warning", "error", "critical"]
 
 # Data cleaning parameters
 STRAT_NUM = SCALAR | Literal["drop", "mean", "median", "knn", "most_frequent"]
@@ -93,20 +87,20 @@ PRUNER_STRATS = Literal[
 ]
 SCALER_STRATS = Literal["standard", "minmax", "maxabs", "robust"]
 
+# Feature engineering parameters
+OPERATORS = Literal["add", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
+FS_STRATS = Literal[
+    "univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "hho", "gwo", "dfo", "go"
+]
 
 # Plotting parameters
 LEGEND = Literal[
-    "upper left",
-    "lower left",
-    "upper right",
-    "lower right",
-    "upper center",
-    "lower center",
-    "center left",
-    "center right",
-    "center",
-    "out",
+    "upper left", "lower left", "upper right", "lower right", "upper center",
+    "lower center", "center left", "center right", "center", "out",
 ]
+
+# Mlflow stages
+STAGES = Literal["None", "Staging", "Production", "Archived"]
 
 
 # Classes for type hinting ========================================= >>

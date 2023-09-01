@@ -166,13 +166,6 @@ def test_vectorizer_space_separation():
     assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
 
 
-def test_invalid_strategy():
-    """Assert that an error is raised when the strategy is invalid."""
-    vectorizer = Vectorizer(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        vectorizer.fit(X_text)
-
-
 @pytest.mark.parametrize("strategy", ["bow", "tfidf"])
 def test_strategies(strategy):
     """Assert that the BOW and TF-IDF strategies works as intended."""
@@ -183,7 +176,7 @@ def test_strategies(strategy):
 
 def test_hashing():
     """Assert that the Hashing strategy works as intended."""
-    X = Vectorizer(strategy="Hashing", n_features=10).fit_transform(X_text)
+    X = Vectorizer(strategy="hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
     assert "hash1" in X
 
@@ -218,7 +211,7 @@ def test_error_sparse_with_dense():
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(test_func)
     with pytest.raises(ValueError, match=".*value for the return_sparse.*"):
-        atom.vectorize(strategy="BOW", return_sparse=True)
+        atom.vectorize(strategy="bow", return_sparse=True)
 
 
 def test_sparse_with_dense():
@@ -230,5 +223,5 @@ def test_sparse_with_dense():
 
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(test_func)
-    atom.vectorize(strategy="BOW", return_sparse=False)
+    atom.vectorize(strategy="bow", return_sparse=False)
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)

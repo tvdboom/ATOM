@@ -18,8 +18,8 @@ from typeguard import typechecked
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
-    BACKEND, BOOL, ENGINE, INDEX_SELECTOR, INT, PREDICTOR, SCALAR,
-    TARGET, WARNINGS,
+    BACKEND, BOOL, ENGINE, INDEX_SELECTOR, INT, PREDICTOR, SCALAR, TARGET,
+    WARNINGS,
 )
 
 
@@ -117,7 +117,6 @@ def ATOMModel(
     return estimator
 
 
-@typechecked
 class ATOMClassifier(BaseTransformer, ATOM):
     """Main class for classification tasks.
 
@@ -320,6 +319,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     """
 
+    @typechecked
     def __init__(
         self,
         *arrays,
@@ -366,7 +366,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
 
-@typechecked
 class ATOMForecaster(BaseTransformer, ATOM):
     """Main class for forecasting tasks.
 
@@ -542,6 +541,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     """
 
+    @typechecked
     def __init__(
         self,
         *arrays,
@@ -585,7 +585,6 @@ class ATOMForecaster(BaseTransformer, ATOM):
         )
 
 
-@typechecked
 class ATOMRegressor(BaseTransformer, ATOM):
     """Main class for regression tasks.
 
@@ -775,6 +774,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     """
 
+    @typechecked
     def __init__(
         self,
         *arrays,

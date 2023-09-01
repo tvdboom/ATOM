@@ -13,7 +13,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 from random import sample
-from typing import Literal
+from typing import Callable, Literal
 
 import featuretools as ft
 import joblib
@@ -38,8 +38,9 @@ from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
-    BOOL, DATAFRAME, ENGINE, ESTIMATOR, FEATURES, FLOAT, INT, INT_TYPES,
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES, TARGET,
+    BACKEND, BOOL, DATAFRAME, ENGINE, ESTIMATOR, FEATURES, FLOAT, FS_STRATS,
+    INT, INT_TYPES, OPERATORS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES,
+    TARGET,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, check_scaling, composed, crash,
@@ -48,7 +49,6 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract features from datetime columns.
 
@@ -169,7 +169,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         features: str | SEQUENCE = ("day", "month", "year"),
         fmt: str | SEQUENCE | None = None,
         *,
-        encoding_type: str = "ordinal",
+        encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
         drop_columns: BOOL = True,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
@@ -180,7 +180,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.encoding_type = encoding_type
         self.drop_columns = drop_columns
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Extract the new features.
 
@@ -201,13 +201,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
-
-        # Check parameters
-        if self.encoding_type.lower() not in ("ordinal", "cyclic"):
-            raise ValueError(
-                "Invalid value for the encoding_type parameter, got "
-                f"{self.encoding_type}. Choose from: ordinal, cyclic."
-            )
 
         self.log("Extracting datetime features...", 1)
 
@@ -254,7 +247,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     continue
 
                 min_val, max_val = 0, None  # max_val=None -> feature is not cyclic
-                if self.encoding_type.lower() == "cyclic":
+                if self.encoding_type == "cyclic":
                     if fx == "microsecond":
                         min_val, max_val = 0, 1e6 - 1
                     elif fx in ("second", "minute"):
@@ -276,10 +269,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 # Add every new feature after the previous one
                 new_name = f"{name}_{fx}"
                 idx = X.columns.get_loc(name)
-                if self.encoding_type.lower() == "ordinal" or max_val is None:
+                if self.encoding_type == "ordinal" or max_val is None:
                     self.log(f"   --> Creating feature {new_name}.", 2)
                     X.insert(idx, new_name, values)
-                elif self.encoding_type.lower() == "cyclic":
+                elif self.encoding_type == "cyclic":
                     self.log(f"   --> Creating cyclic feature {new_name}.", 2)
                     pos = 2 * np.pi * (values - min_val) / np.array(max_val)
                     X.insert(idx, f"{new_name}_sin", np.sin(pos))
@@ -292,7 +285,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     """Generate new features.
 
@@ -427,10 +419,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str = "dfs",
+        strategy: Literal["dfs", "gfg"] = "dfs",
         *,
         n_features: INT | None = None,
-        operators: str | SEQUENCE | None = None,
+        operators: OPERATORS | SEQUENCE | None = None,
         n_jobs: INT = 1,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
@@ -449,11 +441,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
         self.genetic_features = None
-        self._operators = None
         self._dfs = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureGenerator:
         """Fit to data.
 
@@ -484,7 +475,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        operators = CustomDict(
+        all_operators = dict(
             add="add_numeric",
             sub="subtract_numeric",
             mul="multiply_numeric",
@@ -497,12 +488,6 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             tan="tangent",
         )
 
-        if self.strategy.lower() not in ("dfs", "gfg"):
-            raise ValueError(
-                "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: dfs or gfg."
-            )
-
         if self.n_features is not None and self.n_features <= 0:
             raise ValueError(
                 "Invalid value for the n_features parameter."
@@ -510,25 +495,25 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             )
 
         if not self.operators:  # None or empty list
-            self._operators = list(operators.keys())
+            operators = list(all_operators)
         else:
-            self._operators = lst(self.operators)
-            for operator in self._operators:
-                if operator not in operators:
+            operators = lst(self.operators)
+            for op in operators:
+                if op not in all_operators:
                     raise ValueError(
                         "Invalid value in the operators parameter, got "
-                        f"{operator}. Choose from: {', '.join(operators)}."
+                        f"{op}. Choose from: {', '.join(all_operators)}."
                     )
 
         self.log("Fitting FeatureGenerator...", 1)
 
-        if self.strategy.lower() == "dfs":
+        if self.strategy == "dfs":
             # Run deep feature synthesis with transformation primitives
             es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
-                trans_primitives=[operators[x] for x in self._operators],
+                trans_primitives=[all_operators[x] for x in operators],
                 max_depth=1,
                 features_only=True,
                 ignore_columns={"X": ["_index"]},
@@ -553,7 +538,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 n_components=hall_of_fame,
                 init_depth=kwargs.pop("init_depth", (1, 2)),
                 const_range=kwargs.pop("const_range", None),
-                function_set=self._operators,
+                function_set=operators,
                 feature_names=X.columns,
                 verbose=kwargs.pop("verbose", 0 if self.verbose < 2 else 1),
                 n_jobs=kwargs.pop("n_jobs", self.n_jobs),
@@ -564,7 +549,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Generate new features.
 
@@ -642,12 +627,11 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract statistics from similar features.
 
     Replace groups of features with related characteristics with new
-    features that summarize statistical properties of te group. The
+    features that summarize statistical properties of the group. The
     statistical operators are calculated over every row of the group.
     The group names and features can be accessed through the `groups`
     method.
@@ -743,7 +727,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        group: dict[str, str | SEQUENCE],
+        group: dict[str, INT | str | SEQUENCE],
         *,
         operators: str | SEQUENCE | None = None,
         drop_columns: BOOL = True,
@@ -756,7 +740,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
         self.groups = defaultdict(list)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Group features.
 
@@ -839,7 +823,6 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class FeatureSelector(
     BaseEstimator,
     TransformerMixin,
@@ -898,7 +881,7 @@ class FeatureSelector(
         - "[dfo][]": Dragonfly Optimization.
         - "[go][]": Genetic Optimization.
 
-    solver: str, estimator or None, default=None
+    solver: str, func, estimator or None, default=None
         Solver/estimator to use for the feature selection strategy. See
         the corresponding documentation for an extended description of
         the choices. If None, the default value is used (only if
@@ -1116,9 +1099,9 @@ class FeatureSelector(
 
     def __init__(
         self,
-        strategy: str | None = None,
+        strategy: FS_STRATS | None = None,
         *,
-        solver: str | ESTIMATOR | None = None,
+        solver: str | Callable[..., SEQUENCE | SEQUENCE] | ESTIMATOR | None = None,
         n_features: SCALAR | None = None,
         min_repeated: SCALAR | None = 2,
         max_repeated: SCALAR | None = 1.0,
@@ -1126,7 +1109,7 @@ class FeatureSelector(
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: str = "loky",
+        backend: BACKEND = "loky",
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
@@ -1160,7 +1143,7 @@ class FeatureSelector(
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
@@ -1228,12 +1211,7 @@ class FeatureSelector(
         )
 
         if isinstance(self.strategy, str):
-            if self.strategy not in strategies:
-                raise ValueError(
-                    "Invalid value for the strategy parameter, got "
-                    f"{self.strategy}. Choose from: {', '.join(strategies)}"
-                )
-            elif self.strategy.lower() not in ("univariate", "pca"):
+            if self.strategy not in ("univariate", "pca"):
                 if self.solver is None:
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
@@ -1581,7 +1559,7 @@ class FeatureSelector(
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Transform the data.
 

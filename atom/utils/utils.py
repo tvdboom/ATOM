@@ -28,7 +28,7 @@ from itertools import cycle
 from types import GeneratorType, MappingProxyType
 from typing import Any, Callable
 from unittest.mock import patch
-from joblib import Memory
+
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -36,6 +36,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
 from IPython.display import display
+from joblib import Memory
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from optuna.study import Study
@@ -51,10 +52,10 @@ from sklearn.utils import _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    BRANCH, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT,
+    BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT,
     INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES, PREDICTOR,
     SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES, TARGET,
-    TRANSFORMER, BOOL
+    TRANSFORMER, INDEX
 )
 
 
@@ -82,6 +83,19 @@ class DataConfig:
     shuffle: bool = True
     stratify: INDEX_SELECTOR = True
     test_size: SCALAR = 0.2
+
+
+@dataclass
+class IndexConfig:
+    """Stores the index configuration.
+
+    This is a utility class to store the configuration of the indices
+    in a branch.
+
+    """
+    train_idx: INDEX  # Indices in the train set
+    test_idx: INDEX  # Indices in the test
+    n_cols: INT  # Number of target columns
 
 
 class PandasModin:
@@ -212,7 +226,7 @@ class LGBMetric:
         y_true: np.ndarray,
         y_pred: np.ndarray,
         weight: np.ndarray,
-    ) -> tuple[str, FLOAT, bool]:
+    ) -> (str, FLOAT, bool):
         """Evaluates metric value.
 
         Parameters
@@ -681,8 +695,11 @@ class ShapExplanation:
 
     Parameters
     ----------
-    model: Predictor
+    estimator: Predictor
         Estimator to get the shap values from.
+
+    task: str
+        Model's task.
 
     branch: Branch
         Data to get the shap values from.
@@ -1444,19 +1461,19 @@ def check_hyperparams(models: MODEL | SEQUENCE, method: str) -> list[MODEL]:
     return models
 
 
-def check_predict_proba(models: SEQUENCE, method: str):
+def check_predict_proba(models: MODEL | SEQUENCE, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
     Parameters
     ----------
-    models: sequence of [Models][]
+    models: model or sequence of models
         Models to check for the attribute.
 
     method: str
         Name of the method from which the check is called.
 
     """
-    for m in models:
+    for m in lst(models):
         if not hasattr(m.estimator, "predict_proba"):
             raise AttributeError(
                 f"The {method} method is only available for "
@@ -1545,7 +1562,7 @@ def get_versions(models: ClassMap) -> dict:
     """
     versions = {"atom": __version__}
     for model in models:
-        module = model.estimator.__module__.split(".")[0]
+        module = model._est_class.__module__.split(".")[0]
         versions[module] = sys.modules.get(module, import_module(module)).__version__
 
     return versions
@@ -1554,7 +1571,7 @@ def get_versions(models: ClassMap) -> dict:
 def get_corpus(df: DATAFRAME) -> SERIES:
     """Get text column from a dataframe.
 
-    The text column should be called `corpus` (case insensitive).
+    The text column should be called `corpus` (case-insensitive).
 
     Parameters
     ----------
@@ -2380,7 +2397,7 @@ def transform_one(
     X: FEATURES | None = None,
     y: TARGET | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME | None, SERIES | None]:
+) -> (DATAFRAME | None, SERIES | None):
     """Transform the data using one estimator.
 
     Parameters
@@ -2525,7 +2542,7 @@ def fit_transform_one(
     y: TARGET | None = None,
     message: str | None = None,
     **fit_params,
-) -> tuple[DATAFRAME | None, SERIES | None, TRANSFORMER]:
+) -> (DATAFRAME | None, SERIES | None, TRANSFORMER):
     """Fit and transform the data using one estimator.
 
     Parameters
@@ -2577,7 +2594,7 @@ def custom_transform(
     data: tuple[DATAFRAME, PANDAS] | None = None,
     verbose: int | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME, PANDAS]:
+) -> (DATAFRAME, PANDAS):
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -2623,31 +2640,31 @@ def custom_transform(
             X_og, y_og = branch.X, branch.y
 
     # Adapt the transformer's verbosity
-    if verbose is not None:
-        if verbose < 0 or verbose > 2:
-            raise ValueError(
-                "Invalid value for the verbose parameter."
-                f"Value should be between 0 and 2, got {verbose}."
-            )
-        elif hasattr(transformer, "verbose"):
-            vb = transformer.verbose  # Save original verbosity
-            transformer.verbose = verbose
+    if verbose is not None and hasattr(transformer, "verbose"):
+        vb = transformer.verbose  # Save original verbosity
+        transformer.verbose = verbose
 
     X, y = transform_one(transformer, X_og, y_og, method)
 
     # Apply changes to the branch
     if not data:
         if transformer._train_only:
-            branch.train = merge(X, branch.y_train if y is None else y)
+            branch.train = merge(
+                branch.X_train if X is None else X,
+                branch.y_train if y is None else y,
+            )
         else:
-            branch._data = merge(X, branch.y if y is None else y)
+            branch._data = merge(
+                branch.X if X is None else X,
+                branch.y if y is None else y,
+            )
 
-            # Since y can change number of columns, reassign index
-            branch._idx[0] = len(get_cols(y))
-
-            # Since rows can be removed from train and test, reassign indices
-            branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
-            branch._idx[2] = [idx for idx in branch._idx[2] if idx in X.index]
+            # y can change the number of columns or remove rows -> reassign index
+            branch._idx = IndexConfig(
+                train_idx=branch._idx.train_idx.intersection(branch._data.index),
+                test_idx=branch._idx.test_idx.intersection(branch._data.index),
+                n_cols=len(get_cols(y)),
+            )
 
     # Back to the original verbosity
     if verbose is not None and hasattr(transformer, "verbose"):
@@ -2758,7 +2775,7 @@ def composed(*decs) -> Callable:
 
     Parameters
     ----------
-    decs: tuple
+    *decs
         Decorators to run.
 
     """

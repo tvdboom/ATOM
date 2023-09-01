@@ -13,7 +13,7 @@ import tempfile
 import traceback
 from datetime import datetime as dt
 from typing import Any
-from typeguard import TypeCheckError
+
 import joblib
 import mlflow
 import numpy as np
@@ -21,7 +21,7 @@ import ray
 from joblib import Parallel, delayed
 from optuna import Study, create_study
 from sklearn.utils.validation import check_memory
-from typeguard import typechecked
+from typeguard import TypeCheckError, typechecked
 
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner

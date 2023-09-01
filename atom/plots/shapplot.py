@@ -20,7 +20,6 @@ from atom.utils.types import INT, LEGEND, MODEL, SEQUENCE, SLICE
 from atom.utils.utils import check_canvas, composed, crash, plot_from_model
 
 
-@typechecked
 class ShapPlot(BasePlot):
     """Shap plots.
 

@@ -49,7 +49,6 @@ class BaseEnsemble:
                 self.feature_names_in_ = est.feature_names_in_
 
 
-@typechecked
 class BaseVoting(BaseEnsemble):
     """Base class for the voting estimators."""
 
@@ -113,7 +112,6 @@ class BaseVoting(BaseEnsemble):
         return self
 
 
-@typechecked
 class BaseStacking(BaseEnsemble):
     """Base class for the stacking estimators."""
 
@@ -218,7 +216,6 @@ class BaseStacking(BaseEnsemble):
         return self
 
 
-@typechecked
 class VotingClassifier(BaseVoting, VC):
     """Soft Voting/Majority Rule classifier.
 
@@ -328,7 +325,6 @@ class VotingClassifier(BaseVoting, VC):
             )
 
 
-@typechecked
 class VotingRegressor(BaseVoting, VR):
     """Soft Voting/Majority Rule regressor.
 
@@ -363,7 +359,6 @@ class VotingRegressor(BaseVoting, VR):
             self._get_fitted_attrs()
 
 
-@typechecked
 class StackingClassifier(BaseStacking, SC):
     """Stack of estimators with a final classifier.
 
@@ -409,7 +404,6 @@ class StackingClassifier(BaseStacking, SC):
         return super().fit(X, self._label_encoder.transform(y), sample_weight)
 
 
-@typechecked
 class StackingRegressor(BaseStacking, SR):
     """Stack of estimators with a final regressor.
 

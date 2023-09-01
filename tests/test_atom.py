@@ -477,13 +477,6 @@ def test_transform_not_train_only():
     assert len(atom.transform(X_bin)) == len(X_bin)
 
 
-def test_transform_verbose_invalid():
-    """Assert an error is raised for an invalid value of verbose."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    pytest.raises(ValueError, atom.transform, X_bin, verbose=3)
-
-
 # Test base transformers =========================================== >>
 
 def test_add_after_model():

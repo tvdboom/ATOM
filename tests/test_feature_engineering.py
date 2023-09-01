@@ -24,12 +24,6 @@ from .conftest import (
 
 # Test FeatureExtractor ============================================ >>
 
-def test_invalid_encoding_type():
-    """Assert that an error is raised when encoding_type is invalid."""
-    with pytest.raises(ValueError, match=".*the encoding_type parameter.*"):
-        FeatureExtractor(encoding_type="invalid").transform(X10_dt)
-
-
 def test_invalid_features():
     """Assert that an error is raised when features are invalid."""
     with pytest.raises(ValueError, match=".*an attribute of pd.Series.dt.*"):
@@ -109,13 +103,6 @@ def test_n_features_parameter_negative():
     """Assert that an error is raised when n_features is negative."""
     generator = FeatureGenerator(n_features=-2)
     with pytest.raises(ValueError, match=".*the n_features parameter.*"):
-        generator.fit(X_bin, y_bin)
-
-
-def test_strategy_parameter():
-    """Assert that the strategy parameter is either dfs or gfg."""
-    generator = FeatureGenerator(strategy="invalid")
-    with pytest.raises(ValueError, match=".*strategy parameter.*"):
         generator.fit(X_bin, y_bin)
 
 
@@ -249,13 +236,6 @@ def test_attribute_is_created():
 
 
 # Test FeatureSelector ============================================= >>
-
-def test_unknown_strategy_parameter():
-    """Assert that an error is raised when strategy is unknown."""
-    selector = FeatureSelector(strategy="invalid")
-    with pytest.raises(ValueError, match=".*the strategy parameter.*"):
-        selector.fit(X_reg, y_reg)
-
 
 def test_solver_parameter_empty():
     """Assert that an error is raised when solver is None."""

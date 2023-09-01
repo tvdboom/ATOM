@@ -31,18 +31,15 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class Pipeline(skPipeline):
     """Custom Pipeline class.
 
     This class behaves as a sklearn pipeline, and additionally:
 
-    - Always outputs pandas objects.
-    - Is able to transform only X or y.
-    - Accepts transformers that change the target column.
     - Accepts transformers that drop rows.
     - Accepts transformers that only are fitted on a subset
       of the provided dataset.
+    - Accepts transformers that apply only on the target column.
     - Uses transformers that are only applied on the training set
       to fit the pipeline, not to make predictions on new data.
     - The instance is considered fitted at initialization if all
@@ -85,7 +82,7 @@ class Pipeline(skPipeline):
 
     @memory.setter
     def memory(self, value: str | Memory | None):
-        """Create new internal memory object."""
+        """Create a new internal memory object."""
         self._memory = check_memory(value)
         self._memory_fit = self._memory.cache(fit_transform_one)
         self._memory_transform = self._memory.cache(transform_one)
@@ -189,9 +186,8 @@ class Pipeline(skPipeline):
                     continue
 
             if hasattr(transformer, "transform"):
+                # Don't clone when caching is disabled to preserve backward compatibility
                 if self._memory_fit.__class__.__name__ == "NotMemorizedFunc":
-                    # Don't clone when caching is disabled to
-                    # preserve backward compatibility
                     cloned = transformer
                 else:
                     cloned = clone(transformer)

@@ -26,8 +26,9 @@ different data sets:
   not considered part of atom's dataset (the `dataset` attribute only
   returns the train and test sets). The holdout set is left untouched
   until predictions are made on it, i.e. it does not undergo any pipeline
-  transformations. The holdout set is stored in atom's `holdout` attribute.
-  It's features and target can not be accessed separately. See [here][example-holdout-set]
+  transformations until the data set is requested for the first time.
+  The holdout set is stored in atom's `holdout` attribute. Its features
+  and target can not be accessed separately. See [here][example-holdout-set]
   an example that shows how to use the holdout data set.
 
 The data can be provided in different formats. If the data sets are not
@@ -54,7 +55,7 @@ following formats:
 * (X_train, y_train), (X_test, y_test)
 * (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-The input data is always converted internally to a [pandas dataframe](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html),
+The input data is always converted internally to a [dataframe][],
 if it isn't one already. The column names should always be strings. If
 they are not, atom changes their type at initialization. If no column
 names are provided, default names are given of the form `X[N-1]`,

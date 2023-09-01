@@ -32,7 +32,6 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class HyperparameterTuningPlot(BasePlot):
     """Hyperparameter tuning plots.
 
@@ -298,7 +297,7 @@ class HyperparameterTuningPlot(BasePlot):
             fig.add_trace(
                 go.Bar(
                     x=np.array(list(importances.values())) / sum(importances.values()),
-                    y=list(importances.keys()),
+                    y=list(importances),
                     orientation="h",
                     marker=dict(
                         color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
@@ -1055,7 +1054,7 @@ class HyperparameterTuningPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="upper right",
+        legend: str, dict or None, default="upper right"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
@@ -1171,7 +1170,7 @@ class HyperparameterTuningPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="lower right",
+        legend: str, dict or None, default="lower right"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 

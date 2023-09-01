@@ -253,13 +253,6 @@ def test_cleaner_target_mapping_binary():
 
 # Test Discretizer ================================================= >>
 
-def test_strategy_parameter_discretizer():
-    """Assert that the strategy parameter is set correctly."""
-    discretizer = Discretizer(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy parameter.*"):
-        discretizer.fit(X_bin)
-
-
 def test_invalid_bins_missing_column():
     """Assert that an error is raised when a column is missing."""
     discretizer = Discretizer(strategy="uniform", bins={"invalid": 5})
@@ -672,13 +665,6 @@ def test_normalizer_attach_attribute():
 
 # Test Pruner ====================================================== >>
 
-def test_invalid_strategy_parameter():
-    """Assert that an error is raised for an invalid strategy parameter."""
-    pruner = Pruner(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        pruner.transform(X_bin)
-
-
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
     pruner = Pruner(strategy="iforest", method="minmax")
@@ -704,7 +690,7 @@ def test_max_sigma_functionality():
 
 def test_kwargs_parameter_pruner():
     """Assert that the kwargs are passed to the strategy estimator."""
-    pruner = Pruner(strategy="iForest", n_estimators=50)
+    pruner = Pruner(strategy="iforest", n_estimators=50)
     pruner.transform(X10)
     assert pruner.iforest.get_params()["n_estimators"] == 50
 
@@ -785,13 +771,6 @@ def test_pruner_attach_attribute():
 def test_scaler_check_is_fitted():
     """Assert that an error is raised when not fitted."""
     pytest.raises(NotFittedError, Scaler().transform, X_bin)
-
-
-def test_scaler_invalid_strategy():
-    """Assert that an error is raised when strategy is invalid."""
-    scaler = Scaler(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        scaler.fit(X_bin)
 
 
 @pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])

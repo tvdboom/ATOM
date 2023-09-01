@@ -37,7 +37,6 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Applies standard text cleaning to the corpus.
 
@@ -211,7 +210,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         # Encountered regex occurrences
         self.drops = pd.DataFrame()
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
@@ -254,7 +253,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 return elem  # Return unchanged if encoding was successful
 
-        def drop_regex(search: str) -> tuple[int, int]:
+        def drop_regex(search: str) -> (int, int):
             """Find and remove a regex expression from the text.
 
             Parameters
@@ -366,7 +365,6 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
@@ -492,7 +490,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Normalize the text.
 
@@ -579,7 +577,6 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Tokenize the corpus.
 
@@ -715,7 +712,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.trigrams = None
         self.quadgrams = None
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Tokenize the text.
 
@@ -807,7 +804,6 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-@typechecked
 class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Vectorize text data.
 
@@ -966,7 +962,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Vectorizer:
         """Fit to data.
 
@@ -991,7 +987,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_n_features(X, reset=True)
         corpus = get_corpus(X)
 
-        # Convert sequence of tokens to space separated string
+        # Convert a sequence of tokens to space separated string
         if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
@@ -1016,7 +1012,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Vectorize the text.
 

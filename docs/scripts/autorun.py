@@ -62,7 +62,7 @@ class StreamOut:
         self.stdout = None
 
 
-def execute(src: str) -> tuple[list[str], list[str]]:
+def execute(src: str) -> (list[str], list[str]):
     """Get the code with output.
 
     Parameters
