@@ -27,7 +27,7 @@ from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
 )
 from sklearn.model_selection import cross_val_score
-from typeguard import typechecked
+
 from zoofs import (
     DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
     HarrisHawkOptimization, ParticleSwarmOptimization,
@@ -180,7 +180,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.encoding_type = encoding_type
         self.drop_columns = drop_columns
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Extract the new features.
 
@@ -202,13 +202,13 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        self.log("Extracting datetime features...", 1)
+        self._log("Extracting datetime features...", 1)
 
         i = 0
         for name, column in X.select_dtypes(exclude="number").items():
             if column.dtype.name == "datetime64[ns]":
                 col_dt = column
-                self.log(f" --> Extracting features from column {name}.", 1)
+                self._log(f" --> Extracting features from column {name}.", 1)
             else:
                 fmt = self.fmt[i] if isinstance(self.fmt, SEQUENCE_TYPES) else self.fmt
                 col_dt = pd.to_datetime(
@@ -224,7 +224,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     continue  # Skip this column
                 else:
                     i += 1
-                    self.log(
+                    self._log(
                         f" --> Extracting features from categorical column {name}.", 1
                     )
 
@@ -240,7 +240,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Skip if the information is not present in the format
                 if not isinstance(values, SERIES_TYPES):
-                    self.log(
+                    self._log(
                         f"   --> Extracting feature {fx} failed. "
                         "Result is not a Series.dt.", 2
                     )
@@ -270,10 +270,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 new_name = f"{name}_{fx}"
                 idx = X.columns.get_loc(name)
                 if self.encoding_type == "ordinal" or max_val is None:
-                    self.log(f"   --> Creating feature {new_name}.", 2)
+                    self._log(f"   --> Creating feature {new_name}.", 2)
                     X.insert(idx, new_name, values)
                 elif self.encoding_type == "cyclic":
-                    self.log(f"   --> Creating cyclic feature {new_name}.", 2)
+                    self._log(f"   --> Creating cyclic feature {new_name}.", 2)
                     pos = 2 * np.pi * (values - min_val) / np.array(max_val)
                     X.insert(idx, f"{new_name}_sin", np.sin(pos))
                     X.insert(idx + 1, f"{new_name}_cos", np.cos(pos))
@@ -444,7 +444,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._dfs = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureGenerator:
         """Fit to data.
 
@@ -505,7 +505,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                         f"{op}. Choose from: {', '.join(all_operators)}."
                     )
 
-        self.log("Fitting FeatureGenerator...", 1)
+        self._log("Fitting FeatureGenerator...", 1)
 
         if self.strategy == "dfs":
             # Run deep feature synthesis with transformation primitives
@@ -549,7 +549,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Generate new features.
 
@@ -570,7 +570,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Generating new features...", 1)
+        self._log("Generating new features...", 1)
 
         if self.strategy.lower() == "dfs":
             es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
@@ -583,7 +583,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             # Add the new features to the feature set
             X = pd.concat([X, dfs], axis=1).set_index("index")
 
-            self.log(f" --> {len(self._dfs)} new features were added.", 2)
+            self._log(f" --> {len(self._dfs)} new features were added.", 2)
 
         else:
             # Get the names and fitness of the new features
@@ -594,7 +594,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Check if any new features remain
             if len(df) == 0:
-                self.log(
+                self._log(
                     " --> The genetic algorithm didn't find any improving features.", 2
                 )
                 return X
@@ -605,7 +605,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # If there are not enough features remaining, notify the user
             if len(df) != self.n_features:
-                self.log(
+                self._log(
                     f" --> Dropping {(self.n_features or len(self.gfg)) - len(df)} "
                     "features due to repetition.", 2)
 
@@ -621,7 +621,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     else:
                         counter += 1
 
-            self.log(f" --> {len(df)} new features were added.", 2)
+            self._log(f" --> {len(df)} new features were added.", 2)
             self.genetic_features = df.reset_index(drop=True)
 
         return X
@@ -740,7 +740,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
         self.groups = defaultdict(list)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Group features.
 
@@ -760,7 +760,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, _ = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
-        self.log("Grouping features...", 1)
+        self._log("Grouping features...", 1)
 
         # Make the groups
         self.groups = defaultdict(list)
@@ -815,7 +815,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
             to_drop.update(group)
-            self.log(f" --> Group {name} successfully created.", 2)
+            self._log(f" --> Group {name} successfully created.", 2)
 
         if self.drop_columns:
             X = X.drop(to_drop, axis=1)
@@ -894,7 +894,7 @@ class FeatureSelector(
             - "[mutual_info_classif][]"
             - "[mutual_info_regression][]"
             - "[chi2][]"
-            - Any function with signature `func(X, y) -> (scores, p-values)`.
+            - Any function with signature `func(X, y) -> tuple[scores, p-values]`.
 
         - If strategy="pca":
 
@@ -1143,7 +1143,7 @@ class FeatureSelector(
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
@@ -1305,7 +1305,7 @@ class FeatureSelector(
                 f"shouldbe between 0 and 1, got {self.max_correlation}."
             )
 
-        self.log("Fitting FeatureSelector...", 1)
+        self._log("Fitting FeatureSelector...", 1)
 
         # Remove features with too high variance
         if self.min_repeated is not None:
@@ -1559,7 +1559,7 @@ class FeatureSelector(
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Transform the data.
 
@@ -1580,11 +1580,11 @@ class FeatureSelector(
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Performing feature selection ...", 1)
+        self._log("Performing feature selection ...", 1)
 
         # Remove features with too high variance
         for key, value in self._high_variance.items():
-            self.log(
+            self._log(
                 f" --> Feature {key} was removed due to high variance. "
                 f"Value {value[0]} was the most repeated value with "
                 f"{value[1]} ({value[1] / len(X):.1f}%) occurrences.", 2
@@ -1593,7 +1593,7 @@ class FeatureSelector(
 
         # Remove features with too low variance
         for key, value in self._low_variance.items():
-            self.log(
+            self._log(
                 f" --> Feature {key} was removed due to low variance. Value "
                 f"{value[0]} repeated in {value[1]}% of the rows.", 2
             )
@@ -1601,7 +1601,7 @@ class FeatureSelector(
 
         # Remove features with too high correlation
         for col in self.collinear["drop"]:
-            self.log(
+            self._log(
                 f" --> Feature {col} was removed due to "
                 "collinearity with another feature.", 2
             )
@@ -1612,13 +1612,13 @@ class FeatureSelector(
             return X
 
         elif self.strategy.lower() == "univariate":
-            self.log(
+            self._log(
                 f" --> The univariate test selected "
                 f"{self._n_features} features from the dataset.", 2
             )
             for n, column in enumerate(X):
                 if not self.univariate.get_support()[n]:
-                    self.log(
+                    self._log(
                         f"   --> Dropping feature {column} "
                         f"(score: {self.univariate.scores_[n]:.2f}  "
                         f"p-value: {self.univariate.pvalues_[n]:.2f}).", 2
@@ -1626,10 +1626,10 @@ class FeatureSelector(
                     X = X.drop(column, axis=1)
 
         elif self.strategy.lower() == "pca":
-            self.log(" --> Applying Principal Component Analysis...", 2)
+            self._log(" --> Applying Principal Component Analysis...", 2)
 
             if self.scaler:
-                self.log("   --> Scaling features...", 2)
+                self._log("   --> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
             X = to_df(
@@ -1639,12 +1639,12 @@ class FeatureSelector(
             )
 
             var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
-            self.log(f"   --> Keeping {self.pca._comps} components.", 2)
-            self.log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
+            self._log(f"   --> Keeping {self.pca._comps} components.", 2)
+            self._log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() in ("sfm", "sfs", "rfe", "rfecv"):
             mask = self._estimator.get_support()
-            self.log(
+            self._log(
                 f" --> {self.strategy.lower()} selected "
                 f"{sum(mask)} features from the dataset.", 2
             )
@@ -1652,23 +1652,23 @@ class FeatureSelector(
             for n, column in enumerate(X):
                 if not mask[n]:
                     if hasattr(self._estimator, "ranking_"):
-                        self.log(
+                        self._log(
                             f"   --> Dropping feature {column} "
                             f"(rank {self._estimator.ranking_[n]}).", 2
                         )
                     else:
-                        self.log(f"   --> Dropping feature {column}.", 2)
+                        self._log(f"   --> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 
         else:  # Advanced strategies
-            self.log(
+            self._log(
                 f" --> {self.strategy.lower()} selected "
                 f"{len(self._estimator.best_feature_list)} features from the dataset.", 2
             )
 
             for column in X:
                 if column not in self._estimator.best_feature_list:
-                    self.log(f"   --> Dropping feature {column}.", 2)
+                    self._log(f"   --> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 
         return X

@@ -13,7 +13,7 @@ from importlib.util import find_spec
 
 import matplotlib.pyplot as plt
 import shap
-from typeguard import typechecked
+
 
 from atom.plots.base import BasePlot
 from atom.utils.types import INT, LEGEND, MODEL, SEQUENCE, SLICE

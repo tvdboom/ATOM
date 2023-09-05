@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import random
+import tempfile
 import warnings
 from copy import deepcopy
 from datetime import datetime as dt
@@ -27,23 +28,24 @@ import numpy as np
 import ray
 import requests
 from dagshub.auth.token_auth import HTTPBearerAuth
+from joblib.memory import Memory
 from ray.util.joblib import register_ray
 from sklearn.model_selection import train_test_split
+from sklearn.utils.validation import check_memory
 from sktime.datatypes import check_is_mtype
-from typeguard import typechecked
+
 
 from atom.utils.types import (
     BACKEND, BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, ESTIMATOR, FEATURES,
-    INDEX, INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SEVERITY,
-    TARGET, WARNINGS,
+    INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SEVERITY, TARGET,
+    WARNINGS,
 )
 from atom.utils.utils import (
-    bk, composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, sign,
-    to_df, to_pandas, IndexConfig
+    DataContainer, bk, composed, crash, get_cols, lst, merge, method_to_log,
+    n_cols, pd, sign, to_df, to_pandas,
 )
 
 
-@typechecked
 class BaseTransformer:
     """Base class for transformers in the package.
 
@@ -72,6 +74,7 @@ class BaseTransformer:
         "device",
         "engine",
         "backend",
+        "memory",
         "verbose",
         "warnings",
         "logger",
@@ -174,6 +177,21 @@ class BaseTransformer:
                 ray.init(log_to_driver=False)
 
         self._backend = value
+
+    @property
+    def memory(self) -> Memory:
+        """Get the internal memory object."""
+        return self._memory
+
+    @memory.setter
+    def memory(self, value: BOOL | str | Memory):
+        """Create a new internal memory object."""
+        if value is False:
+            value = None
+        elif value is True:
+            value = tempfile.gettempdir()
+
+        self._memory = check_memory(value)
 
     @property
     def verbose(self) -> Literal[0, 1, 2]:
@@ -382,7 +400,7 @@ class BaseTransformer:
         X: Callable | FEATURES | None = None,
         y: TARGET | None = None,
         columns: SEQUENCE | None = None,
-    ) -> (DATAFRAME | None, PANDAS | None):
+    ) -> tuple[DATAFRAME | None, PANDAS | None]:
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -574,7 +592,7 @@ class BaseTransformer:
         if self._config.stratify is False:
             return None
         elif self._config.shuffle is False:
-            self.log(
+            self._log(
                 "Stratification is not possible when shuffle=False.", 3,
                 severity="warning"
             )
@@ -608,7 +626,7 @@ class BaseTransformer:
         arrays: SEQUENCE,
         y: TARGET = -1,
         use_n_rows: BOOL = True,
-    ) -> (DATAFRAME, IndexConfig, DATAFRAME | None):
+    ) -> tuple[DATAFRAME, DataContainer, DATAFRAME | None]:
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -630,7 +648,7 @@ class BaseTransformer:
         dataframe
             Dataset containing the train and test sets.
 
-        IndexConfig
+        DataContainer
             Indices of the train and test sets.
 
         dataframe or None
@@ -671,7 +689,7 @@ class BaseTransformer:
         def _no_data_sets(
             X: DATAFRAME,
             y: PANDAS,
-        ) -> (DATAFRAME, IndexConfig, DATAFRAME | None):
+        ) -> tuple[DataContainer, DATAFRAME | None]:
             """Generate data sets from one dataset.
 
             Additionally, assigns an index, shuffles the data, selects
@@ -688,11 +706,8 @@ class BaseTransformer:
 
             Returns
             -------
-            dataframe
-                Dataset containing the train and test sets.
-
-            IndexConfig
-                Indices of the train and test sets.
+            DataContainer
+                Train and test sets.
 
             dataframe or None
                 Holdout data set. Returns None if not specified.
@@ -770,9 +785,8 @@ class BaseTransformer:
                     stratify=self._get_stratify_columns(data, y),
                 )
 
-                data = self._set_index(bk.concat([train, test]), y)
-
-                idx = IndexConfig(
+                container = DataContainer(
+                    data=(data := self._set_index(bk.concat([train, test]), y)),
                     train_idx=data.index[:-len(test)],
                     test_idx=data.index[-len(test):],
                     n_cols=len(get_cols(y)),
@@ -790,7 +804,7 @@ class BaseTransformer:
                 else:
                     raise ex
 
-            return data, idx, holdout
+            return container, holdout
 
         def _has_data_sets(
             X_train: DATAFRAME,
@@ -799,7 +813,7 @@ class BaseTransformer:
             y_test: PANDAS,
             X_holdout: DATAFRAME | None = None,
             y_holdout: PANDAS | None = None,
-        ) -> (DATAFRAME, IndexConfig, DATAFRAME | None):
+        ) -> tuple[DataContainer, DATAFRAME | None]:
             """Generate data sets from provided sets.
 
             Additionally, assigns an index, shuffles the data and
@@ -827,11 +841,8 @@ class BaseTransformer:
 
             Returns
             -------
-            dataframe
-                Dataset containing the train and test sets.
-
-            IndexConfig
-                Indices of the train and test sets.
+            DataContainer
+                Train and test sets.
 
             dataframe or None
                 Holdout data set. Returns None if not specified.
@@ -839,7 +850,10 @@ class BaseTransformer:
             """
             train = merge(X_train, y_train)
             test = merge(X_test, y_test)
-            holdout = merge(X_holdout, y_holdout) if X_holdout is not None else None
+            if X_holdout is not None:
+                holdout = merge(X_holdout, y_holdout)
+            else:
+                holdout = None
 
             # If the index is a sequence, assign it before shuffling
             if isinstance(self._config.index, SEQUENCE_TYPES):
@@ -883,15 +897,14 @@ class BaseTransformer:
                     )
                 holdout = self._set_index(holdout, y_train)
 
-            data = self._set_index(bk.concat([train, test]), y_train)
-
-            idx = IndexConfig(
+            container = DataContainer(
+                data=(data := self._set_index(bk.concat([train, test]), y_train)),
                 train_idx=data.index[:len(train)],
                 test_idx=data.index[-len(test):],
                 n_cols=len(get_cols(y_train)),
             )
 
-            return data, idx, holdout
+            return container, holdout
 
         # Process input arrays ===================================== >>
 
@@ -981,8 +994,8 @@ class BaseTransformer:
 
         return sets
 
-    @composed(crash, typechecked)
-    def log(self, msg: SCALAR | str, level: INT = 0, severity: SEVERITY = "info"):
+    @crash
+    def _log(self, msg: SCALAR | str, level: INT = 0, severity: SEVERITY = "info"):
         """Print message and save to log file.
 
         Parameters
@@ -1008,44 +1021,3 @@ class BaseTransformer:
         if self.logger:
             for text in str(msg).split("\n"):
                 getattr(self.logger, severity)(str(text))
-
-    @composed(crash, method_to_log, typechecked)
-    def save(self, filename: str = "auto", *, save_data: BOOL = True):
-        """Save the instance to a pickle file.
-
-        Parameters
-        ----------
-        filename: str, default="auto"
-            Name of the file. Use "auto" for automatic naming.
-
-        save_data: bool, default=True
-            Whether to save the dataset with the instance. This parameter
-            is ignored if the method is not called from atom. If False,
-            add the data to the [load][atomclassifier-load] method.
-
-        """
-        if not save_data and hasattr(self, "_branches"):
-            data = {}
-            for branch in self._branches:
-                data[branch.name] = dict(
-                    data=deepcopy(branch._data),
-                    holdout=deepcopy(branch._holdout),
-                )
-                branch._data = None
-                branch._holdout = None
-                branch.__dict__.pop("holdout", None)  # Clear cached holdout
-
-        if filename.endswith("auto"):
-            filename = filename.replace("auto", self.__class__.__name__)
-
-        with open(filename, "wb") as f:
-            pickle.settings["recurse"] = True
-            pickle.dump(self, f)
-
-        # Restore the data to the attributes
-        if not save_data and hasattr(self, "_branches"):
-            for branch in self._branches:
-                branch._data = data[branch.name]["data"]
-                branch._holdout = data[branch.name]["holdout"]
-
-        self.log(f"{self.__class__.__name__} successfully saved.", 1)

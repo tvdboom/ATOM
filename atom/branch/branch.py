@@ -14,20 +14,20 @@ from copy import copy
 from functools import cached_property
 from typing import Hashable
 
+import dill
 import pandas as pd
-from typeguard import typechecked
 
-from atom.models import MODELS_ENSEMBLES
+from atom.pipeline import Pipeline
 from atom.utils.types import (
     BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES,
     PANDAS, SEQUENCE, SERIES_TYPES, SLICE, TARGET,
 )
 from atom.utils.utils import (
-    CustomDict, bk, custom_transform, flt, get_cols, lst, merge, to_pandas, IndexConfig
+    CustomDict, DataContainer, bk, custom_transform, flt, get_cols, lst, merge,
+    to_pandas,
 )
 
 
-@typechecked
 class Branch:
     """Contains information corresponding to a branch.
 
@@ -44,47 +44,27 @@ class Branch:
     name: str
         Name of the branch.
 
-    data: dataframe, default=pd.DataFrame()
-        Complete dataset. Defaults to an empty frame if not provided.
-
-    index: IndexConfig or None, default=None
-        Dataclass containing the indices in the train and test set, as
-        well as the number of target columns.
+    data: DataContainer or None, default=None
+        Data for the branch.
 
     holdout: dataframe or None, default=None
-        Holdout dataset.
-
-    parent: Branch or None, default=None
-        Branch from which to split. If None, create an empty branch.
+        Holdout data set.
 
     """
 
     def __init__(
         self,
         name: str,
-        data: DATAFRAME = pd.DataFrame(),
-        index: IndexConfig | None = None,
+        data: DataContainer | None = None,
         holdout: DATAFRAME | None = None,
-        parent: BRANCH | None = None,
     ):
+        self.name = name
         self._data = data
-        self._idx = index
         self._holdout = holdout
-        self._pipeline = pd.Series(dtype="object")
+        self._pipeline = Pipeline([])
         self._mapping = CustomDict()
 
-        # If a parent branch is provided, transfer its attrs to this one
-        if parent:
-            # Copy the data attrs (except holdout) and point to the rest
-            for attr in ("_data", "_idx", "_pipeline", "_mapping"):
-                setattr(self, attr, copy(getattr(parent, attr)))
-            for attr in vars(parent):
-                if not hasattr(self, attr):  # If not already assigned...
-                    setattr(self, attr, getattr(parent, attr))
-
-        self.name = name  # Name at end to change pipeline's name
-
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"Branch({self.name})"
 
     def __bool__(self):
@@ -97,6 +77,8 @@ class Branch:
 
     @name.setter
     def name(self, value: str):
+        from atom.models import MODELS_ENSEMBLES  # Avoid circular import
+
         if not value:
             raise ValueError("A branch can't have an empty name!")
         else:
@@ -109,7 +91,6 @@ class Branch:
                     )
 
         self._name = value
-        self.pipeline.name = value
 
     # Data properties ============================================== >>
 
@@ -336,7 +317,7 @@ class Branch:
         self._data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self) -> (INT, INT):
+    def shape(self) -> tuple[INT, INT]:
         """Shape of the dataset (n_rows, n_columns)."""
         return self._data.shape
 

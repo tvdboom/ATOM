@@ -16,7 +16,6 @@ import pandas as pd
 from joblib.memory import Memory
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
-from typeguard import typechecked
 
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
@@ -36,13 +35,10 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class BaseRunner(BaseTracker):
     """Base class for runners.
 
-    Contains shared attributes and methods for the atom and trainer
-    classes. Implements magic methods, mlflow tracking properties,
-    utility properties, prediction methods and utility methods.
+    Contains shared attributes and methods for atom and trainers.
 
     """
 
@@ -59,7 +55,7 @@ class BaseRunner(BaseTracker):
             current_versions = get_versions(state["_models"])
             for key, value in current_versions.items():
                 if versions[key] != value:
-                    self.log(
+                    self._log(
                         f"The loaded instance used the {key} package with version "
                         f"{versions[key]} while the version in this environment is "
                         f"{value}.", 1, severity="warning"
@@ -125,18 +121,7 @@ class BaseRunner(BaseTracker):
     # Utility properties =========================================== >>
 
     @property
-    def og(self) -> BRANCH:
-        """Branch containing the original dataset.
-
-        This branch contains the data prior to any transformations.
-        It redirects to the current branch if its pipeline is empty
-        to not have the same data in memory twice.
-
-        """
-        return self._og or self.branch
-
-    @property
-    def branch(self) -> BRANCH:
+    def branch(self) -> Branch:
         """Current active branch.
 
         Use the property's `@setter` to change the branch or to create
@@ -147,7 +132,7 @@ class BaseRunner(BaseTracker):
         more in the [user guide][branches].
 
         """
-        return self._current
+        return self._branches.current
 
     @branch.deleter
     def branch(self):
@@ -163,8 +148,8 @@ class BaseRunner(BaseTracker):
         self._branches.remove(self._current)
         self._current = self._branches[-1]
 
-        self.log(f"Branch {self.branch.name} successfully deleted.", 1)
-        self.log(f"Switched to branch {self.branch.name}.", 1)
+        self._log(f"Branch {self.branch.name} successfully deleted.", 1)
+        self._log(f"Switched to branch {self.branch.name}.", 1)
 
     @property
     def models(self) -> str | list[str] | None:
@@ -474,7 +459,7 @@ class BaseRunner(BaseTracker):
         for model in self._models:
             model.clear()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def delete(
         self,
         models: INT | str | slice | MODEL | SEQUENCE | None = None
@@ -494,14 +479,14 @@ class BaseRunner(BaseTracker):
         """
         models = self._get_models(models)
         if not models:
-            self.log("No models to delete.", 1)
+            self._log("No models to delete.", 1)
         else:
-            self.log(f"Deleting {len(models)} models...", 1)
+            self._log(f"Deleting {len(models)} models...", 1)
             for m in models:
                 self._delete_models(m.name)
-                self.log(f" --> Model {m.name} successfully deleted.", 1)
+                self._log(f" --> Model {m.name} successfully deleted.", 1)
 
-    @composed(crash, typechecked)
+    @crash
     def evaluate(
         self,
         metric: METRIC_SELECTOR = None,
@@ -559,7 +544,7 @@ class BaseRunner(BaseTracker):
 
         return pd.DataFrame(evaluations)
 
-    @composed(crash, typechecked)
+    @crash
     def export_pipeline(
         self,
         model: str | MODEL | None = None,
@@ -623,7 +608,7 @@ class BaseRunner(BaseTracker):
         return export_pipeline(pipeline, model, memory, verbose)
 
     @available_if(has_task("class"))
-    @composed(crash, typechecked)
+    @crash
     def get_class_weight(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
@@ -660,7 +645,7 @@ class BaseRunner(BaseTracker):
         return CustomDict(weights)
 
     @available_if(has_task("class"))
-    @composed(crash, typechecked)
+    @crash
     def get_sample_weight(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
@@ -686,7 +671,7 @@ class BaseRunner(BaseTracker):
         weights = compute_sample_weight("balanced", y=getattr(self, dataset))
         return pd.Series(weights, name="sample_weight").round(3)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def merge(self, other: RUNNER, /, suffix: str = "2"):
         """Merge another instance of the same class into this one.
 
@@ -731,24 +716,65 @@ class BaseRunner(BaseTracker):
                 f"a different metric ({other.metric}) than this one ({self.metric})."
             )
 
-        self.log("Merging instances...", 1)
+        self._log("Merging instances...", 1)
         for branch in other._branches:
-            self.log(f" --> Merging branch {branch.name}.", 1)
+            self._log(f" --> Merging branch {branch.name}.", 1)
             if branch.name in self._branches:
                 branch._name = f"{branch.name}{suffix}"
             self._branches[branch.name] = branch
 
         for model in other._models:
-            self.log(f" --> Merging model {model.name}.", 1)
+            self._log(f" --> Merging model {model.name}.", 1)
             if model.name in self._models:
                 model._name = f"{model.name}{suffix}"
             self._models[model.name] = model
 
-        self.log(" --> Merging attributes.", 1)
+        self._log(" --> Merging attributes.", 1)
         if hasattr(self, "missing"):
             self.missing.extend([x for x in other.missing if x not in self.missing])
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
+    def save(self, filename: str = "auto", *, save_data: BOOL = True):
+        """Save the instance to a pickle file.
+
+        Parameters
+        ----------
+        filename: str, default="auto"
+            Name of the file. Use "auto" for automatic naming.
+
+        save_data: bool, default=True
+            Whether to save the dataset with the instance. This parameter
+            is ignored if the method is not called from atom. If False,
+            add the data to the [load][atomclassifier-load] method.
+
+        """
+        if not save_data and hasattr(self, "_branches"):
+            data = {}
+            for branch in self._branches:
+                data[branch.name] = dict(
+                    data=deepcopy(branch._data),
+                    holdout=deepcopy(branch._holdout),
+                )
+                branch._data = None
+                branch._holdout = None
+                branch.__dict__.pop("holdout", None)  # Clear cached holdout
+
+        if filename.endswith("auto"):
+            filename = filename.replace("auto", self.__class__.__name__)
+
+        with open(filename, "wb") as f:
+            pickle.settings["recurse"] = True
+            pickle.dump(self, f)
+
+        # Restore the data to the attributes
+        if not save_data and hasattr(self, "_branches"):
+            for branch in self._branches:
+                branch._data = data[branch.name]["data"]
+                branch._holdout = data[branch.name]["holdout"]
+
+        self._log(f"{self.__class__.__name__} successfully saved.", 1)
+
+    @composed(crash, method_to_log)
     def stacking(
         self,
         models: slice | SEQUENCE | None = None,
@@ -826,7 +852,7 @@ class BaseRunner(BaseTracker):
 
         self[name].fit()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def voting(
         self,
         models: slice | SEQUENCE | None = None,

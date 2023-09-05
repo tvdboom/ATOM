@@ -10,9 +10,11 @@ Description: Module containing utilities for typing analysis.
 from __future__ import annotations
 
 from typing import (
-    Callable, Literal, Protocol, TypedDict, Union, runtime_checkable,
+    Callable, Literal, Protocol, TypedDict, Union, runtime_checkable, Any
 )
-
+from beartype.vale import Is
+from beartype.typing import Annotated, TypeVar, Protocol, Iterable
+from beartype.door import is_bearable
 import modin.pandas as md
 import numpy as np
 import pandas as pd
@@ -42,6 +44,8 @@ SEQUENCE_TYPES = (list, tuple, np.ndarray, *INDEX_TYPES, *SERIES_TYPES)
 
 
 # Variable types for type hinting ================================== >>
+
+T = TypeVar("T")
 
 BOOL = Union[BOOL_TYPES]
 INT = Union[INT_TYPES]
@@ -109,6 +113,40 @@ class ENGINE(TypedDict, total=False):
     """Types for the `engine` parameter."""
     data: Literal["numpy", "pyarrow", "modin"]
     estimator: Literal["sklearn", "sklearnex", "cuml"]
+
+
+class SeqProtocol(Protocol[T]):
+    """Protocol for all sequences."""
+    def __iter__(self) -> Iterable[T]: ...
+    def __getitem__(self, item) -> T: ...
+    def __len__(self) -> INT: ...
+
+
+class SEQUENCE:
+    """Type hint factory for sequences with subscripted types.
+
+    Dynamically creates new `Annotated[SeqProtocol[...], ...]` type
+    hints, subscripted by the passed type.
+
+    Parameters
+    ----------
+    X : object
+        Arbitrary child type hint with which to subscript the
+        `SeqProtocol` protocol.
+
+    Returns
+    ----------
+    Annotated
+        `Annotated[SeqProtocol[X], ...]` type hint validating that all
+        items of this sequence satisfy this child type hint.
+
+    """
+
+    @classmethod
+    def __class_getitem__(cls, X: Any) -> Annotated[SeqProtocol, Is]:
+        return Annotated[SeqProtocol[X], Is[
+            lambda l: not isinstance(l, str) and all(is_bearable(i, X) for i in l)]
+        ]
 
 
 @runtime_checkable

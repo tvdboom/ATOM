@@ -10,11 +10,12 @@ Description: Module containing the API classes.
 from __future__ import annotations
 
 from logging import Logger
+from pathlib import Path
 from typing import Literal
 
+from joblib.memory import Memory
 from sklearn.base import clone
-from typeguard import typechecked
-
+from beartype import beartype
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
@@ -23,7 +24,7 @@ from atom.utils.types import (
 )
 
 
-@typechecked
+@beartype
 def ATOMModel(
     estimator: PREDICTOR,
     name: str | None = None,
@@ -117,6 +118,7 @@ def ATOMModel(
     return estimator
 
 
+@beartype
 class ATOMClassifier(BaseTransformer, ATOM):
     """Main class for classification tasks.
 
@@ -260,6 +262,16 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -319,7 +331,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
     def __init__(
         self,
         *arrays,
@@ -334,6 +345,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -345,6 +357,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             device=device,
             engine=engine,
             backend=backend,
+            memory=memory,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -486,6 +499,16 @@ class ATOMForecaster(BaseTransformer, ATOM):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -541,7 +564,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
+    @beartype
     def __init__(
         self,
         *arrays,
@@ -553,6 +576,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -564,6 +588,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
             device=device,
             engine=engine,
             backend=backend,
+            memory=memory,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -715,6 +740,16 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -774,7 +809,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     """
 
-    @typechecked
+    @beartype
     def __init__(
         self,
         *arrays,
@@ -788,6 +823,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -799,6 +835,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             device=device,
             engine=engine,
             backend=backend,
+            memory=memory,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

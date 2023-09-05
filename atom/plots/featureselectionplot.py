@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import plotly.graph_objects as go
 from sklearn.utils.metaestimators import available_if
-from typeguard import typechecked
+
 
 from atom.plots.base import BasePlot
 from atom.utils.types import INT, LEGEND
@@ -28,7 +28,7 @@ class FeatureSelectionPlot(BasePlot):
     """
 
     @available_if(has_attr("pca"))
-    @composed(crash, typechecked)
+    @crash
     def plot_components(
         self,
         show: INT | None = None,
@@ -154,7 +154,7 @@ class FeatureSelectionPlot(BasePlot):
         )
 
     @available_if(has_attr("pca"))
-    @composed(crash, typechecked)
+    @crash
     def plot_pca(
         self,
         *,
@@ -271,7 +271,7 @@ class FeatureSelectionPlot(BasePlot):
         )
 
     @available_if(has_attr("rfecv"))
-    @composed(crash, typechecked)
+    @crash
     def plot_rfecv(
         self,
         *,

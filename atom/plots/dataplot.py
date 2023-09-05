@@ -17,7 +17,7 @@ from nltk.collocations import (
     TrigramCollocationFinder,
 )
 from scipy import stats
-from typeguard import typechecked
+
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
@@ -36,7 +36,7 @@ class DataPlot(BasePlot):
 
     """
 
-    @composed(crash, typechecked)
+    @crash
     def plot_correlation(
         self,
         columns: slice | SEQUENCE | None = None,
@@ -170,7 +170,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_distribution(
         self,
         columns: SLICE = 0,
@@ -389,7 +389,7 @@ class DataPlot(BasePlot):
                 display=display,
             )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_ngrams(
         self,
         ngram: INT | str = "bigram",
@@ -567,7 +567,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_qq(
         self,
         columns: SLICE = 0,
@@ -688,7 +688,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_relationships(
         self,
         columns: slice | SEQUENCE = (0, 1, 2),
@@ -851,7 +851,7 @@ class DataPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, typechecked)
+    @crash
     def plot_wordcloud(
         self,
         index: SLICE | None = None,

@@ -19,7 +19,7 @@ from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
-from typeguard import typechecked
+
 
 from atom.utils.types import (
     BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, INT, PANDAS, SEQUENCE, SERIES,
@@ -64,7 +64,7 @@ class Pipeline(skPipeline):
     ):
         super().__init__(steps, memory=memory, verbose=verbose)
 
-        # If all estimators are fitted, Pipeline is fitted
+        # If all estimators are fitted, the Pipeline is fitted
         self._is_fitted = False
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
             self._is_fitted = True

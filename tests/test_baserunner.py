@@ -559,6 +559,22 @@ def test_merge_with_suffix():
     assert atom_1.models == ["Tree", "Tree2"]
 
 
+def test_file_is_saved():
+    """Assert that the pickle file is saved."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.save("auto")
+    assert glob.glob("ATOMClassifier")
+
+
+@patch("atom.baserunner.pickle")
+def test_save_data_false(cls):
+    """Assert that the dataset is restored after saving with save_data=False"""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.save(filename="atom", save_data=False)
+    assert atom.dataset is not None  # Dataset is restored after saving
+    assert atom.holdout is not None  # Holdout is restored after saving
+
+
 def test_stacking():
     """Assert that the stacking method creates a Stack model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

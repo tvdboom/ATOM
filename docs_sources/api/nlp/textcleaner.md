@@ -20,4 +20,6 @@
 ## Methods
 
 :: methods:
-    toc_only: False 
+    toc_only: False
+    exclude:
+        - get_metadata_routing 

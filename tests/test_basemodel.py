@@ -43,8 +43,8 @@ def test_scaler():
     assert atom.lgb.scaler and not atom.lda.scaler
 
 
-def test_repr():
-    """Assert that the __repr__ method works as intended."""
+def test_str():
+    """Assert that the __str__ method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LDA")
     assert str(atom.lda).startswith("LinearDiscriminantAnalysis")

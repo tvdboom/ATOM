@@ -21,7 +21,6 @@ from optuna.visualization._parallel_coordinate import (
 from optuna.visualization._terminator_improvement import _get_improvement_info
 from optuna.visualization._utils import _is_log_scale
 from sklearn.utils._bunch import Bunch
-from typeguard import typechecked
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE

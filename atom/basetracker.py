@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from typeguard import typechecked
+
 
 from atom.utils.types import BOOL
 
@@ -27,7 +27,6 @@ class TrackingParams:
     log_pipeline: BOOL  # Save the model's pipeline
 
 
-@typechecked
 class BaseTracker:
 
     # Tracking parameters for mlflow

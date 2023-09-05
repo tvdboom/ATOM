@@ -42,7 +42,7 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
-from typeguard import typechecked
+
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import MISSING_VALUES
@@ -106,11 +106,11 @@ class TransformerMixin:
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        self.log(f"Fitting {self.__class__.__name__}...", 1)
+        self._log(f"Fitting {self.__class__.__name__}...", 1)
 
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit_transform(
         self,
         X: FEATURES | None = None,
@@ -151,7 +151,7 @@ class TransformerMixin:
         """
         return self.fit(X, y, **fit_params).transform(X, y)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -317,8 +317,8 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.mapping = {}
         self._is_fitted = True
 
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: FEATURES, y: TARGET = -1) -> (DATAFRAME, PANDAS):
+    @composed(crash, method_to_log)
+    def transform(self, X: FEATURES, y: TARGET = -1) -> tuple[DATAFRAME, PANDAS]:
         """Balance the data.
 
         Parameters
@@ -348,9 +348,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             for key, value in self.mapping.items():
                 diff = counts[key] - np.sum(y == value)
                 if diff > 0:
-                    self.log(f" --> Removing {diff} samples from class {key}.", 2)
+                    self._log(f" --> Removing {diff} samples from class {key}.", 2)
                 elif diff < 0:
-                    self.log(f" --> Adding {-diff} samples to class {key}.", 2)
+                    self._log(f" --> Adding {-diff} samples to class {key}.", 2)
 
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
@@ -409,7 +409,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         estimator = self._inherit(estimator)
 
         if "over_sampling" in estimator.__module__:
-            self.log(f"Oversampling with {estimator.__class__.__name__}...", 1)
+            self._log(f"Oversampling with {estimator.__class__.__name__}...", 1)
 
             index = X.index  # Save indices for later reassignment
             X, y = estimator.fit_resample(X, y)
@@ -430,7 +430,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             log_changes(y)
 
         elif "under_sampling" in estimator.__module__:
-            self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
+            self._log(f"Undersampling with {estimator.__class__.__name__}...", 1)
 
             estimator.fit_resample(X, y)
 
@@ -441,7 +441,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             log_changes(y)
 
         elif "combine" in estimator.__module__:
-            self.log(f"Balancing with {estimator.__class__.__name__}...", 1)
+            self._log(f"Balancing with {estimator.__class__.__name__}...", 1)
 
             index = X.index
             X_new, y_new = estimator.fit_resample(X, y)
@@ -475,13 +475,13 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             for key, value in self.mapping.items():
                 diff = np.sum(y_new == value)
                 if diff > 0:
-                    self.log(f" --> Adding {diff} samples to class: {key}.", 2)
+                    self._log(f" --> Adding {diff} samples to class: {key}.", 2)
 
             # Then, output the samples dropped
             for key, value in self.mapping.items():
                 diff = counts[key] - np.sum(y == value)
                 if diff > 0:
-                    self.log(f" --> Removing {diff} samples from class: {key}.", 2)
+                    self._log(f" --> Removing {diff} samples from class: {key}.", 2)
 
             # Add the new samples to the old dataframe
             X, y = bk.concat([X, X_new]), bk.concat([y, y_new])
@@ -667,7 +667,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimators = {}
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES | None = None, y: TARGET | None = None) -> Cleaner:
         """Fit to data.
 
@@ -698,7 +698,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        self.log("Fitting Cleaner...", 1)
+        self._log("Fitting Cleaner...", 1)
 
         self.mapping = {}  # In case the class is refitted
         if y is not None:
@@ -731,7 +731,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
         X: FEATURES | None = None,
@@ -768,7 +768,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
-        self.log("Cleaning the data...", 1)
+        self._log("Cleaning the data...", 1)
 
         if X is not None:
             # Replace all missing values with NaN
@@ -779,7 +779,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Drop features with invalid data type
                 if dtype in lst(self.drop_dtypes):
-                    self.log(
+                    self._log(
                         f" --> Dropping feature {name} for "
                         f"having a prohibited type: {dtype}.", 2
                     )
@@ -820,18 +820,18 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     X = X[X.index.isin(y.index)]  # Select only indices that remain
 
                 if (d := length - len(y)) > 0:
-                    self.log(f" --> Dropping {d} rows with missing values in target.", 2)
+                    self._log(f" --> Dropping {d} rows with missing values in target.", 2)
 
             if self.encode_target and self._estimators:
                 y_transformed = y.__class__(dtype="object")
                 for col in get_cols(y):
                     if est := self._estimators.get(col.name):
                         if n_cols(out := est.transform(col)) == 1:
-                            self.log(f" --> Label-encoding column {col.name}.", 2)
+                            self._log(f" --> Label-encoding column {col.name}.", 2)
                             out = to_series(out, y.index, col.name)
 
                         else:
-                            self.log(f" --> Label-binarizing column {col.name}.", 2)
+                            self._log(f" --> Label-binarizing column {col.name}.", 2)
                             out = to_df(
                                 data=out,
                                 index=y.index,
@@ -854,7 +854,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         return variable_return(X, y)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -893,18 +893,18 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
-        self.log("Inversely cleaning the data...", 1)
+        self._log("Inversely cleaning the data...", 1)
 
         if y is not None and self._estimators:
             y_transformed = y.__class__(dtype="object")
             for col in self.target_names_in_:
                 if est := self._estimators.get(col):
                     if est.__class__.__name__ == "LabelEncoder":
-                        self.log(f" --> Inversely label-encoding column {col}.", 2)
+                        self._log(f" --> Inversely label-encoding column {col}.", 2)
                         out = est.inverse_transform(bk.DataFrame(y)[col])
 
                     else:
-                        self.log(f" --> Inversely label-binarizing column {col}.", 2)
+                        self._log(f" --> Inversely label-binarizing column {col}.", 2)
                         out = est.inverse_transform(
                             y.iloc[:, y.columns.str.startswith(f"{col}_")].values
                         )
@@ -1102,7 +1102,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._labels = {}
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Discretizer:
         """Fit to data.
 
@@ -1144,7 +1144,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_n_features(X, reset=True)
         self._num_cols = list(X.select_dtypes(include="number"))
 
-        self.log("Fitting Discretizer...", 1)
+        self._log("Fitting Discretizer...", 1)
 
         labels = {} if self.labels is None else self.labels
         for i, col in enumerate(self._num_cols):
@@ -1212,7 +1212,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Bin the data into intervals.
 
@@ -1232,7 +1232,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Binning the features...", 1)
+        self._log("Binning the features...", 1)
 
         for col in self._num_cols:
             if self.strategy.lower() == "custom":
@@ -1244,7 +1244,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 for i, label in enumerate(self._labels[col]):
                     X[col] = X[col].replace(i, label)
 
-            self.log(f" --> Discretizing feature {col} in {X[col].nunique()} bins.", 2)
+            self._log(f" --> Discretizing feature {col} in {X[col].nunique()} bins.", 2)
 
         return X
 
@@ -1413,7 +1413,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._encoders = {}
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Encoder:
         """Fit to data.
 
@@ -1507,7 +1507,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 self._infrequent_to_value = self.infrequent_to_value
 
-        self.log("Fitting Encoder...", 1)
+        self._log("Fitting Encoder...", 1)
 
         # Reset internal attrs in case of repeated fit
         self.mapping = {}
@@ -1532,7 +1532,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 # Check that provided classes match those of column
                 ordinal = ordinal.get(name, self._categories[name])
                 if column.nunique(dropna=True) != len(ordinal):
-                    self.log(
+                    self._log(
                         f" --> The number of classes passed to feature {name} in the "
                         f"ordinal parameter ({len(ordinal)}) don't match the number "
                         f"of classes in the data ({column.nunique(dropna=True)}).", 1,
@@ -1584,7 +1584,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Encode the data.
 
@@ -1605,7 +1605,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Encoding categorical columns...", 1)
+        self._log("Encoding categorical columns...", 1)
 
         for name, column in X[self._cat_cols].items():
             # Convert uncommon classes to "other"
@@ -1613,7 +1613,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 X[name] = column.replace(self._to_value[name], self.value)
 
             n_classes = len(column.unique())
-            self.log(
+            self._log(
                 f" --> {self._encoders[name].__class__.__name__[:-7]}-encoding "
                 f"feature {name}. Contains {n_classes} classes.", 2
             )
@@ -1621,7 +1621,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             # Count the propagated missing values
             n_nans = column.isna().sum()
             if n_nans:
-                self.log(f"   --> Propagating {n_nans} missing values.", 2)
+                self._log(f"   --> Propagating {n_nans} missing values.", 2)
 
             # Get the new encoded columns
             new_cols = self._encoders[name].transform(X[[name]])
@@ -1632,7 +1632,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             # Check for unknown classes
             uc = len([i for i in column.unique() if i not in self._categories[name]])
             if uc:
-                self.log(f"   --> Handling {uc} unknown classes.", 2)
+                self._log(f"   --> Handling {uc} unknown classes.", 2)
 
             # Insert the new columns at old location
             for i, new_col in enumerate(sorted(new_cols)):
@@ -1815,7 +1815,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._num_cols = []
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Imputer:
         """Fit to data.
 
@@ -1861,7 +1861,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 max_nan_cols = self.max_nan_cols
 
-        self.log("Fitting Imputer...", 1)
+        self._log("Fitting Imputer...", 1)
 
         # Replace all missing values with NaN
         X = X.replace(self.missing + MISSING_VALUES, np.NaN)
@@ -1918,7 +1918,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
         X: FEATURES,
@@ -1958,7 +1958,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Imputing missing values...", 1)
+        self._log("Imputing missing values...", 1)
 
         # Replace all missing values with NaN
         X = X.replace(self.missing + MISSING_VALUES, np.NaN)
@@ -1970,7 +1970,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             if diff := length - len(X):
                 if y is not None:
                     y = y[y.index.isin(X.index)]  # Select only indices that remain
-                self.log(
+                self._log(
                     f" --> Dropping {diff} samples for containing "
                     f"more than {self._max_nan_rows} missing values.", 2
                 )
@@ -1980,7 +1980,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Drop columns with too many missing values
             if name in self._drop_cols:
-                self.log(
+                self._log(
                     f" --> Dropping feature {name}. Contains {nans} "
                     f"({nans * 100 // len(X)}%) missing values.", 2
                 )
@@ -1990,7 +1990,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             # Apply only if column is numerical and contains missing values
             if name in self._num_cols and nans > 0:
                 if not isinstance(self.strat_num, str):
-                    self.log(
+                    self._log(
                         f" --> Imputing {nans} missing values with number "
                         f"{str(self.strat_num)} in feature {name}.", 2
                     )
@@ -2000,13 +2000,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     X = X.dropna(subset=[name], axis=0)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self.log(
+                    self._log(
                         f" --> Dropping {nans} samples due to missing "
                         f"values in feature {name}.", 2
                     )
 
                 elif self.strat_num.lower() == "knn":
-                    self.log(
+                    self._log(
                         f" --> Imputing {nans} missing values using "
                         f"the KNN imputer in feature {name}.", 2
                     )
@@ -2014,7 +2014,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 else:  # Strategies mean, median or most_frequent
                     n = np.round(self._imputers[name].statistics_[0], 2)
-                    self.log(
+                    self._log(
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
                     )
@@ -2023,7 +2023,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             # Column is categorical and contains missing values
             elif nans > 0:
                 if self.strat_cat.lower() not in ("drop", "most_frequent"):
-                    self.log(
+                    self._log(
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_cat} in feature {name}.", 2
                     )
@@ -2033,14 +2033,14 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     X = X.dropna(subset=[name], axis=0)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self.log(
+                    self._log(
                         f" --> Dropping {nans} samples due to "
                         f"missing values in feature {name}.", 2
                     )
 
                 elif self.strat_cat.lower() == "most_frequent":
                     mode = self._imputers[name].statistics_[0]
-                    self.log(
+                    self._log(
                         f" --> Imputing {nans} missing values with "
                         f"most_frequent ({mode}) in feature {name}.", 2
                     )
@@ -2202,7 +2202,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Normalizer:
         """Fit to data.
 
@@ -2251,7 +2251,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"Choose from: {', '.join(strategies)}."
             )
 
-        self.log("Fitting Normalizer...", 1)
+        self._log("Fitting Normalizer...", 1)
         self._estimator.fit(X[self._num_cols])
 
         # Add the estimator as attribute to the instance
@@ -2260,7 +2260,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
@@ -2281,7 +2281,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Normalizing features...", 1)
+        self._log("Normalizing features...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])
 
         # If all columns were transformed, just swap sets
@@ -2294,7 +2294,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         return X
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the inverse transformation to the data.
 
@@ -2315,7 +2315,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
-        self.log("Inversely normalizing features...", 1)
+        self._log("Inversely normalizing features...", 1)
         X_transformed = self._estimator.inverse_transform(X[self._num_cols])
 
         # If all columns were transformed, just swap sets
@@ -2492,7 +2492,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._is_fitted = True
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
         X: FEATURES,
@@ -2568,7 +2568,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 elif key.lower() not in map(str.lower, lst(self.strategy)):
                     kwargs[strat].update({key: value})
 
-        self.log("Pruning outliers...", 1)
+        self._log("Pruning outliers...", 1)
 
         # Prepare dataset (merge with y and exclude categorical columns)
         objective = merge(X, y) if self.include_target and y is not None else X
@@ -2583,7 +2583,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 if not isinstance(self.method, str):
                     cond = np.abs(z_scores) > self.max_sigma
                     objective = objective.mask(cond, self.method)
-                    self.log(
+                    self._log(
                         f" --> Replacing {cond.sum()} outlier "
                         f"values with {self.method}.", 2
                     )
@@ -2605,7 +2605,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                         # Sum number of replacements
                         counts += cond1.sum() + cond2.sum()
 
-                    self.log(
+                    self._log(
                         f" --> Replacing {counts} outlier values "
                         "with the min or max of the column.", 2
                     )
@@ -2614,7 +2614,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                     mask = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
                     outliers.append(mask)
                     if len(lst(self.strategy)) > 1:
-                        self.log(
+                        self._log(
                             f" --> The zscore strategy detected "
                             f"{len(mask) - sum(mask)} outliers.", 2
                         )
@@ -2624,7 +2624,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 mask = estimator.fit_predict(objective) >= 0
                 outliers.append(mask)
                 if len(lst(self.strategy)) > 1:
-                    self.log(
+                    self._log(
                         f" --> The {estimator.__class__.__name__} "
                         f"detected {len(mask) - sum(mask)} outliers.", 2
                     )
@@ -2635,7 +2635,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         if outliers:
             # Select outliers from intersection of strategies
             mask = [any([i for i in strats]) for strats in zip(*outliers)]
-            self.log(f" --> Dropping {len(mask) - sum(mask)} outliers.", 2)
+            self._log(f" --> Dropping {len(mask) - sum(mask)} outliers.", 2)
 
             # Keep only the non-outliers from the data
             X = X[mask]
@@ -2786,7 +2786,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Scaler:
         """Fit to data.
 
@@ -2824,7 +2824,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
         self._estimator = estimator(**self.kwargs)
 
-        self.log("Fitting Scaler...", 1)
+        self._log("Fitting Scaler...", 1)
         self._estimator.fit(X[self._num_cols])
 
         # Add the estimator as attribute to the instance
@@ -2833,7 +2833,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Perform standardization by centering and scaling.
 
@@ -2854,7 +2854,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
-        self.log("Scaling features...", 1)
+        self._log("Scaling features...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])
 
         # If all columns were transformed, just swap sets
@@ -2867,7 +2867,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         return X
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the inverse transformation to the data.
 
@@ -2888,7 +2888,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
-        self.log("Inversely scaling features...", 1)
+        self._log("Inversely scaling features...", 1)
         X_transformed = self._estimator.inverse_transform(X[self._num_cols])
 
         # If all columns were transformed, just swap sets

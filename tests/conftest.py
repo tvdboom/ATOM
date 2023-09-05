@@ -61,7 +61,7 @@ def change_current_dir(tmp_path: Callable, monkeypatch: Callable):
     monkeypatch.chdir(tmp_path)
 
 
-def get_train_test(X: FEATURES | None, y: TARGET) -> (PANDAS, PANDAS):
+def get_train_test(X: FEATURES | None, y: TARGET) -> tuple[PANDAS, PANDAS]:
     """Get train and test sets from X and y.
 
     Parameters

@@ -24,7 +24,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
-from typeguard import typechecked
+
 
 from atom.utils.types import BOOL, FEATURES, INT, PREDICTOR, SEQUENCE
 from atom.utils.utils import check_is_fitted

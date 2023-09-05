@@ -24,7 +24,7 @@ from nltk.collocations import (
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
-from typeguard import typechecked
+
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
@@ -210,7 +210,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         # Encountered regex occurrences
         self.drops = pd.DataFrame()
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
@@ -253,7 +253,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 return elem  # Return unchanged if encoding was successful
 
-        def drop_regex(search: str) -> (int, int):
+        def drop_regex(search: str) -> tuple[int, int]:
             """Find and remove a regex expression from the text.
 
             Parameters
@@ -295,56 +295,56 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         for elem in ("email", "url", "html", "emoji", "number"):
             drops[elem] = pd.Series(name=elem, dtype="object")
 
-        self.log("Cleaning the corpus...", 1)
+        self._log("Cleaning the corpus...", 1)
 
         if self.decode:
             if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].apply(lambda elem: to_ascii(elem))
             else:
                 X[corpus] = X[corpus].apply(lambda elem: [to_ascii(str(w)) for w in elem])
-        self.log(" --> Decoding unicode characters to ascii.", 2)
+        self._log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
             if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
                 X[corpus] = X[corpus].apply(lambda elem: [str(w).lower() for w in elem])
-        self.log(" --> Converting text to lower case.", 2)
+        self._log(" --> Converting text to lower case.", 2)
 
         if self.drop_email:
             if not self.regex_email:
                 self.regex_email = r"[\w.-]+@[\w-]+\.[\w.-]+"
 
             counts, docs = drop_regex("email")
-            self.log(f" --> Dropping {counts} emails from {docs} documents.", 2)
+            self._log(f" --> Dropping {counts} emails from {docs} documents.", 2)
 
         if self.drop_url:
             if not self.regex_url:
                 self.regex_url = r"https?://\S+|www\.\S+"
 
             counts, docs = drop_regex("url")
-            self.log(f" --> Dropping {counts} URL links from {docs} documents.", 2)
+            self._log(f" --> Dropping {counts} URL links from {docs} documents.", 2)
 
         if self.drop_html:
             if not self.regex_html:
                 self.regex_html = r"<.*?>"
 
             counts, docs = drop_regex("html")
-            self.log(f" --> Dropping {counts} HTML tags from {docs} documents.", 2)
+            self._log(f" --> Dropping {counts} HTML tags from {docs} documents.", 2)
 
         if self.drop_emoji:
             if not self.regex_emoji:
                 self.regex_emoji = r":[a-z_]+:"
 
             counts, docs = drop_regex("emoji")
-            self.log(f" --> Dropping {counts} emojis from {docs} documents.", 2)
+            self._log(f" --> Dropping {counts} emojis from {docs} documents.", 2)
 
         if self.drop_number:
             if not self.regex_number:
                 self.regex_number = r"\b\d+\b"
 
             counts, docs = drop_regex("number")
-            self.log(f" --> Dropping {counts} numbers from {docs} documents.", 2)
+            self._log(f" --> Dropping {counts} numbers from {docs} documents.", 2)
 
         if self.drop_punctuation:
             trans_table = str.maketrans("", "", punctuation)  # Translation table
@@ -353,7 +353,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 func = lambda row: [str(w).translate(trans_table) for w in row]
             X[corpus] = X[corpus].apply(func)
-            self.log(" --> Dropping punctuation from the text.", 2)
+            self._log(" --> Dropping punctuation from the text.", 2)
 
         # Convert all drops to one dataframe attribute
         self.drops = pd.concat(drops.values(), axis=1)
@@ -490,7 +490,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Normalize the text.
 
@@ -537,7 +537,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
-        self.log("Normalizing the corpus...", 1)
+        self._log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
         if isinstance(X[corpus].iat[0], str):
@@ -556,7 +556,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             stopwords = set(stopwords + list(self.custom_stopwords))
 
         if stopwords:
-            self.log(" --> Dropping stopwords.", 2)
+            self._log(" --> Dropping stopwords.", 2)
             f = lambda row: [word for word in row if word not in stopwords]
             X[corpus] = X[corpus].apply(f)
 
@@ -564,12 +564,12 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.stem is True:
                 self.stem = "english"
 
-            self.log(" --> Applying stemming.", 2)
+            self._log(" --> Applying stemming.", 2)
             ss = SnowballStemmer(language=self.stem.lower())
             X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
-            self.log(" --> Applying lemmatization.", 2)
+            self._log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
             X[corpus] = X[corpus].apply(f)
@@ -712,7 +712,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.trigrams = None
         self.quadgrams = None
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Tokenize the text.
 
@@ -763,7 +763,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
-        self.log("Tokenizing the corpus...", 1)
+        self._log("Tokenizing the corpus...", 1)
 
         if isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
@@ -797,9 +797,9 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
                     df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
                     setattr(self, attr, df.reset_index(drop=True))
 
-                    self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
+                    self._log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
                 else:
-                    self.log(f" --> No {attr} found in the corpus.")
+                    self._log(f" --> No {attr} found in the corpus.")
 
         return X
 
@@ -962,7 +962,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = None
         self._is_fitted = False
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> Vectorizer:
         """Fit to data.
 
@@ -1003,7 +1003,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         )
         self._estimator = estimator(**self.kwargs)
 
-        self.log("Fitting Vectorizer...", 1)
+        self._log("Fitting Vectorizer...", 1)
         self._estimator.fit(X[corpus])
 
         # Add the estimator as attribute to the instance
@@ -1012,7 +1012,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
         return self
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Vectorize the text.
 
@@ -1036,7 +1036,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
         corpus = get_corpus(X)
 
-        self.log("Vectorizing the corpus...", 1)
+        self._log("Vectorizing the corpus...", 1)
 
         # Convert sequence of tokens to space separated string
         if not isinstance(X[corpus].iat[0], str):
@@ -1060,7 +1060,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 columns = [f"{corpus}_{w}" for w in vocabulary.to_numpy()]
 
         if not self.return_sparse:
-            self.log(" --> Converting the output to a full array.", 2)
+            self._log(" --> Converting the output to a full array.", 2)
             matrix = matrix.toarray()
         elif not X.empty and not is_sparse(X):
             # Raise if there are other columns that are non-sparse

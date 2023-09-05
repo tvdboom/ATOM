@@ -53,9 +53,9 @@ from sklearn.utils import _print_elapsed_time
 from atom.utils.constants import __version__
 from atom.utils.types import (
     BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT,
-    INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES, PREDICTOR,
-    SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES, TARGET,
-    TRANSFORMER, INDEX
+    INDEX, INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES,
+    PREDICTOR, SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES,
+    TARGET, TRANSFORMER,
 )
 
 
@@ -86,16 +86,12 @@ class DataConfig:
 
 
 @dataclass
-class IndexConfig:
-    """Stores the index configuration.
-
-    This is a utility class to store the configuration of the indices
-    in a branch.
-
-    """
-    train_idx: INDEX  # Indices in the train set
-    test_idx: INDEX  # Indices in the test
-    n_cols: INT  # Number of target columns
+class DataContainer:
+    """Stores a branch's data."""
+    data: DATAFRAME = pd.DataFrame()  # Complete dataset
+    train_idx: INDEX = pd.Index()  # Indices in the train set
+    test_idx: INDEX = pd.index()  # Indices in the test
+    n_cols: INT = 0  # Number of target columns
 
 
 class PandasModin:
@@ -112,7 +108,7 @@ class PandasModin:
             return getattr(pd, item)
 
 
-# This instance is used by ATOM to access the data engine
+# ATOM uses this instance to access the data engine
 bk = PandasModin()
 
 
@@ -226,7 +222,7 @@ class LGBMetric:
         y_true: np.ndarray,
         y_pred: np.ndarray,
         weight: np.ndarray,
-    ) -> (str, FLOAT, bool):
+    ) -> tuple[str, FLOAT, bool]:
         """Evaluates metric value.
 
         Parameters
@@ -929,8 +925,8 @@ class ClassMap:
     def __contains__(self, key):
         return key in self.__data or self._conv(key) in self.keys_lower()
 
-    def __repr__(self):
-        return self.__data.__repr__()
+    def __str__(self):
+        return self.__data.__str__()
 
     def __reversed__(self):
         yield from reversed(list(self.__data))
@@ -953,6 +949,7 @@ class ClassMap:
 
     def append(self, value):
         self.__data.append(self._check(value))
+        return value
 
     def extend(self, value):
         self.__data.extend(list(map(self._check, value)))
@@ -1055,7 +1052,7 @@ class CustomDict(MutableMapping):
     def __contains__(self, key):
         return self._conv(key) in self.__data
 
-    def __repr__(self):
+    def __str__(self):
         return pprint.pformat(dict(self), sort_dicts=False)
 
     def __reversed__(self):
@@ -2397,7 +2394,7 @@ def transform_one(
     X: FEATURES | None = None,
     y: TARGET | None = None,
     method: str = "transform",
-) -> (DATAFRAME | None, SERIES | None):
+) -> tuple[DATAFRAME | None, SERIES | None]:
     """Transform the data using one estimator.
 
     Parameters
@@ -2542,7 +2539,7 @@ def fit_transform_one(
     y: TARGET | None = None,
     message: str | None = None,
     **fit_params,
-) -> (DATAFRAME | None, SERIES | None, TRANSFORMER):
+) -> tuple[DATAFRAME | None, SERIES | None, TRANSFORMER]:
     """Fit and transform the data using one estimator.
 
     Parameters
@@ -2594,7 +2591,7 @@ def custom_transform(
     data: tuple[DATAFRAME, PANDAS] | None = None,
     verbose: int | None = None,
     method: str = "transform",
-) -> (DATAFRAME, PANDAS):
+) -> tuple[DATAFRAME, PANDAS]:
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -2660,7 +2657,7 @@ def custom_transform(
             )
 
             # y can change the number of columns or remove rows -> reassign index
-            branch._idx = IndexConfig(
+            branch._idx = DataContainer(
                 train_idx=branch._idx.train_idx.intersection(branch._data.index),
                 test_idx=branch._idx.test_idx.intersection(branch._data.index),
                 n_cols=len(get_cols(y)),

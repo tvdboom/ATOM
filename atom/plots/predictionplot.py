@@ -29,7 +29,7 @@ from sklearn.metrics import (
 from sklearn.utils import _safe_indexing
 from sklearn.utils.metaestimators import available_if
 from sktime.forecasting.base import ForecastingHorizon
-from typeguard import typechecked
+
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE

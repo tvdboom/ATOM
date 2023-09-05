@@ -9,7 +9,6 @@ Description: Module containing the BaseTrainer class.
 
 from __future__ import annotations
 
-import tempfile
 import traceback
 from datetime import datetime as dt
 from typing import Any
@@ -20,8 +19,6 @@ import numpy as np
 import ray
 from joblib import Parallel, delayed
 from optuna import Study, create_study
-from sklearn.utils.validation import check_memory
-from typeguard import TypeCheckError, typechecked
 
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
@@ -36,7 +33,6 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
     """Base class for trainers.
 
@@ -50,14 +46,15 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
 
     def __init__(
             self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory, verbose,
+            warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
             device=device,
             engine=engine,
             backend=backend,
+            memory=memory,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -70,13 +67,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         self.ht_params = ht_params
         self.n_bootstrap = n_bootstrap
         self.parallel = parallel
-        self.errors = errors.lower()
+        self.errors = errors
 
         self._models = lst(models) if models is not None else []
         self._metric = lst(metric) if metric is not None else []
 
         self._config = DataConfig()
-        self._memory = check_memory(tempfile.gettempdir())
 
         self._og = None
         self._current = Branch(name="master")
@@ -341,12 +337,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
             """
             try:
                 # Set BaseTransformer params in new nodes
-                self.backend = self.backend  # Overwrite utils backend
+                self.engine = self.engine  # Set new env variable for data engine
                 self.experiment = self.experiment  # Set mlflow experiment
                 self.logger = self.logger  # Reassign logger's handlers
                 m.logger = m.logger
 
-                self.log("\n", 1)  # Separate output from header
+                self._log("\n", 1)  # Separate output from header
 
                 # If it has predefined or custom dimensions, run the ht
                 m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
@@ -359,14 +355,14 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
                 if self._n_bootstrap[m._group]:
                     m.bootstrapping(self._n_bootstrap[m._group])
 
-                self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
+                self._log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
 
                 return m
 
             except Exception as ex:
-                self.log(f"\nException encountered while running the {m.name} model.", 1)
-                self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
-                self.log(f"{ex.__class__.__name__}: {ex}", 1)
+                self._log(f"\nException encountered while running the {m.name} model.", 1)
+                self._log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
+                self._log(f"{ex.__class__.__name__}: {ex}", 1)
 
                 if self.experiment:
                     mlflow.end_run()
@@ -417,9 +413,9 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
                 "All models failed to run. Use the logger to investigate the exceptions."
             )
 
-        self.log(f"\n\nFinal results {'=' * 20} >>", 1)
-        self.log(f"Total time: {time_to_str((dt.now() - t).total_seconds())}", 1)
-        self.log("-" * 37, 1)
+        self._log(f"\n\nFinal results {'=' * 20} >>", 1)
+        self._log(f"Total time: {time_to_str((dt.now() - t).total_seconds())}", 1)
+        self._log("-" * 37, 1)
 
         maxlen = 0
         names, scores = [], []
@@ -432,7 +428,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
 
             try:
                 scores.append(get_best_score(model))
-            except TypeCheckError:  # Fails when model failed but errors="keep"
+            except ValueError:  # Fails when model failed but errors="keep"
                 scores.append(-np.inf)
 
             maxlen = max(maxlen, len(names[-1]))
@@ -442,4 +438,4 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
             if scores[i] == max(scores) and len(self._models) > 1:
                 out += " !"
 
-            self.log(out, 1)
+            self._log(out, 1)

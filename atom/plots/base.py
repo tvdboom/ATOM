@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 from mlflow.tracking import MlflowClient
-from typeguard import typechecked
+
 
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
@@ -140,7 +140,7 @@ class BaseFigure:
             )
 
     @property
-    def grid(self) -> (INT, INT):
+    def grid(self) -> tuple[INT, INT]:
         """Position of the current axes on the grid.
 
         Returns
@@ -240,7 +240,7 @@ class BaseFigure:
         x: tuple[SCALAR, SCALAR] = (0, 1),
         y: tuple[SCALAR, SCALAR] = (0, 1),
         coloraxis: dict | None = None,
-    ) -> (str, str):
+    ) -> tuple[str, str]:
         """Create and update the plot's axes.
 
         Parameters

@@ -11,12 +11,14 @@ from __future__ import annotations
 
 from copy import copy
 from logging import Logger
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
 import pandas as pd
+from joblib.memory import Memory
 from sklearn.base import BaseEstimator
-from typeguard import typechecked
+
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
@@ -41,16 +43,16 @@ class Direct(BaseEstimator, BaseTrainer):
 
     def __init__(
         self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
-        parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
-        logger, experiment, random_state,
+        parallel, errors, n_jobs, device, engine, backend, memory, verbose,
+        warnings, logger, experiment, random_state,
     ):
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose,
-            warnings, logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory,
+            verbose, warnings, logger, experiment, random_state,
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def run(self, *arrays):
         """Train and evaluate the models.
 
@@ -72,9 +74,9 @@ class Direct(BaseEstimator, BaseTrainer):
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+        self._log("\nTraining " + "=" * 25 + " >>", 1)
+        self._log(f"Models: {', '.join(lst(self.models))}", 1)
+        self._log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         self._core_iteration()
 
@@ -90,16 +92,16 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
     def __init__(
         self, models, metric, skip_runs, est_params, n_trials, ht_params,
         n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-        verbose, warnings, logger, experiment, random_state,
+        memory, verbose, warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose,
-            warnings, logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory,
+            verbose, warnings, logger, experiment, random_state,
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def run(self, *arrays):
         """Train and evaluate the models.
 
@@ -133,8 +135,8 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
                 f"and skip_runs={self.skip_runs}."
             )
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+        self._log("\nTraining " + "=" * 25 + " >>", 1)
+        self._log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         run = 0
         models = ClassMap()
@@ -147,10 +149,10 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
 
             # Print stats for this subset of the data
             p = round(100.0 / len(self._models))
-            self.log(f"\n\nRun: {run} {'='*27} >>", 1)
-            self.log(f"Models: {', '.join(lst(self.models))}", 1)
-            self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
-            self.log(f"Size of test set: {len(self.test)}", 1)
+            self._log(f"\n\nRun: {run} {'='*27} >>", 1)
+            self._log(f"Models: {', '.join(lst(self.models))}", 1)
+            self._log(f"Size of training set: {len(self.train)} ({p}%)", 1)
+            self._log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
             models.extend(self._models)
@@ -180,16 +182,16 @@ class TrainSizing(BaseEstimator, BaseTrainer):
     def __init__(
         self, models, metric, train_sizes, est_params, n_trials, ht_params,
         n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-        verbose, warnings, logger, experiment, random_state
+        memory, verbose, warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose,
-            warnings, logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory,
+            verbose, warnings, logger, experiment, random_state,
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def run(self, *arrays):
         """Train and evaluate the models.
 
@@ -211,8 +213,8 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+        self._log("\nTraining " + "=" * 25 + " >>", 1)
+        self._log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         # Convert integer train_sizes to sequence
         if isinstance(self.train_sizes, INT_TYPES):
@@ -235,10 +237,10 @@ class TrainSizing(BaseEstimator, BaseTrainer):
 
             # Print stats for this subset of the data
             p = round(train_idx * 100.0 / len(self.branch.train))
-            self.log(f"\n\nRun: {run} {'='*27} >>", 1)
-            self.log(f"Models: {', '.join(lst(self.models))}", 1)
-            self.log(f"Size of training set: {train_idx} ({p}%)", 1)
-            self.log(f"Size of test set: {len(self.test)}", 1)
+            self._log(f"\n\nRun: {run} {'='*27} >>", 1)
+            self._log(f"Models: {', '.join(lst(self.models))}", 1)
+            self._log(f"Size of training set: {train_idx} ({p}%)", 1)
+            self._log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
             models.extend(self._models)
@@ -382,6 +384,16 @@ class DirectClassifier(Direct):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -456,6 +468,7 @@ class DirectClassifier(Direct):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -465,8 +478,8 @@ class DirectClassifier(Direct):
         self.goal = "class"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose,
-            warnings, logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -599,6 +612,16 @@ class DirectForecaster(Direct):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -670,6 +693,7 @@ class DirectForecaster(Direct):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -679,8 +703,8 @@ class DirectForecaster(Direct):
         self.goal = "fc"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -813,6 +837,16 @@ class DirectRegressor(Direct):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -887,6 +921,7 @@ class DirectRegressor(Direct):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | str = False,
         logger: str | Logger | None = None,
@@ -896,8 +931,8 @@ class DirectRegressor(Direct):
         self.goal = "reg"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, memory,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1037,6 +1072,16 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1112,6 +1157,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | str = False,
         logger: str | Logger | None = None,
@@ -1122,7 +1168,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-            verbose, warnings, logger, experiment, random_state,
+            memory, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1258,6 +1304,16 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1330,6 +1386,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -1340,7 +1397,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-            verbose, warnings, logger, experiment, random_state,
+            memory, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1476,6 +1533,16 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1551,6 +1618,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -1561,7 +1629,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-            verbose, warnings, logger, experiment, random_state,
+            memory, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1706,6 +1774,16 @@ class TrainSizingClassifier(TrainSizing):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1781,6 +1859,7 @@ class TrainSizingClassifier(TrainSizing):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -1791,7 +1870,7 @@ class TrainSizingClassifier(TrainSizing):
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-            verbose, warnings, logger, experiment, random_state,
+            memory, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1932,6 +2011,16 @@ class TrainSizingForecaster(TrainSizing):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -2004,6 +2093,7 @@ class TrainSizingForecaster(TrainSizing):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -2014,7 +2104,7 @@ class TrainSizingForecaster(TrainSizing):
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-            verbose, warnings, logger, experiment, random_state,
+            memory, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -2155,6 +2245,16 @@ class TrainSizingRegressor(TrainSizing):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -2230,6 +2330,7 @@ class TrainSizingRegressor(TrainSizing):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
@@ -2240,5 +2341,5 @@ class TrainSizingRegressor(TrainSizing):
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
-            verbose, warnings, logger, experiment, random_state,
+            memory, verbose, warnings, logger, experiment, random_state,
         )

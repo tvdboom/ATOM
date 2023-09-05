@@ -15,6 +15,7 @@ from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
 from logging import Logger
+from pathlib import Path
 from typing import Any, Literal
 from unittest.mock import patch
 
@@ -50,7 +51,6 @@ from sktime.forecasting.compose import make_reduction
 from sktime.forecasting.model_selection import SingleWindowSplitter
 from sktime.proba.normal import Normal
 from starlette.requests import Request
-from typeguard import TypeCheckError, typechecked
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
@@ -75,7 +75,6 @@ from atom.utils.utils import (
 )
 
 
-@typechecked
 class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     """Base class for all models.
 
@@ -141,6 +140,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
+    memory: bool, str, Path or Memory, default=True
+        Enables caching for memory optimization. Read more in the
+        [user guide][memory-considerations].
+
+        - If False: No caching is performed.
+        - If True: A default temp directory is used.
+        - If str: Path to the caching directory.
+        - If Path: A [pathlib.Path][] to the caching directory.
+        - If Memory: Object with the [joblib.Memory][] interface.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -183,6 +192,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         device: str = "cpu",
         engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
         backend: BACKEND = "loky",
+        memory: BOOL | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: BOOL | WARNINGS = False,
         logger: str | Logger | None = None,
@@ -194,6 +204,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             device=device,
             engine=engine,
             backend=backend,
+            memory=memory,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -247,7 +258,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
                 self.scaler = Scaler().fit(self.X_train)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
 
     def __getattr__(self, item: str) -> Any:
@@ -577,7 +588,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
                     out += " ~"
 
-        except TypeCheckError:  # Fails when model failed but errors="keep"
+        except TypeError:  # Fails when model failed but errors="keep"
             out = "FAIL"
 
         return out
@@ -587,7 +598,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         dataset: Literal["train", "test", "holdout"],
         target: str | None = None,
         attr: METHOD_SELECTOR = "predict",
-    ) -> (PANDAS, PANDAS):
+    ) -> tuple[PANDAS, PANDAS]:
         """Get the true and predicted values for a column.
 
         Predictions are made using the `decision_function` or
@@ -805,7 +816,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         return result
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def hyperparameter_tuning(self, n_trials: INT, reset: BOOL = False):
         """Run the hyperparameter tuning algorithm.
 
@@ -843,7 +854,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 estimator: PREDICTOR,
                 train_idx: np.ndarray,
                 val_idx: np.ndarray,
-            ) -> (PREDICTOR, list[FLOAT]):
+            ) -> tuple[PREDICTOR, list[FLOAT]]:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -984,7 +995,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         # Running hyperparameter tuning ============================ >>
 
-        self.log(f"Running hyperparameter tuning for {self._fullname}...", 1)
+        self._log(f"Running hyperparameter tuning for {self._fullname}...", 1)
 
         # Check validity of provided parameters
         self._check_est_params()
@@ -1035,7 +1046,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         # If no hyperparameters to optimize, skip BO
         if not self._ht["distributions"]:
-            self.log(" --> Skipping study. No hyperparameters to optimize.", 2)
+            self._log(" --> Skipping study. No hyperparameters to optimize.", 2)
             return
 
         if not self._study or reset:
@@ -1086,7 +1097,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         )
 
         if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
-            self.log(
+            self._log(
                 "The study didn't complete any trial successfully. "
                 "Skipping hyperparameter tuning.", 1, severity="warning"
             )
@@ -1100,18 +1111,18 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 self.study.best_trials, key=lambda x: x.values[0]
             )[0]
 
-        self.log(f"Hyperparameter tuning {'-' * 27}", 1)
-        self.log(f"Best trial --> {self.best_trial.number}", 1)
-        self.log("Best parameters:", 1)
-        self.log("\n".join([f" --> {k}: {v}" for k, v in self.best_params.items()]), 1)
+        self._log(f"Hyperparameter tuning {'-' * 27}", 1)
+        self._log(f"Best trial --> {self.best_trial.number}", 1)
+        self._log("Best parameters:", 1)
+        self._log("\n".join([f" --> {k}: {v}" for k, v in self.best_params.items()]), 1)
         out = [
             f"{m.name}: {rnd(lst(self.score_ht)[i])}"
             for i, m in enumerate(self._metric)
         ]
-        self.log(f"Best evaluation --> {'   '.join(out)}", 1)
-        self.log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
+        self._log(f"Best evaluation --> {'   '.join(out)}", 1)
+        self._log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def fit(self, X: DATAFRAME | None = None, y: PANDAS | None = None):
         """Fit and validate the model.
 
@@ -1141,8 +1152,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self.clear()  # Reset model's state
 
         if self.trials is None:
-            self.log(f"Results for {self._fullname}:", 1)
-        self.log(f"Fit {'-' * 45}", 1)
+            self._log(f"Results for {self._fullname}:", 1)
+        self._log(f"Fit {'-' * 45}", 1)
 
         # Assign estimator if not done already
         if not self._estimator:
@@ -1161,11 +1172,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 f"{metric.name}: {self._get_score(metric, ds)}"
                 for metric in self._metric
             ]
-            self.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
+            self._log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Get duration and print to log
         self._time_fit += (dt.now() - t_init).total_seconds()
-        self.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
+        self._log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
 
         # Track results in mlflow ================================== >>
 
@@ -1227,7 +1238,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                         input_example=pd.DataFrame(self.X.iloc[[0], :]),
                     )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def bootstrapping(self, n_bootstrap: INT, reset: BOOL = False):
         """Apply a bootstrap algorithm.
 
@@ -1276,16 +1287,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
             self._bootstrap = pd.concat([self._bootstrap, scores], ignore_index=True)
 
-        self.log(f"Bootstrap {'-' * 39}", 1)
+        self._log(f"Bootstrap {'-' * 39}", 1)
         out = [
             f"{m.name}: {rnd(self.bootstrap.mean()[i])}"
             f" \u00B1 {rnd(self.bootstrap.std()[i])}"
             for i, m in enumerate(self._metric)
         ]
-        self.log(f"Evaluation --> {'   '.join(out)}", 1)
+        self._log(f"Evaluation --> {'   '.join(out)}", 1)
 
         self._time_bootstrap += (dt.now() - t_init).total_seconds()
-        self.log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
+        self._log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
 
     # Utility properties =========================================== >>
 
@@ -1314,7 +1325,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         if self._run:  # Change name in mlflow's run
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
 
-        self.log(f"Model {self.name} successfully renamed to {self._name}.", 1)
+        self._log(f"Model {self.name} successfully renamed to {self._name}.", 1)
 
     @property
     def study(self) -> Study | None:
@@ -1699,7 +1710,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         from gradio import Interface
         from gradio.components import Dropdown, Textbox
 
-        self.log("Launching app...", 1)
+        self._log("Launching app...", 1)
 
         inputs = []
         for name, column in self.og.X.items():
@@ -1721,7 +1732,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         )
 
     @available_if(has_task("multioutput", inverse=True))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def create_dashboard(
         self,
         dataset: str | SEQUENCE = "test",
@@ -1770,7 +1781,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
         )
 
-        self.log("Creating dashboard...", 1)
+        self._log("Creating dashboard...", 1)
 
         dataset = self._get_set(dataset, max_one=False, allow_holdout=False)
 
@@ -1809,7 +1820,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             if not filename.endswith(".html"):
                 filename += ".html"
             self.dashboard.save_html(filename)
-            self.log("Dashboard successfully saved.", 1)
+            self._log("Dashboard successfully saved.", 1)
 
     @composed(crash, method_to_log)
     def cross_validate(self, **kwargs) -> pd.DataFrame:
@@ -1840,7 +1851,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         else:
             scoring = dict(self._metric)
 
-        self.log("Applying cross-validation...", 1)
+        self._log("Applying cross-validation...", 1)
 
         # Monkey patch sklearn's _fit_and_score function to allow
         # for pipelines that drop samples during transformation
@@ -1868,7 +1879,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         return df
 
-    @composed(crash, typechecked)
+    @crash
     def evaluate(
         self,
         metric: METRIC_SELECTOR = None,
@@ -1920,9 +1931,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             threshold = [threshold] * self.branch._idx.n_cols  # Length=n_targets
         elif len(threshold) != self.branch._idx.n_cols:
             raise ValueError(
-                "Invalid value for the threshold parameter. The length of the "
-                f"list should be equal to the number of target columns, got "
-                f"len(target)={self.branch._idx.n_cols} and len(threshold)={len(threshold)}."
+                "Invalid value for the threshold parameter. The length of the list "
+                f"list should be equal to the number of target columns, got len(target)"
+                f"={self.branch._idx.n_cols} and len(threshold)={len(threshold)}."
             )
 
         if any(not 0 < t < 1 for t in threshold):
@@ -1981,7 +1992,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         return scores
 
-    @composed(crash, typechecked)
+    @crash
     def export_pipeline(
         self,
         *,
@@ -2029,7 +2040,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         """
         return export_pipeline(self.pipeline, self, memory=memory, verbose=verbose)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def full_train(self, *, include_holdout: BOOL = False):
         """Train the estimator on the complete dataset.
 
@@ -2073,7 +2084,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     @available_if(has_task(["binary", "multilabel"]))
     @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, typechecked)
+    @crash
     def get_best_threshold(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
@@ -2104,7 +2115,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         return flt(results)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def inverse_transform(
         self,
         X: FEATURES | None = None,
@@ -2165,7 +2176,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         return variable_return(X, y)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def register(
         self,
         name: str | None = None,
@@ -2213,7 +2224,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             archive_existing_versions=archive_existing_versions,
         )
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def save_estimator(self, filename: str = "auto"):
         """Save the estimator to a pickle file.
 
@@ -2229,9 +2240,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         with open(filename, "wb") as f:
             pickle.dump(self.estimator, f)
 
-        self.log(f"{self._fullname} estimator successfully saved.", 1)
+        self._log(f"{self._fullname} estimator successfully saved.", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def serve(self, method: str = "predict", host: str = "127.0.0.1", port: INT = 8000):
         """Serve the model as rest API endpoint for inference.
 
@@ -2301,9 +2312,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         server = ServeModel.bind(model=self.export_pipeline(verbose=0), method=method)
         serve.run(server, host=host, port=port)
 
-        self.log(f"Serving model {self._fullname} on {host}:{port}...", 1)
+        self._log(f"Serving model {self._fullname} on {host}:{port}...", 1)
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def transform(
         self,
         X: FEATURES | None = None,
@@ -2831,7 +2842,7 @@ class ClassRegModel(BaseModel):
             return metric(self.estimator, X, y, sample_weight)
 
     @available_if(estimator_has_attr("decision_function"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def decision_function(
         self,
         X: SLICE | FEATURES,
@@ -2866,7 +2877,7 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="decision_function")
 
     @available_if(estimator_has_attr("predict"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict(
         self,
         X: SLICE | FEATURES,
@@ -2900,7 +2911,7 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="predict")
 
     @available_if(estimator_has_attr("predict_log_proba"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_log_proba(
         self,
         X: SLICE | FEATURES,
@@ -2934,7 +2945,7 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
 
     @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_proba(
         self,
         X: SLICE | FEATURES,
@@ -2969,7 +2980,7 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="predict_proba")
 
     @available_if(estimator_has_attr("score"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def score(
         self,
         X: SLICE | FEATURES,
@@ -3365,7 +3376,7 @@ class ForecastModel(BaseModel):
             return self._score_from_est(metric, self.estimator, X, y, **kwargs)
 
     @available_if(estimator_has_attr("predict"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict(
         self,
         fh: int | range | SEQUENCE | ForecastingHorizon,
@@ -3403,7 +3414,7 @@ class ForecastModel(BaseModel):
         return self._prediction(fh=fh, X=X, verbose=verbose, method="predict")
 
     @available_if(estimator_has_attr("predict_interval"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_interval(
         self,
         fh: int | range | SEQUENCE | ForecastingHorizon,
@@ -3451,7 +3462,7 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_proba(
         self,
         fh: int | range | SEQUENCE | ForecastingHorizon,
@@ -3498,7 +3509,7 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("predict_quantiles"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_quantiles(
         self,
         fh: int | range | SEQUENCE | ForecastingHorizon,
@@ -3548,7 +3559,7 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("predict_residuals"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_residuals(
         self,
         y: SEQUENCE | DATAFRAME,
@@ -3585,7 +3596,7 @@ class ForecastModel(BaseModel):
         return self._prediction(y=y, X=X, verbose=verbose, method="predict_residuals")
 
     @available_if(estimator_has_attr("predict_var"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def predict_var(
         self,
         fh: int | range | SEQUENCE | ForecastingHorizon,
@@ -3634,7 +3645,7 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("score"))
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, method_to_log)
     def score(
         self,
         y: SEQUENCE | DATAFRAME,
