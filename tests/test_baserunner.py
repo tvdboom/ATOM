@@ -7,6 +7,7 @@ Description: Unit tests for baserunner.py
 
 """
 
+import glob
 import sys
 from unittest.mock import patch
 
@@ -140,7 +141,7 @@ def test_getitem_int():
 def test_getitem_str_from_branch():
     """Assert that getitem works for a branch name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom["master"] is atom._branches["master"]
+    assert atom["main"] is atom._branches["main"]
 
 
 def test_getitem_str_from_model():
@@ -543,7 +544,7 @@ def test_merge():
     atom_2.missing = ["missing"]
     atom_2.run("LR")
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == [atom_1.master, atom_1.b2]
+    assert list(atom_1._branches) == [atom_1.main, atom_1.b2]
     assert atom_1.models == ["Tree", "LR"]
     assert atom_1.missing[-1] == "missing"
 
@@ -555,7 +556,7 @@ def test_merge_with_suffix():
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2.run(["Tree", "LDA"], n_trials=1, ht_params={"distributions": {"LDA": "test"}})
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == [atom_1.master, atom_1.master2]
+    assert list(atom_1._branches) == [atom_1.main, atom_1.main2]
     assert atom_1.models == ["Tree", "Tree2"]
 
 

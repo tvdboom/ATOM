@@ -13,10 +13,9 @@ import numpy as np
 import plotly.graph_objects as go
 from sklearn.utils.metaestimators import available_if
 
-
 from atom.plots.base import BasePlot
 from atom.utils.types import INT, LEGEND
-from atom.utils.utils import composed, crash, has_attr
+from atom.utils.utils import crash, has_attr
 
 
 class FeatureSelectionPlot(BasePlot):

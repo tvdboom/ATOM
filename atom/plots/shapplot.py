@@ -14,7 +14,6 @@ from importlib.util import find_spec
 import matplotlib.pyplot as plt
 import shap
 
-
 from atom.plots.base import BasePlot
 from atom.utils.types import INT, LEGEND, MODEL, SEQUENCE, SLICE
 from atom.utils.utils import check_canvas, composed, crash, plot_from_model

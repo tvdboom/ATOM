@@ -28,8 +28,8 @@ def pipeline():
     atom.add(StandardScaler(), columns=0)
     atom.run("LR")
 
-    def get_pipeline(model, memory=None):
-        return atom.export_pipeline(model="LR" if model else None, memory=memory)
+    def get_pipeline(model):
+        return atom.export_pipeline(model="LR" if model else None)
 
     return get_pipeline
 

@@ -9,26 +9,15 @@ Description: Module containing the BranchManager class.
 
 from __future__ import annotations
 
-import re
-from copy import copy
-from functools import cached_property
-from typing import Hashable
+from copy import copy, deepcopy
 
-import dill
-import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 
 from atom.branch.branch import Branch
-from atom.utils.types import (
-    BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES,
-    PANDAS, SEQUENCE, SERIES_TYPES, SLICE, TARGET,
-)
-from atom.utils.utils import (
-    CustomDict, DataContainer, bk, custom_transform, flt, get_cols, lst, merge,
-    to_pandas, ClassMap, DataContainer
-)
+from atom.utils.types import BOOL, DATAFRAME, INT, SEQUENCE
+from atom.utils.utils import ClassMap, DataContainer
 
 
 @beartype
@@ -43,21 +32,35 @@ class BranchManager:
 
     """
 
-    def __init__(self, memory: Memory):
-        self.memory = memory
+    def __init__(
+        self,
+        branches: SEQUENCE | None = None,
+        og: Branch | None = None,
+        memory: Memory | None = None,
+    ):
+        self.memory = check_memory(memory)
 
-        self.branches = ClassMap()
-        self.add(Branch("main"))
+        if branches is None:
+            self.branches = ClassMap()
+            self.add("main")
+        else:
+            self.branches = ClassMap(*list(branches))
 
-        self.holdout = None
+        self._og = og
 
     def __str__(self) -> str:
-        return f"BranchManager({', '.join([b.name for b in self.branches])})"
+        return f"BranchManager({', '.join(self.branches.keys())})"
+
+    def __len__(self) -> INT:
+        return len(self.branches)
+
+    def __iter__(self):
+        yield from self.branches
 
     def __contains__(self, item: str) -> BOOL:
         return item in self.branches
 
-    def __getitem__(self, item: str) -> Branch:
+    def __getitem__(self, item: INT | str) -> Branch:
         if item in self.branches:
             return self.branches[item]
         else:
@@ -74,7 +77,7 @@ class BranchManager:
         to not have the same data in memory twice.
 
         """
-        return self.branches.get("og", self.current.name)
+        return self._og or self.current
 
     @property
     def current(self) -> Branch:
@@ -82,33 +85,69 @@ class BranchManager:
 
     @current.setter
     def current(self, branch: str):
-        self.store()
+        self._current.store()
         self._current = self.branches[branch]
-        self.load()
+        self._current.load()
 
-    def add(self, name: str, parent: Branch):
-        """
+    @current.deleter
+    def current(self):
+        del self.branches[self.current.name]
+        self._current = self.branches[0]
+
+    @staticmethod
+    def _copy_from_parent(branch: Branch, parent: Branch):
+        """Pass data and attributes from a parent to a new branch.
 
         Parameters
         ----------
-        name
-        parent
+        branch: Branch
+            Pass data and attributes to this branch.
+
+        parent: Branch
+            Parent branch from which to get the info from.
 
         """
-        if name not in self.branches:
+        # Transfer data from parent or load from memory
+        if parent._data is None:
+            setattr(branch, "_data", parent.load(assign=False))
+        else:
+            setattr(branch, "_data", deepcopy(parent._data))
+
+        setattr(branch, "_pipeline", copy(getattr(parent, "_pipeline")))
+        setattr(branch, "_mapping", copy(getattr(parent, "_mapping")))
+        for attr in vars(parent):
+            if not hasattr(branch, attr):  # If not already assigned...
+                setattr(branch, attr, getattr(parent, attr))
+
+    def add(self, name: str, parent: Branch | None = None):
+        """Add a new branch to the manager.
+
+        If the branch is called `og` (reserved name for the original
+        branch), it's created separately and stored in memory.
+
+        Parameters
+        ----------
+        name: str
+            Name for the new branch.
+
+        parent: Branch or None, default=None
+            Parent branch. Data and attributes from the parent are
+            passed to the new branch.
+
+        """
+        if name == "og":
+            if not self._og:
+                self._og = Branch("og", memory=self.memory)
+                self._copy_from_parent(self._og, self.current)
+        else:
+            # Skip for first call from __init__
             if self.branches:
-                self.store()
+                self.current.store()
 
-            self._current = self.branches.append(Branch(name))
-            self._current.pipeline.memory = self.memory
+            self._current = self.branches.append(Branch(name, memory=self.memory))
 
-            if parent:
-                # Copy the data attrs (except holdout) and point to the rest
-                for attr in ("_data", "_pipeline", "_mapping"):
-                    setattr(self.current, attr, copy(getattr(parent, attr)))
-                for attr in vars(parent):
-                    if not hasattr(self.current, attr):  # If not already assigned...
-                        setattr(self.current, attr, getattr(parent, attr))
+            if parent is not None:
+                self._copy_from_parent(self._current, parent)
 
     def fill(self, data: DataContainer, holdout: DATAFRAME | None = None):
         """Fill the current branch with data.
@@ -122,36 +161,11 @@ class BranchManager:
             Holdout data set (if any).
 
         """
-        self.current.data = data
-        self.holdout = self.current.holdout = holdout
+        self.current._data = data
+        self.current._holdout = holdout
 
-    def store(self):
-        """Store the branch's data as a pickle in memory.
-
-        After storage, the DataContainer is deleted and the branch is
-        no longer usable until `load` is called. This method is used
-        for inactive branches.
-
-        Parameters
-        ----------
-        branch: Branch
-            Path to the storage location.
-
-        """
-        if self.memory.location is not None:
-            with open(f"{self.memory.location}Branch({self.current.name})", "wb") as file:
-                dill.dump(self.current._data, file)
-
-            self.current._data = None
-
-    def load(self, branch: Branch) -> Branch:
-        """Load the branch's data from memory.
-
-        This method is used to restore the data of inactive branches.
-
-        """
-        if self.location is not None:
-            with open(f"{self.memory.location}Branch({branch.name})", "rb") as file:
-                branch._data = dill.load(file)
-
-        return branch
+    def reset(self):
+        """Reset this instance to its initial state."""
+        self.branches = ClassMap()
+        self.add("main", parent=self.og)
+        self._og = None

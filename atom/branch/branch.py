@@ -9,18 +9,19 @@ Description: Module containing the Branch class.
 
 from __future__ import annotations
 
+import os
 import re
-from copy import copy
 from functools import cached_property
 from typing import Hashable
 
-import dill
+import dill as pickle
 import pandas as pd
+from joblib.memory import Memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES,
-    PANDAS, SEQUENCE, SERIES_TYPES, SLICE, TARGET,
+    BOOL, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
+    SEQUENCE, SERIES_TYPES, SLICE, TARGET,
 )
 from atom.utils.utils import (
     CustomDict, DataContainer, bk, custom_transform, flt, get_cols, lst, merge,
@@ -55,20 +56,34 @@ class Branch:
     def __init__(
         self,
         name: str,
+        memory: Memory,
         data: DataContainer | None = None,
         holdout: DATAFRAME | None = None,
     ):
         self.name = name
+        self.memory = memory
+
         self._data = data
         self._holdout = holdout
-        self._pipeline = Pipeline([])
+        self._pipeline = Pipeline([], memory=memory)
         self._mapping = CustomDict()
+
+        # Path to store the data
+        if memory.location is None:
+            self._location = None
+        else:
+            self._location = os.path.join(memory.location, f"joblib/atom/{self}.pkl")
 
     def __str__(self) -> str:
         return f"Branch({self.name})"
 
     def __bool__(self):
-        return not self._data.empty
+        return not self._data.data.empty
+
+    def __del__(self):
+        # Delete stored data
+        if os.path.exists(self._location):
+            os.remove(self._location)
 
     @property
     def name(self) -> str:
@@ -217,39 +232,39 @@ class Branch:
     @property
     def dataset(self) -> DATAFRAME:
         """Complete data set."""
-        return self._data
+        return self._data.data
 
     @dataset.setter
     def dataset(self, value: FEATURES):
-        self._data = self._check_setter("dataset", value)
+        self._data.data = self._check_setter("dataset", value)
 
     @property
     def train(self) -> DATAFRAME:
         """Training set."""
-        return self._data.loc[self._idx.train_idx]
+        return self._data.data.loc[self._data.train_idx]
 
     @train.setter
     def train(self, value: FEATURES):
         df = self._check_setter("train", value)
-        self._data = bk.concat([df, self.test])
-        self._idx.train_idx = self._data.index[:len(df)]
+        self._data.data = bk.concat([df, self.test])
+        self._data.train_idx = self._data.data.index[:len(df)]
 
     @property
     def test(self) -> DATAFRAME:
         """Test set."""
-        return self._data.loc[self._idx.test_idx]
+        return self._data.data.loc[self._data.test_idx]
 
     @test.setter
     def test(self, value: FEATURES):
         df = self._check_setter("test", value)
-        self._data = bk.concat([self.train, df])
-        self._idx.test_idx = self._data.index[-len(df):]
+        self._data.data = bk.concat([self.train, df])
+        self._data.test_idx = self._data.data.index[-len(df):]
 
     @cached_property
     def holdout(self) -> DATAFRAME | None:
         """Holdout set."""
         if self._holdout is not None:
-            X, y = self._holdout.iloc[:, :-self._idx.n_cols], self._holdout[self.target]
+            X, y = self._holdout.iloc[:, :-self._data.n_cols], self._holdout[self.target]
             for transformer in self.pipeline:
                 if not transformer._train_only:
                     X, y = custom_transform(transformer, self, (X, y), verbose=0)
@@ -259,22 +274,22 @@ class Branch:
     @property
     def X(self) -> DATAFRAME:
         """Feature set."""
-        return self._data.drop(self.target, axis=1)
+        return self._data.data.drop(self.target, axis=1)
 
     @X.setter
     def X(self, value: FEATURES):
         df = self._check_setter("X", value)
-        self._data = merge(df, self.y)
+        self._data.data = merge(df, self.y)
 
     @property
     def y(self) -> PANDAS:
         """Target column(s)."""
-        return self._data[self.target]
+        return self._data.data[self.target]
 
     @y.setter
     def y(self, value: TARGET):
         series = self._check_setter("y", value)
-        self._data = merge(self._data.drop(self.target, axis=1), series)
+        self._data.data = merge(self._data.data.drop(self.target, axis=1), series)
 
     @property
     def X_train(self) -> DATAFRAME:
@@ -284,7 +299,7 @@ class Branch:
     @X_train.setter
     def X_train(self, value: FEATURES):
         df = self._check_setter("X_train", value)
-        self._data = bk.concat([merge(df, self.train[self.target]), self.test])
+        self._data.data = bk.concat([merge(df, self.train[self.target]), self.test])
 
     @property
     def y_train(self) -> PANDAS:
@@ -294,7 +309,7 @@ class Branch:
     @y_train.setter
     def y_train(self, value: TARGET):
         series = self._check_setter("y_train", value)
-        self._data = bk.concat([merge(self.X_train, series), self.test])
+        self._data.data = bk.concat([merge(self.X_train, series), self.test])
 
     @property
     def X_test(self) -> DATAFRAME:
@@ -304,7 +319,7 @@ class Branch:
     @X_test.setter
     def X_test(self, value: FEATURES):
         df = self._check_setter("X_test", value)
-        self._data = bk.concat([self.train, merge(df, self.test[self.target])])
+        self._data.data = bk.concat([self.train, merge(df, self.test[self.target])])
 
     @property
     def y_test(self) -> PANDAS:
@@ -314,17 +329,17 @@ class Branch:
     @y_test.setter
     def y_test(self, value: TARGET):
         series = self._check_setter("y_test", value)
-        self._data = bk.concat([self.train, merge(self.X_test, series)])
+        self._data.data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
     def shape(self) -> tuple[INT, INT]:
         """Shape of the dataset (n_rows, n_columns)."""
-        return self._data.shape
+        return self._data.data.shape
 
     @property
     def columns(self) -> INDEX:
         """Name of all the columns."""
-        return self._data.columns
+        return self._data.data.columns
 
     @property
     def n_columns(self) -> INT:
@@ -334,7 +349,7 @@ class Branch:
     @property
     def features(self) -> INDEX:
         """Name of the features."""
-        return self.columns[:-self._idx.n_cols]
+        return self.columns[:-self._data.n_cols]
 
     @property
     def n_features(self) -> INT:
@@ -344,7 +359,7 @@ class Branch:
     @property
     def target(self) -> str | list[str]:
         """Name of the target column(s)."""
-        return flt(list(self.columns[-self._idx.n_cols:]))
+        return flt(list(self.columns[-self._data.n_cols:]))
 
     # Utility methods ============================================== >>
 
@@ -413,7 +428,7 @@ class Branch:
 
         inc, exc = [], []
         if index is None:
-            inc = list(self._idx.test_idx) if return_test else list(self.X.index)
+            inc = list(self._data.test_idx) if return_test else list(self.X.index)
         elif isinstance(index, slice):
             inc = indices[index]
         else:
@@ -684,3 +699,39 @@ class Branch:
                 )
         else:
             return 0, get_class(target)
+
+    def load(self, assign: BOOL = True) -> DataContainer:
+        """Load the branch's data from memory.
+
+        This method is used to restore the data of inactive branches.
+
+        Returns
+        -------
+        DataContainer
+            Own data information.
+
+        """
+        if self._data is None and self._location:
+            with open(self._location, "rb") as file:
+                data = pickle.load(file)
+
+            if assign:
+                self._data = data
+            else:
+                return data
+
+        return self._data
+
+    def store(self):
+        """Store the branch's data as a pickle in memory.
+
+        After storage, the DataContainer is deleted and the branch is
+        no longer usable until `load` is called. This method is used
+        for inactive branches.
+
+        """
+        if self._data is not None and self._location:
+            with open(self._location, "wb") as file:
+                pickle.dump(self._data, file)
+
+            self._data = None

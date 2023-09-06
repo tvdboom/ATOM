@@ -12,12 +12,11 @@ from __future__ import annotations
 import os
 import pprint
 import sys
-import tempfile
 import warnings
 from collections import deque
 from collections.abc import MutableMapping
 from contextlib import contextmanager
-from copy import copy, deepcopy
+from copy import copy
 from dataclasses import dataclass
 from datetime import datetime as dt
 from functools import wraps
@@ -36,7 +35,6 @@ import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
 from IPython.display import display
-from joblib import Memory
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from optuna.study import Study
@@ -52,10 +50,10 @@ from sklearn.utils import _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT,
-    INDEX, INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES,
-    PREDICTOR, SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES,
-    TARGET, TRANSFORMER,
+    BOOL, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT, INDEX,
+    INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES, PREDICTOR,
+    SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES, TARGET,
+    TRANSFORMER,
 )
 
 
@@ -80,7 +78,7 @@ class DataConfig:
 
     """
     index: INDEX_SELECTOR = True
-    shuffle: bool = True
+    shuffle: BOOL = True
     stratify: INDEX_SELECTOR = True
     test_size: SCALAR = 0.2
 
@@ -88,10 +86,10 @@ class DataConfig:
 @dataclass
 class DataContainer:
     """Stores a branch's data."""
-    data: DATAFRAME = pd.DataFrame()  # Complete dataset
-    train_idx: INDEX = pd.Index()  # Indices in the train set
-    test_idx: INDEX = pd.index()  # Indices in the test
-    n_cols: INT = 0  # Number of target columns
+    data: DATAFRAME  # Complete dataset
+    train_idx: INDEX  # Indices in the train set
+    test_idx: INDEX  # Indices in the test
+    n_cols: INT  # Number of target columns
 
 
 class PandasModin:
@@ -428,8 +426,8 @@ class TrialsCallback:
 
         if self.n_jobs == 1:
             self._table = self.create_table()
-            self.T.log(self._table.print_header(), 2)
-            self.T.log(self._table.print_line(), 2)
+            self.T._log(self._table.print_header(), 2)
+            self.T._log(self._table.print_line(), 2)
 
     def __call__(self, study: Study, trial: FrozenTrial):
         # The trial values are None when it fails
@@ -504,7 +502,7 @@ class TrialsCallback:
             sequence["time_ht"] = time_to_str(time_ht)
             sequence["state"] = trial.state.name
 
-            self.T.log(self._table.print(sequence), 2)
+            self.T._log(self._table.print(sequence), 2)
 
     def create_table(self) -> Table:
         """Create the trial table.
@@ -709,7 +707,7 @@ class ShapExplanation:
         self,
         estimator: PREDICTOR,
         task: str,
-        branch: BRANCH,
+        branch: Any,
         random_state: INT | None = None,
     ):
         self.estimator = estimator
@@ -1506,8 +1504,7 @@ def check_scaling(X: PANDAS, pipeline: Any | None = None) -> bool:
     """
     has_scaler = False
     if pipeline is not None:
-        est_names = [est.__class__.__name__.lower() for est in pipeline]
-        has_scaler = any("scaler" in name for name in est_names)
+        has_scaler = any("scaler" in name.lower() for name, _ in pipeline.steps)
 
     df = to_df(X)  # Convert to dataframe
 
@@ -2110,77 +2107,6 @@ def get_feature_importance(
         return np.abs(data.flatten())
 
 
-def export_pipeline(
-    pipeline: pd.Series,
-    model: MODEL | None = None,
-    memory: BOOL | str | Memory | None = None,
-    verbose: INT | None = None,
-) -> Any:
-    """Export a pipeline to a sklearn-like object.
-
-    Optionally, you can add a model as final estimator.
-
-    Parameters
-    ----------
-    pipeline: pd.Series
-        Transformers to add to the pipeline.
-
-    model: str, Model or None, default=None
-        Model for which to export the pipeline. If the model used
-        [automated feature scaling][], the [Scaler][] is added to
-        the pipeline. If None, the pipeline in the current branch
-        is exported.
-
-    memory: bool, str, Memory or None, default=None
-        Used to cache the fitted transformers of the pipeline.
-            - If None or False: No caching is performed.
-            - If True: A default temp directory is used.
-            - If str: Path to the caching directory.
-            - If Memory: Object with the joblib.Memory interface.
-
-    verbose: int or None, default=None
-        Verbosity level of the transformers in the pipeline. If
-        None, it leaves them to their original verbosity. Note
-        that this is not the pipeline's own verbose parameter.
-        To change that, use the `set_params` method.
-
-    Returns
-    -------
-    Pipeline
-        Current branch as a sklearn-like Pipeline object.
-
-    """
-    from atom.pipeline import Pipeline
-
-    steps = []
-    for transformer in pipeline:
-        est = deepcopy(transformer)  # Not clone to keep fitted
-
-        # Set the new verbosity (if possible)
-        if verbose is not None and hasattr(est, "verbose"):
-            est.verbose = verbose
-
-        # Check if there already exists an estimator with that
-        # name. If so, add a counter at the end of the name
-        counter = 1
-        name = est.__class__.__name__.lower()
-        while name in (elem[0] for elem in steps):
-            counter += 1
-            name = est.__class__.__name__.lower() + str(counter)
-
-        steps.append((name, est))
-
-    if model:
-        steps.append((model.name, deepcopy(model.estimator)))
-
-    if not memory:  # None or False
-        memory = None
-    elif memory is True:
-        memory = tempfile.gettempdir()
-
-    return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn's
-
-
 # Pipeline functions =============================================== >>
 
 def name_cols(
@@ -2394,7 +2320,7 @@ def transform_one(
     X: FEATURES | None = None,
     y: TARGET | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME | None, SERIES | None]:
+) -> tuple[DATAFRAME | None, PANDAS | None]:
     """Transform the data using one estimator.
 
     Parameters
@@ -2424,7 +2350,7 @@ def transform_one(
     dataframe or None
         Feature set. Returns None if not provided.
 
-    series or None
+    series, dataframe or None
         Target column. Returns None if not provided.
 
     """
@@ -2587,7 +2513,7 @@ def fit_transform_one(
 
 def custom_transform(
     transformer: TRANSFORMER,
-    branch: BRANCH,
+    branch: Any,
     data: tuple[DATAFRAME, PANDAS] | None = None,
     verbose: int | None = None,
     method: str = "transform",
@@ -2651,16 +2577,14 @@ def custom_transform(
                 branch.y_train if y is None else y,
             )
         else:
-            branch._data = merge(
-                branch.X if X is None else X,
-                branch.y if y is None else y,
-            )
+            data = merge(branch.X if X is None else X, branch.y if y is None else y)
 
             # y can change the number of columns or remove rows -> reassign index
-            branch._idx = DataContainer(
-                train_idx=branch._idx.train_idx.intersection(branch._data.index),
-                test_idx=branch._idx.test_idx.intersection(branch._data.index),
-                n_cols=len(get_cols(y)),
+            branch._data = DataContainer(
+                data=data,
+                train_idx=branch._data.train_idx.intersection(data.index),
+                test_idx=branch._data.test_idx.intersection(data.index),
+                n_cols=branch._data.n_cols if y is None else len(get_cols(y)),
             )
 
     # Back to the original verbosity

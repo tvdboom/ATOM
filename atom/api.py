@@ -13,9 +13,10 @@ from logging import Logger
 from pathlib import Path
 from typing import Literal
 
+from beartype import beartype
 from joblib.memory import Memory
 from sklearn.base import clone
-from beartype import beartype
+
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (

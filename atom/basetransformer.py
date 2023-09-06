@@ -22,7 +22,6 @@ from multiprocessing import cpu_count
 from typing import Any, Callable, Literal
 
 import dagshub
-import dill as pickle
 import mlflow
 import numpy as np
 import ray
@@ -34,15 +33,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_memory
 from sktime.datatypes import check_is_mtype
 
-
 from atom.utils.types import (
     BACKEND, BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, ESTIMATOR, FEATURES,
     INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SEVERITY, TARGET,
     WARNINGS,
 )
 from atom.utils.utils import (
-    DataContainer, bk, composed, crash, get_cols, lst, merge, method_to_log,
-    n_cols, pd, sign, to_df, to_pandas,
+    DataContainer, bk, crash, get_cols, lst, merge, n_cols, pd, sign, to_df,
+    to_pandas,
 )
 
 
@@ -625,7 +623,6 @@ class BaseTransformer:
         self,
         arrays: SEQUENCE,
         y: TARGET = -1,
-        use_n_rows: BOOL = True,
     ) -> tuple[DATAFRAME, DataContainer, DATAFRAME | None]:
         """Get data sets from a sequence of indexables.
 
@@ -639,9 +636,6 @@ class BaseTransformer:
 
         y: int, str or sequence, default=-1
             Transformed target column.
-
-        use_n_rows: bool, default=True
-            Whether to use the `n_rows` parameter on the dataset.
 
         Returns
         -------
@@ -725,13 +719,12 @@ class BaseTransformer:
                     )
                 data.index = self._config.index
 
-            if use_n_rows:
-                if not 0 < self.n_rows <= len(data):
-                    raise ValueError(
-                        "Invalid value for the n_rows parameter. Value should "
-                        f"lie between 0 and len(X)={len(data)}, got {self.n_rows}."
-                    )
-                data = _subsample(data)
+            if not 0 < self.n_rows <= len(data):
+                raise ValueError(
+                    "Invalid value for the n_rows parameter. Value should "
+                    f"lie between 0 and len(X)={len(data)}, got {self.n_rows}."
+                )
+            data = _subsample(data)
 
             if len(data) < 5:
                 raise ValueError(
@@ -850,10 +843,10 @@ class BaseTransformer:
             """
             train = merge(X_train, y_train)
             test = merge(X_test, y_test)
-            if X_holdout is not None:
-                holdout = merge(X_holdout, y_holdout)
-            else:
+            if X_holdout is None:
                 holdout = None
+            else:
+                holdout = merge(X_holdout, y_holdout)
 
             # If the index is a sequence, assign it before shuffling
             if isinstance(self._config.index, SEQUENCE_TYPES):
@@ -874,7 +867,7 @@ class BaseTransformer:
 
             # Skip the n_rows step if not called from atom
             # Don't use hasattr since getattr can fail when _models is not converted
-            if "n_rows" in self.__dict__ and use_n_rows:
+            if "n_rows" in self.__dict__:
                 if self.n_rows <= 1:
                     train = _subsample(train)
                     test = _subsample(test)
@@ -918,7 +911,7 @@ class BaseTransformer:
                     "successfully. See the documentation for the allowed formats."
                 )
             else:
-                return self.branch._data, self.branch._idx, self.branch._holdout
+                return self.branch._data, self.branch._holdout
 
         elif len(arrays) == 1:
             # arrays=(X,) or arrays=(y,) for forecasting

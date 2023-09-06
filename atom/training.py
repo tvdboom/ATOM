@@ -19,7 +19,6 @@ import pandas as pd
 from joblib.memory import Memory
 from sklearn.base import BaseEstimator
 
-
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
     BACKEND, BOOL, ENGINE, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR,
@@ -68,8 +67,7 @@ class Direct(BaseEstimator, BaseTrainer):
             - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch._data, self.branch._idx, holdout = self._get_data(arrays)
-        self.holdout = self.branch._holdout = holdout
+        self._branches.fill(*self._get_data(arrays))
 
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
@@ -117,8 +115,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
             - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch._data, self.branch._idx, holdout = self._get_data(arrays)
-        self.holdout = self.branch._holdout = holdout
+        self._branches.fill(*self._get_data(arrays))
 
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
@@ -207,8 +204,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
             - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch._data, self.branch._idx, holdout = self._get_data(arrays)
-        self.holdout = self.branch._holdout = holdout
+        self._branches.fill(*self._get_data(arrays))
 
         self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()

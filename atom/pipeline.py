@@ -12,7 +12,6 @@ from __future__ import annotations
 from typing import Generator
 
 import numpy as np
-from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as skPipeline
 from sklearn.pipeline import _final_estimator_has
@@ -20,15 +19,14 @@ from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
-
 from atom.utils.types import (
-    BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, INT, PANDAS, SEQUENCE, SERIES,
-    TARGET,
+    BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, INT, PANDAS, SEQUENCE, TARGET,
 )
 from atom.utils.utils import (
     check_is_fitted, fit_one, fit_transform_one, transform_one,
     variable_return,
 )
+from joblib import Memory
 
 
 class Pipeline(skPipeline):
@@ -69,10 +67,13 @@ class Pipeline(skPipeline):
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
             self._is_fitted = True
 
+    def __bool__(self):
+        return len(self.steps) > 0
+
     def __getattr__(self, item: str):
         try:
             return getattr(self._final_estimator, item)
-        except AttributeError:
+        except (AttributeError, IndexError):
             raise AttributeError(f"'Pipeline' object has no attribute '{item}'.")
 
     @property
@@ -148,7 +149,7 @@ class Pipeline(skPipeline):
         X: FEATURES | None = None,
         y: TARGET | None = None,
         **fit_params_steps,
-    ):
+    ) -> tuple[DATAFRAME | None, PANDAS | None]:
         """Get data transformed through the pipeline.
 
         Parameters
@@ -173,7 +174,7 @@ class Pipeline(skPipeline):
         dataframe or None
             Transformed feature set.
 
-        series or None
+        series, dataframe or None
             Transformed target column.
 
         """
@@ -203,7 +204,7 @@ class Pipeline(skPipeline):
                     X=X,
                     y=y,
                     message=self._log_message(step_idx),
-                    **fit_params_steps[name],
+                    **fit_params_steps.get(name, {}),
                 )
 
             # Replace the estimator of the step with the fitted
@@ -258,15 +259,16 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
+        **kwargs,
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Transform the data.
 
         Call `transform` on each transformer in the pipeline. The
         transformed data are finally passed to the final estimator
         that calls the `transform` method. Only valid if the final
-        estimator implements `transform`. This also works where final
-        estimator is `None` in which case all prior transformations
-        are applied.
+        estimator implements `transform`. This also works when the
+        final estimator is `None`, in which case all prior
+        transformations are applied.
 
         Parameters
         ----------
@@ -282,6 +284,9 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
+        **kwargs
+            Additional keyword arguments for the `_iter` inner method.
+
         Returns
         -------
         dataframe
@@ -291,7 +296,7 @@ class Pipeline(skPipeline):
             Transformed target column. Only returned if provided.
 
         """
-        for _, _, transformer in self._iter():
+        for _, _, transformer in self._iter(**kwargs):
             X, y = self._memory_transform(transformer, X, y)
 
         return variable_return(X, y)
@@ -301,7 +306,7 @@ class Pipeline(skPipeline):
         X: FEATURES | None = None,
         y: TARGET | None = None,
         **fit_params,
-    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Fit the pipeline and transform the data.
 
         Parameters
@@ -351,7 +356,7 @@ class Pipeline(skPipeline):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the

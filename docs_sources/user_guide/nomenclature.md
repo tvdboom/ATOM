@@ -13,8 +13,8 @@ Refers to this package.
 
 <div id="atom"><strong>atom</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-Instance of the [ATOMClassifier][] or [ATOMRegressor][] classes (note
-that the examples use it as the default variable name).
+Instance of the [ATOMClassifier][], [ATOMForecaster][] or [ATOMRegressor][]
+classes (note that the examples use it as the default variable name).
 </div>
 
 <a id="branch"></a><strong>branch</strong>

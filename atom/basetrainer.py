@@ -13,16 +13,15 @@ import traceback
 from datetime import datetime as dt
 from typing import Any
 
-import joblib
 import mlflow
 import numpy as np
 import ray
-from joblib import Parallel, delayed
 from optuna import Study, create_study
 
+import joblib
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
-from atom.branch import Branch
+from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
@@ -31,6 +30,7 @@ from atom.utils.utils import (
     ClassMap, DataConfig, check_dependency, get_best_score, get_custom_scorer,
     lst, sign, time_to_str,
 )
+from joblib import Parallel, delayed
 
 
 class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
@@ -73,10 +73,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         self._metric = lst(metric) if metric is not None else []
 
         self._config = DataConfig()
-
-        self._og = None
-        self._current = Branch(name="master")
-        self._branches = ClassMap(self._current)
+        self._branches = BranchManager(memory=self.memory)
 
         self.task = None
 
@@ -164,8 +161,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         kwargs = dict(
             goal=self.goal,
             config=self._config,
-            og=self.og,
-            branch=self.branch,
+            branches=self._branches,
             metric=self._metric,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )

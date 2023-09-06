@@ -16,7 +16,6 @@ from random import sample
 from typing import Callable, Literal
 
 import featuretools as ft
-import joblib
 import numpy as np
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
@@ -27,12 +26,12 @@ from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
 )
 from sklearn.model_selection import cross_val_score
-
 from zoofs import (
     DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
+import joblib
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS

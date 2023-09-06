@@ -10,7 +10,7 @@ Description: Module containing the BaseModel class.
 from __future__ import annotations
 
 import re
-from copy import deepcopy
+from copy import copy, deepcopy
 from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
@@ -24,7 +24,6 @@ import mlflow
 import numpy as np
 import pandas as pd
 import ray
-from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.data import from_pandas
 from mlflow.models.signature import infer_signature
@@ -54,12 +53,13 @@ from starlette.requests import Request
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
+from atom.branch import Branch, BranchManager
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    BACKEND, BOOL, BRANCH, DATAFRAME, DATAFRAME_TYPES, ENGINE, FEATURES, FLOAT,
+    BACKEND, BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, FEATURES, FLOAT,
     FLOAT_TYPES, INDEX, INT, INT_TYPES, METHOD_SELECTOR, METRIC_SELECTOR,
     PANDAS, PREDICTOR, SCALAR, SCORER, SEQUENCE, SLICE, STAGES, TARGET,
     WARNINGS,
@@ -67,12 +67,12 @@ from atom.utils.types import (
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
     TrialsCallback, bk, check_dependency, check_empty, check_scaling, composed,
-    crash, custom_transform, estimator_has_attr, export_pipeline,
-    fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
-    has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
-    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
-    variable_return,
+    crash, estimator_has_attr, fit_and_score, flt, get_cols, get_custom_scorer,
+    get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
+    it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas,
+    to_series,
 )
+from joblib import Parallel, delayed
 
 
 class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
@@ -90,11 +90,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     config: DataConfig or None, default=None
         Data configuration. If None, use the default config values.
 
-    og: Branch or None, default=None
-        Original branch.
-
-    branch: Branch or None, default=None
-        Current branch.
+    branches: BranchManager or None, default=None
+        BranchManager.
 
     metric: ClassMap or None, default=None
         Metric on which to fit the model.
@@ -185,8 +182,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         name: str | None = None,
         goal: Literal["class", "reg", "fc"] = "class",
         config: DataConfig | None = None,
-        og: BRANCH | None = None,
-        branch: BRANCH | None = None,
+        branches: BranchManager | None = None,
         metric: ClassMap | None = None,
         n_jobs: INT = 1,
         device: str = "cpu",
@@ -248,10 +244,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self._time_bootstrap = 0
 
         # Skip this part if not called for the estimator
-        if branch:
-            self.og = og or branch
-            self.branch = branch
-            self._train_idx = len(self.branch._idx.train_idx)  # Can change for sh and ts
+        if branches:
+            self._branches = branches
+            self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             self.task = infer_task(self.y, goal=self.goal)
 
@@ -315,6 +310,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             )
 
         return self._shap_explanation
+
+    @property
+    def og(self) -> Branch:
+        """Original branch."""
+        return self._branches.og
+
+    @property
+    def branch(self) -> Branch:
+        """Current active branch."""
+        return self._branches.current
 
     def _check_est_params(self):
         """Check that the parameters are valid for the estimator.
@@ -893,7 +898,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 y_val = self.og.y_train.iloc[val_idx]
 
                 # Transform subsets if there is a pipeline
-                if len(pl := export_pipeline(self.pipeline, verbose=0)) > 0:
+                if len(pl := self.pipeline) > 0:
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
@@ -1545,8 +1550,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         if (holdout := self.branch.holdout) is not None:
             if self.scaler:
                 return merge(
-                    self.scaler.transform(holdout.iloc[:, :-self.branch._idx.n_cols]),
-                    holdout.iloc[:, -self.branch._idx.n_cols:],
+                    self.scaler.transform(holdout.iloc[:, :-self.branch._data.n_cols]),
+                    holdout.iloc[:, -self.branch._data.n_cols:],
                 )
             else:
                 return holdout
@@ -1586,7 +1591,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def X_holdout(self) -> DATAFRAME | None:
         """Features of the holdout set."""
         if self.branch.holdout is not None:
-            return self.holdout.iloc[:, :-self.branch._idx.n_cols]
+            return self.holdout.iloc[:, :-self.branch._data.n_cols]
 
     @property
     def y_holdout(self) -> PANDAS | None:
@@ -1722,7 +1727,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self.app = Interface(
             fn=inference,
             inputs=inputs,
-            outputs=["label"] * self.branch._idx.n_cols,
+            outputs=["label"] * self.branch._data.n_cols,
             allow_flagging=kwargs.pop("allow_flagging", "never"),
             **{k: v for k, v in kwargs.items() if k in sign(Interface)},
         )
@@ -1928,12 +1933,12 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         """
         if isinstance(threshold, FLOAT_TYPES):
-            threshold = [threshold] * self.branch._idx.n_cols  # Length=n_targets
-        elif len(threshold) != self.branch._idx.n_cols:
+            threshold = [threshold] * self.branch._data.n_cols  # Length=n_targets
+        elif len(threshold) != self.branch._data.n_cols:
             raise ValueError(
                 "Invalid value for the threshold parameter. The length of the list "
                 f"list should be equal to the number of target columns, got len(target)"
-                f"={self.branch._idx.n_cols} and len(threshold)={len(threshold)}."
+                f"={self.branch._data.n_cols} and len(threshold)={len(threshold)}."
             )
 
         if any(not 0 < t < 1 for t in threshold):
@@ -1993,12 +1998,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return scores
 
     @crash
-    def export_pipeline(
-        self,
-        *,
-        memory: BOOL | str | Memory | None = None,
-        verbose: INT | None = None,
-    ) -> Pipeline:
+    def export_pipeline(self) -> Pipeline:
         """Export the model's pipeline to a sklearn-like object.
 
         The returned pipeline is already fitted on the training set.
@@ -2016,29 +2016,15 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             - Uses transformers that apply only on the training set to
               fit the pipeline, not to make predictions on new data.
 
-        Parameters
-        ----------
-        memory: bool, str, Memory or None, default=None
-            Used to cache the fitted transformers of the pipeline.
-
-            - If None or False: No caching is performed.
-            - If True: A default temp directory is used.
-            - If str: Path to the caching directory.
-            - If Memory: Object with the joblib.Memory interface.
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is not the pipeline's own verbose parameter.
-            To change that, use the `set_params` method.
-
         Returns
         -------
         Pipeline
             Current branch as a sklearn-like Pipeline object.
 
         """
-        return export_pipeline(self.pipeline, self, memory=memory, verbose=verbose)
+        pipeline = copy(self.pipeline)
+        pipeline.steps.append((self._est_class.__name__, deepcopy(self.estimator)))
+        return pipeline
 
     @composed(crash, method_to_log)
     def full_train(self, *, include_holdout: BOOL = False):
@@ -2120,8 +2106,6 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        *,
-        verbose: INT | None = None,
     ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Inversely transform new data through the pipeline.
 
@@ -2149,32 +2133,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
-
         Returns
         -------
         dataframe
             Original feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Original target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y, columns=self.og.features)
-
-        for transformer in reversed(self.pipeline):
-            if not transformer._train_only:
-                X, y = custom_transform(
-                    transformer=transformer,
-                    branch=self.branch,
-                    data=(X, y),
-                    verbose=verbose,
-                    method="inverse_transform",
-                )
-
-        return variable_return(X, y)
+        return self.pipeline.inverse_transform(X, y)
 
     @composed(crash, method_to_log)
     def register(
@@ -2236,6 +2204,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         """
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.estimator.__class__.__name__)
+
+        if not filename.endswith(".pkl"):
+            filename += ".pkl"
 
         with open(filename, "wb") as f:
             pickle.dump(self.estimator, f)
@@ -2319,8 +2290,6 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        *,
-        verbose: INT | None = None,
     ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Transform new data through the pipeline.
 
@@ -2348,26 +2317,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
-
         Returns
         -------
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y, columns=self.og.features)
-
-        for transformer in self.pipeline:
-            if not transformer._train_only:
-                X, y = custom_transform(transformer, self.branch, (X, y), verbose)
-
-        return variable_return(X, y)
+        return self.pipeline.transform(X, y)
 
 
 class ClassRegModel(BaseModel):
@@ -2793,18 +2752,9 @@ class ClassRegModel(BaseModel):
         try:
             # Duck type _get_rows -> raises an error if X can't select indices
             rows = self.branch._get_rows(X, return_test=True)
-        except (ValueError, TypeError, IndexError, KeyError, TypeCheckError):
+        except (ValueError, TypeError, IndexError, KeyError):
             rows = None
-
-            # When there is a pipeline, apply transformations first
-            X, y = self._prepare_input(X, y, columns=self.og.features)
-            X = self._set_index(X, y)
-            if y is not None:
-                y.index = X.index
-
-            for transformer in self.pipeline:
-                if not transformer._train_only:
-                    X, y = custom_transform(transformer, self.branch, (X, y), verbose)
+            X, y = self.transform(X, y)  # TODO: Fix return only X
 
         if method != "score":
             if rows:
@@ -3356,14 +3306,7 @@ class ForecastModel(BaseModel):
 
         """
         if (X := kwargs.get("X")) is not None and (y := kwargs.get("y")) is not None:
-            X, y = self._prepare_input(X, y, columns=self.og.features)
-            X = self._set_index(X, y)
-            if y is not None:
-                y.index = X.index
-
-            for transformer in self.pipeline:
-                if not transformer._train_only:
-                    X, y = custom_transform(transformer, self.branch, (X, y), verbose)
+            X, y = self.transform(X, y)
 
         if method != "score":
             return getattr(self.estimator, method)(**kwargs)

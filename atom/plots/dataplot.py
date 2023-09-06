@@ -18,12 +18,11 @@ from nltk.collocations import (
 )
 from scipy import stats
 
-
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import INT, LEGEND, SEQUENCE, SERIES, SLICE
 from atom.utils.utils import (
-    check_dependency, composed, crash, divide, get_corpus, lst, rnd,
+    check_dependency, crash, divide, get_corpus, lst, rnd,
 )
 
 

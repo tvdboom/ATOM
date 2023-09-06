@@ -19,7 +19,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from mlflow.tracking import MlflowClient
 
-
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     BOOL, DATAFRAME, FLOAT, INDEX, INT, INT_TYPES, LEGEND, MODEL, SCALAR,

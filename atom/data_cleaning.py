@@ -43,7 +43,6 @@ from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
 
-
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import MISSING_VALUES
 from atom.utils.types import (

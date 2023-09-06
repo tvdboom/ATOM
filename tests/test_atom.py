@@ -86,9 +86,9 @@ def test_repr():
     """Assert that the __str__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
-    assert "Branches: master" in str(atom)
+    assert "Branches: main" in str(atom)
     atom.branch = "b2"
-    assert "Branches:\n   --> master\n   --> b2 !" in str(atom)
+    assert "Branches:\n   --> main\n   --> b2 !" in str(atom)
 
 
 def test_iter():
@@ -104,8 +104,8 @@ def test_iter():
 def test_branch_same():
     """Assert that we can stay on the same branch."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    atom.branch = "master"
-    assert atom.branch.name == "master"
+    atom.branch = "main"
+    assert atom.branch.name == "main"
 
 
 def test_branch_change():
@@ -113,7 +113,7 @@ def test_branch_change():
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.branch = "b2"
     atom.clean()
-    atom.branch = "master"
+    atom.branch = "main"
     assert atom.pipeline.empty  # Has no Cleaner
 
 
@@ -122,7 +122,7 @@ def test_branch_existing_name():
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.branch = "b2"
     with pytest.raises(ValueError, match=".*already exists.*"):
-        atom.branch = "b2_from_master"
+        atom.branch = "b2_from_main"
 
 
 def test_branch_unknown_parent():
@@ -145,7 +145,7 @@ def test_branch_from_valid():
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.branch = "b2"
     atom.impute()
-    atom.branch = "b3_from_master"
+    atom.branch = "b3_from_main"
     assert atom.branch.name == "b3"
     assert atom.n_nans > 0
 

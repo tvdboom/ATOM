@@ -25,7 +25,6 @@ from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
 
-
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (

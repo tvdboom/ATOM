@@ -7,7 +7,6 @@ Description: Unit tests for basetransformer.py
 
 """
 
-import glob
 import multiprocessing
 import os
 from logging import Logger
@@ -515,8 +514,8 @@ def test_data_already_set():
     trainer.run(bin_train, bin_test)
     trainer.run()
     pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
-    pd.testing.assert_index_equal(trainer.branch._idx.train_idx, bin_train.index)
-    pd.testing.assert_index_equal(trainer.branch._idx.test_idx, bin_test.index)
+    pd.testing.assert_index_equal(trainer.branch._data.train_idx, bin_train.index)
+    pd.testing.assert_index_equal(trainer.branch._data.test_idx, bin_test.index)
 
 
 def test_input_is_X():
@@ -797,12 +796,12 @@ def test_invalid_index_forecast():
 def test_log_severity_error():
     """Assert that an error is raised when the severity is error."""
     with pytest.raises(UserWarning, match=".*user error.*"):
-        BaseTransformer(logger="log").log("this is a user error", severity="error")
+        BaseTransformer(logger="log")._log("this is a user error", severity="error")
 
 
 @patch("atom.basetransformer.getLogger")
 def test_log(cls):
     """Assert the log method works."""
     base = BaseTransformer(verbose=2, logger="log")
-    base.log("test", 1)
+    base._log("test", 1)
     cls.return_value.info.assert_called()

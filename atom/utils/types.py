@@ -9,16 +9,15 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from typing import (
-    Callable, Literal, Protocol, TypedDict, Union, runtime_checkable, Any
-)
-from beartype.vale import Is
-from beartype.typing import Annotated, TypeVar, Protocol, Iterable
-from beartype.door import is_bearable
+from typing import Any, Callable, Literal, TypedDict, Union, runtime_checkable
+
 import modin.pandas as md
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
+from beartype.door import is_bearable
+from beartype.typing import Annotated, Iterable, Protocol, TypeVar
+from beartype.vale import Is
 
 
 # Variable types for isinstance ==================================== >>
@@ -145,7 +144,7 @@ class SEQUENCE:
     @classmethod
     def __class_getitem__(cls, X: Any) -> Annotated[SeqProtocol, Is]:
         return Annotated[SeqProtocol[X], Is[
-            lambda l: not isinstance(l, str) and all(is_bearable(i, X) for i in l)]
+            lambda lst: not isinstance(lst, str) and all(is_bearable(i, X) for i in lst)]
         ]
 
 
@@ -172,14 +171,6 @@ class PREDICTOR(Protocol):
 class ESTIMATOR(Protocol):
     """Protocol for all estimators."""
     def fit(self, **params): ...
-
-
-@runtime_checkable
-class BRANCH(Protocol):
-    """Protocol for the Branch class."""
-    def _get_rows(self, **params): ...
-    def _get_columns(self, **params): ...
-    def _get_target(self, **params): ...
 
 
 @runtime_checkable

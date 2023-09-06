@@ -11,8 +11,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
-
 from atom.utils.types import BOOL
 
 

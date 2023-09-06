@@ -10,28 +10,28 @@ Description: Module containing the BaseRunner class.
 from __future__ import annotations
 
 import re
+from copy import copy, deepcopy
 from typing import Any, Literal
 
+import dill as pickle
 import pandas as pd
-from joblib.memory import Memory
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
-from atom.branch import Branch
+from atom.branch import Branch, BranchManager
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    BOOL, BRANCH, FLOAT, INT, INT_TYPES, METRIC_SELECTOR, MODEL, RUNNER,
-    SEQUENCE, SERIES,
+    BOOL, FLOAT, INT, INT_TYPES, METRIC_SELECTOR, MODEL, RUNNER, SEQUENCE,
+    SERIES,
 )
 from atom.utils.utils import (
-    ClassMap, CustomDict, check_is_fitted, composed, crash, divide,
-    export_pipeline, flt, get_best_score, get_versions, has_task,
-    is_multioutput, lst, method_to_log,
+    ClassMap, CustomDict, check_is_fitted, composed, crash, divide, flt,
+    get_best_score, get_versions, has_task, is_multioutput, lst, method_to_log,
 )
 
 
@@ -121,6 +121,17 @@ class BaseRunner(BaseTracker):
     # Utility properties =========================================== >>
 
     @property
+    def og(self) -> Branch:
+        """Branch containing the original dataset.
+
+        This branch contains the data prior to any transformations.
+        It redirects to the current branch if its pipeline is empty
+        to not have the same data in memory twice.
+
+        """
+        return self._branches.og
+
+    @property
     def branch(self) -> Branch:
         """Current active branch.
 
@@ -145,10 +156,8 @@ class BaseRunner(BaseTracker):
             if model.branch is self.branch:
                 self._delete_models(model.name)
 
-        self._branches.remove(self._current)
-        self._current = self._branches[-1]
-
-        self._log(f"Branch {self.branch.name} successfully deleted.", 1)
+        self._log(f"Deleting branch {self.branch.name}...", 1)
+        del self._branches.current
         self._log(f"Switched to branch {self.branch.name}.", 1)
 
     @property
@@ -260,7 +269,7 @@ class BaseRunner(BaseTracker):
         self,
         models: INT | str | MODEL | slice | SEQUENCE | None = None,
         ensembles: BOOL = True,
-        branch: BRANCH | None = None,
+        branch: Branch | None = None,
     ) -> list[MODEL]:
         """Get models.
 
@@ -545,13 +554,7 @@ class BaseRunner(BaseTracker):
         return pd.DataFrame(evaluations)
 
     @crash
-    def export_pipeline(
-        self,
-        model: str | MODEL | None = None,
-        *,
-        memory: BOOL | str | Memory | None = None,
-        verbose: INT | None = None,
-    ) -> Pipeline:
+    def export_pipeline(self, model: str | MODEL | None = None) -> Pipeline:
         """Export the pipeline to a sklearn-like object.
 
         Optionally, you can add a model as final estimator. The
@@ -576,20 +579,6 @@ class BaseRunner(BaseTracker):
             the pipeline. If None, the pipeline in the current branch
             is exported.
 
-        memory: bool, str, Memory or None, default=None
-            Used to cache the fitted transformers of the pipeline.
-
-            - If None or False: No caching is performed.
-            - If True: A default temp directory is used.
-            - If str: Path to the caching directory.
-            - If Memory: Object with the joblib.Memory interface.
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is not the pipeline's own verbose parameter.
-            To change that, use the `set_params` method.
-
         Returns
         -------
         Pipeline
@@ -598,14 +587,17 @@ class BaseRunner(BaseTracker):
         """
         if model:
             model = self._get_models(model)[0]
-            pipeline = model.pipeline
+            pipeline = copy(model.pipeline)
         else:
-            pipeline = self.pipeline
+            pipeline = copy(self.pipeline)
 
         if len(pipeline) == 0 and not model:
             raise RuntimeError("There is no pipeline to export!")
 
-        return export_pipeline(pipeline, model, memory, verbose)
+        if model:
+            pipeline.steps.append((model.name, deepcopy(model.estimator)))
+
+        return pipeline
 
     @available_if(has_task("class"))
     @crash
@@ -743,17 +735,21 @@ class BaseRunner(BaseTracker):
             Name of the file. Use "auto" for automatic naming.
 
         save_data: bool, default=True
-            Whether to save the dataset with the instance. This parameter
-            is ignored if the method is not called from atom. If False,
-            add the data to the [load][atomclassifier-load] method.
+            Whether to save the dataset with the instance. This
+            parameter is ignored if the method is not called from atom.
+            If False, add the data to the [load][atomclassifier-load]
+            method to reload the instance.
 
         """
         if not save_data and hasattr(self, "_branches"):
             data = {}
+            og = self._branches.og._data
+            self._branches._og._data = None
             for branch in self._branches:
                 data[branch.name] = dict(
-                    data=deepcopy(branch._data),
-                    holdout=deepcopy(branch._holdout),
+                    _data=deepcopy(branch._data),
+                    _holdout=deepcopy(branch._holdout),
+                    holdout=branch.__dict__.get("holdout", None)
                 )
                 branch._data = None
                 branch._holdout = None
@@ -762,15 +758,20 @@ class BaseRunner(BaseTracker):
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
 
+        if not filename.endswith(".pkl"):
+            filename += ".pkl"
+
         with open(filename, "wb") as f:
             pickle.settings["recurse"] = True
             pickle.dump(self, f)
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "_branches"):
+            self._branches._og._data = og
             for branch in self._branches:
-                branch._data = data[branch.name]["data"]
-                branch._holdout = data[branch.name]["holdout"]
+                branch._data = data[branch.name]["_data"]
+                branch._holdout = data[branch.name]["_holdout"]
+                branch.holdout = data[branch.name]["holdout"]
 
         self._log(f"{self.__class__.__name__} successfully saved.", 1)
 
@@ -825,8 +826,7 @@ class BaseRunner(BaseTracker):
         kw_model = dict(
             goal=self.goal,
             config=self._config,
-            og=self.og,
-            branch=self.branch,
+            branches=BranchManager([self.branch], og=self.og),
             metric=self._metric,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
@@ -904,8 +904,7 @@ class BaseRunner(BaseTracker):
                 name=name,
                 goal=self.goal,
                 config=self._config,
-                og=self.og,
-                branch=self.branch,
+                branches=BranchManager([self.branch], og=self.og),
                 metric=self._metric,
                 **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
                 **kwargs,

@@ -33,7 +33,7 @@ def test_init_attrs_are_passed():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
     atom.branch = "b2"
-    assert atom.b2._idx is not atom.master._idx
+    assert atom.b2._data is not atom.master._data
     assert atom.b2.adasyn is atom.master.adasyn
 
 

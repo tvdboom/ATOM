@@ -10,7 +10,6 @@ Description: Module containing the ATOM class.
 from __future__ import annotations
 
 from collections import defaultdict
-from copy import deepcopy
 from platform import machine, platform, python_build, python_version
 from types import MappingProxyType
 from typing import Callable, Literal
@@ -48,10 +47,10 @@ from atom.utils.types import (
     SLICE, STRAT_NUM, TARGET, TRANSFORMER, TS_INDEX_TYPES,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, check_dependency, check_is_fitted,
-    check_scaling, composed, crash, custom_transform, fit_one, flt, get_cols,
-    get_custom_scorer, has_task, infer_task, is_multioutput, is_sparse, lst,
-    method_to_log, sign, to_pyarrow, variable_return,
+    ClassMap, DataConfig, DataContainer, bk, check_dependency, check_is_fitted,
+    check_scaling, composed, crash, fit_one, flt, get_cols, get_custom_scorer,
+    has_task, infer_task, is_multioutput, is_sparse, lst, merge, method_to_log,
+    sign, to_pyarrow, transform_one,
 )
 
 
@@ -101,12 +100,13 @@ class ATOM(BaseRunner, ATOMPlot):
         self._log("<< ================== ATOM ================== >>", 1)
 
         # Initialize the branch system and fill with data
-        self._branches = BranchManager(location=self.memory.location)
+        self._branches = BranchManager(memory=self.memory)
         self._branches.fill(*self._get_data(arrays, y=y))
 
         self.task = infer_task(self.y, goal=self.goal)
-        self._log(f"Algorithm task: {self.task}.", 1)
 
+        self._log("\nConfiguration ==================== >>", 1)
+        self._log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
             self._log(f"Parallel processing with {self.n_jobs} cores.", 1)
         elif self.backend not in ("loky", "ray"):
@@ -116,12 +116,14 @@ class ATOM(BaseRunner, ATOMPlot):
             )
         if "gpu" in self.device.lower():
             self._log("GPU training enabled.", 1)
-        if (data := self.engine.get("data")) != "numpy":
+        if (data := self.engine.get("data", "numpy")) != "numpy":
             self._log(f"Data engine: {data}.", 1)
-        if (models := self.engine.get("estimator")) != "sklearn":
+        if (models := self.engine.get("estimator", "sklearn")) != "sklearn":
             self._log(f"Estimator engine: {models}.", 1)
         if self.backend == "ray" or self.n_jobs > 1:
             self._log(f"Parallelization backend: {self.backend}", 1)
+        if self.memory.location is not None:
+            self._log(f"Cache storage: {self.memory.location or './'}joblib", 1)
         if self.experiment:
             self._log(f"Mlflow experiment: {self.experiment}.", 1)
 
@@ -152,7 +154,7 @@ class ATOM(BaseRunner, ATOMPlot):
         return out
 
     def __iter__(self) -> TRANSFORMER | None:
-        yield from self.pipeline.values
+        yield from (s[1] for s in self.pipeline.steps)
 
     # Utility properties =========================================== >>
 
@@ -164,7 +166,7 @@ class ATOM(BaseRunner, ATOMPlot):
                 self._log(f"Already on branch {self.branch.name}.", 1)
             else:
                 self._branches.current = name
-                self._log(f"Switched to branch {self._current.name}.", 1)
+                self._log(f"Switched to branch {self.branch.name}.", 1)
         else:
             # Branch can be created from current or another one
             if "_from_" in name:
@@ -180,7 +182,7 @@ class ATOM(BaseRunner, ATOMPlot):
                     parent = self._branches[parent]
 
             else:
-                new, parent = name, self.current
+                new, parent = name, self.branch
 
             # Check if the new branch is not in existing
             if new in self._branches:  # Can happen when using _from_
@@ -377,9 +379,9 @@ class ATOM(BaseRunner, ATOMPlot):
                     if m._estimators.get(self.goal) == est_name:
                         model = m(
                             goal=self.goal,
+                            config=self._config,
+                            branches=BranchManager([self.branch], og=self.og),
                             metric=self._metric,
-                            og=self.og,
-                            branch=self.branch,
                             **{x: getattr(self, x) for x in BaseTransformer.attrs},
                         )
                         model._estimator = est._component_obj
@@ -536,13 +538,11 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        *,
-        verbose: INT | None = None,
     ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
-        skipped. The rest should all implement a `inverse_transform`
+        skipped. The rest should all implement an `inverse_transform`
         method. If only `X` or only `y` is provided, it ignores
         transformers that require the other parameter. This can be
         used to transform only the target column.
@@ -563,49 +563,26 @@ class ATOM(BaseRunner, ATOMPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
-
         Returns
         -------
         dataframe
             Original feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Original target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y, columns=self.og.features)
-
-        for transformer in reversed(self.pipeline):
-            if not transformer._train_only:
-                X, y = custom_transform(
-                    transformer=transformer,
-                    branch=self.branch,
-                    data=(X, y),
-                    verbose=verbose,
-                    method="inverse_transform",
-                )
-
-        return variable_return(X, y)
+        return self.pipeline.inverse_transform(X, y)
 
     @classmethod
-    def load(
-        cls,
-        filename: str,
-        data: SEQUENCE | None = None,
-        *,
-        transform_data: BOOL = True,
-        verbose: INT | None = None,
-    ) -> ATOM:
+    def load(cls, filename: str, data: SEQUENCE | None = None) -> ATOM:
         """Loads an atom instance from a pickle file.
 
         If the instance was [saved][self-save] using `save_data=False`,
         it's possible to load new data into it and apply all data
         transformations.
 
-        !!! note
+        !!! info
             The loaded instance's current branch is the same branch as it
             was when saved.
 
@@ -615,7 +592,8 @@ class ATOM(BaseRunner, ATOMPlot):
             Name of the pickle file.
 
         data: sequence of indexables or None, default=None
-            Original dataset. Only use this parameter if the loaded file
+            Original dataset as it was provided to the instance's
+            constructor. Only use this parameter if the loaded file
             was saved using `save_data=False`. Allowed formats are:
 
             - X
@@ -640,22 +618,15 @@ class ATOM(BaseRunner, ATOMPlot):
               tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        transform_data: bool, default=True
-            If False, the `data` is left as provided. If True, it's
-            transformed through all the steps in the loaded instance's
-            pipeline.
-
-        verbose: int or None, default=None
-            Verbosity level of the transformations applied on the new
-            data. If None, use the verbosity from the loaded instance.
-            This parameter is ignored if `transform_data=False`.
-
         Returns
         -------
-        atom instance
+        atom
             Unpickled atom instance.
 
         """
+        if "." not in filename:
+            filename += ".pkl"
+
         with open(filename, "rb") as f:
             atom = pickle.load(f)
 
@@ -672,48 +643,28 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         if data is not None:
-            if any(branch._data is not None for branch in atom._branches):
-                raise ValueError(
-                    f"The loaded {atom.__class__.__name__} "
-                    "instance already contains data."
-                )
-
             # Prepare the provided data
-            dataset, idx, atom.holdout = atom._get_data(data, use_n_rows=transform_data)
+            data, holdout = atom._get_data(data)
 
             # Apply transformations per branch
-            step = {}  # Current step in the pipeline per branch
-            for b1 in atom._branches:
-                # Provide the input data if not already filled from another branch
-                if b1._data is None:
-                    b1._data, b1._idx = dataset, idx
+            for branch in atom._branches:
+                if branch._data is None:
+                    branch._data, branch._holdout = data, holdout
+                else:
+                    raise ValueError(
+                        f"The loaded {atom.__class__.__name__} instance "
+                        f"already contains data in branch {branch.name}."
+                    )
 
-                if transform_data:
-                    if len(atom._branches) > 2 and not b1.pipeline.empty:
-                        atom.log(f"Transforming data for branch {b1.name}:", 1)
+                if len(atom._branches) > 2 and branch.pipeline:
+                    atom._log(f"Transforming data for branch {branch.name}:", 1)
 
-                    for i, est1 in enumerate(b1.pipeline):
-                        # Skip if the transformation was already applied
-                        if step.get(b1.name, -1) < i:
-                            custom_transform(est1, b1, verbose=verbose)
+                X_train, y_train = branch.pipeline.transform(branch.X_train, branch.y_train, filter_train_only=False)
+                X_test, y_test = branch.pipeline.transform(branch.X_test, branch.y_test)
 
-                            if atom.index is False:
-                                b1._data = b1.dataset.reset_index(drop=True)
-                                b1._idx = DataContainer(
-                                    train_idx=b1._data.index[:len(b1._idx.train_idx)],
-                                    test_idx=b1._data.index[-len(b1._idx.test_idx):],
-                                    n_cols=b1._idx.n_cols,
-                                )
+                branch._data.data = bk.concat([merge(X_train, y_train), merge(X_test, y_test)])
 
-                            for b2 in atom._branches:
-                                if b1.name != b2.name and b2.pipeline.get(i) is est1:
-                                    # Update the data and step for the other branch
-                                    atom._branches[b2.name]._data = b1._data.copy()
-                                    atom._branches[b2.name]._idx = deepcopy(b1._idx)
-                                    atom._branches[b2.name]._holdout = b1._holdout
-                                    step[b2.name] = i
-
-        atom.log(f"{atom.__class__.__name__} successfully loaded.", 1)
+        atom._log(f"{atom.__class__.__name__} successfully loaded.", 1)
 
         return atom
 
@@ -728,11 +679,7 @@ class ATOM(BaseRunner, ATOMPlot):
         # Delete all models
         self._delete_models(self._get_models())
 
-        # Recreate the master branch from original and drop rest
-        self._current = self.og
-        self._current.name = "master"
-        self._branches = ClassMap(self._current)
-        self._og = None  # Reset original branch
+        self._branches.reset()
 
         self._log(f"{self.__class__.__name__} successfully reset.", 1)
 
@@ -977,8 +924,6 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         X: FEATURES | None = None,
         y: TARGET | None = None,
-        *,
-        verbose: INT | None = None,
     ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Transform new data through the pipeline.
 
@@ -1004,26 +949,16 @@ class ATOM(BaseRunner, ATOMPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
-
         Returns
         -------
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y, columns=self.og.features)
-
-        for transformer in self.pipeline:
-            if not transformer._train_only:
-                X, y = custom_transform(transformer, self.branch, (X, y), verbose)
-
-        return variable_return(X, y)
+        return self.pipeline.transform(X, y)
 
     # Base transformers ============================================ >>
 
@@ -1124,25 +1059,45 @@ class ATOM(BaseRunner, ATOMPlot):
 
             fit_one(transformer, self.X_train, self.y_train, **fit_params)
 
-        # Store data in og branch
-        if not self._branches.og:
-            self._og = Branch(name="og", parent=self.branch)
+        # Store data in og branch before transforming
+        self._branches.add("og")
 
-        custom_transform(transformer, self.branch)
+        if train_only:
+            X, y = transform_one(transformer, self.X_train, self.y_train)
+            self.train = merge(
+                self.X_train if X is None else X,
+                self.y_train if y is None else y,
+            )
+        else:
+            X, y = transform_one(transformer, self.X, self.y)
+            data = merge(self.X if X is None else X, self.y if y is None else y)
+
+            # y can change the number of columns or remove rows -> reassign index
+            self.branch._data = DataContainer(
+                data=data,
+                train_idx=self.branch._data.train_idx.intersection(data.index),
+                test_idx=self.branch._data.test_idx.intersection(data.index),
+                n_cols=self.branch._data.n_cols if y is None else len(get_cols(y)),
+            )
 
         if self.index is False:
-            self.branch._data = self.branch.dataset.reset_index(drop=True)
-            self.branch._idx = DataContainer(
-                train_idx=self.branch._data.index[:len(self.branch._idx.train_idx)],
-                test_idx=self.branch._data.index[-len(self.branch._idx.test_idx):],
-                n_cols=self.branch._idx.n_cols,
+            self.branch._data = DataContainer(
+                data=(data := self.dataset.reset_index(drop=True)),
+                train_idx=data.index[:len(self.branch._data.train_idx)],
+                test_idx=data.index[-len(self.branch._data.test_idx):],
+                n_cols=self.branch._data.n_cols,
             )
 
         # Add the estimator to the pipeline
-        self.branch._pipeline = pd.concat(
-            [self.pipeline, pd.Series([transformer], dtype="object")],
-            ignore_index=True,
-        )
+        # Check if there already exists an estimator with that
+        # name. If so, add a counter at the end of the name
+        counter = 1
+        name = transformer.__class__.__name__
+        while name in (n for n, _ in self.pipeline):
+            counter += 1
+            name = f"{name}{counter}"
+
+        self.branch._pipeline.steps.append((name, transformer))
 
     @composed(crash, method_to_log)
     def add(
@@ -1978,13 +1933,11 @@ class ATOM(BaseRunner, ATOMPlot):
 
         # Transfer attributes
         trainer._config = self._config
-        trainer._og = self._og
-        trainer._current = self._current
-        trainer._branches = self._branches
+        trainer._branches = BranchManager([self.branch], og=self.og)
 
         trainer.run()
 
-        # Overwrite models with same name as new ones
+        # Overwrite models with the same name as new ones
         for model in trainer._models:
             if model.name in self._models:
                 self._delete_models(model.name)

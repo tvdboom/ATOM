@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -30,7 +29,6 @@ from sklearn.utils import _safe_indexing
 from sklearn.utils.metaestimators import available_if
 from sktime.forecasting.base import ForecastingHorizon
 
-
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
@@ -42,6 +40,7 @@ from atom.utils.utils import (
     divide, get_best_score, get_custom_scorer, has_task, is_binary,
     is_multioutput, lst, plot_from_model, rnd,
 )
+from joblib import Parallel, delayed
 
 
 class PredictionPlot(BasePlot):
@@ -3332,7 +3331,7 @@ class PredictionPlot(BasePlot):
         for met in metric:
             x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
             for m in models:
-                x[m._group].append(len(m.branch._idx.train_idx) // m._train_idx)
+                x[m._group].append(len(m.branch._data.train_idx) // m._train_idx)
                 y[m._group].append(get_best_score(m, met))
                 if m.bootstrap is not None:
                     std[m._group].append(m.bootstrap.iloc[:, met].std())
