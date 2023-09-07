@@ -20,10 +20,10 @@ Documents are expected to be strings or sequences of words. Click
 !!! note
     All of atom's NLP methods automatically adopt the relevant transformer
     attributes (`verbose`, `logger`) from atom. A different choice can be
-    added as parameter to the method call, e.g. `#!python atom.tokenize(verbose=0)`.
+    added as parameter to the method call, e.g., `#!python atom.tokenize(verbose=0)`.
 
 !!! info
-    ATOM doesn't do topic modelling! The module's goal is to help process
+    ATOM doesn't do topic modeling! The module's goal is to help process
     text documents into features that can be used for supervised learning.
 
 <br>
@@ -112,7 +112,7 @@ embedding with the prefix `corpus_`. Read more in sklearn's [documentation](http
 <br style="display: block; margin-top: 2em; content: ' '">
 
 **TF-IDF**<br>
-In a large text corpus, some words will be very present (e.g. “the”,
+In a large text corpus, some words will be very present (e.g., “the”,
 “a”, “is” in English), hence carrying very little meaningful information
 about the actual contents of the document. If we were to feed the direct
 count data directly to a classifier, those very frequent terms would

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Unit tests for basemodel.py
 
@@ -44,7 +44,7 @@ def test_scaler():
 
 
 def test_str():
-    """Assert that the __str__ method works as intended."""
+    """Assert that the __repr__ method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LDA")
     assert str(atom.lda).startswith("LinearDiscriminantAnalysis")

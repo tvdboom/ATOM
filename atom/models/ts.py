@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing all time series models.
 
@@ -47,10 +47,10 @@ class ARIMA(ForecastModel):
 
         - Use the [AutoARIMA][] model instead.
         - Use [`est_params`][directforecaster-est_params] to specify the
-          orders manually, e.g. `#!python atom.run("arima", n_trials=5,
+          orders manually, e.g., `#!python atom.run("arima", n_trials=5,
           est_params={"order": (1, 1, 0)})`.
         - Use the `catch` parameter in [`ht_params`][directforecaster-ht_params]
-          to avoid raising every exception, e.g. `#!python atom.run("arima",
+          to avoid raising every exception, e.g., `#!python atom.run("arima",
           n_trials=5, ht_params={"catch": (Exception,)})`.
 
     See Also

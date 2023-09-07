@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the ShapPlot class.
 
@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import shap
 
 from atom.plots.base import BasePlot
-from atom.utils.types import INT, LEGEND, MODEL, SEQUENCE, SLICE
+from atom.utils.types import SLICE, Int, Legend, Model, Sequence
 from atom.utils.utils import check_canvas, composed, crash, plot_from_model
 
 
@@ -32,14 +32,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_bar(
         self,
-        models: INT | str | MODEL | None = None,
+        models: Int | str | Model | None = None,
         index: SLICE | None = None,
-        show: INT | None = None,
-        target: INT | str | tuple = 1,
+        show: Int | None = None,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -57,7 +57,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_bar()`.
+            from a model, e.g., `atom.lr.plot_shap_bar()`.
 
         index: int, str, slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
@@ -146,14 +146,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_beeswarm(
         self,
-        models: INT | str | MODEL | None = None,
-        index: slice | SEQUENCE | None = None,
-        show: INT | None = None,
-        target: INT | str | tuple = 1,
+        models: Int | str | Model | None = None,
+        index: slice | Sequence | None = None,
+        show: Int | None = None,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -168,7 +168,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_beeswarm()`.
+            from a model, e.g., `atom.lr.plot_shap_beeswarm()`.
 
         index: tuple, slice or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
@@ -257,14 +257,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_decision(
         self,
-        models: INT | str | MODEL | None = None,
+        models: Int | str | Model | None = None,
         index: SLICE | None = None,
-        show: INT | None = None,
-        target: INT | str | tuple = 1,
+        show: Int | None = None,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -284,7 +284,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_decision()`.
+            from a model, e.g., `atom.lr.plot_shap_decision()`.
 
         index: int, str, slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
@@ -381,13 +381,13 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_force(
         self,
-        models: INT | str | MODEL | None = None,
+        models: Int | str | Model | None = None,
         index: SLICE | None = None,
-        target: INT | str | tuple = 1,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (900, 300),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (900, 300),
         filename: str | None = None,
         display: bool | None = True,
         **kwargs,
@@ -406,7 +406,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_force()`.
+            from a model, e.g., `atom.lr.plot_shap_force()`.
 
         index: int, str, slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
@@ -509,14 +509,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_heatmap(
         self,
-        models: INT | str | MODEL | None = None,
-        index: slice | SEQUENCE | None = None,
-        show: INT | None = None,
-        target: INT | str | tuple = 1,
+        models: Int | str | Model | None = None,
+        index: slice | Sequence | None = None,
+        show: Int | None = None,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -534,7 +534,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_heatmap()`.
+            from a model, e.g., `atom.lr.plot_shap_heatmap()`.
 
         index: slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
@@ -624,14 +624,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_scatter(
         self,
-        models: INT | str | MODEL | None = None,
-        index: slice | SEQUENCE | None = None,
-        columns: INT | str = 0,
-        target: INT | str | tuple = 1,
+        models: Int | str | Model | None = None,
+        index: slice | Sequence | None = None,
+        columns: Int | str = 0,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (900, 600),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -650,7 +650,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_scatter()`.
+            from a model, e.g., `atom.lr.plot_shap_scatter()`.
 
         index: slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
@@ -742,14 +742,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_shap_waterfall(
         self,
-        models: INT | str | MODEL | None = None,
-        index: INT | str | None = None,
-        show: INT | None = None,
-        target: INT | str | tuple = 1,
+        models: Int | str | Model | None = None,
+        index: Int | str | None = None,
+        show: Int | None = None,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -773,7 +773,7 @@ class ShapPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_shap_waterfall()`.
+            from a model, e.g., `atom.lr.plot_shap_waterfall()`.
 
         index: int, str or None, default=None
             Rows in the dataset to plot. If None, it selects all rows

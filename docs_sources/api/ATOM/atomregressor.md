@@ -22,7 +22,7 @@ The class contains some magic methods to help you access some of its
 elements faster. Note that methods that apply on the pipeline can return
 different results per branch.
 
-* **\__str__:** Prints an overview of atom's branches, models and metric.
+* **\__repr__:** Prints an overview of atom's branches, models and metric.
 * **\__len__:** Returns the length of the dataset.
 * **\__iter__:** Iterate over the pipeline's transformers.
 * **\__contains__:** Checks if the provided item is a column in the dataset.

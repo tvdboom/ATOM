@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing utility classes.
 
@@ -50,10 +50,10 @@ from sklearn.utils import _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    BOOL, DATAFRAME, DATAFRAME_TYPES, ESTIMATOR, FEATURES, FLOAT, INDEX,
-    INDEX_SELECTOR, INT, INT_TYPES, MODEL, PANDAS, PANDAS_TYPES, PREDICTOR,
-    SCALAR, SCORER, SEQUENCE, SEQUENCE_TYPES, SERIES, SERIES_TYPES, TARGET,
-    TRANSFORMER,
+    Bool, DataFrame, DataFrameTypes, Estimator, Features, Float, Index,
+    IndexSelector, Int, IntTypes, Model, Pandas, PandasTypes, Predictor,
+    Scalar, Scorer, Sequence, SequenceTypes, Series, SeriesTypes, Target,
+    Transformer,
 )
 
 
@@ -77,30 +77,30 @@ class DataConfig:
     the one adopted by trainers.
 
     """
-    index: INDEX_SELECTOR = True
-    shuffle: BOOL = True
-    stratify: INDEX_SELECTOR = True
-    test_size: SCALAR = 0.2
+    index: IndexSelector = True
+    shuffle: Bool = True
+    stratify: IndexSelector = True
+    test_size: Scalar = 0.2
 
 
 @dataclass
 class DataContainer:
     """Stores a branch's data."""
-    data: DATAFRAME  # Complete dataset
-    train_idx: INDEX  # Indices in the train set
-    test_idx: INDEX  # Indices in the test
-    n_cols: INT  # Number of target columns
+    data: DataFrame  # Complete dataset
+    train_idx: Index  # Indices in the train set
+    test_idx: Index  # Indices in the test
+    n_cols: Int  # Number of target columns
 
 
 class PandasModin:
     """Utility class to select the right data engine.
 
     Returns pandas or modin depending on the env variable
-    ATOM_DATA_ENGINE, which is set in BaseTransformer.py.
+    ATOM_DATA_Engine, which is set in BaseTransformer.py.
 
     """
     def __getattr__(self, item: str) -> Any:
-        if os.environ.get("ATOM_DATA_ENGINE") == "modin":
+        if os.environ.get("ATOM_DATA_Engine") == "modin":
             return getattr(md, item)
         else:
             return getattr(pd, item)
@@ -122,11 +122,11 @@ class CatBMetric:
         Model's task.
 
     """
-    def __init__(self, scorer: SCORER, task: str):
+    def __init__(self, scorer: Scorer, task: str):
         self.scorer = scorer
         self.task = task
 
-    def get_final_error(self, error: FLOAT, weight: FLOAT) -> FLOAT:
+    def get_final_error(self, error: Float, weight: Float) -> Float:
         """Returns final value of metric based on error and weight.
 
         Can't be a `staticmethod` because of CatBoost's implementation.
@@ -152,7 +152,7 @@ class CatBMetric:
         """Returns whether great values of metric are better."""
         return True
 
-    def evaluate(self, approxes: list, targets: list, weight: list) -> FLOAT:
+    def evaluate(self, approxes: list, targets: list, weight: list) -> Float:
         """Evaluates metric value.
 
         Parameters
@@ -211,7 +211,7 @@ class LGBMetric:
         Model's task.
 
     """
-    def __init__(self, scorer: SCORER, task: str):
+    def __init__(self, scorer: Scorer, task: str):
         self.scorer = scorer
         self.task = task
 
@@ -220,7 +220,7 @@ class LGBMetric:
         y_true: np.ndarray,
         y_pred: np.ndarray,
         weight: np.ndarray,
-    ) -> tuple[str, FLOAT, bool]:
+    ) -> tuple[str, Float, bool]:
         """Evaluates metric value.
 
         Parameters
@@ -274,7 +274,7 @@ class XGBMetric:
         Model's task.
 
     """
-    def __init__(self, scorer: SCORER, task: str):
+    def __init__(self, scorer: Scorer, task: str):
         self.scorer = scorer
         self.task = task
 
@@ -282,7 +282,7 @@ class XGBMetric:
     def __name__(self):
         return self.scorer.name
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> FLOAT:
+    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> Float:
         if self.scorer.__class__.__name__ == "_PredictScorer":
             if is_binary(self.task):
                 y_pred = (y_pred > 0.5).astype(int)
@@ -311,7 +311,7 @@ class Table:
 
     """
 
-    def __init__(self, headers: SEQUENCE, spaces: SEQUENCE, default_pos: str = "right"):
+    def __init__(self, headers: Sequence, spaces: Sequence, default_pos: str = "right"):
         assert len(headers) == len(spaces)
 
         self.headers = []
@@ -327,7 +327,7 @@ class Table:
         self.spaces = spaces
 
     @staticmethod
-    def to_cell(text: SCALAR | str, position: str, space: INT) -> str:
+    def to_cell(text: Scalar | str, position: str, space: Int) -> str:
         """Get the string format for one cell.
 
         Parameters
@@ -420,7 +420,7 @@ class TrialsCallback:
 
     """
 
-    def __init__(self, model: MODEL, n_jobs: INT):
+    def __init__(self, model: Model, n_jobs: Int):
         self.T = model
         self.n_jobs = n_jobs
 
@@ -705,10 +705,10 @@ class ShapExplanation:
 
     def __init__(
         self,
-        estimator: PREDICTOR,
+        estimator: Predictor,
         task: str,
         branch: Any,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.estimator = estimator
         self.task = task
@@ -752,7 +752,7 @@ class ShapExplanation:
                 feature_names=list(self.branch.features),
                 seed=self.random_state,
             )
-            try:  # Fails when model does not fit standard explainers (e.g. ensembles)
+            try:  # Fails when model does not fit standard explainers (e.g., ensembles)
                 self._explainer = Explainer(self.estimator, **kwargs)
             except TypeError:
                 # If method is provided as first arg, selects always Permutation
@@ -762,7 +762,7 @@ class ShapExplanation:
 
     def get_explanation(
         self,
-        df: DATAFRAME,
+        df: DataFrame,
         target: tuple,
     ) -> Explanation:
         """Get an Explanation object.
@@ -859,7 +859,7 @@ class ClassMap:
         return key.lower() if isinstance(key, str) else key
 
     def _get_data(self, key):
-        if isinstance(key, INT_TYPES) and key not in self.keys():
+        if isinstance(key, IntTypes) and key not in self.keys():
             try:
                 return self.__data[key]
             except IndexError:
@@ -894,7 +894,7 @@ class ClassMap:
                 self.__data.append(self._check(elem))
 
     def __getitem__(self, key):
-        if isinstance(key, SEQUENCE_TYPES):
+        if isinstance(key, SequenceTypes):
             return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
         elif isinstance(key, slice):
             return self.__class__(*self.__data[key], key=self.__key)
@@ -902,7 +902,7 @@ class ClassMap:
             return self._get_data(key)
 
     def __setitem__(self, key, value):
-        if isinstance(key, INT_TYPES):
+        if isinstance(key, IntTypes):
             self.__data[key] = self._check(value)
         else:
             try:
@@ -923,8 +923,8 @@ class ClassMap:
     def __contains__(self, key):
         return key in self.__data or self._conv(key) in self.keys_lower()
 
-    def __str__(self):
-        return self.__data.__str__()
+    def __repr__(self):
+        return self.__data.__repr__()
 
     def __reversed__(self):
         yield from reversed(list(self.__data))
@@ -988,7 +988,7 @@ class CustomDict(MutableMapping):
 
     def _get_key(self, key):
         # Get key from index
-        if isinstance(key, INT_TYPES) and key not in self.__keys:
+        if isinstance(key, IntTypes) and key not in self.__keys:
             return self.__keys[key]
         else:
             # Get key from name
@@ -1024,7 +1024,7 @@ class CustomDict(MutableMapping):
             self.__data[self._conv(key)] = value
 
     def __getitem__(self, key):
-        if isinstance(key, SEQUENCE_TYPES):
+        if isinstance(key, SequenceTypes):
             return self.__class__({self._get_key(k): self[k] for k in key})
         elif isinstance(key, slice):
             return self.__class__({k: self[k] for k in self.__keys[key]})
@@ -1050,7 +1050,7 @@ class CustomDict(MutableMapping):
     def __contains__(self, key):
         return self._conv(key) in self.__data
 
-    def __str__(self):
+    def __repr__(self):
         return pprint.pformat(dict(self), sort_dicts=False)
 
     def __reversed__(self):
@@ -1157,10 +1157,10 @@ def flt(x: Any) -> Any:
         Object.
 
     """
-    return x[0] if isinstance(x, SEQUENCE_TYPES) and len(x) == 1 else x
+    return x[0] if isinstance(x, SequenceTypes) and len(x) == 1 else x
 
 
-def lst(x: Any) -> SEQUENCE:
+def lst(x: Any) -> Sequence:
     """Make a sequence from an item if not a sequence already.
 
     Parameters
@@ -1174,7 +1174,7 @@ def lst(x: Any) -> SEQUENCE:
         Item as sequence with length 1 or provided sequence.
 
     """
-    return x if isinstance(x, (dict, CustomDict, ClassMap, *SEQUENCE_TYPES)) else [x]
+    return x if isinstance(x, (dict, CustomDict, ClassMap, *SequenceTypes)) else [x]
 
 
 def it(x: Any) -> Any:
@@ -1201,7 +1201,7 @@ def it(x: Any) -> Any:
     return int(x) if is_equal else float(x)
 
 
-def rnd(x: Any, decimals: INT = 4) -> Any:
+def rnd(x: Any, decimals: Int = 4) -> Any:
     """Round a float to the `decimals` position.
 
     If the value is not a float, return as is.
@@ -1223,7 +1223,7 @@ def rnd(x: Any, decimals: INT = 4) -> Any:
     return round(x, decimals) if np.issubdtype(type(x), np.floating) else x
 
 
-def divide(a: SCALAR, b: SCALAR) -> SCALAR:
+def divide(a: Scalar, b: Scalar) -> Scalar:
     """Divide two numbers and return 0 if division by zero.
 
     If the value is not a float, return as is.
@@ -1283,7 +1283,7 @@ def sign(obj: Callable) -> MappingProxyType:
     return signature(obj).parameters
 
 
-def merge(*args) -> DATAFRAME:
+def merge(*args) -> DataFrame:
     """Concatenate pandas objects column-wise.
 
     None and empty objects are ignored.
@@ -1305,7 +1305,7 @@ def merge(*args) -> DATAFRAME:
         return bk.DataFrame(bk.concat([*args], axis=1))
 
 
-def get_cols(elem: PANDAS) -> list[SERIES]:
+def get_cols(elem: Pandas) -> list[Series]:
     """Get a list of columns in dataframe / series.
 
     Parameters
@@ -1319,16 +1319,16 @@ def get_cols(elem: PANDAS) -> list[SERIES]:
         Columns in elem.
 
     """
-    if isinstance(elem, SERIES_TYPES):
+    if isinstance(elem, SeriesTypes):
         return [elem]
     else:
         return [elem[col] for col in elem]
 
 
 def variable_return(
-    X: DATAFRAME | None,
-    y: SERIES | None,
-) -> DATAFRAME | SERIES | tuple[DATAFRAME, PANDAS]:
+    X: DataFrame | None,
+    y: Series | None,
+) -> DataFrame | Series | tuple[DataFrame, Pandas]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1356,7 +1356,7 @@ def variable_return(
         return X, y
 
 
-def is_sparse(obj: PANDAS) -> bool:
+def is_sparse(obj: Pandas) -> bool:
     """Check if the dataframe is sparse.
 
     A data set is considered sparse if any of its columns is sparse.
@@ -1375,7 +1375,7 @@ def is_sparse(obj: PANDAS) -> bool:
     return any(pd.api.types.is_sparse(col) for col in get_cols(obj))
 
 
-def check_empty(obj: PANDAS) -> PANDAS | None:
+def check_empty(obj: Pandas) -> Pandas | None:
     """Check if a pandas object is empty.
 
     Parameters
@@ -1428,7 +1428,7 @@ def check_canvas(is_canvas: bool, method: str):
         )
 
 
-def check_hyperparams(models: MODEL | SEQUENCE, method: str) -> list[MODEL]:
+def check_hyperparams(models: Model | Sequence, method: str) -> list[Model]:
     """Check if the models ran hyperparameter tuning.
 
     If no models did, raise an exception.
@@ -1456,7 +1456,7 @@ def check_hyperparams(models: MODEL | SEQUENCE, method: str) -> list[MODEL]:
     return models
 
 
-def check_predict_proba(models: MODEL | SEQUENCE, method: str):
+def check_predict_proba(models: Model | Sequence, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
     Parameters
@@ -1476,7 +1476,7 @@ def check_predict_proba(models: MODEL | SEQUENCE, method: str):
             )
 
 
-def check_scaling(X: PANDAS, pipeline: Any | None = None) -> bool:
+def check_scaling(X: Pandas, pipeline: Any | None = None) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
@@ -1520,7 +1520,7 @@ def check_scaling(X: PANDAS, pipeline: Any | None = None) -> bool:
 
 
 @contextmanager
-def keep_attrs(estimator: ESTIMATOR):
+def keep_attrs(estimator: Estimator):
     """Contextmanager to save an estimator's custom attributes.
 
     ATOM's pipeline uses two custom attributes for its transformers:
@@ -1562,7 +1562,7 @@ def get_versions(models: ClassMap) -> dict:
     return versions
 
 
-def get_corpus(df: DATAFRAME) -> SERIES:
+def get_corpus(df: DataFrame) -> Series:
     """Get text column from a dataframe.
 
     The text column should be called `corpus` (case-insensitive).
@@ -1584,7 +1584,7 @@ def get_corpus(df: DATAFRAME) -> SERIES:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
-def get_best_score(item: MODEL | SERIES, metric: int = 0) -> FLOAT:
+def get_best_score(item: Model | Series, metric: int = 0) -> Float:
     """Returns the best score for a model.
 
     The best score is the `score_bootstrap` or `score_test`, checked
@@ -1610,7 +1610,7 @@ def get_best_score(item: MODEL | SERIES, metric: int = 0) -> FLOAT:
         return lst(item.score_test)[metric]
 
 
-def time_to_str(t: SCALAR) -> str:
+def time_to_str(t: Scalar) -> str:
     """Convert time to a nice string representation.
 
     The resulting string is of format 00h:00m:00s or 1.000s if
@@ -1638,7 +1638,7 @@ def time_to_str(t: SCALAR) -> str:
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
-def n_cols(data: FEATURES | TARGET | None) -> int:
+def n_cols(data: Features | Target | None) -> int:
     """Get the number of columns in a dataset.
 
     Parameters
@@ -1659,7 +1659,7 @@ def n_cols(data: FEATURES | TARGET | None) -> int:
             return array.ndim  # Can be 0 when input is a dict
 
 
-def to_pyarrow(column: SERIES, inverse: bool = False) -> str:
+def to_pyarrow(column: Series, inverse: bool = False) -> str:
     """Get the pyarrow dtype corresponding to a series.
 
     Parameters
@@ -1689,11 +1689,11 @@ def to_pyarrow(column: SERIES, inverse: bool = False) -> str:
 
 
 def to_df(
-    data: FEATURES | None,
-    index: SEQUENCE | None = None,
-    columns: SEQUENCE | None = None,
+    data: Features | None,
+    index: Sequence | None = None,
+    columns: Sequence | None = None,
     dtype: str | dict | np.dtype | None = None,
-) -> DATAFRAME | None:
+) -> DataFrame | None:
     """Convert a dataset to a dataframe.
 
     Parameters
@@ -1721,7 +1721,7 @@ def to_df(
     if data is not None:
         if not isinstance(data, bk.DataFrame):
             # Assign default column names (dict already has column names)
-            if not isinstance(data, (dict, PANDAS_TYPES)) and columns is None:
+            if not isinstance(data, (dict, PandasTypes)) and columns is None:
                 columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
             if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
@@ -1735,18 +1735,18 @@ def to_df(
             if dtype is not None:
                 data = data.astype(dtype)
 
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
+        if os.environ.get("ATOM_DATA_Engine") == "pyarrow":
             data = data.astype({name: to_pyarrow(col) for name, col in data.items()})
 
     return data
 
 
 def to_series(
-    data: SEQUENCE | None,
-    index: SEQUENCE | None = None,
+    data: Sequence | None,
+    index: Sequence | None = None,
     name: str = "target",
     dtype: str | np.dtype | None = None,
-) -> SERIES | None:
+) -> Series | None:
     """Convert a sequence to a series.
 
     Parameters
@@ -1783,19 +1783,19 @@ def to_series(
                     dtype=dtype,
                 )
 
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
+        if os.environ.get("ATOM_DATA_Engine") == "pyarrow":
             data = data.astype(to_pyarrow(data))
 
     return data
 
 
 def to_pandas(
-    data: SEQUENCE | None,
-    index: SEQUENCE | None = None,
-    columns: SEQUENCE | None = None,
+    data: Sequence | None,
+    index: Sequence | None = None,
+    columns: Sequence | None = None,
     name: str = "target",
     dtype: str | dict | np.dtype | None = None,
-) -> PANDAS | None:
+) -> Pandas | None:
     """Convert a sequence or dataset to a dataframe or series object.
 
     If the data is 1-dimensional, convert to series, else to a dataframe.
@@ -1831,9 +1831,9 @@ def to_pandas(
 
 
 def check_is_fitted(
-    estimator: ESTIMATOR,
+    estimator: Estimator,
     exception: bool = True,
-    attributes: str | SEQUENCE | None = None,
+    attributes: str | Sequence | None = None,
 ) -> bool:
     """Check whether an estimator is fitted.
 
@@ -1874,18 +1874,18 @@ def check_is_fitted(
         Returns
         -------
         bool
-            Whether the attribute's value is False.
+            Whether the attribute's value is False or empty.
 
         """
         if attr:
-            if isinstance(value := getattr(estimator, attr), PANDAS_TYPES):
+            if isinstance(value := getattr(estimator, attr), PandasTypes):
                 return value.empty
             else:
                 return not value
 
     is_fitted = False
-    if hasattr(estimator, "_is_fitted"):
-        is_fitted = estimator._is_fitted
+    if hasattr(estimator, "__sklearn_is_fitted__"):
+        return estimator.__sklearn_is_fitted__()
     elif attributes is None:
         # Check for attributes from a fitted object
         for k, v in vars(estimator).items():
@@ -1908,7 +1908,7 @@ def check_is_fitted(
     return True
 
 
-def get_custom_scorer(metric: str | Callable | SCORER) -> SCORER:
+def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -1995,7 +1995,7 @@ def get_custom_scorer(metric: str | Callable | SCORER) -> SCORER:
     return scorer
 
 
-def infer_task(y: PANDAS, goal: str = "class") -> str:
+def infer_task(y: Pandas, goal: str = "class") -> str:
     """Infer the task corresponding to a target column.
 
     Parameters
@@ -2028,7 +2028,7 @@ def infer_task(y: PANDAS, goal: str = "class") -> str:
             return "multilabel classification"
         else:
             return "multiclass-multioutput classification"
-    elif isinstance(y.iloc[0], SEQUENCE_TYPES):
+    elif isinstance(y.iloc[0], SequenceTypes):
         return "multilabel classification"
     elif y.nunique() == 1:
         raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
@@ -2049,8 +2049,8 @@ def is_multioutput(task) -> bool:
 
 
 def get_feature_importance(
-    est: PREDICTOR,
-    attributes: SEQUENCE | None = None,
+    est: Predictor,
+    attributes: Sequence | None = None,
 ) -> np.ndarray | None:
     """Return the feature importance from an estimator.
 
@@ -2111,7 +2111,7 @@ def get_feature_importance(
 
 def name_cols(
     array: np.ndarray,
-    original_df: DATAFRAME,
+    original_df: DataFrame,
     col_names: list[str],
 ) -> list[str]:
     """Get the column names after a transformation.
@@ -2170,11 +2170,11 @@ def name_cols(
 
 
 def reorder_cols(
-    transformer: TRANSFORMER,
-    df: DATAFRAME,
-    original_df: DATAFRAME,
+    transformer: Transformer,
+    df: DataFrame,
+    original_df: DataFrame,
     col_names: list[str],
-) -> DATAFRAME:
+) -> DataFrame:
     """Reorder the columns to their original order.
 
     This function is necessary in case only a subset of the
@@ -2183,7 +2183,7 @@ def reorder_cols(
 
     Parameters
     ----------
-    transformer: TRANSFORMER
+    transformer: Transformer
         Instance that transformed `df`.
 
     df: dataframe
@@ -2227,7 +2227,7 @@ def reorder_cols(
             columns.append(col)
 
         # Add all derivative columns: columns that originate from another
-        # and start with its progenitor name, e.g. one-hot encoded columns
+        # and start with its progenitor name, e.g., one-hot encoded columns
         columns.extend(
             [c for c in df.columns if c.startswith(f"{col}_") and c not in original_df]
         )
@@ -2249,9 +2249,9 @@ def reorder_cols(
 
 
 def fit_one(
-    transformer: TRANSFORMER,
-    X: FEATURES | None = None,
-    y: TARGET | None = None,
+    transformer: Transformer,
+    X: Features | None = None,
+    y: Target | None = None,
     message: str | None = None,
     **fit_params,
 ):
@@ -2259,7 +2259,7 @@ def fit_one(
 
     Parameters
     ----------
-    transformer: TRANSFORMER
+    transformer: Transformer
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2272,7 +2272,7 @@ def fit_one(
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -2316,16 +2316,16 @@ def fit_one(
 
 
 def transform_one(
-    transformer: TRANSFORMER,
-    X: FEATURES | None = None,
-    y: TARGET | None = None,
+    transformer: Transformer,
+    X: Features | None = None,
+    y: Target | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME | None, PANDAS | None]:
+) -> tuple[DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
 
     Parameters
     ----------
-    transformer: TRANSFORMER
+    transformer: Transformer
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2338,7 +2338,7 @@ def transform_one(
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -2355,7 +2355,7 @@ def transform_one(
 
     """
 
-    def prepare_df(out: FEATURES, og: DATAFRAME) -> DATAFRAME:
+    def prepare_df(out: Features, og: DataFrame) -> DataFrame:
         """Convert to df and set correct column names and order.
 
         Parameters
@@ -2375,11 +2375,11 @@ def transform_one(
         use_cols = [c for c in inc if c in og.columns]
 
         # Convert to pandas and assign proper column names
-        if not isinstance(out, DATAFRAME_TYPES):
+        if not isinstance(out, DataFrameTypes):
             if hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
             elif hasattr(transformer, "get_feature_names"):
-                # Some estimators have legacy method, e.g. cuml, category-encoders...
+                # Some estimators have legacy method, e.g., cuml, category-encoders...
                 columns = transformer.get_feature_names()
             else:
                 columns = name_cols(out, og, use_cols)
@@ -2438,7 +2438,7 @@ def transform_one(
             name=getattr(y, "name", None),
             columns=getattr(y, "columns", None),
         )
-        if isinstance(y, DATAFRAME_TYPES):
+        if isinstance(y, DataFrameTypes):
             y_new = prepare_df(y_new, y)
     elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
@@ -2453,24 +2453,24 @@ def transform_one(
             columns=getattr(y, "columns", None),
         )
         X_new = X if X is None else X.set_index(y_new.index)
-        if isinstance(y, DATAFRAME_TYPES):
+        if isinstance(y, DataFrameTypes):
             y_new = prepare_df(y_new, y)
 
     return X_new, y_new
 
 
 def fit_transform_one(
-    transformer: TRANSFORMER,
-    X: FEATURES | None = None,
-    y: TARGET | None = None,
+    transformer: Transformer,
+    X: Features | None = None,
+    y: Target | None = None,
     message: str | None = None,
     **fit_params,
-) -> tuple[DATAFRAME | None, SERIES | None, TRANSFORMER]:
+) -> tuple[DataFrame | None, Series | None, Transformer]:
     """Fit and transform the data using one estimator.
 
     Parameters
     ----------
-    transformer: TRANSFORMER
+    transformer: Transformer
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2483,7 +2483,7 @@ def fit_transform_one(
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -2512,12 +2512,12 @@ def fit_transform_one(
 
 
 def custom_transform(
-    transformer: TRANSFORMER,
+    transformer: Transformer,
     branch: Any,
-    data: tuple[DATAFRAME, PANDAS] | None = None,
+    data: tuple[DataFrame, Pandas] | None = None,
     verbose: int | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME, PANDAS]:
+) -> tuple[DataFrame, Pandas]:
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -2525,7 +2525,7 @@ def custom_transform(
 
     Parameters
     ----------
-    transformer: TRANSFORMER
+    transformer: Transformer
         Estimator to apply to the data.
 
     branch: Branch
@@ -2620,7 +2620,7 @@ def score(f: Callable) -> Callable:
 
     """
 
-    def wrapper(*args, **kwargs) -> FLOAT | dict[str, FLOAT]:
+    def wrapper(*args, **kwargs) -> Float | dict[str, Float]:
         args = list(args)  # Convert to list for item assignment
         if len(args[0]) > 1:  # Has transformers
             args[1], args[2] = args[0][:-1].transform(args[1], args[2])
@@ -2816,37 +2816,37 @@ def plot_from_model(
 
 # Custom scorers =================================================== >>
 
-def true_negatives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+def true_negatives(y_true: Sequence, y_pred: Sequence) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[0]
 
 
-def false_positives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+def false_positives(y_true: Sequence, y_pred: Sequence) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[1]
 
 
-def false_negatives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+def false_negatives(y_true: Sequence, y_pred: Sequence) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[2]
 
 
-def true_positives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
+def true_positives(y_true: Sequence, y_pred: Sequence) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[3]
 
 
-def false_positive_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
+def false_positive_rate(y_true: Sequence, y_pred: Sequence) -> Float:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return fp / (fp + tn)
 
 
-def true_positive_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
+def true_positive_rate(y_true: Sequence, y_pred: Sequence) -> Float:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return tp / (tp + fn)
 
 
-def true_negative_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
+def true_negative_rate(y_true: Sequence, y_pred: Sequence) -> Float:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return tn / (tn + fp)
 
 
-def false_negative_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
+def false_negative_rate(y_true: Sequence, y_pred: Sequence) -> Float:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return fn / (fn + tp)

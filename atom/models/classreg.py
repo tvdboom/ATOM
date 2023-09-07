@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing classification and regression models.
 
@@ -20,7 +20,7 @@ from optuna.integration import (
 from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel
-from atom.utils.types import DATAFRAME, PANDAS, PREDICTOR
+from atom.utils.types import DataFrame, Pandas, Predictor
 from atom.utils.utils import CatBMetric, CustomDict, LGBMetric, XGBMetric
 
 
@@ -435,7 +435,7 @@ class CatBoost(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
 
         Parameters
@@ -467,10 +467,10 @@ class CatBoost(ClassRegModel):
 
     def _fit_estimator(
         self,
-        estimator: PREDICTOR,
-        data: tuple[DATAFRAME, PANDAS],
+        estimator: Predictor,
+        data: tuple[DataFrame, Pandas],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME, PANDAS] | None = None,
+        validation: tuple[DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -1665,7 +1665,7 @@ class LightGBM(ClassRegModel):
     _module = "lightgbm.sklearn"
     _estimators = CustomDict({"class": "LGBMClassifier", "reg": "LGBMRegressor"})
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -1675,7 +1675,7 @@ class LightGBM(ClassRegModel):
 
         """
         # Custom lightgbm mapping for warnings
-        # PYTHONWARNINGS doesn't work since they go from C/C++ code to stdout
+        # PYTHONWarnings doesn't work since they go from C/C++ code to stdout
         warns = dict(always=2, default=1, error=0, ignore=-1)
 
         return self._est_class(
@@ -1689,10 +1689,10 @@ class LightGBM(ClassRegModel):
 
     def _fit_estimator(
         self,
-        estimator: PREDICTOR,
-        data: tuple[DATAFRAME, PANDAS],
+        estimator: Predictor,
+        data: tuple[DataFrame, Pandas],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME, PANDAS] | None = None,
+        validation: tuple[DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -1942,7 +1942,7 @@ class LinearSVM(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
 
         Parameters
@@ -3052,7 +3052,7 @@ class SupportVectorMachine(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -3141,7 +3141,7 @@ class XGBoost(ClassRegModel):
     _module = "xgboost"
     _estimators = CustomDict({"class": "XGBClassifier", "reg": "XGBRegressor"})
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -3166,10 +3166,10 @@ class XGBoost(ClassRegModel):
 
     def _fit_estimator(
         self,
-        estimator: PREDICTOR,
-        data: tuple[DATAFRAME, PANDAS],
+        estimator: Predictor,
+        data: tuple[DataFrame, Pandas],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME, PANDAS] | None = None,
+        validation: tuple[DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.

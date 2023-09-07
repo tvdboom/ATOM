@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the API classes.
 
@@ -20,22 +20,22 @@ from sklearn.base import clone
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
-    BACKEND, BOOL, ENGINE, INDEX_SELECTOR, INT, PREDICTOR, SCALAR, TARGET,
-    WARNINGS,
+    Backend, Bool, Engine, IndexSelector, Int, Predictor, Scalar, Target,
+    Warnings,
 )
 
 
 @beartype
 def ATOMModel(
-    estimator: PREDICTOR,
+    estimator: Predictor,
     name: str | None = None,
     *,
     acronym: str | None = None,
-    needs_scaling: BOOL = False,
-    native_multilabel: BOOL = False,
-    native_multioutput: BOOL = False,
+    needs_scaling: Bool = False,
+    native_multilabel: Bool = False,
+    native_multioutput: Bool = False,
     has_validation: str | None = None,
-) -> PREDICTOR:
+) -> Predictor:
     """Convert an estimator to a model that can be ingested by atom.
 
     This function adds the relevant attributes to the estimator so
@@ -155,7 +155,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -164,7 +164,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -285,7 +285,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -335,23 +335,23 @@ class ATOMClassifier(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
-        y: TARGET = -1,
-        index: INDEX_SELECTOR = False,
-        shuffle: BOOL = True,
-        stratify: INDEX_SELECTOR = True,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: SCALAR | None = None,
-        n_jobs: INT = 1,
+        y: Target = -1,
+        index: IndexSelector = False,
+        shuffle: Bool = True,
+        stratify: IndexSelector = True,
+        n_rows: Scalar = 1,
+        test_size: Scalar = 0.2,
+        holdout_size: Scalar | None = None,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | WARNINGS = False,
+        warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -418,7 +418,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -428,7 +428,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -522,7 +522,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -569,20 +569,20 @@ class ATOMForecaster(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
-        y: TARGET = -1,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: SCALAR | None = None,
-        n_jobs: INT = 1,
+        y: Target = -1,
+        n_rows: Scalar = 1,
+        test_size: Scalar = 0.2,
+        holdout_size: Scalar | None = None,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | WARNINGS = False,
+        warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -646,7 +646,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -656,7 +656,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - If sequence: Target array with shape=(n_samples,) or
+        - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
@@ -763,7 +763,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -814,22 +814,22 @@ class ATOMRegressor(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
-        y: TARGET = -1,
-        index: INDEX_SELECTOR = False,
-        shuffle: BOOL = True,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: SCALAR | None = None,
-        n_jobs: INT = 1,
+        y: Target = -1,
+        index: IndexSelector = False,
+        shuffle: Bool = True,
+        n_rows: Scalar = 1,
+        test_size: Scalar = 0.2,
+        holdout_size: Scalar | None = None,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | WARNINGS = False,
+        warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,

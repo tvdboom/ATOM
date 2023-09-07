@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the ATOM class.
 
@@ -41,16 +41,16 @@ from atom.training import (
 )
 from atom.utils.constants import MISSING_VALUES, __version__
 from atom.utils.types import (
-    BOOL, DATAFRAME, DATASETS, DISCRETIZER_STRATS, ESTIMATOR, FEATURES,
-    FS_STRATS, INDEX, INDEX_SELECTOR, INT, METRIC_SELECTOR, OPERATORS, PANDAS,
-    PREDICTOR, PRUNER_STRATS, RUNNER, SCALAR, SCALER_STRATS, SEQUENCE, SERIES,
-    SLICE, STRAT_NUM, TARGET, TRANSFORMER, TS_INDEX_TYPES,
+    SLICE, Bool, DataFrame, Datasets, DiscretizerStrats, Estimator, Features,
+    FeatureSelectionStrats, Index, IndexSelector, Int, MetricSelector,
+    NumericalStrats, Operators, Pandas, Predictor, PrunerStrats, Runner,
+    Scalar, ScalerStrats, Sequence, Series, Target, Transformer, TSIndexTypes,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, bk, check_dependency, check_is_fitted,
     check_scaling, composed, crash, fit_one, flt, get_cols, get_custom_scorer,
     has_task, infer_task, is_multioutput, is_sparse, lst, merge, method_to_log,
-    sign, to_pyarrow, transform_one,
+    sign, to_pyarrow,
 )
 
 
@@ -73,13 +73,13 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         arrays,
         *,
-        y: TARGET = -1,
-        index: INDEX_SELECTOR = False,
-        shuffle: BOOL = True,
-        stratify: INDEX_SELECTOR = True,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: SCALAR | None = None,
+        y: Target = -1,
+        index: IndexSelector = False,
+        shuffle: Bool = True,
+        stratify: IndexSelector = True,
+        n_rows: Scalar = 1,
+        test_size: Scalar = 0.2,
+        holdout_size: Scalar | None = None,
     ):
         self.index = index
         self.shuffle = shuffle
@@ -140,7 +140,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self.stats(1)
         self._log("", 1)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         out = f"{self.__class__.__name__}"
         out += "\n --> Branches:"
         if len(branches := self._branches) == 1:
@@ -153,7 +153,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         return out
 
-    def __iter__(self) -> TRANSFORMER | None:
+    def __iter__(self) -> Transformer | None:
         yield from (s[1] for s in self.pipeline.steps)
 
     # Utility properties =========================================== >>
@@ -208,11 +208,11 @@ class ATOM(BaseRunner, ATOMPlot):
         return self._missing
 
     @missing.setter
-    def missing(self, value: SEQUENCE):
+    def missing(self, value: Sequence):
         self._missing = list(value)
 
     @property
-    def scaled(self) -> BOOL:
+    def scaled(self) -> Bool:
         """Whether the feature set is scaled.
 
         A data set is considered scaled when it has mean=0 and std=1,
@@ -223,12 +223,12 @@ class ATOM(BaseRunner, ATOMPlot):
         return check_scaling(self.X, pipeline=self.pipeline)
 
     @property
-    def duplicates(self) -> INT:
+    def duplicates(self) -> Int:
         """Number of duplicate rows in the dataset."""
         return self.dataset.duplicated().sum()
 
     @property
-    def nans(self) -> SERIES | None:
+    def nans(self) -> Series | None:
         """Columns with the number of missing values in them."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing + MISSING_VALUES, np.NaN)
@@ -236,7 +236,7 @@ class ATOM(BaseRunner, ATOMPlot):
             return nans[nans > 0]
 
     @property
-    def n_nans(self) -> INT | None:
+    def n_nans(self) -> Int | None:
         """Number of samples containing missing values."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing + MISSING_VALUES, np.NaN)
@@ -244,22 +244,22 @@ class ATOM(BaseRunner, ATOMPlot):
             return len(nans[nans > 0])
 
     @property
-    def numerical(self) -> INDEX:
+    def numerical(self) -> Index:
         """Names of the numerical features in the dataset."""
         return self.X.select_dtypes(include=["number"]).columns
 
     @property
-    def n_numerical(self) -> INT:
+    def n_numerical(self) -> Int:
         """Number of numerical features in the dataset."""
         return len(self.numerical)
 
     @property
-    def categorical(self) -> INDEX:
+    def categorical(self) -> Index:
         """Names of the categorical features in the dataset."""
         return self.X.select_dtypes(include=["object", "category"]).columns
 
     @property
-    def n_categorical(self) -> INT:
+    def n_categorical(self) -> Int:
         """Number of categorical features in the dataset."""
         return len(self.categorical)
 
@@ -273,7 +273,7 @@ class ATOM(BaseRunner, ATOMPlot):
             return z_scores[z_scores > 0]
 
     @property
-    def n_outliers(self) -> INT | None:
+    def n_outliers(self) -> Int | None:
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
             data = self.train.select_dtypes(include=["number"])
@@ -301,7 +301,7 @@ class ATOM(BaseRunner, ATOMPlot):
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
-    def n_classes(self) -> INT | SERIES | None:
+    def n_classes(self) -> Int | Series | None:
         """Number of classes in the target column(s)."""
         if self.goal.startswith("class"):
             return self.y.nunique(dropna=False)
@@ -402,7 +402,7 @@ class ATOM(BaseRunner, ATOMPlot):
     @crash
     def distribution(
         self,
-        distributions: str | SEQUENCE | None = None,
+        distributions: str | Sequence | None = None,
         *,
         columns: SLICE | None = None,
     ) -> pd.DataFrame:
@@ -483,9 +483,9 @@ class ATOM(BaseRunner, ATOMPlot):
     @crash
     def eda(
         self,
-        dataset: DATASETS = "dataset",
+        dataset: Datasets = "dataset",
         *,
-        n_rows: SCALAR | None = None,
+        n_rows: Scalar | None = None,
         filename: str | None = None,
         **kwargs,
     ):
@@ -536,9 +536,9 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+        X: Features | None = None,
+        y: Target | None = None,
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -559,7 +559,8 @@ class ATOM(BaseRunner, ATOMPlot):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
@@ -575,7 +576,7 @@ class ATOM(BaseRunner, ATOMPlot):
         return self.pipeline.inverse_transform(X, y)
 
     @classmethod
-    def load(cls, filename: str, data: SEQUENCE | None = None) -> ATOM:
+    def load(cls, filename: str, data: Sequence | None = None) -> ATOM:
         """Loads an atom instance from a pickle file.
 
         If the instance was [saved][self-save] using `save_data=False`,
@@ -613,7 +614,8 @@ class ATOM(BaseRunner, ATOMPlot):
 
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
             - If dataframe: Target columns for multioutput tasks.
@@ -664,6 +666,14 @@ class ATOM(BaseRunner, ATOMPlot):
 
                 branch._data.data = bk.concat([merge(X_train, y_train), merge(X_test, y_test)])
 
+                if atom.index is False:
+                    branch._data = DataContainer(
+                        data=(data := branch.dataset.reset_index(drop=True)),
+                        train_idx=data.index[:len(branch._data.train_idx)],
+                        test_idx=data.index[-len(branch._data.test_idx):],
+                        n_cols=branch._data.n_cols,
+                    )
+
         atom._log(f"{atom.__class__.__name__} successfully loaded.", 1)
 
         return atom
@@ -688,7 +698,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         filename: str = "auto",
         *,
-        dataset: DATASETS = "dataset",
+        dataset: Datasets = "dataset",
         **kwargs,
     ):
         """Save the data in the current branch to a `.csv` file.
@@ -717,10 +727,10 @@ class ATOM(BaseRunner, ATOMPlot):
     def shrink(
         self,
         *,
-        int2bool: BOOL = False,
-        int2uint: BOOL = False,
-        str2cat: BOOL = False,
-        dense2sparse: BOOL = False,
+        int2bool: Bool = False,
+        int2uint: Bool = False,
+        str2cat: Bool = False,
+        dense2sparse: Bool = False,
         columns: SLICE | None = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
@@ -756,7 +766,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         """
 
-        def get_data(new_t: str) -> SERIES:
+        def get_data(new_t: str) -> Series:
             """Get the series with the right data format.
 
             Also converts to sparse format if `dense2sparse=True`.
@@ -846,7 +856,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self._log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
-    def stats(self, _vb: INT = -2, /):
+    def stats(self, _vb: Int = -2, /):
         """Display basic information about the dataset.
 
         Parameters
@@ -861,7 +871,7 @@ class ATOM(BaseRunner, ATOMPlot):
         for set_ in ("Train", "Test", "Holdout"):
             if (data := getattr(self, set_.lower())) is not None:
                 self._log(f"{set_} set size: {len(data)}", _vb)
-                if isinstance(self.train.index, TS_INDEX_TYPES):
+                if isinstance(self.train.index, TSIndexTypes):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)
@@ -885,7 +895,7 @@ class ATOM(BaseRunner, ATOMPlot):
             nans = self.nans.sum()
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
-            try:  # Can fail for unhashable columns (e.g. multilabel with lists)
+            try:  # Can fail for unhashable columns (e.g., multilabel with lists)
                 duplicates = self.dataset.duplicated().sum()
             except TypeError:
                 duplicates = None
@@ -913,7 +923,7 @@ class ATOM(BaseRunner, ATOMPlot):
     def status(self):
         """Get an overview of the branches and models.
 
-        This method prints the same information as the \__str__ and
+        This method prints the same information as the \__repr__ and
         also saves it to the logger.
 
         """
@@ -922,9 +932,9 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+        X: Features | None = None,
+        y: Target | None = None,
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -945,7 +955,8 @@ class ATOM(BaseRunner, ATOMPlot):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
@@ -994,9 +1005,9 @@ class ATOM(BaseRunner, ATOMPlot):
 
     def _add_transformer(
         self,
-        transformer: TRANSFORMER,
+        transformer: Transformer,
         columns: SLICE | None = None,
-        train_only: BOOL = False,
+        train_only: Bool = False,
         **fit_params,
     ):
         """Add a transformer to the pipeline.
@@ -1062,14 +1073,14 @@ class ATOM(BaseRunner, ATOMPlot):
         # Store data in og branch before transforming
         self._branches.add("og")
 
-        if train_only:
-            X, y = transform_one(transformer, self.X_train, self.y_train)
+        if transformer._train_only:
+            X, y = self.pipeline._mem_transform(transformer, self.X_train, self.y_train)
             self.train = merge(
                 self.X_train if X is None else X,
                 self.y_train if y is None else y,
             )
         else:
-            X, y = transform_one(transformer, self.X, self.y)
+            X, y = self.pipeline._mem_transform(transformer, self.X, self.y)
             data = merge(self.X if X is None else X, self.y if y is None else y)
 
             # y can change the number of columns or remove rows -> reassign index
@@ -1087,13 +1098,18 @@ class ATOM(BaseRunner, ATOMPlot):
                 test_idx=data.index[-len(self.branch._data.test_idx):],
                 n_cols=self.branch._data.n_cols,
             )
+        elif self.dataset.index.duplicated().any():
+            raise ValueError(
+                "Duplicate indices found in the dataset. "
+                "Try initializing atom using `index=False`."
+            )
 
         # Add the estimator to the pipeline
         # Check if there already exists an estimator with that
         # name. If so, add a counter at the end of the name
         counter = 1
         name = transformer.__class__.__name__
-        while name in (n for n, _ in self.pipeline):
+        while name in self.pipeline:
             counter += 1
             name = f"{name}{counter}"
 
@@ -1102,10 +1118,10 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def add(
         self,
-        transformer: TRANSFORMER,
+        transformer: Transformer,
         *,
         columns: SLICE | None = None,
-        train_only: BOOL = False,
+        train_only: Bool = False,
         **fit_params,
     ):
         """Add a transformer to the pipeline.
@@ -1185,8 +1201,8 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def apply(
         self,
-        func: Callable[..., DATAFRAME],
-        inverse_func: Callable[..., DATAFRAME] | None = None,
+        func: Callable[..., DataFrame],
+        inverse_func: Callable[..., DataFrame] | None = None,
         *,
         kw_args: dict | None = None,
         inv_kw_args: dict | None = None,
@@ -1239,7 +1255,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
     @available_if(has_task("class"))
     @composed(crash, method_to_log)
-    def balance(self, strategy: str = "adasyn", **kwargs):
+    def balance(self, strategy: str | Estimator = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
 
         When oversampling, the newly created samples have an increasing
@@ -1249,7 +1265,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         See the [Balancer][] class for a description of the parameters.
 
-        !!! note
+        !!! warning
             * The balance method does not support [multioutput tasks][].
             * This transformation is only applied to the training set
               in order to maintain the original distribution of target
@@ -1270,24 +1286,21 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         # Add target column mapping for cleaner printing
-        balancer.mapping = self.mapping.get(self.target, {})
+        balancer.mapping_ = self.mapping.get(self.target, {})
 
         self._add_transformer(balancer, columns=columns)
-
-        # Attach the estimator attribute to atom's branch
-        setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
 
     @composed(crash, method_to_log)
     def clean(
         self,
         *,
-        convert_dtypes: BOOL = True,
-        drop_dtypes: str | SEQUENCE | None = None,
+        convert_dtypes: Bool = True,
+        drop_dtypes: str | Sequence | None = None,
         drop_chars: str | None = None,
-        strip_categorical: BOOL = True,
-        drop_duplicates: BOOL = False,
-        drop_missing_target: BOOL = True,
-        encode_target: BOOL = True,
+        strip_categorical: Bool = True,
+        drop_duplicates: Bool = False,
+        drop_missing_target: Bool = True,
+        encode_target: Bool = True,
         **kwargs,
     ):
         """Applies standard data cleaning steps on the dataset.
@@ -1319,18 +1332,18 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         # Pass atom's missing values to the cleaner before transforming
-        cleaner.missing = self.missing
+        cleaner.missing_ = self.missing
 
         self._add_transformer(cleaner, columns=columns)
-        self.mapping.update(cleaner.mapping)
+        self.branch._mapping.update(cleaner.mapping_)
 
     @composed(crash, method_to_log)
     def discretize(
         self,
-        strategy: DISCRETIZER_STRATS = "quantile",
+        strategy: DiscretizerStrats = "quantile",
         *,
-        bins: INT | SEQUENCE | dict = 5,
-        labels: SEQUENCE | dict | None = None,
+        bins: Int | Sequence | dict = 5,
+        labels: Sequence | dict | None = None,
         **kwargs,
     ):
         """Bin continuous data into intervals.
@@ -1361,9 +1374,9 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         strategy: str = "Target",
         *,
-        max_onehot: INT | None = 10,
-        ordinal: dict[str, SEQUENCE] | None = None,
-        infrequent_to_value: SCALAR | None = None,
+        max_onehot: Int | None = 10,
+        ordinal: dict[str, Sequence] | None = None,
+        infrequent_to_value: Scalar | None = None,
         value: str = "rare",
         **kwargs,
     ):
@@ -1406,17 +1419,17 @@ class ATOM(BaseRunner, ATOMPlot):
         self._add_transformer(encoder, columns=columns)
 
         # Add mapping of the encoded columns and reorder because of target col
-        self.branch._mapping.update(encoder.mapping)
+        self.branch._mapping.update(encoder.mapping_)
         self.branch._mapping.reorder(self.columns)
 
     @composed(crash, method_to_log)
     def impute(
         self,
-        strat_num: STRAT_NUM = "drop",
+        strat_num: NumericalStrats = "drop",
         strat_cat: Literal["drop", "most_frequent"] | str = "drop",
         *,
-        max_nan_rows: SCALAR | None = None,
-        max_nan_cols: SCALAR | None = None,
+        max_nan_rows: Scalar | None = None,
+        max_nan_cols: Scalar | None = None,
         **kwargs,
     ):
         """Handle missing values in the dataset.
@@ -1476,19 +1489,14 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._add_transformer(normalizer, columns=columns)
 
-        # Attach the estimator attribute to atom's branch
-        for attr in ("yeojohnson", "boxcox", "quantile"):
-            if hasattr(normalizer, attr):
-                setattr(self.branch, attr, getattr(normalizer, attr))
-
     @composed(crash, method_to_log)
     def prune(
         self,
-        strategy: PRUNER_STRATS | SEQUENCE = "zscore",
+        strategy: PrunerStrats | Sequence = "zscore",
         *,
-        method: SCALAR | Literal["drop", "minmax"] = "drop",
-        max_sigma: SCALAR = 3,
-        include_target: BOOL = False,
+        method: Scalar | Literal["drop", "minmax"] = "drop",
+        max_sigma: Scalar = 3,
+        include_target: Bool = False,
         **kwargs,
     ):
         """Prune outliers from the training set.
@@ -1520,16 +1528,11 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._add_transformer(pruner, columns=columns)
 
-        # Attach the estimator attribute to atom's branch
-        for strat in lst(strategy):
-            if strat.lower() != "zscore":
-                setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
-
     @composed(crash, method_to_log)
     def scale(
         self,
-        strategy: SCALER_STRATS = "standard",
-        include_binary: BOOL = False,
+        strategy: ScalerStrats = "standard",
+        include_binary: Bool = False,
         **kwargs,
     ):
         """Scale the data.
@@ -1552,33 +1555,30 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._add_transformer(scaler, columns=columns)
 
-        # Attach the estimator attribute to atom's branch
-        setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
-
     # NLP transformers ============================================= >>
 
     @composed(crash, method_to_log)
     def textclean(
         self,
         *,
-        decode: BOOL = True,
-        lower_case: BOOL = True,
-        drop_email: BOOL = True,
+        decode: Bool = True,
+        lower_case: Bool = True,
+        drop_email: Bool = True,
         regex_email: str | None = None,
-        drop_url: BOOL = True,
+        drop_url: Bool = True,
         regex_url: str | None = None,
-        drop_html: BOOL = True,
+        drop_html: Bool = True,
         regex_html: str | None = None,
-        drop_emoji: BOOL = True,
+        drop_emoji: Bool = True,
         regex_emoji: str | None = None,
-        drop_number: BOOL = True,
+        drop_number: Bool = True,
         regex_number: str | None = None,
-        drop_punctuation: BOOL = True,
+        drop_punctuation: Bool = True,
         **kwargs,
     ):
         """Applies standard text cleaning to the corpus.
 
-        Transformations include normalizing characters and dropping
+        Transformations include normalizing characters and drop
         noise from the text (emails, HTML tags, URLs, etc...). The
         transformations are applied on the column named `corpus`, in
         the same order the parameters are presented. If there is no
@@ -1608,16 +1608,14 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._add_transformer(textcleaner, columns=columns)
 
-        setattr(self.branch, "drops", getattr(textcleaner, "drops"))
-
     @composed(crash, method_to_log)
     def textnormalize(
         self,
         *,
-        stopwords: BOOL | str = True,
-        custom_stopwords: SEQUENCE | None = None,
-        stem: BOOL | str = False,
-        lemmatize: BOOL = True,
+        stopwords: Bool | str = True,
+        custom_stopwords: Sequence | None = None,
+        stem: Bool | str = False,
+        lemmatize: Bool = True,
         **kwargs,
     ):
         """Normalize the corpus.
@@ -1646,16 +1644,16 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def tokenize(
         self,
-        bigram_freq: SCALAR | None = None,
-        trigram_freq: SCALAR | None = None,
-        quadgram_freq: SCALAR | None = None,
+        bigram_freq: Scalar | None = None,
+        trigram_freq: Scalar | None = None,
+        quadgram_freq: Scalar | None = None,
         **kwargs,
     ):
         """Tokenize the corpus.
 
         Convert documents into sequences of words. Additionally,
         create n-grams (represented by words united with underscores,
-        e.g. "New_York") based on their frequency in the corpus. The
+        e.g., "New_York") based on their frequency in the corpus. The
         transformations are applied on the column named `corpus`. If
         there is no column with that name, an exception is raised.
 
@@ -1681,7 +1679,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         strategy: Literal["bow", "tfidf", "hashing"] = "bow",
         *,
-        return_sparse: BOOL = True,
+        return_sparse: Bool = True,
         **kwargs,
     ):
         """Vectorize the corpus.
@@ -1718,11 +1716,11 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def feature_extraction(
         self,
-        features: str | SEQUENCE = ["day", "month", "year"],
-        fmt: str | SEQUENCE | None = None,
+        features: str | Sequence = ["day", "month", "year"],
+        fmt: str | Sequence | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
-        drop_columns: BOOL = True,
+        drop_columns: Bool = True,
         **kwargs,
     ):
         """Extract features from datetime columns.
@@ -1753,8 +1751,8 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         strategy: Literal["dfs", "gfg"] = "dfs",
         *,
-        n_features: INT | None = None,
-        operators: OPERATORS | SEQUENCE | None = None,
+        n_features: Int | None = None,
+        operators: Operators | Sequence | None = None,
         **kwargs,
     ):
         """Generate new features.
@@ -1784,10 +1782,10 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def feature_grouping(
         self,
-        group: dict[str, INT | str | SEQUENCE],
+        group: dict[str, Int | str | Sequence],
         *,
-        operators: str | SEQUENCE | None = None,
-        drop_columns: BOOL = True,
+        operators: str | Sequence | None = None,
+        drop_columns: Bool = True,
         **kwargs,
     ):
         """Extract statistics from similar features.
@@ -1816,13 +1814,13 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def feature_selection(
         self,
-        strategy: FS_STRATS | None = None,
+        strategy: FeatureSelectionStrats | None = None,
         *,
-        solver: str | Callable[..., SEQUENCE | SEQUENCE] | ESTIMATOR | None = None,
-        n_features: SCALAR | None = None,
-        min_repeated: SCALAR | None = 2,
-        max_repeated: SCALAR | None = 1.0,
-        max_correlation: SCALAR | None = 1.0,
+        solver: str | Callable[..., Sequence | Sequence] | Estimator | None = None,
+        n_features: Scalar | None = None,
+        min_repeated: Scalar | None = 2,
+        max_repeated: Scalar | None = 1.0,
+        max_correlation: Scalar | None = 1.0,
         **kwargs,
     ):
         """Reduce the number of features in the data.
@@ -1878,7 +1876,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
     # Training methods ============================================= >>
 
-    def _check(self, metric: METRIC_SELECTOR) -> METRIC_SELECTOR:
+    def _check(self, metric: MetricSelector) -> MetricSelector:
         """Check whether the provided metric is valid.
 
         If there was a previous run, check that the provided metric
@@ -1912,7 +1910,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         return metric
 
-    def _run(self, trainer: RUNNER):
+    def _run(self, trainer: Runner):
         """Train and evaluate the models.
 
         If all models failed, catch the errors and pass them to the
@@ -1952,14 +1950,14 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def run(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
         est_params: dict | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
@@ -2007,15 +2005,15 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def successive_halving(
         self,
-        models: str | PREDICTOR | SEQUENCE,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence,
+        metric: MetricSelector = None,
         *,
-        skip_runs: INT = 0,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        skip_runs: Int = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | dict | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):
@@ -2028,7 +2026,7 @@ class ATOM(BaseRunner, ATOMPlot):
         is fitted on the complete dataset. Beware that a model's
         performance can depend greatly on the amount of data on which
         it is trained. For this reason, it is recommended to only use
-        this technique with similar models, e.g. only using tree-based
+        this technique with similar models, e.g., only using tree-based
         models.
 
         The following steps are applied to every model (per iteration):
@@ -2070,15 +2068,15 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def train_sizing(
         self,
-        models: str | Callable | PREDICTOR | SEQUENCE,
-        metric: METRIC_SELECTOR = None,
+        models: str | Callable | Predictor | Sequence,
+        metric: MetricSelector = None,
         *,
-        train_sizes: INT | SEQUENCE = 5,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        train_sizes: Int | Sequence = 5,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | dict | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         **kwargs,
     ):

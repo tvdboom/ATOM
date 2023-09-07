@@ -3332,13 +3332,13 @@ classes to apply the most common transformations fast and easy.</p>
 <p>All of atom's data cleaning methods automatically adopt the relevant
 transformer attributes (<code>n_jobs</code>, <code>verbose</code>, <code>logger</code>, <code>random_state</code>)
 from atom. A different choice can be added as parameter to the method
-call, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>.</p>
+call, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Like the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add">add</a> method, the data cleaning methods
 accept the <code>columns</code> parameter to only transform a subset of the
-dataset's features, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span></code>.</p>
+dataset's features, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span></code>.</p>
 </div>
 <p><br></p>
 <h2 id="balancing-the-data">Balancing the data</h2>
@@ -3355,7 +3355,7 @@ method.</p>
 <p><br></p>
 <h2 id="standard-data-cleaning">Standard data cleaning</h2>
 <p>There are many data cleaning steps that are useful to perform on any
-dataset before modelling. These are general rules that apply almost
+dataset before modeling. These are general rules that apply almost
 on every use-case and every task. The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a> class is a convenient
 tool to apply such steps. It can be accessed from atom through the
 <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clean">clean</a> method. Use the class' parameters to
@@ -3424,11 +3424,11 @@ and <a class="autorefs autorefs-internal" href="../../API/models/gnb/#gaussiannb
 through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-normalize">normalize</a> method.</p>
 <p><br></p>
 <h2 id="handling-outliers">Handling outliers</h2>
-<p>When modelling, it is important to clean the data sample to ensure that
+<p>When modeling, it is important to clean the data sample to ensure that
 the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
-learning modelling and model skill in general can be improved by 
+learning modeling and model skill in general can be improved by
 understanding and even removing these outlier samples. The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/pruner/#pruner">Pruner</a>
 class offers 7 different strategies to detect outliers (described
 hereunder). It can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-prune">prune</a>

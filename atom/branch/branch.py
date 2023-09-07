@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the Branch class.
 
@@ -20,8 +20,8 @@ from joblib.memory import Memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    BOOL, DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
-    SEQUENCE, SERIES_TYPES, SLICE, TARGET,
+    SLICE, Bool, DataFrame, DataFrameTypes, Features, Index, Int, IntTypes,
+    Pandas, Sequence, SeriesTypes, Target,
 )
 from atom.utils.utils import (
     CustomDict, DataContainer, bk, custom_transform, flt, get_cols, lst, merge,
@@ -58,7 +58,7 @@ class Branch:
         name: str,
         memory: Memory,
         data: DataContainer | None = None,
-        holdout: DATAFRAME | None = None,
+        holdout: DataFrame | None = None,
     ):
         self.name = name
         self.memory = memory
@@ -74,7 +74,7 @@ class Branch:
         else:
             self._location = os.path.join(memory.location, f"joblib/atom/{self}.pkl")
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"Branch({self.name})"
 
     def __bool__(self):
@@ -109,7 +109,7 @@ class Branch:
 
     # Data properties ============================================== >>
 
-    def _check_setter(self, name: str, value: SEQUENCE | FEATURES) -> PANDAS:
+    def _check_setter(self, name: str, value: Sequence | Features) -> Pandas:
         """Check the property setter.
 
         Convert the property to a pandas object and compare with the
@@ -187,7 +187,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(value, SERIES_TYPES):
+            if isinstance(value, SeriesTypes):
                 if value.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -223,45 +223,45 @@ class Branch:
         """Encoded values and their respective mapped values.
 
         The column name is the key to its mapping dictionary. Only for
-        columns mapped to a single column (e.g. Ordinal, Leave-one-out,
+        columns mapped to a single column (e.g., Ordinal, Leave-one-out,
         etc...).
 
         """
         return self._mapping
 
     @property
-    def dataset(self) -> DATAFRAME:
+    def dataset(self) -> DataFrame:
         """Complete data set."""
         return self._data.data
 
     @dataset.setter
-    def dataset(self, value: FEATURES):
+    def dataset(self, value: Features):
         self._data.data = self._check_setter("dataset", value)
 
     @property
-    def train(self) -> DATAFRAME:
+    def train(self) -> DataFrame:
         """Training set."""
         return self._data.data.loc[self._data.train_idx]
 
     @train.setter
-    def train(self, value: FEATURES):
+    def train(self, value: Features):
         df = self._check_setter("train", value)
         self._data.data = bk.concat([df, self.test])
-        self._data.train_idx = self._data.data.index[:len(df)]
+        self._data.train_idx = df.index
 
     @property
-    def test(self) -> DATAFRAME:
+    def test(self) -> DataFrame:
         """Test set."""
         return self._data.data.loc[self._data.test_idx]
 
     @test.setter
-    def test(self, value: FEATURES):
+    def test(self, value: Features):
         df = self._check_setter("test", value)
         self._data.data = bk.concat([self.train, df])
-        self._data.test_idx = self._data.data.index[-len(df):]
+        self._data.test_idx = df.index
 
     @cached_property
-    def holdout(self) -> DATAFRAME | None:
+    def holdout(self) -> DataFrame | None:
         """Holdout set."""
         if self._holdout is not None:
             X, y = self._holdout.iloc[:, :-self._data.n_cols], self._holdout[self.target]
@@ -272,87 +272,87 @@ class Branch:
             return merge(X, y)
 
     @property
-    def X(self) -> DATAFRAME:
+    def X(self) -> DataFrame:
         """Feature set."""
         return self._data.data.drop(self.target, axis=1)
 
     @X.setter
-    def X(self, value: FEATURES):
+    def X(self, value: Features):
         df = self._check_setter("X", value)
         self._data.data = merge(df, self.y)
 
     @property
-    def y(self) -> PANDAS:
+    def y(self) -> Pandas:
         """Target column(s)."""
         return self._data.data[self.target]
 
     @y.setter
-    def y(self, value: TARGET):
+    def y(self, value: Target):
         series = self._check_setter("y", value)
         self._data.data = merge(self._data.data.drop(self.target, axis=1), series)
 
     @property
-    def X_train(self) -> DATAFRAME:
+    def X_train(self) -> DataFrame:
         """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
     @X_train.setter
-    def X_train(self, value: FEATURES):
+    def X_train(self, value: Features):
         df = self._check_setter("X_train", value)
         self._data.data = bk.concat([merge(df, self.train[self.target]), self.test])
 
     @property
-    def y_train(self) -> PANDAS:
+    def y_train(self) -> Pandas:
         """Target column(s) of the training set."""
         return self.train[self.target]
 
     @y_train.setter
-    def y_train(self, value: TARGET):
+    def y_train(self, value: Target):
         series = self._check_setter("y_train", value)
         self._data.data = bk.concat([merge(self.X_train, series), self.test])
 
     @property
-    def X_test(self) -> DATAFRAME:
+    def X_test(self) -> DataFrame:
         """Features of the test set."""
         return self.test.drop(self.target, axis=1)
 
     @X_test.setter
-    def X_test(self, value: FEATURES):
+    def X_test(self, value: Features):
         df = self._check_setter("X_test", value)
         self._data.data = bk.concat([self.train, merge(df, self.test[self.target])])
 
     @property
-    def y_test(self) -> PANDAS:
+    def y_test(self) -> Pandas:
         """Target column(s) of the test set."""
         return self.test[self.target]
 
     @y_test.setter
-    def y_test(self, value: TARGET):
+    def y_test(self, value: Target):
         series = self._check_setter("y_test", value)
         self._data.data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self) -> tuple[INT, INT]:
+    def shape(self) -> tuple[Int, Int]:
         """Shape of the dataset (n_rows, n_columns)."""
         return self._data.data.shape
 
     @property
-    def columns(self) -> INDEX:
+    def columns(self) -> Index:
         """Name of all the columns."""
         return self._data.data.columns
 
     @property
-    def n_columns(self) -> INT:
+    def n_columns(self) -> Int:
         """Number of columns."""
         return len(self.columns)
 
     @property
-    def features(self) -> INDEX:
+    def features(self) -> Index:
         """Name of the features."""
         return self.columns[:-self._data.n_cols]
 
     @property
-    def n_features(self) -> INT:
+    def n_features(self) -> Int:
         """Number of features."""
         return len(self.features)
 
@@ -366,7 +366,7 @@ class Branch:
     def _get_rows(
         self,
         index: SLICE | None,
-        return_test: BOOL = True,
+        return_test: Bool = True,
     ) -> list[Hashable]:
         """Get a subset of the rows in the dataset.
 
@@ -433,9 +433,9 @@ class Branch:
             inc = indices[index]
         else:
             for idx in lst(index):
-                if isinstance(idx, (*INT_TYPES, str)) and idx in indices:
+                if isinstance(idx, (*IntTypes, str)) and idx in indices:
                     inc.append(idx)
-                elif isinstance(idx, INT_TYPES):
+                elif isinstance(idx, IntTypes):
                     if -len(indices) <= idx <= len(indices):
                         inc.append(indices[idx])
                     else:
@@ -475,8 +475,8 @@ class Branch:
     def _get_columns(
         self,
         columns: SLICE | None = None,
-        include_target: BOOL = True,
-        only_numerical: BOOL = False,
+        include_target: Bool = True,
+        only_numerical: Bool = False,
     ) -> list[str]:
         """Get a subset of the columns.
 
@@ -550,7 +550,7 @@ class Branch:
             inc = list(df.columns[columns])
         else:
             for col in lst(columns):
-                if isinstance(col, INT_TYPES):
+                if isinstance(col, IntTypes):
                     try:
                         inc.append(df.columns[col])
                     except IndexError:
@@ -589,9 +589,9 @@ class Branch:
 
     def _get_target(
         self,
-        target: INT | str | tuple,
-        only_columns: BOOL = False,
-    ) -> str | tuple[INT, INT]:
+        target: Int | str | tuple,
+        only_columns: Bool = False,
+    ) -> str | tuple[Int, Int]:
         """Get a target column and/or class in target column.
 
         Parameters
@@ -613,7 +613,7 @@ class Branch:
 
         """
 
-        def get_column(target: INT | str) -> str:
+        def get_column(target: Int | str) -> str:
             """Get the target column.
 
             Parameters
@@ -644,7 +644,7 @@ class Branch:
                 else:
                     return lst(self.target)[target]
 
-        def get_class(target: INT | str, column: int = 0) -> int:
+        def get_class(target: Int | str, column: int = 0) -> int:
             """Get the class in the target column.
 
             Parameters
@@ -682,7 +682,7 @@ class Branch:
         if only_columns:
             return get_column(target)
         elif isinstance(target, tuple):
-            if not isinstance(self.y, DATAFRAME_TYPES):
+            if not isinstance(self.y, DataFrameTypes):
                 raise ValueError(
                     f"Invalid value for the target parameter, got {target}. "
                     "A tuple is only accepted for multioutput tasks."
@@ -700,7 +700,7 @@ class Branch:
         else:
             return 0, get_class(target)
 
-    def load(self, assign: BOOL = True) -> DataContainer:
+    def load(self, assign: Bool = True) -> DataContainer:
         """Load the branch's data from memory.
 
         This method is used to restore the data of inactive branches.

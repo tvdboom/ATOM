@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the HyperparameterTuningPlot class.
 
@@ -24,7 +24,7 @@ from sklearn.utils._bunch import Bunch
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
-from atom.utils.types import INT, INT_TYPES, LEGEND, MODEL, SEQUENCE
+from atom.utils.types import Int, IntTypes, Legend, Model, Sequence
 from atom.utils.utils import (
     check_dependency, check_hyperparams, composed, crash, divide, it, lst,
     plot_from_model, rnd,
@@ -45,12 +45,12 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_edf(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        metric: INT | str | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -190,13 +190,13 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_hyperparameter_importance(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         metric: int | str = 0,
-        show: INT | None = None,
+        show: Int | None = None,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -334,13 +334,13 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_hyperparameters(
         self,
-        models: INT | str | MODEL | None = None,
-        params: str | slice | SEQUENCE = (0, 1),
+        models: Int | str | Model | None = None,
+        params: str | slice | Sequence = (0, 1),
         metric: int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -357,7 +357,7 @@ class HyperparameterTuningPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_hyperparameters()`.
+            from a model, e.g., `atom.lr.plot_hyperparameters()`.
 
         params: str, slice or sequence, default=(0, 1)
             Hyperparameters to plot. Use a sequence or add `+` between
@@ -539,13 +539,13 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_parallel_coordinate(
         self,
-        models: INT | str | MODEL | None = None,
-        params: str | slice | SEQUENCE | None = None,
-        metric: INT | str = 0,
+        models: Int | str | Model | None = None,
+        params: str | slice | Sequence | None = None,
+        metric: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -560,7 +560,7 @@ class HyperparameterTuningPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_parallel_coordinate()`.
+            from a model, e.g., `atom.lr.plot_parallel_coordinate()`.
 
         params: str, slice, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
@@ -661,7 +661,7 @@ class HyperparameterTuningPlot(BasePlot):
         for d in [dims[0]] + sorted(dims[1:], key=lambda x: params.index(x["label"])):
             if "ticktext" in d:
                 # Skip processing for logarithmic params
-                if all(isinstance(i, INT_TYPES) for i in d["values"]):
+                if all(isinstance(i, IntTypes) for i in d["values"]):
                     # Order categorical values
                     mapping = [d["ticktext"][i] for i in d["values"]]
                     d["ticktext"] = sort_mixed_types(d["ticktext"])
@@ -710,12 +710,12 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_pareto_front(
         self,
-        models: INT | str | MODEL | None = None,
-        metric: str | SEQUENCE | None = None,
+        models: Int | str | Model | None = None,
+        metric: str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -732,7 +732,7 @@ class HyperparameterTuningPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_pareto_front()`.
+            from a model, e.g., `atom.lr.plot_pareto_front()`.
 
         metric: str, sequence or None, default=None
             Metrics to plot.  Use a sequence or add `+` between options
@@ -861,13 +861,13 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model(max_one=True))
     def plot_slice(
         self,
-        models: INT | str | MODEL | None = None,
-        params: str | slice | SEQUENCE | None = None,
-        metric: INT | str | SEQUENCE | None = None,
+        models: Int | str | Model | None = None,
+        params: str | slice | Sequence | None = None,
+        metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -882,7 +882,7 @@ class HyperparameterTuningPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_slice()`.
+            from a model, e.g., `atom.lr.plot_slice()`.
 
         params: str, slice, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
@@ -1016,11 +1016,11 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_terminator_improvement(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1036,7 +1036,7 @@ class HyperparameterTuningPlot(BasePlot):
         !!! warning
             * The plot_terminator_improvement method is only available
               for models that ran [hyperparameter tuning][] using
-              cross-validation, e.g. using `ht_params={'cv': 5}`.
+              cross-validation, e.g., using `ht_params={'cv': 5}`.
             * This method can be slow. Results are cached to fasten
               repeated calls.
 
@@ -1111,7 +1111,7 @@ class HyperparameterTuningPlot(BasePlot):
                 raise ValueError(
                     "The plot_terminator_improvement method is only available for "
                     "models that ran hyperparameter tuning using cross-validation, "
-                    "e.g. using ht_params={'cv': 5}."
+                    "e.g., using ht_params={'cv': 5}."
                 )
 
             fig.add_trace(
@@ -1143,11 +1143,11 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_timeline(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1296,12 +1296,12 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_trials(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        metric: INT | str | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[INT, INT] = (900, 800),
+        figsize: tuple[Int, Int] = (900, 800),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:

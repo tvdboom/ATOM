@@ -3420,7 +3420,7 @@ Target column corresponding to X.</p>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
 </ul>
@@ -3430,7 +3430,7 @@ Target column corresponding to X.</p>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
 </ul>
@@ -3597,7 +3597,7 @@ attributes accordingly.</p>
 <p>Use this attribute only to access the individual instances. To
 visualize the pipeline, use the <a class="autorefs autorefs-internal" href="../../plots/plot_pipeline/#plot_pipeline">plot_pipeline</a> method.</div><a id='atomregressor-mapping'></a><strong>mapping: dict</strong><br><div markdown class='param'>Encoded values and their respective mapped values.</p>
 <p>The column name is the key to its mapping dictionary. Only for
-columns mapped to a single column (e.g. Ordinal, Leave-one-out,
+columns mapped to a single column (e.g., Ordinal, Leave-one-out,
 etc...).</div><a id='atomregressor-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.</div><a id='atomregressor-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.</div><a id='atomregressor-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.</div><a id='atomregressor-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.</div><a id='atomregressor-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).</div><a id='atomregressor-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.</div><a id='atomregressor-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='atomregressor-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.</div><a id='atomregressor-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='atomregressor-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='atomregressor-columns'></a><strong>columns: index</strong><br><div markdown class='param'>Name of all the columns.</div><a id='atomregressor-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='atomregressor-features'></a><strong>features: index</strong><br><div markdown class='param'>Name of the features.</div><a id='atomregressor-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='atomregressor-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).</div><a id='atomregressor-scaled'></a><strong>scaled: bool</strong><br><div markdown class='param'>Whether the feature set is scaled.</p>
 <p>A data set is considered scaled when it has mean=0 and std=1,
 or when there is a scaler in the pipeline. Binary columns (only
@@ -3658,7 +3658,7 @@ more in the <a class="autorefs autorefs-internal" href="../../../user_guide/plot
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='atomregressor-palette'></a><strong>palette: str | sequence</strong><br><div markdown class='param'>Color palette.</p>
 <p>Specify one of plotly's <a href="https://plotly.com/python/discrete-color/">built-in palettes</a> or create
-a custom one, e.g. <code>atom.palette = ["red", "green", "blue"]</code>.</div><a id='atomregressor-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.</div><a id='atomregressor-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for the labels, legend and hover information.</div><a id='atomregressor-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.</div><a id='atomregressor-line_width'></a><strong>line_width: int</strong><br><div markdown class='param'>Width of the line plots.</div><a id='atomregressor-marker_size'></a><strong>marker_size: int</strong><br><div markdown class='param'>Size of the markers.</div></td></tr></p>
+a custom one, e.g., <code>atom.palette = ["red", "green", "blue"]</code>.</div><a id='atomregressor-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.</div><a id='atomregressor-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for the labels, legend and hover information.</div><a id='atomregressor-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.</div><a id='atomregressor-line_width'></a><strong>line_width: int</strong><br><div markdown class='param'>Width of the line plots.</div><a id='atomregressor-marker_size'></a><strong>marker_size: int</strong><br><div markdown class='param'>Size of the markers.</div></td></tr></p>
 </table>
 <p><br></p>
 <h2 id="utility-methods">Utility methods</h2>
@@ -4037,7 +4037,7 @@ Target column corresponding to X.</p>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
 </ul>
@@ -4083,7 +4083,7 @@ Target column corresponding to X.</p>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput
   tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
@@ -4245,7 +4245,7 @@ Target column corresponding to X.</p>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
 </ul>
@@ -4424,7 +4424,7 @@ parameters.</p>
 <p><a id='atomregressor-tokenize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1695>[source]</a></span></div>Tokenize the corpus.</p>
 <p>Convert documents into sequences of words. Additionally,
 create n-grams (represented by words united with underscores,
-e.g. "New_York") based on their frequency in the corpus. The
+e.g., "New_York") based on their frequency in the corpus. The
 transformations are applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/tokenizer/#tokenizer">Tokenizer</a> class for a description of the parameters.</p>
@@ -4527,7 +4527,7 @@ repeated. This continues until only one model remains, which
 is fitted on the complete dataset. Beware that a model's
 performance can depend greatly on the amount of data on which
 it is trained. For this reason, it is recommended to only use
-this technique with similar models, e.g. only using tree-based
+this technique with similar models, e.g., only using tree-based
 models.</p>
 <p>The following steps are applied to every model (per iteration):</p>
 <ol>

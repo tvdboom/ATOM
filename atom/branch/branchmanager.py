@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the BranchManager class.
 
@@ -16,7 +16,7 @@ from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 
 from atom.branch.branch import Branch
-from atom.utils.types import BOOL, DATAFRAME, INT, SEQUENCE
+from atom.utils.types import Bool, DataFrame, Int, Sequence
 from atom.utils.utils import ClassMap, DataContainer
 
 
@@ -34,7 +34,7 @@ class BranchManager:
 
     def __init__(
         self,
-        branches: SEQUENCE | None = None,
+        branches: Sequence | None = None,
         og: Branch | None = None,
         memory: Memory | None = None,
     ):
@@ -48,19 +48,19 @@ class BranchManager:
 
         self._og = og
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"BranchManager({', '.join(self.branches.keys())})"
 
-    def __len__(self) -> INT:
+    def __len__(self) -> Int:
         return len(self.branches)
 
     def __iter__(self):
         yield from self.branches
 
-    def __contains__(self, item: str) -> BOOL:
+    def __contains__(self, item: str) -> Bool:
         return item in self.branches
 
-    def __getitem__(self, item: INT | str) -> Branch:
+    def __getitem__(self, item: Int | str) -> Branch:
         if item in self.branches:
             return self.branches[item]
         else:
@@ -149,7 +149,7 @@ class BranchManager:
             if parent is not None:
                 self._copy_from_parent(self._current, parent)
 
-    def fill(self, data: DataContainer, holdout: DATAFRAME | None = None):
+    def fill(self, data: DataContainer, holdout: DataFrame | None = None):
         """Fill the current branch with data.
 
         Parameters

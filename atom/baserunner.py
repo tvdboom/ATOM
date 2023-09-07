@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the BaseRunner class.
 
@@ -26,8 +26,8 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    BOOL, FLOAT, INT, INT_TYPES, METRIC_SELECTOR, MODEL, RUNNER, SEQUENCE,
-    SERIES,
+    Bool, Float, Int, IntTypes, MetricSelector, Model, Runner, Sequence,
+    Series,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, check_is_fitted, composed, crash, divide, flt,
@@ -92,16 +92,16 @@ class BaseRunner(BaseTracker):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __contains__(self, item: str) -> BOOL:
+    def __contains__(self, item: str) -> Bool:
         return item in self.dataset
 
-    def __getitem__(self, item: INT | str | list) -> Any:
+    def __getitem__(self, item: Int | str | list) -> Any:
         if self.dataset.empty:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
             )
-        elif isinstance(item, INT_TYPES):
+        elif isinstance(item, IntTypes):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
             if item in self._branches:
@@ -173,7 +173,7 @@ class BaseRunner(BaseTracker):
             return flt(self._metric.keys())
 
     @property
-    def winners(self) -> list[MODEL] | None:
+    def winners(self) -> list[Model] | None:
         """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
@@ -190,7 +190,7 @@ class BaseRunner(BaseTracker):
             )
 
     @property
-    def winner(self) -> MODEL | None:
+    def winner(self) -> Model | None:
         """Best performing model.
 
         Performance is measured as the highest score on the model's
@@ -227,7 +227,7 @@ class BaseRunner(BaseTracker):
 
         """
 
-        def frac(m: MODEL) -> FLOAT:
+        def frac(m: Model) -> Float:
             """Return the fraction of the train set used.
 
             Parameters
@@ -267,10 +267,10 @@ class BaseRunner(BaseTracker):
 
     def _get_models(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        ensembles: BOOL = True,
+        models: Int | str | Model | slice | Sequence | None = None,
+        ensembles: Bool = True,
         branch: Branch | None = None,
-    ) -> list[MODEL]:
+    ) -> list[Model]:
         """Get models.
 
         Models can be selected by name, index or regex pattern. If a
@@ -334,7 +334,7 @@ class BaseRunner(BaseTracker):
             inc.extend(self._models[models])
         else:
             for model in lst(models):
-                if isinstance(model, INT_TYPES):
+                if isinstance(model, IntTypes):
                     try:
                         inc.append(self._models[model])
                     except KeyError:
@@ -381,7 +381,7 @@ class BaseRunner(BaseTracker):
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
-    def _delete_models(self, models: str | SEQUENCE):
+    def _delete_models(self, models: str | Sequence):
         """Delete models.
 
         Remove models from the instance. All attributes are deleted
@@ -471,7 +471,7 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log)
     def delete(
         self,
-        models: INT | str | slice | MODEL | SEQUENCE | None = None
+        models: Int | str | slice | Model | Sequence | None = None
     ):
         """Delete models.
 
@@ -498,11 +498,11 @@ class BaseRunner(BaseTracker):
     @crash
     def evaluate(
         self,
-        metric: METRIC_SELECTOR = None,
+        metric: MetricSelector = None,
         dataset: Literal["train", "test", "holdout"] = "test",
         *,
-        threshold: FLOAT | SEQUENCE = 0.5,
-        sample_weight: SEQUENCE | None = None,
+        threshold: Float | Sequence = 0.5,
+        sample_weight: Sequence | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -554,7 +554,7 @@ class BaseRunner(BaseTracker):
         return pd.DataFrame(evaluations)
 
     @crash
-    def export_pipeline(self, model: str | MODEL | None = None) -> Pipeline:
+    def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
         """Export the pipeline to a sklearn-like object.
 
         Optionally, you can add a model as final estimator. The
@@ -641,7 +641,7 @@ class BaseRunner(BaseTracker):
     def get_sample_weight(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
-    ) -> SERIES:
+    ) -> Series:
         """Return sample weights for a balanced data set.
 
         The returned weights are inversely proportional to the class
@@ -664,7 +664,7 @@ class BaseRunner(BaseTracker):
         return pd.Series(weights, name="sample_weight").round(3)
 
     @composed(crash, method_to_log)
-    def merge(self, other: RUNNER, /, suffix: str = "2"):
+    def merge(self, other: Runner, /, suffix: str = "2"):
         """Merge another instance of the same class into this one.
 
         Branches, models, metrics and attributes of the other instance
@@ -726,7 +726,7 @@ class BaseRunner(BaseTracker):
             self.missing.extend([x for x in other.missing if x not in self.missing])
 
     @composed(crash, method_to_log)
-    def save(self, filename: str = "auto", *, save_data: BOOL = True):
+    def save(self, filename: str = "auto", *, save_data: Bool = True):
         """Save the instance to a pickle file.
 
         Parameters
@@ -778,7 +778,7 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log)
     def stacking(
         self,
-        models: slice | SEQUENCE | None = None,
+        models: slice | Sequence | None = None,
         name: str = "Stack",
         **kwargs,
     ):
@@ -855,7 +855,7 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log)
     def voting(
         self,
-        models: slice | SEQUENCE | None = None,
+        models: slice | Sequence | None = None,
         name: str = "Vote",
         **kwargs,
     ):

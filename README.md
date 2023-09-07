@@ -3,7 +3,7 @@
 	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" height="130" width="500"/>
 </p>
 
-# Automated Tool for Optimized Modelling
+# Automated Tool for Optimized Modeling
 ### A Python package for fast exploration of machine learning pipelines
 </div>
 

@@ -272,13 +272,13 @@ in a branch after fitting a model with it. Instead, create a new branch
 for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
-branch, set a new name to the property, e.g. `#!python atom.branch = "undersample"`.
+branch, set a new name to the property, e.g., `#!python atom.branch = "undersample"`.
 This creates a new branch from the current one. To create a branch from any
 other branch type "\_from\_" between the new name and the branch from which
-to split, e.g. `#!python atom.branch = "oversample_from_master"` creates
+to split, e.g., `#!python atom.branch = "oversample_from_master"` creates
 branch "oversample" from branch "master", even if the current branch is
 "undersample". To switch between existing branches, just type the name of
-the desired branch, e.g. `#!python atom.branch = "master"` brings you back
+the desired branch, e.g., `#!python atom.branch = "master"` brings you back
 to the master branch. Note that every branch contains a unique copy of the
 whole dataset! Creating many branches can cause [memory issues](#memory-considerations)
 for large datasets.
@@ -331,7 +331,7 @@ before they are ready to be ingested by a model. ATOM provides various
 classes to apply [data cleaning][] and [feature engineering][]
 transformations to the data. This tooling should be able to help you
 apply most of the typically needed transformations to get the data ready
-for modelling. For further fine-tuning, it's also possible to transform
+for modeling. For further fine-tuning, it's also possible to transform
 the data using custom transformers (see the [add][atomclassifier-add]
 method) or through a function (see the [apply][atomclassifier-apply]
 method). Remember that all transformations are only applied to the

@@ -10,8 +10,8 @@ are rendered using html. Some plots require other libraries like
 [wordcloud](http://amueller.github.io/word_cloud/) and [schemdraw](https://schemdraw.readthedocs.io/en/latest/).
 
 Plots that compare model performances (methods with the `models`
-parameter) can be called directly from atom, e.g. `#!python atom.plot_roc()`,
-or from one of the models, e.g. `#!python atom.adab.plot_roc()`. If called from
+parameter) can be called directly from atom, e.g., `#!python atom.plot_roc()`,
+or from one of the models, e.g., `#!python atom.adab.plot_roc()`. If called from
 atom, use the `models` parameter to specify which models to plot. If
 called from a specific model, it makes the plot only for that model and
 the `models` parameter becomes unavailable.
@@ -28,11 +28,11 @@ in common:
 
 * The `title` parameter adds a title to the plot. The default value doesn't
   show any title. Provide a configuration (as dictionary) to customize its
-  appearance, e.g. `#!python title=dict(text="Awesome plot", color="red")`.
+  appearance, e.g., `#!python title=dict(text="Awesome plot", color="red")`.
   Read more in plotly's [documentation](https://plotly.com/python/figure-labels/).
 * The `legend` parameter is used to show/hide, position or customize the
   plot's legend. Provide a configuration (as dictionary) to customize its
-  appearance (e.g. `#!python legend=dict(title="Title for legend", title_font_color="red")`)
+  appearance (e.g., `#!python legend=dict(title="Title for legend", title_font_color="red")`)
   or choose one of the following locations:
 
     - upper left
@@ -57,7 +57,7 @@ in common:
 ## Aesthetics
 
 The plot's aesthetics can be customized using the plot attributes prior
-to calling the plotting method, e.g. `#!python atom.title_fontsize = 30`.
+to calling the plotting method, e.g., `#!python atom.title_fontsize = 30`.
 The default values are:
 
 * **palette:** ["rgb(0, 98, 98)", "rgb(56, 166, 165)", "rgb(115, 175, 72)",
@@ -69,7 +69,7 @@ The default values are:
 
 Use atom's [update_layout][atomclassifier-update_layout] method to further
 customize the plot's layout using any of plotly's [layout properties](https://plotly.com/python/reference/layout/),
-e.g. `#!python atom.update_layout(template="plotly_dark")`. Similarly, use
+e.g., `#!python atom.update_layout(template="plotly_dark")`. Similarly, use
 the [update_traces][atomclassifier-update_traces] method to customize the
 [traces properties](https://plotly.com/python/reference/scatter/), e.g.
 `#!python atom.update_traces(mode="lines+markers")`.
@@ -87,7 +87,7 @@ by side, for example to make it easier to compare similar results. The canvas
 method is a `@contextmanager`, i.e. it's used through Python's `with` command.
 Plots in a canvas ignore the legend, figsize, filename and display parameters.
 Instead, specify these parameters in the canvas. If a variable is assigned to
-the canvas (e.g. `#!python with atom.canvas() as fig`), it yields the resulting
+the canvas (e.g., `#!python with atom.canvas() as fig`), it yields the resulting
 figure.
 
 For example, we can use a canvas to compare the results of a XGBoost and
@@ -134,7 +134,7 @@ them later when needed again.
 
     * It's not possible to draw multiple models in the same figure.
       Selecting more than one model will raise an exception. To avoid
-      this, call the plot directly from a model, e.g. `#!python atom.lr.plot_shap_force()`.
+      this, call the plot directly from a model, e.g., `#!python atom.lr.plot_shap_force()`.
     * The returned plot is a matplotlib figure, not plotly's.
 
 <br>

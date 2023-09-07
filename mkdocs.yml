@@ -87,7 +87,7 @@ plugins:
 markdown_extensions:
     - admonition
     - md_in_html  # Allows for writing Markdown inside of HTML
-    - def_list  # Allows for definition lists (e.g. nomenclature)
+    - def_list  # Allows for definition lists (e.g., nomenclature)
     - attr_list  # Allows for HTML attributes and CSS classes to markdown objects
     - footnotes
     - pymdownx.details  # Allows for collapsible admonition blocks

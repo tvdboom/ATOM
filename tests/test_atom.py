@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Unit tests for atom.py
 
@@ -83,7 +83,7 @@ def test_backend_with_n_jobs_1():
 # Test magic methods =============================================== >>
 
 def test_repr():
-    """Assert that the __str__ method visualizes the pipeline(s)."""
+    """Assert that the __repr__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     assert "Branches: main" in str(atom)

@@ -30,7 +30,7 @@ Refers to all columns of type `object` or `category`.
 
 <div id="class"><strong>class</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-Unique value in a column, e.g. a binary classifier has 2 classes in
+Unique value in a column, e.g., a binary classifier has 2 classes in
 the target column.
 </div>
 

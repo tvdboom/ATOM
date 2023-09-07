@@ -3415,7 +3415,7 @@ and <a class="autorefs autorefs-internal" href="../feature_engineering/#feature-
 directly. Instead, every approach can be called directly from atom through
 the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run">run</a>, <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-successive_halving">successive_halving</a>
 and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-train_sizing">train_sizing</a> methods respectively.</p>
-<p>Models are called through their <a class="autorefs autorefs-internal" href="../models/#models">acronyms</a>, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;RF&quot;</span><span class="p">)</span></code>
+<p>Models are called through their <a class="autorefs autorefs-internal" href="../models/#models">acronyms</a>, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;RF&quot;</span><span class="p">)</span></code>
 will train a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>. If you want to run the same model multiple
 times, add a tag after the acronym to differentiate them. the tag must be 
 separated from the accronym by an underscore.</p>
@@ -3472,7 +3472,7 @@ sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
 case-insensitive and can be used in the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-metric"><code>metric</code></a>
-parameter instead of the scorer's full name, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;BA&quot;</span><span class="p">)</span></code>
+parameter instead of the scorer's full name, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;BA&quot;</span><span class="p">)</span></code>
 uses <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
 <li>"AP" for "average_precision"</li>
@@ -3508,7 +3508,7 @@ tasks. </p>
 <p>Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the <code>metric</code> parameter with a list of
-desired metrics, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="s2">&quot;mse&quot;</span><span class="p">])</span></code>.</p>
+desired metrics, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="s2">&quot;mse&quot;</span><span class="p">])</span></code>.</p>
 <p>When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">knn</span><span class="o">.</span><span class="n">score_train</span></code> could return [0.8734, 0.6672, 0.9001].
@@ -3521,7 +3521,7 @@ model.</p>
 <li>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-winner"><code>winning</code></a> model is retrieved comparing only
   the main metric.</li>
 <li>Some plots let you choose which of the metrics in a multi-metric run
-  to show using the <code>metric</code> parameter, e.g. <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a>.</li>
+  to show using the <code>metric</code> parameter, e.g., <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a>.</li>
 </ul>
 </div>
 <p><br></p>
@@ -3809,7 +3809,7 @@ where the process is repeated. This continues until only one model
 remains, which is fitted on the complete dataset. Beware that a model's
 performance can depend greatly on the amount of data on which it is
 trained. For this reason, we recommend only to use this technique with
-similar models, e.g. only using tree-based models.</p>
+similar models, e.g., only using tree-based models.</p>
 <p>Run successive halving from atom via the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-successive_halving">successive_halving</a>
 method. Consecutive runs of the same model are saved with the model's
 acronym followed by the number of models in the run. For example, a

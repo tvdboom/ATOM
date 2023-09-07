@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the FeatureSelectionPlot class.
 
@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 from sklearn.utils.metaestimators import available_if
 
 from atom.plots.base import BasePlot
-from atom.utils.types import INT, LEGEND
+from atom.utils.types import Int, Legend
 from atom.utils.utils import crash, has_attr
 
 
@@ -30,11 +30,11 @@ class FeatureSelectionPlot(BasePlot):
     @crash
     def plot_components(
         self,
-        show: INT | None = None,
+        show: Int | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -158,8 +158,8 @@ class FeatureSelectionPlot(BasePlot):
         self,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (900, 600),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -275,8 +275,8 @@ class FeatureSelectionPlot(BasePlot):
         self,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (900, 600),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the documentation rendering.
 
@@ -854,12 +854,12 @@ def types_conversion(dtype: str) -> str:
     """
     types = {
         "CustomDict": "dict",
-        "BOOL": "bool",
-        "INT": "int",
+        "Bool": "bool",
+        "Int": "int",
         "FLOAT": "float",
         "INDEX": "index",
         "SERIES": "series",
-        "SEQUENCE": "sequence",
+        "Sequence": "sequence",
         "DATAFRAME": "dataframe",
         "PANDAS": "series | dataframe",
         "BRANCH": "[Branch][branches]",

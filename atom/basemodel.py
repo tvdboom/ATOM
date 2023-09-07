@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the BaseModel class.
 
@@ -24,6 +24,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 import ray
+from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.data import from_pandas
 from mlflow.models.signature import infer_signature
@@ -59,10 +60,9 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    BACKEND, BOOL, DATAFRAME, DATAFRAME_TYPES, ENGINE, FEATURES, FLOAT,
-    FLOAT_TYPES, INDEX, INT, INT_TYPES, METHOD_SELECTOR, METRIC_SELECTOR,
-    PANDAS, PREDICTOR, SCALAR, SCORER, SEQUENCE, SLICE, STAGES, TARGET,
-    WARNINGS,
+    SLICE, Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
+    FloatTypes, Index, Int, IntTypes, MethodSelector, MetricSelector, Pandas,
+    Predictor, Scalar, Scorer, Sequence, Stages, Target, Warnings,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
@@ -72,7 +72,6 @@ from atom.utils.utils import (
     it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas,
     to_series,
 )
-from joblib import Parallel, delayed
 
 
 class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
@@ -159,7 +158,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -184,16 +183,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         config: DataConfig | None = None,
         branches: BranchManager | None = None,
         metric: ClassMap | None = None,
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | WARNINGS = False,
+        warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -253,7 +252,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
                 self.scaler = Scaler().fit(self.X_train)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
     def __getattr__(self, item: str) -> Any:
@@ -268,11 +267,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
             )
 
-    def __contains__(self, item: str) -> BOOL:
+    def __contains__(self, item: str) -> Bool:
         return item in self.dataset
 
-    def __getitem__(self, item: INT | str | list) -> PANDAS:
-        if isinstance(item, INT_TYPES):
+    def __getitem__(self, item: Int | str | list) -> Pandas:
+        if isinstance(item, IntTypes):
             return self.dataset[self.columns[item]]
         else:
             return self.dataset[item]  # Get a subset of the dataset
@@ -283,7 +282,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return self.__class__.__name__
 
     @property
-    def _est_class(self) -> PREDICTOR:
+    def _est_class(self) -> Predictor:
         """Return the estimator's class (not instance)."""
         try:
             engine = self.engine.get("estimator", "sklearn")
@@ -386,9 +385,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def _trial_to_est(params: CustomDict) -> CustomDict:
         """Convert trial's parameters to parameters for the estimator.
 
-        Some models such as MLP, use different hyperparameters for the
+        Some models, such as MLP, use different hyperparameters for the
         study as for the estimator (this is the case when the estimator's
-        parameter can not be modelled according to an integer, float or
+        parameter can not be modeled according to an integer, float or
         categorical distribution). This method converts the parameters
         from the trial to those that can be ingested by the estimator.
         This method is overriden by implementations in the child classes.
@@ -407,7 +406,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         """
         return deepcopy(params)
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
 
         Use the multioutput meta-estimator if the estimator has
@@ -453,12 +452,12 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     def _fit_estimator(
         self,
-        estimator: PREDICTOR,
-        data: tuple[DATAFRAME, PANDAS],
+        estimator: Predictor,
+        data: tuple[DataFrame, Pandas],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME, PANDAS] | None = None,
+        validation: tuple[DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
-    ) -> PREDICTOR:
+    ) -> Predictor:
         """Fit the estimator and perform in-training validation.
 
         In-training evaluation is performed on models with the
@@ -602,8 +601,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self,
         dataset: Literal["train", "test", "holdout"],
         target: str | None = None,
-        attr: METHOD_SELECTOR = "predict",
-    ) -> tuple[PANDAS, PANDAS]:
+        attr: MethodSelector = "predict",
+    ) -> tuple[Pandas, Pandas]:
         """Get the true and predicted values for a column.
 
         Predictions are made using the `decision_function` or
@@ -656,12 +655,12 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     def _score_from_est(
         self,
-        scorer: SCORER,
-        estimator: PREDICTOR,
-        X: DATAFRAME,
-        y: PANDAS,
+        scorer: Scorer,
+        estimator: Predictor,
+        X: DataFrame,
+        y: Pandas,
         **kwargs,
-    ) -> FLOAT:
+    ) -> Float:
         """Calculate the metric score from an estimator.
 
         Parameters
@@ -700,11 +699,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     def _score_from_pred(
         self,
-        scorer: SCORER,
-        y_true: PANDAS,
-        y_pred: PANDAS,
+        scorer: Scorer,
+        y_true: Pandas,
+        y_pred: Pandas,
         **kwargs,
-    ) -> SCALAR:
+    ) -> Scalar:
         """Calculate the metric score from predicted values.
 
         Since sklearn metrics don't support multiclass-multioutput
@@ -748,11 +747,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @lru_cache
     def _get_score(
         self,
-        scorer: SCORER,
+        scorer: Scorer,
         dataset: str,
-        threshold: tuple[FLOAT] | None = None,
+        threshold: tuple[Float] | None = None,
         sample_weight: tuple | None = None,
-    ) -> SCALAR:
+    ) -> Scalar:
         """Calculate a metric score using the prediction attributes.
 
         The method results are cached to avoid recalculation of the
@@ -797,8 +796,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         else:
             if threshold and is_binary(self.task) and hasattr(self, "predict_proba"):
                 y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
-                if isinstance(y_pred, DATAFRAME_TYPES):
-                    # Update every target columns with its corresponding threshold
+                if isinstance(y_pred, DataFrameTypes):
+                    # Update every target column with its corresponding threshold
                     for i, value in enumerate(threshold):
                         y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
                 else:
@@ -822,7 +821,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return result
 
     @composed(crash, method_to_log)
-    def hyperparameter_tuning(self, n_trials: INT, reset: BOOL = False):
+    def hyperparameter_tuning(self, n_trials: Int, reset: Bool = False):
         """Run the hyperparameter tuning algorithm.
 
         Search for the best combination of hyperparameters. The function
@@ -840,7 +839,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         """
 
-        def objective(trial: Trial) -> list[FLOAT]:
+        def objective(trial: Trial) -> list[Float]:
             """Objective function for hyperparameter tuning.
 
             Parameters
@@ -856,10 +855,10 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             """
 
             def fit_model(
-                estimator: PREDICTOR,
+                estimator: Predictor,
                 train_idx: np.ndarray,
                 val_idx: np.ndarray,
-            ) -> tuple[PREDICTOR, list[FLOAT]]:
+            ) -> tuple[Predictor, list[Float]]:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -951,13 +950,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 # Follow same stratification strategy as atom
                 cols = self._get_stratify_columns(self.og.train, self.og.y_train)
 
-                if isinstance(cv := self._ht["cv"], INT_TYPES):
+                if isinstance(cv := self._ht["cv"], IntTypes):
                     if self.goal == "fc":
                         if cv == 1:
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
-                    elif isinstance(self._ht["cv"], INT):
+                    elif isinstance(self._ht["cv"], Int):
                         # We use ShuffleSplit instead of Kfold because it
                         # works with n_splits=1 and multioutput stratification
                         if cols is None:
@@ -1128,7 +1127,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self._log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
 
     @composed(crash, method_to_log)
-    def fit(self, X: DATAFRAME | None = None, y: PANDAS | None = None):
+    def fit(self, X: DataFrame | None = None, y: Pandas | None = None):
         """Fit and validate the model.
 
         The estimator is fitted using the best hyperparameters found
@@ -1244,7 +1243,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                     )
 
     @composed(crash, method_to_log)
-    def bootstrapping(self, n_bootstrap: INT, reset: BOOL = False):
+    def bootstrapping(self, n_bootstrap: Int, reset: Bool = False):
         """Apply a bootstrap algorithm.
 
         Take bootstrapped samples from the training set and test them
@@ -1367,7 +1366,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return self._best_trial
 
     @best_trial.setter
-    def best_trial(self, value: INT):
+    def best_trial(self, value: Int):
         """Change the selected best trial."""
         if value not in self.trials.index:
             raise ValueError(
@@ -1385,19 +1384,19 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             return {}
 
     @property
-    def score_ht(self) -> SCALAR | list[SCALAR] | None:
+    def score_ht(self) -> Scalar | list[Scalar] | None:
         """Metric score obtained by the [best trial][self-best_trial]."""
         if self.best_trial:
             return self.trials.at[self.best_trial.number, "score"]
 
     @property
-    def time_ht(self) -> FLOAT | None:
+    def time_ht(self) -> Float | None:
         """Duration of the hyperparameter tuning (in seconds)."""
         if self.trials is not None:
             return self.trials.iat[-1, -2]
 
     @property
-    def estimator(self) -> PREDICTOR:
+    def estimator(self) -> Predictor:
         """Estimator fitted on the training set."""
         return self._estimator
 
@@ -1413,22 +1412,22 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return self._evals
 
     @property
-    def score_train(self) -> SCALAR | list[SCALAR]:
+    def score_train(self) -> Scalar | list[Scalar]:
         """Metric score on the training set."""
         return flt([self._get_score(m, "train") for m in self._metric])
 
     @property
-    def score_test(self) -> SCALAR | list[SCALAR]:
+    def score_test(self) -> Scalar | list[Scalar]:
         """Metric score on the test set."""
         return flt([self._get_score(m, "test") for m in self._metric])
 
     @property
-    def score_holdout(self) -> SCALAR | list[SCALAR]:
+    def score_holdout(self) -> Scalar | list[Scalar]:
         """Metric score on the holdout set."""
         return flt([self._get_score(m, "holdout") for m in self._metric])
 
     @property
-    def time_fit(self) -> FLOAT:
+    def time_fit(self) -> Float:
         """Duration of the model fitting on the train set (in seconds)."""
         return self._time_fit
 
@@ -1445,19 +1444,19 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return self._bootstrap
 
     @property
-    def score_bootstrap(self) -> SCALAR | list[SCALAR] | None:
+    def score_bootstrap(self) -> Scalar | list[Scalar] | None:
         """Mean metric score on the bootstrapped samples."""
         if self.bootstrap is not None:
             return flt(self.bootstrap.mean().tolist())
 
     @property
-    def time_bootstrap(self) -> FLOAT | None:
+    def time_bootstrap(self) -> Float | None:
         """Duration of the bootstrapping (in seconds)."""
         if self._time_bootstrap:
             return self._time_bootstrap
 
     @property
-    def time(self) -> FLOAT:
+    def time(self) -> Float:
         """Total duration of the run (in seconds)."""
         return (self.time_ht or 0) + self._time_fit + self._time_bootstrap
 
@@ -1530,22 +1529,22 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             return self.branch.pipeline
 
     @property
-    def dataset(self) -> DATAFRAME:
+    def dataset(self) -> DataFrame:
         """Complete data set."""
         return merge(self.X, self.y)
 
     @property
-    def train(self) -> DATAFRAME:
+    def train(self) -> DataFrame:
         """Training set."""
         return merge(self.X_train, self.y_train)
 
     @property
-    def test(self) -> DATAFRAME:
+    def test(self) -> DataFrame:
         """Test set."""
         return merge(self.X_test, self.y_test)
 
     @property
-    def holdout(self) -> DATAFRAME | None:
+    def holdout(self) -> DataFrame | None:
         """Holdout set."""
         if (holdout := self.branch.holdout) is not None:
             if self.scaler:
@@ -1557,17 +1556,17 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 return holdout
 
     @property
-    def X(self) -> DATAFRAME:
+    def X(self) -> DataFrame:
         """Feature set."""
         return bk.concat([self.X_train, self.X_test])
 
     @property
-    def y(self) -> PANDAS:
+    def y(self) -> Pandas:
         """Target column."""
         return bk.concat([self.y_train, self.y_test])
 
     @property
-    def X_train(self) -> DATAFRAME:
+    def X_train(self) -> DataFrame:
         """Features of the training set."""
         if self.scaler:
             return self.scaler.transform(self.branch.X_train[-self._train_idx:])
@@ -1575,12 +1574,12 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             return self.branch.X_train[-self._train_idx:]
 
     @property
-    def y_train(self) -> PANDAS:
+    def y_train(self) -> Pandas:
         """Target column of the training set."""
         return self.branch.y_train[-self._train_idx:]
 
     @property
-    def X_test(self) -> DATAFRAME:
+    def X_test(self) -> DataFrame:
         """Features of the test set."""
         if self.scaler:
             return self.scaler.transform(self.branch.X_test)
@@ -1588,13 +1587,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             return self.branch.X_test
 
     @property
-    def X_holdout(self) -> DATAFRAME | None:
+    def X_holdout(self) -> DataFrame | None:
         """Features of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout.iloc[:, :-self.branch._data.n_cols]
 
     @property
-    def y_holdout(self) -> PANDAS | None:
+    def y_holdout(self) -> Pandas | None:
         """Target column of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout[self.branch.target]
@@ -1689,7 +1688,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         """
 
-        def inference(*X) -> SCALAR | str | list[SCALAR | str]:
+        def inference(*X) -> Scalar | str | list[Scalar | str]:
             """Apply inference on the row provided by the app.
 
             Parameters
@@ -1706,7 +1705,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
             y_pred = self.inverse_transform(y=self.predict([X], verbose=0), verbose=0)
-            if isinstance(y_pred, DATAFRAME_TYPES):
+            if isinstance(y_pred, DataFrameTypes):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])
@@ -1740,7 +1739,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @composed(crash, method_to_log)
     def create_dashboard(
         self,
-        dataset: str | SEQUENCE = "test",
+        dataset: str | Sequence = "test",
         *,
         filename: str | None = None,
         **kwargs,
@@ -1887,11 +1886,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @crash
     def evaluate(
         self,
-        metric: METRIC_SELECTOR = None,
+        metric: MetricSelector = None,
         dataset: Literal["train", "test", "holdout"] = "test",
         *,
-        threshold: FLOAT | SEQUENCE = 0.5,
-        sample_weight: SEQUENCE | None = None,
+        threshold: Float | Sequence = 0.5,
+        sample_weight: Sequence | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
@@ -1932,7 +1931,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Scores of the model.
 
         """
-        if isinstance(threshold, FLOAT_TYPES):
+        if isinstance(threshold, FloatTypes):
             threshold = [threshold] * self.branch._data.n_cols  # Length=n_targets
         elif len(threshold) != self.branch._data.n_cols:
             raise ValueError(
@@ -2027,7 +2026,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return pipeline
 
     @composed(crash, method_to_log)
-    def full_train(self, *, include_holdout: BOOL = False):
+    def full_train(self, *, include_holdout: Bool = False):
         """Train the estimator on the complete dataset.
 
         In some cases it might be desirable to use all available data
@@ -2074,7 +2073,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def get_best_threshold(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
-    ) -> FLOAT | list[FLOAT]:
+    ) -> Float | list[Float]:
         """Get the threshold that maximizes the [ROC][] curve.
 
         Only available for models with a `predict_proba` method in a
@@ -2104,9 +2103,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+        X: Features | None = None,
+        y: Target | None = None,
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2129,7 +2128,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
@@ -2148,8 +2148,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def register(
         self,
         name: str | None = None,
-        stage: STAGES = "None",
-        archive_existing_versions: BOOL = False,
+        stage: Stages = "None",
+        archive_existing_versions: Bool = False,
     ):
         """Register the model in [mlflow's model registry][registry].
 
@@ -2214,7 +2214,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self._log(f"{self._fullname} estimator successfully saved.", 1)
 
     @composed(crash, method_to_log)
-    def serve(self, method: str = "predict", host: str = "127.0.0.1", port: INT = 8000):
+    def serve(self, method: str = "predict", host: str = "127.0.0.1", port: Int = 8000):
         """Serve the model as rest API endpoint for inference.
 
         The complete pipeline is served with the model. The inference
@@ -2288,9 +2288,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @composed(crash, method_to_log)
     def transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+        X: Features | None = None,
+        y: Target | None = None,
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2313,7 +2313,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
@@ -2341,7 +2342,7 @@ class ClassRegModel(BaseModel):
 
     # Prediction properties ======================================== >>
 
-    def _assign_prediction_indices(self, index: INDEX) -> INDEX:
+    def _assign_prediction_indices(self, index: Index) -> Index:
         """Assign index names for the prediction methods.
 
         Create a multi-index object for multioutput tasks, where the
@@ -2378,7 +2379,7 @@ class ClassRegModel(BaseModel):
             return self.mapping.get(self.target, np.unique(self.y).astype(str))
 
     @cached_property
-    def decision_function_train(self) -> PANDAS:
+    def decision_function_train(self) -> Pandas:
         """Predicted confidence scores on the training set.
 
         The shape of the output depends on the task:
@@ -2396,7 +2397,7 @@ class ClassRegModel(BaseModel):
         )
 
     @cached_property
-    def decision_function_test(self) -> PANDAS:
+    def decision_function_test(self) -> Pandas:
         """Predicted confidence scores on the test set.
 
         The shape of the output depends on the task:
@@ -2414,7 +2415,7 @@ class ClassRegModel(BaseModel):
         )
 
     @cached_property
-    def decision_function_holdout(self) -> PANDAS | None:
+    def decision_function_holdout(self) -> Pandas | None:
         """Predicted confidence scores on the holdout set.
 
         The shape of the output depends on the task:
@@ -2433,7 +2434,7 @@ class ClassRegModel(BaseModel):
             )
 
     @cached_property
-    def predict_train(self) -> PANDAS:
+    def predict_train(self) -> Pandas:
         """Predictions on the training set.
 
         The shape of the output depends on the task:
@@ -2450,7 +2451,7 @@ class ClassRegModel(BaseModel):
         )
 
     @cached_property
-    def predict_test(self) -> PANDAS:
+    def predict_test(self) -> Pandas:
         """Predictions on the test set.
 
         The shape of the output depends on the task:
@@ -2467,7 +2468,7 @@ class ClassRegModel(BaseModel):
         )
 
     @cached_property
-    def predict_holdout(self) -> PANDAS | None:
+    def predict_holdout(self) -> Pandas | None:
         """Predictions on the holdout set.
 
         The shape of the output depends on the task:
@@ -2485,7 +2486,7 @@ class ClassRegModel(BaseModel):
             )
 
     @cached_property
-    def predict_log_proba_train(self) -> DATAFRAME:
+    def predict_log_proba_train(self) -> DataFrame:
         """Class log-probability predictions on the training set.
 
         The shape of the output depends on the task:
@@ -2519,7 +2520,7 @@ class ClassRegModel(BaseModel):
         return data
 
     @cached_property
-    def predict_log_proba_test(self) -> DATAFRAME:
+    def predict_log_proba_test(self) -> DataFrame:
         """Class log-probability predictions on the test set.
 
         The shape of the output depends on the task:
@@ -2553,7 +2554,7 @@ class ClassRegModel(BaseModel):
         return data
 
     @cached_property
-    def predict_log_proba_holdout(self) -> DATAFRAME | None:
+    def predict_log_proba_holdout(self) -> DataFrame | None:
         """Class log-probability predictions on the holdout set.
 
         The shape of the output depends on the task:
@@ -2588,7 +2589,7 @@ class ClassRegModel(BaseModel):
             return data
 
     @cached_property
-    def predict_proba_train(self) -> DATAFRAME:
+    def predict_proba_train(self) -> DataFrame:
         """Class probability predictions on the training set.
 
         The shape of the output depends on the task:
@@ -2622,7 +2623,7 @@ class ClassRegModel(BaseModel):
         return data
 
     @cached_property
-    def predict_proba_test(self) -> DATAFRAME:
+    def predict_proba_test(self) -> DataFrame:
         """Class probability predictions on the test set.
 
         The shape of the output depends on the task:
@@ -2656,7 +2657,7 @@ class ClassRegModel(BaseModel):
         return data
 
     @cached_property
-    def predict_proba_holdout(self) -> DATAFRAME | None:
+    def predict_proba_holdout(self) -> DataFrame | None:
         """Class probability predictions on the holdout set.
 
         The shape of the output depends on the task:
@@ -2694,13 +2695,13 @@ class ClassRegModel(BaseModel):
 
     def _prediction(
         self,
-        X: slice | FEATURES | TARGET,
-        y: TARGET | None = None,
-        metric: METRIC_SELECTOR = None,
-        sample_weight: SEQUENCE | None = None,
-        verbose: INT | None = None,
+        X: slice | Features | Target,
+        y: Target | None = None,
+        metric: MetricSelector = None,
+        sample_weight: Sequence | None = None,
+        verbose: Int | None = None,
         method: str = "predict",
-    ) -> FLOAT | PANDAS:
+    ) -> Float | Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2719,7 +2720,8 @@ class ClassRegModel(BaseModel):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
             - If dataframe: Target columns for multioutput tasks.
@@ -2795,9 +2797,9 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def decision_function(
         self,
-        X: SLICE | FEATURES,
-        verbose: INT | None = None,
-    ) -> PANDAS:
+        X: SLICE | Features,
+        verbose: Int | None = None,
+    ) -> Pandas:
         """Get confidence scores on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2830,9 +2832,9 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict(
         self,
-        X: SLICE | FEATURES,
-        verbose: INT | None = None,
-    ) -> PANDAS:
+        X: SLICE | Features,
+        verbose: Int | None = None,
+    ) -> Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2864,9 +2866,9 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_log_proba(
         self,
-        X: SLICE | FEATURES,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
+        X: SLICE | Features,
+        verbose: Int | None = None,
+    ) -> DataFrame:
         """Get class log-probabilities on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2898,9 +2900,9 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_proba(
         self,
-        X: SLICE | FEATURES,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
+        X: SLICE | Features,
+        verbose: Int | None = None,
+    ) -> DataFrame:
         """Get class probabilities on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2933,12 +2935,12 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def score(
         self,
-        X: SLICE | FEATURES,
-        y: TARGET | None = None,
-        metric: METRIC_SELECTOR = None,
-        sample_weight: SEQUENCE | None = None,
-        verbose: INT | None = None,
-    ) -> FLOAT:
+        X: SLICE | Features,
+        y: Target | None = None,
+        metric: MetricSelector = None,
+        sample_weight: Sequence | None = None,
+        verbose: Int | None = None,
+    ) -> Float:
         """Get a metric score on new data.
 
         New data is first transformed through the model's pipeline.
@@ -2963,7 +2965,8 @@ class ClassRegModel(BaseModel):
 
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
             - If dataframe: Target columns for multioutput tasks.
@@ -3011,7 +3014,7 @@ class ForecastModel(BaseModel):
     # Prediction properties ======================================== >>
 
     @cached_property
-    def predict_train(self) -> PANDAS:
+    def predict_train(self) -> Pandas:
         """Predictions on the training set.
 
         The shape of the output depends on the task:
@@ -3026,7 +3029,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_test(self) -> PANDAS:
+    def predict_test(self) -> Pandas:
         """Predictions on the test set.
 
         The shape of the output depends on the task:
@@ -3041,7 +3044,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_holdout(self) -> PANDAS | None:
+    def predict_holdout(self) -> Pandas | None:
         """Predictions on the holdout set.
 
         The shape of the output depends on the task:
@@ -3057,7 +3060,7 @@ class ForecastModel(BaseModel):
             )
 
     @cached_property
-    def predict_interval_train(self) -> DATAFRAME:
+    def predict_interval_train(self) -> DataFrame:
         """Prediction interval on the training set.
 
         The shape of the output depends on the task:
@@ -3072,7 +3075,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_interval_test(self) -> DATAFRAME:
+    def predict_interval_test(self) -> DataFrame:
         """Prediction interval on the test set.
 
         The shape of the output depends on the task:
@@ -3087,7 +3090,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_interval_holdout(self) -> DATAFRAME | None:
+    def predict_interval_holdout(self) -> DataFrame | None:
         """Prediction interval on the holdout set.
 
         The shape of the output depends on the task:
@@ -3128,7 +3131,7 @@ class ForecastModel(BaseModel):
             )
 
     @cached_property
-    def predict_quantiles_train(self) -> DATAFRAME:
+    def predict_quantiles_train(self) -> DataFrame:
         """Quantile forecast on the training set.
 
         The shape of the output depends on the task:
@@ -3143,7 +3146,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_quantiles_test(self) -> DATAFRAME:
+    def predict_quantiles_test(self) -> DataFrame:
         """Quantile forecast on the test set.
 
         The shape of the output depends on the task:
@@ -3158,7 +3161,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_quantiles_holdout(self) -> DATAFRAME | None:
+    def predict_quantiles_holdout(self) -> DataFrame | None:
         """Quantile forecast on the holdout set.
 
         The shape of the output depends on the task:
@@ -3174,7 +3177,7 @@ class ForecastModel(BaseModel):
             )
 
     @cached_property
-    def predict_residuals_train(self) -> PANDAS:
+    def predict_residuals_train(self) -> Pandas:
         """Residuals forecast on the training set.
 
         The shape of the output depends on the task:
@@ -3189,7 +3192,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_residuals_test(self) -> PANDAS:
+    def predict_residuals_test(self) -> Pandas:
         """Residuals forecast on the test set.
 
         The shape of the output depends on the task:
@@ -3204,7 +3207,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_residuals_holdout(self) -> PANDAS | None:
+    def predict_residuals_holdout(self) -> Pandas | None:
         """Residuals forecast on the holdout set.
 
         The shape of the output depends on the task:
@@ -3220,7 +3223,7 @@ class ForecastModel(BaseModel):
             )
 
     @cached_property
-    def predict_var_train(self) -> DATAFRAME:
+    def predict_var_train(self) -> DataFrame:
         """Variance forecast on the training set.
 
         The shape of the output depends on the task:
@@ -3235,7 +3238,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_var_test(self) -> DATAFRAME:
+    def predict_var_test(self) -> DataFrame:
         """Variance forecast on the test set.
 
         The shape of the output depends on the task:
@@ -3250,7 +3253,7 @@ class ForecastModel(BaseModel):
         )
 
     @cached_property
-    def predict_var_holdout(self) -> DATAFRAME | None:
+    def predict_var_holdout(self) -> DataFrame | None:
         """Variance forecast on the holdout set.
 
         The shape of the output depends on the task:
@@ -3269,11 +3272,11 @@ class ForecastModel(BaseModel):
 
     def _prediction(
         self,
-        metric: METRIC_SELECTOR = None,
-        verbose: INT | None = None,
+        metric: MetricSelector = None,
+        verbose: Int | None = None,
         method: str = "predict",
         **kwargs,
-    ) -> FLOAT | PANDAS:
+    ) -> Float | Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3322,10 +3325,10 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict(
         self,
-        fh: int | range | SEQUENCE | ForecastingHorizon,
-        X: FEATURES | None = None,
-        verbose: INT | None = None,
-    ) -> PANDAS:
+        fh: int | range | Sequence | ForecastingHorizon,
+        X: Features | None = None,
+        verbose: Int | None = None,
+    ) -> Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3360,11 +3363,11 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_interval(
         self,
-        fh: int | range | SEQUENCE | ForecastingHorizon,
-        X: FEATURES | None = None,
-        coverage: FLOAT | SEQUENCE = 0.9,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
+        fh: int | range | Sequence | ForecastingHorizon,
+        X: Features | None = None,
+        coverage: Float | Sequence = 0.9,
+        verbose: Int | None = None,
+    ) -> DataFrame:
         """Get prediction intervals on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3408,10 +3411,10 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_proba(
         self,
-        fh: int | range | SEQUENCE | ForecastingHorizon,
-        X: FEATURES | None = None,
-        marginal: BOOL = True,
-        verbose: INT | None = None,
+        fh: int | range | Sequence | ForecastingHorizon,
+        X: Features | None = None,
+        marginal: Bool = True,
+        verbose: Int | None = None,
     ) -> Normal:
         """Get probabilistic forecasts on new data or existing rows.
 
@@ -3455,11 +3458,11 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_quantiles(
         self,
-        fh: int | range | SEQUENCE | ForecastingHorizon,
-        X: FEATURES | None = None,
-        alpha: FLOAT | list[FLOAT] = [0.05, 0.95],
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
+        fh: int | range | Sequence | ForecastingHorizon,
+        X: Features | None = None,
+        alpha: Float | list[Float] = [0.05, 0.95],
+        verbose: Int | None = None,
+    ) -> DataFrame:
         """Get probabilistic forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3505,10 +3508,10 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_residuals(
         self,
-        y: SEQUENCE | DATAFRAME,
-        X: FEATURES | None = None,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
+        y: Sequence | DataFrame,
+        X: Features | None = None,
+        verbose: Int | None = None,
+    ) -> DataFrame:
         """Get residuals of forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3542,11 +3545,11 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_var(
         self,
-        fh: int | range | SEQUENCE | ForecastingHorizon,
-        X: FEATURES | None = None,
-        cov: BOOL = False,
-        verbose: INT | None = None,
-    ) -> DATAFRAME:
+        fh: int | range | Sequence | ForecastingHorizon,
+        X: Features | None = None,
+        cov: Bool = False,
+        verbose: Int | None = None,
+    ) -> DataFrame:
         """Get probabilistic forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3591,12 +3594,12 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def score(
         self,
-        y: SEQUENCE | DATAFRAME,
-        X: DATAFRAME | None = None,
-        fh: int | SEQUENCE | ForecastingHorizon | None = None,
-        metric: METRIC_SELECTOR = None,
-        verbose: INT | None = None,
-    ) -> FLOAT:
+        y: Sequence | DataFrame,
+        X: DataFrame | None = None,
+        fh: int | Sequence | ForecastingHorizon | None = None,
+        metric: MetricSelector = None,
+        verbose: Int | None = None,
+    ) -> Float:
         """Get a metric score on new data.
 
         New data is first transformed through the model's pipeline.

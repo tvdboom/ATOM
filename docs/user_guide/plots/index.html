@@ -3370,8 +3370,8 @@ are rendered using html. Some plots require other libraries like
 <a href="https://matplotlib.org/">matplotlib</a>, <a href="https://github.com/slundberg/shap">shap</a>,
 <a href="http://amueller.github.io/word_cloud/">wordcloud</a> and <a href="https://schemdraw.readthedocs.io/en/latest/">schemdraw</a>.</p>
 <p>Plots that compare model performances (methods with the <code>models</code>
-parameter) can be called directly from atom, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">plot_roc</span><span class="p">()</span></code>,
-or from one of the models, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">adab</span><span class="o">.</span><span class="n">plot_roc</span><span class="p">()</span></code>. If called from
+parameter) can be called directly from atom, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">plot_roc</span><span class="p">()</span></code>,
+or from one of the models, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">adab</span><span class="o">.</span><span class="n">plot_roc</span><span class="p">()</span></code>. If called from
 atom, use the <code>models</code> parameter to specify which models to plot. If
 called from a specific model, it makes the plot only for that model and
 the <code>models</code> parameter becomes unavailable.</p>
@@ -3384,12 +3384,12 @@ in common:</p>
 <ul>
 <li>The <code>title</code> parameter adds a title to the plot. The default value doesn't
   show any title. Provide a configuration (as dictionary) to customize its
-  appearance, e.g. <code class="language-python highlight"><span class="n">title</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Awesome plot&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span></code>.
+  appearance, e.g., <code class="language-python highlight"><span class="n">title</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Awesome plot&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span></code>.
   Read more in plotly's <a href="https://plotly.com/python/figure-labels/">documentation</a>.</li>
 <li>
 <p>The <code>legend</code> parameter is used to show/hide, position or customize the
   plot's legend. Provide a configuration (as dictionary) to customize its
-  appearance (e.g. <code class="language-python highlight"><span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Title for legend&quot;</span><span class="p">,</span> <span class="n">title_font_color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span></code>)
+  appearance (e.g., <code class="language-python highlight"><span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Title for legend&quot;</span><span class="p">,</span> <span class="n">title_font_color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span></code>)
   or choose one of the following locations:</p>
 <ul>
 <li>upper left</li>
@@ -3415,7 +3415,7 @@ in common:</p>
 <p><br></p>
 <h2 id="aesthetics">Aesthetics</h2>
 <p>The plot's aesthetics can be customized using the plot attributes prior
-to calling the plotting method, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">title_fontsize</span> <span class="o">=</span> <span class="mi">30</span></code>.
+to calling the plotting method, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">title_fontsize</span> <span class="o">=</span> <span class="mi">30</span></code>.
 The default values are:</p>
 <ul>
 <li><strong>palette:</strong> ["rgb(0, 98, 98)", "rgb(56, 166, 165)", "rgb(115, 175, 72)",
@@ -3427,7 +3427,7 @@ The default values are:</p>
 </ul>
 <p>Use atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-update_layout">update_layout</a> method to further
 customize the plot's layout using any of plotly's <a href="https://plotly.com/python/reference/layout/">layout properties</a>,
-e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_dark&quot;</span><span class="p">)</span></code>. Similarly, use
+e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_dark&quot;</span><span class="p">)</span></code>. Similarly, use
 the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-update_traces">update_traces</a> method to customize the
 <a href="https://plotly.com/python/reference/scatter/">traces properties</a>, e.g.
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines+markers&quot;</span><span class="p">)</span></code>.</p>
@@ -3441,7 +3441,7 @@ by side, for example to make it easier to compare similar results. The canvas
 method is a <code>@contextmanager</code>, i.e. it's used through Python's <code>with</code> command.
 Plots in a canvas ignore the legend, figsize, filename and display parameters.
 Instead, specify these parameters in the canvas. If a variable is assigned to
-the canvas (e.g. <code class="language-python highlight"><span class="k">with</span> <span class="n">atom</span><span class="o">.</span><span class="n">canvas</span><span class="p">()</span> <span class="k">as</span> <span class="n">fig</span></code>), it yields the resulting
+the canvas (e.g., <code class="language-python highlight"><span class="k">with</span> <span class="n">atom</span><span class="o">.</span><span class="n">canvas</span><span class="p">()</span> <span class="k">as</span> <span class="n">fig</span></code>), it yields the resulting
 figure.</p>
 <p>For example, we can use a canvas to compare the results of a XGBoost and
 LightGBM model on the train and test set. We could also draw the lines for
@@ -3481,7 +3481,7 @@ them later when needed again.</p>
 <ul>
 <li>It's not possible to draw multiple models in the same figure.
   Selecting more than one model will raise an exception. To avoid
-  this, call the plot directly from a model, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">plot_shap_force</span><span class="p">()</span></code>.</li>
+  this, call the plot directly from a model, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">plot_shap_force</span><span class="p">()</span></code>.</li>
 <li>The returned plot is a matplotlib figure, not plotly's.</li>
 </ul>
 </div>

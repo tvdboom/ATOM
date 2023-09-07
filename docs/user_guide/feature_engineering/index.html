@@ -3339,13 +3339,13 @@ example.</p>
 <p>All of atom's feature engineering methods automatically adopt the relevant
 transformer attributes (<code>n_jobs</code>, <code>verbose</code>, <code>logger</code>, <code>random_state</code>) from
 atom. A different choice can be added as parameter to the method call,
-e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>.</p>
+e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Like the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-add">add</a> method, the feature engineering
 methods accept the <code>columns</code> parameter to only transform a subset of the
-dataset's features, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span><span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span></code>.</p>
+dataset's features, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span><span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span></code>.</p>
 </div>
 <p><br></p>
 <h2 id="extracting-datetime-features">Extracting datetime features</h2>
@@ -3354,12 +3354,12 @@ by models since they are not strictly numerical. Encoding them as
 categorical features is not an option since the encoding does not
 capture the relationship between the different moments in time. The
 <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class creates new features extracting datetime
-elements (e.g. day, month, year, hour...) from the columns. It can be
+elements (e.g., day, month, year, hour...) from the columns. It can be
 accessed from atom through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-feature_extraction">feature_extraction</a>
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. <code>x0_day</code> for the day element of <code>x0</code>.</p>
-<p>Note that many time features have a cyclic pattern, e.g. after Sunday
+they create, e.g., <code>x0_day</code> for the day element of <code>x0</code>.</p>
+<p>Note that many time features have a cyclic pattern, e.g., after Sunday
 comes Monday. This means that if we would encode the days of the week
 from 0 to 6, we would lose that relation. A common method used to encode
 cyclical features is to transform the data into two dimensions using a
@@ -3474,9 +3474,9 @@ SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</cod
 to select the best features in a dataset based on importance weights.
 The estimator is provided through the <code>solver</code> parameter and can be
 already fitted. ATOM allows you to use one its predefined <a class="autorefs autorefs-internal" href="../models/#models">models</a>,
-e.g. <code class="language-python highlight"><span class="n">solver</span><span class="o">=</span><span class="s2">&quot;RF&quot;</span></code>. If you didn't call the FeatureSelector through
+e.g., <code class="language-python highlight"><span class="n">solver</span><span class="o">=</span><span class="s2">&quot;RF&quot;</span></code>. If you didn't call the FeatureSelector through
 atom, don't forget to indicate the estimator's task adding <code>_class</code> or <code>_reg</code>
-after the name, e.g. <code>RF_class</code> to use a random forest classifier. Read
+after the name, e.g., <code>RF_class</code> to use a random forest classifier. Read
 more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
 <p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="sfs"></a>

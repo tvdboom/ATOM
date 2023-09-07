@@ -9,7 +9,7 @@ class containing the underlying estimator is attached to atom as an
 attribute. We refer to these "subclasses" as models. Apart from the
 estimator, the models contain a variety of attributes and methods that
 can help you understand how the underlying estimator performed. They
-can be accessed using their acronyms, e.g. `atom.LGB` to access the
+can be accessed using their acronyms, e.g., `atom.LGB` to access the
 LightGBM model. The available models and their corresponding
 acronyms are:
 
@@ -63,7 +63,7 @@ acronyms are:
     them only through atom.
 
 !!! tip
-    The acronyms are case-insensitive, e.g. `atom.lgb` also calls
+    The acronyms are case-insensitive, e.g., `atom.lgb` also calls
     the LightGBM model.
 
 <br>
@@ -130,7 +130,7 @@ wrappers [KerasClassifier](https://www.adriangb.com/scikeras/refs/heads/master/g
 or [KerasRegressor](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasRegressor.html#scikeras.wrappers.KerasRegressor).
 
 Many deep learning use cases, for example in computer vision, use datasets
-with more than 2 dimensions, e.g. image data can have shape (n_samples,
+with more than 2 dimensions, e.g., image data can have shape (n_samples,
 length, width, rgb). Luckily, scikeras has a workaround to be able to work
 with such datasets. Learn with this [example][example-deep-learning] how to
 use ATOM to train and validate a Convolutional Neural Network on an image

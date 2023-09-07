@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the PredictionPlot class.
 
@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -32,15 +33,14 @@ from sktime.forecasting.base import ForecastingHorizon
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    FEATURES, FLOAT, INT, LEGEND, METRIC_SELECTOR, MODEL, SCALAR, SEQUENCE,
-    SLICE,
+    SLICE, Features, Float, Int, Legend, MetricSelector, Model, Scalar,
+    Sequence,
 )
 from atom.utils.utils import (
     bk, check_canvas, check_dependency, check_predict_proba, composed, crash,
     divide, get_best_score, get_custom_scorer, has_task, is_binary,
     is_multioutput, lst, plot_from_model, rnd,
 )
-from joblib import Parallel, delayed
 
 
 class PredictionPlot(BasePlot):
@@ -58,14 +58,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_calibration(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
-        n_bins: INT = 10,
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
+        n_bins: Int = 10,
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = "upper left",
-        figsize: tuple[INT, INT] = (900, 900),
+        legend: Legend | dict | None = "upper left",
+        figsize: tuple[Int, Int] = (900, 900),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -244,14 +244,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_confusion_matrix(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         dataset: str = "test",
-        target: INT | str = 0,
-        threshold: FLOAT = 0.5,
+        target: Int | str = 0,
+        threshold: Float = 0.5,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -451,13 +451,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_det(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ):
@@ -571,13 +571,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_errors(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         dataset: str = "test",
-        target: INT | str = 0,
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -712,12 +712,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_evals(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -828,12 +828,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_feature_importance(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        show: INT | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        show: Int | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -962,15 +962,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(check_fitted=False))
     def plot_forecast(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        fh: int | str | range | SEQUENCE | ForecastingHorizon = "test",
-        X: FEATURES | None = None,
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        fh: int | str | range | Sequence | ForecastingHorizon = "test",
+        X: Features | None = None,
+        target: Int | str = 0,
         plot_interval: bool = True,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1169,13 +1169,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_gains(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1291,12 +1291,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_learning_curve(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        metric: INT | str | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1445,13 +1445,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_lift(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1566,13 +1566,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_parshap(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         columns: SLICE | None = None,
-        target: INT | str | tuple = 1,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1764,15 +1764,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_partial_dependence(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         columns: SLICE | None = None,
-        kind: str | SEQUENCE = "average",
+        kind: str | Sequence = "average",
         pair: int | str | None = None,
-        target: INT | str = 1,
+        target: Int | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2056,13 +2056,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_permutation_importance(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        show: INT | None = None,
-        n_repeats: INT = 10,
+        models: Int | str | Model | slice | Sequence | None = None,
+        show: Int | None = None,
+        n_repeats: Int = 10,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2201,13 +2201,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(check_fitted=False))
     def plot_pipeline(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: bool | None = None,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] | None = None,
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -2509,13 +2509,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_prc(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2633,13 +2633,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_probabilities(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         dataset: str = "test",
-        target: INT | str | tuple = 1,
+        target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2774,13 +2774,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_residuals(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
         dataset: str = "test",
-        target: INT | str = 0,
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2924,12 +2924,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_results(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        metric: INT | str | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3010,7 +3010,7 @@ class PredictionPlot(BasePlot):
 
         """
 
-        def get_std(model: MODEL, metric: int) -> SCALAR:
+        def get_std(model: Model, metric: int) -> Scalar:
             """Get the standard deviation of the bootstrap scores.
 
             Parameters
@@ -3125,13 +3125,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_roc(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        dataset: str | SEQUENCE = "test",
-        target: INT | str = 0,
+        models: Int | str | Model | slice | Sequence | None = None,
+        dataset: str | Sequence = "test",
+        target: Int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3248,12 +3248,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_successive_halving(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        metric: INT | str | SEQUENCE | None = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3404,15 +3404,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_threshold(
         self,
-        models: INT | str | MODEL | slice | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: Int | str | Model | slice | Sequence | None = None,
+        metric: MetricSelector = None,
         dataset: str = "test",
-        target: INT | str = 0,
-        steps: INT = 100,
+        target: Int | str = 0,
+        steps: Int = 100,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:

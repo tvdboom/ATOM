@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the ensemble estimators.
 
@@ -12,6 +12,7 @@ from __future__ import annotations
 from copy import deepcopy
 
 import numpy as np
+from joblib import Parallel, delayed
 from sklearn.base import clone, is_classifier
 from sklearn.ensemble import StackingClassifier as SC
 from sklearn.ensemble import StackingRegressor as SR
@@ -24,9 +25,8 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils.types import BOOL, FEATURES, INT, PREDICTOR, SEQUENCE
+from atom.utils.types import Bool, Features, Int, Predictor, Sequence
 from atom.utils.utils import check_is_fitted
-from joblib import Parallel, delayed
 
 
 class BaseEnsemble:
@@ -53,9 +53,9 @@ class BaseVoting(BaseEnsemble):
 
     def fit(
         self,
-        X: FEATURES,
-        y: SEQUENCE,
-        sample_weight: SEQUENCE | None = None,
+        X: Features,
+        y: Sequence,
+        sample_weight: Sequence | None = None,
     ) -> BaseVoting:
         """Fit the estimators in the ensemble.
 
@@ -116,9 +116,9 @@ class BaseStacking(BaseEnsemble):
 
     def fit(
         self,
-        X: FEATURES,
-        y: SEQUENCE,
-        sample_weight: SEQUENCE | None = None,
+        X: Features,
+        y: Sequence,
+        sample_weight: Sequence | None = None,
     ) -> BaseStacking:
         """Fit the estimators in the ensemble.
 
@@ -231,13 +231,13 @@ class VotingClassifier(BaseVoting, VC):
 
     def __init__(
         self,
-        estimators: list[tuple[str, PREDICTOR]],
+        estimators: list[tuple[str, Predictor]],
         *,
         voting: str = "hard",
-        weights: SEQUENCE | None = None,
-        n_jobs: INT | None = None,
-        flatten_transform: BOOL = True,
-        verbose: BOOL = False,
+        weights: Sequence | None = None,
+        n_jobs: Int | None = None,
+        flatten_transform: Bool = True,
+        verbose: Bool = False,
     ):
         super().__init__(
             estimators,
@@ -255,9 +255,9 @@ class VotingClassifier(BaseVoting, VC):
 
     def fit(
         self,
-        X: FEATURES,
-        y: SEQUENCE,
-        sample_weight: SEQUENCE | None = None,
+        X: Features,
+        y: Sequence,
+        sample_weight: Sequence | None = None,
     ) -> VotingClassifier:
         """Fit the estimators, skipping prefit ones.
 
@@ -299,7 +299,7 @@ class VotingClassifier(BaseVoting, VC):
 
         return super().fit(X, y, sample_weight)
 
-    def predict(self, X: FEATURES) -> np.ndarray:
+    def predict(self, X: Features) -> np.ndarray:
         """Predict class labels for X.
 
         Parameters
@@ -339,11 +339,11 @@ class VotingRegressor(BaseVoting, VR):
 
     def __init__(
         self,
-        estimators: list[tuple[str, PREDICTOR]],
+        estimators: list[tuple[str, Predictor]],
         *,
-        weights: SEQUENCE | None = None,
-        n_jobs: INT | None = None,
-        verbose: BOOL = False,
+        weights: Sequence | None = None,
+        n_jobs: Int | None = None,
+        verbose: Bool = False,
     ):
         super().__init__(
             estimators,
@@ -372,9 +372,9 @@ class StackingClassifier(BaseStacking, SC):
 
     def fit(
         self,
-        X: FEATURES,
-        y: SEQUENCE,
-        sample_weight: SEQUENCE | None = None,
+        X: Features,
+        y: Sequence,
+        sample_weight: Sequence | None = None,
     ) -> StackingClassifier:
         """Fit the estimators, skipping prefit ones.
 
@@ -417,9 +417,9 @@ class StackingRegressor(BaseStacking, SR):
 
     def fit(
         self,
-        X: FEATURES,
-        y: SEQUENCE,
-        sample_weight: SEQUENCE | None = None,
+        X: Features,
+        y: Sequence,
+        sample_weight: Sequence | None = None,
     ) -> StackingRegressor:
         """Fit the estimators, skipping prefit ones.
 

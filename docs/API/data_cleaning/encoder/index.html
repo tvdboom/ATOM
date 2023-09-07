@@ -3272,7 +3272,7 @@ one-hot encoding. If None, <code>strategy</code>-encoding is always
 used for columns with more than two classes.</p>
 <p></div><a id='encoder-ordinal'></a><strong>ordinal: dict or None, default=None</strong><br><div markdown class='param'>
 Order of ordinal features, where the dict key is the feature's
-name and the value is the class order, e.g. <code>{"salary": ["low",
+name and the value is the class order, e.g., <code>{"salary": ["low",
 "medium", "high"]}</code>.</p>
 <p></div><a id='encoder-infrequent_to_value'></a><strong>infrequent_to_value: int, float or None, default=None</strong><br><div markdown class='param'>
 Replaces infrequent class occurrences in categorical columns
@@ -3304,7 +3304,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='encoder-mapping'></a><strong>mapping: dict of dicts</strong><br><div markdown class='param'>
 Encoded values and their respective mapping. The column name is
 the key to its mapping dictionary. Only for columns mapped to a
-single column (e.g. Ordinal, Leave-one-out, etc...).</p>
+single column (e.g., Ordinal, Leave-one-out, etc...).</p>
 <p></div><a id='encoder-feature_names_in_'></a><strong>feature_names_in_: np.array</strong><br><div markdown class='param'>
 Names of features seen during fit.</p>
 <p></div><a id='encoder-n_features_in_'></a><strong>n_features_in_: int</strong><br><div markdown class='param'>
@@ -3380,7 +3380,7 @@ Target column corresponding to X.</p>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput
   tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>

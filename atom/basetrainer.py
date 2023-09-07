@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the BaseTrainer class.
 
@@ -13,24 +13,24 @@ import traceback
 from datetime import datetime as dt
 from typing import Any
 
+import joblib
 import mlflow
 import numpy as np
 import ray
+from joblib import Parallel, delayed
 from optuna import Study, create_study
 
-import joblib
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
 from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
-from atom.utils.types import MODEL, SEQUENCE_TYPES
+from atom.utils.types import Model, SequenceTypes
 from atom.utils.utils import (
     ClassMap, DataConfig, check_dependency, get_best_score, get_custom_scorer,
     lst, sign, time_to_str,
 )
-from joblib import Parallel, delayed
 
 
 class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
@@ -106,7 +106,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
             Parameter with model names as key.
 
         """
-        if isinstance(value, SEQUENCE_TYPES):
+        if isinstance(value, SequenceTypes):
             if len(value) != len(self._models):
                 raise ValueError(
                     f"Invalid value for the {param} parameter. The length "
@@ -233,7 +233,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
                     "Invalid value for the models parameter. There are duplicate "
                     "models. Add a tag to a model's acronym (separated by an "
                     "underscore) to train two different models with the same estimator, "
-                    "e.g. models=['LR_1', 'LR_2']."
+                    "e.g., models=['LR_1', 'LR_2']."
                 )
             self._models = ClassMap(*inc)
         else:
@@ -313,7 +313,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
     def _core_iteration(self):
         """Fit and evaluate all models and displays final results."""
 
-        def execute_model(m: MODEL) -> MODEL | None:
+        def execute_model(m: Model) -> Model | None:
             """Executes a single model.
 
             Runs hyperparameter tuning, training and bootstrap for one

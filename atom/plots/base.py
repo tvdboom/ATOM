@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the base classes for plotting.
 
@@ -21,8 +21,8 @@ from mlflow.tracking import MlflowClient
 
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    BOOL, DATAFRAME, FLOAT, INDEX, INT, INT_TYPES, LEGEND, MODEL, SCALAR,
-    SEQUENCE,
+    Bool, DataFrame, Float, Index, Int, IntTypes, Legend, Model, Scalar,
+    Sequence,
 )
 from atom.utils.utils import (
     composed, crash, divide, get_custom_scorer, lst, rnd, to_rgb,
@@ -33,12 +33,12 @@ from atom.utils.utils import (
 class Aesthetics:
     """Keeps track of plot aesthetics."""
 
-    palette: SEQUENCE  # Sequence of colors
-    title_fontsize: INT  # Fontsize for titles
-    label_fontsize: INT  # Fontsize for labels, legend and hoverinfo
-    tick_fontsize: INT  # Fontsize for ticks
-    line_width: INT  # Width of the line plots
-    marker_size: INT  # Size of the markers
+    palette: Sequence  # Sequence of colors
+    title_fontsize: Int  # Fontsize for titles
+    label_fontsize: Int  # Fontsize for labels, legend and hoverinfo
+    tick_fontsize: Int  # Fontsize for ticks
+    line_width: Int  # Width of the line plots
+    marker_size: Int  # Size of the markers
 
 
 class BaseFigure:
@@ -83,14 +83,14 @@ class BaseFigure:
 
     def __init__(
         self,
-        rows: INT = 1,
-        cols: INT = 1,
-        horizontal_spacing: FLOAT = 0.05,
-        vertical_spacing: FLOAT = 0.07,
-        palette: str | SEQUENCE = "Prism",
-        is_canvas: BOOL = False,
+        rows: Int = 1,
+        cols: Int = 1,
+        horizontal_spacing: Float = 0.05,
+        vertical_spacing: Float = 0.07,
+        palette: str | Sequence = "Prism",
+        is_canvas: Bool = False,
         backend: Literal["plotly", "matplotlib"] = "plotly",
-        create_figure: BOOL = True,
+        create_figure: Bool = True,
     ):
         self.rows = rows
         self.cols = cols
@@ -139,7 +139,7 @@ class BaseFigure:
             )
 
     @property
-    def grid(self) -> tuple[INT, INT]:
+    def grid(self) -> tuple[Int, Int]:
         """Position of the current axes on the grid.
 
         Returns
@@ -177,7 +177,7 @@ class BaseFigure:
 
     def get_elem(
         self,
-        name: SCALAR | str | None = None,
+        name: Scalar | str | None = None,
         element: Literal["palette", "marker", "dash", "shape"] = "palette",
     ) -> str | None:
         """Get the plot element for a specific name.
@@ -208,7 +208,7 @@ class BaseFigure:
         else:
             return self.style[element].setdefault(name, next(getattr(self, element)))
 
-    def showlegend(self, name: str, legend: LEGEND | dict | None) -> BOOL:
+    def showlegend(self, name: str, legend: Legend | dict | None) -> Bool:
         """Get whether the trace should be showed in the legend.
 
         If there's already a trace with the same name, it's not
@@ -236,8 +236,8 @@ class BaseFigure:
 
     def get_axes(
         self,
-        x: tuple[SCALAR, SCALAR] = (0, 1),
-        y: tuple[SCALAR, SCALAR] = (0, 1),
+        x: tuple[Scalar, Scalar] = (0, 1),
+        y: tuple[Scalar, Scalar] = (0, 1),
         coloraxis: dict | None = None,
     ) -> tuple[str, str]:
         """Create and update the plot's axes.
@@ -354,17 +354,17 @@ class BasePlot:
         self.marker_size = value.get("marker_size", self.marker_size)
 
     @property
-    def palette(self) -> str | SEQUENCE:
+    def palette(self) -> str | Sequence:
         """Color palette.
 
         Specify one of plotly's [built-in palettes][palette] or create
-        a custom one, e.g. `atom.palette = ["red", "green", "blue"]`.
+        a custom one, e.g., `atom.palette = ["red", "green", "blue"]`.
 
         """
         return self._aesthetics.palette
 
     @palette.setter
-    def palette(self, value: str | SEQUENCE):
+    def palette(self, value: str | Sequence):
         if isinstance(value, str) and not hasattr(px.colors.qualitative, value):
             raise ValueError(
                 f"Invalid value for the palette parameter, got {value}. Choose "
@@ -375,12 +375,12 @@ class BasePlot:
         self._aesthetics.palette = value
 
     @property
-    def title_fontsize(self) -> INT:
+    def title_fontsize(self) -> Int:
         """Fontsize for the plot's title."""
         return self._aesthetics.title_fontsize
 
     @title_fontsize.setter
-    def title_fontsize(self, value: INT):
+    def title_fontsize(self, value: Int):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the title_fontsize parameter. "
@@ -390,12 +390,12 @@ class BasePlot:
         self._aesthetics.title_fontsize = value
 
     @property
-    def label_fontsize(self) -> INT:
+    def label_fontsize(self) -> Int:
         """Fontsize for the labels, legend and hover information."""
         return self._aesthetics.label_fontsize
 
     @label_fontsize.setter
-    def label_fontsize(self, value: INT):
+    def label_fontsize(self, value: Int):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the label_fontsize parameter. "
@@ -405,12 +405,12 @@ class BasePlot:
         self._aesthetics.label_fontsize = value
 
     @property
-    def tick_fontsize(self) -> INT:
+    def tick_fontsize(self) -> Int:
         """Fontsize for the ticks along the plot's axes."""
         return self._aesthetics.tick_fontsize
 
     @tick_fontsize.setter
-    def tick_fontsize(self, value: INT):
+    def tick_fontsize(self, value: Int):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the tick_fontsize parameter. "
@@ -420,12 +420,12 @@ class BasePlot:
         self._aesthetics.tick_fontsize = value
 
     @property
-    def line_width(self) -> INT:
+    def line_width(self) -> Int:
         """Width of the line plots."""
         return self._aesthetics.line_width
 
     @line_width.setter
-    def line_width(self, value: INT):
+    def line_width(self, value: Int):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the line_width parameter. "
@@ -435,12 +435,12 @@ class BasePlot:
         self._aesthetics.line_width = value
 
     @property
-    def marker_size(self) -> INT:
+    def marker_size(self) -> Int:
         """Size of the markers."""
         return self._aesthetics.marker_size
 
     @marker_size.setter
-    def marker_size(self, value: INT):
+    def marker_size(self, value: Int):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the marker_size parameter. "
@@ -452,10 +452,10 @@ class BasePlot:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _get_plot_index(df: DATAFRAME) -> INDEX:
+    def _get_plot_index(df: DataFrame) -> Index:
         """Return the dataset's index in a plottable format.
 
-        Plotly does not accept all index formats (e.g. pd.Period),
+        Plotly does not accept all index formats (e.g., pd.Period),
         thus use this utility method to convert to timestamp those
         indices that can, else return as is.
 
@@ -476,7 +476,7 @@ class BasePlot:
             return df.index
 
     @staticmethod
-    def _get_show(show: INT | None, model: MODEL | list[MODEL]) -> INT:
+    def _get_show(show: Int | None, model: Model | list[Model]) -> Int:
         """Check and return the number of features to show.
 
         Parameters
@@ -506,8 +506,8 @@ class BasePlot:
 
     @staticmethod
     def _get_hyperparams(
-        params: str | slice | SEQUENCE | None,
-        model: MODEL,
+        params: str | slice | Sequence | None,
+        model: Model,
     ) -> list[str]:
         """Check and return a model's hyperparameters.
 
@@ -534,7 +534,7 @@ class BasePlot:
         else:
             hyperparameters = []
             for param in lst(params):
-                if isinstance(param, INT_TYPES):
+                if isinstance(param, IntTypes):
                     hyperparameters.append(list(model._ht["distributions"])[param])
                 elif isinstance(param, str):
                     for p in param.split("+"):
@@ -554,9 +554,9 @@ class BasePlot:
 
     def _get_metric(
         self,
-        metric: INT | str | SEQUENCE | None,
-        max_one: BOOL,
-    ) -> INT | str | list[INT | str]:
+        metric: Int | str | Sequence | None,
+        max_one: Bool,
+    ) -> Int | str | list[Int | str]:
         """Check and return the provided metric index.
 
         Parameters
@@ -579,7 +579,7 @@ class BasePlot:
         else:
             inc = []
             for met in lst(metric):
-                if isinstance(met, INT_TYPES):
+                if isinstance(met, IntTypes):
                     if 0 <= met < len(self._metric):
                         inc.append(met)
                     else:
@@ -610,9 +610,9 @@ class BasePlot:
 
     def _get_set(
         self,
-        dataset: str | SEQUENCE,
-        max_one: BOOL,
-        allow_holdout: BOOL = True,
+        dataset: str | Sequence,
+        max_one: Bool,
+        allow_holdout: Bool = True,
     ) -> str | list[str]:
         """Check and return the provided data set.
 
@@ -696,7 +696,7 @@ class BasePlot:
         """Draw a line.
 
         Unify the style to draw a line, where parent and child
-        (e.g. model - data set or column - distribution) keep the
+        (e.g., model - data set or column - distribution) keep the
         same style (color or dash). A legendgroup title is only added
         when there is a child element.
 
@@ -743,7 +743,7 @@ class BasePlot:
         )
 
     @staticmethod
-    def _draw_straight_line(y: SCALAR | str, xaxis: str, yaxis: str):
+    def _draw_straight_line(y: Scalar | str, xaxis: str, yaxis: str):
         """Draw a line across the axis.
 
         The line can be either horizontal or diagonal. The line should
@@ -982,16 +982,16 @@ class BasePlot:
     @composed(contextmanager, crash)
     def canvas(
         self,
-        rows: INT = 1,
-        cols: INT = 2,
+        rows: Int = 1,
+        cols: Int = 2,
         *,
-        horizontal_spacing: FLOAT = 0.05,
-        vertical_spacing: FLOAT = 0.07,
+        horizontal_spacing: Float = 0.05,
+        vertical_spacing: Float = 0.07,
         title: str | dict | None = None,
         legend: str | dict | None = "out",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
-        display: BOOL = True,
+        display: Bool = True,
     ):
         """Create a figure with multiple plots.
 

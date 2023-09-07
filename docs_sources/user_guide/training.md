@@ -35,7 +35,7 @@ directly. Instead, every approach can be called directly from atom through
 the [run][atomclassifier-run], [successive_halving][atomclassifier-successive_halving]
 and [train_sizing][atomclassifier-train_sizing] methods respectively.
 
-Models are called through their [acronyms][models], e.g. `#!python atom.run(models="RF")`
+Models are called through their [acronyms][models], e.g., `#!python atom.run(models="RF")`
 will train a [RandomForest][]. If you want to run the same model multiple
 times, add a tag after the acronym to differentiate them. the tag must be 
 separated from the accronym by an underscore.
@@ -101,7 +101,7 @@ sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
 case-insensitive and can be used in the [`metric`][directclassifier-metric]
-parameter instead of the scorer's full name, e.g. `#!python atom.run("LR", metric="BA")`
+parameter instead of the scorer's full name, e.g., `#!python atom.run("LR", metric="BA")`
 uses `balanced_accuracy`. The available acronyms are:
 
 * "AP" for "average_precision"
@@ -140,7 +140,7 @@ tasks.
 Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the `metric` parameter with a list of
-desired metrics, e.g. `#!python atom.run("LDA", metric=["r2", "mse"])`.
+desired metrics, e.g., `#!python atom.run("LDA", metric=["r2", "mse"])`.
 
 When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
@@ -153,7 +153,7 @@ model.
     * The [`winning`][atomclassifier-winner] model is retrieved comparing only
       the main metric.
     * Some plots let you choose which of the metrics in a multi-metric run
-      to show using the `metric` parameter, e.g. [plot_results][].
+      to show using the `metric` parameter, e.g., [plot_results][].
 
 <br>
 
@@ -470,7 +470,7 @@ where the process is repeated. This continues until only one model
 remains, which is fitted on the complete dataset. Beware that a model's
 performance can depend greatly on the amount of data on which it is
 trained. For this reason, we recommend only to use this technique with
-similar models, e.g. only using tree-based models.
+similar models, e.g., only using tree-based models.
 
 Run successive halving from atom via the [successive_halving][atomclassifier-successive_halving]
 method. Consecutive runs of the same model are saved with the model's

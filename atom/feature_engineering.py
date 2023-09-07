@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the feature engineering transformers.
 
@@ -16,6 +16,7 @@ from random import sample
 from typing import Callable, Literal
 
 import featuretools as ft
+import joblib
 import numpy as np
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
@@ -31,15 +32,14 @@ from zoofs import (
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
-import joblib
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
-    BACKEND, BOOL, DATAFRAME, ENGINE, ESTIMATOR, FEATURES, FLOAT, FS_STRATS,
-    INT, INT_TYPES, OPERATORS, SCALAR, SEQUENCE, SEQUENCE_TYPES, SERIES_TYPES,
-    TARGET,
+    Backend, Bool, DataFrame, Engine, Estimator, Features,
+    FeatureSelectionStrats, Float, Int, IntTypes, Operators, Scalar, Sequence,
+    SequenceTypes, SeriesTypes, Target,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, check_scaling, composed, crash,
@@ -71,7 +71,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     features: str or sequence, default=("day", "month", "year")
         Features to create from the datetime columns. Note that
-        created features with zero variance (e.g. the feature hour
+        created features with zero variance (e.g., the feature hour
         in a column that only contains dates) are ignored. Allowed
         values are datetime attributes from `pandas.Series.dt`.
 
@@ -165,11 +165,11 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        features: str | SEQUENCE = ("day", "month", "year"),
-        fmt: str | SEQUENCE | None = None,
+        features: str | Sequence = ("day", "month", "year"),
+        fmt: str | Sequence | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
-        drop_columns: BOOL = True,
+        drop_columns: Bool = True,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
@@ -180,7 +180,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
 
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Extract the new features.
 
         Parameters
@@ -209,7 +209,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 col_dt = column
                 self._log(f" --> Extracting features from column {name}.", 1)
             else:
-                fmt = self.fmt[i] if isinstance(self.fmt, SEQUENCE_TYPES) else self.fmt
+                fmt = self.fmt[i] if isinstance(self.fmt, SequenceTypes) else self.fmt
                 col_dt = pd.to_datetime(
                     arg=column,
                     errors="coerce",  # Converts to NaT if he can't format
@@ -238,7 +238,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
                 # Skip if the information is not present in the format
-                if not isinstance(values, SERIES_TYPES):
+                if not isinstance(values, SeriesTypes):
                     self._log(
                         f"   --> Extracting feature {fx} failed. "
                         "Result is not a Series.dt.", 2
@@ -357,13 +357,13 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    gfg: [SymbolicTransformer][]
-        Object used to calculate the genetic features. Only for the
-        gfg strategy.
+    gfg_: [SymbolicTransformer][]
+        Object used to calculate the genetic features. Only available
+        when strategy="gfg".
 
-    genetic_features: pd.DataFrame
-        Information on the newly created non-linear features. Only for
-        the gfg strategy. Columns include:
+    genetic_features_: pd.DataFrame
+        Information on the newly created non-linear features. Only
+        available when strategy="gfg". Columns include:
 
         - **name:** Name of the feature (generated automatically).
         - **description:** Operators used to create this feature.
@@ -420,12 +420,12 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: Literal["dfs", "gfg"] = "dfs",
         *,
-        n_features: INT | None = None,
-        operators: OPERATORS | SEQUENCE | None = None,
-        n_jobs: INT = 1,
+        n_features: Int | None = None,
+        operators: Operators | Sequence | None = None,
+        n_jobs: Int = 1,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -439,12 +439,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.operators = operators
         self.kwargs = kwargs
 
-        self.genetic_features = None
-        self._dfs = None
-        self._is_fitted = False
-
     @composed(crash, method_to_log)
-    def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureGenerator:
+    def fit(self, X: Features, y: Target | None = None) -> FeatureGenerator:
         """Fit to data.
 
         Parameters
@@ -458,6 +454,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
+            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
@@ -531,7 +528,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             kwargs = self.kwargs.copy()  # Copy in case of repeated fit
             hall_of_fame = kwargs.pop("hall_of_fame", max(400, self.n_features or 400))
-            self.gfg = SymbolicTransformer(
+            self.gfg_ = SymbolicTransformer(
                 population_size=kwargs.pop("population_size", 2000),
                 hall_of_fame=hall_of_fame,
                 n_components=hall_of_fame,
@@ -545,11 +542,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 **kwargs,
             ).fit(X, y)
 
-        self._is_fitted = True
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Generate new features.
 
         Parameters
@@ -621,7 +617,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                         counter += 1
 
             self._log(f" --> {len(df)} new features were added.", 2)
-            self.genetic_features = df.reset_index(drop=True)
+            self.genetic_features_ = df.reset_index(drop=True)
 
         return X
 
@@ -641,7 +637,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     !!! tip
         Use a regex pattern with the `groups` parameter to select
-        groups easier, e.g. `atom.feature_grouping({"group1": "var_.+")`
+        groups easier, e.g., `atom.feature_grouping({"group1": "var_.+")`
         to select all features that start with `var_`.
 
     Parameters
@@ -673,7 +669,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    groups: dict
+    groups_: dict
         Names and features of every created group.
 
     feature_names_in_: np.array
@@ -726,10 +722,10 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        group: dict[str, INT | str | SEQUENCE],
+        group: dict[str, Int | str | Sequence],
         *,
-        operators: str | SEQUENCE | None = None,
-        drop_columns: BOOL = True,
+        operators: str | Sequence | None = None,
+        drop_columns: Bool = True,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
@@ -737,10 +733,9 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self.group = group
         self.operators = operators
         self.drop_columns = drop_columns
-        self.groups = defaultdict(list)
 
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Group features.
 
         Parameters
@@ -762,10 +757,10 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self._log("Grouping features...", 1)
 
         # Make the groups
-        self.groups = defaultdict(list)
+        self.groups_ = defaultdict(list)
         for name, group in self.group.items():
             for col in lst(group):
-                if isinstance(col, INT_TYPES):
+                if isinstance(col, IntTypes):
                     try:
                         self.groups[name].append(X.columns[col])
                     except IndexError:
@@ -925,7 +920,7 @@ class FeatureSelector(
           either a `feature_importances_` or `coef_` attribute after
           fitting. You can use one of the [predefined models][]. Add
           `_class` or `_reg` after the model's  name to specify a
-          classification or regression task, e.g. `solver="LGB_reg"`
+          classification or regression task, e.g., `solver="LGB_reg"`
           (not necessary if called from atom). No default option.
 
     n_features: int, float or None, default=None
@@ -1036,15 +1031,15 @@ class FeatureSelector(
 
     Attributes
     ----------
-    collinear: pd.DataFrame
+    collinear_: pd.DataFrame
         Information on the removed collinear features. Columns include:
 
         - **drop:** Name of the dropped feature.
         - **corr_feature:** Names of the correlated features.
         - **corr_value:** Corresponding correlation coefficients.
 
-    [strategy]: sklearn transformer
-        Object used to transform the data, e.g. `fs.pca` for the pca
+    [strategy]_: sklearn transformer
+        Object used to transform the data, e.g., `fs.pca` for the pca
         strategy.
 
     feature_names_in_: np.array
@@ -1098,20 +1093,20 @@ class FeatureSelector(
 
     def __init__(
         self,
-        strategy: FS_STRATS | None = None,
+        strategy: FeatureSelectionStrats | None = None,
         *,
-        solver: str | Callable[..., SEQUENCE | SEQUENCE] | ESTIMATOR | None = None,
-        n_features: SCALAR | None = None,
-        min_repeated: SCALAR | None = 2,
-        max_repeated: SCALAR | None = 1.0,
-        max_correlation: FLOAT | None = 1.0,
-        n_jobs: INT = 1,
+        solver: str | Callable[..., Sequence | Sequence] | Estimator | None = None,
+        n_features: Scalar | None = None,
+        min_repeated: Scalar | None = 2,
+        max_repeated: Scalar | None = 1.0,
+        max_correlation: Float | None = 1.0,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -1131,19 +1126,8 @@ class FeatureSelector(
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
-        self.collinear = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
-        self.scaler = None
-
-        self._multioutput = None
-        self._n_features = None
-        self._kwargs = kwargs.copy()
-        self._high_variance = {}
-        self._low_variance = {}
-        self._estimator = None
-        self._is_fitted = False
-
     @composed(crash, method_to_log)
-    def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureSelector:
+    def fit(self, X: Features, y: Target | None = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
         The univariate, sfm (when model is not fitted), sfs, rfe and
@@ -1161,6 +1145,7 @@ class FeatureSelector(
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
+            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
@@ -1194,6 +1179,14 @@ class FeatureSelector(
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
+
+        self.collinear_ = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
+        self.scaler = None
+
+        kwargs = self.kwargs.copy()
+        self._high_variance = {}
+        self._low_variance = {}
+        self._n_features = None
 
         strategies = CustomDict(
             univariate="SelectKBest",
@@ -1250,9 +1243,9 @@ class FeatureSelector(
                     solver = self.solver
 
         elif self.kwargs:
-            kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
+            kw = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
             raise ValueError(
-                f"Keyword arguments ({kwargs}) are specified for "
+                f"Keyword arguments ({kw}) are specified for "
                 "the strategy estimator but no strategy is selected."
             )
 
@@ -1435,19 +1428,19 @@ class FeatureSelector(
         elif self.strategy.lower() == "sfm":
             # If any of these attr exists, model is already fitted
             if any(hasattr(solver, a) for a in ("coef_", "feature_importances_")):
-                prefit = self._kwargs.pop("prefit", True)
+                prefit = kwargs.pop("prefit", True)
             else:
                 prefit = False
 
             # If threshold is not specified, select only based on _n_features
             if not self.kwargs.get("threshold"):
-                self._kwargs["threshold"] = -np.inf
+                kwargs["threshold"] = -np.inf
 
             self._estimator = SelectFromModel(
                 estimator=solver,
                 max_features=self._n_features,
                 prefit=prefit,
-                **self._kwargs,
+                **kwargs,
             )
             if prefit:
                 if list(solver.feature_names_in_) != list(X.columns):
@@ -1466,13 +1459,13 @@ class FeatureSelector(
                 check_y()
 
                 if self.kwargs.get("scoring"):
-                    self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+                    kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
                 self._estimator = SequentialFeatureSelector(
                     estimator=solver,
                     n_features_to_select=self._n_features,
                     n_jobs=self.n_jobs,
-                    **self._kwargs,
+                    **kwargs,
                 )
 
             elif self.strategy.lower() == "rfe":
@@ -1481,14 +1474,14 @@ class FeatureSelector(
                 self._estimator = RFE(
                     estimator=solver,
                     n_features_to_select=self._n_features,
-                    **self._kwargs,
+                    **kwargs,
                 )
 
             elif self.strategy.lower() == "rfecv":
                 check_y()
 
                 if self.kwargs.get("scoring"):
-                    self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+                    kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
                 # Invert n_features to select them all (default option)
                 if self._n_features == X.shape[1]:
@@ -1498,7 +1491,7 @@ class FeatureSelector(
                     estimator=solver,
                     min_features_to_select=self._n_features,
                     n_jobs=self.n_jobs,
-                    **self._kwargs,
+                    **kwargs,
                 )
 
             # Use parallelization backend
@@ -1509,7 +1502,7 @@ class FeatureSelector(
             check_y()
 
             # Either use a provided validation set or cross-validation over X
-            if "X_valid" in (kwargs := self.kwargs.copy()):
+            if "X_valid" in kwargs:
                 if "y_valid" in kwargs:
                     X_valid, y_valid = self._prepare_input(
                         kwargs.pop("X_valid"), kwargs.pop("y_valid")
@@ -1553,13 +1546,12 @@ class FeatureSelector(
             )
 
         # Add the strategy estimator as attribute to the class
-        setattr(self, self.strategy.lower(), self._estimator)
+        setattr(self, f"{self.strategy.lower()}_", self._estimator)
 
-        self._is_fitted = True
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Transform the data.
 
         Parameters

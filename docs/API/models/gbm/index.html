@@ -3381,7 +3381,7 @@ instances. To visualize the pipeline, use the <a class="autorefs autorefs-intern
 method.</p>
 <p></div><a id='gradientboostingmachine-mapping'></a><strong>mapping: dict</strong><br><div markdown class='param'>Encoded values and their respective mapped values.</p>
 <p>The column name is the key to its mapping dictionary. Only for
-columns mapped to a single column (e.g. Ordinal, Leave-one-out,
+columns mapped to a single column (e.g., Ordinal, Leave-one-out,
 etc...).</div><a id='gradientboostingmachine-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.</div><a id='gradientboostingmachine-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.</div><a id='gradientboostingmachine-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.</div><a id='gradientboostingmachine-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.</div><a id='gradientboostingmachine-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).</div><a id='gradientboostingmachine-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.</div><a id='gradientboostingmachine-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='gradientboostingmachine-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.</div><a id='gradientboostingmachine-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='gradientboostingmachine-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='gradientboostingmachine-columns'></a><strong>columns: index</strong><br><div markdown class='param'>Name of all the columns.</div><a id='gradientboostingmachine-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='gradientboostingmachine-features'></a><strong>features: index</strong><br><div markdown class='param'>Name of the features.</div><a id='gradientboostingmachine-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='gradientboostingmachine-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).</div></td></tr></p>
 </table>
 <p><br></p>
@@ -3404,7 +3404,7 @@ the corresponding run also changes.</div><a id='gradientboostingmachine-study'><
 <p>For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, the best trial is the trial that
 performed best on the main metric. Use the property's <code>@setter</code>
 to change the best trial. See [here][example-hyperparameter-tuning]
-an example.</div><a id='gradientboostingmachine-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#gradientboostingmachine-best_trial">best trial</a>.</div><a id='gradientboostingmachine-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#gradientboostingmachine-best_trial">best trial</a>.</div><a id='gradientboostingmachine-time_ht'></a><strong>time_ht: float | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='gradientboostingmachine-estimator'></a><strong>estimator: PREDICTOR</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='gradientboostingmachine-score_train'></a><strong>score_train: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='gradientboostingmachine-score_test'></a><strong>score_test: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='gradientboostingmachine-score_holdout'></a><strong>score_holdout: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='gradientboostingmachine-time_fit'></a><strong>time_fit: float</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='gradientboostingmachine-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
+an example.</div><a id='gradientboostingmachine-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#gradientboostingmachine-best_trial">best trial</a>.</div><a id='gradientboostingmachine-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#gradientboostingmachine-best_trial">best trial</a>.</div><a id='gradientboostingmachine-time_ht'></a><strong>time_ht: float | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='gradientboostingmachine-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='gradientboostingmachine-score_train'></a><strong>score_train: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='gradientboostingmachine-score_test'></a><strong>score_test: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='gradientboostingmachine-score_holdout'></a><strong>score_holdout: SCALAR | list[SCALAR]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='gradientboostingmachine-time_fit'></a><strong>time_fit: float</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='gradientboostingmachine-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
 <p>The dataframe has shape=(n_bootstrap, metric) and shows the
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
@@ -3823,7 +3823,7 @@ Target column corresponding to X.</p>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
 </ul>
@@ -3962,7 +3962,7 @@ Target column corresponding to X.</p>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput
   tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
@@ -4022,7 +4022,7 @@ Target column corresponding to X.</p>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>If sequence: Target array with shape=(n_samples,) or
+<li>If sequence: Target column with shape=(n_samples,) or
   sequence of column names or positions for multioutput tasks.</li>
 <li>If dataframe: Target columns for multioutput tasks.</li>
 </ul>

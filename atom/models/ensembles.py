@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing all ensemble models.
 
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from atom.basemodel import ClassRegModel
 from atom.pipeline import Pipeline
-from atom.utils.types import PREDICTOR
+from atom.utils.types import Predictor
 from atom.utils.utils import ClassMap, CustomDict, sign
 
 
@@ -44,7 +44,7 @@ class Stacking(ClassRegModel):
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
         Returns
@@ -109,7 +109,7 @@ class Voting(ClassRegModel):
                         f"a predict_proba method, got {m._fullname}."
                     )
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
         Returns

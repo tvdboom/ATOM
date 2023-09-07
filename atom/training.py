@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the training classes.
 
@@ -21,8 +21,8 @@ from sklearn.base import BaseEstimator
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    BACKEND, BOOL, ENGINE, INT, INT_TYPES, METRIC_SELECTOR, PREDICTOR,
-    SEQUENCE, WARNINGS,
+    Backend, Bool, Engine, Int, IntTypes, MetricSelector, Predictor, Sequence,
+    Warnings,
 )
 from atom.utils.utils import (
     ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
@@ -213,7 +213,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self._log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         # Convert integer train_sizes to sequence
-        if isinstance(self.train_sizes, INT_TYPES):
+        if isinstance(self.train_sizes, IntTypes):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
         models = ClassMap()
@@ -402,7 +402,7 @@ class DirectClassifier(Direct):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -451,25 +451,25 @@ class DirectClassifier(Direct):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | dict | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | WARNINGS = False,
+        warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "class"
         super().__init__(
@@ -630,7 +630,7 @@ class DirectForecaster(Direct):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -676,25 +676,25 @@ class DirectForecaster(Direct):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | dict | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | WARNINGS = False,
+        warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "fc"
         super().__init__(
@@ -855,7 +855,7 @@ class DirectRegressor(Direct):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -904,25 +904,25 @@ class DirectRegressor(Direct):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | dict | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: Bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "reg"
         super().__init__(
@@ -1090,7 +1090,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -1139,26 +1139,26 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        skip_runs: INT = 0,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        skip_runs: Int = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
-        parallel: BOOL = False,
+        n_bootstrap: Int | dict | Sequence = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
-        warnings: BOOL | str = False,
+        warnings: Bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "class"
         super().__init__(
@@ -1322,7 +1322,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -1368,26 +1368,26 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        skip_runs: INT = 0,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        skip_runs: Int = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
+        n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "fc"
         super().__init__(
@@ -1551,7 +1551,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -1600,26 +1600,26 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        skip_runs: INT = 0,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        skip_runs: Int = 0,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
+        n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "reg"
         super().__init__(
@@ -1792,7 +1792,7 @@ class TrainSizingClassifier(TrainSizing):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -1841,26 +1841,26 @@ class TrainSizingClassifier(TrainSizing):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        train_sizes: INT | SEQUENCE = 5,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        train_sizes: Int | Sequence = 5,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
+        n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "class"
         super().__init__(
@@ -2029,7 +2029,7 @@ class TrainSizingForecaster(TrainSizing):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -2075,26 +2075,26 @@ class TrainSizingForecaster(TrainSizing):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        train_sizes: INT | SEQUENCE = 5,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        train_sizes: Int | Sequence = 5,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
+        n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "fc"
         super().__init__(
@@ -2263,7 +2263,7 @@ class TrainSizingRegressor(TrainSizing):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
-        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        Changing this parameter affects the `PYTHONWarnings` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
@@ -2312,26 +2312,26 @@ class TrainSizingRegressor(TrainSizing):
 
     def __init__(
         self,
-        models: str | PREDICTOR | SEQUENCE | None = None,
-        metric: METRIC_SELECTOR = None,
+        models: str | Predictor | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
-        train_sizes: INT | SEQUENCE = 5,
-        est_params: dict | SEQUENCE | None = None,
-        n_trials: INT | dict | SEQUENCE = 0,
+        train_sizes: Int | Sequence = 5,
+        est_params: dict | Sequence | None = None,
+        n_trials: Int | dict | Sequence = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT | dict | SEQUENCE = 0,
+        n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: INT = 1,
+        n_jobs: Int = 1,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
-        backend: BACKEND = "loky",
-        memory: BOOL | str | Path | Memory = True,
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        backend: Backend = "loky",
+        memory: Bool | str | Path | Memory = True,
         verbose: Literal[0, 1, 2] = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT | None = None,
+        random_state: Int | None = None,
     ):
         self.goal = "reg"
         super().__init__(

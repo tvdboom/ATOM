@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Unit tests for branch.py
 
@@ -38,7 +38,7 @@ def test_init_attrs_are_passed():
 
 
 def test_repr():
-    """Assert that the __str__  method returns the list of available branches."""
+    """Assert that the __repr__  method returns the list of available branches."""
     branch = Branch(name="master")
     assert str(branch) == "Branch(master)"
 

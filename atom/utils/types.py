@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing utilities for typing analysis.
 
@@ -23,12 +23,12 @@ from beartype.vale import Is
 # Variable types for isinstance ==================================== >>
 
 # TODO: From Python 3.10, isinstance accepts pipe operator (change by then)
-BOOL_TYPES = (bool, np.bool_)
-INT_TYPES = (int, np.integer)
-FLOAT_TYPES = (float, np.floating)
-SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
-INDEX_TYPES = (pd.Index, md.Index)
-TS_INDEX_TYPES = (
+BoolTypes = (bool, np.bool_)
+IntTypes = (int, np.integer)
+FloatTypes = (float, np.floating)
+ScalarTypes = (*IntTypes, *FloatTypes)
+IndexTypes = (pd.Index, md.Index)
+TSIndexTypes = (
     pd.PeriodIndex,
     md.PeriodIndex,
     pd.DatetimeIndex,
@@ -36,79 +36,18 @@ TS_INDEX_TYPES = (
     pd.TimedeltaIndex,
     md.TimedeltaIndex,
 )
-SERIES_TYPES = (pd.Series, md.Series)
-DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
-PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
-SEQUENCE_TYPES = (list, tuple, np.ndarray, *INDEX_TYPES, *SERIES_TYPES)
-
-
-# Variable types for type hinting ================================== >>
-
-T = TypeVar("T")
-
-BOOL = Union[BOOL_TYPES]
-INT = Union[INT_TYPES]
-FLOAT = Union[FLOAT_TYPES]
-SCALAR = Union[SCALAR_TYPES]
-INDEX = Union[INDEX_TYPES]
-SERIES = Union[SERIES_TYPES]
-DATAFRAME = Union[DATAFRAME_TYPES]
-PANDAS = Union[PANDAS_TYPES]
-SEQUENCE = Union[SEQUENCE_TYPES]
-
-# Types for X and y
-FEATURES = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DATAFRAME]
-TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
-
-DATASETS = Literal[
-    "dataset", "train", "test", "holdout", "X", "y", "X_train",
-    "X_test", "X_holdout", "y_train", "y_test", "y_holdout",
-]
-
-# Selection of rows or columns by name or position
-SLICE = Union[INT, str, slice, SEQUENCE]
-
-# Assignment of index or stratify parameter
-INDEX_SELECTOR = Union[bool, INT, str, SEQUENCE]
-
-# Types to initialize a metric
-METRIC_SELECTOR = (str, Callable[..., SCALAR], SEQUENCE, None)
-
-# Allowed values for method selection
-METHOD_SELECTOR = Literal["predict", "predict_proba", "decision_function", "thresh"]
-
-# Allowed values for BaseTransformer parameter
-BACKEND = Literal["loky", "multiprocessing", "threading", "ray"]
-WARNINGS = Literal["default", "error", "ignore", "always", "module", "once"]
-SEVERITY = Literal["debug", "info", "warning", "error", "critical"]
-
-# Data cleaning parameters
-STRAT_NUM = SCALAR | Literal["drop", "mean", "median", "knn", "most_frequent"]
-DISCRETIZER_STRATS = Literal["uniform", "quantile", "kmeans", "custom"]
-PRUNER_STRATS = Literal[
-    "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"
-]
-SCALER_STRATS = Literal["standard", "minmax", "maxabs", "robust"]
-
-# Feature engineering parameters
-OPERATORS = Literal["add", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
-FS_STRATS = Literal[
-    "univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "hho", "gwo", "dfo", "go"
-]
-
-# Plotting parameters
-LEGEND = Literal[
-    "upper left", "lower left", "upper right", "lower right", "upper center",
-    "lower center", "center left", "center right", "center", "out",
-]
-
-# Mlflow stages
-STAGES = Literal["None", "Staging", "Production", "Archived"]
+SeriesTypes = (pd.Series, md.Series)
+DataFrameTypes = (pd.DataFrame, md.DataFrame)
+PandasTypes = (*SeriesTypes, *DataFrameTypes)
+SequenceTypes = (list, tuple, np.ndarray, *IndexTypes, *SeriesTypes)
 
 
 # Classes for type hinting ========================================= >>
 
-class ENGINE(TypedDict, total=False):
+T = TypeVar("T")
+
+
+class Engine(TypedDict, total=False):
     """Types for the `engine` parameter."""
     data: Literal["numpy", "pyarrow", "modin"]
     estimator: Literal["sklearn", "sklearnex", "cuml"]
@@ -118,10 +57,10 @@ class SeqProtocol(Protocol[T]):
     """Protocol for all sequences."""
     def __iter__(self) -> Iterable[T]: ...
     def __getitem__(self, item) -> T: ...
-    def __len__(self) -> INT: ...
+    def __len__(self) -> Int: ...
 
 
-class SEQUENCE:
+class Sequence:
     """Type hint factory for sequences with subscripted types.
 
     Dynamically creates new `Annotated[SeqProtocol[...], ...]` type
@@ -129,7 +68,7 @@ class SEQUENCE:
 
     Parameters
     ----------
-    X : object
+    X: object
         Arbitrary child type hint with which to subscript the
         `SeqProtocol` protocol.
 
@@ -149,38 +88,99 @@ class SEQUENCE:
 
 
 @runtime_checkable
-class SCORER(Protocol):
+class Scorer(Protocol):
     """Protocol for all scorers."""
     def _score(self, method_caller, clf, X, y, sample_weight=None): ...
 
 
 @runtime_checkable
-class TRANSFORMER(Protocol):
+class Transformer(Protocol):
     """Protocol for all predictors."""
     def transform(self, **params): ...
 
 
 @runtime_checkable
-class PREDICTOR(Protocol):
+class Predictor(Protocol):
     """Protocol for all predictors."""
     def fit(self, **params): ...
     def predict(self, **params): ...
 
 
 @runtime_checkable
-class ESTIMATOR(Protocol):
+class Estimator(Protocol):
     """Protocol for all estimators."""
     def fit(self, **params): ...
 
 
 @runtime_checkable
-class MODEL(Protocol):
+class Model(Protocol):
     """Protocol for all models."""
     def _est_class(self): ...
     def _get_est(self, **params): ...
 
 
 @runtime_checkable
-class RUNNER(Protocol):
+class Runner(Protocol):
     """Protocol for all runners."""
     def run(self, **params): ...
+
+
+# Variable types for type hinting ================================== >>
+
+Bool = Union[BoolTypes]
+Int = Union[IntTypes]
+Float = Union[FloatTypes]
+Scalar = Union[ScalarTypes]
+Index = Union[IndexTypes]
+Series = Union[SeriesTypes]
+DataFrame = Union[DataFrameTypes]
+Pandas = Union[PandasTypes]
+
+# Types for X and y
+Features = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DataFrame]
+Target = Union[Int, str, dict, Sequence, DataFrame]
+
+Datasets = Literal[
+    "dataset", "train", "test", "holdout", "X", "y", "X_train",
+    "X_test", "X_holdout", "y_train", "y_test", "y_holdout",
+]
+
+# Selection of rows or columns by name or position
+SLICE = Union[Int, str, slice, Sequence]
+
+# Assignment of index or stratify parameter
+IndexSelector = Union[Bool, Int, str, Sequence]
+
+# Types to initialize a metric
+MetricSelector = (str, Callable[..., Scalar], Sequence, None)
+
+# Allowed values for method selection
+MethodSelector = Literal["predict", "predict_proba", "decision_function", "thresh"]
+
+# Allowed values for BaseTransformer parameter
+Backend = Literal["loky", "multiprocessing", "threading", "ray"]
+Warnings = Literal["default", "error", "ignore", "always", "module", "once"]
+Severity = Literal["debug", "info", "warning", "error", "critical"]
+
+# Data cleaning parameters
+NumericalStrats = Scalar | Literal["drop", "mean", "median", "knn", "most_frequent"]
+DiscretizerStrats = Literal["uniform", "quantile", "kmeans", "custom"]
+PrunerStrats = Literal[
+    "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"
+]
+ScalerStrats = Literal["standard", "minmax", "maxabs", "robust"]
+
+# Feature engineering parameters
+Operators = Literal["add", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
+FeatureSelectionStrats = Literal[
+    "univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "hho", "gwo", "dfo", "go"
+]
+
+# Plotting parameters
+Legend = Literal[
+    "upper left", "lower left", "upper right", "lower right", "upper center",
+    "lower center", "center left", "center right", "center", "out",
+]
+
+# Mlflow stages
+Stages = Literal["None", "Staging", "Production", "Archived"]

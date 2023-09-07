@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the DataPlot class.
 
@@ -20,7 +20,7 @@ from scipy import stats
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
-from atom.utils.types import INT, LEGEND, SEQUENCE, SERIES, SLICE
+from atom.utils.types import SLICE, Int, Legend, Sequence, Series
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, lst, rnd,
 )
@@ -38,12 +38,12 @@ class DataPlot(BasePlot):
     @crash
     def plot_correlation(
         self,
-        columns: slice | SEQUENCE | None = None,
+        columns: slice | Sequence | None = None,
         method: str = "pearson",
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (800, 700),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (800, 700),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -173,12 +173,12 @@ class DataPlot(BasePlot):
     def plot_distribution(
         self,
         columns: SLICE = 0,
-        distributions: str | SEQUENCE | None = None,
-        show: INT | None = None,
+        distributions: str | Sequence | None = None,
+        show: Int | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -391,13 +391,13 @@ class DataPlot(BasePlot):
     @crash
     def plot_ngrams(
         self,
-        ngram: INT | str = "bigram",
+        ngram: Int | str = "bigram",
         index: SLICE | None = None,
-        show: INT = 10,
+        show: Int = 10,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] | None = None,
+        figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -488,7 +488,7 @@ class DataPlot(BasePlot):
 
         """
 
-        def get_text(column: SERIES) -> SERIES:
+        def get_text(column: Series) -> Series:
             """Get the complete corpus as sequence of tokens.
 
             Parameters
@@ -570,11 +570,11 @@ class DataPlot(BasePlot):
     def plot_qq(
         self,
         columns: SLICE = 0,
-        distributions: str | SEQUENCE = "norm",
+        distributions: str | Sequence = "norm",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[INT, INT] = (900, 600),
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -690,11 +690,11 @@ class DataPlot(BasePlot):
     @crash
     def plot_relationships(
         self,
-        columns: slice | SEQUENCE = (0, 1, 2),
+        columns: slice | Sequence = (0, 1, 2),
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (900, 900),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (900, 900),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -856,8 +856,8 @@ class DataPlot(BasePlot):
         index: SLICE | None = None,
         *,
         title: str | dict | None = None,
-        legend: LEGEND | dict | None = None,
-        figsize: tuple[INT, INT] = (900, 600),
+        legend: Legend | dict | None = None,
+        figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
         **kwargs,

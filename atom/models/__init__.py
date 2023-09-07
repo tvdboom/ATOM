@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module for models.
 
@@ -92,7 +92,7 @@ from atom.models.ts import (
     ARIMA, ETS, AutoARIMA, ExponentialSmoothing, NaiveForecaster,
     PolynomialTrend,
 )
-from atom.utils.types import PREDICTOR
+from atom.utils.types import Predictor
 from atom.utils.utils import ClassMap
 
 
@@ -196,12 +196,12 @@ class CustomModel(ClassRegModel):
         """Return the estimator's class."""
         return self._est
 
-    def _get_est(self, **params) -> PREDICTOR:
+    def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
         Returns
         -------
-        PREDICTOR
+        Predictor
             Estimator instance.
 
         """

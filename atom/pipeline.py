@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the ATOM's custom sklearn-like pipeline.
 
@@ -9,9 +9,10 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 from __future__ import annotations
 
-from typing import Generator
+from typing import Any, Generator
 
 import numpy as np
+from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as skPipeline
 from sklearn.pipeline import _final_estimator_has
@@ -20,13 +21,12 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
-    BOOL, DATAFRAME, ESTIMATOR, FEATURES, FLOAT, INT, PANDAS, SEQUENCE, TARGET,
+    Bool, DataFrame, Estimator, Features, Float, Int, Pandas, Sequence, Target,
 )
 from atom.utils.utils import (
-    check_is_fitted, fit_one, fit_transform_one, transform_one,
+    NotFittedError, check_is_fitted, fit_one, fit_transform_one, transform_one,
     variable_return,
 )
-from joblib import Memory
 
 
 class Pipeline(skPipeline):
@@ -55,26 +55,40 @@ class Pipeline(skPipeline):
 
     def __init__(
         self,
-        steps: list[tuple[str, ESTIMATOR]],
+        steps: list[tuple[str, Estimator]],
         *,
         memory: str | Memory | None = None,
-        verbose: BOOL = False,
+        verbose: Bool = False,
     ):
         super().__init__(steps, memory=memory, verbose=verbose)
-
-        # If all estimators are fitted, the Pipeline is fitted
-        self._is_fitted = False
-        if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
-            self._is_fitted = True
+        self._is_fitted = self.__sklearn_is_fitted__()
 
     def __bool__(self):
         return len(self.steps) > 0
+
+    def __contains__(self, item: str | Any):
+        if isinstance(item, str):
+            return item in (n for n, _ in self.steps)
+        else:
+            return item in (t for _, t in self.steps)
 
     def __getattr__(self, item: str):
         try:
             return getattr(self._final_estimator, item)
         except (AttributeError, IndexError):
             raise AttributeError(f"'Pipeline' object has no attribute '{item}'.")
+
+    def __sklearn_is_fitted__(self):
+        """Indicate whether the pipeline has been fitted."""
+        try:
+            # check if the last step of the pipeline is fitted
+            # we only check the last step since if the last step is fit, it
+            # means the previous steps should also be fit. This is faster than
+            # checking if every step of the pipeline is fit.
+            check_is_fitted(self.steps[-1][1])
+            return True
+        except (NotFittedError, IndexError):
+            return False
 
     @property
     def memory(self) -> Memory:
@@ -85,17 +99,17 @@ class Pipeline(skPipeline):
     def memory(self, value: str | Memory | None):
         """Create a new internal memory object."""
         self._memory = check_memory(value)
-        self._memory_fit = self._memory.cache(fit_transform_one)
-        self._memory_transform = self._memory.cache(transform_one)
+        self._mem_fit = self._memory.cache(fit_transform_one)
+        self._mem_transform = self._memory.cache(transform_one)
 
-    def _can_transform(self) -> BOOL:
+    def _can_transform(self) -> Bool:
         """Check if the pipeline can use the transform method."""
         return (
             self._final_estimator is None or self._final_estimator == "passthrough"
             or hasattr(self._final_estimator, "transform")
         )
 
-    def _can_inverse_transform(self) -> BOOL:
+    def _can_inverse_transform(self) -> Bool:
         """Check if the pipeline can use the transform method."""
         return all(
             est is None or est == "passthrough" or hasattr(est, "inverse_transform")
@@ -104,10 +118,10 @@ class Pipeline(skPipeline):
 
     def _iter(
         self,
-        with_final: BOOL = True,
-        filter_passthrough: BOOL = True,
-        filter_train_only: BOOL = True,
-    ) -> Generator[INT, str, ESTIMATOR]:
+        with_final: Bool = True,
+        filter_passthrough: Bool = True,
+        filter_train_only: Bool = True,
+    ) -> Generator[Int, str, Estimator]:
         """Generate (idx, name, estimator) tuples from self.steps.
 
         By default, estimators that are only applied on the training
@@ -146,10 +160,10 @@ class Pipeline(skPipeline):
 
     def _fit(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
+        X: Features | None = None,
+        y: Target | None = None,
         **fit_params_steps,
-    ) -> tuple[DATAFRAME | None, PANDAS | None]:
+    ) -> tuple[DataFrame | None, Pandas | None]:
         """Get data transformed through the pipeline.
 
         Parameters
@@ -188,7 +202,7 @@ class Pipeline(skPipeline):
 
             if hasattr(transformer, "transform"):
                 # Don't clone when caching is disabled to preserve backward compatibility
-                if self._memory_fit.__class__.__name__ == "NotMemorizedFunc":
+                if self._mem_fit.__class__.__name__ == "NotMemorizedFunc":
                     cloned = transformer
                 else:
                     cloned = clone(transformer)
@@ -199,7 +213,7 @@ class Pipeline(skPipeline):
                             setattr(cloned, attr, getattr(transformer, attr))
 
                 # Fit or load the current estimator from cache
-                X, y, fitted_transformer = self._memory_fit(
+                X, y, fitted_transformer = self._mem_fit(
                     transformer=cloned,
                     X=X,
                     y=y,
@@ -215,8 +229,8 @@ class Pipeline(skPipeline):
 
     def fit(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
+        X: Features | None = None,
+        y: Target | None = None,
         **fit_params,
     ) -> Pipeline:
         """Fit the pipeline.
@@ -257,10 +271,10 @@ class Pipeline(skPipeline):
     @available_if(_can_transform)
     def transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
+        X: Features | None = None,
+        y: Target | None = None,
         **kwargs,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform the data.
 
         Call `transform` on each transformer in the pipeline. The
@@ -297,16 +311,16 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(**kwargs):
-            X, y = self._memory_transform(transformer, X, y)
+            X, y = self._mem_transform(transformer, X, y)
 
         return variable_return(X, y)
 
     def fit_transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
+        X: Features | None = None,
+        y: Target | None = None,
         **fit_params,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Fit the pipeline and transform the data.
 
         Parameters
@@ -322,7 +336,8 @@ class Pipeline(skPipeline):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
@@ -354,9 +369,9 @@ class Pipeline(skPipeline):
     @available_if(_can_inverse_transform)
     def inverse_transform(
         self,
-        X: FEATURES | None = None,
-        y: TARGET | None = None,
-    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
+        X: Features | None = None,
+        y: Target | None = None,
+    ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the
@@ -374,7 +389,8 @@ class Pipeline(skPipeline):
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - If sequence: Target array with shape=(n_samples,) or
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
@@ -388,12 +404,12 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in reversed(list(self._iter())):
-            X, y = self._memory_transform(transformer, X, y, method="inverse_transform")
+            X, y = self._mem_transform(transformer, X, y, method="inverse_transform")
 
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: FEATURES, **predict_params) -> np.ndarray:
+    def predict(self, X: Features, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -415,12 +431,12 @@ class Pipeline(skPipeline):
 
         """
         for _, name, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].predict(X, **predict_params)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X: FEATURES) -> np.ndarray:
+    def predict_proba(self, X: Features) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
@@ -435,12 +451,12 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].predict_proba(X)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X: FEATURES) -> np.ndarray:
+    def predict_log_proba(self, X: Features) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
@@ -455,12 +471,12 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X: FEATURES) -> np.ndarray:
+    def decision_function(self, X: Features) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
@@ -475,17 +491,17 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = self._memory_transform(transformer, X)
+            X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].decision_function(X)
 
     @available_if(_final_estimator_has("score"))
     def score(
         self,
-        X: FEATURES,
-        y: TARGET,
-        sample_weight: SEQUENCE | None = None,
-    ) -> FLOAT:
+        X: Features,
+        y: Target,
+        sample_weight: Sequence | None = None,
+    ) -> Float:
         """Transform, then score of the final estimator.
 
         Parameters
@@ -508,6 +524,6 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, y = self._memory_transform(transformer, X, y)
+            X, y = self._mem_transform(transformer, X, y)
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)

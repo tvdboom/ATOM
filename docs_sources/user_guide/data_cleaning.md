@@ -11,12 +11,12 @@ classes to apply the most common transformations fast and easy.
     All of atom's data cleaning methods automatically adopt the relevant
     transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`)
     from atom. A different choice can be added as parameter to the method
-    call, e.g. `#!python atom.scale(verbose=2)`.
+    call, e.g., `#!python atom.scale(verbose=2)`.
 
 !!! note
     Like the [add][atomclassifier-add] method, the data cleaning methods
     accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `#!python atom.scale(columns=[0, 1])`.
+    dataset's features, e.g., `#!python atom.scale(columns=[0, 1])`.
 
 
 <br>
@@ -39,7 +39,7 @@ method.
 ## Standard data cleaning
 
 There are many data cleaning steps that are useful to perform on any
-dataset before modelling. These are general rules that apply almost
+dataset before modeling. These are general rules that apply almost
 on every use-case and every task. The [Cleaner][] class is a convenient
 tool to apply such steps. It can be accessed from atom through the
 [clean][atomclassifier-clean] method. Use the class' parameters to
@@ -123,11 +123,11 @@ through the [normalize][atomclassifier-normalize] method.
 
 ## Handling outliers
 
-When modelling, it is important to clean the data sample to ensure that
+When modeling, it is important to clean the data sample to ensure that
 the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
-learning modelling and model skill in general can be improved by 
+learning modeling and model skill in general can be improved by 
 understanding and even removing these outlier samples. The [Pruner][]
 class offers 7 different strategies to detect outliers (described
 hereunder). It can be accessed from atom through the [prune][atomclassifier-prune]

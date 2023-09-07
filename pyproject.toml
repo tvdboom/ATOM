@@ -9,7 +9,7 @@ authors = [{name = "Mavs", email = "m.524687@gmail.com"}]
 license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">=3.8"
-keywords = ["Python package", "Machine Learning", "Modelling", "Data Pipeline"]
+keywords = ["Python package", "Machine Learning", "Modeling", "Data Pipeline"]
 dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3.8",

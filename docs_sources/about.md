@@ -3,7 +3,7 @@
 
 ## What is it?
 
-Automated Tool for Optimized Modelling (ATOM) is an open-source
+Automated Tool for Optimized Modeling (ATOM) is an open-source
 Python package designed to help data scientists fasten up the
 exploration phase of their machine learning projects. ATOM is a
 low-code, easy-to-use library, capable of running experiments
@@ -93,7 +93,7 @@ deployment. Click on the icons to read more about its main functionalities.
 
 * Data scientists that want to fasten up the exploration phase of their machine
   learning projects.
-* Data scientists that want to run a simple modelling experiment without having
+* Data scientists that want to run a simple modeling experiment without having
   to spend too much time on coding.
 * Data scientists that are new to Python and are not (yet) familiar with all
   the relevant machine learning packages.

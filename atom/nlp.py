@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Tool for Optimized Modelling (ATOM)
+Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module containing the NLP transformers.
 
@@ -28,7 +28,7 @@ from sklearn.base import BaseEstimator
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    BOOL, DATAFRAME, ENGINE, FEATURES, SCALAR, SEQUENCE, TARGET,
+    Bool, DataFrame, Engine, Features, Scalar, Sequence, Target,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
@@ -113,7 +113,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    drops: pd.DataFrame
+    drops_: pd.DataFrame
         Encountered regex matches. The row indices correspond to
         the document index from which the occurrence was dropped.
 
@@ -175,19 +175,19 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        decode: BOOL = True,
-        lower_case: BOOL = True,
-        drop_email: BOOL = True,
+        decode: Bool = True,
+        lower_case: Bool = True,
+        drop_email: Bool = True,
         regex_email: str | None = None,
-        drop_url: BOOL = True,
+        drop_url: Bool = True,
         regex_url: str | None = None,
-        drop_html: BOOL = True,
+        drop_html: Bool = True,
         regex_html: str | None = None,
-        drop_emoji: BOOL = True,
+        drop_emoji: Bool = True,
         regex_emoji: str | None = None,
-        drop_number: BOOL = True,
+        drop_number: Bool = True,
         regex_number: str | None = None,
-        drop_punctuation: BOOL = True,
+        drop_punctuation: Bool = True,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
@@ -206,11 +206,8 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.regex_number = regex_number
         self.drop_punctuation = drop_punctuation
 
-        # Encountered regex occurrences
-        self.drops = pd.DataFrame()
-
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -355,7 +352,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             self._log(" --> Dropping punctuation from the text.", 2)
 
         # Convert all drops to one dataframe attribute
-        self.drops = pd.concat(drops.values(), axis=1)
+        self.drops_ = pd.concat(drops.values(), axis=1)
 
         # Drop empty tokens from every row
         if not isinstance(X[corpus].iat[0], str):
@@ -410,6 +407,14 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
+
+    Attributes
+    ----------
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
 
     See Also
     --------
@@ -476,10 +481,10 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        stopwords: BOOL | str = True,
-        custom_stopwords: SEQUENCE | None = None,
-        stem: BOOL | str = False,
-        lemmatize: BOOL = True,
+        stopwords: Bool | str = True,
+        custom_stopwords: Sequence | None = None,
+        stem: Bool | str = False,
+        lemmatize: Bool = True,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
     ):
@@ -490,7 +495,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.lemmatize = lemmatize
 
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Normalize the text.
 
         Parameters
@@ -581,7 +586,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Convert documents into sequences of words. Additionally,
     create n-grams (represented by words united with underscores,
-    e.g. "New_York") based on their frequency in the corpus. The
+    e.g., "New_York") based on their frequency in the corpus. The
     transformations are applied on the column named `corpus`. If
     there is no column with that name, an exception is raised.
 
@@ -626,14 +631,20 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    bigrams: pd.DataFrame
+    bigrams_: pd.DataFrame
         Created bigrams and their frequencies.
 
-    trigrams: pd.DataFrame
+    trigrams_: pd.DataFrame
         Created trigrams and their frequencies.
 
-    quadgrams: pd.DataFrame
+    quadgrams_: pd.DataFrame
         Created quadgrams and their frequencies.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
 
     See Also
     --------
@@ -695,9 +706,9 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        bigram_freq: SCALAR | None = None,
-        trigram_freq: SCALAR | None = None,
-        quadgram_freq: SCALAR | None = None,
+        bigram_freq: Scalar | None = None,
+        trigram_freq: Scalar | None = None,
+        quadgram_freq: Scalar | None = None,
         *,
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
@@ -707,12 +718,8 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.trigram_freq = trigram_freq
         self.quadgram_freq = quadgram_freq
 
-        self.bigrams = None
-        self.trigrams = None
-        self.quadgrams = None
-
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Tokenize the text.
 
         Parameters
@@ -794,7 +801,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 if rows:
                     # Sort ngrams by frequency and add the dataframe as attribute
                     df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
-                    setattr(self, attr, df.reset_index(drop=True))
+                    setattr(self, f"{attr}_", df.reset_index(drop=True))
 
                     self._log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
                 else:
@@ -873,9 +880,9 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    [strategy]: sklearn transformer
+    [strategy]_: sklearn transformer
         Estimator instance (lowercase strategy) used to vectorize the
-        corpus, e.g. `vectorizer.tfidf` for the tfidf strategy.
+        corpus, e.g., `vectorizer.tfidf` for the tfidf strategy.
 
     feature_names_in_: np.array
         Names of features seen during fit.
@@ -946,9 +953,9 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: Literal["bow", "tfidf", "hashing"] = "bow",
         *,
-        return_sparse: BOOL = True,
+        return_sparse: Bool = True,
         device: str = "cpu",
-        engine: ENGINE = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Literal[0, 1, 2] = 0,
         logger: str | Logger | None = None,
         **kwargs,
@@ -958,11 +965,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.return_sparse = return_sparse
         self.kwargs = kwargs
 
-        self._estimator = None
-        self._is_fitted = False
-
     @composed(crash, method_to_log)
-    def fit(self, X: FEATURES, y: TARGET | None = None) -> Vectorizer:
+    def fit(self, X: Features, y: Target | None = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
@@ -1006,13 +1010,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator.fit(X[corpus])
 
         # Add the estimator as attribute to the instance
-        setattr(self, self.strategy.lower(), self._estimator)
+        setattr(self, f"{self.strategy.lower()}_", self._estimator)
 
-        self._is_fitted = True
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
+    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
         """Vectorize the text.
 
         Parameters
@@ -1037,7 +1040,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._log("Vectorizing the corpus...", 1)
 
-        # Convert sequence of tokens to space separated string
+        # Convert a sequence of tokens to space-separated string
         if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 

@@ -20,12 +20,12 @@ example.
     All of atom's feature engineering methods automatically adopt the relevant
     transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
     atom. A different choice can be added as parameter to the method call,
-    e.g. `#!python atom.feature_selection("pca", n_features=10, random_state=2)`.
+    e.g., `#!python atom.feature_selection("pca", n_features=10, random_state=2)`.
 
 !!! note
     Like the [add][atomclassifier-add] method, the feature engineering
     methods accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `#!python atom.feature_selection("pca", 
+    dataset's features, e.g., `#!python atom.feature_selection("pca", 
     n_features=10, columns=slice(5, 15))`.
 
 <br>
@@ -37,13 +37,13 @@ by models since they are not strictly numerical. Encoding them as
 categorical features is not an option since the encoding does not
 capture the relationship between the different moments in time. The
 [FeatureExtractor][] class creates new features extracting datetime
-elements (e.g. day, month, year, hour...) from the columns. It can be
+elements (e.g., day, month, year, hour...) from the columns. It can be
 accessed from atom through the [feature_extraction][atomclassifier-feature_extraction]
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. `x0_day` for the day element of `x0`.
+they create, e.g., `x0_day` for the day element of `x0`.
 
-Note that many time features have a cyclic pattern, e.g. after Sunday
+Note that many time features have a cyclic pattern, e.g., after Sunday
 comes Monday. This means that if we would encode the days of the week
 from 0 to 6, we would lose that relation. A common method used to encode
 cyclical features is to transform the data into two dimensions using a
@@ -184,9 +184,9 @@ SFM uses an estimator with `feature_importances_` or `coef_` attributes
 to select the best features in a dataset based on importance weights.
 The estimator is provided through the `solver` parameter and can be
 already fitted. ATOM allows you to use one its predefined [models][],
-e.g. `#!python solver="RF"`. If you didn't call the FeatureSelector through
+e.g., `#!python solver="RF"`. If you didn't call the FeatureSelector through
 atom, don't forget to indicate the estimator's task adding `_class` or `_reg`
-after the name, e.g. `RF_class` to use a random forest classifier. Read
+after the name, e.g., `RF_class` to use a random forest classifier. Read
 more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
 
 <br style="display: block; margin-top: 2em; content: ' '">

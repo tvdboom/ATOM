@@ -3255,11 +3255,11 @@
 <h2 id="prediction-methods">Prediction methods</h2>
 <p>After training a model, you probably want to make predictions on new,
 unseen data. Just like a sklearn estimator, you can call the prediction
-methods from the model, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></code>.</p>
+methods from the model, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></code>.</p>
 <p>All prediction methods transform the provided data through the pipeline
 in the model's branch before making the predictions. Transformers that
 should only be applied on the training set are excluded from this step
-(e.g. outlier pruning or class balancing).</p>
+(e.g., outlier pruning or class balancing).</p>
 <p>The available prediction methods are the standard methods for estimators
 in sklearn's and sktime's API.</p>
 <p>For classification and regression tasks:</p>
@@ -3273,7 +3273,7 @@ in sklearn's and sktime's API.</p>
 <h2 id="prediction-attributes">Prediction attributes</h2>
 <p>The prediction methods can be calculated on the train, test and
 holdout set. You can access them through attributes of the form
-[method]_[data_set], e.g. <code>atom.mnb.predict_train</code>, <code>atom.mnb.predict_test</code>
+[method]_[data_set], e.g., <code>atom.mnb.predict_train</code>, <code>atom.mnb.predict_test</code>
 or <code>atom.mnb.predict_holdout</code>. The results are cached after the
 first call to avoid consequent expensive calculations (lazy properties).
 This mechanism can increase the size of the instance for large datasets.
@@ -3299,7 +3299,7 @@ indices are the target columns, and the second level are the classes. Use
 <h2 id="predictions-on-rows-in-the-dataset">Predictions on rows in the dataset</h2>
 <p>It's also possible to get the prediction for a specific row or rows in
 the dataset, providing the names or positions of the rows to the <a class="autorefs autorefs-internal" href="#prediction-methods">prediction methods</a>,
-e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></code> returns the random forest's prediction on the
+e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></code> returns the random forest's prediction on the
 10th row in the dataset, or <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">([</span><span class="s2">&quot;index1&quot;</span><span class="p">,</span> <span class="s2">&quot;index2&quot;</span><span class="p">])</span></code>
 returns the class probabilities for the rows in the dataset with indices
 <code>index1</code> and <code>index2</code>.</p>
