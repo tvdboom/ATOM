@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -41,6 +40,7 @@ from atom.utils.utils import (
     divide, get_best_score, get_custom_scorer, has_task, is_binary,
     is_multioutput, lst, plot_from_model, rnd,
 )
+from joblib import Parallel, delayed
 
 
 class PredictionPlot(BasePlot):

@@ -538,6 +538,8 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         X: Features | None = None,
         y: Target | None = None,
+        *,
+        verbose: Literal[0, 1, 2] | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
@@ -564,6 +566,10 @@ class ATOM(BaseRunner, ATOMPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            transformers' own verbosity.
+
         Returns
         -------
         dataframe
@@ -573,7 +579,7 @@ class ATOM(BaseRunner, ATOMPlot):
             Original target column. Only returned if provided.
 
         """
-        return self.pipeline.inverse_transform(X, y)
+        return self.pipeline.inverse_transform(X, y, verbose=verbose)
 
     @classmethod
     def load(cls, filename: str, data: Sequence | None = None) -> ATOM:
@@ -661,10 +667,18 @@ class ATOM(BaseRunner, ATOMPlot):
                 if len(atom._branches) > 2 and branch.pipeline:
                     atom._log(f"Transforming data for branch {branch.name}:", 1)
 
-                X_train, y_train = branch.pipeline.transform(branch.X_train, branch.y_train, filter_train_only=False)
+                X_train, y_train = branch.pipeline.transform(
+                    X=branch.X_train,
+                    y=branch.y_train,
+                    verbose=0,
+                    filter_train_only=False,
+                )
                 X_test, y_test = branch.pipeline.transform(branch.X_test, branch.y_test)
 
-                branch._data.data = bk.concat([merge(X_train, y_train), merge(X_test, y_test)])
+                # Update complete dataset
+                branch._data.data = bk.concat(
+                    [merge(X_train, y_train), merge(X_test, y_test)]
+                )
 
                 if atom.index is False:
                     branch._data = DataContainer(
@@ -868,9 +882,9 @@ class ATOM(BaseRunner, ATOMPlot):
         self._log("Dataset stats " + "=" * 20 + " >>", _vb)
         self._log(f"Shape: {self.shape}", _vb)
 
-        for set_ in ("Train", "Test", "Holdout"):
-            if (data := getattr(self, set_.lower())) is not None:
-                self._log(f"{set_} set size: {len(data)}", _vb)
+        for set_ in ("train", "test", "holdout"):
+            if (data := getattr(self, set_)) is not None:
+                self._log(f"{set_.capitalize()} set size: {len(data)}", _vb)
                 if isinstance(self.train.index, TSIndexTypes):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
@@ -934,6 +948,8 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         X: Features | None = None,
         y: Target | None = None,
+        *,
+        verbose: Literal[0, 1, 2] | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
@@ -960,6 +976,10 @@ class ATOM(BaseRunner, ATOMPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            transformers' own verbosity.
+
         Returns
         -------
         dataframe
@@ -969,7 +989,7 @@ class ATOM(BaseRunner, ATOMPlot):
             Transformed target column. Only returned if provided.
 
         """
-        return self.pipeline.transform(X, y)
+        return self.pipeline.transform(X, y, verbose=verbose)
 
     # Base transformers ============================================ >>
 

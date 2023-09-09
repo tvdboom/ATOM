@@ -12,10 +12,8 @@ from __future__ import annotations
 import os
 import re
 from functools import cached_property
-from typing import Hashable
 
 import dill as pickle
-import pandas as pd
 from joblib.memory import Memory
 
 from atom.pipeline import Pipeline
@@ -24,8 +22,7 @@ from atom.utils.types import (
     Pandas, Sequence, SeriesTypes, Target,
 )
 from atom.utils.utils import (
-    CustomDict, DataContainer, bk, custom_transform, flt, get_cols, lst, merge,
-    to_pandas,
+    CustomDict, DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
 )
 
 
@@ -77,12 +74,15 @@ class Branch:
     def __repr__(self) -> str:
         return f"Branch({self.name})"
 
-    def __bool__(self):
-        return not self._data.data.empty
+    def __bool__(self) -> bool:
+        if self._data is None:
+            return False
+        else:
+            return not self._data.data.empty
 
     def __del__(self):
-        # Delete stored data
-        if os.path.exists(self._location):
+        # Delete stored data container
+        if self._location and os.path.exists(self._location):
             os.remove(self._location)
 
     @property
@@ -209,11 +209,11 @@ class Branch:
         return value
 
     @property
-    def pipeline(self) -> pd.Series:
+    def pipeline(self) -> Pipeline:
         """Transformers fitted on the data.
 
-        Use this attribute only to access the individual instances. To
-        visualize the pipeline, use the [plot_pipeline][] method.
+        !!! tip
+            Use the [plot_pipeline][] method to visualize the pipeline.
 
         """
         return self._pipeline
@@ -264,12 +264,13 @@ class Branch:
     def holdout(self) -> DataFrame | None:
         """Holdout set."""
         if self._holdout is not None:
-            X, y = self._holdout.iloc[:, :-self._data.n_cols], self._holdout[self.target]
-            for transformer in self.pipeline:
-                if not transformer._train_only:
-                    X, y = custom_transform(transformer, self, (X, y), verbose=0)
-
-            return merge(X, y)
+            return merge(
+                *self.pipeline.transform(
+                    X=self._holdout.iloc[:, :-self._data.n_cols],
+                    y=self._holdout[self.target],
+                    verbose=0,
+                )
+            )
 
     @property
     def X(self) -> DataFrame:
@@ -361,116 +362,92 @@ class Branch:
         """Name of the target column(s)."""
         return flt(list(self.columns[-self._data.n_cols:]))
 
+    @property
+    def _all(self) -> DataFrame:
+        """Dataset + holdout.
+
+        Note that calling this property triggers the holdout set
+        calculation.
+
+        """
+        return bk.concat([self.dataset, self.holdout])
+
     # Utility methods ============================================== >>
 
-    def _get_rows(
-        self,
-        index: SLICE | None,
-        return_test: Bool = True,
-    ) -> list[Hashable]:
-        """Get a subset of the rows in the dataset.
+    def _get_rows(self, rows: SLICE | None) -> DataFrame:
+        """Get a subset of the data.
 
-        Rows can be selected by name, index or regex pattern. If a
-        string is provided, use `+` to select multiple rows and `!`
+        Rows can be selected by name, index, regex pattern or data set.
+        If a string is provided, use `+` to select multiple rows and `!`
         to exclude them. Rows cannot be included and excluded in the
         same call.
 
+        !!! note
+            This call activates the holdout calculation.
+
         Parameters
         ----------
-        index: int, str, slice, sequence or None, default=None
-            Rows to select. If None, returns the complete dataset or the
-            test set.
-
-        return_test: bool, default=True
-            Whether to return the test or the complete dataset when no
-            index is provided.
+        rows: int, str, slice or sequence
+            Rows to select.
 
         Returns
         -------
-        list
-            Indices of the included rows.
+        dataframe
+            Subset of the data.
 
         """
-
-        def get_match(idx: str, ex: ValueError | None = None):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            idx: str
-                Regex pattern to match with indices.
-
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if idx.startswith("!") and idx not in indices:
-                array = exc
-                idx = idx[1:]
-
-            # Find rows using regex matches
-            if matches := [i for i in indices if re.fullmatch(idx, str(i))]:
-                array.extend(matches)
-            else:
-                raise ex or ValueError(
-                    "Invalid value for the index parameter. "
-                    f"Could not find any row that matches {idx}."
-                )
-
-        indices = list(self.dataset.index)
-
-        # Note that this call caches the holdout calculation!
-        if self.holdout is not None:
-            indices += list(self.holdout.index)
+        indices = self._all.index
 
         inc, exc = [], []
-        if index is None:
-            inc = list(self._data.test_idx) if return_test else list(self.X.index)
-        elif isinstance(index, slice):
-            inc = indices[index]
+        if isinstance(rows, slice):
+            return self._all[rows]
         else:
-            for idx in lst(index):
-                if isinstance(idx, (*IntTypes, str)) and idx in indices:
-                    inc.append(idx)
-                elif isinstance(idx, IntTypes):
-                    if -len(indices) <= idx <= len(indices):
-                        inc.append(indices[idx])
+            for row in lst(rows):
+                if row in indices:
+                    inc.append(row)
+                elif isinstance(row, IntTypes):
+                    if -len(indices) <= row <= len(indices):
+                        inc.append(indices[row])
                     else:
                         raise IndexError(
-                            f"Invalid value for the index parameter. Value {index} is "
-                            f"out of range for a dataset with {len(indices)} rows."
+                            f"Invalid value for the rows parameter. Value {rows} "
+                            f"is out of range for data with {len(indices)} rows."
                         )
-                elif isinstance(idx, str):
-                    try:
-                        get_match(idx)
-                    except ValueError as ex:
-                        for i in idx.split("+"):
-                            get_match(i, ex)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the index parameter, got {type(idx)}. "
-                        "Use a row's name or position to select it."
-                    )
+                elif isinstance(row, str):
+                    for r in row.split("+"):
+                        array = inc
+                        if r.startswith("!") and r not in indices:
+                            array = exc
+                            r = r[1:]
+
+                        # Find match on data set
+                        if r.lower() in ("dataset", "train", "test", "holdout"):
+                            try:
+                                array.extend(getattr(self, r.lower()).index)
+                            except AttributeError:
+                                raise ValueError(
+                                    "Invalid value for the rows parameter. No holdout "
+                                    "data set was declared when initializing atom."
+                                )
+                        elif (matches := indices.str.fullmatch(r)).sum() > 0:
+                            array.extend(indices[matches])
 
         if len(inc) + len(exc) == 0:
             raise ValueError(
-                "Invalid value for the index parameter, got "
-                f"{index}. At least one row has to be selected."
+                "Invalid value for the rows parameter, got "
+                f"{rows}. No rows were selected."
             )
         elif inc and exc:
             raise ValueError(
-                "Invalid value for the index parameter. You can either "
+                "Invalid value for the rows parameter. You can either "
                 "include or exclude rows, not combinations of these."
             )
 
         if exc:
             # If rows were excluded with `!`, select all but those
-            inc = [idx for idx in indices if idx not in exc]
+            inc = indices[~indices.isin(exc)]
 
-        return list(dict.fromkeys(inc))  # Avoid duplicates
+        return self._all.loc[inc]
 
     def _get_columns(
         self,

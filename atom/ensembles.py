@@ -12,7 +12,6 @@ from __future__ import annotations
 from copy import deepcopy
 
 import numpy as np
-from joblib import Parallel, delayed
 from sklearn.base import clone, is_classifier
 from sklearn.ensemble import StackingClassifier as SC
 from sklearn.ensemble import StackingRegressor as SR
@@ -27,6 +26,7 @@ from sklearn.utils.validation import column_or_1d
 
 from atom.utils.types import Bool, Features, Int, Predictor, Sequence
 from atom.utils.utils import check_is_fitted
+from joblib import Parallel, delayed
 
 
 class BaseEnsemble:

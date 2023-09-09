@@ -60,7 +60,7 @@ class SeqProtocol(Protocol[T]):
     def __len__(self) -> Int: ...
 
 
-class Sequence:
+class Sequence(Protocol[T]):
     """Type hint factory for sequences with subscripted types.
 
     Dynamically creates new `Annotated[SeqProtocol[...], ...]` type
@@ -79,6 +79,10 @@ class Sequence:
         items of this sequence satisfy this child type hint.
 
     """
+
+    def __iter__(self) -> Iterable[T]: ...
+    def __getitem__(self, item) -> T: ...
+    def __len__(self) -> Int: ...
 
     @classmethod
     def __class_getitem__(cls, X: Any) -> Annotated[SeqProtocol, Is]:

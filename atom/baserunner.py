@@ -10,7 +10,7 @@ Description: Module containing the BaseRunner class.
 from __future__ import annotations
 
 import re
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import Any, Literal
 
 import dill as pickle
@@ -26,8 +26,8 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, Float, Int, IntTypes, MetricSelector, Model, Runner, Sequence,
-    Series,
+    Bool, DataFrame, Float, Int, IntTypes, MetricSelector, Model, Runner,
+    Sequence, Series,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, check_is_fitted, composed, crash, divide, flt,
@@ -159,6 +159,16 @@ class BaseRunner(BaseTracker):
         self._log(f"Deleting branch {self.branch.name}...", 1)
         del self._branches.current
         self._log(f"Switched to branch {self.branch.name}.", 1)
+
+    @property
+    def holdout(self) -> DataFrame | None:
+        """Holdout set.
+
+        This data set is untransformed by the pipeline. Read more in
+        the [user guide][data-sets].
+
+        """
+        return self.branch._holdout
 
     @property
     def models(self) -> str | list[str] | None:
@@ -555,21 +565,11 @@ class BaseRunner(BaseTracker):
 
     @crash
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
-        """Export the pipeline to a sklearn-like object.
+        """Export the pipeline.
 
+        This method returns a deepcopy of the branch's pipeline.
         Optionally, you can add a model as final estimator. The
         returned pipeline is already fitted on the training set.
-
-        !!! info
-            The returned pipeline behaves similarly to sklearn's
-            [Pipeline][], and additionally:
-
-            - Accepts transformers that drop rows.
-            - Accepts transformers that only are fitted on a subset
-              of the provided dataset.
-            - Accepts transformers that apply only on the target column.
-            - Uses transformers that apply only on the training set to
-              fit the pipeline, not to make predictions on new data.
 
         Parameters
         ----------
@@ -587,9 +587,9 @@ class BaseRunner(BaseTracker):
         """
         if model:
             model = self._get_models(model)[0]
-            pipeline = copy(model.pipeline)
+            pipeline = deepcopy(model.pipeline)
         else:
-            pipeline = copy(self.pipeline)
+            pipeline = deepcopy(self.pipeline)
 
         if len(pipeline) == 0 and not model:
             raise RuntimeError("There is no pipeline to export!")

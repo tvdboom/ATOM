@@ -16,7 +16,6 @@ from random import sample
 from typing import Callable, Literal
 
 import featuretools as ft
-import joblib
 import numpy as np
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
@@ -32,6 +31,7 @@ from zoofs import (
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
+import joblib
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
@@ -1363,7 +1363,6 @@ class FeatureSelector(
             X = X.drop(self.collinear["drop"], axis=1)
 
         if self.strategy is None:
-            self._is_fitted = True
             return self  # Exit feature_engineering
 
         elif self.strategy.lower() == "univariate":

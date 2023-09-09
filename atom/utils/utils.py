@@ -25,7 +25,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 from unittest.mock import patch
 
 import mlflow
@@ -912,7 +912,7 @@ class ClassMap:
                 self.append(value)
 
     def __delitem__(self, key):
-        del self.__data[self._get_data(key)]
+        del self.__data[self.index(self._get_data(key))]
 
     def __iter__(self):
         yield from self.__data
@@ -1538,6 +1538,26 @@ def keep_attrs(estimator: Estimator):
             estimator._train_only = train_only
         if cols is not None:
             estimator._cols = cols
+
+
+@contextmanager
+def adjust_verbosity(estimator: Estimator, verbose: Literal[0, 1, 2] | None):
+    """Contextmanager to save an estimator's custom attributes.
+
+    ATOM's pipeline uses two custom attributes for its transformers:
+    _train_only, and _cols. Since some transformers reset their
+    attributes during fit (like those from sktime), we wrap the fit
+    method in a contextmanager that saves and restores the attrs.
+
+    """
+    try:
+        if verbose is not None and hasattr(estimator, "verbose"):
+            verbosity = estimator.verbose
+            estimator.verbose = verbose
+        yield
+    finally:
+        if verbose is not None and hasattr(estimator, "verbose"):
+            estimator.verbose = verbosity
 
 
 def get_versions(models: ClassMap) -> dict:

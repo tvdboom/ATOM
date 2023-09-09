@@ -141,15 +141,18 @@ nav:
             - ATOMForecaster: API/ATOM/atomforecaster.md
             - ATOMModel: API/ATOM/atommodel.md
             - ATOMRegressor: API/ATOM/atomregressor.md
+        - Branch:
+            - Branch: API/branch/branch.md
+            - BranchManager: API/branch/branchmanager.md
         - Data cleaning:
-             - Balancer: API/data_cleaning/balancer.md
-             - Cleaner: API/data_cleaning/cleaner.md
-             - Discretizer: API/data_cleaning/discretizer.md
-             - Encoder: API/data_cleaning/encoder.md
-             - Imputer: API/data_cleaning/imputer.md
-             - Normalizer: API/data_cleaning/normalizer.md
-             - Pruner: API/data_cleaning/pruner.md
-             - Scaler: API/data_cleaning/scaler.md
+            - Balancer: API/data_cleaning/balancer.md
+            - Cleaner: API/data_cleaning/cleaner.md
+            - Discretizer: API/data_cleaning/discretizer.md
+            - Encoder: API/data_cleaning/encoder.md
+            - Imputer: API/data_cleaning/imputer.md
+            - Normalizer: API/data_cleaning/normalizer.md
+            - Pruner: API/data_cleaning/pruner.md
+            - Scaler: API/data_cleaning/scaler.md
         - Feature engineering:
             - FeatureExtractor: API/feature_engineering/featureextractor.md
             - FeatureGenerator: API/feature_engineering/featuregenerator.md
@@ -215,6 +218,8 @@ nav:
             - StochasticGradientDescent: API/models/sgd.md
             - SupportVectorMachine: API/models/svm.md
             - XGBoost: API/models/xgb.md
+        - Pipeline:
+            - Pipeline: API/pipeline/pipeline.md
         - Plots:
             - plot_calibration: API/plots/plot_calibration.md
             - plot_components: API/plots/plot_components.md

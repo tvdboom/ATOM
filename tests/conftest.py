@@ -23,7 +23,7 @@ from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
 from sktime.forecasting.model_selection import temporal_train_test_split
 
-from atom.utils.types import DATAFRAME, FEATURES, PANDAS, TARGET
+from atom.utils.types import DataFrame, Features, Pandas, Target
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 
@@ -45,7 +45,7 @@ class DummyTransformer:
     def __init__(self, strategy: str):
         self.strategy = strategy
 
-    def transform(self, X: DATAFRAME) -> np.ndarray:
+    def transform(self, X: DataFrame) -> np.ndarray:
         if self.strategy == "equal":
             return X.to_numpy()
         elif self.strategy == "drop":
@@ -61,23 +61,23 @@ def change_current_dir(tmp_path: Callable, monkeypatch: Callable):
     monkeypatch.chdir(tmp_path)
 
 
-def get_train_test(X: FEATURES | None, y: TARGET) -> tuple[PANDAS, PANDAS]:
+def get_train_test(X: Features | None, y: Target) -> tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.
 
     Parameters
     ----------
-    X: dataframe-like or None
+    X: DataFrame-like or None
         Feature set.
 
-    y: int, str, dict, sequence or dataframe
+    y: int, str, dict, sequence or DataFrame
         Target column corresponding to X.
 
     Returns
     -------
-    series or dataframe
+    series or DataFrame
         Training set.
 
-    series or dataframe
+    series or DataFrame
         Test set.
 
     """
@@ -122,7 +122,7 @@ X_text = [
     ["this is a random test"],
     ["test is random this"],
     ["nice random test"],
-    ["test target for text"],
+    ["test Target for text"],
 ]
 
 # Dataset wth string indices

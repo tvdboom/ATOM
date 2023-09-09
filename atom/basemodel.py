@@ -24,7 +24,6 @@ import mlflow
 import numpy as np
 import pandas as pd
 import ray
-from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.data import from_pandas
 from mlflow.models.signature import infer_signature
@@ -72,6 +71,7 @@ from atom.utils.utils import (
     it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas,
     to_series,
 )
+from joblib import Parallel, delayed
 
 
 class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
@@ -888,17 +888,14 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                     Scores of the estimator on the validation set.
 
                 """
-                # Overwrite the utils backend in all nodes (for ray parallelization)
-                self.backend = self.backend
-
-                X_subtrain = self.og.X_train.iloc[train_idx]
-                y_subtrain = self.og.y_train.iloc[train_idx]
+                X_sub = self.og.X_train.iloc[train_idx]
+                y_sub = self.og.y_train.iloc[train_idx]
                 X_val = self.og.X_train.iloc[val_idx]
                 y_val = self.og.y_train.iloc[val_idx]
 
                 # Transform subsets if there is a pipeline
                 if len(pl := self.pipeline) > 0:
-                    X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
+                    X_sub, y_sub = pl.fit_transform(X_sub, y_sub, verbose=0)
                     X_val, y_val = pl.transform(X_val, y_val)
 
                 # Match the sample_weight with the length of the subtrain set
@@ -910,7 +907,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
                 estimator = self._fit_estimator(
                     estimator=estimator,
-                    data=(X_subtrain, y_subtrain),
+                    data=(X_sub, y_sub),
                     est_params_fit=est_copy,
                     validation=(X_val, y_val),
                     trial=trial,
@@ -2105,6 +2102,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self,
         X: Features | None = None,
         y: Target | None = None,
+        *,
+        verbose: Literal[0, 1, 2] | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
@@ -2133,6 +2132,10 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            transformers' own verbosity.
+
         Returns
         -------
         dataframe
@@ -2142,7 +2145,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Original target column. Only returned if provided.
 
         """
-        return self.pipeline.inverse_transform(X, y)
+        return self.pipeline.inverse_transform(X, y, verbose=verbose)
 
     @composed(crash, method_to_log)
     def register(
@@ -2290,6 +2293,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self,
         X: Features | None = None,
         y: Target | None = None,
+        *,
+        verbose: Literal[0, 1, 2] | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
@@ -2318,6 +2323,10 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            transformers' own verbosity.
+
         Returns
         -------
         dataframe
@@ -2327,7 +2336,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Transformed target column. Only returned if provided.
 
         """
-        return self.pipeline.transform(X, y)
+        return self.pipeline.transform(X, y, verbose=0)
 
 
 class ClassRegModel(BaseModel):
@@ -2816,7 +2825,7 @@ class ClassRegModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -2851,7 +2860,7 @@ class ClassRegModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -2885,7 +2894,7 @@ class ClassRegModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -2919,7 +2928,7 @@ class ClassRegModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -2982,7 +2991,7 @@ class ClassRegModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3348,7 +3357,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3390,7 +3399,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3438,7 +3447,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3486,7 +3495,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3530,7 +3539,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3573,7 +3582,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------
@@ -3633,7 +3642,7 @@ class ForecastModel(BaseModel):
 
         verbose: int or None, default=None
             Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
+            transformers' own verbosity.
 
         Returns
         -------

@@ -6,13 +6,15 @@ Author: Mavs
 Description: Unit tests for branch.py
 
 """
+import glob
 
 import pandas as pd
 import pytest
+from joblib.memory import Memory
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
-from atom.utils.utils import merge
+from atom.utils.utils import DataContainer, merge
 
 from .conftest import (
     X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,
@@ -33,22 +35,36 @@ def test_init_attrs_are_passed():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
     atom.branch = "b2"
-    assert atom.b2._data is not atom.master._data
-    assert atom.b2.adasyn is atom.master.adasyn
+    assert atom.b2._data is not atom.main._data
+    assert atom.b2.adasyn is atom.main.adasyn
 
 
 def test_repr():
     """Assert that the __repr__  method returns the list of available branches."""
-    branch = Branch(name="master")
-    assert str(branch) == "Branch(master)"
+    branch = Branch(name="main", memory=Memory(None))
+    assert str(branch) == "Branch(main)"
 
 
 def test_bool():
-    """Assert that the __bool__  method checks if there's data."""
-    branch = Branch(name="master")
+    """Assert that the __bool__ method checks if there's data."""
+    branch = Branch(name="main", memory=Memory(None))
     assert not branch
-    branch = Branch(name="master", data=X_bin)
+    branch = Branch(
+        name="main",
+        memory=Memory(None),
+        data=DataContainer(X_bin, [], [], 1),
+    )
     assert branch
+
+
+def test_del():
+    """Assert that the cache is deleted when deleting the instance."""
+    atom = ATOMClassifier(X_bin, y_bin, memory="", random_state=1)
+    atom.branch = "2"
+    assert glob.glob("joblib/atom/Branch(main).pkl")
+    atom.branch = "main"
+    del atom.branch
+    assert not glob.glob("joblib/atom/Branch(main).pkl")
 
 
 # Test name property =============================================== >>
@@ -72,7 +88,6 @@ def test_name_setter():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch.name = "b1"
     assert atom.branch.name == "b1"
-    assert atom.branch.pipeline.name == "b1"
 
 
 # Test data properties ============================================= >>
@@ -93,7 +108,7 @@ def test_mapping_property():
 def test_dataset_property():
     """Assert that the dataset property returns the data in the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.dataset is atom.branch._data
+    assert atom.branch.dataset is atom.branch._data.data
 
 
 def test_train_property():
@@ -191,6 +206,13 @@ def test_target_property():
     """Assert that the target property returns the last column in the dataset."""
     atom = ATOMRegressor(X_bin, "mean radius", random_state=1)
     assert atom.branch.target == "mean radius"
+
+
+def test_all_property():
+    """Assert that the _all property returns the dataset + holdout."""
+    atom = ATOMRegressor(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    assert len(atom.branch.dataset) != len(X_bin)
+    assert len(atom.branch._all) == len(X_bin)
 
 
 # Test property setters ============================================ >>
@@ -326,64 +348,51 @@ def test_setter_error_unequal_target_names():
 
 # Test utility methods ============================================= >>
 
-def test_get_rows_is_None():
-    """Assert that all indices are returned."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert len(atom.branch._get_rows(index=None, return_test=True)) < len(X_idx)
-    assert len(atom.branch._get_rows(index=None, return_test=False)) == len(X_idx)
-
-
 def test_get_rows_is_slice():
     """Assert that a slice of rows is returned."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert len(atom.branch._get_rows(index=slice(20, 100, 2))) == 40
+    assert len(atom.branch._get_rows(rows=slice(20, 100, 2))) == 40
 
 
 def test_get_rows_by_exact_match():
-    """Assert that a row can be selected by name."""
+    """Assert that name can select a row."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert atom.branch._get_rows(index="index_23") == ["index_23"]
+    assert atom.branch._get_rows(rows="index_23").index[0] == "index_23"
 
 
 def test_get_rows_by_int():
     """Assert that rows can be retrieved by their index position."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
     with pytest.raises(IndexError, match=".*out of range.*"):
-        atom.branch._get_rows(index=1000)
-    assert atom.branch._get_rows(index=100) == [atom.X.index[100]]
+        atom.branch._get_rows(rows=1000)
+    assert atom.branch._get_rows(rows=100).equals(atom.dataset.iloc[[100]])
 
 
 def test_get_rows_by_str():
-    """Assert that rows can be retrieved by name or regex."""
+    """Assert that rows can be retrieved by name, data set or regex."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    assert len(atom.branch._get_rows(index="index_34+index_58")) == 2
-    assert len(atom.branch._get_rows(index=["index_34+index_58", "index_57"])) == 3
-    assert len(atom.branch._get_rows(index="index_3.*")) == 111
-    assert len(atom.branch._get_rows(index="!index_3")) == len(X_idx) - 1
-    assert len(atom.branch._get_rows(index="!index_3.*")) == len(X_idx) - 111
-    with pytest.raises(ValueError, match=".*any row that matches.*"):
-        atom.branch._get_rows(index="invalid")
-
-
-def test_get_rows_invalid_type():
-    """Assert that an error is raised when the type is invalid."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(TypeError, match=".*Invalid type for the index.*"):
-        atom.branch._get_rows(index=[3.2])
+    assert len(atom.branch._get_rows(rows="index_34+index_58")) == 2
+    assert len(atom.branch._get_rows(rows=["index_34+index_58", "index_57"])) == 3
+    assert len(atom.branch._get_rows(rows="test")) == len(atom.test)
+    with pytest.raises(ValueError, match=".*No holdout data set was declared.*"):
+        atom.branch._get_rows(rows="holdout")
+    assert len(atom.branch._get_rows(rows="index_3.*")) == 111
+    assert len(atom.branch._get_rows(rows="!index_3")) == len(X_idx) - 1
+    assert len(atom.branch._get_rows(rows="!index_3.*")) == len(X_idx) - 111
 
 
 def test_get_rows_none_selected():
     """Assert that an error is raised when no rows are selected."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
     with pytest.raises(ValueError, match=".*has to be selected.*"):
-        atom.branch._get_rows(index=slice(1000, 2000))
+        atom.branch._get_rows(rows=slice(1000, 2000))
 
 
 def test_get_rows_include_or_exclude():
     """Assert that an error is raised when rows are included and excluded."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
     with pytest.raises(ValueError, match=".*either include or exclude rows.*"):
-        atom.branch._get_rows(index=["index_34", "!index_36"])
+        atom.branch._get_rows(rows=["index_34", "!index_36"])
 
 
 def test_get_columns_is_None():

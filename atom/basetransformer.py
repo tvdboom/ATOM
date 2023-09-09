@@ -708,7 +708,14 @@ class BaseTransformer:
             """
             data = merge(X, y)
 
-            # If the index is a sequence, assign it before shuffling
+            # Shuffle the dataset
+            if not 0 < self.n_rows <= len(data):
+                raise ValueError(
+                    "Invalid value for the n_rows parameter. Value should "
+                    f"lie between 0 and len(X)={len(data)}, got {self.n_rows}."
+                )
+            data = _subsample(data)
+
             if isinstance(self._config.index, SequenceTypes):
                 if len(self._config.index) != len(data):
                     raise IndexError(
@@ -718,17 +725,10 @@ class BaseTransformer:
                     )
                 data.index = self._config.index
 
-            if not 0 < self.n_rows <= len(data):
-                raise ValueError(
-                    "Invalid value for the n_rows parameter. Value should "
-                    f"lie between 0 and len(X)={len(data)}, got {self.n_rows}."
-                )
-            data = _subsample(data)
-
             if len(data) < 5:
                 raise ValueError(
-                    "Invalid value for the n_rows parameter. The "
-                    f"length of the dataset can't be <5, got {self.n_rows}."
+                    f"The length of the dataset can't be <5, got {len(data)}. "
+                    "Make sure n_rows=1 for small datasets."
                 )
 
             if not 0 < self.test_size < len(data):
@@ -765,7 +765,6 @@ class BaseTransformer:
                         shuffle=self._config.shuffle,
                         stratify=self._get_stratify_columns(data, y),
                     )
-                    holdout = self._set_index(holdout, y)
                 else:
                     holdout = None
 
@@ -777,8 +776,10 @@ class BaseTransformer:
                     stratify=self._get_stratify_columns(data, y),
                 )
 
+                complete_set = self._set_index(bk.concat([train, test, holdout]), y)
+
                 container = DataContainer(
-                    data=(data := self._set_index(bk.concat([train, test]), y)),
+                    data=(data := complete_set.iloc[:len(data)]),
                     train_idx=data.index[:-len(test)],
                     test_idx=data.index[-len(test):],
                     n_cols=len(get_cols(y)),
@@ -795,6 +796,9 @@ class BaseTransformer:
                     )
                 else:
                     raise ex
+
+            if holdout is not None:
+                holdout = complete_set.iloc[len(data):]
 
             return container, holdout
 
@@ -847,6 +851,30 @@ class BaseTransformer:
             else:
                 holdout = merge(X_holdout, y_holdout)
 
+            if not train.columns.equals(test.columns):
+                raise ValueError("The train and test set do not have the same columns.")
+
+            if holdout is not None:
+                if not train.columns.equals(holdout.columns):
+                    raise ValueError(
+                        "The holdout set does not have the "
+                        "same columns as the train and test set."
+                    )
+
+            # Skip the n_rows step if not called from atom
+            # Don't use hasattr since getattr can fail when _models is not converted
+            if "n_rows" in self.__dict__:
+                if self.n_rows <= 1:
+                    train = _subsample(train)
+                    test = _subsample(test)
+                    if holdout is not None:
+                        holdout = _subsample(holdout)
+                else:
+                    raise ValueError(
+                        "Invalid value for the n_rows parameter. Value must "
+                        "be <1 when the train and test sets are provided."
+                    )
+
             # If the index is a sequence, assign it before shuffling
             if isinstance(self._config.index, SequenceTypes):
                 len_data = len(train) + len(test)
@@ -864,37 +892,17 @@ class BaseTransformer:
                 if holdout is not None:
                     holdout.index = self._config.index[-len(holdout):]
 
-            # Skip the n_rows step if not called from atom
-            # Don't use hasattr since getattr can fail when _models is not converted
-            if "n_rows" in self.__dict__:
-                if self.n_rows <= 1:
-                    train = _subsample(train)
-                    test = _subsample(test)
-                    if holdout is not None:
-                        holdout = _subsample(holdout)
-                else:
-                    raise ValueError(
-                        "Invalid value for the n_rows parameter. Value must "
-                        "be <1 when the train and test sets are provided."
-                    )
-
-            if not train.columns.equals(test.columns):
-                raise ValueError("The train and test set do not have the same columns.")
-
-            if holdout is not None:
-                if not train.columns.equals(holdout.columns):
-                    raise ValueError(
-                        "The holdout set does not have the "
-                        "same columns as the train and test set."
-                    )
-                holdout = self._set_index(holdout, y_train)
+            complete_set = self._set_index(bk.concat([train, test, holdout]), y)
 
             container = DataContainer(
-                data=(data := self._set_index(bk.concat([train, test]), y_train)),
+                data=(data := complete_set.iloc[:len(train) + len(test)]),
                 train_idx=data.index[:len(train)],
                 test_idx=data.index[-len(test):],
                 n_cols=len(get_cols(y_train)),
             )
+
+            if holdout is not None:
+                holdout = complete_set.iloc[len(train) + len(test):]
 
             return container, holdout
 
