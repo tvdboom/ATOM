@@ -21,7 +21,7 @@ from sklearn.utils.metaestimators import available_if
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
-from atom.branch import Branch, BranchManager
+from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
@@ -459,7 +459,7 @@ class BaseRunner(BaseTracker):
 
     @composed(crash, method_to_log)
     def clear(self):
-        """Reset attributes and clear cache from all models.
+        """Reset attributes and clear memoization from all models.
 
         Reset certain model attributes to their initial state, deleting
         potentially large data arrays. Use this method to free some
@@ -470,9 +470,8 @@ class BaseRunner(BaseTracker):
         - [Shap values][shap]
         - [App instance][adaboost-create_app]
         - [Dashboard instance][adaboost-create_dashboard]
-        - Cached [prediction attributes][]
-        - Cached [metric scores][metric]
-        - Cached [holdout data sets][data-sets]
+        - Memoized [metric scores][metric]
+        - Calculated [holdout data sets][data-sets]
 
         """
         for model in self._models:
@@ -565,7 +564,7 @@ class BaseRunner(BaseTracker):
 
     @crash
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
-        """Export the pipeline.
+        """Export the internal pipeline.
 
         This method returns a deepcopy of the branch's pipeline.
         Optionally, you can add a model as final estimator. The
@@ -581,23 +580,14 @@ class BaseRunner(BaseTracker):
 
         Returns
         -------
-        Pipeline
+        [Pipeline][]
             Current branch as a sklearn-like Pipeline object.
 
         """
         if model:
-            model = self._get_models(model)[0]
-            pipeline = deepcopy(model.pipeline)
+            return self._get_models(model)[0].export_pipeline()
         else:
-            pipeline = deepcopy(self.pipeline)
-
-        if len(pipeline) == 0 and not model:
-            raise RuntimeError("There is no pipeline to export!")
-
-        if model:
-            pipeline.steps.append((model.name, deepcopy(model.estimator)))
-
-        return pipeline
+            return deepcopy(self.pipeline)
 
     @available_if(has_task("class"))
     @crash
@@ -771,7 +761,8 @@ class BaseRunner(BaseTracker):
             for branch in self._branches:
                 branch._data = data[branch.name]["_data"]
                 branch._holdout = data[branch.name]["_holdout"]
-                branch.holdout = data[branch.name]["holdout"]
+                if data[branch.name]["holdout"] is not None:
+                    branch.holdout = data[branch.name]["holdout"]
 
         self._log(f"{self.__class__.__name__} successfully saved.", 1)
 
@@ -826,7 +817,7 @@ class BaseRunner(BaseTracker):
         kw_model = dict(
             goal=self.goal,
             config=self._config,
-            branches=BranchManager([self.branch], og=self.og),
+            branches=self._branches,
             metric=self._metric,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
@@ -904,7 +895,7 @@ class BaseRunner(BaseTracker):
                 name=name,
                 goal=self.goal,
                 config=self._config,
-                branches=BranchManager([self.branch], og=self.og),
+                branches=self._branches,
                 metric=self._metric,
                 **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
                 **kwargs,

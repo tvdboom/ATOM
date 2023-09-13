@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import shap
 
 from atom.plots.base import BasePlot
-from atom.utils.types import SLICE, Int, Legend, Model, Sequence
+from atom.utils.types import ColumnSelector, Int, Legend, Model, Sequence
 from atom.utils.utils import check_canvas, composed, crash, plot_from_model
 
 
@@ -33,7 +33,7 @@ class ShapPlot(BasePlot):
     def plot_shap_bar(
         self,
         models: Int | str | Model | None = None,
-        index: SLICE | None = None,
+        index: ColumnSelector | None = None,
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -258,7 +258,7 @@ class ShapPlot(BasePlot):
     def plot_shap_decision(
         self,
         models: Int | str | Model | None = None,
-        index: SLICE | None = None,
+        index: ColumnSelector | None = None,
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -382,7 +382,7 @@ class ShapPlot(BasePlot):
     def plot_shap_force(
         self,
         models: Int | str | Model | None = None,
-        index: SLICE | None = None,
+        index: ColumnSelector | None = None,
         target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,

@@ -20,7 +20,7 @@ from scipy import stats
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
-from atom.utils.types import SLICE, Int, Legend, Sequence, Series
+from atom.utils.types import ColumnSelector, Int, Legend, Sequence, Series
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, lst, rnd,
 )
@@ -172,7 +172,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_distribution(
         self,
-        columns: SLICE = 0,
+        columns: ColumnSelector = 0,
         distributions: str | Sequence | None = None,
         show: Int | None = None,
         *,
@@ -392,7 +392,7 @@ class DataPlot(BasePlot):
     def plot_ngrams(
         self,
         ngram: Int | str = "bigram",
-        index: SLICE | None = None,
+        index: ColumnSelector | None = None,
         show: Int = 10,
         *,
         title: str | dict | None = None,
@@ -569,7 +569,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_qq(
         self,
-        columns: SLICE = 0,
+        columns: ColumnSelector = 0,
         distributions: str | Sequence = "norm",
         *,
         title: str | dict | None = None,
@@ -853,7 +853,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_wordcloud(
         self,
-        index: SLICE | None = None,
+        index: ColumnSelector | None = None,
         *,
         title: str | dict | None = None,
         legend: Legend | dict | None = None,

@@ -86,7 +86,7 @@ plugins:
 
 markdown_extensions:
     - admonition
-    - md_in_html  # Allows for writing Markdown inside of HTML
+    - md_in_html  # Allows for writing Markdown inside HTML
     - def_list  # Allows for definition lists (e.g., nomenclature)
     - attr_list  # Allows for HTML attributes and CSS classes to markdown objects
     - footnotes
@@ -95,10 +95,10 @@ markdown_extensions:
     - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
     - pymdownx.superfences:
         preserve_tabs: true
-#        custom_fences:
-#            - name: pycon
-#              class: pycon
-#              format: !!python/name:docs_sources.scripts.autorun.formatter
+        custom_fences:
+            - name: pycon
+              class: pycon
+              format: !!python/name:docs_sources.scripts.autorun.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true
     - pymdownx.tabbed:  # Allows the usage of content tabs
@@ -283,6 +283,7 @@ nav:
         - Hyperparameter tuning: examples/hyperparameter_tuning.ipynb
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - In-training validation: examples/in_training_validation.ipynb
+        - Memory considerations: examples/memory_considerations.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multilabel classification: examples/multilabel_classification.ipynb
         - Multioutput regression: examples/multioutput_regression.ipynb

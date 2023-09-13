@@ -348,6 +348,12 @@ def test_setter_error_unequal_target_names():
 
 # Test utility methods ============================================= >>
 
+def test_get_rows_is_range():
+    """Assert that a range of rows is returned."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    assert len(atom.branch._get_rows(rows=range(20, 40))) == 20
+
+
 def test_get_rows_is_slice():
     """Assert that a slice of rows is returned."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)

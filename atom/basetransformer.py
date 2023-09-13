@@ -19,7 +19,7 @@ from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
-from typing import Callable, Literal
+from typing import Callable
 
 import dagshub
 import mlflow
@@ -36,7 +36,7 @@ from sktime.datatypes import check_is_mtype
 from atom.utils.types import (
     Backend, Bool, DataFrame, DataFrameTypes, Engine, Estimator, Features, Int,
     IntTypes, Pandas, Scalar, Sequence, SequenceTypes, Severity, Target,
-    Warnings,
+    Verbose, Warnings,
 )
 from atom.utils.utils import (
     DataContainer, bk, crash, get_cols, lst, merge, n_cols, pd, sign, to_df,
@@ -192,12 +192,12 @@ class BaseTransformer:
         self._memory = check_memory(value)
 
     @property
-    def verbose(self) -> Literal[0, 1, 2]:
+    def verbose(self) -> Verbose:
         """Verbosity level of the output."""
         return self._verbose
 
     @verbose.setter
-    def verbose(self, value: Literal[0, 1, 2]):
+    def verbose(self, value: Verbose):
         self._verbose = value
 
     @property
@@ -912,7 +912,7 @@ class BaseTransformer:
             if self.goal == "fc" and not isinstance(y, (Int, str)):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._prepare_input(y=y))
-            elif self.branch._data.empty:
+            elif not self.branch._data:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
                     "successfully. See the documentation for the allowed formats."
@@ -983,7 +983,7 @@ class BaseTransformer:
         if self.goal == "fc":
             # For forecasting, check if index complies with sktime's standard
             valid, msg, _ = check_is_mtype(
-                obj=pd.DataFrame(bk.concat([sets[0], sets[2]])),
+                obj=pd.DataFrame(bk.concat([sets[0].data, sets[1]])),
                 mtype="pd.DataFrame",
                 return_metadata=True,
                 var_name="the dataset",

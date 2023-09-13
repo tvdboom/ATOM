@@ -17,7 +17,6 @@ Instance of the [ATOMClassifier][], [ATOMForecaster][] or [ATOMRegressor][]
 classes (note that the examples use it as the default variable name).
 </div>
 
-<a id="branch"></a><strong>branch</strong>
 <div markdown style="margin: -1em 0 0 1.2em">
 A [pipeline][], corresponding dataset and models fitted to that dataset.
 See the [branches][] section of the user guide.
@@ -83,8 +82,7 @@ well as `None`, `NaN`, `+inf` and `-inf`.
 
 <div id="model"><strong>model</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-Instance of a [model][models] in the pipeline. Not to confuse with
-[estimator][].
+Instance of a [model][models] in atom. Not to confuse with [estimator][].
 </div>
 
 <div id="outliers"><strong>outliers</strong></div>
@@ -98,11 +96,6 @@ depending on the chosen strategy.
 <div markdown style="margin: -1em 0 0 1.2em">
 Value that lies further than 3 times the standard deviation away
 from the mean of its column, i.e. |z-score| > 3.
-</div>
-
-<div id="pipeline"><strong>pipeline</strong></div>
-<div markdown style="margin: -1em 0 0 1.2em">
-Sequence of transformers in a specific (usually the current) [branch][].
 </div>
 
 <div id="predictor"><strong>predictor</strong></div>

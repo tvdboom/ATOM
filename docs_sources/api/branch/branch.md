@@ -17,6 +17,33 @@
 
 <br>
 
+### Attributes
+
+:: table:
+    - attributes:
+        from_docstring: False
+        include:
+            - pipeline
+            - mapping
+            - dataset
+            - train
+            - test
+            - X
+            - y
+            - holdout
+            - X_train
+            - y_train
+            - X_test
+            - y_test
+            - shape
+            - columns
+            - n_columns
+            - features
+            - n_features
+            - target
+
+<br>
+
 ## Methods
 
 :: methods:

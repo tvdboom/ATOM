@@ -24,15 +24,17 @@
         include:
             - pipeline
             - atom.branch:Branch.mapping
-            - atom.branch:Branch.dataset
-            - atom.branch:Branch.train
-            - atom.branch:Branch.test
-            - atom.branch:Branch.X
-            - atom.branch:Branch.y
-            - atom.branch:Branch.X_train
-            - atom.branch:Branch.y_train
-            - atom.branch:Branch.X_test
+            - dataset
+            - train
+            - test
+            - X
+            - y
+            - X_train
+            - y_train
+            - X_test
             - atom.branch:Branch.y_test
+            - X_holdout
+            - y_holdout
             - atom.branch:Branch.shape
             - atom.branch:Branch.columns
             - atom.branch:Branch.n_columns

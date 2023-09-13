@@ -16,6 +16,7 @@ from random import sample
 from typing import Callable, Literal
 
 import featuretools as ft
+import joblib
 import numpy as np
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
@@ -31,7 +32,6 @@ from zoofs import (
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
-import joblib
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
@@ -39,7 +39,7 @@ from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, Estimator, Features,
     FeatureSelectionStrats, Float, Int, IntTypes, Operators, Scalar, Sequence,
-    SequenceTypes, SeriesTypes, Target,
+    SequenceTypes, SeriesTypes, Target, Verbose,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, check_scaling, composed, crash,
@@ -170,7 +170,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
         drop_columns: Bool = True,
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -423,7 +423,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         n_features: Int | None = None,
         operators: Operators | Sequence | None = None,
         n_jobs: Int = 1,
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
@@ -726,7 +726,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         operators: str | Sequence | None = None,
         drop_columns: Bool = True,
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -758,11 +758,11 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
         # Make the groups
         self.groups_ = defaultdict(list)
-        for name, group in self.group.items():
+        for name, group in self.groups_.items():
             for col in lst(group):
                 if isinstance(col, IntTypes):
                     try:
-                        self.groups[name].append(X.columns[col])
+                        self.groups_[name].append(X.columns[col])
                     except IndexError:
                         raise ValueError(
                             f"Invalid value for the groups parameter. Value {col} "
@@ -771,10 +771,10 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
                 else:
                     # Find columns using regex matches
                     if matches := [c for c in X.columns if re.fullmatch(col, c)]:
-                        self.groups[name].extend(matches)
+                        self.groups_[name].extend(matches)
                     else:
                         try:
-                            self.groups[name].extend(list(X.select_dtypes(col).columns))
+                            self.groups_[name].extend(list(X.select_dtypes(col).columns))
                         except TypeError:
                             raise ValueError(
                                 "Invalid value for the groups parameter. "
@@ -787,7 +787,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
             operators = lst(self.operators)
 
         to_drop = set()
-        for name, group in self.groups.items():
+        for name, group in self.groups_.items():
             for operator in operators:
                 try:
                     result = X[group].apply(getattr(np, operator), axis=1)
@@ -1104,7 +1104,7 @@ class FeatureSelector(
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
@@ -1181,7 +1181,7 @@ class FeatureSelector(
         self._check_n_features(X, reset=True)
 
         self.collinear_ = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
-        self.scaler = None
+        self.scaler_ = None
 
         kwargs = self.kwargs.copy()
         self._high_variance = {}
@@ -1396,8 +1396,8 @@ class FeatureSelector(
             if not is_sparse(X):
                 # PCA requires the features to be scaled
                 if not check_scaling(X):
-                    self.scaler = Scaler()
-                    X = self.scaler.fit_transform(X)
+                    self.scaler_ = Scaler()
+                    X = self.scaler_.fit_transform(X)
 
                 estimator = self._get_est_class("PCA", "decomposition")
                 solver_param = "svd_solver"
@@ -1618,18 +1618,18 @@ class FeatureSelector(
         elif self.strategy.lower() == "pca":
             self._log(" --> Applying Principal Component Analysis...", 2)
 
-            if self.scaler:
+            if self.scaler_:
                 self._log("   --> Scaling features...", 2)
-                X = self.scaler.transform(X)
+                X = self.scaler_.transform(X)
 
             X = to_df(
-                data=self.pca.transform(X)[:, :self.pca._comps],
+                data=self.pca_.transform(X)[:, :self.pca_._comps],
                 index=X.index,
-                columns=[f"pca{str(i)}" for i in range(self.pca._comps)],
+                columns=[f"pca{str(i)}" for i in range(self.pca_._comps)],
             )
 
-            var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
-            self._log(f"   --> Keeping {self.pca._comps} components.", 2)
+            var = np.array(self.pca_.explained_variance_ratio_[:self._n_features])
+            self._log(f"   --> Keeping {self.pca_._comps} components.", 2)
             self._log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() in ("sfm", "sfs", "rfe", "rfecv"):

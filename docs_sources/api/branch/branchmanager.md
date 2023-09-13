@@ -17,6 +17,13 @@
 
 <br>
 
+### Attributes
+
+:: table:
+    - attributes
+
+<br>
+
 ## Methods
 
 :: methods:

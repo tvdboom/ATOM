@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from logging import Logger
 from pathlib import Path
-from typing import Literal
 
 from beartype import beartype
 from joblib.memory import Memory
@@ -21,7 +20,7 @@ from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
     Backend, Bool, Engine, IndexSelector, Int, Predictor, Scalar, Target,
-    Warnings,
+    Verbose, Warnings,
 )
 
 
@@ -263,7 +262,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -346,8 +345,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -500,7 +499,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -577,8 +576,8 @@ class ATOMForecaster(BaseTransformer, ATOM):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -741,7 +740,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -824,8 +823,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,

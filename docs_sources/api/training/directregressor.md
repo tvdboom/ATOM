@@ -33,6 +33,7 @@ attributes accordingly.
             - atom.branch:Branch.test
             - atom.branch:Branch.X
             - atom.branch:Branch.y
+            - holdout
             - atom.branch:Branch.X_train
             - atom.branch:Branch.y_train
             - atom.branch:Branch.X_test
@@ -114,7 +115,6 @@ of methods to handle the data, run the training, and manage the pipeline.
         - export_pipeline
         - get_class_weight
         - get_params
-        - log
         - merge
         - update_layout
         - update_traces

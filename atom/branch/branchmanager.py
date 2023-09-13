@@ -13,43 +13,81 @@ from copy import copy, deepcopy
 
 from beartype import beartype
 from joblib.memory import Memory
-from sklearn.utils.validation import check_memory
 
 from atom.branch.branch import Branch
-from atom.utils.types import Bool, DataFrame, Int, Sequence
+from atom.utils.types import Bool, DataFrame, Int
 from atom.utils.utils import ClassMap, DataContainer
 
 
 @beartype
 class BranchManager:
-    """Manages branches.
+    """Object to manage branches.
+
+    Maintains references to a series of branches and the current
+    active branch. Additionally, stores an 'original' branch separately
+    from the rest, intended for the branch containing the original
+    dataset (previous to any transformations). The branches share a
+    reference to any holdout set, not the BranchManager self.
+
+    Read more in the [user guide][branches].
 
     Parameters
     ----------
-    memory: Memory
+    memory: [Memory][joblibmemory]
         Location to store inactive branches. If None, all branches
         are kept in memory.
 
+    Attributes
+    ----------
+    branches: ClassMap
+        Collection of branches.
+
+    og: [Branch][] or None
+        Original branch. None if no branches have transformations.
+
+    current: [Branch][]
+        Current active branch.
+
+    See Also
+    --------
+    atom.branch:Branch
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
+
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    # Initialize atom
+    atom = ATOMClassifier(X, y, verbose=2)
+
+    # Train a model
+    atom.run("RF")
+
+    # Change the branch and apply feature scaling
+    atom.branch = "scaled"
+
+    atom.scale()
+    atom.run("RF_scaled")
+
+    # Compare the models
+    atom.plot_roc()
+    ```
+
     """
 
-    def __init__(
-        self,
-        branches: Sequence | None = None,
-        og: Branch | None = None,
-        memory: Memory | None = None,
-    ):
-        self.memory = check_memory(memory)
+    def __init__(self, memory: Memory):
+        self.memory = memory
 
-        if branches is None:
-            self.branches = ClassMap()
-            self.add("main")
-        else:
-            self.branches = ClassMap(*list(branches))
+        self.branches = ClassMap()
+        self.add("main")
 
-        self._og = og
+        self._og = None
 
     def __repr__(self) -> str:
-        return f"BranchManager({', '.join(self.branches.keys())})"
+        return f"BranchManager([{', '.join(self.branches.keys())}], og={self.og})"
 
     def __len__(self) -> Int:
         return len(self.branches)
@@ -73,11 +111,11 @@ class BranchManager:
         """Branch containing the original dataset.
 
         This branch contains the data prior to any transformations.
-        It redirects to the current branch if its pipeline is empty
-        to not have the same data in memory twice.
+        It redirects to the first branch with an empty pipeline to not
+        have the same data in memory twice.
 
         """
-        return self._og or self.current
+        return self._og or next(b for b in self.branches if not b.pipeline.steps)
 
     @property
     def current(self) -> Branch:
@@ -113,7 +151,11 @@ class BranchManager:
         else:
             setattr(branch, "_data", deepcopy(parent._data))
 
-        setattr(branch, "_pipeline", copy(getattr(parent, "_pipeline")))
+        # Deepcopy the pipeline but use the same estimators
+        setattr(branch, "_pipeline", deepcopy(getattr(parent, "_pipeline")))
+        for i, step in enumerate(parent._pipeline.steps):
+            branch.pipeline.steps[i] = step
+
         setattr(branch, "_mapping", copy(getattr(parent, "_mapping")))
         for attr in vars(parent):
             if not hasattr(branch, attr):  # If not already assigned...
@@ -164,8 +206,22 @@ class BranchManager:
         self.current._data = data
         self.current._holdout = holdout
 
-    def reset(self):
-        """Reset this instance to its initial state."""
+    def reset(self, hard: Bool = False):
+        """Reset this instance to its initial state.
+
+        The initial state of the BranchManager contains a single branch
+        called `main` with no data. There's no reference to an original
+        (`og`) branch.
+
+        Parameters
+        ----------
+        hard: bool, default=False
+            If True, also deletes the cached memory (if enabled).
+
+        """
         self.branches = ClassMap()
         self.add("main", parent=self.og)
         self._og = None
+
+        if hard:
+            self.pipeline._memory.clear()

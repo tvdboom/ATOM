@@ -9,7 +9,9 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Literal, TypedDict, Union, runtime_checkable
+from typing import (
+    Any, Callable, Hashable, Literal, TypedDict, Union, runtime_checkable,
+)
 
 import modin.pandas as md
 import numpy as np
@@ -69,14 +71,13 @@ class Sequence(Protocol[T]):
     Parameters
     ----------
     X: object
-        Arbitrary child type hint with which to subscript the
-        `SeqProtocol` protocol.
+        Arbitrary child type hint with which to subscript the protocol.
 
     Returns
     ----------
     Annotated
-        `Annotated[SeqProtocol[X], ...]` type hint validating that all
-        items of this sequence satisfy this child type hint.
+        Type hint validating that all items of this sequence satisfy
+        this child type hint.
 
     """
 
@@ -86,9 +87,7 @@ class Sequence(Protocol[T]):
 
     @classmethod
     def __class_getitem__(cls, X: Any) -> Annotated[SeqProtocol, Is]:
-        return Annotated[SeqProtocol[X], Is[
-            lambda lst: not isinstance(lst, str) and all(is_bearable(i, X) for i in lst)]
-        ]
+        return Annotated[cls, Is[lambda lst: all(is_bearable(i, X) for i in lst)]]
 
 
 @runtime_checkable
@@ -150,13 +149,14 @@ Datasets = Literal[
 ]
 
 # Selection of rows or columns by name or position
-SLICE = Union[Int, str, slice, Sequence]
+ColumnSelector = Union[Int, str, range, slice, Sequence]
+RowSelector = Union[Hashable, ColumnSelector]
 
 # Assignment of index or stratify parameter
 IndexSelector = Union[Bool, Int, str, Sequence]
 
 # Types to initialize a metric
-MetricSelector = (str, Callable[..., Scalar], Sequence, None)
+MetricSelector = Union[str, Callable[..., Scalar], Sequence, None]
 
 # Allowed values for method selection
 MethodSelector = Literal["predict", "predict_proba", "decision_function", "thresh"]
@@ -165,6 +165,7 @@ MethodSelector = Literal["predict", "predict_proba", "decision_function", "thres
 Backend = Literal["loky", "multiprocessing", "threading", "ray"]
 Warnings = Literal["default", "error", "ignore", "always", "module", "once"]
 Severity = Literal["debug", "info", "warning", "error", "critical"]
+Verbose = Literal[0, 1, 2]
 
 # Data cleaning parameters
 NumericalStrats = Scalar | Literal["drop", "mean", "median", "knn", "most_frequent"]

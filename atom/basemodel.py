@@ -10,7 +10,7 @@ Description: Module containing the BaseModel class.
 from __future__ import annotations
 
 import re
-from copy import copy, deepcopy
+from copy import deepcopy
 from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
@@ -24,6 +24,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 import ray
+from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.data import from_pandas
 from mlflow.models.signature import infer_signature
@@ -59,9 +60,10 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    SLICE, Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
-    FloatTypes, Index, Int, IntTypes, MethodSelector, MetricSelector, Pandas,
-    Predictor, Scalar, Scorer, Sequence, Stages, Target, Warnings,
+    Backend, Bool, ColumnSelector, DataFrame, DataFrameTypes, Engine, Features,
+    Float, FloatTypes, Index, Int, IntTypes, MethodSelector, MetricSelector,
+    Pandas, Predictor, Scalar, Scorer, Sequence, Stages, Target, Verbose,
+    Warnings,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
@@ -71,7 +73,6 @@ from atom.utils.utils import (
     it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas,
     to_series,
 )
-from joblib import Parallel, delayed
 
 
 class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
@@ -136,7 +137,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -187,8 +188,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -244,7 +245,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         # Skip this part if not called for the estimator
         if branches:
-            self._branches = branches
+            self.og = branches.og
+            self.branch = branches.current
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             self.task = infer_task(self.y, goal=self.goal)
@@ -256,9 +258,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return f"{self.__class__.__name__}()"
 
     def __getattr__(self, item: str) -> Any:
-        if item in dir(self.__dict__.get("branch")) and not item.startswith("_"):
+        if item in dir(self.branch) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
-        elif item in self.__dict__.get("branch").columns:
+        elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column
         elif item in DF_ATTRS:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
@@ -309,16 +311,6 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             )
 
         return self._shap_explanation
-
-    @property
-    def og(self) -> Branch:
-        """Original branch."""
-        return self._branches.og
-
-    @property
-    def branch(self) -> Branch:
-        """Current active branch."""
-        return self._branches.current
 
     def _check_est_params(self):
         """Check that the parameters are valid for the estimator.
@@ -895,7 +887,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
                 # Transform subsets if there is a pipeline
                 if len(pl := self.pipeline) > 0:
-                    X_sub, y_sub = pl.fit_transform(X_sub, y_sub, verbose=0)
+                    X_sub, y_sub = pl.fit_transform(X_sub, y_sub)
                     X_val, y_val = pl.transform(X_val, y_val)
 
                 # Match the sample_weight with the length of the subtrain set
@@ -1508,20 +1500,20 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     # Data Properties ============================================== >>
 
     @property
-    def pipeline(self) -> pd.Series:
-        """Transformers fitted on the data.
+    def pipeline(self) -> Pipeline:
+        """Pipeline of transforms.
 
         Models that used [automated feature scaling][] have the scaler
-        added. Use this attribute only to access the individual
-        instances. To visualize the pipeline, use the [plot_pipeline][]
-        method.
+        added.
+
+        !!! tip
+            Use the [plot_pipeline][] method to visualize the pipeline.
 
          """
         if self.scaler:
-            return pd.concat(
-                [self.branch.pipeline, pd.Series(self.scaler, dtype="object")],
-                ignore_index=True,
-            )
+            pipeline = deepcopy(self.branch.pipeline)
+            pipeline.steps.append(("AutomatedScaler", self.scaler))
+            return pipeline
         else:
             return self.branch.pipeline
 
@@ -1650,9 +1642,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         - [Shap values][shap]
         - [App instance][self-create_app]
         - [Dashboard instance][self-create_dashboard]
-        - Cached [prediction attributes][]
-        - Cached [metric scores][metric]
-        - Cached [holdout data sets][data-sets]
+        - Memoized [metric scores][metric]
+        - Calculated [holdout data sets][data-sets]
 
         """
         # Reset attributes
@@ -1662,9 +1653,6 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self.dashboard = None
 
         # Clear caching
-        for method in self._prediction_methods:
-            for ds in ("train", "test", "holdout"):
-                self.__dict__.pop(f"{method}_{ds}", None)
         self._get_score.cache_clear()
         self.branch.__dict__.pop("holdout", None)
 
@@ -1858,7 +1846,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         # for pipelines that drop samples during transformation
         with patch("sklearn.model_selection._validation._fit_and_score", fit_and_score):
             self.cv = cross_validate(
-                estimator=self.export_pipeline(verbose=0),
+                estimator=self.export_pipeline(),
                 X=self.og.X,
                 y=self.og.y,
                 scoring=scoring,
@@ -1995,30 +1983,19 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     @crash
     def export_pipeline(self) -> Pipeline:
-        """Export the model's pipeline to a sklearn-like object.
+        """Export the internal pipeline.
 
         The returned pipeline is already fitted on the training set.
         Note that if the model used [automated feature scaling][],
         the [Scaler][] is added to the pipeline.
 
-        !!! info
-            The returned pipeline behaves similarly to sklearn's
-            [Pipeline][], and additionally:
-
-            - Accepts transformers that drop rows.
-            - Accepts transformers that only are fitted on a subset
-              of the provided dataset.
-            - Accepts transformers that apply only on the target column.
-            - Uses transformers that apply only on the training set to
-              fit the pipeline, not to make predictions on new data.
-
         Returns
         -------
-        Pipeline
+        [Pipeline][]
             Current branch as a sklearn-like Pipeline object.
 
         """
-        pipeline = copy(self.pipeline)
+        pipeline = deepcopy(self.pipeline)
         pipeline.steps.append((self._est_class.__name__, deepcopy(self.estimator)))
         return pipeline
 
@@ -2103,7 +2080,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         X: Features | None = None,
         y: Target | None = None,
         *,
-        verbose: Literal[0, 1, 2] | None = None,
+        verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
@@ -2173,7 +2150,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         archive_existing_versions: bool, default=False
             Whether all existing model versions in the `stage` will be
             moved to the "Archived" stage. Only valid when `stage` is
-            "Staging" or "Production" otherwise an error will be raised.
+            "Staging" or "Production", otherwise an error will be raised.
 
         """
         if not self._run:
@@ -2183,7 +2160,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             )
 
         model = mlflow.register_model(
-            model_uri=f"runs:/{self._run.info.run_id}/{name or self._fullname}",
+            model_uri=f"runs:/{self._run.info.run_id}/{self._est_class.__name__}",
             name=name or self._fullname,
             tags=self._ht["tags"] or None,
         )
@@ -2294,7 +2271,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         X: Features | None = None,
         y: Target | None = None,
         *,
-        verbose: Literal[0, 1, 2] | None = None,
+        verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
@@ -2806,7 +2783,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def decision_function(
         self,
-        X: SLICE | Features,
+        X: ColumnSelector | Features,
         verbose: Int | None = None,
     ) -> Pandas:
         """Get confidence scores on new data or existing rows.
@@ -2841,7 +2818,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict(
         self,
-        X: SLICE | Features,
+        X: ColumnSelector | Features,
         verbose: Int | None = None,
     ) -> Pandas:
         """Get predictions on new data or existing rows.
@@ -2875,7 +2852,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_log_proba(
         self,
-        X: SLICE | Features,
+        X: ColumnSelector | Features,
         verbose: Int | None = None,
     ) -> DataFrame:
         """Get class log-probabilities on new data or existing rows.
@@ -2909,7 +2886,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_proba(
         self,
-        X: SLICE | Features,
+        X: ColumnSelector | Features,
         verbose: Int | None = None,
     ) -> DataFrame:
         """Get class probabilities on new data or existing rows.
@@ -2944,7 +2921,7 @@ class ClassRegModel(BaseModel):
     @composed(crash, method_to_log)
     def score(
         self,
-        X: SLICE | Features,
+        X: ColumnSelector | Features,
         y: Target | None = None,
         metric: MetricSelector = None,
         sample_weight: Sequence | None = None,

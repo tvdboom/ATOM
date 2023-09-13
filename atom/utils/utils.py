@@ -25,7 +25,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import Any, Callable, Literal
+from typing import Any, Callable
 from unittest.mock import patch
 
 import mlflow
@@ -53,7 +53,7 @@ from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, Estimator, Features, Float, Index,
     IndexSelector, Int, IntTypes, Model, Pandas, PandasTypes, Predictor,
     Scalar, Scorer, Sequence, SequenceTypes, Series, SeriesTypes, Target,
-    Transformer,
+    Transformer, Verbose,
 )
 
 
@@ -1504,7 +1504,7 @@ def check_scaling(X: Pandas, pipeline: Any | None = None) -> bool:
     """
     has_scaler = False
     if pipeline is not None:
-        has_scaler = any("scaler" in name.lower() for name, _ in pipeline.steps)
+        has_scaler = any("scaler" in name.lower() for name in pipeline.named_steps)
 
     df = to_df(X)  # Convert to dataframe
 
@@ -1541,13 +1541,22 @@ def keep_attrs(estimator: Estimator):
 
 
 @contextmanager
-def adjust_verbosity(estimator: Estimator, verbose: Literal[0, 1, 2] | None):
+def adjust_verbosity(estimator: Estimator, verbose: Verbose | None):
     """Contextmanager to save an estimator's custom attributes.
 
     ATOM's pipeline uses two custom attributes for its transformers:
     _train_only, and _cols. Since some transformers reset their
     attributes during fit (like those from sktime), we wrap the fit
     method in a contextmanager that saves and restores the attrs.
+
+    Parameters
+    ----------
+    estimator: Estimator
+        Temporarily change the verbosity of this estimator.
+
+    verbose: int or None, default=None
+        Verbosity level of the transformers in the pipeline. If
+        None, it leaves them to their original verbosity.
 
     """
     try:
@@ -1712,7 +1721,7 @@ def to_df(
     data: Features | None,
     index: Sequence | None = None,
     columns: Sequence | None = None,
-    dtype: str | dict | np.dtype | None = None,
+    dtype: str | np.dtype | dict[str, str | np.dtype] | None = None,
 ) -> DataFrame | None:
     """Convert a dataset to a dataframe.
 
@@ -2269,17 +2278,17 @@ def reorder_cols(
 
 
 def fit_one(
-    transformer: Transformer,
+    estimator: Estimator,
     X: Features | None = None,
     y: Target | None = None,
     message: str | None = None,
     **fit_params,
-):
+) -> Estimator:
     """Fit the data using one estimator.
 
     Parameters
     ----------
-    transformer: Transformer
+    estimator: Estimator
         Instance to fit.
 
     X: dataframe-like or None, default=None
@@ -2302,28 +2311,33 @@ def fit_one(
     **fit_params
         Additional keyword arguments for the fit method.
 
+    Returns
+    -------
+    Estimator
+        Fitted estimator.
+
     """
     X = to_df(X, index=getattr(y, "index", None))
     y = to_pandas(y, index=getattr(X, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
-        if hasattr(transformer, "fit"):
+        if hasattr(estimator, "fit"):
             kwargs = {}
-            inc = getattr(transformer, "_cols", getattr(X, "columns", []))
-            if "X" in (params := sign(transformer.fit)):
+            inc = getattr(estimator, "_cols", getattr(X, "columns", []))
+            if "X" in (params := sign(estimator.fit)):
                 if X is not None and (cols := [c for c in inc if c in X]):
                     kwargs["X"] = X[cols]
 
                 # X is required but has not been provided
                 if len(kwargs) == 0:
-                    if y is not None and hasattr(transformer, "_cols"):
+                    if y is not None and hasattr(estimator, "_cols"):
                         kwargs["X"] = to_df(y)[inc]
                     elif params["X"].default != Parameter.empty:
                         kwargs["X"] = params["X"].default  # Fill X with default
                     else:
                         raise ValueError(
                             "Exception while trying to fit transformer "
-                            f"{transformer.__class__.__name__}. Parameter "
+                            f"{estimator.__class__.__name__}. Parameter "
                             "X is required but has not been provided."
                         )
 
@@ -2331,8 +2345,10 @@ def fit_one(
                 kwargs["y"] = y
 
             # Keep custom attrs since some transformers reset during fit
-            with keep_attrs(transformer):
-                transformer.fit(**kwargs, **fit_params)
+            with keep_attrs(estimator):
+                estimator.fit(**kwargs, **fit_params)
+
+        return estimator
 
 
 def transform_one(

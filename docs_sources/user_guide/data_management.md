@@ -27,9 +27,9 @@ different data sets:
   returns the train and test sets). The holdout set is left untouched
   until predictions are made on it, i.e. it does not undergo any pipeline
   transformations until the data set is requested for the first time.
-  The holdout set is stored in atom's `holdout` attribute. Its features
-  and target can not be accessed separately. See [here][example-holdout-set]
-  an example that shows how to use the holdout data set.
+  The holdout set is stored in atom's `holdout` attribute. See
+  [here][example-holdout-set]an example that shows how to use the holdout
+  data set.
 
 The data can be provided in different formats. If the data sets are not
 specified beforehand, you can input the features and target separately
@@ -290,7 +290,7 @@ branching use cases.
 !!! warning
     Always create a new branch if you want to change the dataset after fitting
     a model! Forcing a data change through the data property's `@setter` can
-    cause unexpected model behaviour and break down the plotting methods.
+    cause unexpected model behavior and break down the plotting methods.
 
 <br>
 
@@ -314,13 +314,22 @@ transformation). If the dataset is occupying too much memory, consider
 using the [shrink][atomclassifier-shrink] method to convert the dtypes to
 their smallest possible matching dtype.
 
-Apart from the dataset itself, a model's [prediction attributes][] (e.g.
-`#!python atom.lr.predict_train`), metric scores and [shap values][shap]
+When working with large datasets and multiple branches, it becomes impossible
+to store all branches in memory at the same time. To avoid out-of-memory errors,
+use atom's [`memory`][atomclassifier-memory] parameter. If not `False`, atom
+saves the data of inactive branches at the specified location (in a directory
+called `joblib`, the name of the underlying library managing the caching),
+maintaining only the current active branch in memory. This mechanism results
+in a slight drop in performance, but can save a lot of memory. Additionally,
+the memory's location is also used to cache the output of the `fit` method of
+transformers in the pipeline. See [here][example-memory-considerations] an
+example using the memory parameter.
+
+Apart from the dataset itself, a model's metric scores and [shap values][shap]
 are also stored as attributes of the model to avoid having to recalculate
-them every time they are needed. This data can occupy a considerable amount
-of memory for large datasets. You can delete all these attributes using
-the [clear][atomclassifier-clear] method in order to free some memory
-before [saving][atomclassifier-save] the class.
+them every time they are needed. You can delete all these attributes using
+the [clear][atomclassifier-clear] method in order to free some memory before
+[saving][atomclassifier-save] atom.
 
 <br>
 

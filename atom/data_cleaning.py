@@ -49,6 +49,7 @@ from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, DiscretizerStrats, Engine, Estimator,
     Features, Float, Int, NumericalStrats, Pandas, PrunerStrats, Scalar,
     ScalerStrats, Sequence, SequenceTypes, Series, SeriesTypes, Target,
+    Verbose,
 )
 from atom.utils.utils import (
     CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -146,7 +147,7 @@ class TransformerMixin:
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
@@ -187,7 +188,7 @@ class TransformerMixin:
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
@@ -293,7 +294,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         print(X)
 
         balancer = Balancer(strategy="smote", verbose=2)
-        X, y = balancer.transform(X, y)
+        X, y = balancer.fit_transform(X, y)
 
         # Note that the number of rows has increased
         print(X)
@@ -308,7 +309,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: str | Estimator = "ADASYN",
         *,
         n_jobs: Int = 1,
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
@@ -331,7 +332,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict or sequence, default=None
+        y: int, str, dict or sequence, default=-1
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -402,7 +403,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             self.mapping_ = {str(v): v for v in y.sort_values().unique()}
 
         self._counts = {}
-        for key, value in self.mapping.items():
+        for key, value in self.mapping_.items():
             self._counts[key] = np.sum(y == value)
 
         # Add n_jobs or random_state if its one of the estimator's parameters
@@ -690,7 +691,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         encode_target: Bool = True,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -734,6 +735,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
+        self.mapping_ = {}
+        self._estimators = {}
+
         if not hasattr(self, "missing_"):
             self.missing_ = [
                 "", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"
@@ -757,9 +761,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 y = y.replace(self.missing_ + MISSING_VALUES, np.NaN).dropna(axis=0)
 
             if self.encode_target:
-                self.mapping_ = {}
-                self._estimators = {}
-
                 for col in get_cols(y):
                     if isinstance(col.iloc[0], SequenceTypes):  # Multilabel
                         est = self._get_est_class("MultiLabelBinarizer", "preprocessing")
@@ -815,7 +816,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if X is not None:
             # Replace all missing values with NaN
-            X = X.replace(self.missing + MISSING_VALUES, np.NaN)
+            X = X.replace(self.missing_ + MISSING_VALUES, np.NaN)
 
             for name, column in X.items():
                 dtype = column.dtype.name
@@ -857,7 +858,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             # Delete samples with NaN in target
             if self.drop_missing_target:
                 length = len(y)  # Save original length to count deleted rows later
-                y = y.replace(self.missing + MISSING_VALUES, np.NaN).dropna()
+                y = y.replace(self.missing_ + MISSING_VALUES, np.NaN).dropna()
 
                 if X is not None:
                     X = X[X.index.isin(y.index)]  # Select only indices that remain
@@ -1125,7 +1126,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         labels: Sequence | dict | None = None,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         random_state: Int | None = None,
     ):
@@ -1432,7 +1433,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         ordinal: dict[str, Sequence] | None = None,
         infrequent_to_value: Scalar | None = None,
         value: str = "infrequent",
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -1548,7 +1549,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         for name, column in X[self._cat_cols].items():
             # Replace infrequent classes with the string in `value`
-            if infrequent_to_value:
+            if self.infrequent_to_value:
                 for category, count in column.value_counts().items():
                     if count <= infrequent_to_value:
                         self._to_value[name].append(category)
@@ -1830,7 +1831,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         max_nan_cols: Float | None = None,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -1994,7 +1995,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._log("Imputing missing values...", 1)
 
         # Replace all missing values with NaN
-        X = X.replace(self.missing + MISSING_VALUES, np.NaN)
+        X = X.replace(self.missing_ + MISSING_VALUES, np.NaN)
 
         # Drop rows with too many missing values
         if self._max_nan_rows is not None:
@@ -2217,7 +2218,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
@@ -2455,6 +2456,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         Object used to prune the data, e.g., `pruner.iforest` for the
         isolation forest strategy. Not available for strategy="zscore".
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     See Also
     --------
     atom.data_cleaning:Balancer
@@ -2509,7 +2516,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         include_target: Bool = False,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -2803,7 +2810,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Literal[0, 1, 2] = 0,
+        verbose: Verbose = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):

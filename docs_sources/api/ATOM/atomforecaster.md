@@ -49,6 +49,7 @@ attributes accordingly.
             - atom.branch:Branch.test
             - atom.branch:Branch.X
             - atom.branch:Branch.y
+            - holdout
             - atom.branch:Branch.X_train
             - atom.branch:Branch.y_train
             - atom.branch:Branch.X_test
@@ -149,7 +150,6 @@ of utility methods to handle the data and manage the pipeline.
         - get_sample_weight
         - inverse_transform
         - load
-        - log
         - merge
         - update_layout
         - update_traces

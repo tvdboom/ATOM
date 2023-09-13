@@ -13,12 +13,13 @@ import traceback
 from datetime import datetime as dt
 from typing import Any
 
+import joblib
 import mlflow
 import numpy as np
 import ray
+from joblib import Parallel, delayed
 from optuna import Study, create_study
 
-import joblib
 from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
 from atom.branch import BranchManager
@@ -30,7 +31,6 @@ from atom.utils.utils import (
     ClassMap, DataConfig, check_dependency, get_best_score, get_custom_scorer,
     lst, sign, time_to_str,
 )
-from joblib import Parallel, delayed
 
 
 class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):

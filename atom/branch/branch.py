@@ -18,8 +18,8 @@ from joblib.memory import Memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    SLICE, Bool, DataFrame, DataFrameTypes, Features, Index, Int, IntTypes,
-    Pandas, Sequence, SeriesTypes, Target,
+    Bool, ColumnSelector, DataFrame, DataFrameTypes, Features, Index, Int,
+    IntTypes, Pandas, RowSelector, Sequence, SeriesTypes, Target,
 )
 from atom.utils.utils import (
     CustomDict, DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
@@ -27,7 +27,7 @@ from atom.utils.utils import (
 
 
 class Branch:
-    """Contains information corresponding to a branch.
+    """Object that contains the data.
 
     A branch contains a specific pipeline, the dataset transformed
     through that pipeline, the models fitted on that dataset, and all
@@ -36,6 +36,8 @@ class Branch:
 
     All properties and attributes of the branch (except the private
     ones, starting with underscore) can be accessed from the parent.
+
+    Read more in the [user guide][branches].
 
     Parameters
     ----------
@@ -47,6 +49,34 @@ class Branch:
 
     holdout: dataframe or None, default=None
         Holdout data set.
+
+    See Also
+    --------
+    atom.branch:BranchManager
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
+
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    # Initialize atom
+    atom = ATOMClassifier(X, y, verbose=2)
+
+    # Train a model
+    atom.run("RF")
+
+    # Change the branch and apply feature scaling
+    atom.branch = "scaled"
+
+    atom.scale()
+    atom.run("RF_scaled")
+
+    # Compare the models
+    atom.plot_roc()
+    ```
 
     """
 
@@ -60,7 +90,7 @@ class Branch:
         self.name = name
         self.memory = memory
 
-        self._data = data
+        self._container = data
         self._holdout = holdout
         self._pipeline = Pipeline([], memory=memory)
         self._mapping = CustomDict()
@@ -74,16 +104,19 @@ class Branch:
     def __repr__(self) -> str:
         return f"Branch({self.name})"
 
-    def __bool__(self) -> bool:
-        if self._data is None:
-            return False
-        else:
-            return not self._data.data.empty
+    @property
+    def _data(self) -> DataFrame | None:
+        """Get the branch's data.
 
-    def __del__(self):
-        # Delete stored data container
-        if self._location and os.path.exists(self._location):
-            os.remove(self._location)
+        Load from memory if the data container is empty. This property
+        is required to access the data from inactive branches.
+
+        """
+        return self.load(assign=False)
+
+    @_data.setter
+    def _data(self, value: DataContainer):
+        self._container = value
 
     @property
     def name(self) -> str:
@@ -102,7 +135,7 @@ class Branch:
                     raise ValueError(
                         "Invalid name for the branch. The name of a branch can "
                         f"not begin with a model's acronym, and {model.acronym} "
-                        f"is the acronym of the {model._fullname} model."
+                        f"is the acronym of the {model.__name__} model."
                     )
 
         self._name = value
@@ -206,11 +239,14 @@ class Branch:
                         f"columns, got {value.columns} != {under.columns}."
                     )
 
+        # Reset holdout calculation
+        self.__dict__.pop("holdout", None)
+
         return value
 
     @property
     def pipeline(self) -> Pipeline:
-        """Transformers fitted on the data.
+        """Pipeline of transforms.
 
         !!! tip
             Use the [plot_pipeline][] method to visualize the pipeline.
@@ -374,7 +410,7 @@ class Branch:
 
     # Utility methods ============================================== >>
 
-    def _get_rows(self, rows: SLICE | None) -> DataFrame:
+    def _get_rows(self, rows: RowSelector) -> DataFrame:
         """Get a subset of the data.
 
         Rows can be selected by name, index, regex pattern or data set.
@@ -383,11 +419,11 @@ class Branch:
         same call.
 
         !!! note
-            This call activates the holdout calculation.
+            This call activates the holdout calculation for this branch.
 
         Parameters
         ----------
-        rows: int, str, slice or sequence
+        rows: hashable, range, slice or sequence
             Rows to select.
 
         Returns
@@ -399,8 +435,8 @@ class Branch:
         indices = self._all.index
 
         inc, exc = [], []
-        if isinstance(rows, slice):
-            return self._all[rows]
+        if isinstance(rows, (range, slice)):
+            return self._all.loc[indices[rows]]
         else:
             for row in lst(rows):
                 if row in indices:
@@ -451,7 +487,7 @@ class Branch:
 
     def _get_columns(
         self,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
         include_target: Bool = True,
         only_numerical: Bool = False,
     ) -> list[str]:
@@ -464,7 +500,7 @@ class Branch:
 
         Parameters
         ----------
-        columns: int, str, slice, sequence or None
+        columns: int, str, range, slice, sequence or None
             Names, indices or dtypes of the columns to select. If None,
             it returns all columns in the dataframe.
 
@@ -477,7 +513,7 @@ class Branch:
 
         Returns
         -------
-        list
+        list of str
             Names of the included columns.
 
         """
@@ -554,7 +590,7 @@ class Branch:
             )
         elif exc:
             # If columns were excluded with `!`, select all but those
-            inc = [col for col in df.columns if col not in exc]
+            inc = df.columns[~df.columns.isin(exc)]
 
         if len(inc) == 0:
             raise ValueError(
@@ -677,38 +713,50 @@ class Branch:
         else:
             return 0, get_class(target)
 
-    def load(self, assign: Bool = True) -> DataContainer:
+    def load(self, assign: Bool = True) -> DataContainer | None:
         """Load the branch's data from memory.
 
         This method is used to restore the data of inactive branches.
 
+        Parameters
+        ----------
+        assign: bool, default=True
+            Whether to assign the loaded data to `self`.
+
         Returns
         -------
-        DataContainer
-            Own data information.
+        DataContainer or None
+            Own data information. Returns None if no data is set.
 
         """
-        if self._data is None and self._location:
-            with open(self._location, "rb") as file:
-                data = pickle.load(file)
+        if self._container is None and self._location:
+            try:
+                with open(self._location, "rb") as file:
+                    data = pickle.load(file)
+            except FileNotFoundError:
+                raise ValueError(f"Branch {self.name} has no data.")
 
             if assign:
-                self._data = data
+                self._container = data
             else:
                 return data
 
-        return self._data
+        return self._container
 
     def store(self):
         """Store the branch's data as a pickle in memory.
 
-        After storage, the DataContainer is deleted and the branch is
-        no longer usable until `load` is called. This method is used
-        for inactive branches.
+        After storage, the data is deleted and the branch is no longer
+        usable until [load][self-load] is called. This method is used
+        to store the data for inactive branches.
+
+        !!! note
+            This method is skipped silently for branches with no memory
+            allocation.
 
         """
-        if self._data is not None and self._location:
+        if self._location:
             with open(self._location, "wb") as file:
-                pickle.dump(self._data, file)
+                pickle.dump(self._container, file)
 
-            self._data = None
+            self._container = None

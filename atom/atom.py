@@ -9,6 +9,7 @@ Description: Module containing the ATOM class.
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from platform import machine, platform, python_build, python_version
 from types import MappingProxyType
@@ -41,16 +42,17 @@ from atom.training import (
 )
 from atom.utils.constants import MISSING_VALUES, __version__
 from atom.utils.types import (
-    SLICE, Bool, DataFrame, Datasets, DiscretizerStrats, Estimator, Features,
-    FeatureSelectionStrats, Index, IndexSelector, Int, MetricSelector,
-    NumericalStrats, Operators, Pandas, Predictor, PrunerStrats, Runner,
-    Scalar, ScalerStrats, Sequence, Series, Target, Transformer, TSIndexTypes,
+    Bool, ColumnSelector, DataFrame, Datasets, DiscretizerStrats, Estimator,
+    Features, FeatureSelectionStrats, Index, IndexSelector, Int,
+    MetricSelector, NumericalStrats, Operators, Pandas, Predictor,
+    PrunerStrats, Runner, Scalar, ScalerStrats, Sequence, Series, Target,
+    Transformer, TSIndexTypes, Verbose,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, bk, check_dependency, check_is_fitted,
-    check_scaling, composed, crash, fit_one, flt, get_cols, get_custom_scorer,
-    has_task, infer_task, is_multioutput, is_sparse, lst, merge, method_to_log,
-    sign, to_pyarrow,
+    ClassMap, DataConfig, DataContainer, bk, check_dependency, check_scaling,
+    composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
+    infer_task, is_multioutput, is_sparse, lst, merge, method_to_log, sign,
+    to_pyarrow, transform_one,
 )
 
 
@@ -123,7 +125,7 @@ class ATOM(BaseRunner, ATOMPlot):
         if self.backend == "ray" or self.n_jobs > 1:
             self._log(f"Parallelization backend: {self.backend}", 1)
         if self.memory.location is not None:
-            self._log(f"Cache storage: {self.memory.location or './'}joblib", 1)
+            self._log(f"Cache storage: {os.path.join(self.memory.location, 'joblib')}", 1)
         if self.experiment:
             self._log(f"Mlflow experiment: {self.experiment}.", 1)
 
@@ -143,18 +145,18 @@ class ATOM(BaseRunner, ATOMPlot):
     def __repr__(self) -> str:
         out = f"{self.__class__.__name__}"
         out += "\n --> Branches:"
-        if len(branches := self._branches) == 1:
-            out += f" {self._current.name}"
+        if len(branches := self._branches.branches) == 1:
+            out += f" {self.branch.name}"
         else:
             for branch in branches:
-                out += f"\n   --> {branch.name}{' !' if branch is self._current else ''}"
+                out += f"\n   --> {branch.name}{' !' if branch is self.branch else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
 
         return out
 
     def __iter__(self) -> Transformer | None:
-        yield from (s[1] for s in self.pipeline.steps)
+        yield from self.pipeline.named_steps.values()
 
     # Utility properties =========================================== >>
 
@@ -192,7 +194,7 @@ class ATOM(BaseRunner, ATOMPlot):
                 )
 
             self._branches.add(name=new, parent=parent)
-            self._log(f"New branch {new} successfully created.", 1)
+            self._log(f"Successfully created new branch: {new}.", 1)
 
     @property
     def missing(self) -> list:
@@ -380,7 +382,7 @@ class ATOM(BaseRunner, ATOMPlot):
                         model = m(
                             goal=self.goal,
                             config=self._config,
-                            branches=BranchManager([self.branch], og=self.og),
+                            branches=self._branches,
                             metric=self._metric,
                             **{x: getattr(self, x) for x in BaseTransformer.attrs},
                         )
@@ -404,7 +406,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         distributions: str | Sequence | None = None,
         *,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
     ) -> pd.DataFrame:
         """Get statistics on column distributions.
 
@@ -539,7 +541,7 @@ class ATOM(BaseRunner, ATOMPlot):
         X: Features | None = None,
         y: Target | None = None,
         *,
-        verbose: Literal[0, 1, 2] | None = None,
+        verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
@@ -670,7 +672,6 @@ class ATOM(BaseRunner, ATOMPlot):
                 X_train, y_train = branch.pipeline.transform(
                     X=branch.X_train,
                     y=branch.y_train,
-                    verbose=0,
                     filter_train_only=False,
                 )
                 X_test, y_test = branch.pipeline.transform(branch.X_test, branch.y_test)
@@ -693,17 +694,23 @@ class ATOM(BaseRunner, ATOMPlot):
         return atom
 
     @composed(crash, method_to_log)
-    def reset(self):
+    def reset(self, hard: Bool = False):
         """Reset the instance to it's initial state.
 
         Deletes all branches and models. The dataset is also reset
         to its form after initialization.
 
-        """
-        # Delete all models
-        self._delete_models(self._get_models())
+        Parameters
+        ----------
+        hard: bool, default=False
+            If True, also deletes the cached memory (if enabled).
 
-        self._branches.reset()
+        """
+        self._delete_models(self._get_models())
+        self._branches.reset(hard=hard)
+
+        if hard:
+            self.memory.clear()
 
         self._log(f"{self.__class__.__name__} successfully reset.", 1)
 
@@ -745,7 +752,7 @@ class ATOM(BaseRunner, ATOMPlot):
         int2uint: Bool = False,
         str2cat: Bool = False,
         dense2sparse: Bool = False,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
 
@@ -801,10 +808,10 @@ class ATOM(BaseRunner, ATOMPlot):
                 return column.astype(pd.SparseDtype(new_t, column.dtype.fill_value))
             else:
                 if dense2sparse and name not in lst(self.target):  # Skip target cols
-                    # Select most frequent value to fill the sparse array
+                    # Select the most frequent value to fill the sparse array
                     fill_value = column.mode(dropna=False)[0]
 
-                    # Convert first to sparse array, else fails for nullable pd types
+                    # Convert first to a sparse array, else fails for nullable pd types
                     sparse_col = pd.arrays.SparseArray(column, fill_value=fill_value)
 
                     return sparse_col.astype(pd.SparseDtype(new_t, fill_value=fill_value))
@@ -837,20 +844,20 @@ class ATOM(BaseRunner, ATOMPlot):
 
             if old_t.name.startswith("string"):
                 if str2cat and column.nunique() <= int(len(column) * 0.3):
-                    self.branch._data[name] = get_data("category")
+                    self.branch._data.data[name] = get_data("category")
                     continue
 
             try:
                 # Get the types to look at
                 t = next(v for k, v in types.items() if old_t.name.lower().startswith(k))
             except StopIteration:
-                self.branch._data[name] = get_data(column.dtype.name)
+                self.branch._data.data[name] = get_data(column.dtype.name)
                 continue
 
             # Use bool if values are in (0, 1)
             if int2bool and (t == types["int"] or t == types["uint"]):
                 if column.isin([0, 1]).all() or column.isin([-1, 1]).all():
-                    self.branch._data[name] = get_data("bool")
+                    self.branch._data.data[name] = get_data("bool")
                     continue
 
             # Use uint if values are strictly positive
@@ -858,7 +865,7 @@ class ATOM(BaseRunner, ATOMPlot):
                 t = types["uint"]
 
             # Find the smallest type that fits
-            self.branch._data[name] = next(
+            self.branch._data.data[name] = next(
                 get_data(r[0]) for r in t if r[1] <= column.min() and r[2] >= column.max()
             )
 
@@ -889,7 +896,7 @@ class ATOM(BaseRunner, ATOMPlot):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)
-        if (memory := self.dataset.memory_usage(deep=True).sum()) < 1e6:
+        if (memory := self.dataset.memory_usage(index=self.index is not False, deep=True).sum()) < 1e6:
             self._log(f"Memory: {memory / 1e3:.2f} kB", _vb)
         else:
             self._log(f"Memory: {memory / 1e6:.2f} MB", _vb)
@@ -949,7 +956,7 @@ class ATOM(BaseRunner, ATOMPlot):
         X: Features | None = None,
         y: Target | None = None,
         *,
-        verbose: Literal[0, 1, 2] | None = None,
+        verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
@@ -1026,10 +1033,10 @@ class ATOM(BaseRunner, ATOMPlot):
     def _add_transformer(
         self,
         transformer: Transformer,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
         train_only: Bool = False,
         **fit_params,
-    ):
+    ) -> Transformer:
         """Add a transformer to the pipeline.
 
         If the transformer is not fitted, it is fitted on the
@@ -1056,6 +1063,11 @@ class ATOM(BaseRunner, ATOMPlot):
 
         **fit_params
             Additional keyword arguments for the transformer's fit method.
+
+        Returns
+        -------
+        Transformer
+            Fitted transformer.
 
         """
         if any(m.branch is self.branch for m in self._models):
@@ -1084,23 +1096,34 @@ class ATOM(BaseRunner, ATOMPlot):
                 )
             transformer._cols = inc
 
-        if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
+        if hasattr(transformer, "fit"):
             if not transformer.__module__.startswith("atom"):
                 self._log(f"Fitting {transformer.__class__.__name__}...", 1)
 
-            fit_one(transformer, self.X_train, self.y_train, **fit_params)
+            # Memoize the fitted transformer for repeated instantiations of atom
+            fit = self._memory.cache(fit_one)
+            kw = dict(estimator=transformer, X=self.X_train, y=self.y_train, **fit_params)
 
-        # Store data in og branch before transforming
-        self._branches.add("og")
+            # Check if the fitted estimator is retrieved from cache to inform
+            # the user, else user might notice the lack of printed messages
+            if self.memory.location is not None:
+                if fit._is_in_cache_and_valid([*fit._get_output_identifiers(**kw)]):
+                    self._log(f"Retrieving cached {transformer.__class__.__name__}...", 1)
+
+            transformer = fit(**kw)
+
+        # If this is the last empty branch, create a new og branch
+        if len([b for b in self._branches if not b.pipeline.steps]) == 1:
+            self._branches.add("og")
 
         if transformer._train_only:
-            X, y = self.pipeline._mem_transform(transformer, self.X_train, self.y_train)
+            X, y = transform_one(transformer, self.X_train, self.y_train)
             self.train = merge(
                 self.X_train if X is None else X,
                 self.y_train if y is None else y,
             )
         else:
-            X, y = self.pipeline._mem_transform(transformer, self.X, self.y)
+            X, y = transform_one(transformer, self.X, self.y)
             data = merge(self.X if X is None else X, self.y if y is None else y)
 
             # y can change the number of columns or remove rows -> reassign index
@@ -1124,7 +1147,7 @@ class ATOM(BaseRunner, ATOMPlot):
                 "Try initializing atom using `index=False`."
             )
 
-        # Add the estimator to the pipeline
+        # Add the transformer to the pipeline
         # Check if there already exists an estimator with that
         # name. If so, add a counter at the end of the name
         counter = 1
@@ -1133,14 +1156,23 @@ class ATOM(BaseRunner, ATOMPlot):
             counter += 1
             name = f"{name}{counter}"
 
-        self.branch._pipeline.steps.append((name, transformer))
+        self.branch._pipeline.steps.append((transformer.__class__.__name__, transformer))
+
+        # Attach atom's transformer attributes to the branch
+        if "atom" in transformer.__module__:
+            attrs = ("mapping_", "feature_names_in_", "n_features_in_")
+            for name, value in vars(transformer).items():
+                if not name.startswith("_") and name.endswith("_") and name not in attrs:
+                    setattr(self.branch, name, value)
+
+        return transformer
 
     @composed(crash, method_to_log)
     def add(
         self,
         transformer: Transformer,
         *,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
         train_only: Bool = False,
         **fit_params,
     ):
@@ -1331,7 +1363,7 @@ class ATOM(BaseRunner, ATOMPlot):
         - Convert dtypes to the best possible types.
         - Drop columns with specific data types.
         - Remove characters from column names.
-        - Strip categorical features from white spaces.
+        - Strip categorical features from spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
         - Encode the target column (ignored for regression tasks).
@@ -1354,7 +1386,7 @@ class ATOM(BaseRunner, ATOMPlot):
         # Pass atom's missing values to the cleaner before transforming
         cleaner.missing_ = self.missing
 
-        self._add_transformer(cleaner, columns=columns)
+        cleaner = self._add_transformer(cleaner, columns=columns)
         self.branch._mapping.update(cleaner.mapping_)
 
     @composed(crash, method_to_log)
@@ -1436,7 +1468,7 @@ class ATOM(BaseRunner, ATOMPlot):
             **self._prepare_kwargs(kwargs, sign(Encoder)),
         )
 
-        self._add_transformer(encoder, columns=columns)
+        encoder = self._add_transformer(encoder, columns=columns)
 
         # Add mapping of the encoded columns and reorder because of target col
         self.branch._mapping.update(encoder.mapping_)
@@ -1690,10 +1722,6 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._add_transformer(tokenizer, columns=columns)
 
-        self.branch.bigrams = tokenizer.bigrams
-        self.branch.trigrams = tokenizer.trigrams
-        self.branch.quadgrams = tokenizer.quadgrams
-
     @composed(crash, method_to_log)
     def vectorize(
         self,
@@ -1725,11 +1753,6 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         self._add_transformer(vectorizer, columns=columns)
-
-        # Attach the estimator attribute to atom's branch
-        for attr in ("bow", "tfidf", "hashing"):
-            if hasattr(vectorizer, attr):
-                setattr(self.branch, attr, getattr(vectorizer, attr))
 
     # Feature engineering transformers ============================= >>
 
@@ -1794,11 +1817,6 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._add_transformer(feature_generator, columns=columns)
 
-        # Attach the genetic attributes to atom's branch
-        if strategy.lower() == "gfg":
-            self.branch.gfg = feature_generator.gfg
-            self.branch.genetic_features = feature_generator.genetic_features
-
     @composed(crash, method_to_log)
     def feature_grouping(
         self,
@@ -1829,7 +1847,6 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         self._add_transformer(feature_grouper, columns=columns)
-        self.branch.groups = feature_grouper.groups
 
     @composed(crash, method_to_log)
     def feature_selection(
@@ -1848,7 +1865,7 @@ class ATOM(BaseRunner, ATOMPlot):
         Apply feature selection or dimensionality reduction, either to
         improve the estimators' accuracy or to boost their performance
         on very high-dimensional datasets. Additionally, remove
-        multicollinear and low variance features.
+        multicollinear and low-variance features.
 
         See the [FeatureSelector][] class for a description of the
         parameters.
@@ -1888,11 +1905,6 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         self._add_transformer(feature_selector, columns=columns)
-
-        # Attach used attributes to atom's branch
-        for attr in ("collinear", str(strategy).lower()):
-            if getattr(feature_selector, attr) is not None:
-                setattr(self.branch, attr, getattr(feature_selector, attr))
 
     # Training methods ============================================= >>
 
@@ -1934,8 +1946,8 @@ class ATOM(BaseRunner, ATOMPlot):
         """Train and evaluate the models.
 
         If all models failed, catch the errors and pass them to the
-        atom before raising the exception. If successful run, update
-        all relevant attributes and methods.
+        atom before raising the exception. If the run is successful,
+        update all relevant attributes and methods.
 
         Parameters
         ----------
@@ -1951,7 +1963,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         # Transfer attributes
         trainer._config = self._config
-        trainer._branches = BranchManager([self.branch], og=self.og)
+        trainer._branches = self._branches
 
         trainer.run()
 
@@ -2025,7 +2037,7 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def successive_halving(
         self,
-        models: str | Predictor | Sequence,
+        models: str | Predictor | Sequence | None = None,
         metric: MetricSelector = None,
         *,
         skip_runs: Int = 0,
@@ -2088,7 +2100,7 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def train_sizing(
         self,
-        models: str | Callable | Predictor | Sequence,
+        models: str | Predictor | Sequence,
         metric: MetricSelector = None,
         *,
         train_sizes: Int | Sequence = 5,

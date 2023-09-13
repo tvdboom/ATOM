@@ -9,9 +9,10 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 from __future__ import annotations
 
-from typing import Any, Generator, Literal
+from typing import Any, Generator
 
 import numpy as np
+from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as skPipeline
 from sklearn.pipeline import _final_estimator_has
@@ -21,36 +22,113 @@ from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Bool, DataFrame, Estimator, Features, Float, Int, Pandas, Sequence, Target,
+    Verbose,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
     fit_transform_one, transform_one, variable_return,
 )
-from joblib import Memory
 
 
 class Pipeline(skPipeline):
-    """Custom Pipeline class.
+    """Pipeline of transforms with a final estimator.
 
-    This class behaves as a sklearn pipeline, and additionally:
+    Sequentially apply a list of transforms and a final estimator.
+    Intermediate steps of the pipeline must be transformsers, that
+    is, they must implement `fit` and `transform` methods. The final
+    estimator only needs to implement `fit`. The transformers in the
+    pipeline can be cached using the `memory` parameter.
 
-    - Works with an empty pipeline.
-    - Accepts transformers that drop rows.
-    - Accepts transformers that only are fitted on a subset
-      of the provided dataset.
-    - Accepts transformers that apply only on the target column.
-    - Uses transformers that are only applied on the training set
-      to fit the pipeline, not to make predictions on new data.
-    - The instance is considered fitted at initialization if all
-      the underlying transformers/estimator in the pipeline are.
-    - It returns attributes from the final estimator if they are
-      not of the Pipeline.
+    The purpose of the pipeline is to assemble several steps that can
+    be cross-validated together while setting different parameters. For
+    this, it enables setting parameters of the various steps using their
+    names and the parameter name separated by `__`, as in the example
+    below. A step's estimator may be replaced entirely by setting the
+    parameter with its name to another estimator, or a transformer
+    removed by setting it to `passthrough` or `None`.
 
-    Note: This Pipeline only works with estimators whose parameters
-    for fit, transform, predict, etcare named X and/or y.
+    Read more in sklearn's the [user guide][pipelinedocs].
 
-    See sklearn's [Pipeline][] for a description of the parameters
-    and attributes.
+    !!! info
+        This class behaves similarly to sklearn's [pipeline][skpipeline],
+        and additionally:
+
+        - Works with an empty pipeline.
+        - Accepts transformers that drop rows.
+        - Accepts transformers that only are fitted on a subset of the
+          provided dataset.
+        - Accepts transformers that apply only on the target column.
+        - Uses transformers that are only applied on the training set
+          to fit the pipeline, not to make predictions on new data.
+        - The instance is considered fitted at initialization if all
+          the underlying transformers/estimator in the pipeline are.
+        - It returns attributes from the final estimator if they are
+          not of the Pipeline.
+        - The last transformer is also cached.
+
+    !!! warning
+        This Pipeline only works with estimators whose parameters
+        for fit, transform, predict, etc... are named `X` and/or `y`.
+
+    Parameters
+    ----------
+    steps: list of tuple
+        List of (name, transform) tuples (implementing `fit`/`transform`)
+        that are chained in sequential order.
+
+    memory: str, Memory or None, default=None
+        Used to cache the fitted transformers of the pipeline. Enabling
+        caching triggers a clone of the transformers before fitting.
+        Therefore, the transformer instance given to the pipeline cannot
+        be inspected directly. Use the attribute `named_steps` or `steps`
+        to inspect estimators within the pipeline. Caching the
+        transformers is advantageous when fitting is time-consuming.
+
+    verbose: int or None, default=0
+        Verbosity level of the transformers in the pipeline. If None,
+        it leaves them to their original verbosity. If >0, the time
+        elapsed while fitting each step is printed.
+
+    Attributes
+    ----------
+    named_steps: [sklearn.utils.Bunch][bunch]
+        Dictionary-like object, with the following attributes. Read-only
+        attribute to access any step parameter by user given name. Keys
+        are step names and values are steps parameters.
+
+    classes_: np.array of shape (n_classes,)
+        The classes labels. Only exist if the last step of the pipeline
+        is a classifier.
+
+    feature_names_in_: np.array
+        Names of features seen during first step `fit` method.
+
+    n_features_in_: int
+        Number of features seen during first step `fit` method.
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMClassifier
+    from sklearn.datasets import load_breast_cancer
+
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    # Initialize atom
+    atom = ATOMClassifier(X, y, verbose=2)
+
+    # Apply data cleaning and feature engineering methods
+    atom.scale()
+    atom.balance(strategy="smote")
+    atom.feature_selection(strategy="rfe", solver="lr", n_features=22)
+
+    # Train models
+    atom.run(models="LR")
+
+    # Get the pipeline and make predictions
+    pl = atom.lr.export_pipeline()
+    print(pl.predict(X))
+    ```
 
     """
 
@@ -59,7 +137,7 @@ class Pipeline(skPipeline):
         steps: list[tuple[str, Estimator]],
         *,
         memory: str | Memory | None = None,
-        verbose: Bool = False,
+        verbose: Verbose | None = 0,
     ):
         super().__init__(steps, memory=memory, verbose=verbose)
 
@@ -68,9 +146,9 @@ class Pipeline(skPipeline):
 
     def __contains__(self, item: str | Any):
         if isinstance(item, str):
-            return item in (n for n, _ in self.steps)
+            return item in self.named_steps
         else:
-            return item in (t for _, t in self.steps)
+            return item in self.named_steps.values()
 
     def __getattr__(self, item: str):
         try:
@@ -179,7 +257,6 @@ class Pipeline(skPipeline):
         self,
         X: Features | None = None,
         y: Target | None = None,
-        verbose: Literal[0, 1, 2] | None = None,
         **fit_params_steps,
     ) -> tuple[DataFrame | None, Pandas | None]:
         """Get data transformed through the pipeline.
@@ -197,12 +274,6 @@ class Pipeline(skPipeline):
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -224,27 +295,26 @@ class Pipeline(skPipeline):
                 with _print_elapsed_time("Pipeline", self._log_message(step_idx)):
                     continue
 
-            if hasattr(transformer, "transform"):
-                # Don't clone when caching is disabled to preserve backward compatibility
-                if self._mem_fit.__class__.__name__ == "NotMemorizedFunc":
-                    cloned = transformer
-                else:
-                    cloned = clone(transformer)
+            # Don't clone when caching is disabled to preserve backward compatibility
+            if self.memory.location is None:
+                cloned = transformer
+            else:
+                cloned = clone(transformer)
 
-                    # Attach internal attrs otherwise wiped by clone
-                    for attr in ("_cols", "_train_only"):
-                        if hasattr(transformer, attr):
-                            setattr(cloned, attr, getattr(transformer, attr))
+                # Attach internal attrs otherwise wiped by clone
+                for attr in ("_cols", "_train_only"):
+                    if hasattr(transformer, attr):
+                        setattr(cloned, attr, getattr(transformer, attr))
 
-                with adjust_verbosity(cloned, verbose):
-                    # Fit or load the current estimator from cache
-                    X, y, fitted_transformer = self._mem_fit(
-                        transformer=cloned,
-                        X=X,
-                        y=y,
-                        message=self._log_message(step_idx),
-                        **fit_params_steps.get(name, {}),
-                    )
+            with adjust_verbosity(cloned, self.verbose):
+                # Fit or load the current estimator from cache
+                X, y, fitted_transformer = self._mem_fit(
+                    transformer=cloned,
+                    X=X,
+                    y=y,
+                    message=self._log_message(step_idx),
+                    **fit_params_steps.get(name, {}),
+                )
 
             # Replace the estimator of the step with the fitted
             # estimator (necessary when loading from cache)
@@ -256,8 +326,6 @@ class Pipeline(skPipeline):
         self,
         X: Features | None = None,
         y: Target | None = None,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
         **fit_params,
     ) -> Pipeline:
         """Fit the pipeline.
@@ -276,12 +344,6 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
-
         **fit_params
             Additional keyword arguments for the fit method.
 
@@ -292,22 +354,85 @@ class Pipeline(skPipeline):
 
         """
         fit_params_steps = self._check_fit_params(**fit_params)
-        X, y = self._fit(X, y, verbose, **fit_params_steps)
+        X, y = self._fit(X, y, **fit_params_steps)
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator != "passthrough":
-                with adjust_verbosity(self._final_estimator, verbose):
+                with adjust_verbosity(self._final_estimator, self.verbose):
                     fit_params_last_step = fit_params_steps[self.steps[-1][0]]
                     fit_one(self._final_estimator, X, y, **fit_params_last_step)
 
         return self
 
     @available_if(_can_transform)
+    def fit_transform(
+        self,
+        X: Features | None = None,
+        y: Target | None = None,
+        **fit_params,
+    ) -> Pandas | tuple[DataFrame, Pandas]:
+        """Fit the pipeline and transform the data.
+
+        Call `fit` followed by `transform` on each transformer in the
+        pipeline. The transformed data are finally passed to the final
+        estimator that calls the `transform` method. Only valid if the
+        final estimator implements `transform`. This also works when the
+        final estimator is `None`, in which case all prior
+        transformations are applied.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. None
+            if the estimator only uses y.
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        **fit_params
+            Additional keyword arguments for the fit method.
+
+        Returns
+        -------
+        dataframe
+            Transformed feature set. Only returned if provided.
+
+        series or dataframe
+            Transformed target column. Only returned if provided.
+
+        """
+        fit_params_steps = self._check_fit_params(**fit_params)
+        X, y = self._fit(X, y, **fit_params_steps)
+
+        # Don't clone when caching is disabled to preserve backward compatibility
+        if self.memory.location is None:
+            last_step = self._final_estimator
+        else:
+            last_step = clone(self._final_estimator)
+
+        with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
+            if last_step == "passthrough":
+                return variable_return(X, y)
+
+            with adjust_verbosity(last_step, self.verbose):
+                fit_params_last_step = fit_params_steps[self.steps[-1][0]]
+                X, y, _ = self._mem_fit(last_step, X, y, **fit_params_last_step)
+
+        return variable_return(X, y)
+
+    @available_if(_can_transform)
     def transform(
         self,
         X: Features | None = None,
         y: Target | None = None,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
         **kwargs,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform the data.
@@ -333,66 +458,8 @@ class Pipeline(skPipeline):
             - If str: Name of the target column in X.
             - Else: Array with shape=(n_samples,) to use as target.
 
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
-
         **kwargs
             Additional keyword arguments for the `_iter` inner method.
-
-        Returns
-        -------
-        dataframe
-            Transformed feature set. Only returned if provided.
-
-        series
-            Transformed target column. Only returned if provided.
-
-        """
-        for _, _, transformer in self._iter(**kwargs):
-            with adjust_verbosity(transformer, verbose):
-                X, y = self._mem_transform(transformer, X, y)
-
-        return variable_return(X, y)
-
-    def fit_transform(
-        self,
-        X: Features | None = None,
-        y: Target | None = None,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
-        **fit_params,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
-        """Fit the pipeline and transform the data.
-
-        Parameters
-        ----------
-        X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
-            if the estimator only uses y.
-
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
-
-        **fit_params
-            Additional keyword arguments for the fit method.
 
         Returns
         -------
@@ -403,17 +470,9 @@ class Pipeline(skPipeline):
             Transformed target column. Only returned if provided.
 
         """
-        fit_params_steps = self._check_fit_params(**fit_params)
-        X, y = self._fit(X, y, verbose, **fit_params_steps)
-
-        last_step = self._final_estimator
-        with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
-            if last_step == "passthrough":
-                return variable_return(X, y)
-
-            with adjust_verbosity(last_step, verbose):
-                fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-                X, y, _ = fit_transform_one(last_step, X, y, **fit_params_last_step)
+        for _, _, transformer in self._iter(**kwargs):
+            with adjust_verbosity(transformer, self.verbose):
+                X, y = self._mem_transform(transformer, X, y)
 
         return variable_return(X, y)
 
@@ -422,8 +481,6 @@ class Pipeline(skPipeline):
         self,
         X: Features | None = None,
         y: Target | None = None,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inverse transform for each step in a reverse order.
 
@@ -447,12 +504,6 @@ class Pipeline(skPipeline):
               sequence of column names or positions for multioutput tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
-
         Returns
         -------
         dataframe
@@ -463,19 +514,13 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in reversed(list(self._iter())):
-            with adjust_verbosity(transformer, verbose):
+            with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y, method="inverse_transform")
 
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(
-        self,
-        X: Features,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
-        **predict_params,
-    ) -> np.ndarray:
+    def predict(self, X: Features, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -490,12 +535,6 @@ class Pipeline(skPipeline):
             that are generated by the transformations in the pipeline
             are not propagated to the final estimator.
 
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
-
         Returns
         -------
         np.array
@@ -503,30 +542,19 @@ class Pipeline(skPipeline):
 
         """
         for _, name, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, verbose):
+            with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].predict(X, **predict_params)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(
-        self,
-        X: Features,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
-    ) -> np.ndarray:
+    def predict_proba(self, X: Features) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
 
         Returns
         -------
@@ -535,30 +563,19 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, verbose):
+            with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].predict_proba(X)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(
-        self,
-        X: Features,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
-    ) -> np.ndarray:
+    def predict_log_proba(self, X: Features) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
 
         Returns
         -------
@@ -567,30 +584,19 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, verbose):
+            with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(
-        self,
-        X: Features,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
-    ) -> np.ndarray:
+    def decision_function(self, X: Features) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
 
         Returns
         -------
@@ -599,7 +605,7 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, verbose):
+            with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][-1].decision_function(X)
@@ -610,8 +616,6 @@ class Pipeline(skPipeline):
         X: Features,
         y: Target,
         sample_weight: Sequence | None = None,
-        *,
-        verbose: Literal[0, 1, 2] | None = None,
     ) -> Float:
         """Transform, then score of the final estimator.
 
@@ -628,12 +632,6 @@ class Pipeline(skPipeline):
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y.
 
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is different from the pipeline's own `verbose`
-            parameter. To change that, use the `set_params` method.
-
         Returns
         -------
         float
@@ -641,7 +639,7 @@ class Pipeline(skPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, verbose):
+            with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)

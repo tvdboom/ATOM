@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -32,15 +33,14 @@ from sktime.forecasting.base import ForecastingHorizon
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    SLICE, Features, Float, Int, Legend, MetricSelector, Model, Scalar,
-    Sequence,
+    ColumnSelector, Features, Float, Int, Legend, MetricSelector, Model,
+    Scalar, Sequence,
 )
 from atom.utils.utils import (
     bk, check_canvas, check_dependency, check_predict_proba, composed, crash,
     divide, get_best_score, get_custom_scorer, has_task, is_binary,
     is_multioutput, lst, plot_from_model, rnd,
 )
-from joblib import Parallel, delayed
 
 
 class PredictionPlot(BasePlot):
@@ -676,7 +676,7 @@ class PredictionPlot(BasePlot):
 
             # Fit the points using linear regression
             from atom.models import OrdinaryLeastSquares
-            model = OrdinaryLeastSquares(goal=self.goal, branch=m.branch)._get_est()
+            model = OrdinaryLeastSquares(goal=self.goal)._get_est()
             model.fit(y_true.values.reshape(-1, 1), y_pred)
 
             fig.add_trace(
@@ -1567,7 +1567,7 @@ class PredictionPlot(BasePlot):
     def plot_parshap(
         self,
         models: Int | str | Model | slice | Sequence | None = None,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
         target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
@@ -1765,7 +1765,7 @@ class PredictionPlot(BasePlot):
     def plot_partial_dependence(
         self,
         models: Int | str | Model | slice | Sequence | None = None,
-        columns: SLICE | None = None,
+        columns: ColumnSelector | None = None,
         kind: str | Sequence = "average",
         pair: int | str | None = None,
         target: Int | str = 1,

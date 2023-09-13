@@ -42,7 +42,9 @@ CUSTOM_URLS = dict(
     evalml="https://evalml.alteryx.com/en/stable/index.html",
     automlsearch="https://evalml.alteryx.com/en/stable/autoapi/evalml/automl/index.html#evalml.automl.AutoMLSearch",
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
-    pipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
+    skpipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
+    pipelinedocs="https://scikit-learn.org/stable/modules/compose.html#pipeline",
+    bunch="https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html",
     profiling="https://github.com/ydataai/ydata-profiling",
     profilereport="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html",
     to_csv="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html",
@@ -287,15 +289,15 @@ class AutoDocs:
 
     # Blocks that can be encountered in the object's docstring
     blocks = (
-        "Parameters",
-        "Attributes",
-        "Returns",
-        "Yields",
-        "Raises",
-        "See Also",
-        "Notes",
-        "References",
-        "Examples",
+        "Parameters\n---------",
+        "Attributes\n---------",
+        "Returns\n-------",
+        "Yields\n------",
+        "Raises\n------",
+        "See Also\n--------",
+        "Notes\n-----",
+        "References\n-------",
+        "Examples\n--------",
         r"\Z",
     )
 
@@ -575,7 +577,7 @@ class AutoDocs:
                         output = output[1:-1]
 
                     header = f"{obj.__name__}: {types_conversion(output)}"
-                    text = f"<div markdown class='param'>{getdoc(obj)}</div>"
+                    text = f"<div markdown class='param'>{getdoc(obj)}\n</div>"
 
                     anchor = f"<a id='{self.obj.__name__.lower()}-{obj.__name__}'></a>"
                     content += f"{anchor}<strong>{header}</strong><br>{text}"
@@ -873,6 +875,7 @@ def types_conversion(dtype: str) -> str:
         "Trial": "[Trial][]",
         "FrozenTrial": "[FrozenTrial][]",
         "Normal": "[Normal][]",
+        "Memory": "[Memory][joblibmemory]",
     }
 
     for k, v in types.items():

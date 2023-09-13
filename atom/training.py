@@ -22,7 +22,7 @@ from sklearn.base import BaseEstimator
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
     Backend, Bool, Engine, Int, IntTypes, MetricSelector, Predictor, Sequence,
-    Warnings,
+    Verbose, Warnings,
 )
 from atom.utils.utils import (
     ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
@@ -380,7 +380,7 @@ class DirectClassifier(Direct):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -464,8 +464,8 @@ class DirectClassifier(Direct):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -608,7 +608,7 @@ class DirectForecaster(Direct):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -689,8 +689,8 @@ class DirectForecaster(Direct):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -833,7 +833,7 @@ class DirectRegressor(Direct):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -917,8 +917,8 @@ class DirectRegressor(Direct):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -1068,7 +1068,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -1153,8 +1153,8 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: Bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -1300,7 +1300,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -1382,8 +1382,8 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -1529,7 +1529,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -1614,8 +1614,8 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -1770,7 +1770,7 @@ class TrainSizingClassifier(TrainSizing):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -1855,8 +1855,8 @@ class TrainSizingClassifier(TrainSizing):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -2007,7 +2007,7 @@ class TrainSizingForecaster(TrainSizing):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -2089,8 +2089,8 @@ class TrainSizingForecaster(TrainSizing):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
@@ -2241,7 +2241,7 @@ class TrainSizingRegressor(TrainSizing):
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
 
-    memory: bool, str, Path or Memory, default=True
+    memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
         [user guide][memory-considerations].
 
@@ -2326,8 +2326,8 @@ class TrainSizingRegressor(TrainSizing):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
-        memory: Bool | str | Path | Memory = True,
-        verbose: Literal[0, 1, 2] = 0,
+        memory: Bool | str | Path | Memory = False,
+        verbose: Verbose = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,

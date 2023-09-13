@@ -26,7 +26,7 @@ class FeatureSelectionPlot(BasePlot):
 
     """
 
-    @available_if(has_attr("pca"))
+    @available_if(has_attr("pca_"))
     @crash
     def plot_components(
         self,
@@ -40,7 +40,7 @@ class FeatureSelectionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot the explained variance ratio per component.
 
-        Kept components are colored and discarted components are
+        Kept components are colored and discarded components are
         transparent. This plot is available only when feature selection
         was applied with strategy="pca".
 
@@ -101,9 +101,9 @@ class FeatureSelectionPlot(BasePlot):
         ```
 
         """
-        if show is None or show > self.pca.components_.shape[0]:
+        if show is None or show > self.pca_.components_.shape[0]:
             # Limit max features shown to avoid maximum figsize error
-            show = min(200, self.pca.components_.shape[0])
+            show = min(200, self.pca_.components_.shape[0])
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter. "
@@ -111,14 +111,14 @@ class FeatureSelectionPlot(BasePlot):
             )
 
         # Get the variance ratio per component
-        variance = np.array(self.pca.explained_variance_ratio_)
+        variance = np.array(self.pca_.explained_variance_ratio_)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        # Create color scheme: first normal and then fully transparent
+        # Create a color scheme: first normal and then fully transparent
         color = BasePlot._fig.get_elem("components")
-        opacity = [0.2] * self.pca._comps + [0] * (len(variance) - self.pca._comps)
+        opacity = [0.2] * self.pca_._comps + [0] * (len(variance) - self.pca_._comps)
 
         fig.add_trace(
             go.Bar(
@@ -130,7 +130,7 @@ class FeatureSelectionPlot(BasePlot):
                     line=dict(width=2, color=color),
                 ),
                 hovertemplate="%{x}<extra></extra>",
-                name=f"Variance retained: {variance[:self.pca._comps].sum():.3f}",
+                name=f"Variance retained: {variance[:self.pca_._comps].sum():.3f}",
                 legendgroup="components",
                 showlegend=BasePlot._fig.showlegend("components", legend),
                 xaxis=xaxis,
@@ -152,7 +152,7 @@ class FeatureSelectionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_attr("pca"))
+    @available_if(has_attr("pca_"))
     @crash
     def plot_pca(
         self,
@@ -221,17 +221,17 @@ class FeatureSelectionPlot(BasePlot):
 
         """
         # Create star symbol at selected number of components
-        symbols = ["circle"] * self.pca.n_features_in_
-        symbols[self.pca._comps - 1] = "star"
-        sizes = [self.marker_size] * self.pca.n_features_in_
-        sizes[self.pca._comps - 1] = self.marker_size * 1.5
+        symbols = ["circle"] * self.pca_.n_features_in_
+        symbols[self.pca_._comps - 1] = "star"
+        sizes = [self.marker_size] * self.pca_.n_features_in_
+        sizes[self.pca_._comps - 1] = self.marker_size * 1.5
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         fig.add_trace(
             go.Scatter(
-                x=tuple(range(1, self.pca.n_features_in_ + 1)),
-                y=np.cumsum(self.pca.explained_variance_ratio_),
+                x=tuple(range(1, self.pca_.n_features_in_ + 1)),
+                y=np.cumsum(self.pca_.explained_variance_ratio_),
                 mode="lines+markers",
                 line=dict(width=self.line_width, color=BasePlot._fig.get_elem("pca")),
                 marker=dict(
@@ -255,12 +255,12 @@ class FeatureSelectionPlot(BasePlot):
             }
         )
 
-        margin = self.pca.n_features_in_ / 30
+        margin = self.pca_.n_features_in_ / 30
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
-            xlim=(1 - margin, self.pca.n_features_in_ - 1 + margin),
+            xlim=(1 - margin, self.pca_.n_features_in_ - 1 + margin),
             title=title,
             legend=legend,
             figsize=figsize,
@@ -269,7 +269,7 @@ class FeatureSelectionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_attr("rfecv"))
+    @available_if(has_attr("rfecv_"))
     @crash
     def plot_rfecv(
         self,
@@ -340,23 +340,23 @@ class FeatureSelectionPlot(BasePlot):
 
         """
         try:  # Define the y-label for the plot
-            ylabel = self.rfecv.get_params()["scoring"].name
+            ylabel = self.rfecv_.get_params()["scoring"].name
         except AttributeError:
             ylabel = "accuracy" if self.goal.startswith("class") else "r2"
 
-        x = range(self.rfecv.min_features_to_select, self.rfecv.n_features_in_ + 1)
+        x = range(self.rfecv_.min_features_to_select, self.rfecv_.n_features_in_ + 1)
 
         # Create star symbol at selected number of features
         sizes = [6] * len(x)
-        sizes[self.rfecv.n_features_ - self.rfecv.min_features_to_select] = 12
+        sizes[self.rfecv_.n_features_ - self.rfecv_.min_features_to_select] = 12
         symbols = ["circle"] * len(x)
-        symbols[self.rfecv.n_features_ - self.rfecv.min_features_to_select] = "star"
+        symbols[self.rfecv_.n_features_ - self.rfecv_.min_features_to_select] = "star"
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        mean = self.rfecv.cv_results_["mean_test_score"]
-        std = self.rfecv.cv_results_["std_test_score"]
+        mean = self.rfecv_.cv_results_["mean_test_score"]
+        std = self.rfecv_.cv_results_["std_test_score"]
 
         fig.add_trace(
             go.Scatter(
