@@ -104,7 +104,6 @@ experiment are tracked. Read more in the [user guide][tracking].
         from_docstring: False
         include:
             - log_ht
-            - log_model
             - log_plots
             - log_data
             - log_pipeline

@@ -1,0 +1,4173 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Mavs">
+      
+      
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/training/trainsizingregressor/">
+      
+      
+        <link rel="prev" href="../trainsizingforecaster/">
+      
+      
+        <link rel="next" href="../../models/adab/">
+      
+      <link rel="icon" href="../../../img/favicon.ico">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
+    
+    
+  <title>TrainSizingRegressor - ATOM</title>
+
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.eebd395e.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#trainsizingregressor" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're not viewing the latest version.
+  <a href="../../../..">
+    <strong>Click here to go to latest.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),outdated=__md_get("__outdated",sessionStorage);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
+      
+  <img src="../../../img/icon_white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ATOM
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              TrainSizingRegressor
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+            
+              <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+              </label>
+            
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+            
+              <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+              </label>
+            
+          
+        </form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tvdboom/ATOM
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../about/" class="md-tabs__link">
+      About
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../getting_started/" class="md-tabs__link">
+      Getting started
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../user_guide/introduction/" class="md-tabs__link">
+        User guide
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../ATOM/atomclassifier/" class="md-tabs__link md-tabs__link--active">
+        API
+      </a>
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../examples/accelerating_cuml.ipynb" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/v5.x.x/" class="md-tabs__link">
+        Changelog
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../faq/" class="md-tabs__link">
+      FAQ
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../contributing/" class="md-tabs__link">
+      Contributing
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../dependencies/" class="md-tabs__link">
+      Dependencies
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../license/" class="md-tabs__link">
+      License
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
+      
+  <img src="../../../img/icon_white.png" alt="logo">
+
+    </a>
+    ATOM
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tvdboom/ATOM
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../about/" class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          User guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          User guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/nomenclature/" class="md-nav__link">
+        Nomenclature
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/logging/" class="md-nav__link">
+        Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/accelerating/" class="md-nav__link">
+        Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/data_cleaning/" class="md-nav__link">
+        Data cleaning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/feature_engineering/" class="md-nav__link">
+        Feature engineering
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/nlp/" class="md-nav__link">
+        NLP
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/time_series/" class="md-nav__link">
+        Time Series
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/models/" class="md-nav__link">
+        Models
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/training/" class="md-nav__link">
+        Training
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/predicting/" class="md-nav__link">
+        Predicting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+          ATOM
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_1">
+          <span class="md-nav__icon md-icon"></span>
+          ATOM
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomclassifier/" class="md-nav__link">
+        ATOMClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomforecaster/" class="md-nav__link">
+        ATOMForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atommodel/" class="md-nav__link">
+        ATOMModel
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomregressor/" class="md-nav__link">
+        ATOMRegressor
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+          Branch
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_2">
+          <span class="md-nav__icon md-icon"></span>
+          Branch
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../branch/branch/" class="md-nav__link">
+        Branch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../branch/branchmanager/" class="md-nav__link">
+        BranchManager
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+          Data cleaning
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_3">
+          <span class="md-nav__icon md-icon"></span>
+          Data cleaning
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/balancer/" class="md-nav__link">
+        Balancer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/cleaner/" class="md-nav__link">
+        Cleaner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/discretizer/" class="md-nav__link">
+        Discretizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/encoder/" class="md-nav__link">
+        Encoder
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/imputer/" class="md-nav__link">
+        Imputer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/pruner/" class="md-nav__link">
+        Pruner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/scaler/" class="md-nav__link">
+        Scaler
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+          Feature engineering
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_4">
+          <span class="md-nav__icon md-icon"></span>
+          Feature engineering
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featureextractor/" class="md-nav__link">
+        FeatureExtractor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featuregenerator/" class="md-nav__link">
+        FeatureGenerator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featuregrouper/" class="md-nav__link">
+        FeatureGrouper
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featureselector/" class="md-nav__link">
+        FeatureSelector
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+          NLP
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_5">
+          <span class="md-nav__icon md-icon"></span>
+          NLP
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/textcleaner/" class="md-nav__link">
+        TextCleaner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/tokenizer/" class="md-nav__link">
+        Tokenizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nlp/vectorizer/" class="md-nav__link">
+        Vectorizer
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+          Training
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_4_6">
+          <span class="md-nav__icon md-icon"></span>
+          Training
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../directclassifier/" class="md-nav__link">
+        DirectClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../directforecaster/" class="md-nav__link">
+        DirectForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../directregressor/" class="md-nav__link">
+        DirectRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../successivehalvingclassifier/" class="md-nav__link">
+        SuccessiveHalvingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../successivehalvingforecaster/" class="md-nav__link">
+        SuccessiveHalvingForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../successivehalvingregressor/" class="md-nav__link">
+        SuccessiveHalvingRegressor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trainsizingclassifier/" class="md-nav__link">
+        TrainSizingClassifier
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trainsizingforecaster/" class="md-nav__link">
+        TrainSizingForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          TrainSizingRegressor
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        TrainSizingRegressor
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-attributes" class="md-nav__link">
+    Data attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utility-attributes" class="md-nav__link">
+    Utility attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tracking-attributes" class="md-nav__link">
+    Tracking attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plot-attributes" class="md-nav__link">
+    Plot attributes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
+          Models
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_7">
+          <span class="md-nav__icon md-icon"></span>
+          Models
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/adab/" class="md-nav__link">
+        AdaBoost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/arima/" class="md-nav__link">
+        ARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/autoarima/" class="md-nav__link">
+        AutoARIMA
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ard/" class="md-nav__link">
+        AutomaticRelevanceDetermination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/bag/" class="md-nav__link">
+        Bagging
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/br/" class="md-nav__link">
+        BayesianRidge
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/bnb/" class="md-nav__link">
+        BernoulliNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/catb/" class="md-nav__link">
+        CatBoost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/catnb/" class="md-nav__link">
+        CategoricalNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/cnb/" class="md-nav__link">
+        ComplementNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/tree/" class="md-nav__link">
+        DecisionTree
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/dummy/" class="md-nav__link">
+        Dummy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/en/" class="md-nav__link">
+        ElasticNet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ets/" class="md-nav__link">
+        ETS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/es/" class="md-nav__link">
+        ExponentialSmoothing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/etree/" class="md-nav__link">
+        ExtraTree
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/et/" class="md-nav__link">
+        ExtraTrees
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gnb/" class="md-nav__link">
+        GaussianNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gp/" class="md-nav__link">
+        GaussianProcess
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gbm/" class="md-nav__link">
+        GradientBoostingMachine
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        HuberRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/hgbm/" class="md-nav__link">
+        HistGradientBoosting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/knn/" class="md-nav__link">
+        KNearestNeighbors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lasso/" class="md-nav__link">
+        Lasso
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        LeastAngleRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lgb/" class="md-nav__link">
+        LightGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lda/" class="md-nav__link">
+        LinearDiscriminantAnalysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lsvm/" class="md-nav__link">
+        LinearSVM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lr/" class="md-nav__link">
+        LogisticRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/mlp/" class="md-nav__link">
+        MultiLayerPerceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/mnb/" class="md-nav__link">
+        MultinomialNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/nf/" class="md-nav__link">
+        NaiveForecaster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ols/" class="md-nav__link">
+        OrdinaryLeastSquares
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/pa/" class="md-nav__link">
+        PassiveAggressive
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/pt/" class="md-nav__link">
+        PolynomialTrend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/qda/" class="md-nav__link">
+        QuadraticDiscriminantAnalysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/rnn/" class="md-nav__link">
+        RadiusNearestNeighbors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/rf/" class="md-nav__link">
+        RandomForest
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ridge/" class="md-nav__link">
+        Ridge
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/sgd/" class="md-nav__link">
+        StochasticGradientDescent
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/svm/" class="md-nav__link">
+        SupportVectorMachine
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/xgb/" class="md-nav__link">
+        XGBoost
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+          Pipeline
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_8">
+          <span class="md-nav__icon md-icon"></span>
+          Pipeline
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pipeline/pipeline/" class="md-nav__link">
+        Pipeline
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+          Plots
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4_9">
+          <span class="md-nav__icon md-icon"></span>
+          Plots
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_calibration/" class="md-nav__link">
+        plot_calibration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_components/" class="md-nav__link">
+        plot_components
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
+        plot_confusion_matrix
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_correlation/" class="md-nav__link">
+        plot_correlation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_det/" class="md-nav__link">
+        plot_det
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_distribution/" class="md-nav__link">
+        plot_distribution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_errors/" class="md-nav__link">
+        plot_errors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_evals/" class="md-nav__link">
+        plot_evals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_forecast/" class="md-nav__link">
+        plot_forecast
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_gains/" class="md-nav__link">
+        plot_gains
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_learning_curve/" class="md-nav__link">
+        plot_learning_curve
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_lift/" class="md-nav__link">
+        plot_lift
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pareto_front/" class="md-nav__link">
+        plot_pareto_front
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pca/" class="md-nav__link">
+        plot_pca
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_prc/" class="md-nav__link">
+        plot_prc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_probabilities/" class="md-nav__link">
+        plot_probabilities
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_qq/" class="md-nav__link">
+        plot_qq
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_relationships/" class="md-nav__link">
+        plot_relationships
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_residuals/" class="md-nav__link">
+        plot_residuals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_results/" class="md-nav__link">
+        plot_results
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_rfecv/" class="md-nav__link">
+        plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_roc/" class="md-nav__link">
+        plot_roc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_bar/" class="md-nav__link">
+        plot_shap_bar
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_beeswarm/" class="md-nav__link">
+        plot_shap_beeswarm
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_decision/" class="md-nav__link">
+        plot_shap_decision
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_force/" class="md-nav__link">
+        plot_shap_force
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_heatmap/" class="md-nav__link">
+        plot_shap_heatmap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_scatter/" class="md-nav__link">
+        plot_shap_scatter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_waterfall/" class="md-nav__link">
+        plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_slice/" class="md-nav__link">
+        plot_slice
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_successive_halving/" class="md-nav__link">
+        plot_successive_halving
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_terminator_improvement/" class="md-nav__link">
+        plot_terminator_improvement
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_timeline/" class="md-nav__link">
+        plot_timeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_threshold/" class="md-nav__link">
+        plot_threshold
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_trials/" class="md-nav__link">
+        plot_trials
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_wordcloud/" class="md-nav__link">
+        plot_wordcloud
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/accelerating_cuml.ipynb" class="md-nav__link">
+        Accelerating cuml
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/accelerating_sklearnex.ipynb" class="md-nav__link">
+        Accelerating sklearnex
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/advanced_plotting.ipynb" class="md-nav__link">
+        Advanced plotting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/automated_feature_scaling.ipynb" class="md-nav__link">
+        Automated feature scaling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/automl.ipynb" class="md-nav__link">
+        AutoML
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/binary_classification.ipynb" class="md-nav__link">
+        Binary classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/calibration.ipynb" class="md-nav__link">
+        Calibration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/deep_learning.ipynb" class="md-nav__link">
+        Deep learning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/ensembles.ipynb" class="md-nav__link">
+        Ensembles
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/feature_engineering.ipynb" class="md-nav__link">
+        Feature engineering
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/getting_started.ipynb" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/holdout_set.ipynb" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/hyperparameter_tuning.ipynb" class="md-nav__link">
+        Hyperparameter tuning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/imbalanced_datasets.ipynb" class="md-nav__link">
+        Imbalanced datasets
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/in_training_validation.ipynb" class="md-nav__link">
+        In-training validation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/memory_considerations.ipynb" class="md-nav__link">
+        Memory considerations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multiclass_classification.ipynb" class="md-nav__link">
+        Multiclass classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification.ipynb" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multioutput_regression.ipynb" class="md-nav__link">
+        Multioutput regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/multi_metric.ipynb" class="md-nav__link">
+        Multi-metric runs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/nlp.ipynb" class="md-nav__link">
+        NLP
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/pruning.ipynb" class="md-nav__link">
+        Pruning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/ray_backend.ipynb" class="md-nav__link">
+        Ray backend
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/regression.ipynb" class="md-nav__link">
+        Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/successive_halving.ipynb" class="md-nav__link">
+        Successive halving
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/train_sizing.ipynb" class="md-nav__link">
+        Train sizing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/utilities.ipynb" class="md-nav__link">
+        Utilities
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Changelog
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Changelog
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/v5.x.x/" class="md-nav__link">
+        v5.x.x
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/v4.x.x/" class="md-nav__link">
+        v4.x.x
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dependencies/" class="md-nav__link">
+        Dependencies
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-attributes" class="md-nav__link">
+    Data attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utility-attributes" class="md-nav__link">
+    Utility attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tracking-attributes" class="md-nav__link">
+    Tracking attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plot-attributes" class="md-nav__link">
+    Plot attributes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+
+<script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
+
+                  
+
+
+<h1 id="trainsizingregressor">TrainSizingRegressor</h1>
+<hr />
+<p><a id='TrainSizingRegressor'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingRegressor</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, backend="loky", memory=False, verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L2107>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
+<p>The following steps are applied to every model (per iteration):</p>
+<ol>
+<li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
+<li>Fit the model on the training set using the best combination
+   of hyperparameters found.</li>
+<li>Evaluate the model on the test set.</li>
+<li>Train the estimator on various <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapped</a>
+   samples of the training set and evaluate again on the test set
+   (optional).</li>
+</ol>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='trainsizingregressor-models'></a><strong>models: str, estimator or sequence, default=None</strong><br><div markdown class='param'>
+Models to fit to the data. Allowed inputs are: an acronym from
+any of the <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>, an <a class="autorefs autorefs-internal" href="../../ATOM/atommodel/#atommodel">ATOMModel</a> or a custom
+predictor as class or instance. If None, all the predefined
+models are used.</p>
+<p></div><a id='trainsizingregressor-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
+Metric on which to fit the models. Choose from any of sklearn's
+<a href="https://scikit-learn.org/stable/modules/model_evaluation.html">scorers</a>, a function with signature <code>function(y_true, y_pred)
+-&gt; score</code>, a scorer object or a sequence of these. If None, the
+default metric <code>r2</code> is selected.</p>
+<p></div><a id='trainsizingregressor-train_sizes'></a><strong>train_sizes: int or sequence, default=5</strong><br><div markdown class='param'>
+Sequence of training set sizes used to run the trainings.</p>
+<ul>
+<li>If int: Number of equally distributed splits, i.e. for a value
+  <code>N</code>, it's equal to <code>np.linspace(1.0/N, 1.0, N)</code>.</li>
+<li>If sequence: Fraction of the training set when &lt;=1, else total
+  number of samples.</li>
+</ul>
+<p></div><a id='trainsizingregressor-n_trials'></a><strong>n_trials: int or sequence, default=0</strong><br><div markdown class='param'>
+Maximum number of iterations for the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.
+If 0, skip the tuning and fit the model on its default
+parameters. If sequence, the n-th value applies to the n-th
+model.</p>
+<p></div><a id='trainsizingregressor-est_params'></a><strong>est_params: dict or None, default=None</strong><br><div markdown class='param'>
+Additional parameters for the models. See their corresponding
+documentation for the available options. For multiple models,
+use the acronyms as key (or 'all' for all models) and a dict
+of the parameters as value. Add <code>_fit</code> to the parameter's name
+to pass it to the estimator's fit method instead of the
+constructor.</p>
+<p></div><a id='trainsizingregressor-ht_params'></a><strong>ht_params: dict or None, default=None</strong><br><div markdown class='param'>
+Additional parameters for the hyperparameter tuning. If None,
+it uses the same parameters as the first run. Can include:</p>
+<ul>
+<li><strong>cv: int, cv-generator, dict or sequence, default=1</strong><br>
+  Cross-validation object or number of splits. If 1, the
+  data is randomly split in a subtrain and validation set.</li>
+<li><strong>plot: bool, dict or sequence, default=False</strong><br>
+  Whether to plot the optimization's progress as it runs.
+  Creates a canvas with two plots: the first plot shows the
+  score of every trial and the second shows the distance between
+  the last consecutive steps. See the <a class="autorefs autorefs-internal" href="../../plots/plot_trials/#plot_trials">plot_trials</a> method.</li>
+<li><strong>distributions: dict, sequence or None, default=None</strong><br>
+  Custom hyperparameter distributions. If None, it uses the
+  model's predefined distributions. Read more in the
+  <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">user guide</a>.</li>
+<li><strong>tags: dict, sequence or None, default=None</strong><br>
+  Custom tags for the model's trial and <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow run</a>.</li>
+<li><strong>**kwargs</strong><br>
+  Additional Keyword arguments for the constructor of the
+  <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html">study</a> class or the <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize">optimize</a> method.</li>
+</ul>
+<p></div><a id='trainsizingregressor-n_bootstrap'></a><strong>n_bootstrap: int or sequence, default=0</strong><br><div markdown class='param'>
+Number of data sets to use for <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapping</a>. If 0, no
+bootstrapping is performed. If sequence, the n-th value applies
+to the n-th model.</p>
+<p></div><a id='trainsizingregressor-parallel'></a><strong>parallel: bool, default=False</strong><br><div markdown class='param'>
+Whether to train the models in a parallel or sequential
+fashion. Using <code>parallel=True</code> turns off the verbosity of the
+models during training. Note that many models also have
+build-in parallelizations (often when the estimator has the
+<code>n_jobs</code> parameter).</p>
+<p></div><a id='trainsizingregressor-errors'></a><strong>errors: str, default="skip"</strong><br><div markdown class='param'>
+How to handle exceptions encountered during model <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">training</a>.
+Choose from:</p>
+<ul>
+<li>"raise": Raise any encountered exception.</li>
+<li>"skip": Skip a failed model. This model is not accessible
+  after training.</li>
+<li>"keep": Keep the model in its state at failure. Note that
+  this model can break down many other methods after training.
+  This option is useful to be able to rerun hyperparameter
+  optimization after failure without losing previous successful
+  trials.</li>
+</ul>
+<p></div><a id='trainsizingregressor-n_jobs'></a><strong>n_jobs: int, default=1</strong><br><div markdown class='param'>
+Number of cores to use for parallel processing.</p>
+<ul>
+<li>If &gt;0: Number of cores to use.</li>
+<li>If -1: Use all available cores.</li>
+<li>If &lt;-1: Use number of cores - 1 + <code>n_jobs</code>.</li>
+</ul>
+<p></div><a id='trainsizingregressor-device'></a><strong>device: str, default="cpu"</strong><br><div markdown class='param'>
+Device on which to run the estimators. Use any string that
+follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector, e.g.
+<code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code> to use the GPU. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#gpu-acceleration">user guide</a>.</p>
+<p></div><a id='trainsizingregressor-engine'></a><strong>engine: dict, default={"data": "numpy", "estimator": "sklearn"}</strong><br><div markdown class='param'>
+Execution engine to use for <a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#data-acceleration">data</a> and
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#estimator-acceleration">estimators</a>. The value should be a
+dictionary with keys <code>data</code> and/or <code>estimator</code>, with their
+corresponding choice as values. Choose from:</p>
+<ul>
+<li>
+<p>"data":</p>
+<ul>
+<li>"numpy"</li>
+<li>"pyarrow"</li>
+<li>"modin"</li>
+</ul>
+</li>
+<li>
+<p>"estimator":</p>
+<ul>
+<li>"sklearn"</li>
+<li>"sklearnex"</li>
+<li>"cuml"</li>
+</ul>
+</li>
+</ul>
+<p></div><a id='trainsizingregressor-backend'></a><strong>backend: str, default="loky"</strong><br><div markdown class='param'>
+Parallelization backend. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#parallel-execution">user guide</a>. Choose from:</p>
+<ul>
+<li>"loky": Single-node, process-based parallelism.</li>
+<li>"multiprocessing": Legacy single-node, process-based
+  parallelism. Less robust than <code>loky</code>.</li>
+<li>"threading": Single-node, thread-based parallelism.</li>
+<li>"ray": Multi-node, process-based parallelism.</li>
+</ul>
+<p></div><a id='trainsizingregressor-memory'></a><strong>memory: bool, str, Path or Memory, default=False</strong><br><div markdown class='param'>
+Enables caching for memory optimization. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#memory-considerations">user guide</a>.</p>
+<ul>
+<li>If False: No caching is performed.</li>
+<li>If True: A default temp directory is used.</li>
+<li>If str: Path to the caching directory.</li>
+<li>If Path: A <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">pathlib.Path</a> to the caching directory.</li>
+<li>If Memory: Object with the <a href="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html">joblib.Memory</a> interface.</li>
+</ul>
+<p></div><a id='trainsizingregressor-verbose'></a><strong>verbose: int, default=0</strong><br><div markdown class='param'>
+Verbosity level of the class. Choose from:</p>
+<ul>
+<li>0 to not print anything.</li>
+<li>1 to print basic information.</li>
+<li>2 to print detailed information.</li>
+</ul>
+<p></div><a id='trainsizingregressor-warnings'></a><strong>warnings: bool or str, default=False</strong><br><div markdown class='param'></p>
+<ul>
+<li>If True: Default warning action (equal to "default").</li>
+<li>If False: Suppress all warnings (equal to "ignore").</li>
+<li>If str: One of python's <a href="https://docs.python.org/3/library/warnings.html#the-warnings-filter">warnings filters</a>.</li>
+</ul>
+<p>Changing this parameter affects the <code>PYTHONWarnings</code> environment.
+ATOM can't manage warnings that go from C/C++ code to stdout.</p>
+<p></div><a id='trainsizingregressor-logger'></a><strong>logger: str, Logger or None, default=None</strong><br><div markdown class='param'></p>
+<ul>
+<li>If None: Logging isn't used.</li>
+<li>If str: Name of the log file. Use "auto" for automatic name.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
+</ul>
+<p></div><a id='trainsizingregressor-experiment'></a><strong>experiment: str or None, default=None</strong><br><div markdown class='param'>
+Name of the <a href="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments">mlflow experiment</a> to use for tracking.
+If None, no mlflow tracking is performed.</p>
+<p></div><a id='trainsizingregressor-random_state'></a><strong>random_state: int or None, default=None</strong><br><div markdown class='param'>
+Seed used by the random number generator. If None, the random
+number generator is the <code>RandomState</code> used by <code>np.random</code>.</p>
+<p></div></td></tr></p>
+</table>
+<p><br></p>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../../ATOM/atomregressor/#atomregressor">ATOMRegressor</a><br>    <div style='margin: -1em 0 0 1.2em'>Main class for regression tasks.</div></p>
+<p><a class="autorefs autorefs-internal" href="../directregressor/#directregressor">DirectRegressor</a><br>    <div style='margin: -1em 0 0 1.2em'>Train and evaluate the models in a direct fashion.</div></p>
+<p><a class="autorefs autorefs-internal" href="../successivehalvingregressor/#successivehalvingregressor">SuccessiveHalvingRegressor</a><br>    <div style='margin: -1em 0 0 1.2em'>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#successive-halving">successive halving</a> fashion.</div></p>
+</div>
+<p><br></p>
+<h2 id="example">Example</h2>
+<pre><code class="language-pycon">from atom.training import TrainSizingRegressor
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+
+X, y = load_digits(return_X_y=True, as_frame=True)
+
+train, test = train_test_split(
+    X.merge(y.to_frame(), left_index=True, right_index=True),
+    test_size=0.3,
+)
+
+runner = TrainSizingRegressor(models=&quot;OLS&quot;, verbose=2)
+runner.run(train, test)
+
+# Analyze the results
+print(runner.results)
+
+print(runner.evaluate())
+</code></pre>
+<p><br></p>
+<h2 id="attributes">Attributes</h2>
+<h3 id="data-attributes">Data attributes</h3>
+<p>The data attributes are used to access the dataset and its properties.
+Updating the dataset will automatically update the response of these
+attributes accordingly.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-dataset'></a><strong>dataset: dataframe</strong><br><div markdown class='param'>Complete data set.
+</div><a id='trainsizingregressor-train'></a><strong>train: dataframe</strong><br><div markdown class='param'>Training set.
+</div><a id='trainsizingregressor-test'></a><strong>test: dataframe</strong><br><div markdown class='param'>Test set.
+</div><a id='trainsizingregressor-X'></a><strong>X: dataframe</strong><br><div markdown class='param'>Feature set.
+</div><a id='trainsizingregressor-y'></a><strong>y: series | dataframe</strong><br><div markdown class='param'>Target column(s).
+</div><a id='trainsizingregressor-holdout'></a><strong>holdout: dataframe | None</strong><br><div markdown class='param'>Holdout set.</p>
+<p>This data set is untransformed by the pipeline. Read more in
+the <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">user guide</a>.
+</div><a id='trainsizingregressor-X_train'></a><strong>X_train: dataframe</strong><br><div markdown class='param'>Features of the training set.
+</div><a id='trainsizingregressor-y_train'></a><strong>y_train: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the training set.
+</div><a id='trainsizingregressor-X_test'></a><strong>X_test: dataframe</strong><br><div markdown class='param'>Features of the test set.
+</div><a id='trainsizingregressor-y_test'></a><strong>y_test: series | dataframe</strong><br><div markdown class='param'>Target column(s) of the test set.
+</div><a id='trainsizingregressor-shape'></a><strong>shape: tuple[int, int]</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).
+</div><a id='trainsizingregressor-columns'></a><strong>columns: index</strong><br><div markdown class='param'>Name of all the columns.
+</div><a id='trainsizingregressor-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.
+</div><a id='trainsizingregressor-features'></a><strong>features: index</strong><br><div markdown class='param'>Name of the features.
+</div><a id='trainsizingregressor-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.
+</div><a id='trainsizingregressor-target'></a><strong>target: str | list[str]</strong><br><div markdown class='param'>Name of the target column(s).
+</div></td></tr></p>
+</table>
+<p><br></p>
+<h3 id="utility-attributes">Utility attributes</h3>
+<p>The utility attributes are used to access information about the models
+in the instance after <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">training</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-models'></a><strong>models: str | list[str] | None</strong><br><div markdown class='param'>Name of the model(s).
+</div><a id='trainsizingregressor-metric'></a><strong>metric: str | list[str] | None</strong><br><div markdown class='param'>Name of the metric(s).
+</div><a id='trainsizingregressor-winners'></a><strong>winners: list[<a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a>] | None</strong><br><div markdown class='param'>Models ordered by performance.</p>
+<p>Performance is measured as the highest score on the model's
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
+that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
+is compared. Ties are resolved looking at the lowest
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-time_fit">time_fit</a>.
+</div><a id='trainsizingregressor-winner'></a><strong>winner: <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a> | None</strong><br><div markdown class='param'>Best performing model.</p>
+<p>Performance is measured as the highest score on the model's
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
+that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
+is compared. Ties are resolved looking at the lowest
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-time_fit">time_fit</a>.
+</div><a id='trainsizingregressor-results'></a><strong>results: pd.dataframe</strong><br><div markdown class='param'>Overview of the training results.</p>
+<p>All durations are in seconds. Columns include:</p>
+<ul>
+<li><strong>score_ht:</strong> Score obtained by the hyperparameter tuning.</li>
+<li><strong>time_ht:</strong> Duration of the hyperparameter tuning.</li>
+<li><strong>score_train:</strong> Metric score on the train set.</li>
+<li><strong>score_test:</strong> Metric score on the test set.</li>
+<li><strong>time_fit:</strong> Duration of the model fitting on the train set.</li>
+<li><strong>score_bootstrap:</strong> Mean score on the bootstrapped samples.</li>
+<li><strong>time_bootstrap:</strong> Duration of the bootstrapping.</li>
+<li><strong>time:</strong> Total duration of the model run.
+</div></td></tr></li>
+</ul>
+</table>
+<p><br></p>
+<h3 id="tracking-attributes">Tracking attributes</h3>
+<p>The tracking attributes are used to customize what elements of the
+experiment are tracked. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-log_ht'></a><strong>log_ht: bool</strong><br><div markdown class='param'>Whether to track every trial of the hyperparameter tuning.
+</div><a id='trainsizingregressor-log_plots'></a><strong>log_plots: bool</strong><br><div markdown class='param'>Whether to save plots as artifacts.
+</div><a id='trainsizingregressor-log_data'></a><strong>log_data: bool</strong><br><div markdown class='param'>Whether to save the train and test sets.
+</div><a id='trainsizingregressor-log_pipeline'></a><strong>log_pipeline: bool</strong><br><div markdown class='param'>Whether to save the model's pipeline.
+</div></td></tr></p>
+</table>
+<p><br></p>
+<h3 id="plot-attributes">Plot attributes</h3>
+<p>The plot attributes are used to customize the plot's aesthetics. Read
+more in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-palette'></a><strong>palette: str | sequence</strong><br><div markdown class='param'>Color palette.</p>
+<p>Specify one of plotly's <a href="https://plotly.com/python/discrete-color/">built-in palettes</a> or create
+a custom one, e.g., <code>atom.palette = ["red", "green", "blue"]</code>.
+</div><a id='trainsizingregressor-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.
+</div><a id='trainsizingregressor-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for the labels, legend and hover information.
+</div><a id='trainsizingregressor-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.
+</div><a id='trainsizingregressor-line_width'></a><strong>line_width: int</strong><br><div markdown class='param'>Width of the line plots.
+</div><a id='trainsizingregressor-marker_size'></a><strong>marker_size: int</strong><br><div markdown class='param'>Size of the markers.
+</div></td></tr></p>
+</table>
+<p><br></p>
+<h2 id="methods">Methods</h2>
+<p>Next to the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> methods, the class contains a variety
+of methods to handle the data, run the training, and manage the pipeline.</p>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-clear">clear</a></td><td>Reset attributes and clear memoization from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-export_pipeline">export_pipeline</a></td><td>Export the internal pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-run">run</a></td><td>Train and evaluate the models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
+</table>
+<p><br></p>
+<p><a id='trainsizingregressor-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L415>[source]</a></span></div>Give an overview of the available predefined models.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='available_models-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Information about the available <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>. Columns
+include:</p>
+<ul>
+<li><strong>acronym:</strong> Model's acronym (used to call the model).</li>
+<li><strong>model:</strong> Name of the model's class.</li>
+<li><strong>estimator:</strong> The model's underlying estimator.</li>
+<li><strong>module:</strong> The estimator's module.</li>
+<li><strong>needs_scaling:</strong> Whether the model requires feature scaling.</li>
+<li><strong>accepts_sparse:</strong> Whether the model accepts sparse matrices.</li>
+<li><strong>native_multilabel:</strong> Whether the model has native support
+  for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</li>
+<li><strong>native_multioutput:</strong> Whether the model has native support
+  for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</li>
+<li><strong>has_validation:</strong> Whether the model has <a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">in-training validation</a>.</li>
+<li><strong>supports_engines:</strong> Engines supported by the model.
+</div></td></tr></li>
+</ul>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L982>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p>This <code>@contextmanager</code> allows you to draw many plots in one
+figure. The default option is to add two plots side by side.
+See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='canvas-rows'></a><strong>rows: int, default=1</strong><br><div markdown class='param'>
+Number of plots in length.</p>
+<p></div><a id='canvas-cols'></a><strong>cols: int, default=2</strong><br><div markdown class='param'>
+Number of plots in width.</p>
+<p></div><a id='canvas-horizontal_spacing'></a><strong>horizontal_spacing: float, default=0.05</strong><br><div markdown class='param'>
+Space between subplot rows in normalized plot coordinates.
+The spacing is relative to the figure's size.</p>
+<p></div><a id='canvas-vertical_spacing'></a><strong>vertical_spacing: float, default=0.07</strong><br><div markdown class='param'>
+Space between subplot cols in normalized plot coordinates.
+The spacing is relative to the figure's size.</p>
+<p></div><a id='canvas-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
+Title for the plot.</p>
+<ul>
+<li>If None, no title is shown.</li>
+<li>If str, text for the title.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
+</ul>
+<p></div><a id='canvas-legend'></a><strong>legend: bool, str or dict, default="out"</strong><br><div markdown class='param'>
+Legend for the plot. See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">user guide</a> for
+an extended description of the choices.</p>
+<ul>
+<li>If None: No legend is shown.</li>
+<li>If str: Location where to show the legend.</li>
+<li>If dict: Legend configuration.</li>
+</ul>
+<p></div><a id='canvas-figsize'></a><strong>figsize: tuple or None, default=None</strong><br><div markdown class='param'>
+Figure's size in pixels, format as (x, y). If None, it
+adapts the size to the number of plots in the canvas.</p>
+<p></div><a id='canvas-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no file type,
+the plot is saved as html. If None, the plot is not saved.</p>
+<p></div><a id='canvas-display'></a><strong>display: bool, default=True</strong><br><div markdown class='param'>
+Whether to render the plot.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Yields</strong></td><td class='td_params'><a id='canvas-<a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a>'></a><strong><a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a></strong><br><div markdown class='param'>
+Plot object.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L460>[source]</a></span></div>Reset attributes and clear memoization from all models.</p>
+<p>Reset certain model attributes to their initial state, deleting
+potentially large data arrays. Use this method to free some
+memory before <a class="autorefs autorefs-internal" href="#trainsizingregressor-save">saving</a> the instance. The affected
+attributes are:</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
+<li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_app">App instance</a></li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_dashboard">Dashboard instance</a></li>
+<li>Memoized <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
+<li>Calculated <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
+</ul>
+<p><br><br></p>
+<p><a id='trainsizingregressor-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L480>[source]</a></span></div>Delete models.</p>
+<p>If all models are removed, the metric is reset. Use this method
+to drop unwanted models from the pipeline or to free some memory
+before <a class="autorefs autorefs-internal" href="#trainsizingregressor-save">saving</a>. Deleted models are not removed from
+any active <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow experiment</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='delete-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
+Models to delete. If None, all models are deleted.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L507>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
+Metric to calculate. If None, it returns an overview of
+the most common metrics per task.</p>
+<p></div><a id='evaluate-dataset'></a><strong>dataset: str, default="test"</strong><br><div markdown class='param'>
+Data set on which to calculate the metric. Choose from:
+"train", "test" or "holdout".</p>
+<p></div><a id='evaluate-threshold'></a><strong>threshold: float or sequence, default=0.5</strong><br><div markdown class='param'>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:</p>
+<ul>
+<li>The task is binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted probabilities.</li>
+</ul>
+<p>For multilabel classification tasks, it's possible to
+provide a sequence of thresholds (one per target column).
+The same threshold per target column is applied to all
+models.</p>
+<p></div><a id='evaluate-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
+Sample weights corresponding to y in <code>dataset</code>.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='evaluate-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Scores of the models.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L565>[source]</a></span></div>Export the internal pipeline.</p>
+<p>This method returns a deepcopy of the branch's pipeline.
+Optionally, you can add a model as final estimator. The
+returned pipeline is already fitted on the training set.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='export_pipeline-model'></a><strong>model: str, Model or None, default=None</strong><br><div markdown class='param'>
+Model for which to export the pipeline. If the model used
+<a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>, the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to
+the pipeline. If None, the pipeline in the current branch
+is exported.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='export_pipeline-<a class="autorefs autorefs-internal" href="../../pipeline/pipeline/#pipeline">Pipeline</a>'></a><strong><a class="autorefs autorefs-internal" href="../../pipeline/pipeline/#pipeline">Pipeline</a></strong><br><div markdown class='param'>
+Current branch as a sklearn-like Pipeline object.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L592>[source]</a></span></div>Return class weights for a balanced data set.</p>
+<p>Statistically, the class weights re-balance the data set so
+that the sampled data set represents the target population
+as closely as possible. The returned weights are inversely
+proportional to the class frequencies in the selected data set.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_class_weight-dataset'></a><strong>dataset: str, default="train"</strong><br><div markdown class='param'>
+Data set from which to get the weights. Choose from:
+"train", "test", "dataset".</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_class_weight-dict'></a><strong>dict</strong><br><div markdown class='param'>
+Classes with the corresponding weights. A dict of dicts is
+returned for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L177>[source]</a></span></div>Get parameters for this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
+If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_params-params '></a><strong>params : dict</strong><br><div markdown class='param'>
+Parameter names mapped to their values.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L656>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p>Branches, models, metrics and attributes of the other instance
+are merged into this one. If there are branches and/or models
+with the same name, they are merged adding the <code>suffix</code>
+parameter to their name. The errors and missing attributes are
+extended with those of the other instance. It's only possible
+to merge two instances if they are initialized with the same
+dataset and trained with the same metric.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='merge-other'></a><strong>other: Runner</strong><br><div markdown class='param'>
+Instance with which to merge. Should be of the same class
+as self.</p>
+<p></div><a id='merge-suffix'></a><strong>suffix: str, default="2"</strong><br><div markdown class='param'>
+Conflicting branches and models are merged adding <code>suffix</code>
+to the end of their names.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1088>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p>Recursively update the structure of the original layout with
+the values in the arguments.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='update_layout-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Keyword arguments for the figure's <a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html#plotly.graph_objects.Figure.update_layout">update_layout</a> method.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-update_traces'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1102>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p>Recursively update the structure of the original traces with
+the values in the arguments.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='update_traces-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Keyword arguments for the figure's <a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html#plotly.graph_objects.Figure.update_traces">update_traces</a> method.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/base.py#L1075>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><br><br></p>
+<p><a id='trainsizingregressor-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(*arrays)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L191>[source]</a></span></div>Train and evaluate the models.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='run-\*arrays'></a><strong>*arrays: sequence of indexables</strong><br><div markdown class='param'>
+Training set and test set. Allowed formats are:</p>
+<ul>
+<li>train, test</li>
+<li>X_train, X_test, y_train, y_test</li>
+<li>(X_train, y_train), (X_test, y_test)
+</div></td></tr></li>
+</ul>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L718>[source]</a></span></div>Save the instance to a pickle file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
+Name of the file. Use "auto" for automatic naming.</p>
+<p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
+Whether to save the dataset with the instance. This
+parameter is ignored if the method is not called from atom.
+If False, add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a>
+method to reload the instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L201>[source]</a></span></div>Set the parameters of this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
+Estimator parameters.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='set_params-self '></a><strong>self : estimator instance</strong><br><div markdown class='param'>
+Estimator instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L768>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Combining models trained on different branches into one
+ensemble is not allowed and will raise an exception.</p>
+</div>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='stacking-models'></a><strong>models: slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Models that feed the stacking estimator. The models must have
+been fitted on the current branch.</p>
+<p></div><a id='stacking-name'></a><strong>name: str, default="Stack"</strong><br><div markdown class='param'>
+Name of the model. The name is always presided with the
+model's acronym: <code>Stack</code>.</p>
+<p></div><a id='stacking-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Additional keyword arguments for sklearn's stacking instance.
+The model's acronyms can be used for the <code>final_estimator</code>
+parameter.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L845>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Combining models trained on different branches into one
+ensemble is not allowed and will raise an exception.</p>
+</div>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='voting-models'></a><strong>models: slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Models that feed the stacking estimator. The models must have
+been fitted on the current branch.</p>
+<p></div><a id='voting-name'></a><strong>name: str, default="Vote"</strong><br><div markdown class='param'>
+Name of the model. The name is always presided with the
+model's acronym: <code>Vote</code>.</p>
+<p></div><a id='voting-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Additional keyword arguments for sklearn's voting instance.
+</div></td></tr></p>
+</table>
+<p><br></p>
+
+
+  
+
+
+
+
+                
+
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../trainsizingforecaster/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TrainSizingForecaster" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                TrainSizingForecaster
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../models/adab/" class="md-footer__link md-footer__link--next" aria-label="Next: AdaBoost" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                AdaBoost
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023, by Mavs.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://stackoverflow.com/questions/tagged/atom-ml" target="_blank" rel="noopener" title="StackOverflow" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M290.7 311 95 269.7 86.8 309l195.7 41zm51-87L188.2 95.7l-25.5 30.8 153.5 128.3zm-31.2 39.7L129.2 179l-16.7 36.5L293.7 300zM262 32l-32 24 119.3 160.3 32-24zm20.5 328h-200v39.7h200zm39.7 80H42.7V320h-40v160h359.5V320h-40z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://pypi.org/project/atom-ml/" target="_blank" rel="noopener" title="Pypi" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6zM286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3zM167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4zm-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262Zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095Zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271Z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0L0 176z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
+      
+        
+          <script src="../../../stylesheets/extra.js"></script>
+        
+      
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+      
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+      
+    
+  </body>
+</html>

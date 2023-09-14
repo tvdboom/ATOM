@@ -482,7 +482,7 @@ class TrialsCallback:
                     for i, name in enumerate(self.T._metric.keys()):
                         mlflow.log_metric(f"{name}_validation", score[i])
 
-                    if estimator and self.T.log_model:
+                    if estimator:
                         mlflow.sklearn.log_model(
                             sk_model=estimator,
                             artifact_path=estimator.__class__.__name__,
@@ -1507,9 +1507,7 @@ def check_scaling(X: Pandas, pipeline: Any | None = None) -> bool:
         has_scaler = any("scaler" in name.lower() for name in pipeline.named_steps)
 
     df = to_df(X)  # Convert to dataframe
-
-    # Remove binary columns (thus also sparse columns)
-    df = df[[c for c in df if ~np.isin(df[c].unique(), [0, 1]).all()]]
+    df = df.loc[:, (~df.isin([0, 1])).any(axis=0)]  # Remove binary columns
 
     if df.empty:  # All columns are binary -> no scaling needed
         return True

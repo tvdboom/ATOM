@@ -19,7 +19,6 @@ class TrackingParams:
     """Tracking parameters for a mlflow experiment."""
 
     log_ht: Bool  # Track every trial of the hyperparameter tuning
-    log_model: Bool  # Save the model estimator after fitting
     log_plots: Bool  # Save plot artifacts
     log_data: Bool  # Save the train and test sets
     log_pipeline: Bool  # Save the model's pipeline
@@ -30,7 +29,6 @@ class BaseTracker:
     # Tracking parameters for mlflow
     _tracking_params = TrackingParams(
         log_ht=True,
-        log_model=True,
         log_plots=True,
         log_data=False,
         log_pipeline=False,
@@ -44,15 +42,6 @@ class BaseTracker:
     @log_ht.setter
     def log_ht(self, value: Bool):
         self._tracking_params.log_ht = value
-
-    @property
-    def log_model(self) -> Bool:
-        """Whether to save the model's estimator after fitting."""
-        return self._tracking_params.log_model
-
-    @log_model.setter
-    def log_model(self, value: Bool):
-        self._tracking_params.log_model = value
 
     @property
     def log_plots(self) -> Bool:

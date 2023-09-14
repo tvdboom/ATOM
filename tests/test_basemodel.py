@@ -312,7 +312,6 @@ def test_run_log_evals_to_mlflow(mlflow):
 def test_run_log_models_to_mlflow(mlflow):
     """Assert that models are logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.log_model = True
     atom.run("LGB")
     assert mlflow.call_count == 1
 

@@ -731,7 +731,7 @@ class BaseRunner(BaseTracker):
             method to reload the instance.
 
         """
-        if not save_data and hasattr(self, "_branches"):
+        if not save_data:
             data = {}
             og = self._branches.og._data
             self._branches._og._data = None
@@ -739,11 +739,10 @@ class BaseRunner(BaseTracker):
                 data[branch.name] = dict(
                     _data=deepcopy(branch._data),
                     _holdout=deepcopy(branch._holdout),
-                    holdout=branch.__dict__.get("holdout", None)
+                    holdout=branch.__dict__.pop("holdout", None)  # Clear cached holdout
                 )
                 branch._data = None
                 branch._holdout = None
-                branch.__dict__.pop("holdout", None)  # Clear cached holdout
 
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
@@ -756,13 +755,13 @@ class BaseRunner(BaseTracker):
             pickle.dump(self, f)
 
         # Restore the data to the attributes
-        if not save_data and hasattr(self, "_branches"):
+        if not save_data:
             self._branches._og._data = og
             for branch in self._branches:
                 branch._data = data[branch.name]["_data"]
                 branch._holdout = data[branch.name]["_holdout"]
                 if data[branch.name]["holdout"] is not None:
-                    branch.holdout = data[branch.name]["holdout"]
+                    branch.__dict__["holdout"] = data[branch.name]["holdout"]
 
         self._log(f"{self.__class__.__name__} successfully saved.", 1)
 

@@ -10,7 +10,7 @@ Description: Module containing the BranchManager class.
 from __future__ import annotations
 
 from copy import copy, deepcopy
-
+import shutil
 from beartype import beartype
 from joblib.memory import Memory
 
@@ -145,10 +145,17 @@ class BranchManager:
             Parent branch from which to get the info from.
 
         """
-        # Transfer data from parent or load from memory
-        if parent._data is None:
+        if branch.name == "og" and parent._location:
+            # Make a new copy of the data for the og branch
+            parent.store(assign=False)
+            shutil.copy(f"{parent._location}.pkl", f"{branch._location}.pkl")
+        elif parent._location:
+            # Transfer data from memory to avoid having
+            # the datasets in memory twice at one time
+            parent.store()
             setattr(branch, "_data", parent.load(assign=False))
         else:
+            # Copy the dataset in-memory
             setattr(branch, "_data", deepcopy(parent._data))
 
         # Deepcopy the pipeline but use the same estimators
@@ -156,6 +163,7 @@ class BranchManager:
         for i, step in enumerate(parent._pipeline.steps):
             branch.pipeline.steps[i] = step
 
+        # Copy mapping and assign other vars
         setattr(branch, "_mapping", copy(getattr(parent, "_mapping")))
         for attr in vars(parent):
             if not hasattr(branch, attr):  # If not already assigned...
@@ -180,7 +188,7 @@ class BranchManager:
         if name == "og":
             if not self._og:
                 self._og = Branch("og", memory=self.memory)
-                self._copy_from_parent(self._og, self.current)
+                self._copy_from_parent(self.og, self.current)
         else:
             # Skip for first call from __init__
             if self.branches:
@@ -188,8 +196,8 @@ class BranchManager:
 
             self._current = self.branches.append(Branch(name, memory=self.memory))
 
-            if parent is not None:
-                self._copy_from_parent(self._current, parent)
+            if parent:
+                self._copy_from_parent(self.current, parent)
 
     def fill(self, data: DataContainer, holdout: DataFrame | None = None):
         """Fill the current branch with data.

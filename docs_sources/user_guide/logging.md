@@ -97,8 +97,7 @@ parameters passed to the fit method are **not** tracked.
 **Model**<br>
 The model's estimator is stored as artifact. The estimator has to be
 compatible with the [mlflow.sklearn](https://www.mlflow.org/docs/latest/python_api/mlflow.sklearn.html),
-module. This option can be switched off using atom's [`log_model`]
-[atomclassifier-log_model] attribute, e.g., `#!python atom.log_model = False`.
+module.
 
 **Hyperparameter tuning**<br>
 If [hyperparameter tuning][] is performed, every trial is tracked as a nested

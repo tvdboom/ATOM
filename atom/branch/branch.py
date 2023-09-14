@@ -99,7 +99,7 @@ class Branch:
         if memory.location is None:
             self._location = None
         else:
-            self._location = os.path.join(memory.location, f"joblib/atom/{self}.pkl")
+            self._location = os.path.join(memory.location, "joblib", "atom", str(self))
 
     def __repr__(self) -> str:
         return f"Branch({self.name})"
@@ -109,7 +109,7 @@ class Branch:
         """Get the branch's data.
 
         Load from memory if the data container is empty. This property
-        is required to access the data from inactive branches.
+        is required to access the data for inactive branches.
 
         """
         return self.load(assign=False)
@@ -304,7 +304,6 @@ class Branch:
                 *self.pipeline.transform(
                     X=self._holdout.iloc[:, :-self._data.n_cols],
                     y=self._holdout[self.target],
-                    verbose=0,
                 )
             )
 
@@ -500,7 +499,7 @@ class Branch:
 
         Parameters
         ----------
-        columns: int, str, range, slice, sequence or None
+        columns: int, str, range, slice, sequence or None, default=None
             Names, indices or dtypes of the columns to select. If None,
             it returns all columns in the dataframe.
 
@@ -731,10 +730,10 @@ class Branch:
         """
         if self._container is None and self._location:
             try:
-                with open(self._location, "rb") as file:
+                with open(f"{self._location}.pkl", "rb") as file:
                     data = pickle.load(file)
             except FileNotFoundError:
-                raise ValueError(f"Branch {self.name} has no data.")
+                raise ValueError(f"Branch {self.name} has no data stored.")
 
             if assign:
                 self._container = data
@@ -743,7 +742,7 @@ class Branch:
 
         return self._container
 
-    def store(self):
+    def store(self, assign: Bool = True):
         """Store the branch's data as a pickle in memory.
 
         After storage, the data is deleted and the branch is no longer
@@ -754,9 +753,15 @@ class Branch:
             This method is skipped silently for branches with no memory
             allocation.
 
+        Parameters
+        ----------
+        assign: bool, default=True
+            Whether to assign `None` to the data in `self`.
+
         """
-        if self._location:
-            with open(self._location, "wb") as file:
+        if self._container is not None and self._location:
+            with open(f"{self._location}.pkl", "wb") as file:
                 pickle.dump(self._container, file)
 
-            self._container = None
+            if assign:
+                self._container = None

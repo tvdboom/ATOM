@@ -72,12 +72,12 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 * An identifier doesn't usually contain any useful information
   on the target column, and should therefore be removed before training.
-* [Predictions][predicting] of specific rows can be accessed through
-  their index.
+* [Predictions][predicting] of specific rows can be [accessed through their index][row-and-column-selection].
 
 !!! warning
-    Avoid duplicate indices in the dataframe. Having them may potentially
-    lead to unexpected behavior.
+    Avoid duplicate indices in the dataframe. Having them raises an error
+    when initializing atom and may potentially lead to unexpected behavior
+    if introduced later.
 
 <br>
 
@@ -99,6 +99,10 @@ to convert dense features to sparse and the [available_models]
 native support for sparse matrices.
 
 Click [here][example-nlp] to see an example that uses sparse data.
+
+!!! warning
+    Estimators accelerated using [sklearnex][] don't support sparse 
+    datasets.
 
 <br>
 
@@ -258,7 +262,7 @@ meta-estimators are respectively:
 You might want to compare how a model performs on a dataset transformed
 through multiple pipelines, each using different transformers. For
 example, on one pipeline with an undersampling strategy and the other
-with an oversampling strategy. To be able to do this, ATOM has the
+with an oversampling strategy. To be able to do this, ATOM has a
 branching system.
 
 The branching system helps the user to manage multiple data pipelines
@@ -271,15 +275,15 @@ attributes such as `atom.dataset`. It's not allowed to change the data
 in a branch after fitting a model with it. Instead, create a new branch
 for every unique pipeline.
 
-By default, atom starts with one branch called "master". To start a new
+By default, atom starts with one branch called "main". To start a new
 branch, set a new name to the property, e.g., `#!python atom.branch = "undersample"`.
 This creates a new branch from the current one. To create a branch from any
 other branch type "\_from\_" between the new name and the branch from which
-to split, e.g., `#!python atom.branch = "oversample_from_master"` creates
-branch "oversample" from branch "master", even if the current branch is
+to split, e.g., `#!python atom.branch = "oversample_from_main"` creates
+branch "oversample" from branch "main", even if the current branch is
 "undersample". To switch between existing branches, just type the name of
-the desired branch, e.g., `#!python atom.branch = "master"` brings you back
-to the master branch. Note that every branch contains a unique copy of the
+the desired branch, e.g., `#!python atom.branch = "main"` brings you back
+to the main branch. Note that every branch contains a unique copy of the
 whole dataset! Creating many branches can cause [memory issues](#memory-considerations)
 for large datasets.
 
@@ -308,7 +312,7 @@ doesn't include the [holdout set](#data-sets), which is only stored once),
 and one copy of the initial dataset with which the instance is initialized.
 This copy of the original dataset is necessary to avoid data leakage during
 hyperparameter tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
-and [reset][atomclassifier-reset]). It's created as soon as there are no
+and [reset][atomclassifier-reset]. It's created as soon as there are no
 branches in the initial state (usually after calling the first data
 transformation). If the dataset is occupying too much memory, consider
 using the [shrink][atomclassifier-shrink] method to convert the dtypes to
@@ -317,13 +321,14 @@ their smallest possible matching dtype.
 When working with large datasets and multiple branches, it becomes impossible
 to store all branches in memory at the same time. To avoid out-of-memory errors,
 use atom's [`memory`][atomclassifier-memory] parameter. If not `False`, atom
-saves the data of inactive branches at the specified location (in a directory
-called `joblib`, the name of the underlying library managing the caching),
-maintaining only the current active branch in memory. This mechanism results
-in a slight drop in performance, but can save a lot of memory. Additionally,
-the memory's location is also used to cache the output of the `fit` method of
-transformers in the pipeline. See [here][example-memory-considerations] an
-example using the memory parameter.
+saves the data of inactive branches as well as the original branch at the
+specified location (in a directory called `joblib`, the name of the underlying
+library managing the caching), maintaining only the current active branch in
+memory. This mechanism results in a slight drop in performance because of the
+I/O overhead, but can save a lot of memory. Additionally, the memory's location
+is also used to cache the output of the `fit` method of transformers in the
+pipeline. See [here][example-memory-considerations] an example using the memory
+parameter.
 
 Apart from the dataset itself, a model's metric scores and [shap values][shap]
 are also stored as attributes of the model to avoid having to recalculate
@@ -345,3 +350,41 @@ the data using custom transformers (see the [add][atomclassifier-add]
 method) or through a function (see the [apply][atomclassifier-apply]
 method). Remember that all transformations are only applied to the
 dataset in the current branch.
+
+
+## Row and column selection
+
+Many methods in atom contain the `rows` or `columns` parameter to select a
+subset of the dataset. Examples are the [eda][atomclassifier-eda] and
+[save_data][atomclassifier-save_data] methods for `rows`, and the
+[distribution][atomclassifier-distribution] and [shrink][atomclassifier-shrink]
+methods for `columns`. All [data cleaning][] and [feature engineering][] methods
+use the `columns` parameter to apply the transformation only to that selection
+of columns, and all [prediction methods][predicting] use the `rows` parameter
+to make predictions on that selection of rows.
+
+As you can see, these two parameters are very important and shared across
+many methods in atom. Rows and columns can be selected in multiple ways.
+The check is performed in the order described hereunder:
+
+1. By exact name, e.g., `#!python rows=["row1", "row2"]` to select rows with
+   indices `row1` and `row2` or `#!python columns=["col1", "col2"]` to select
+   columns `col1` and `col2`. It's also possible to use the `+` sign to select
+   multiple rows or columns, e.g., `#!python columns="col1+col2` is the same
+   as `#!python columns=["col1", "col2"]`.
+2. By position, e.g., `#!python rows=[0, 1, 2]` to select the first three rows.
+3. By name of the data set (only for rows), e.g., `#!python rows="train"` to
+   select all rows in the train set, or `#!python rows="test+holdout"` to select
+   all rows in the test and holdout sets. Valid data sets are `dataset`, `train`,
+   `test` and `holdout`.
+4. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
+   starting with `mean_`.
+5. By range or slice, e.g., `#!python rows=range(100)` to select the first 100
+   rows or `#!python rows=slice(20, 100)` to select rows 20 to 99.
+6. Excluding instead of including using the `!` sign, e.g. `#!python columns="!col1"`
+   to select all columns except `col1`. You can also exclude multiple columns like
+   this `#!python columns=["!col1", "!col2"]` or this `#!python columns="!col1+!col2"`.
+   Note that if a column name starts with `!`, the selection of that name will take
+   priority over exclusion. Rows and columns can only be included or excluded, and
+   not both at the same time. For example, this selection raises an exception
+   `#!python column=["col1", "!col2"]`.

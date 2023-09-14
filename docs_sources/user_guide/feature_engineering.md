@@ -17,16 +17,15 @@ in the dataset. See the [Feature engineering][example-feature-engineering]
 example.
 
 !!! note
-    All of atom's feature engineering methods automatically adopt the relevant
-    transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
-    atom. A different choice can be added as parameter to the method call,
-    e.g., `#!python atom.feature_selection("pca", n_features=10, random_state=2)`.
-
-!!! note
-    Like the [add][atomclassifier-add] method, the feature engineering
-    methods accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g., `#!python atom.feature_selection("pca", 
-    n_features=10, columns=slice(5, 15))`.
+    * All of atom's feature engineering methods automatically adopt the relevant
+      transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
+      atom. A different choice can be added as parameter to the method call,
+      e.g., `#!python atom.feature_selection("pca", n_features=10, random_state=2)`.
+    * Like the [add][atomclassifier-add] method, the feature engineering
+      methods accept the `columns` parameter to only transform a subset of the
+      dataset's features, e.g., `#!python atom.feature_selection("pca", 
+      n_features=10, columns=slice(5, 15))`. Read more in the
+      [row and column selection][] section.
 
 <br>
 

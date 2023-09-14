@@ -270,7 +270,7 @@ class ATOM(BaseRunner, ATOMPlot):
         """Columns in training set with number of outlier values."""
         if not is_sparse(self.X):
             data = self.train.select_dtypes(include=["number"])
-            z_scores = (np.abs(stats.zscore(data.values.astype(float))) > 3)
+            z_scores = (np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3)
             z_scores = pd.Series(z_scores.sum(axis=0), index=data.columns)
             return z_scores[z_scores > 0]
 
@@ -279,7 +279,8 @@ class ATOM(BaseRunner, ATOMPlot):
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
             data = self.train.select_dtypes(include=["number"])
-            return (np.abs(stats.zscore(data.values.astype(float))) > 3).any(axis=1).sum()
+            z_scores = (np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3)
+            return z_scores.any(axis=1).sum()
 
     @property
     def classes(self) -> pd.DataFrame | None:
@@ -870,8 +871,8 @@ class ATOM(BaseRunner, ATOMPlot):
             )
 
         if self.engine.get("data") == "pyarrow":
-            self.branch.dataset = self.branch.dataset.astype(
-                {name: to_pyarrow(col) for name, col in self.branch._data.items()}
+            self.dataset = self.dataset.astype(
+                {name: to_pyarrow(col) for name, col in self.dataset.items()}
             )
 
         self._log("The column dtypes are successfully converted.", 1)

@@ -1199,19 +1199,18 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                         for step in range(len(value)):
                             mlflow.log_metric(f"evals_{key}", value[step], step=step)
 
-                # Rest of metrics are tracked when calling _get_score
+                # The Rest of the metrics are tracked when calling _get_score
                 mlflow.log_metric("time_fit", self.time_fit)
 
-                if self.log_model:
-                    mlflow.sklearn.log_model(
-                        sk_model=self.estimator,
-                        artifact_path=self._est_class.__name__,
-                        signature=infer_signature(
-                            model_input=pd.DataFrame(self.X),
-                            model_output=self.predict_test.to_numpy(),
-                        ),
-                        input_example=pd.DataFrame(self.X.iloc[[0], :]),
-                    )
+                mlflow.sklearn.log_model(
+                    sk_model=self.estimator,
+                    artifact_path=self._est_class.__name__,
+                    signature=infer_signature(
+                        model_input=pd.DataFrame(self.X),
+                        model_output=self.predict_test.to_numpy(),
+                    ),
+                    input_example=pd.DataFrame(self.X.iloc[[0], :]),
+                )
 
                 if self.log_data:
                     for ds in ("train", "test"):
@@ -1223,7 +1222,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 if self.log_pipeline:
                     mlflow.sklearn.log_model(
                         sk_model=self.export_pipeline(),
-                        artifact_path=f"{self.name}_pipeline",
+                        artifact_path=f"{self._est_class.__name__}_pipeline",
                         signature=infer_signature(
                             model_input=pd.DataFrame(self.X),
                             model_output=self.predict_test.to_numpy(),
