@@ -7,15 +7,9 @@ Description: Module containing utility constants.
 
 """
 
-import numpy as np
-import pandas as pd
-
 
 # Current library version
 __version__ = "6.0.0"
-
-# Always considered missing values
-MISSING_VALUES = [None, pd.NA, pd.NaT, np.inf, -np.inf]
 
 # Attributes shared between atom and a dataframe
 DF_ATTRS = (

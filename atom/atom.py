@@ -40,7 +40,7 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingForecaster,
     TrainSizingRegressor,
 )
-from atom.utils.constants import MISSING_VALUES, __version__
+from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Datasets, DiscretizerStrats, Estimator,
     Features, FeatureSelectionStrats, Index, IndexSelector, Int,
@@ -51,8 +51,8 @@ from atom.utils.types import (
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, bk, check_dependency, check_scaling,
     composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
-    infer_task, is_multioutput, is_sparse, lst, merge, method_to_log, sign,
-    to_pyarrow, transform_one,
+    infer_task, is_multioutput, is_sparse, lst, merge, method_to_log,
+    replace_missing_values, sign, to_pyarrow,
 )
 
 
@@ -137,7 +137,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self._log(f"Python build: {python_build()}", 3)
         self._log(f"ATOM version: {__version__}", 3)
 
-        # Add empty rows around stats for cleaner look
+        # Add an empty rows around stats for a neater look
         self._log("", 1)
         self.stats(1)
         self._log("", 1)
@@ -233,16 +233,13 @@ class ATOM(BaseRunner, ATOMPlot):
     def nans(self) -> Series | None:
         """Columns with the number of missing values in them."""
         if not is_sparse(self.X):
-            nans = self.dataset.replace(self.missing + MISSING_VALUES, np.NaN)
-            nans = nans.isna().sum()
-            return nans[nans > 0]
+            return replace_missing_values(self.X, self.missing).isna().sum()
 
     @property
     def n_nans(self) -> Int | None:
-        """Number of samples containing missing values."""
+        """Number of rows containing missing values."""
         if not is_sparse(self.X):
-            nans = self.dataset.replace(self.missing + MISSING_VALUES, np.NaN)
-            nans = nans.isna().sum(axis=1)
+            nans = replace_missing_values(self.X, self.missing).isna().sum(axis=1)
             return len(nans[nans > 0])
 
     @property
@@ -897,7 +894,7 @@ class ATOM(BaseRunner, ATOMPlot):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)
-        if (memory := self.dataset.memory_usage(index=self.index is not False, deep=True).sum()) < 1e6:
+        if (memory := self.dataset.memory_usage().sum()) < 1e6:
             self._log(f"Memory: {memory / 1e3:.2f} kB", _vb)
         else:
             self._log(f"Memory: {memory / 1e6:.2f} MB", _vb)
@@ -1109,7 +1106,10 @@ class ATOM(BaseRunner, ATOMPlot):
             # the user, else user might notice the lack of printed messages
             if self.memory.location is not None:
                 if fit._is_in_cache_and_valid([*fit._get_output_identifiers(**kw)]):
-                    self._log(f"Retrieving cached {transformer.__class__.__name__}...", 1)
+                    self._log(
+                        "Retrieving cached results for "
+                        f"{transformer.__class__.__name__}...", 1
+                    )
 
             transformer = fit(**kw)
 
@@ -1118,13 +1118,13 @@ class ATOM(BaseRunner, ATOMPlot):
             self._branches.add("og")
 
         if transformer._train_only:
-            X, y = transform_one(transformer, self.X_train, self.y_train)
+            X, y = self.pipeline._mem_transform(transformer, self.X_train, self.y_train)
             self.train = merge(
                 self.X_train if X is None else X,
                 self.y_train if y is None else y,
             )
         else:
-            X, y = transform_one(transformer, self.X, self.y)
+            X, y = self.pipeline._mem_transform(transformer, self.X, self.y)
             data = merge(self.X if X is None else X, self.y if y is None else y)
 
             # y can change the number of columns or remove rows -> reassign index

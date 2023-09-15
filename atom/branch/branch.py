@@ -310,7 +310,7 @@ class Branch:
     @property
     def X(self) -> DataFrame:
         """Feature set."""
-        return self._data.data.drop(self.target, axis=1)
+        return self._data.data[self.features]
 
     @X.setter
     def X(self, value: Features):
@@ -325,17 +325,17 @@ class Branch:
     @y.setter
     def y(self, value: Target):
         series = self._check_setter("y", value)
-        self._data.data = merge(self._data.data.drop(self.target, axis=1), series)
+        self._data.data = merge(self.X, series)
 
     @property
     def X_train(self) -> DataFrame:
         """Features of the training set."""
-        return self.train.drop(self.target, axis=1)
+        return self.train[self.features]
 
     @X_train.setter
     def X_train(self, value: Features):
         df = self._check_setter("X_train", value)
-        self._data.data = bk.concat([merge(df, self.train[self.target]), self.test])
+        self._data.data = bk.concat([merge(df, self.y_train), self.test])
 
     @property
     def y_train(self) -> Pandas:
@@ -350,12 +350,12 @@ class Branch:
     @property
     def X_test(self) -> DataFrame:
         """Features of the test set."""
-        return self.test.drop(self.target, axis=1)
+        return self.test[self.features]
 
     @X_test.setter
     def X_test(self, value: Features):
         df = self._check_setter("X_test", value)
-        self._data.data = bk.concat([self.train, merge(df, self.test[self.target])])
+        self._data.data = bk.concat([self.train, merge(df, self.y_test)])
 
     @property
     def y_test(self) -> Pandas:
@@ -370,12 +370,12 @@ class Branch:
     @property
     def shape(self) -> tuple[Int, Int]:
         """Shape of the dataset (n_rows, n_columns)."""
-        return self._data.data.shape
+        return self.dataset.shape
 
     @property
     def columns(self) -> Index:
         """Name of all the columns."""
-        return self._data.data.columns
+        return self.dataset.columns
 
     @property
     def n_columns(self) -> Int:
@@ -409,10 +409,14 @@ class Branch:
 
     # Utility methods ============================================== >>
 
-    def _get_rows(self, rows: RowSelector) -> DataFrame:
-        """Get a subset of the data.
+    def _get_rows(
+        self,
+        rows: RowSelector,
+        return_X_y: Bool = True,
+    ) -> DataFrame | tuple[DataFrame, Pandas]:
+        """Get a subset of the rows.
 
-        Rows can be selected by name, index, regex pattern or data set.
+        Rows can be selected by name, index, data set or regex pattern.
         If a string is provided, use `+` to select multiple rows and `!`
         to exclude them. Rows cannot be included and excluded in the
         same call.
@@ -425,10 +429,16 @@ class Branch:
         rows: hashable, range, slice or sequence
             Rows to select.
 
+        return_X_y: bool, default=True
+            Whether to return X and y separately or concatenated.
+
         Returns
         -------
         dataframe
-            Subset of the data.
+            Subset of rows.
+
+        series or dataframe
+            Subset of target column. Only returned if return_X_y=True.
 
         """
         indices = self._all.index
@@ -477,12 +487,14 @@ class Branch:
                 "Invalid value for the rows parameter. You can either "
                 "include or exclude rows, not combinations of these."
             )
-
-        if exc:
+        elif exc:
             # If rows were excluded with `!`, select all but those
             inc = indices[~indices.isin(exc)]
 
-        return self._all.loc[inc]
+        if return_X_y:
+            return self._all.loc[inc, self.features], self._all.loc[inc, self.target]
+        else:
+            return self._all.loc[inc]
 
     def _get_columns(
         self,
@@ -492,23 +504,23 @@ class Branch:
     ) -> list[str]:
         """Get a subset of the columns.
 
-        Columns can be selected by name, index or regex pattern. If a
-        string is provided, use `+` to select multiple columns and `!`
-        to exclude them. Columns cannot be included and excluded in
+        Columns can be selected by name, index, dtype or regex pattern.
+        If a string is provided, use `+` to select multiple columns and
+        `!` to exclude them. Columns cannot be included and excluded in
         the same call.
 
         Parameters
         ----------
         columns: int, str, range, slice, sequence or None, default=None
-            Names, indices or dtypes of the columns to select. If None,
-            it returns all columns in the dataframe.
+            Columns to select. If None, return all columns in the
+            dataset bearing the other parameters.
 
         include_target: bool, default=True
-            Whether to include the target column in the dataframe to
+            Whether to include the target column in the dataset to
             select from.
 
         only_numerical: bool, default=False
-            Whether to return only numerical columns.
+            Whether to select only numerical columns.
 
         Returns
         -------
@@ -516,39 +528,6 @@ class Branch:
             Names of the included columns.
 
         """
-
-        def get_match(col: str, ex: ValueError | None = None):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            col: str
-                Regex pattern to match with the column names.
-
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if col.startswith("!") and col not in df.columns:
-                array = exc
-                col = col[1:]
-
-            # Find columns using regex matches
-            if matches := [c for c in df.columns if re.fullmatch(col, str(c))]:
-                array.extend(matches)
-            else:
-                # Find columns by type
-                try:
-                    array.extend(list(df.select_dtypes(col).columns))
-                except TypeError:
-                    raise ex or ValueError(
-                        "Invalid value for the columns parameter. "
-                        f"Could not find any column that matches {col}."
-                    )
-
         # Select dataframe from which to get the columns
         df = self.dataset if include_target else self.X
 
@@ -558,31 +537,44 @@ class Branch:
                 return list(df.select_dtypes(include=["number"]).columns)
             else:
                 return list(df.columns)
-        elif isinstance(columns, slice):
+        elif isinstance(columns, (range, slice)):
             inc = list(df.columns[columns])
         else:
             for col in lst(columns):
                 if isinstance(col, IntTypes):
-                    try:
+                    if -df.shape[1] <= col <= df.shape[1]:
                         inc.append(df.columns[col])
-                    except IndexError:
-                        raise ValueError(
+                    else:
+                        raise IndexError(
                             f"Invalid value for the columns parameter. Value {col} "
-                            f"is out of range for a dataset with {df.shape[1]} columns."
+                            f"is out of range for data with {df.shape[1]} columns."
                         )
                 elif isinstance(col, str):
-                    try:
-                        get_match(col)
-                    except ValueError as ex:
-                        for c in col.split("+"):
-                            get_match(c, ex)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the columns parameter, got {type(col)}. "
-                        "Use a column's name or position to select it."
-                    )
+                    for c in col.split("+"):
+                        array = inc
+                        if c.startswith("!") and c not in df.columns:
+                            array = exc
+                            c = c[1:]
 
-        if inc and exc:
+                    # Find columns using regex matches
+                    if (matches := df.columns.str.fullmatch(c)).sum() > 0:
+                        array.extend(matches)
+                    else:
+                        # Find columns by type
+                        try:
+                            array.extend(list(df.select_dtypes(c).columns))
+                        except TypeError:
+                            raise ex or ValueError(
+                                "Invalid value for the columns parameter. "
+                                f"Could not find any column that matches {c}."
+                            )
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the columns parameter, got "
+                f"{columns}. At least one column has to be selected."
+            )
+        elif inc and exc:
             raise ValueError(
                 "Invalid value for the columns parameter. You can either "
                 "include or exclude columns, not combinations of these."
@@ -590,12 +582,6 @@ class Branch:
         elif exc:
             # If columns were excluded with `!`, select all but those
             inc = df.columns[~df.columns.isin(exc)]
-
-        if len(inc) == 0:
-            raise ValueError(
-                "Invalid value for the columns parameter, got "
-                f"{columns}. At least one column has to be selected."
-            )
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 

@@ -1305,6 +1305,35 @@ def merge(*args) -> DataFrame:
         return bk.DataFrame(bk.concat([*args], axis=1))
 
 
+def replace_missing_values(X: Pandas, missing_values: list) -> Pandas:
+    """Replace all values considered 'missing' in a dataset.
+
+    This method replaces the missing values in columns with pandas'
+    nullable dtypes with `pd.NA`, else with `np.NaN`.
+
+    Parameters
+    ----------
+    X: series or dataframe
+        Data set to replace.
+
+    missing_values: list
+        Values considered 'missing'.
+
+    Returns
+    -------
+    series or dataframe
+        Data set without missing values.
+
+    """
+    # Always convert these values
+    default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
+
+    return X.replace(
+        to_replace={k: missing_values + default_values for k in X},
+        value={k: np.NaN if isinstance(X[k].dtype, np.dtype) else pd.NA for k in X},
+    )
+
+
 def get_cols(elem: Pandas) -> list[Series]:
     """Get a list of columns in dataframe / series.
 
@@ -1561,7 +1590,7 @@ def adjust_verbosity(estimator: Estimator, verbose: Verbose | None):
         if verbose is not None and hasattr(estimator, "verbose"):
             verbosity = estimator.verbose
             estimator.verbose = verbose
-        yield
+        yield estimator
     finally:
         if verbose is not None and hasattr(estimator, "verbose"):
             estimator.verbose = verbosity

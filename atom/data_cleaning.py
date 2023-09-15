@@ -15,6 +15,7 @@ from logging import Logger
 from typing import Literal
 
 import numpy as np
+import pandas as pd
 from category_encoders.backward_difference import BackwardDifferenceEncoder
 from category_encoders.basen import BaseNEncoder
 from category_encoders.binary import BinaryEncoder
@@ -44,7 +45,6 @@ from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
 
 from atom.basetransformer import BaseTransformer
-from atom.utils.constants import MISSING_VALUES
 from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, DiscretizerStrats, Engine, Estimator,
     Features, Float, Int, NumericalStrats, Pandas, PrunerStrats, Scalar,
@@ -53,7 +53,8 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
-    method_to_log, n_cols, sign, to_df, to_series, variable_return,
+    method_to_log, n_cols, replace_missing_values, sign, to_df, to_series,
+    variable_return,
 )
 
 
@@ -758,7 +759,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
 
             if self.drop_missing_target:
-                y = y.replace(self.missing_ + MISSING_VALUES, np.NaN).dropna(axis=0)
+                y = replace_missing_values(y, self.missing_).dropna(axis=0)
 
             if self.encode_target:
                 for col in get_cols(y):
@@ -815,8 +816,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._log("Cleaning the data...", 1)
 
         if X is not None:
-            # Replace all missing values with NaN
-            X = X.replace(self.missing_ + MISSING_VALUES, np.NaN)
+            # Unify all missing values
+            X = replace_missing_values(X, self.missing_)
 
             for name, column in X.items():
                 dtype = column.dtype.name
@@ -855,10 +856,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 else:
                     y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
 
-            # Delete samples with NaN in target
+            # Delete samples with missing values in target
             if self.drop_missing_target:
                 length = len(y)  # Save original length to count deleted rows later
-                y = y.replace(self.missing_ + MISSING_VALUES, np.NaN).dropna()
+                y = replace_missing_values(y, self.missing_).dropna()
 
                 if X is not None:
                     X = X[X.index.isin(y.index)]  # Select only indices that remain
@@ -1897,8 +1898,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._log("Fitting Imputer...", 1)
 
-        # Replace all missing values with NaN
-        X = X.replace(self.missing_ + MISSING_VALUES, np.NaN)
+        # Unify all values to impute
+        X = replace_missing_values(X, self.missing_)
 
         # Drop rows with too many NaN values
         if self._max_nan_rows is not None:
@@ -1927,6 +1928,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 continue
 
             # Column is numerical
+            # Note missing_values=pd.NA also imputes np.NaN in SimpleImputer
             if name in self._num_cols:
                 if isinstance(self.strat_num, str):
                     if self.strat_num.lower() == "knn":
@@ -1934,18 +1936,21 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
                     elif self.strat_num.lower() == "most_frequent":
                         self._imputers[name] = estimator(
+                            missing_values=pd.NA,
                             strategy="most_frequent",
                         ).fit(X[[name]])
 
                     # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
                         self._imputers[name] = estimator(
+                            missing_values=pd.NA,
                             strategy=self.strat_num.lower()
                         ).fit(X[[name]])
 
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
                 self._imputers[name] = estimator(
+                    missing_values=pd.NA,
                     strategy="most_frequent",
                 ).fit(X[[name]])
 
@@ -1994,8 +1999,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._log("Imputing missing values...", 1)
 
-        # Replace all missing values with NaN
-        X = X.replace(self.missing_ + MISSING_VALUES, np.NaN)
+        # Unify all values to impute
+        X = replace_missing_values(X, self.missing_)
 
         # Drop rows with too many missing values
         if self._max_nan_rows is not None:

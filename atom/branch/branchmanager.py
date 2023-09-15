@@ -9,8 +9,9 @@ Description: Module containing the BranchManager class.
 
 from __future__ import annotations
 
-from copy import copy, deepcopy
 import shutil
+from copy import copy, deepcopy
+
 from beartype import beartype
 from joblib.memory import Memory
 

@@ -374,17 +374,21 @@ The check is performed in the order described hereunder:
    as `#!python columns=["col1", "col2"]`.
 2. By position, e.g., `#!python rows=[0, 1, 2]` to select the first three rows.
 3. By name of the data set (only for rows), e.g., `#!python rows="train"` to
-   select all rows in the train set, or `#!python rows="test+holdout"` to select
-   all rows in the test and holdout sets. Valid data sets are `dataset`, `train`,
-   `test` and `holdout`.
-4. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
+   select all rows in the training set, or `#!python rows="test+holdout"` to
+   select all rows in the test and holdout sets. Valid data sets are `dataset`,
+   `train`, `test` and `holdout`.
+4. By dtype (only for columns), e.g., `#!python columns="number"` to select only 
+   numerical columns. See pandas' [user guide](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.select_dtypes.html).
+5. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
    starting with `mean_`.
-5. By range or slice, e.g., `#!python rows=range(100)` to select the first 100
+6. By range or slice, e.g., `#!python rows=range(100)` to select the first 100
    rows or `#!python rows=slice(20, 100)` to select rows 20 to 99.
-6. Excluding instead of including using the `!` sign, e.g. `#!python columns="!col1"`
-   to select all columns except `col1`. You can also exclude multiple columns like
-   this `#!python columns=["!col1", "!col2"]` or this `#!python columns="!col1+!col2"`.
-   Note that if a column name starts with `!`, the selection of that name will take
-   priority over exclusion. Rows and columns can only be included or excluded, and
-   not both at the same time. For example, this selection raises an exception
-   `#!python column=["col1", "!col2"]`.
+7. Excluding instead of including using the `!` sign, e.g. `#!python columns="!col1"`
+   to select all columns except `col1`. You can also exclude multiple rows or
+   columns like this `#!python columns=["!col1", "!col2"]` or this
+   `#!python columns="!col1+!col2"`. It's also possible to exclude data sets
+   for row selection, e.g., `#!python columns="!train"` or dtypes for column
+   selection, e.g., `#!python columns="!number"`. Note that if a column name
+   starts with `!`, the selection of that name will take priority over exclusion.
+   Rows and columns can only be included or excluded, and not both at the same
+   time. For example, this selection raises an exception `#!python column=["col1", "!col2"]`.
