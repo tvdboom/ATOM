@@ -791,7 +791,7 @@ class ShapExplanation:
             if "max_evals" in sign(self.explainer.__call__):
                 kwargs["max_evals"] = "auto"
 
-            # Additivity check fails sometimes for no apparent reason
+            # Additivity check sometimes fails for no apparent reason
             if "check_additivity" in sign(self.explainer.__call__):
                 kwargs["check_additivity"] = False
 
@@ -982,22 +982,6 @@ class CustomDict(MutableMapping):
 
     """
 
-    @staticmethod
-    def _conv(key):
-        return key.lower() if isinstance(key, str) else key
-
-    def _get_key(self, key):
-        # Get key from index
-        if isinstance(key, IntTypes) and key not in self.__keys:
-            return self.__keys[key]
-        else:
-            # Get key from name
-            for k in self.__keys:
-                if self._conv(k) == self._conv(key):
-                    return k
-
-        raise KeyError(key)
-
     def __init__(self, iterable_or_mapping=None, **kwargs):
         """Creates keys and data.
 
@@ -1058,6 +1042,22 @@ class CustomDict(MutableMapping):
 
     def __bool__(self):
         return bool(self.__keys)
+
+    @staticmethod
+    def _conv(key):
+        return key.lower() if isinstance(key, str) else key
+
+    def _get_key(self, key):
+        # Get key from index
+        if isinstance(key, IntTypes) and key not in self.__keys:
+            return self.__keys[key]
+        else:
+            # Get key from name
+            for k in self.__keys:
+                if self._conv(k) == self._conv(key):
+                    return k
+
+        raise KeyError(key)
 
     def keys(self):
         yield from self.__keys
@@ -1128,8 +1128,8 @@ class CustomDict(MutableMapping):
         return self.__keys.index(self._get_key(key))
 
     def reorder(self, keys):
-        self.__keys = [k for k in keys if k in self.__keys]
-        self.__data = {k: self[k] for k in self.__keys}
+        self.__keys = [k for k in keys if k in self]
+        self.__data = {self._conv(k): self[k] for k in keys if k in self}
 
     def replace_key(self, key, new_key):
         if key in self:

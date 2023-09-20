@@ -18,7 +18,6 @@ import pandas as pd
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 
-from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
@@ -26,8 +25,8 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, Float, Int, IntTypes, MetricSelector, Model, Runner,
-    Sequence, Series,
+    Bool, DataFrame, Float, Int, IntTypes, MetricSelector, Model,
+    ModelSelector, Runner, Sequence, Series,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, check_is_fitted, composed, crash, divide, flt,
@@ -277,7 +276,7 @@ class BaseRunner(BaseTracker):
 
     def _get_models(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         ensembles: Bool = True,
         branch: Branch | None = None,
     ) -> list[Model]:
@@ -290,9 +289,8 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
-            Names or indices of the models to select. If None, it
-            returns all models.
+        models: int, str, Model, range, slice, sequence or None, default=None
+            Models to select. If None, it returns all models.
 
         ensembles: bool, default=True
             Whether to include ensemble models in the output. If False,
@@ -308,86 +306,65 @@ class BaseRunner(BaseTracker):
             Selected models.
 
         """
-
-        def get_match(model: str):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            model: str
-                Regex pattern to match with model names.
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if model.startswith("!") and model not in self._models:
-                array = exc
-                model = model[1:]
-
-            # Find rows using regex matches
-            if model.lower() == "winner":
-                array.append(self.winner)
-            elif match := [m for m in self._models if re.fullmatch(model, m.name, re.I)]:
-                array.extend(match)
-            else:
-                raise ValueError(
-                    "Invalid value for the models parameter. Could "
-                    f"not find any model that matches {model}. The "
-                    f"available models are: {', '.join(self._models.keys())}."
-                )
-
         inc, exc = [], []
         if models is None:
-            inc.extend(self._models)
-        elif isinstance(models, slice):
-            inc.extend(self._models[models])
+            return self._models
+        elif isinstance(models, (range, slice)):
+            return self._models[models]
         else:
             for model in lst(models):
                 if isinstance(model, IntTypes):
                     try:
                         inc.append(self._models[model])
                     except KeyError:
-                        raise ValueError(
-                            "Invalid value for the models parameter. Value "
-                            f"{model} is out of range for a pipeline with "
-                            f"{len(self._models)} models."
+                        raise IndexError(
+                            f"Invalid value for the models parameter. The {model} is out "
+                            f"of range for an instance with {len(self._models)} models."
                         )
                 elif isinstance(model, str):
-                    try:
-                        get_match(model)
-                    except ValueError:
-                        for m in model.split("+"):
-                            get_match(m)
-                elif isinstance(model, BaseModel):
-                    inc.append(model)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the models parameter, got {type(model)}. "
-                        "Use a model's name, position or instance to select it."
-                    )
+                    for mdl in model.split("+"):
+                        array = inc
+                        if mdl.startswith("!") and mdl not in self._models:
+                            array = exc
+                            mdl = mdl[1:]
 
-        if inc and exc:
+                        if mdl.lower() == "winner":
+                            array.append(self.winner)
+                        elif matches := [
+                            m for m in self._models if re.fullmatch(mdl, m.name, re.I)
+                        ]:
+                            array.extend(matches)
+                        else:
+                            raise ValueError(
+                                "Invalid value for the models parameter. Could "
+                                f"not find any model that matches {mdl}. The "
+                                f"available models are: {', '.join(self._models.keys())}."
+                            )
+                elif isinstance(model, Model):
+                    inc.append(model)
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the models parameter, "
+                f"got {models}. No models were selected."
+            )
+        elif inc and exc:
             raise ValueError(
                 "Invalid value for the models parameter. You can either "
                 "include or exclude models, not combinations of these."
             )
-
-        if exc:
+        elif exc:
             # If models were excluded with `!`, select all but those
             inc = [m for m in self._models if m not in exc]
 
         if not ensembles:
-            inc = [m for m in inc if all(not m.acronym == x for x in ("Stack", "Vote"))]
+            inc = list(filter(lambda m: m.acronym in ("Stack", "Vote"), inc))
 
-        if branch:
-            for m in inc:
-                if m.branch is not branch:
-                    raise ValueError(
-                        "Invalid value for the models parameter. All "
-                        f"models must have been fitted on {branch}, but "
-                        f"model {m.name} is fitted on {m.branch}."
-                    )
+        if branch and not all(m.branch is branch for m in inc):
+            raise ValueError(
+                "Invalid value for the models parameter. Not "
+                f"all models have been fitted on {branch}."
+            )
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 

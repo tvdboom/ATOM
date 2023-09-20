@@ -24,7 +24,9 @@ from sklearn.utils._bunch import Bunch
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
-from atom.utils.types import Int, IntTypes, Legend, Model, Sequence
+from atom.utils.types import (
+    Int, IntTypes, Legend, Model, ModelSelector, Sequence,
+)
 from atom.utils.utils import (
     check_dependency, check_hyperparams, composed, crash, divide, it, lst,
     plot_from_model, rnd,
@@ -45,11 +47,11 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_edf(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper left",
+        legend: Legend | dict | None = "upper left",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -190,7 +192,7 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_hyperparameter_importance(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: int | str = 0,
         show: Int | None = None,
         *,
@@ -1016,10 +1018,10 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_terminator_improvement(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: Legend | dict | None = "upper right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1143,10 +1145,10 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_timeline(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1296,11 +1298,11 @@ class HyperparameterTuningPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_trials(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper left",
+        legend: Legend | dict | None = "upper left",
         figsize: tuple[Int, Int] = (900, 800),
         filename: str | None = None,
         display: bool | None = True,

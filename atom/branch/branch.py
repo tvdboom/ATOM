@@ -412,7 +412,7 @@ class Branch:
     def _get_rows(
         self,
         rows: RowSelector,
-        return_X_y: Bool = True,
+        return_X_y: Bool = False,
     ) -> DataFrame | tuple[DataFrame, Pandas]:
         """Get a subset of the rows.
 
@@ -429,7 +429,7 @@ class Branch:
         rows: hashable, range, slice or sequence
             Rows to select.
 
-        return_X_y: bool, default=True
+        return_X_y: bool, default=False
             Whether to return X and y separately or concatenated.
 
         Returns
@@ -564,7 +564,7 @@ class Branch:
                         try:
                             array.extend(list(df.select_dtypes(c).columns))
                         except TypeError:
-                            raise ex or ValueError(
+                            raise ValueError(
                                 "Invalid value for the columns parameter. "
                                 f"Could not find any column that matches {c}."
                             )

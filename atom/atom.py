@@ -42,17 +42,17 @@ from atom.training import (
 )
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, Datasets, DiscretizerStrats, Estimator,
-    Features, FeatureSelectionStrats, Index, IndexSelector, Int,
-    MetricSelector, NumericalStrats, Operators, Pandas, Predictor,
-    PrunerStrats, Runner, Scalar, ScalerStrats, Sequence, Series, Target,
-    Transformer, TSIndexTypes, Verbose,
+    Bool, ColumnSelector, DataFrame, DiscretizerStrats, Estimator, Features,
+    FeatureSelectionStrats, Index, IndexSelector, Int, MetricSelector,
+    NumericalStrats, Operators, Pandas, Predictor, PrunerStrats, RowSelector,
+    Runner, Scalar, ScalerStrats, Sequence, Series, Target, Transformer,
+    TSIndexTypes, Verbose,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, bk, check_dependency, check_scaling,
-    composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
-    infer_task, is_multioutput, is_sparse, lst, merge, method_to_log,
-    replace_missing_values, sign, to_pyarrow,
+    ClassMap, DataConfig, DataContainer, adjust_verbosity, bk,
+    check_dependency, check_scaling, composed, crash, fit_one, flt, get_cols,
+    get_custom_scorer, has_task, infer_task, is_multioutput, is_sparse, lst,
+    merge, method_to_log, replace_missing_values, sign, to_pyarrow,
 )
 
 
@@ -423,9 +423,9 @@ class ATOM(BaseRunner, ATOMPlot):
             statistics on. If None, a selection of the most common
             ones is used.
 
-        columns: int, str, slice, sequence or None, default=None
-            Names, positions or dtypes of the columns in the dataset to
-            perform the test on. If None, select all numerical columns.
+        columns: int, str, slice, range, sequence or None, default=None
+            [Selection of columns][row-and-column-selection] to perform
+            the test on. If None, select all numerical columns.
 
         Returns
         -------
@@ -483,9 +483,8 @@ class ATOM(BaseRunner, ATOMPlot):
     @crash
     def eda(
         self,
-        dataset: Datasets = "dataset",
+        rows: RowSelector = "dataset",
         *,
-        n_rows: Scalar | None = None,
         filename: str | None = None,
         **kwargs,
     ):
@@ -501,12 +500,9 @@ class ATOM(BaseRunner, ATOMPlot):
 
         Parameters
         ----------
-        dataset: str, default="dataset"
-            Data set to get the report from.
-
-        n_rows: int or None, default=None
-            Number of (randomly picked) rows to process. None to use
-            all rows.
+        rows: hashable, range, slice or sequence, default="dataset"
+            [Selection of rows][row-and-column-selection] to get the
+            report from.
 
         filename: str or None, default=None
             Name to save the file with (as .html). None to not save
@@ -522,8 +518,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         self._log("Creating EDA report...", 1)
 
-        n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
-        self.report = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
+        self.report = ProfileReport(self.branch._get_rows(rows), **kwargs)
 
         if filename:
             if not filename.endswith(".html"):
@@ -567,8 +562,8 @@ class ATOM(BaseRunner, ATOMPlot):
             - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformers' own verbosity.
+            Verbosity level for the transformers in the pipeline. If None,
+            it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -579,7 +574,8 @@ class ATOM(BaseRunner, ATOMPlot):
             Original target column. Only returned if provided.
 
         """
-        return self.pipeline.inverse_transform(X, y, verbose=verbose)
+        with adjust_verbosity(self.pipeline, verbose) as pipeline:
+            return pipeline.inverse_transform(X, y)
 
     @classmethod
     def load(cls, filename: str, data: Sequence | None = None) -> ATOM:
@@ -717,7 +713,7 @@ class ATOM(BaseRunner, ATOMPlot):
         self,
         filename: str = "auto",
         *,
-        dataset: Datasets = "dataset",
+        rows: RowSelector = "dataset",
         **kwargs,
     ):
         """Save the data in the current branch to a `.csv` file.
@@ -727,19 +723,23 @@ class ATOM(BaseRunner, ATOMPlot):
         filename: str, default="auto"
             Name of the file. Use "auto" for automatic naming.
 
-        dataset: str, default="dataset"
-            Data set to save.
+        rows: hashable, range, slice, sequence or dataframe-like
+            [Selection of rows][row-and-column-selection] to save.
 
         **kwargs
             Additional keyword arguments for pandas' [to_csv][] method.
 
         """
         if filename.endswith("auto"):
-            filename = filename.replace("auto", f"{self.__class__.__name__}_{dataset}")
+            if isinstance(rows, str):
+                filename = filename.replace("auto", f"{self.__class__.__name__}_{rows}")
+            else:
+                filename = filename.replace("auto", f"{self.__class__.__name__}")
+
         if not filename.endswith(".csv"):
             filename += ".csv"
 
-        getattr(self, dataset).to_csv(filename, **kwargs)
+        self.branch._get_rows(rows).to_csv(filename, **kwargs)
         self._log("Data set successfully saved.", 1)
 
     @composed(crash, method_to_log)
@@ -779,9 +779,9 @@ class ATOM(BaseRunner, ATOMPlot):
             Whether to convert all features to sparse format. The value
             that is compressed is the most frequent value in the column.
 
-        columns: int, str, slice, sequence or None, default=None
-            Names, positions or dtypes of the columns in the dataset to
-            shrink. If None, transform all columns.
+        columns: int, str, slice, range, sequence or None, default=None
+            [Selection of columns][row-and-column-selection] to shrink. If
+            None, transform all columns.
 
         """
 
@@ -982,8 +982,8 @@ class ATOM(BaseRunner, ATOMPlot):
             - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers. If None, it uses the
-            transformers' own verbosity.
+            Verbosity level for the transformers in the pipeline. If None,
+            it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -994,7 +994,8 @@ class ATOM(BaseRunner, ATOMPlot):
             Transformed target column. Only returned if provided.
 
         """
-        return self.pipeline.transform(X, y, verbose=verbose)
+        with adjust_verbosity(self.pipeline, verbose) as pipeline:
+            return pipeline.transform(X, y)
 
     # Base transformers ============================================ >>
 
@@ -1051,7 +1052,7 @@ class ATOM(BaseRunner, ATOMPlot):
         transformer: Transformer
             Estimator to add. Should implement a `transform` method.
 
-        columns: int, str, slice, sequence or None, default=None
+        columns: int, str, slice, range, sequence or None, default=None
             Columns in the dataset to transform. If None, transform
             all features.
 
@@ -1142,6 +1143,8 @@ class ATOM(BaseRunner, ATOMPlot):
                 test_idx=data.index[-len(self.branch._data.test_idx):],
                 n_cols=self.branch._data.n_cols,
             )
+            if self.branch._holdout is not None:
+                self.branch._holdout.index = range(len(data), len(data) + len(self.branch._holdout))
         elif self.dataset.index.duplicated().any():
             raise ValueError(
                 "Duplicate indices found in the dataset. "
@@ -1222,15 +1225,11 @@ class ATOM(BaseRunner, ATOMPlot):
             Estimator to add to the pipeline. Should implement a
             `transform` method.
 
-        columns: int, str, slice, sequence or None, default=None
-            Names, indices or dtypes of the columns in the dataset to
+        columns: int, str, slice, range, sequence or None, default=None
+            [Selection of columns][row-and-column-selection] to
             transform. Only select features or the target column, not
             both at the same time (if that happens, the target column
-            is ignored). If None, transform all columns. Add `!` in
-            front of a name or dtype to exclude that column, e.g.
-            `atom.add(Transformer(), columns="!Location")`</code>`
-            transforms all columns except `Location`. You can either
-            include or exclude columns, not combinations of these.
+            is ignored). If None, transform all columns.
 
         train_only: bool, default=False
             Whether to apply the estimator only on the training set or
@@ -1339,7 +1338,8 @@ class ATOM(BaseRunner, ATOMPlot):
         )
 
         # Add target column mapping for cleaner printing
-        balancer.mapping_ = self.mapping.get(self.target, {})
+        if mapping := self.mapping.get(self.target):
+            balancer.mapping_ = mapping
 
         self._add_transformer(balancer, columns=columns)
 
@@ -1455,7 +1455,7 @@ class ATOM(BaseRunner, ATOMPlot):
             method for that.
 
         !!! tip
-            Use the [categorical][self-categorical] attribute  for a
+            Use the [categorical][self-categorical] attribute for a
             list of the categorical features in the dataset.
 
         """

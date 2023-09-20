@@ -33,7 +33,7 @@ class FeatureSelectionPlot(BasePlot):
         show: Int | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,

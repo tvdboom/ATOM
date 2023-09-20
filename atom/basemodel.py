@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from datetime import datetime as dt
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
@@ -60,18 +60,18 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Backend, Bool, ColumnSelector, DataFrame, DataFrameTypes, Engine, Features,
-    Float, FloatTypes, Index, Int, IntTypes, MethodSelector, MetricSelector,
-    Pandas, Predictor, Scalar, Scorer, Sequence, Stages, Target, Verbose,
-    Warnings, RowSelector
+    Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
+    FloatTypes, Int, IntTypes, MethodSelector, MetricSelector, Pandas,
+    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Target, Verbose,
+    Warnings,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
-    TrialsCallback, bk, check_dependency, check_empty, check_scaling, composed,
-    crash, estimator_has_attr, fit_and_score, flt, get_cols, get_custom_scorer,
-    get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
-    it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas,
-    to_series, adjust_verbosity
+    TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
+    check_scaling, composed, crash, estimator_has_attr, fit_and_score, flt,
+    get_cols, get_custom_scorer, get_feature_importance, has_task, infer_task,
+    is_binary, is_multioutput, it, lst, merge, method_to_log, rnd, sign,
+    time_to_str, to_df, to_pandas, to_series,
 )
 
 
@@ -591,7 +591,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     def _get_pred(
         self,
-        dataset: Literal["train", "test", "holdout"],
+        rows: RowSelector,
         target: str | None = None,
         attr: MethodSelector = "predict",
     ) -> tuple[Pandas, Pandas]:
@@ -603,8 +603,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        dataset: str
-            Data set for which to get the predictions.
+        rows: hashable, range, slice or sequence
+            [Selection of rows][row-and-column-selection] for which to
+            get the predictions.
 
         target: str or None, default=None
             Target column to look at. Only for [multioutput tasks][].
@@ -634,11 +635,12 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                     attr = attribute
                     break
 
-        y_true = getattr(self, f"y_{dataset}")
-        y_pred = getattr(self, f"{attr}_{dataset}")
+        X, y_true = self.branch._get_rows(rows, return_X_y=True)
+        y_pred = getattr(self, attr)(X.index)
 
         if is_multioutput(self.task):
             if target is not None:
+                target = self.branch._get_target(target, only_columns=True)
                 return y_true.loc[:, target], y_pred.loc[:, target]
         elif self.task.startswith("bin") and y_pred.ndim > 1:
             return y_true, y_pred.iloc[:, 1]
@@ -740,7 +742,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def _get_score(
         self,
         scorer: Scorer,
-        dataset: str,
+        rows: RowSelector,
         threshold: tuple[Float] | None = None,
         sample_weight: tuple | None = None,
     ) -> Scalar:
@@ -755,9 +757,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        dataset: str
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric.
 
         threshold: tuple or None, default=None
             Thresholds between 0 and 1 to convert predicted probabilities
@@ -778,16 +780,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metric score on the selected data set.
 
         """
-        if dataset == "holdout" and self.holdout is None:
-            raise ValueError("No holdout data set available.")
-
         if scorer.__class__.__name__ == "_ThresholdScorer":
-            y_true, y_pred = self._get_pred(dataset, attr="thresh")
+            y_true, y_pred = self._get_pred(rows, attr="thresh")
         elif scorer.__class__.__name__ == "_ProbaScorer":
-            y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
+            y_true, y_pred = self._get_pred(rows, attr="predict_proba")
         else:
             if threshold and is_binary(self.task) and hasattr(self, "predict_proba"):
-                y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
+                y_true, y_pred = self._get_pred(rows, attr="predict_proba")
                 if isinstance(y_pred, DataFrameTypes):
                     # Update every target column with its corresponding threshold
                     for i, value in enumerate(threshold):
@@ -795,7 +794,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 else:
                     y_pred = (y_pred > threshold[0]).astype("int")
             else:
-                y_true, y_pred = self._get_pred(dataset, attr="predict")
+                y_true, y_pred = self._get_pred(rows, attr="predict")
 
         kwargs = {}
         if "sample_weight" in sign(scorer._score_func):
@@ -803,10 +802,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         result = rnd(self._score_from_pred(scorer, y_true, y_pred, **kwargs))
 
-        if self._run:  # Log metric to mlflow run
+        # Log metric to mlflow run for predictions on data sets
+        if self._run and isinstance(rows, str):
             MlflowClient().log_metric(
                 run_id=self._run.info.run_id,
-                key=f"{scorer.name}_{dataset}",
+                key=f"{scorer.name}_{rows}",
                 value=it(result),
             )
 
@@ -1770,7 +1770,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         self._log("Creating dashboard...", 1)
 
-        X, y = self._get_rows(rows, return_X_y=True)
+        X, y = self.branch._get_rows(rows, return_X_y=True)
 
         # Get shap values from the internal ShapExplanation object
         exp = self._shap.get_explanation(X, target=(0,))
@@ -1867,7 +1867,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def evaluate(
         self,
         metric: MetricSelector = None,
-        dataset: Literal["train", "test", "holdout"] = "test",
+        rows: RowSelector = "test",
         *,
         threshold: Float | Sequence = 0.5,
         sample_weight: Sequence | None = None,
@@ -1885,9 +1885,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence
+            [Selection of rows][row-and-column-selection] to calculate
+            metric on.
 
         threshold: float or sequence, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
@@ -1969,7 +1969,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             scorer = get_custom_scorer(met)
             scores[scorer.name] = self._get_score(
                 scorer=scorer,
-                dataset=dataset,
+                rows=rows,
                 threshold=tuple(threshold),
                 sample_weight=None if sample_weight is None else tuple(sample_weight),
             )
@@ -2039,10 +2039,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @available_if(has_task(["binary", "multilabel"]))
     @available_if(estimator_has_attr("predict_proba"))
     @crash
-    def get_best_threshold(
-        self,
-        dataset: Literal["train", "test", "holdout"] = "train",
-    ) -> Float | list[Float]:
+    def get_best_threshold(self, rows: RowSelector = "train") -> Float | list[Float]:
         """Get the threshold that maximizes the [ROC][] curve.
 
         Only available for models with a `predict_proba` method in a
@@ -2050,9 +2047,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        dataset: str, default="train"
-            Data set on which to calculate the threshold. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the threshold.
 
         Returns
         -------
@@ -2062,7 +2059,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         """
         results = []
         for target in lst(self.target):
-            y_true, y_pred = self._get_pred(dataset, target, attr="predict_proba")
+            y_true, y_pred = self._get_pred(rows, target, attr="predict_proba")
             fpr, tpr, thresholds = roc_curve(y_true, y_pred)
 
             results.append(thresholds[np.argmax(tpr - fpr)])

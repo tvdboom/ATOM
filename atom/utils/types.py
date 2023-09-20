@@ -155,7 +155,8 @@ RowSelector = Union[Hashable, ColumnSelector]
 # Assignment of index or stratify parameter
 IndexSelector = Union[Bool, Int, str, Sequence]
 
-# Types to initialize a metric
+# Types to initialize models and metric
+ModelSelector = Union[Int, str, Model, range, slice, Sequence, None]
 MetricSelector = Union[str, Callable[..., Scalar], Sequence, None]
 
 # Allowed values for method selection

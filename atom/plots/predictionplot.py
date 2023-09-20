@@ -34,7 +34,7 @@ from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     ColumnSelector, Features, Float, Int, Legend, MetricSelector, Model,
-    Scalar, Sequence,
+    ModelSelector, RowSelector, Scalar, Sequence,
 )
 from atom.utils.utils import (
     bk, check_canvas, check_dependency, check_predict_proba, composed, crash,
@@ -58,8 +58,8 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_calibration(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         n_bins: Int = 10,
         target: Int | str = 0,
         *,
@@ -71,13 +71,13 @@ class PredictionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot the calibration curve for a binary classifier.
 
-        Well calibrated classifiers are probabilistic classifiers for
+        Well-calibrated classifiers are probabilistic classifiers for
         which the output of the `predict_proba` method can be directly
-        interpreted as a confidence level. For instance a well
-        calibrated (binary) classifier should classify the samples such
-        that among the samples to which it gave a `predict_proba` value
-        close to 0.8, approx. 80% actually belong to the positive class.
-        Read more in sklearn's [documentation][calibration].
+        interpreted as a confidence level. For instance, a calibrated
+        (binary) classifier should classify the samples such that among
+        the samples to which it gave a `predict_proba` value close to
+        0.8, approx. 80% actually belong to the positive class. Read
+        more in sklearn's [documentation][calibration].
 
         This figure shows two plots: the calibration curve, where the
         x-axis represents the average predicted probability in each bin
@@ -96,10 +96,9 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the metric. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric. Use a sequence to plot multiple lines.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -160,8 +159,6 @@ class PredictionPlot(BasePlot):
 
         """
         check_predict_proba(models, "plot_calibration")
-        dataset = self._get_set(dataset, max_one=False)
-        target = self.branch._get_target(target, only_columns=True)
 
         if n_bins < 5:
             raise ValueError(
@@ -173,7 +170,7 @@ class PredictionPlot(BasePlot):
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
         for m in models:
-            for ds in dataset:
+            for ds in lst(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
 
                 # Get calibration (frac of positives and predicted values)
@@ -244,13 +241,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_confusion_matrix(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         threshold: Float = 0.5,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: Legend | dict | None = "upper right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
@@ -271,9 +268,9 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the confusion matrix. Choose
-            from:` "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the confusion matrix.
 
         target: int or str, default=0
             Target column to look at. Only for [multioutput tasks][].
@@ -335,7 +332,6 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        ds = self._get_set(dataset, max_one=True)
         target = self.branch._get_target(target, only_columns=True)
 
         if self.task.startswith("multiclass") and len(models) > 1:
@@ -371,7 +367,6 @@ class PredictionPlot(BasePlot):
 
             cm = confusion_matrix(y_true, y_pred)
             if len(models) == 1:  # Create matrix heatmap
-                ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
                 xaxis, yaxis = BasePlot._fig.get_axes(
                     x=(0, 0.87),
                     coloraxis=dict(
@@ -383,6 +378,7 @@ class PredictionPlot(BasePlot):
                     ),
                 )
 
+                ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
                 fig.add_trace(
                     go.Heatmap(
                         x=ticks,
@@ -451,12 +447,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_det(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: Legend | dict | None = "upper right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -471,10 +467,9 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the metric. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric. Use a sequence to plot multiple lines.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -531,13 +526,10 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        dataset = self._get_set(dataset, max_one=False)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in dataset:
+            for ds in lst(rows):
                 # Get fpr-fnr pairs for different thresholds
                 fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -571,12 +563,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_errors(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -595,9 +587,9 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric. Use a sequence to plot multiple lines.
 
         target: int or str, default=0
             Target column to look at. Only for [multioutput tasks][].
@@ -652,46 +644,43 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        ds = self._get_set(dataset, max_one=True)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            y_true, y_pred = m._get_pred(ds, target)
+            for ds in lst(rows):
+                y_true, y_pred = m._get_pred(ds, target)
 
-            fig.add_trace(
-                go.Scatter(
-                    x=y_true,
-                    y=y_pred,
-                    mode="markers",
-                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
+                fig.add_trace(
+                    self._draw_line(
+                        x=y_true,
+                        y=y_pred,
+                        mode="markers",
+                        parent=m.name,
+                        child="test",
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
-            # Fit the points using linear regression
-            from atom.models import OrdinaryLeastSquares
-            model = OrdinaryLeastSquares(goal=self.goal)._get_est()
-            model.fit(y_true.values.reshape(-1, 1), y_pred)
+                # Fit the points using linear regression
+                from atom.models import OrdinaryLeastSquares
+                model = OrdinaryLeastSquares(goal=self.goal, branches=self._branches)
+                estimator = model._get_est()
+                estimator.fit(y_true.values.reshape(-1, 1), y_pred)
 
-            fig.add_trace(
-                go.Scatter(
-                    x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
-                    y=model.predict(x[:, np.newaxis]),
-                    mode="lines",
-                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                    hovertemplate="(%{x}, %{y})<extra></extra>",
-                    legendgroup=m.name,
-                    showlegend=False,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
+                fig.add_trace(
+                    self._draw_line(
+                        x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
+                        y=estimator.predict(x[:, np.newaxis]),
+                        mode="lines",
+                        hovertemplate="(%{x}, %{y})<extra></extra>",
+                        parent=m.name,
+                        legend=None,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
@@ -712,11 +701,10 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_evals(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -731,11 +719,6 @@ class PredictionPlot(BasePlot):
         ----------
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
-
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the evaluation curves. Use a
-            sequence or add `+` between options to select more than one.
-            Choose from: "train" or "test".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -787,8 +770,6 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        dataset = self._get_set(dataset, max_one=False, allow_holdout=False)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
@@ -798,7 +779,7 @@ class PredictionPlot(BasePlot):
                     f"{m.name} has no in-training validation."
                 )
 
-            for ds in dataset:
+            for ds in ("train", "test"):
                 fig.add_trace(
                     self._draw_line(
                         x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
@@ -828,11 +809,11 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_feature_importance(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         show: Int | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
@@ -962,14 +943,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(check_fitted=False))
     def plot_forecast(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         fh: int | str | range | Sequence | ForecastingHorizon = "test",
         X: Features | None = None,
         target: Int | str = 0,
         plot_interval: bool = True,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper left",
+        legend: Legend | dict | None = "upper left",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1169,12 +1150,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_gains(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1249,13 +1230,10 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        dataset = self._get_set(dataset, max_one=False)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in dataset:
+            for ds in rows:
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 fig.add_trace(
@@ -1291,11 +1269,11 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_learning_curve(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1445,12 +1423,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_lift(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: Legend | dict | None = "upper right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1524,13 +1502,10 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        dataset = self._get_set(dataset, max_one=False)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in dataset:
+            for ds in rows:
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
@@ -1566,12 +1541,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_parshap(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         columns: ColumnSelector | None = None,
         target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper left",
+        legend: Legend | dict | None = "upper left",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -1764,14 +1739,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_partial_dependence(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         columns: ColumnSelector | None = None,
         kind: str | Sequence = "average",
         pair: int | str | None = None,
         target: Int | str = 1,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -2056,12 +2031,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_permutation_importance(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         show: Int | None = None,
         n_repeats: Int = 10,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
@@ -2201,7 +2176,7 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(check_fitted=False))
     def plot_pipeline(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: bool | None = None,
         *,
@@ -2509,12 +2484,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_prc(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower left",
+        legend: Legend | dict | None = "lower left",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -2589,13 +2564,10 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        dataset = self._get_set(dataset, max_one=False)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in dataset:
+            for ds in rows:
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 # Get precision-recall pairs for different thresholds
@@ -2633,12 +2605,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_probabilities(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         dataset: str = "test",
         target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: Legend | dict | None = "upper right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -2774,12 +2746,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_residuals(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         dataset: str = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper left",
+        legend: Legend | dict | None = "upper left",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -2924,11 +2896,11 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_results(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
@@ -3125,12 +3097,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_roc(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
-        dataset: str | Sequence = "test",
+        models: ModelSelector = None,
+        rows: RowSelector = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -3205,13 +3177,10 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        dataset = self._get_set(dataset, max_one=False)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in dataset:
+            for ds in lst(rows):
                 # Get False (True) Positive Rate as arrays
                 fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -3248,11 +3217,11 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model(ensembles=False))
     def plot_successive_halving(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -3404,14 +3373,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model)
     def plot_threshold(
         self,
-        models: Int | str | Model | slice | Sequence | None = None,
+        models: ModelSelector = None,
         metric: MetricSelector = None,
-        dataset: str = "test",
+        rows: RowSelector = "test",
         target: Int | str = 0,
         steps: Int = 100,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower left",
+        legend: Legend | dict | None = "lower left",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -3433,9 +3402,9 @@ class PredictionPlot(BasePlot):
             between options to select more than one. If None, the
             metric used to run the pipeline is selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -3496,8 +3465,6 @@ class PredictionPlot(BasePlot):
 
         """
         check_predict_proba(models, "plot_threshold")
-        ds = self._get_set(dataset, max_one=True)
-        target = self.branch._get_target(target, only_columns=True)
 
         # Get all metric functions from the input
         if metric is None:
@@ -3516,7 +3483,7 @@ class PredictionPlot(BasePlot):
 
         steps = np.linspace(0, 1, steps)
         for m in models:
-            y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
+            y_true, y_pred = m._get_pred(rows, target, attr="predict_proba")
             for met in metrics:
                 fig.add_trace(
                     self._draw_line(

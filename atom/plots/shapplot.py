@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import shap
 
 from atom.plots.base import BasePlot
-from atom.utils.types import ColumnSelector, Int, Legend, Model, Sequence
+from atom.utils.types import Int, Legend, Model, RowSelector
 from atom.utils.utils import check_canvas, composed, crash, plot_from_model
 
 
@@ -33,7 +33,7 @@ class ShapPlot(BasePlot):
     def plot_shap_bar(
         self,
         models: Int | str | Model | None = None,
-        index: ColumnSelector | None = None,
+        rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -59,9 +59,8 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_bar()`.
 
-        index: int, str, slice, sequence or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot.
 
         show: int or None, default=None
             Number of features (ordered by importance) to show. If
@@ -121,7 +120,7 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[models.branch._get_rows(index)]
+        rows = models.branch._get_rows(rows)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
@@ -147,7 +146,7 @@ class ShapPlot(BasePlot):
     def plot_shap_beeswarm(
         self,
         models: Int | str | Model | None = None,
-        index: slice | Sequence | None = None,
+        rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -170,10 +169,10 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_beeswarm()`.
 
-        index: tuple, slice or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set. The beeswarm plot does not support plotting
-            a single sample.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot. The
+            plot_shap_beeswarm method does not support plotting a single
+            sample.
 
         show: int or None, default=None
             Number of features (ordered by importance) to show. If
@@ -233,7 +232,7 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[models.branch._get_rows(index)]
+        rows = models.branch._get_rows(rows)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
@@ -258,7 +257,7 @@ class ShapPlot(BasePlot):
     def plot_shap_decision(
         self,
         models: Int | str | Model | None = None,
-        index: ColumnSelector | None = None,
+        rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -286,9 +285,8 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_decision()`.
 
-        index: int, str, slice, sequence or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot.
 
         show: int or None, default=None
             Number of features (ordered by importance) to show. If
@@ -349,7 +347,7 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[models.branch._get_rows(index)]
+        rows = models.branch._get_rows(rows)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
@@ -382,7 +380,7 @@ class ShapPlot(BasePlot):
     def plot_shap_force(
         self,
         models: Int | str | Model | None = None,
-        index: ColumnSelector | None = None,
+        rows: RowSelector = "test",
         target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
@@ -408,9 +406,8 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_force()`.
 
-        index: int, str, slice, sequence or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot.
 
         target: int, str or tuple, default=1
             Class in the target column to target. For multioutput tasks,
@@ -468,7 +465,7 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[models.branch._get_rows(index)]
+        rows = models.branch._get_rows(rows)
         target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
 
@@ -510,7 +507,7 @@ class ShapPlot(BasePlot):
     def plot_shap_heatmap(
         self,
         models: Int | str | Model | None = None,
-        index: slice | Sequence | None = None,
+        rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -536,10 +533,10 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_heatmap()`.
 
-        index: slice, sequence or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set. The plot_shap_heatmap method does not
-            support plotting a single sample.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot. The
+            plot_shap_heatmap method does not support plotting a single
+            sample.
 
         show: int or None, default=None
             Number of features (ordered by importance) to show. If
@@ -599,7 +596,7 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[models.branch._get_rows(index)]
+        rows = models.branch._get_rows(rows)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
@@ -625,7 +622,7 @@ class ShapPlot(BasePlot):
     def plot_shap_scatter(
         self,
         models: Int | str | Model | None = None,
-        index: slice | Sequence | None = None,
+        rows: RowSelector = "test",
         columns: Int | str = 0,
         target: Int | str | tuple = 1,
         *,
@@ -652,10 +649,10 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_scatter()`.
 
-        index: slice, sequence or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set. The plot_shap_scatter method does not
-            support plotting a single sample.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot. The
+            plot_shap_scatter method does not support plotting a single
+            sample.
 
         columns: int or str, default=0
             Column to plot.
@@ -713,7 +710,7 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[models.branch._get_rows(index)]
+        rows = models.branch._get_rows(rows)
         column = models.branch._get_columns(columns, include_target=False)[0]
         target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
@@ -743,7 +740,7 @@ class ShapPlot(BasePlot):
     def plot_shap_waterfall(
         self,
         models: Int | str | Model | None = None,
-        index: Int | str | None = None,
+        rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
@@ -775,10 +772,10 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_waterfall()`.
 
-        index: int, str or None, default=None
-            Rows in the dataset to plot. If None, it selects all rows
-            in the test set. The plot_shap_waterfall method does not
-            support plotting multiple samples.
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] to plot. The
+            plot_shap_waterfall method does not support plotting
+            multiple samples.
 
         show: int or None, default=None
             Number of features (ordered by importance) to show. If
@@ -838,10 +835,16 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.X.loc[[models.branch._get_rows(index)[0]]]
+        if len(row := models.branch._get_rows(rows)) > 1:
+            raise ValueError(
+                f"Invalid value for the rows parameter, got {rows}. "
+                "The plot_shap_waterfall method does not support "
+                f"plotting multiple samples, got {len(rows)}."
+            )
+
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(row, target)
 
         # Waterfall accepts only one row
         explanation.values = explanation.values[0]

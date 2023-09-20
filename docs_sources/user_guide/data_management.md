@@ -392,3 +392,11 @@ The check is performed in the order described hereunder:
    starts with `!`, the selection of that name will take priority over exclusion.
    Rows and columns can only be included or excluded, and not both at the same
    time. For example, this selection raises an exception `#!python column=["col1", "!col2"]`.
+
+!!! info
+    In some plotting methods, it's possible to plot separate lines for different
+    subsets of the rows. In these cases, provide a sequence to the `rows` parameter
+    for every line you want to draw, e.g., `#!python atom.plot_roc(rows=("train", "test"))`
+    to plot both the train and test sets. In these methods, using
+    `#!python atom.plot_roc(rows="train+test")`,  only plots one line with the
+    data from both sets.

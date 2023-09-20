@@ -22,7 +22,7 @@ from mlflow.tracking import MlflowClient
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, DataFrame, Float, Index, Int, IntTypes, Legend, Model, Scalar,
-    Sequence,
+    Sequence, RowSelector
 )
 from atom.utils.utils import (
     composed, crash, divide, get_custom_scorer, lst, rnd, to_rgb,
@@ -608,64 +608,11 @@ class BasePlot:
 
         return inc[0] if max_one else inc
 
-    def _get_set(
-        self,
-        dataset: str | Sequence,
-        max_one: Bool,
-        allow_holdout: Bool = True,
-    ) -> str | list[str]:
-        """Check and return the provided data set.
-
-        Parameters
-        ----------
-        dataset: str or sequence
-            Name(s) of the data set to retrieve.
-
-        max_one: bool
-            Whether one or multiple data sets are allowed. If True, return
-            the data set instead of a list.
-
-        allow_holdout: bool, default=True
-            Whether to allow the retrieval of the holdout set.
-
-        Returns
-        -------
-        str or list
-            Selected data set(s).
-
-        """
-        for ds in (sets := "+".join(lst(dataset)).lower().split("+")):
-            if ds == "holdout":
-                if allow_holdout:
-                    if self.holdout is None:
-                        raise ValueError(
-                            "Invalid value for the dataset parameter. No holdout "
-                            "data set was specified when initializing the instance."
-                        )
-                else:
-                    raise ValueError(
-                        "Invalid value for the dataset parameter, got "
-                        f"{ds}. Choose from: train, test."
-                    )
-            elif ds not in ("train", "test"):
-                raise ValueError(
-                    f"Invalid value for the dataset parameter, got {ds}. "
-                    f"Choose from: train, test{', holdout' if allow_holdout else ''}."
-                )
-
-        if max_one and len(sets) > 1:
-            raise ValueError(
-                "Invalid value for the dataset parameter, got "
-                f"{dataset}. Only one data set is allowed."
-            )
-
-        return sets[0] if max_one else sets
-
     def _get_figure(self, **kwargs) -> go.Figure | plt.Figure | None:
-        """Return existing figure if in canvas, else a new figure.
+        """Return an existing figure if in canvas, else a new figure.
 
         Every time this method is called from a canvas, the plot
-        index is raised by one to keep track in which subplot the
+        index is raised by one to keep track of which subplot the
         BaseFigure is at.
 
         Parameters
@@ -690,7 +637,7 @@ class BasePlot:
         self,
         parent: str,
         child: str | None = None,
-        legend: str | dict = None,
+        legend: Legend | dict | None = None,
         **kwargs,
     ) -> go.Scatter:
         """Draw a line.
@@ -988,7 +935,7 @@ class BasePlot:
         horizontal_spacing: Float = 0.05,
         vertical_spacing: Float = 0.07,
         title: str | dict | None = None,
-        legend: str | dict | None = "out",
+        legend: Legend | dict | None = "out",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: Bool = True,

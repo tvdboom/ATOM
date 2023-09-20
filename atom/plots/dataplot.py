@@ -20,7 +20,9 @@ from scipy import stats
 
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
-from atom.utils.types import ColumnSelector, Int, Legend, Sequence, Series
+from atom.utils.types import (
+    ColumnSelector, Int, Legend, RowSelector, Sequence, Series,
+)
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, lst, rnd,
 )
@@ -177,7 +179,7 @@ class DataPlot(BasePlot):
         show: Int | None = None,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "upper right",
+        legend: Legend | dict | None = "upper right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
@@ -392,11 +394,11 @@ class DataPlot(BasePlot):
     def plot_ngrams(
         self,
         ngram: Int | str = "bigram",
-        index: ColumnSelector | None = None,
+        rows: RowSelector | None = "dataset",
         show: Int = 10,
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] | None = None,
         filename: str | None = None,
         display: bool | None = True,
@@ -420,9 +422,9 @@ class DataPlot(BasePlot):
             Choose from: words (1), bigrams (2), trigrams (3),
             quadgrams (4).
 
-        index: int, str, slice, sequence or None, default=None
-            Documents in the corpus to include in the search. If None,
-            it selects all documents in the dataset.
+        rows: hashable, range, slice or sequence, default="dataset"
+            [Selection of rows][row-and-column-selection] in the corpus
+            to include in the search.
 
         show: int, default=10
             Number of n-grams (ordered by number of occurrences) to
@@ -508,7 +510,7 @@ class DataPlot(BasePlot):
                 return column
 
         corpus = get_corpus(self.X)
-        rows = self.dataset.loc[self.branch._get_rows(index, return_test=False)]
+        rows = self.branch._get_rows(rows)
 
         if str(ngram).lower() in ("1", "word", "words"):
             ngram = "words"
@@ -573,7 +575,7 @@ class DataPlot(BasePlot):
         distributions: str | Sequence = "norm",
         *,
         title: str | dict | None = None,
-        legend: str | dict | None = "lower right",
+        legend: Legend | dict | None = "lower right",
         figsize: tuple[Int, Int] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
@@ -853,7 +855,7 @@ class DataPlot(BasePlot):
     @crash
     def plot_wordcloud(
         self,
-        index: ColumnSelector | None = None,
+        rows: RowSelector = "dataset",
         *,
         title: str | dict | None = None,
         legend: Legend | dict | None = None,
@@ -870,9 +872,9 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        index: int, str, slice, sequence or None, default=None
-            Documents in the corpus to include in the wordcloud. If
-            None, it selects all documents in the dataset.
+        rows: hashable, range, slice or sequence, default="dataset"
+            [Selection of rows][row-and-column-selection] in the corpus
+            to include in the wordcloud.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -943,7 +945,7 @@ class DataPlot(BasePlot):
         from wordcloud import WordCloud
 
         corpus = get_corpus(self.X)
-        rows = self.dataset.loc[self.branch._get_rows(index, return_test=False)]
+        rows = self.branch._get_rows(rows)
 
         wordcloud = WordCloud(
             width=figsize[0],
