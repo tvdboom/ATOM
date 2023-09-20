@@ -445,7 +445,7 @@ class Branch:
 
         inc, exc = [], []
         if isinstance(rows, (range, slice)):
-            return self._all.loc[indices[rows]]
+            inc.extend(indices[rows])
         else:
             for row in lst(rows):
                 if row in indices:

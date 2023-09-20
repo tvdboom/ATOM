@@ -22,7 +22,7 @@ from mlflow.tracking import MlflowClient
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, DataFrame, Float, Index, Int, IntTypes, Legend, Model, Scalar,
-    Sequence, RowSelector
+    Sequence, RowSelector, SequenceTypes
 )
 from atom.utils.utils import (
     composed, crash, divide, get_custom_scorer, lst, rnd, to_rgb,
@@ -551,6 +551,18 @@ class BasePlot:
             raise ValueError(f"Didn't find any hyperparameters for model {model.name}.")
 
         return hyperparameters
+
+    def _get_sets(
+        self,
+        rows: str | dict[str, RowSelector],
+    ) -> dict[str, RowSelector]:
+        """Check and return the datasets to plot."""
+        if isinstance(rows, dict):
+            return rows
+        elif isinstance(rows, SequenceTypes) and all(isinstance(r, str) for r in rows):
+            return {row: row for row in rows}
+        else:
+            return {rows: rows}
 
     def _get_metric(
         self,

@@ -644,11 +644,13 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        datasets = self._get_sets(rows)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in lst(rows):
-                y_true, y_pred = m._get_pred(ds, target)
+            for child, rows in datasets.items():
+                y_true, y_pred = m._get_pred(rows, target)
 
                 fig.add_trace(
                     self._draw_line(
@@ -656,7 +658,7 @@ class PredictionPlot(BasePlot):
                         y=y_pred,
                         mode="markers",
                         parent=m.name,
-                        child="test",
+                        child=child,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
