@@ -175,7 +175,7 @@ class DataPlot(BasePlot):
     def plot_distribution(
         self,
         columns: ColumnSelector = 0,
-        distributions: str | Sequence | None = None,
+        distributions: str | Sequence | None = "kde",
         show: Int | None = None,
         *,
         title: str | dict | None = None,
@@ -199,14 +199,16 @@ class DataPlot(BasePlot):
         Parameters
         ----------
         columns: int, str, slice or sequence, default=0
-            Columns to plot. I's only possible to plot one categorical
-            column. If more than one categorical columns are selected,
+            Columns to plot. It's only possible to plot one categorical
+            column. If more than one categorical column is selected,
             all categorical columns are ignored.
 
-        distributions: str, sequence or None, default=None
-            Names of the `scipy.stats` distributions to fit to the
-            columns. If None, a [Gaussian kde distribution][kde] is
-            showed. Only for numerical columns.
+        distributions: str, sequence or None, default="gaussian_kde"
+            Distributions to fit. Only for numerical columns.
+
+            - If None: No distribution is fit.
+            - If "kde": Fit a [Gaussian kde distribution][kde].
+            - Else: Name of a `scipy.stats` distribution.
 
         show: int or None, default=None
             Number of classes (ordered by number of occurrences) to
@@ -346,15 +348,19 @@ class DataPlot(BasePlot):
                 missing = self.missing + [np.inf, -np.inf]
                 values = self.dataset[col].replace(missing, np.NaN).dropna()
 
-                if distributions:
+                if distributions is not None:
                     # Get a line for each distribution
-                    for j, dist in enumerate(lst(distributions)):
-                        params = getattr(stats, dist).fit(values)
+                    for dist in lst(distributions):
+                        if dist == "kde":
+                            y = stats.gaussian_kde(values)(x)
+                        else:
+                            params = getattr(stats, dist).fit(values)
+                            y = getattr(stats, dist).pdf(x, *params)
 
                         fig.add_trace(
                             self._draw_line(
                                 x=x,
-                                y=getattr(stats, dist).pdf(x, *params),
+                                y=y,
                                 parent=col,
                                 child=dist,
                                 legend=legend,
@@ -362,19 +368,6 @@ class DataPlot(BasePlot):
                                 yaxis=yaxis,
                             )
                         )
-                else:
-                    # If no distributions specified, draw Gaussian kde
-                    fig.add_trace(
-                        self._draw_line(
-                            x=x,
-                            y=stats.gaussian_kde(values)(x),
-                            parent=col,
-                            child="kde",
-                            legend=legend,
-                            xaxis=xaxis,
-                            yaxis=yaxis,
-                        )
-                    )
 
             fig.update_layout(dict(barmode="overlay"))
 
@@ -422,7 +415,7 @@ class DataPlot(BasePlot):
             Choose from: words (1), bigrams (2), trigrams (3),
             quadgrams (4).
 
-        rows: hashable, range, slice or sequence, default="dataset"
+        rows: hashable, slice, sequence or dataframe, default="dataset"
             [Selection of rows][row-and-column-selection] in the corpus
             to include in the search.
 
@@ -667,6 +660,7 @@ class DataPlot(BasePlot):
                         x=np.percentile(samples, percentiles),
                         y=np.percentile(values, percentiles),
                         mode="markers",
+                        multiparent=len(columns) > 1,
                         parent=col,
                         child=dist,
                         legend=legend,
@@ -872,7 +866,7 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        rows: hashable, range, slice or sequence, default="dataset"
+        rows: hashable, slice, sequence or dataframe, default="dataset"
             [Selection of rows][row-and-column-selection] in the corpus
             to include in the wordcloud.
 

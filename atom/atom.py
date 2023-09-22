@@ -500,7 +500,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         Parameters
         ----------
-        rows: hashable, range, slice or sequence, default="dataset"
+        rows: hashable, slice, sequence or dataframe, default="dataset"
             [Selection of rows][row-and-column-selection] to get the
             report from.
 
@@ -723,7 +723,7 @@ class ATOM(BaseRunner, ATOMPlot):
         filename: str, default="auto"
             Name of the file. Use "auto" for automatic naming.
 
-        rows: hashable, range, slice, sequence or dataframe-like
+        rows: hashable, slice, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] to save.
 
         **kwargs
@@ -1144,7 +1144,9 @@ class ATOM(BaseRunner, ATOMPlot):
                 n_cols=self.branch._data.n_cols,
             )
             if self.branch._holdout is not None:
-                self.branch._holdout.index = range(len(data), len(data) + len(self.branch._holdout))
+                self.branch._holdout.index = range(
+                    len(data), len(data) + len(self.branch._holdout)
+                )
         elif self.dataset.index.duplicated().any():
             raise ValueError(
                 "Duplicate indices found in the dataset. "

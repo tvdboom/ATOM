@@ -59,7 +59,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_bar()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot.
 
         show: int or None, default=None
@@ -120,10 +120,10 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.branch._get_rows(rows)
+        X, _ = models.branch._get_rows(rows, return_X_y=True)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_bar")
@@ -169,7 +169,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_beeswarm()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_beeswarm method does not support plotting a single
             sample.
@@ -232,10 +232,10 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.branch._get_rows(rows)
+        X, _ = models.branch._get_rows(rows, return_X_y=True)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_beeswarm")
@@ -285,7 +285,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_decision()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot.
 
         show: int or None, default=None
@@ -347,10 +347,10 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.branch._get_rows(rows)
+        X, _ = models.branch._get_rows(rows, return_X_y=True)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_decision")
@@ -406,7 +406,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_force()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot.
 
         target: int, str or tuple, default=1
@@ -465,9 +465,9 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.branch._get_rows(rows)
+        X, _ = models.branch._get_rows(rows, return_X_y=True)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(X, target)
 
         self._get_figure(create_figure=False, backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_force")
@@ -533,7 +533,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_heatmap()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_heatmap method does not support plotting a single
             sample.
@@ -596,10 +596,10 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.branch._get_rows(rows)
+        X, _ = models.branch._get_rows(rows, return_X_y=True)
         show = self._get_show(show, models)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_heatmap")
@@ -649,7 +649,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_scatter()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_scatter method does not support plotting a single
             sample.
@@ -710,10 +710,10 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        rows = models.branch._get_rows(rows)
+        X, _ = models.branch._get_rows(rows, return_X_y=True)
         column = models.branch._get_columns(columns, include_target=False)[0]
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(X, target)
 
         # Get explanation for a specific column
         explanation = explanation[:, models.columns.get_loc(column)]
@@ -772,7 +772,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_waterfall()`.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_waterfall method does not support plotting
             multiple samples.

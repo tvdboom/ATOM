@@ -12,7 +12,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import cycle
-from typing import Literal
+from typing import Iterator, Literal
 
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -21,8 +21,8 @@ from mlflow.tracking import MlflowClient
 
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, DataFrame, Float, Index, Int, IntTypes, Legend, Model, Scalar,
-    Sequence, RowSelector, SequenceTypes
+    Bool, DataFrame, Float, Index, Int, IntTypes, Legend, Model, RowSelector,
+    Scalar, Sequence, SequenceTypes,
 )
 from atom.utils.utils import (
     composed, crash, divide, get_custom_scorer, lst, rnd, to_rgb,
@@ -552,17 +552,36 @@ class BasePlot:
 
         return hyperparameters
 
-    def _get_sets(
-        self,
-        rows: str | dict[str, RowSelector],
-    ) -> dict[str, RowSelector]:
-        """Check and return the datasets to plot."""
-        if isinstance(rows, dict):
-            return rows
-        elif isinstance(rows, SequenceTypes) and all(isinstance(r, str) for r in rows):
-            return {row: row for row in rows}
-        else:
-            return {rows: rows}
+    @staticmethod
+    def _get_set(
+        rows: str | Sequence | dict[str, RowSelector]
+    ) -> Iterator[str, RowSelector]:
+        """Get the row selection.
+
+        Convert provided rows to a dict where the keys are the names of
+        the data sets, and the corresponding values are the selection
+        rows fed to branch._get_rows().
+
+        Parameters
+        ----------
+        rows: str, sequence or dict
+            Selection of rows to plot.
+
+        Yields
+        ------
+        str
+            Name of the row set.
+
+        RowSelector
+            Selection of rows for this set.
+
+        """
+        if isinstance(rows, SequenceTypes):
+            rows = {row: row for row in rows}
+        elif isinstance(rows, str):
+            rows = {rows: rows}
+
+        yield from rows.items()
 
     def _get_metric(
         self,
@@ -662,10 +681,10 @@ class BasePlot:
         Parameters
         ----------
         parent: str
-            Name of the model.
+            Name of the head attribute.
 
         child: str or None, default=None
-            Data set which is plotted.
+            Name of the secondary attribute.
 
         legend: str, dict or None
             Legend argument provided by the user.
@@ -679,8 +698,6 @@ class BasePlot:
             New trace to add to figure.
 
         """
-        legendgrouptitle = dict(text=parent, font_size=self.label_fontsize)
-        hover = f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>"
         return go.Scatter(
             line=dict(
                 width=self.line_width,
@@ -693,10 +710,16 @@ class BasePlot:
                 color=BasePlot._fig.get_elem(parent),
                 line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
             ),
-            hovertemplate=kwargs.pop("hovertemplate", hover),
+            hovertemplate=kwargs.pop(
+                "hovertemplate",
+                f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>"
+            ),
             name=kwargs.pop("name", child or parent),
             legendgroup=kwargs.pop("legendgroup", parent),
-            legendgrouptitle=legendgrouptitle if child else None,
+            legendgrouptitle=kwargs.pop(
+                "legendgrouptitle",
+                dict(text=parent, font_size=self.label_fontsize) if child else None,
+            ),
             showlegend=BasePlot._fig.showlegend(f"{parent}-{child}", legend),
             **kwargs,
         )

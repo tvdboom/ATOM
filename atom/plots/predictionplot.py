@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 from functools import reduce
 from itertools import chain
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -59,7 +60,7 @@ class PredictionPlot(BasePlot):
     def plot_calibration(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         n_bins: Int = 10,
         target: Int | str = 0,
         *,
@@ -96,9 +97,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        rows: hashable, range, slice or sequence, default="test"
-            [Selection of rows][row-and-column-selection] on which to
-            calculate the metric. Use a sequence to plot multiple lines.
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -170,7 +175,7 @@ class PredictionPlot(BasePlot):
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
         for m in models:
-            for ds in lst(rows):
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
 
                 # Get calibration (frac of positives and predicted values)
@@ -181,7 +186,7 @@ class PredictionPlot(BasePlot):
                         x=pred,
                         y=frac_pos,
                         parent=m.name,
-                        child=ds,
+                        child=child,
                         mode="lines+markers",
                         marker_symbol="circle",
                         legend=legend,
@@ -332,6 +337,7 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        rows = self.branch._get_rows(rows)
         target = self.branch._get_target(target, only_columns=True)
 
         if self.task.startswith("multiclass") and len(models) > 1:
@@ -361,7 +367,7 @@ class PredictionPlot(BasePlot):
             xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models:
-            y_true, y_pred = m._get_pred(ds, target, attr="predict")
+            y_true, y_pred = m._get_pred(rows, target, attr="predict")
             if threshold != 0.5:
                 y_pred = (y_pred > threshold).astype("int")
 
@@ -448,7 +454,7 @@ class PredictionPlot(BasePlot):
     def plot_det(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -467,9 +473,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        rows: hashable, range, slice or sequence, default="test"
-            [Selection of rows][row-and-column-selection] on which to
-            calculate the metric. Use a sequence to plot multiple lines.
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -529,7 +539,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in lst(rows):
+            for child, ds in self._get_set(rows):
                 # Get fpr-fnr pairs for different thresholds
                 fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -539,7 +549,7 @@ class PredictionPlot(BasePlot):
                         y=fnr,
                         mode="lines",
                         parent=m.name,
-                        child=ds,
+                        child=child,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -564,7 +574,7 @@ class PredictionPlot(BasePlot):
     def plot_errors(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -587,9 +597,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        rows: hashable, range, slice or sequence, default="test"
-            [Selection of rows][row-and-column-selection] on which to
-            calculate the metric. Use a sequence to plot multiple lines.
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multioutput tasks][].
@@ -644,13 +658,11 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        datasets = self._get_sets(rows)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, rows in datasets.items():
-                y_true, y_pred = m._get_pred(rows, target)
+            for child, ds in self._get_set(rows):
+                y_true, y_pred = m._get_pred(ds, target)
 
                 fig.add_trace(
                     self._draw_line(
@@ -668,8 +680,7 @@ class PredictionPlot(BasePlot):
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
                 model = OrdinaryLeastSquares(goal=self.goal, branches=self._branches)
-                estimator = model._get_est()
-                estimator.fit(y_true.values.reshape(-1, 1), y_pred)
+                estimator = model._get_est().fit(pd.DataFrame(y_true), y_pred)
 
                 fig.add_trace(
                     self._draw_line(
@@ -704,6 +715,7 @@ class PredictionPlot(BasePlot):
     def plot_evals(
         self,
         models: ModelSelector = None,
+        dataset: Literal["train", "test", "train+test"] = "test",
         *,
         title: str | dict | None = None,
         legend: Legend | dict | None = "lower right",
@@ -721,6 +733,10 @@ class PredictionPlot(BasePlot):
         ----------
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
+
+        dataset: str, default="test"
+            Data set for which to plot the evaluation curves. Choose
+            from: "train", "test", "train+test".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -781,7 +797,7 @@ class PredictionPlot(BasePlot):
                     f"{m.name} has no in-training validation."
                 )
 
-            for ds in ("train", "test"):
+            for ds in dataset.split("+"):
                 fig.add_trace(
                     self._draw_line(
                         x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
@@ -1153,7 +1169,7 @@ class PredictionPlot(BasePlot):
     def plot_gains(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -1172,10 +1188,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the metric. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "train", "test" or "holdout".
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -1235,7 +1254,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in rows:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 fig.add_trace(
@@ -1244,7 +1263,7 @@ class PredictionPlot(BasePlot):
                         y=np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum(),
                         mode="lines",
                         parent=m.name,
-                        child=ds,
+                        child=child,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -1426,7 +1445,7 @@ class PredictionPlot(BasePlot):
     def plot_lift(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -1444,10 +1463,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the metric. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "train", "test" or "holdout".
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -1507,7 +1529,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in rows:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
@@ -1517,7 +1539,7 @@ class PredictionPlot(BasePlot):
                         y=gains / x,
                         mode="lines",
                         parent=m.name,
-                        child=ds,
+                        child=child,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -2487,7 +2509,7 @@ class PredictionPlot(BasePlot):
     def plot_prc(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -2506,10 +2528,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the metric. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "train", "test" or "holdout".
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -2569,7 +2594,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in rows:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 # Get precision-recall pairs for different thresholds
@@ -2608,7 +2633,7 @@ class PredictionPlot(BasePlot):
     def plot_probabilities(
         self,
         models: ModelSelector = None,
-        dataset: str = "test",
+        rows: RowSelector = "test",
         target: Int | str | tuple = 1,
         *,
         title: str | dict | None = None,
@@ -2627,9 +2652,9 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, range, slice or sequence, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric.
 
         target: int, str or tuple, default=1
             Probability of being that class in the target column. For
@@ -2689,14 +2714,15 @@ class PredictionPlot(BasePlot):
 
         """
         check_predict_proba(models, "plot_probabilities")
-        ds = self._get_set(dataset, max_one=True)
         col, cls = self.branch._get_target(target)
         col = lst(self.target)[col]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            y_true, y_pred = getattr(m, f"y_{ds}"), getattr(m, f"predict_proba_{ds}")
+            X, y_true = m.branch._get_rows(rows, return_X_y=True)
+            y_pred = m.predict_proba(X.index)
+
             for value in np.unique(m.dataset[col]):
                 # Get indices per class
                 if is_multioutput(self.task):
@@ -2715,7 +2741,7 @@ class PredictionPlot(BasePlot):
                         line=dict(
                             width=2,
                             color=BasePlot._fig.get_elem(m.name),
-                            dash=BasePlot._fig.get_elem(ds, "dash"),
+                            dash=BasePlot._fig.get_elem(value, "dash"),
                         ),
                         fill="tonexty",
                         fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
@@ -2749,7 +2775,7 @@ class PredictionPlot(BasePlot):
     def plot_residuals(
         self,
         models: ModelSelector = None,
-        dataset: str = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -2764,20 +2790,24 @@ class PredictionPlot(BasePlot):
         and the true value) on the vertical axis and the independent
         variable on the horizontal axis. The gray, intersected line
         shows the identity line. This plot can be useful to analyze the
-        variance of the error of the regressor. If the points are
-        randomly dispersed around the horizontal axis, a linear
-        regression model is appropriate for the data; otherwise, a
-        non-linear model is more appropriate. This plot is only
-        available for regression tasks.
+        variance of the regressor's errors. If the points are randomly
+        dispersed around the horizontal axis, a linear regression model
+        is appropriate for the data; otherwise, a non-linear model is
+        more appropriate. This plot is only available for regression
+        tasks.
 
         Parameters
         ----------
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multioutput tasks][].
@@ -2832,44 +2862,41 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        ds = self._get_set(dataset, max_one=True)
-        target = self.branch._get_target(target, only_columns=True)
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(x=(0, 0.69))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(x=(0.71, 1.0))
         for m in models:
-            y_true, y_pred = m._get_pred(ds, target)
+            for child, ds in self._get_set(rows):
+                y_true, y_pred = m._get_pred(ds, target)
 
-            fig.add_trace(
-                go.Scatter(
-                    x=y_true,
-                    y=(res := np.subtract(y_true, y_pred)),
-                    mode="markers",
-                    line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
+                fig.add_trace(
+                    self._draw_line(
+                        x=y_true,
+                        y=(res := np.subtract(y_true, y_pred)),
+                        mode="markers",
+                        parent=m.name,
+                        child=child,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
-            fig.add_trace(
-                go.Histogram(
-                    y=res,
-                    bingroup="residuals",
-                    marker=dict(
-                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                    ),
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=False,
-                    xaxis=xaxis2,
-                    yaxis=yaxis,
+                fig.add_trace(
+                    go.Histogram(
+                        y=res,
+                        bingroup="residuals",
+                        marker=dict(
+                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
+                        ),
+                        name=m.name,
+                        legendgroup=m.name,
+                        showlegend=False,
+                        xaxis=xaxis2,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
         self._draw_straight_line(y=0, xaxis=xaxis, yaxis=yaxis)
 
@@ -3100,7 +3127,7 @@ class PredictionPlot(BasePlot):
     def plot_roc(
         self,
         models: ModelSelector = None,
-        rows: RowSelector = "test",
+        rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
         title: str | dict | None = None,
@@ -3119,10 +3146,13 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        dataset: str or sequence, default="test"
-            Data set on which to calculate the metric. Use a sequence
-            or add `+` between options to select more than one. Choose
-            from: "train", "test" or "holdout".
+        rows: str, sequence or dict, default="test"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
 
         target: int or str, default=0
             Target column to look at. Only for [multilabel][] tasks.
@@ -3182,7 +3212,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for ds in lst(rows):
+            for child, ds in self._get_set(rows):
                 # Get False (True) Positive Rate as arrays
                 fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -3192,7 +3222,7 @@ class PredictionPlot(BasePlot):
                         y=tpr,
                         mode="lines",
                         parent=m.name,
-                        child=ds,
+                        child=child,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3404,7 +3434,7 @@ class PredictionPlot(BasePlot):
             between options to select more than one. If None, the
             metric used to run the pipeline is selected.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, slice, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 

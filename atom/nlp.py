@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from logging import Logger
+from pathlib import Path
 from string import punctuation
 from typing import Literal
 
@@ -189,7 +190,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         regex_number: str | None = None,
         drop_punctuation: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -486,7 +487,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         stem: Bool | str = False,
         lemmatize: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -711,7 +712,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         quadgram_freq: Scalar | None = None,
         *,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
@@ -957,7 +958,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)

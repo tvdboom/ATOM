@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from logging import Logger
+from pathlib import Path
 from random import sample
 from typing import Callable, Literal
 
@@ -38,8 +39,8 @@ from atom.models import MODELS
 from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, Estimator, Features,
-    FeatureSelectionStrats, Float, Int, IntTypes, Operators, Scalar, Sequence,
-    SequenceTypes, SeriesTypes, Target, Verbose,
+    FeatureSelectionStrats, Float, Int, IntTypes, NJobs, Operators, Scalar,
+    Sequence, SequenceTypes, SeriesTypes, Target, Verbose,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, check_scaling, composed, crash,
@@ -171,7 +172,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
         drop_columns: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.fmt = fmt
@@ -422,9 +423,9 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         n_features: Int | None = None,
         operators: Operators | Sequence | None = None,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
     ):
@@ -727,7 +728,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         operators: str | Sequence | None = None,
         drop_columns: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.group = group
@@ -1100,12 +1101,12 @@ class FeatureSelector(
         min_repeated: Scalar | None = 2,
         max_repeated: Scalar | None = 1.0,
         max_correlation: Float | None = 1.0,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
     ):

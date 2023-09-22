@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from logging import Logger
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -47,7 +48,7 @@ from sklearn.impute import KNNImputer
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, DiscretizerStrats, Engine, Estimator,
-    Features, Float, Int, NumericalStrats, Pandas, PrunerStrats, Scalar,
+    Features, Float, Int, NJobs, NumericalStrats, Pandas, PrunerStrats, Scalar,
     ScalerStrats, Sequence, SequenceTypes, Series, SeriesTypes, Target,
     Verbose,
 )
@@ -309,9 +310,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str | Estimator = "ADASYN",
         *,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
     ):
@@ -693,7 +694,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.convert_dtypes = convert_dtypes
@@ -1128,7 +1129,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         random_state: Int | None = None,
     ):
         super().__init__(
@@ -1435,7 +1436,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         infrequent_to_value: Scalar | None = None,
         value: str = "infrequent",
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -1833,7 +1834,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strat_num = strat_num
@@ -2224,7 +2225,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         random_state: Int | None = None,
         **kwargs,
     ):
@@ -2522,7 +2523,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -2816,7 +2817,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)

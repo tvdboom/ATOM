@@ -367,22 +367,23 @@ As you can see, these two parameters are very important and shared across
 many methods in atom. Rows and columns can be selected in multiple ways.
 The check is performed in the order described hereunder:
 
-1. By exact name, e.g., `#!python rows=["row1", "row2"]` to select rows with
+1. By actual dataset, e.g., `#!python rows=atom.test` is equal to `#!python rows="test"`.
+2. By range or slice, e.g., `#!python rows=range(100)` to select the first 100
+   rows or `#!python rows=slice(20, 100)` to select rows 20 to 99.
+3. By exact name, e.g., `#!python rows=["row1", "row2"]` to select rows with
    indices `row1` and `row2` or `#!python columns=["col1", "col2"]` to select
    columns `col1` and `col2`. It's also possible to use the `+` sign to select
    multiple rows or columns, e.g., `#!python columns="col1+col2` is the same
    as `#!python columns=["col1", "col2"]`.
-2. By position, e.g., `#!python rows=[0, 1, 2]` to select the first three rows.
-3. By name of the data set (only for rows), e.g., `#!python rows="train"` to
+4. By position, e.g., `#!python rows=[0, 1, 2]` to select the first three rows.
+5. By name of the data set (only for rows), e.g., `#!python rows="train"` to
    select all rows in the training set, or `#!python rows="test+holdout"` to
    select all rows in the test and holdout sets. Valid data sets are `dataset`,
    `train`, `test` and `holdout`.
-4. By dtype (only for columns), e.g., `#!python columns="number"` to select only 
+5. By dtype (only for columns), e.g., `#!python columns="number"` to select only 
    numerical columns. See pandas' [user guide](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.select_dtypes.html).
-5. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
+6. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
    starting with `mean_`.
-6. By range or slice, e.g., `#!python rows=range(100)` to select the first 100
-   rows or `#!python rows=slice(20, 100)` to select rows 20 to 99.
 7. Excluding instead of including using the `!` sign, e.g. `#!python columns="!col1"`
    to select all columns except `col1`. You can also exclude multiple rows or
    columns like this `#!python columns=["!col1", "!col2"]` or this
@@ -394,9 +395,13 @@ The check is performed in the order described hereunder:
    time. For example, this selection raises an exception `#!python column=["col1", "!col2"]`.
 
 !!! info
-    In some plotting methods, it's possible to plot separate lines for different
-    subsets of the rows. In these cases, provide a sequence to the `rows` parameter
-    for every line you want to draw, e.g., `#!python atom.plot_roc(rows=("train", "test"))`
-    to plot both the train and test sets. In these methods, using
-    `#!python atom.plot_roc(rows="train+test")`,  only plots one line with the
-    data from both sets.
+    In some [plotting methods][prediction-plots], it's possible to plot separate
+    lines for different subsets of the rows. For example, to compare the results
+    on the train and test set. For these cases, either provide a sequence to the
+    `rows` parameter for every line you want to draw, e.g., `#!python atom.plot_roc(rows=("train", "test"))`,
+    or provide a dictionary where the keys are the names of the sets (used in the
+    legend) and the values are the corresponding selection of rows, selected using
+    any of the aforementioned approaches, e.g, `#!python atom.plot_roc(rows={"0-99": range(100), "100-199": range(100, 200})`.
+    Note that for these methods, using `#!python atom.plot_roc(rows="train+test")`,
+    only plots one line with the data from both sets. See the
+    [advanced plotting example][example-advanced-plotting].

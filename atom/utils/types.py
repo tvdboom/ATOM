@@ -55,13 +55,6 @@ class Engine(TypedDict, total=False):
     estimator: Literal["sklearn", "sklearnex", "cuml"]
 
 
-class SeqProtocol(Protocol[T]):
-    """Protocol for all sequences."""
-    def __iter__(self) -> Iterable[T]: ...
-    def __getitem__(self, item) -> T: ...
-    def __len__(self) -> Int: ...
-
-
 class Sequence(Protocol[T]):
     """Type hint factory for sequences with subscripted types.
 
@@ -86,7 +79,7 @@ class Sequence(Protocol[T]):
     def __len__(self) -> Int: ...
 
     @classmethod
-    def __class_getitem__(cls, X: Any) -> Annotated[SeqProtocol, Is]:
+    def __class_getitem__(cls, X: Any) -> Annotated[Sequence, Is]:
         return Annotated[cls, Is[lambda lst: all(is_bearable(i, X) for i in lst)]]
 
 
@@ -143,13 +136,8 @@ Pandas = Union[PandasTypes]
 Features = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DataFrame]
 Target = Union[Int, str, dict, Sequence, DataFrame]
 
-Datasets = Literal[
-    "dataset", "train", "test", "holdout", "X", "y", "X_train",
-    "X_test", "X_holdout", "y_train", "y_test", "y_holdout",
-]
-
 # Selection of rows or columns by name or position
-ColumnSelector = Union[Int, str, range, slice, Sequence]
+ColumnSelector = Union[Int, str, range, slice, Sequence, DataFrame]
 RowSelector = Union[Hashable, ColumnSelector]
 
 # Assignment of index or stratify parameter
@@ -163,6 +151,7 @@ MetricSelector = Union[str, Callable[..., Scalar], Sequence, None]
 MethodSelector = Literal["predict", "predict_proba", "decision_function", "thresh"]
 
 # Allowed values for BaseTransformer parameter
+NJobs = Annotated[Int, Is[lambda x: x >= 0]]
 Backend = Literal["loky", "multiprocessing", "threading", "ray"]
 Warnings = Literal["default", "error", "ignore", "always", "module", "once"]
 Severity = Literal["debug", "info", "warning", "error", "critical"]

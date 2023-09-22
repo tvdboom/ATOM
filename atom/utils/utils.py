@@ -763,7 +763,7 @@ class ShapExplanation:
     def get_explanation(
         self,
         df: DataFrame,
-        target: tuple,
+        target: tuple[Int, Int],
     ) -> Explanation:
         """Get an Explanation object.
 
@@ -823,7 +823,7 @@ class ShapExplanation:
         # Update the explanation object
         explanation.values = np.stack(self._shap_values.loc[df.index].values)
         explanation.base_values = self._explanation.base_values[0]
-        explanation.data = self.branch.X.loc[df.index].to_numpy()
+        explanation.data = self.branch._all.loc[df.index].to_numpy()
 
         if is_multioutput(self.task):
             if explanation.values.shape[-1] == self.branch.y.shape[1]:
@@ -2824,8 +2824,9 @@ def plot_from_model(
     ----------
     func: callable or None
         Function to decorate. When the decorator is called with no
-        optional arguments, the function is passed as the first argument
-        and the decorator just returns the decorated function.
+        optional arguments, the function is passed as the first
+        argument, and the decorator just returns the decorated
+        function.
 
     max_one: bool, default=False
         Whether one or multiple models are allowed. If True, return

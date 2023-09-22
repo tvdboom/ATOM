@@ -461,7 +461,7 @@ def test_plot_distribution():
         atom.plot_distribution(columns=2, show=-1, display=False)
 
     atom.plot_distribution(columns=2, distributions=None, display=False)
-    atom.plot_distribution(columns="x0", distributions=None, display=False)
+    atom.plot_distribution(columns="x0", distributions="kde", display=False)
     atom.plot_distribution(columns=[0, 1], distributions="pearson3", display=False)
 
 

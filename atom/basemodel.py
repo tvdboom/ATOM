@@ -61,7 +61,7 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
-    FloatTypes, Int, IntTypes, MethodSelector, MetricSelector, Pandas,
+    FloatTypes, Int, IntTypes, MethodSelector, MetricSelector, NJobs, Pandas,
     Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Target, Verbose,
     Warnings,
 )
@@ -165,6 +165,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -184,14 +185,14 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         config: DataConfig | None = None,
         branches: BranchManager | None = None,
         metric: ClassMap | None = None,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -603,7 +604,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        rows: hashable, range, slice or sequence
+        rows: hashable, slice, sequence or dataframe
             [Selection of rows][row-and-column-selection] for which to
             get the predictions.
 
@@ -757,7 +758,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        rows: hashable, range, slice or sequence
+        rows: hashable, slice, sequence or dataframe
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 
@@ -1750,7 +1751,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        rows: hashable, range, slice, sequence or dataframe-like
+        rows: hashable, slice, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] to get the
             report from.
 
@@ -1885,7 +1886,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        rows: hashable, range, slice or sequence
+        rows: hashable, slice, sequence or dataframe
             [Selection of rows][row-and-column-selection] to calculate
             metric on.
 
@@ -2047,7 +2048,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        rows: hashable, range, slice or sequence
+        rows: hashable, slice, sequence or dataframe
             [Selection of rows][row-and-column-selection] on which to
             calculate the threshold.
 

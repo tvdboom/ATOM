@@ -19,8 +19,8 @@ from sklearn.base import clone
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
-    Backend, Bool, Engine, IndexSelector, Int, Predictor, Scalar, Target,
-    Verbose, Warnings,
+    Backend, Bool, Engine, IndexSelector, Int, NJobs, Predictor, Scalar,
+    Target, Verbose, Warnings,
 )
 
 
@@ -290,6 +290,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -341,14 +342,14 @@ class ATOMClassifier(BaseTransformer, ATOM):
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -527,6 +528,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -572,14 +574,14 @@ class ATOMForecaster(BaseTransformer, ATOM):
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -768,6 +770,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -819,14 +822,14 @@ class ATOMRegressor(BaseTransformer, ATOM):
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):

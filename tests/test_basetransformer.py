@@ -10,6 +10,7 @@ Description: Unit tests for basetransformer.py
 import multiprocessing
 import os
 from logging import Logger
+from pathlib import Path
 from platform import machine
 from random import sample
 from unittest.mock import patch
@@ -40,13 +41,6 @@ def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
     base = BaseTransformer(n_jobs=1000)
     assert base.n_jobs == multiprocessing.cpu_count()
-
-
-@pytest.mark.parametrize("n_jobs", [0, -1000])
-def test_n_jobs_invalid(n_jobs):
-    """Assert that an error is raised when n_jobs is invalid."""
-    with pytest.raises(ValueError, match=".*n_jobs parameter.*"):
-        BaseTransformer(n_jobs=n_jobs)
 
 
 def test_negative_n_jobs():
@@ -128,7 +122,7 @@ def test_warnings_parameter_str():
     assert base.warnings == "always"
 
 
-@pytest.mark.parametrize("logger", [None, "auto", Logger("test")])
+@pytest.mark.parametrize("logger", [None, "auto", Path("test"), Logger("test")])
 def test_logger_creator(logger):
     """Assert that the logger is created correctly."""
     base = BaseTransformer(logger="auto")

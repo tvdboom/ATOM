@@ -21,8 +21,8 @@ from sklearn.base import BaseEstimator
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    Backend, Bool, Engine, Int, IntTypes, MetricSelector, Predictor, Sequence,
-    Verbose, Warnings,
+    Backend, Bool, Engine, Int, IntTypes, MetricSelector, NJobs, Predictor,
+    Sequence, Verbose, Warnings,
 )
 from atom.utils.utils import (
     ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
@@ -408,6 +408,7 @@ class DirectClassifier(Direct):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -460,14 +461,14 @@ class DirectClassifier(Direct):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -636,6 +637,7 @@ class DirectForecaster(Direct):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -685,14 +687,14 @@ class DirectForecaster(Direct):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | Warnings = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -861,6 +863,7 @@ class DirectRegressor(Direct):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -913,14 +916,14 @@ class DirectRegressor(Direct):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -1096,6 +1099,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -1149,14 +1153,14 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: Bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -1328,6 +1332,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -1378,14 +1383,14 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -1557,6 +1562,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -1610,14 +1616,14 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -1798,6 +1804,7 @@ class TrainSizingClassifier(TrainSizing):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -1851,14 +1858,14 @@ class TrainSizingClassifier(TrainSizing):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -2035,6 +2042,7 @@ class TrainSizingForecaster(TrainSizing):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -2085,14 +2093,14 @@ class TrainSizingForecaster(TrainSizing):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
@@ -2269,6 +2277,7 @@ class TrainSizingRegressor(TrainSizing):
     logger: str, Logger or None, default=None
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic name.
+        - If Path: A [pathlib.Path][] to the log file.
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
@@ -2322,14 +2331,14 @@ class TrainSizingRegressor(TrainSizing):
         n_bootstrap: Int | dict | Sequence = 0,
         parallel: bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
-        n_jobs: Int = 1,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
         warnings: bool | str = False,
-        logger: str | Logger | None = None,
+        logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):

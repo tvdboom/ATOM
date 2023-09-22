@@ -426,7 +426,7 @@ class Branch:
 
         Parameters
         ----------
-        rows: hashable, range, slice or sequence
+        rows: RowSelector
             Rows to select.
 
         return_X_y: bool, default=False
@@ -444,7 +444,9 @@ class Branch:
         indices = self._all.index
 
         inc, exc = [], []
-        if isinstance(rows, (range, slice)):
+        if isinstance(rows, DataFrameTypes):
+            inc.extend(rows.index)
+        elif isinstance(rows, (range, slice)):
             inc.extend(indices[rows])
         else:
             for row in lst(rows):
@@ -511,9 +513,9 @@ class Branch:
 
         Parameters
         ----------
-        columns: int, str, range, slice, sequence or None, default=None
+        columns: ColumnSelector or None, default=None
             Columns to select. If None, return all columns in the
-            dataset bearing the other parameters.
+            dataset, bearing the other parameters.
 
         include_target: bool, default=True
             Whether to include the target column in the dataset to
@@ -537,6 +539,8 @@ class Branch:
                 return list(df.select_dtypes(include=["number"]).columns)
             else:
                 return list(df.columns)
+        elif isinstance(columns, DataFrameTypes):
+            inc = list(columns.columns)
         elif isinstance(columns, (range, slice)):
             inc = list(df.columns[columns])
         else:

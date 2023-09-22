@@ -19,6 +19,7 @@ from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
+from pathlib import Path
 from typing import Callable
 
 import dagshub
@@ -94,20 +95,11 @@ class BaseTransformer:
 
     @n_jobs.setter
     def n_jobs(self, value: Int):
-        # Check number of cores for multiprocessing
+        # Check the number of cores for multiprocessing
         if value > (n_cores := cpu_count()):
-            value = n_cores
+            self._n_jobs = n_cores
         else:
-            value = n_cores + 1 + value if value < 0 else value
-
-            # Final check for negative input
-            if value < 1:
-                raise ValueError(
-                    "Invalid value for the n_jobs parameter, "
-                    f"got {value}. Value should be >=0.", 1
-                )
-
-        self._n_jobs = value
+            self._n_jobs = n_cores + 1 + value if value < 0 else value
 
     @property
     def device(self) -> str:
@@ -227,7 +219,7 @@ class BaseTransformer:
         return self._logger
 
     @logger.setter
-    def logger(self, value: str | Logger | None):
+    def logger(self, value: str | Path | Logger | None):
         external_loggers = [
             "dagshub",
             "mlflow",
@@ -259,13 +251,13 @@ class BaseTransformer:
                 logger.handlers.clear()
 
                 # Prepare the FileHandler
-                if not value.endswith(".log"):
-                    value += ".log"
-                if os.path.basename(value) == "auto.log":
-                    current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
-                    value = value.replace("auto", self.__class__.__name__ + "_" + current)
+                if not (path := Path(value)).suffix == ".log":
+                    path = path.with_suffix(".log")
+                if value.name == "auto.log":
+                    now = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
+                    path = path.with_name(f"{self.__class__.__name__}_{now}.log")
 
-                fh = FileHandler(value)
+                fh = FileHandler(path)
                 fh.setFormatter(Formatter("%(asctime)s - %(levelname)s: %(message)s"))
 
                 # Redirect loggers to file handler
