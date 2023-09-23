@@ -5,7 +5,6 @@
 
 As of the moment, ATOM supports the following Python versions:
 
-* [Python 3.8](https://www.python.org/downloads/release/python-380/)
 * [Python 3.9](https://www.python.org/downloads/release/python-390/)
 * [Python 3.10](https://www.python.org/downloads/release/python-3100/)
 * [Python 3.11](https://www.python.org/downloads/release/python-3110/)
@@ -83,6 +82,7 @@ using `pip install atom-ml[dev]`.
 * **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
 * **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
 * **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.2)
+* **[mypy](https://www.mypy-lang.org/)** (>=1.5.1)
 
 **Testing**
 

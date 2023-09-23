@@ -1305,7 +1305,7 @@ def merge(*args) -> DataFrame:
         return bk.DataFrame(bk.concat([*args], axis=1))
 
 
-def replace_missing_values(X: Pandas, missing_values: list) -> Pandas:
+def replace_missing_values(X: Pandas, missing_values: list[Any] | None = None) -> Pandas:
     """Replace all values considered 'missing' in a dataset.
 
     This method replaces the missing values in columns with pandas'
@@ -1316,8 +1316,9 @@ def replace_missing_values(X: Pandas, missing_values: list) -> Pandas:
     X: series or dataframe
         Data set to replace.
 
-    missing_values: list
-        Values considered 'missing'.
+    missing_values: list or None, default=None
+        Values considered 'missing'. If None, use only the default
+        values.
 
     Returns
     -------
@@ -1329,7 +1330,7 @@ def replace_missing_values(X: Pandas, missing_values: list) -> Pandas:
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
 
     return X.replace(
-        to_replace={k: missing_values + default_values for k in X},
+        to_replace={k: (missing_values or []) + default_values for k in X},
         value={k: np.NaN if isinstance(X[k].dtype, np.dtype) else pd.NA for k in X},
     )
 
@@ -1846,7 +1847,7 @@ def to_series(
 
 
 def to_pandas(
-    data: Sequence | None,
+    data: Sequence | DataFrame | None,
     index: Sequence | None = None,
     columns: Sequence | None = None,
     name: str = "target",
@@ -1858,7 +1859,7 @@ def to_pandas(
 
     Parameters
     ----------
-    data: sequence or None
+    data: sequence, dataframe or None
         Data to convert. If None, return unchanged.
 
     index: sequence, index or None, default=None

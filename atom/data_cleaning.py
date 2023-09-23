@@ -42,7 +42,7 @@ from imblearn.under_sampling import (
     TomekLinks,
 )
 from scipy.stats import zscore
-from sklearn.base import BaseEstimator, clone
+from sklearn.base import BaseEstimator
 from sklearn.impute import KNNImputer
 
 from atom.basetransformer import BaseTransformer
@@ -50,7 +50,7 @@ from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, DiscretizerStrats, Engine, Estimator,
     Features, Float, Int, NJobs, NumericalStrats, Pandas, PrunerStrats, Scalar,
     ScalerStrats, Sequence, SequenceTypes, Series, SeriesTypes, Target,
-    Verbose,
+    Transformer, Verbose,
 )
 from atom.utils.utils import (
     CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -832,7 +832,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     X = X.drop(name, axis=1)
                     continue
 
-                elif any(t in dtype for t in ("object", "category", "string")):
+                elif dtype in ("object", "category", "string"):
                     if self.strip_categorical:
                         # Strip strings from blank spaces
                         X[name] = column.apply(
@@ -1429,7 +1429,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str | Estimator = "Target",
+        strategy: str | Transformer = "Target",
         *,
         max_onehot: Int | None = 10,
         ordinal: dict[str, Sequence] | None = None,
@@ -1482,7 +1482,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        self.mapping_ = {}
+        self.mapping_ = defaultdict(dict)
         self._to_value = defaultdict(list)
         self._categories = {}
         self._encoders = {}
@@ -1511,20 +1511,14 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
                     f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = strategies[self.strategy](
-                handle_missing="return_nan",
-                handle_unknown="value",
-                **self.kwargs,
-            )
-        elif not all(hasattr(self.strategy, attr) for attr in ("fit", "transform")):
-            raise TypeError(
-                "Invalid type for the strategy parameter. A custom"
-                "estimator must have a fit and transform method."
-            )
+            estimator = strategies[self.strategy]
         elif callable(self.strategy):
-            estimator = self.strategy(**self.kwargs)
-        else:
             estimator = self.strategy
+        else:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                "For customs estimators, a class is expected, but got an instance."
+            )
 
         if self.max_onehot is None:
             max_onehot = 0
@@ -1558,7 +1552,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                         X[name] = column.replace(category, self.value)
 
             # Get the unique categories before fitting
-            self._categories[name] = column.sort_values().unique().tolist()
+            self._categories[name] = column.dropna().sort_values().unique().tolist()
 
             # Perform encoding type dependent on number of unique values
             ordinal = self.ordinal or {}
@@ -1598,7 +1592,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 args = [X[[name]]]
                 if "y" in sign(estimator.fit):
                     args.append(bk.DataFrame(y).iloc[:, 0])
-                self._encoders[name] = clone(estimator).fit(*args)
+
+                self._encoders[name] = estimator(
+                    cols=[name],
+                    handle_missing="return_nan",
+                    handle_unknown="value",
+                    **self.kwargs,
+                ).fit(*args)
 
                 # Create encoding of unique values for mapping
                 data = self._encoders[name].transform(
@@ -1612,7 +1612,6 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Only mapping 1 - 1 column
                 if data.shape[1] == 1:
-                    self.mapping_[name] = {}
                     for idx, value in data[name].items():
                         self.mapping_[name][idx] = value
 
@@ -1642,30 +1641,29 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._log("Encoding categorical columns...", 1)
 
         for name, column in X[self._cat_cols].items():
-            # Convert uncommon classes to "other"
+            # Convert infrequent classes to value
             if self._to_value[name]:
                 X[name] = column.replace(self._to_value[name], self.value)
 
-            n_classes = len(column.unique())
             self._log(
                 f" --> {self._encoders[name].__class__.__name__[:-7]}-encoding "
-                f"feature {name}. Contains {n_classes} classes.", 2
+                f"feature {name}. Contains {column.nunique()} classes.", 2
             )
 
-            # Count the propagated missing values
-            n_nans = column.isna().sum()
-            if n_nans:
+            # Count the propagated missingX[[name]] values
+            if n_nans := column.isna().sum():
                 self._log(f"   --> Propagating {n_nans} missing values.", 2)
 
             # Get the new encoded columns
+            # TODO: category_encoders can't handle pd.NA
+            # https://github.com/scikit-learn-contrib/category_encoders/issues/424
             new_cols = self._encoders[name].transform(X[[name]])
 
             # Drop _nan columns (since missing values are propagated)
-            new_cols = new_cols[[col for col in new_cols if not col.endswith("_nan")]]
+            new_cols = new_cols.loc[:, ~new_cols.columns.str.endswith("_nan")]
 
             # Check for unknown classes
-            uc = len([i for i in column.unique() if i not in self._categories[name]])
-            if uc:
+            if uc := len(column.dropna()[~column.isin(self._categories[name])]):
                 self._log(f"   --> Handling {uc} unknown classes.", 2)
 
             # Insert the new columns at old location

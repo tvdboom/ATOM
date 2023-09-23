@@ -11,11 +11,9 @@ Do you have a question? Before you do, please read the following guidelines.
 
 ### Question or problem?
 
-For quick questions there's no need to open an issue. Check first if the
-question isn't already answered on the [FAQ](../faq) section. If not, reach
-us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
-page or on the [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)
-channel.
+For quick questions, there's no need to open an issue. Check first if the
+question isn't already answered in the FAQ section. If not, reach us
+through the [discussions](https://github.com/tvdboom/ATOM/discussions) page or on the [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g) channel.
 
 
 ### Report a bug?
@@ -99,17 +97,18 @@ review and accept your changes.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
 * Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
-* Run [flake8](https://github.com/john-hen/Flake8-pyproject): `flake8 --show-source --statistics atom tests`.
+* Run [flake8](https://github.com/pycqa/flake8): `flake8 --show-source --statistics atom tests`.
+* Run [mypy](https://www.mypy-lang.org/): `mypy atom tests`.
 
 If your contribution requires a new library dependency:
 
 * Double-check that the new dependency is easy to install via pip and Anaconda.
-* The library should support Python 3.8 and higher.
+* The library should support Python 3.9 and higher.
 * Make sure the code works with the latest version of the library.
 * Update the dependencies in the documentation.
 * Add the library with the minimum required version to `pyproject.toml`.
 
 After submitting your pull request, GitHub will automatically run the tests
 on your changes and make sure that the updated code builds successfully.
-The checks are run on Python 3.8, 3.9, 3.10 and 3.11, on Ubuntu and Windows.
+The checks are run on Python 3.9, 3.10 and 3.11, on Ubuntu and Windows.
 We also use services that automatically check code style and test coverage.

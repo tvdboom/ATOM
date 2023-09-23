@@ -802,7 +802,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
             """
             if pd.api.types.is_sparse(column):
-                # If already sparse array, cast directly to new sparse type
+                # If already sparse array, cast directly to a new sparse type
                 return column.astype(pd.SparseDtype(new_t, column.dtype.fill_value))
             else:
                 if dense2sparse and name not in lst(self.target):  # Skip target cols

@@ -380,6 +380,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
 
+@beartype
 class ATOMForecaster(BaseTransformer, ATOM):
     """Main class for forecasting tasks.
 
@@ -566,7 +567,6 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     """
 
-    @beartype
     def __init__(
         self,
         *arrays,
@@ -612,6 +612,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         )
 
 
+@beartype
 class ATOMRegressor(BaseTransformer, ATOM):
     """Main class for regression tasks.
 
@@ -812,7 +813,6 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     """
 
-    @beartype
     def __init__(
         self,
         *arrays,

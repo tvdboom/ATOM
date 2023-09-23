@@ -9,11 +9,12 @@ Description: Global fixtures and variables for the tests.
 
 from __future__ import annotations
 
-from typing import Callable
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
     make_multilabel_classification,
@@ -23,7 +24,7 @@ from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
 from sktime.forecasting.model_selection import temporal_train_test_split
 
-from atom.utils.types import DataFrame, Features, Pandas, Target
+from atom.utils.types import DataFrame, Features, Pandas, Sequence
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 
@@ -47,29 +48,44 @@ class DummyTransformer:
 
     def transform(self, X: DataFrame) -> np.ndarray:
         if self.strategy == "equal":
-            return X.to_numpy()
+            X = X.to_numpy()
         elif self.strategy == "drop":
-            return X.drop(X.columns[1], axis=1).to_numpy()
+            X = X.drop(X.columns[1], axis=1).to_numpy()
         elif self.strategy == "add":
             X["new_col"] = list(range(len(X)))
-            return X.to_numpy()
+            X = X.to_numpy()
+
+        return X
 
 
 @pytest.fixture(autouse=True)
-def change_current_dir(tmp_path: Callable, monkeypatch: Callable):
-    """Changes the directory of the test to a temporary dir."""
+def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
+    """Changes the directory of the test to a temporary dir.
+
+    Parameters
+    ----------
+    tmp_path: pathlib.Path
+        Reference to the temporary directory.
+
+    monkeypatch: _pytest.monkeypatch.MonkeyPatch
+        Helper to monkeypatch changing the current working dir.
+
+    """
     monkeypatch.chdir(tmp_path)
 
 
-def get_train_test(X: Features | None, y: Target) -> tuple[Pandas, Pandas]:
+def get_train_test(
+    X: Features | None,
+    y: Sequence | DataFrame,
+) -> Pandas | tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.
 
     Parameters
     ----------
     X: DataFrame-like or None
-        Feature set.
+        Feature set. If None, split as time series data set.
 
-    y: int, str, dict, sequence or DataFrame
+    y: sequence or DataFrame
         Target column corresponding to X.
 
     Returns

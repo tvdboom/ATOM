@@ -39,6 +39,20 @@ jobs:
       - name: Apply linting
         run: flake8 --show-source --statistics atom tests
 
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: pip install mypy types-requests pandas-stubs
+      - name: Check type hints
+        run: mypy atom tests
+
   code-quality-codeql:
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +86,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
     steps:
       - name: Check out source repository
         uses: actions/checkout@v3

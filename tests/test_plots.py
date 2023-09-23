@@ -15,7 +15,7 @@ from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots.base import Aesthetics, BaseFigure, BasePlot
-from atom.utils.types import LEGEND
+from atom.utils.types import Legend
 from atom.utils.utils import NotFittedError
 
 from .conftest import (
@@ -272,7 +272,7 @@ def test_custom_title_and_legend(func):
     func.assert_called_once()
 
 
-@pytest.mark.parametrize("legend", LEGEND.__args__)
+@pytest.mark.parametrize("legend", Legend.__args__)
 def test_custom_legend_position(legend):
     """Assert that the legend position can be specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
