@@ -43,7 +43,7 @@ packages are necessary for its correct functioning.
 * **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.0.3)
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.6.1)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.0)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.1)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.42.1)
@@ -66,7 +66,7 @@ additional libraries. You can install all the optional dependencies using
 * **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
-* **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.7.4)
+* **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=2.0.0)
 * **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.5.1)
 
 

@@ -9,9 +9,9 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-import typing
 from typing import (
-    Any, Callable, Hashable,  TypedDict, Union, runtime_checkable, NotRequired
+    Any, Callable, Hashable, Literal, NotRequired, TypedDict, Union,
+    runtime_checkable,
 )
 
 import modin.pandas as md
@@ -21,6 +21,7 @@ import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import Annotated, Iterable, Protocol, TypeVar
 from beartype.vale import Is
+
 
 # Variable types for isinstance ==================================== >>
 
@@ -54,10 +55,10 @@ class Engine(TypedDict, total=False):
     estimator: Literal["sklearn", "sklearnex", "cuml"]
 
 
-class Literal(typing.Literal):
-
-    def __class_getitem__(cls, X: tuple[str]) -> Annotated[str, Is]:
-        return Annotated[str, Is[lambda x: x.lower() in X]]
+# class Literal(typing.Literal):
+#
+#     def __class_getitem__(cls, X: tuple[str]) -> Annotated[str, Is]:
+#         return Annotated[str, Is[lambda x: x.lower() in X]]
 
 
 class Sequence(Protocol[T]):
@@ -96,9 +97,9 @@ class Sequence(Protocol[T]):
     def __class_getitem__(cls, item: Any) -> Annotated[Sequence, Is]:
         return Annotated[
             cls,
-            Is[lambda lst: not isinstance(lst, str)] &
-            Is[lambda lst: np.array(lst).ndim == 1] &
-            Is[lambda lst: all(is_bearable(i, item) for i in lst)]
+            Is[lambda lst: not isinstance(lst, str)]
+            & Is[lambda lst: np.array(lst).ndim == 1]
+            & Is[lambda lst: all(is_bearable(i, item) for i in lst)]
         ]
 
 
@@ -159,7 +160,7 @@ DataFrame = Union[pd.DataFrame, md.DataFrame]
 Pandas = Union[Series, DataFrame]
 
 # Types for X and y
-Features = Union[iter, dict, list, tuple, np.ndarray, sps.spmatrix, DataFrame]
+Features = Union[Iterable, dict, list, tuple, np.ndarray, sps.spmatrix, DataFrame]
 Target = Union[Int, str, dict, Sequence[Int, str], DataFrame]
 
 # Selection of rows or columns by name or position
@@ -186,6 +187,7 @@ Verbose = Literal[0, 1, 2]
 
 # Data cleaning parameters
 NumericalStrats = Union[Scalar, Literal["drop", "mean", "median", "knn", "most_frequent"]]
+CategoricalStrats = Union[str, Literal["drop", "most_frequent"]]
 DiscretizerStrats = Literal["uniform", "quantile", "kmeans", "custom"]
 PrunerStrats = Literal[
     "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"

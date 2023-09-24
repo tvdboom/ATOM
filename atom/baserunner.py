@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Literal
 
 import dill as pickle
@@ -693,13 +694,14 @@ class BaseRunner(BaseTracker):
             self.missing.extend([x for x in other.missing if x not in self.missing])
 
     @composed(crash, method_to_log)
-    def save(self, filename: str = "auto", *, save_data: Bool = True):
+    def save(self, filename: str | Path = "auto", *, save_data: Bool = True):
         """Save the instance to a pickle file.
 
         Parameters
         ----------
-        filename: str, default="auto"
-            Name of the file. Use "auto" for automatic naming.
+        filename: str or Path, default="auto"
+            Filename or [pathlib.Path][] of the file to save. Use
+            "auto" for automatic naming.
 
         save_data: bool, default=True
             Whether to save the dataset with the instance. This
@@ -721,13 +723,13 @@ class BaseRunner(BaseTracker):
                 branch._data = None
                 branch._holdout = None
 
-        if filename.endswith("auto"):
-            filename = filename.replace("auto", self.__class__.__name__)
+        if not (path := Path(filename)).suffix(".pkl"):
+            path = path.with_suffix(".pkl")
 
-        if not filename.endswith(".pkl"):
-            filename += ".pkl"
+        if path.name == "auto.csv":
+            path = path.with_name(f"{self.__class__.__name__}.pkl")
 
-        with open(filename, "wb") as f:
+        with open(path, "wb") as f:
             pickle.settings["recurse"] = True
             pickle.dump(self, f)
 

@@ -200,7 +200,7 @@ class BaseTransformer:
     @warnings.setter
     def warnings(self, value: Bool | Warnings):
         if isinstance(value, Bool):
-            self._warnings = "default" if value else "ignore"
+            self._warnings = "once" if value else "ignore"
         else:
             self._warnings = value
 
@@ -253,7 +253,7 @@ class BaseTransformer:
                 # Prepare the FileHandler
                 if not (path := Path(value)).suffix == ".log":
                     path = path.with_suffix(".log")
-                if value.name == "auto.log":
+                if path.name == "auto.log":
                     now = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
                     path = path.with_name(f"{self.__class__.__name__}_{now}.log")
 

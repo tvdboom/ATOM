@@ -398,7 +398,7 @@ class DirectClassifier(Direct):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -627,7 +627,7 @@ class DirectForecaster(Direct):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -853,7 +853,7 @@ class DirectRegressor(Direct):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -1089,7 +1089,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -1322,7 +1322,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -1552,7 +1552,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -1794,7 +1794,7 @@ class TrainSizingClassifier(TrainSizing):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -2032,7 +2032,7 @@ class TrainSizingForecaster(TrainSizing):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -2267,7 +2267,7 @@ class TrainSizingRegressor(TrainSizing):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 

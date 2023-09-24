@@ -47,10 +47,10 @@ from sklearn.impute import KNNImputer
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
-    Bool, DataFrame, DataFrameTypes, DiscretizerStrats, Engine, Estimator,
-    Features, Float, Int, NJobs, NumericalStrats, Pandas, PrunerStrats, Scalar,
-    ScalerStrats, Sequence, SequenceTypes, Series, SeriesTypes, Target,
-    Transformer, Verbose,
+    Bool, CategoricalStrats, DataFrame, DataFrameTypes, DiscretizerStrats,
+    Engine, Estimator, Features, Float, Int, NJobs, NumericalStrats, Pandas,
+    PrunerStrats, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
+    SeriesTypes, Target, Transformer, Verbose,
 )
 from atom.utils.utils import (
     CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -1825,7 +1825,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strat_num: NumericalStrats = "drop",
-        strat_cat: Literal["drop", "most_frequent"] | str = "drop",
+        strat_cat: CategoricalStrats = "drop",
         *,
         max_nan_rows: Scalar | None = None,
         max_nan_cols: Float | None = None,

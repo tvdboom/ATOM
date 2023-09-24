@@ -2484,17 +2484,8 @@ def transform_one(
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
-    try:
-        out = getattr(transformer, method)(**kwargs)
-    except TypeError as ex:
-        try:
-            # Duck type using args instead of kwargs
-            out = getattr(transformer, method)(*kwargs.values())
-        except TypeError:
-            raise ex
-
     # Transform can return X, y or both
-    if isinstance(out, tuple):
+    if isinstance(out := getattr(transformer, method)(**kwargs), tuple):
         X_new = prepare_df(out[0], X)
         y_new = to_pandas(
             data=out[1],
@@ -2573,89 +2564,6 @@ def fit_transform_one(
     X, y = transform_one(transformer, X, y)
 
     return X, y, transformer
-
-
-def custom_transform(
-    transformer: Transformer,
-    branch: Any,
-    data: tuple[DataFrame, Pandas] | None = None,
-    verbose: int | None = None,
-    method: str = "transform",
-) -> tuple[DataFrame, Pandas]:
-    """Applies a transformer on a branch.
-
-    This function is generic and should work for all
-    methods with parameters X and/or y.
-
-    Parameters
-    ----------
-    transformer: Transformer
-        Estimator to apply to the data.
-
-    branch: Branch
-        Transformer's branch.
-
-    data: tuple or None
-        New data to transform on. If tuple, should have form
-        (X, y). If None, the transformation is applied directly
-        on the branch.
-
-    verbose: int or None, default=None
-        Verbosity level for the transformation. If None, the
-        transformer's verbosity is used.
-
-    method: str, default="transform"
-        Method to apply to the transformer. Choose from: transform
-        or inverse_transform.
-
-    Returns
-    -------
-    dataframe
-        Feature set.
-
-    series or dataframe
-        Target column(s).
-
-    """
-    # Select provided data or from the branch
-    if data:
-        X_og, y_og = to_df(data[0]), to_pandas(data[1])
-    else:
-        if transformer._train_only:
-            X_og, y_og = branch.X_train, branch.y_train
-        else:
-            X_og, y_og = branch.X, branch.y
-
-    # Adapt the transformer's verbosity
-    if verbose is not None and hasattr(transformer, "verbose"):
-        vb = transformer.verbose  # Save original verbosity
-        transformer.verbose = verbose
-
-    X, y = transform_one(transformer, X_og, y_og, method)
-
-    # Apply changes to the branch
-    if not data:
-        if transformer._train_only:
-            branch.train = merge(
-                branch.X_train if X is None else X,
-                branch.y_train if y is None else y,
-            )
-        else:
-            data = merge(branch.X if X is None else X, branch.y if y is None else y)
-
-            # y can change the number of columns or remove rows -> reassign index
-            branch._data = DataContainer(
-                data=data,
-                train_idx=branch._data.train_idx.intersection(data.index),
-                test_idx=branch._data.test_idx.intersection(data.index),
-                n_cols=branch._data.n_cols if y is None else len(get_cols(y)),
-            )
-
-    # Back to the original verbosity
-    if verbose is not None and hasattr(transformer, "verbose"):
-        transformer.verbose = vb
-
-    return X, y
 
 
 # Patches ========================================================== >>

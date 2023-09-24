@@ -11,13 +11,15 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
+from pathlib import Path
 from platform import machine, platform, python_build, python_version
 from types import MappingProxyType
-from typing import Callable, Literal
+from typing import Callable, Iterable, Literal
 
 import dill as pickle
 import numpy as np
 import pandas as pd
+from beartype import beartype
 from scipy import stats
 from sklearn.utils.metaestimators import available_if
 
@@ -42,11 +44,11 @@ from atom.training import (
 )
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, DiscretizerStrats, Estimator, Features,
-    FeatureSelectionStrats, Index, IndexSelector, Int, MetricSelector,
-    NumericalStrats, Operators, Pandas, Predictor, PrunerStrats, RowSelector,
-    Runner, Scalar, ScalerStrats, Sequence, Series, Target, Transformer,
-    TSIndexTypes, Verbose,
+    Bool, CategoricalStrats, ColumnSelector, DataFrame, DiscretizerStrats,
+    Estimator, Features, FeatureSelectionStrats, Index, IndexSelector, Int,
+    MetricSelector, NumericalStrats, Operators, Pandas, Predictor,
+    PrunerStrats, RowSelector, Runner, Scalar, ScalerStrats, Sequence, Series,
+    Target, Transformer, TSIndexTypes, Verbose,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, adjust_verbosity, bk,
@@ -56,6 +58,7 @@ from atom.utils.utils import (
 )
 
 
+@beartype
 class ATOM(BaseRunner, ATOMPlot):
     """ATOM base class.
 
@@ -155,7 +158,7 @@ class ATOM(BaseRunner, ATOMPlot):
 
         return out
 
-    def __iter__(self) -> Transformer | None:
+    def __iter__(self) -> Iterable[Transformer]:
         yield from self.pipeline.named_steps.values()
 
     # Utility properties =========================================== >>
@@ -711,7 +714,7 @@ class ATOM(BaseRunner, ATOMPlot):
     @composed(crash, method_to_log)
     def save_data(
         self,
-        filename: str = "auto",
+        filename: str | Path = "auto",
         *,
         rows: RowSelector = "dataset",
         **kwargs,
@@ -720,8 +723,9 @@ class ATOM(BaseRunner, ATOMPlot):
 
         Parameters
         ----------
-        filename: str, default="auto"
-            Name of the file. Use "auto" for automatic naming.
+        filename: str or Path, default="auto"
+            Filename or [pathlib.Path][] of the file to save. Use
+            "auto" for automatic naming.
 
         rows: hashable, slice, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] to save.
@@ -730,16 +734,16 @@ class ATOM(BaseRunner, ATOMPlot):
             Additional keyword arguments for pandas' [to_csv][] method.
 
         """
-        if filename.endswith("auto"):
+        if not (path := Path(filename)).suffix(".csv"):
+            path = path.with_suffix(".csv")
+
+        if path.name == "auto.csv":
             if isinstance(rows, str):
-                filename = filename.replace("auto", f"{self.__class__.__name__}_{rows}")
+                path = path.with_name(f"{self.__class__.__name__}_{rows}.csv")
             else:
-                filename = filename.replace("auto", f"{self.__class__.__name__}")
+                path = path.with_name(f"{self.__class__.__name__}.csv")
 
-        if not filename.endswith(".csv"):
-            filename += ".csv"
-
-        self.branch._get_rows(rows).to_csv(filename, **kwargs)
+        self.branch._get_rows(rows).to_csv(path, **kwargs)
         self._log("Data set successfully saved.", 1)
 
     @composed(crash, method_to_log)
@@ -1481,7 +1485,7 @@ class ATOM(BaseRunner, ATOMPlot):
     def impute(
         self,
         strat_num: NumericalStrats = "drop",
-        strat_cat: Literal["drop", "most_frequent"] | str = "drop",
+        strat_cat: CategoricalStrats = "drop",
         *,
         max_nan_rows: Scalar | None = None,
         max_nan_cols: Scalar | None = None,

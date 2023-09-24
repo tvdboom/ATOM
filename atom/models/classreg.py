@@ -3157,8 +3157,7 @@ class XGBoost(ClassRegModel):
         return self._est_class(
             eval_metric=params.pop("eval_metric", eval_metric),
             n_jobs=params.pop("n_jobs", self.n_jobs),
-            tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
-            gpu_id=self._device_id,
+            device=params.pop("device", self.device),
             verbosity=params.pop("verbosity", 0),
             random_state=params.pop("random_state", self.random_state),
             **params,

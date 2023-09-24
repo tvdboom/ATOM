@@ -280,7 +280,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -519,7 +519,7 @@ class ATOMForecaster(BaseTransformer, ATOM):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
@@ -761,7 +761,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - 2 to print detailed information.
 
     warnings: bool or str, default=False
-        - If True: Default warning action (equal to "default").
+        - If True: Default warning action (equal to "once").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of python's [warnings filters][warnings].
 
