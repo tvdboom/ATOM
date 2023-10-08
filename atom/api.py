@@ -13,20 +13,24 @@ from logging import Logger
 from pathlib import Path
 
 from beartype import beartype
+from beartype.typing import TypeVar
 from joblib.memory import Memory
 from sklearn.base import clone
 
 from atom.atom import ATOM
-from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
     Backend, Bool, Engine, IndexSelector, Int, NJobs, Predictor, Scalar,
     Target, Verbose, Warnings,
 )
+from atom.utils.utils import Goal
+
+
+T_Predictor = TypeVar("T_Predictor", bound=Predictor)
 
 
 @beartype
 def ATOMModel(
-    estimator: Predictor,
+    estimator: T_Predictor,
     name: str | None = None,
     *,
     acronym: str | None = None,
@@ -34,14 +38,14 @@ def ATOMModel(
     native_multilabel: Bool = False,
     native_multioutput: Bool = False,
     has_validation: str | None = None,
-) -> Predictor:
+) -> T_Predictor:
     """Convert an estimator to a model that can be ingested by atom.
 
     This function adds the relevant attributes to the estimator so
-    that they can be used by atom. Note that only estimators that follow
-    [sklearn's API][api] are compatible.
+    that they can be used by atom. Note that only estimators that
+    follow [sklearn's API][api] are compatible.
 
-    Read more about using custom models in the [user guide][custom-models].
+    Read more about custom models in the [user guide][custom-models].
 
     Parameters
     ----------
@@ -70,18 +74,22 @@ def ATOMModel(
 
     native_multioutput: bool, default=False
         Whether the model has native support for [multioutput tasks][].
-        If False and the task is multiouput, a multiotuput meta-estimator
-        is wrapper around the estimator.
+        If False and the task is multioutput, a multioutput
+        meta-estimator is wrapped around the estimator.
 
     has_validation: str or None, default=None
-        Whether the model allows [in-training validation][]. If str,
-        name of the estimator's parameter that states the number of
-        iterations. If None, no support for in-training validation.
+        Whether the model allows [in-training validation][].
+
+        - If None: No support for in-training validation.
+        - If str: Name of the estimator's parameter that states the
+          number of iterations, e.g., `n_estimators` for
+          [RandomForestClassifier][].
 
     Returns
     -------
-    estimator
-        Clone of the provided estimator with custom attributes.
+    Predictor
+        Estimator with provided information. Provide this instance to
+        the `models` parameter of the [run][atomclassifier-run] method.
 
     Examples
     --------
@@ -103,23 +111,25 @@ def ATOMModel(
     ```
 
     """
-    if not callable(estimator):
-        estimator = clone(estimator)
+    if callable(estimator):
+        estimator_c = estimator()
+    else:
+        estimator_c = clone(estimator)
 
     if name:
-        estimator.name = name
+        estimator_c.name = name
     if acronym:
-        estimator.acronym = acronym
-    estimator.needs_scaling = needs_scaling
-    estimator.native_multioutput = native_multioutput
-    estimator.native_multilabel = native_multilabel
-    estimator.has_validation = has_validation
+        estimator_c.acronym = acronym
+    estimator_c.needs_scaling = needs_scaling
+    estimator_c.native_multioutput = native_multioutput
+    estimator_c.native_multilabel = native_multilabel
+    estimator_c.has_validation = has_validation
 
-    return estimator
+    return estimator_c
 
 
 @beartype
-class ATOMClassifier(BaseTransformer, ATOM):
+class ATOMClassifier(ATOM):
     """Main class for classification tasks.
 
     Apply all data transformations and model management provided by
@@ -332,6 +342,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     """
 
+    _goal = Goal.classification
+
     def __init__(
         self,
         *arrays,
@@ -354,6 +366,14 @@ class ATOMClassifier(BaseTransformer, ATOM):
         random_state: Int | None = None,
     ):
         super().__init__(
+            arrays=arrays,
+            y=y,
+            index=index,
+            test_size=test_size,
+            holdout_size=holdout_size,
+            shuffle=shuffle,
+            stratify=stratify,
+            n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,
             engine=engine,
@@ -366,22 +386,9 @@ class ATOMClassifier(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "class"
-        ATOM.__init__(
-            self,
-            arrays=arrays,
-            y=y,
-            index=index,
-            test_size=test_size,
-            holdout_size=holdout_size,
-            shuffle=shuffle,
-            stratify=stratify,
-            n_rows=n_rows,
-        )
-
 
 @beartype
-class ATOMForecaster(BaseTransformer, ATOM):
+class ATOMForecaster(ATOM):
     """Main class for forecasting tasks.
 
     Apply all data transformations and model management provided by
@@ -567,6 +574,8 @@ class ATOMForecaster(BaseTransformer, ATOM):
 
     """
 
+    _goal = Goal.forecast
+
     def __init__(
         self,
         *arrays,
@@ -586,6 +595,14 @@ class ATOMForecaster(BaseTransformer, ATOM):
         random_state: Int | None = None,
     ):
         super().__init__(
+            arrays=arrays,
+            y=y,
+            index=True,
+            test_size=test_size,
+            holdout_size=holdout_size,
+            shuffle=False,
+            stratify=False,
+            n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,
             engine=engine,
@@ -598,22 +615,9 @@ class ATOMForecaster(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "fc"
-        ATOM.__init__(
-            self,
-            arrays=arrays,
-            y=y,
-            index=True,
-            test_size=test_size,
-            holdout_size=holdout_size,
-            shuffle=False,
-            stratify=False,
-            n_rows=n_rows,
-        )
-
 
 @beartype
-class ATOMRegressor(BaseTransformer, ATOM):
+class ATOMRegressor(ATOM):
     """Main class for regression tasks.
 
     Apply all data transformations and model management provided by
@@ -813,6 +817,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     """
 
+    _goal = Goal.regression
+
     def __init__(
         self,
         *arrays,
@@ -834,6 +840,14 @@ class ATOMRegressor(BaseTransformer, ATOM):
         random_state: Int | None = None,
     ):
         super().__init__(
+            arrays=arrays,
+            y=y,
+            index=index,
+            test_size=test_size,
+            holdout_size=holdout_size,
+            shuffle=shuffle,
+            stratify=False,
+            n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,
             engine=engine,
@@ -844,17 +858,4 @@ class ATOMRegressor(BaseTransformer, ATOM):
             logger=logger,
             experiment=experiment,
             random_state=random_state,
-        )
-
-        self.goal = "reg"
-        ATOM.__init__(
-            self,
-            arrays=arrays,
-            y=y,
-            index=index,
-            test_size=test_size,
-            holdout_size=holdout_size,
-            shuffle=shuffle,
-            stratify=False,
-            n_rows=n_rows,
         )

@@ -12,20 +12,21 @@ from __future__ import annotations
 from copy import copy
 from logging import Logger
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
+from beartype.typing import Any, Literal
 from joblib.memory import Memory
 from sklearn.base import BaseEstimator
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    Backend, Bool, Engine, Int, IntTypes, MetricSelector, NJobs, Predictor,
-    Sequence, Verbose, Warnings,
+    Backend, Bool, Engine, FloatLargerZero, Int, IntLargerEqualZero, IntTypes,
+    MetricConstructor, ModelsConstructor, NItems, NJobs, Sequence, Verbose,
+    Warnings,
 )
 from atom.utils.utils import (
-    ClassMap, composed, crash, get_best_score, infer_task, lst, method_to_log,
+    ClassMap, Goal, composed, crash, get_best_score, lst, method_to_log,
 )
 
 
@@ -68,8 +69,6 @@ class Direct(BaseEstimator, BaseTrainer):
 
         """
         self._branches.fill(*self._get_data(arrays))
-
-        self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
         self._log("\nTraining " + "=" * 25 + " >>", 1)
@@ -116,20 +115,13 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
 
         """
         self._branches.fill(*self._get_data(arrays))
-
-        self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
-        if self.skip_runs < 0:
+        if self.skip_runs >= len(self._models) // 2 + 1:
             raise ValueError(
-                "Invalid value for the skip_runs parameter."
-                f"Value should be >=0, got {self.skip_runs}."
-            )
-        elif self.skip_runs >= len(self._models) // 2 + 1:
-            raise ValueError(
-                "Invalid value for the skip_runs parameter. Less than "
-                f"1 run remaining, got n_runs={len(self._models) // 2 + 1} "
-                f"and skip_runs={self.skip_runs}."
+                "Invalid value for the skip_runs parameter. Less than one run "
+                f"remaining for this choice, got n_runs={len(self._models) // 2 + 1} "
+                f"for skip_runs={self.skip_runs}."
             )
 
         self._log("\nTraining " + "=" * 25 + " >>", 1)
@@ -205,8 +197,6 @@ class TrainSizing(BaseEstimator, BaseTrainer):
 
         """
         self._branches.fill(*self._get_data(arrays))
-
-        self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
         self._log("\nTraining " + "=" * 25 + " >>", 1)
@@ -219,7 +209,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         models = ClassMap()
         og_models = ClassMap(copy(m) for m in self._models)
         for run, size in enumerate(self.train_sizes):
-            # Select fraction of data to use in this run
+            # Select the fraction of the data to use in this run
             if size <= 1:
                 frac = round(size, 2)
                 train_idx = int(size * len(self.train))
@@ -270,15 +260,15 @@ class DirectClassifier(Direct):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, a default metric is selected for every task:
 
         - "f1" for binary classification
         - "f1_weighted" for multiclass(-multioutput) classification
         - "average_precision" for multilabel classification
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -450,15 +440,17 @@ class DirectClassifier(Direct):
 
     """
 
+    _goal = Goal.classification
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
@@ -472,7 +464,6 @@ class DirectClassifier(Direct):
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "class"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, memory,
@@ -503,11 +494,12 @@ class DirectForecaster(Direct):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, the
-        default metric `mean_absolute_percentage_error` is selected.
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, the default metric `mean_absolute_percentage_error` is
+        selected.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -676,15 +668,17 @@ class DirectForecaster(Direct):
 
     """
 
+    _goal = Goal.forecast
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
@@ -698,7 +692,6 @@ class DirectForecaster(Direct):
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "fc"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, memory,
@@ -729,11 +722,11 @@ class DirectRegressor(Direct):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, the
-        default metric `r2` is selected.
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, the default metric `r2` is selected.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -905,15 +898,17 @@ class DirectRegressor(Direct):
 
     """
 
+    _goal = Goal.regression
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
@@ -927,7 +922,6 @@ class DirectRegressor(Direct):
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "reg"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
             parallel, errors, n_jobs, device, engine, backend, memory,
@@ -958,9 +952,9 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, a default metric is selected for every task:
 
         - "f1" for binary classification
         - "f1_weighted" for multiclass(-multioutput) classification
@@ -969,7 +963,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -1141,16 +1135,18 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     """
 
+    _goal = Goal.classification
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        skip_runs: Int = 0,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
+        skip_runs: IntLargerEqualZero = 0,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
         parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
@@ -1164,7 +1160,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "class"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1195,14 +1190,14 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, the
-        default metric `mean_absolute_percentage_error` is selected.
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, the default metric `mean_absolute_percentage_error` is selected.
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -1371,17 +1366,19 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     """
 
+    _goal = Goal.forecast
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        skip_runs: Int = 0,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
-        parallel: bool = False,
+        skip_runs: IntLargerEqualZero = 0,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
@@ -1389,12 +1386,11 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
-        warnings: bool | str = False,
+        warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "fc"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1425,14 +1421,14 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, the
-        default metric `r2` is selected.
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, the default metric `r2` is selected.
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -1604,17 +1600,19 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     """
 
+    _goal = Goal.regression
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        skip_runs: Int = 0,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
-        parallel: bool = False,
+        skip_runs: IntLargerEqualZero = 0,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
@@ -1622,12 +1620,11 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
-        warnings: bool | str = False,
+        warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "reg"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1658,23 +1655,23 @@ class TrainSizingClassifier(TrainSizing):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, a
-        default metric is selected for every task:
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, a default metric is selected for every task:
 
         - "f1" for binary classification
         - "f1_weighted" for multiclass(-multioutput) classification
         - "average_precision" for multilabel classification
 
     train_sizes: int or sequence, default=5
-        Sequence of training set sizes used to run the trainings.
+        Training set sizes used to run the trainings.
 
-        - If int: Number of equally distributed splits, i.e. for a value
-          `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
-        - If sequence: Fraction of the training set when <=1, else total
-          number of samples.
+        - If int: Number of equally distributed splits, i.e., for a
+          value `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
+        - If sequence: Fraction of the training set when <=1, else
+          total number of samples.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -1846,17 +1843,19 @@ class TrainSizingClassifier(TrainSizing):
 
     """
 
+    _goal = Goal.classification
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        train_sizes: Int | Sequence = 5,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
-        parallel: bool = False,
+        train_sizes: FloatLargerZero | Sequence[FloatLargerZero] = 5,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
@@ -1864,12 +1863,11 @@ class TrainSizingClassifier(TrainSizing):
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
-        warnings: bool | str = False,
+        warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "class"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -1900,19 +1898,20 @@ class TrainSizingForecaster(TrainSizing):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, the
-        default metric `mean_absolute_percentage_error` is selected.
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, the default metric `mean_absolute_percentage_error` is
+        selected.
 
     train_sizes: int or sequence, default=5
-        Sequence of training set sizes used to run the trainings.
+        Training set sizes used to run the trainings.
 
-        - If int: Number of equally distributed splits, i.e. for a value
-          `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
-        - If sequence: Fraction of the training set when <=1, else total
-          number of samples.
+        - If int: Number of equally distributed splits, i.e., for a
+          value `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
+        - If sequence: Fraction of the training set when <=1, else
+          total number of samples.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -2081,17 +2080,19 @@ class TrainSizingForecaster(TrainSizing):
 
     """
 
+    _goal = Goal.forecast
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        train_sizes: Int | Sequence = 5,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
-        parallel: bool = False,
+        train_sizes: FloatLargerZero | Sequence[FloatLargerZero] = 5,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
@@ -2099,12 +2100,11 @@ class TrainSizingForecaster(TrainSizing):
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
-        warnings: bool | str = False,
+        warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "fc"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
@@ -2135,19 +2135,19 @@ class TrainSizingRegressor(TrainSizing):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        [scorers][], a function with signature `function(y_true, y_pred)
-        -> score`, a scorer object or a sequence of these. If None, the
-        default metric `r2` is selected.
+        [scorers][], a function with signature `function(y_true, y_pred,
+        **kwargs) -> score`, a scorer object or a sequence of these. If
+        None, the default metric `r2` is selected.
 
     train_sizes: int or sequence, default=5
-        Sequence of training set sizes used to run the trainings.
+        Training set sizes used to run the trainings.
 
-        - If int: Number of equally distributed splits, i.e. for a value
-          `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
-        - If sequence: Fraction of the training set when <=1, else total
-          number of samples.
+        - If int: Number of equally distributed splits, i.e., for a
+          value `N`, it's equal to `np.linspace(1.0/N, 1.0, N)`.
+        - If sequence: Fraction of the training set when <=1, else
+          total number of samples.
 
-    n_trials: int or sequence, default=0
+    n_trials: int, dict or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
         If 0, skip the tuning and fit the model on its default
         parameters. If sequence, the n-th value applies to the n-th
@@ -2319,17 +2319,19 @@ class TrainSizingRegressor(TrainSizing):
 
     """
 
+    _goal = Goal.regression
+
     def __init__(
         self,
-        models: str | Predictor | Sequence | None = None,
-        metric: MetricSelector = None,
+        models: ModelsConstructor = None,
+        metric: MetricConstructor = None,
         *,
-        train_sizes: Int | Sequence = 5,
-        est_params: dict | Sequence | None = None,
-        n_trials: Int | dict | Sequence = 0,
-        ht_params: dict | None = None,
-        n_bootstrap: Int | dict | Sequence = 0,
-        parallel: bool = False,
+        train_sizes: FloatLargerZero | Sequence[FloatLargerZero] = 5,
+        est_params: dict[str, Any] | None = None,
+        n_trials: NItems = 0,
+        ht_params: dict[str, Any] | None = None,
+        n_bootstrap: NItems = 0,
+        parallel: Bool = False,
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
@@ -2337,12 +2339,11 @@ class TrainSizingRegressor(TrainSizing):
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
-        warnings: bool | str = False,
+        warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
         random_state: Int | None = None,
     ):
-        self.goal = "reg"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
             n_bootstrap, parallel, errors, n_jobs, device, engine, backend,

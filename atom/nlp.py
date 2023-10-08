@@ -14,7 +14,6 @@ import unicodedata
 from logging import Logger
 from pathlib import Path
 from string import punctuation
-from typing import Literal
 
 import nltk
 import pandas as pd
@@ -29,7 +28,8 @@ from sklearn.base import BaseEstimator
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, DataFrame, Engine, Features, Scalar, Sequence, Target, Verbose,
+    Bool, DataFrame, Engine, Features, FloatLargerZero, Sequence, Target,
+    VectorizerStarts, Verbose,
 )
 from atom.utils.utils import (
     CustomDict, check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
@@ -483,7 +483,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         *,
         stopwords: Bool | str = True,
-        custom_stopwords: Sequence | None = None,
+        custom_stopwords: Sequence[str] | None = None,
         stem: Bool | str = False,
         lemmatize: Bool = True,
         verbose: Verbose = 0,
@@ -707,9 +707,9 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        bigram_freq: Scalar | None = None,
-        trigram_freq: Scalar | None = None,
-        quadgram_freq: Scalar | None = None,
+        bigram_freq: FloatLargerZero | None = None,
+        trigram_freq: FloatLargerZero | None = None,
+        quadgram_freq: FloatLargerZero | None = None,
         *,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
@@ -746,7 +746,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             Parameters
             ----------
             row: list of str
-                Document in the corpus.
+                A document in the corpus.
 
             ngram: tuple of str
                 Words in the ngram.
@@ -782,8 +782,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         }
 
         for attr, finder in ngrams.items():
-            frequency = getattr(self, f"{attr[:-1]}_freq")
-            if frequency:
+            if frequency := getattr(self, f"{attr[:-1]}_freq"):
                 # Search for all n-grams in the corpus
                 ngram_fd = finder.from_documents(X[corpus]).ngram_fd
 
@@ -952,7 +951,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: Literal["bow", "tfidf", "hashing"] = "bow",
+        strategy: VectorizerStarts = "bow",
         *,
         return_sparse: Bool = True,
         device: str = "cpu",
@@ -1011,7 +1010,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator.fit(X[corpus])
 
         # Add the estimator as attribute to the instance
-        setattr(self, f"{self.strategy.lower()}_", self._estimator)
+        setattr(self, f"{self.strategy}_", self._estimator)
 
         return self
 

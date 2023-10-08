@@ -84,7 +84,7 @@ for an example.
 
 Use the [canvas][atomclassifier-canvas] method to draw multiple plots side
 by side, for example to make it easier to compare similar results. The canvas
-method is a `@contextmanager`, i.e. it's used through Python's `with` command.
+method is a `@contextmanager`, i.e., it's used through Python's `with` command.
 Plots in a canvas ignore the legend, figsize, filename and display parameters.
 Instead, specify these parameters in the canvas. If a variable is assigned to
 the canvas (e.g., `#!python with atom.canvas() as fig`), it yields the resulting

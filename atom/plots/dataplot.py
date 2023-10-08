@@ -9,26 +9,34 @@ Description: Module containing the DataPlot class.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from beartype import beartype
+from beartype.typing import Any, Literal
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
 )
 from scipy import stats
 
+from atom.branch import Branch
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    ColumnSelector, Int, Legend, RowSelector, Sequence, Series,
+    Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, RowSelector,
+    Segment, Sequence, Series,
 )
 from atom.utils.utils import (
-    check_dependency, crash, divide, get_corpus, lst, rnd,
+    check_dependency, crash, divide, get_corpus, lst, replace_missing, rnd,
 )
 
 
-class DataPlot(BasePlot):
+@beartype
+class DataPlot(BasePlot, ABC):
     """Data plots.
 
     Plots used for understanding and interpretation of the dataset.
@@ -37,17 +45,25 @@ class DataPlot(BasePlot):
 
     """
 
+    @property
+    @abstractmethod
+    def missing(self) -> list[str]: ...
+
+    @property
+    @abstractmethod
+    def branch(self) -> Branch: ...
+
     @crash
     def plot_correlation(
         self,
-        columns: slice | Sequence | None = None,
-        method: str = "pearson",
+        columns: Segment | Sequence[Int | str] | DataFrame | None = None,
+        method: Literal["pearson", "kendall", "spearman"] = "pearson",
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (800, 700),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (800, 700),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a correlation matrix.
 
@@ -57,7 +73,7 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        columns: slice, sequence or None, default=None
+        columns: segment, sequence, dataframe or None, default=None
             Columns to plot. If None, plot all columns in the dataset.
             Selected categorical columns are ignored.
 
@@ -78,7 +94,7 @@ class DataPlot(BasePlot):
         figsize: tuple, default=(800, 700)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -111,15 +127,10 @@ class DataPlot(BasePlot):
         ```
 
         """
-        columns = self.branch._get_columns(columns, only_numerical=True)
-        if method.lower() not in ("pearson", "kendall", "spearman"):
-            raise ValueError(
-                f"Invalid value for the method parameter, got {method}. "
-                "Choose from: pearson, kendall or spearman."
-            )
+        columns_c = self.branch._get_columns(columns, only_numerical=True)
 
         # Compute the correlation matrix
-        corr = self.dataset[columns].corr(method=method.lower())
+        corr = self.branch.dataset[columns_c].corr(method=method)
 
         # Generate a mask for the lower triangle
         # k=1 means keep outermost diagonal line
@@ -133,7 +144,7 @@ class DataPlot(BasePlot):
                 colorscale="rdbu_r",
                 cmin=-1,
                 cmax=1,
-                title=f"{method.lower()} correlation",
+                title=f"{method} correlation",
                 font_size=self.label_fontsize,
             ),
         )
@@ -141,8 +152,8 @@ class DataPlot(BasePlot):
         fig.add_trace(
             go.Heatmap(
                 z=corr.mask(mask),
-                x=columns,
-                y=columns,
+                x=columns_c,
+                y=columns_c,
                 coloraxis=f"coloraxis{xaxis[1:]}",
                 hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                 hoverongaps=False,
@@ -175,14 +186,14 @@ class DataPlot(BasePlot):
     def plot_distribution(
         self,
         columns: ColumnSelector = 0,
-        distributions: str | Sequence | None = "kde",
-        show: Int | None = None,
+        distributions: str | Sequence[str] | None = "kde",
+        show: IntLargerZero | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot column distributions.
 
@@ -234,7 +245,7 @@ class DataPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the plot's type.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -275,14 +286,14 @@ class DataPlot(BasePlot):
         ```
 
         """
-        columns = self.branch._get_columns(columns)
-        cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
+        columns_c = self.branch._get_columns(columns)
+        num_columns = self.branch.dataset.select_dtypes(include="number").columns
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        if len(columns) == 1 and columns[0] in cat_columns:
-            series = self.dataset[columns[0]].value_counts(ascending=True)
+        if len(columns_c) == 1 and columns_c[0] not in num_columns:
+            series = self.branch.dataset[columns_c[0]].value_counts(ascending=True)
 
             if show is None or show > len(series):
                 show = len(series)
@@ -303,7 +314,7 @@ class DataPlot(BasePlot):
                         line=dict(width=2, color=color),
                     ),
                     hovertemplate="%{x}<extra></extra>",
-                    name=f"{columns[0]}: {len(series)} classes",
+                    name=f"{columns_c[0]}: {len(series)} classes",
                     showlegend=BasePlot._fig.showlegend("dist", legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
@@ -323,10 +334,10 @@ class DataPlot(BasePlot):
             )
 
         else:
-            for col in [c for c in columns if c not in cat_columns]:
+            for col in [c for c in columns_c if c in num_columns]:
                 fig.add_trace(
                     go.Histogram(
-                        x=self.dataset[col],
+                        x=self.branch.dataset[col],
                         histnorm="probability density",
                         marker=dict(
                             color=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
@@ -342,11 +353,14 @@ class DataPlot(BasePlot):
                     )
                 )
 
-                x = np.linspace(self.dataset[col].min(), self.dataset[col].max(), 200)
+                x = np.linspace(
+                    start=self.branch.dataset[col].min(),
+                    stop=self.branch.dataset[col].max(),
+                    num=200,
+                )
 
                 # Drop missing values for compatibility with scipy.stats
-                missing = self.missing + [np.inf, -np.inf]
-                values = self.dataset[col].replace(missing, np.NaN).dropna()
+                values = replace_missing(self.branch.dataset[col], self.missing).dropna()
 
                 if distributions is not None:
                     # Get a line for each distribution
@@ -386,15 +400,15 @@ class DataPlot(BasePlot):
     @crash
     def plot_ngrams(
         self,
-        ngram: Int | str = "bigram",
+        ngram: Literal[1, 2, 3, 4, "word", "bigram", "trigram", "quadgram"] = "bigram",
         rows: RowSelector | None = "dataset",
-        show: Int = 10,
+        show: IntLargerZero | None = 10,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot n-gram frequencies.
 
@@ -412,16 +426,15 @@ class DataPlot(BasePlot):
         ----------
         ngram: str or int, default="bigram"
             Number of contiguous words to search for (size of n-gram).
-            Choose from: words (1), bigrams (2), trigrams (3),
-            quadgrams (4).
+            Choose from: word (1), bigram (2), trigram (3), quadgram (4).
 
-        rows: hashable, slice, sequence or dataframe, default="dataset"
+        rows: hashable, segment, sequence or dataframe, default="dataset"
             [Selection of rows][row-and-column-selection] in the corpus
             to include in the search.
 
-        show: int, default=10
+        show: int or None, default=10
             Number of n-grams (ordered by number of occurrences) to
-            show in the plot.
+            show in the plot. If none, show all n-grams (up to 200).
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -442,7 +455,7 @@ class DataPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of n-grams shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -502,28 +515,24 @@ class DataPlot(BasePlot):
             else:
                 return column
 
-        corpus = get_corpus(self.X)
-        rows = self.branch._get_rows(rows)
+        corpus = get_corpus(self.branch.X)
+        rows_c = self.branch._get_rows(rows)
+        show_c = self._get_show(show, maximum=200)
 
-        if str(ngram).lower() in ("1", "word", "words"):
-            ngram = "words"
+        if str(ngram) in ("1", "word"):
+            ngram_c = "words"
             series = pd.Series(
-                [word for row in get_text(rows[corpus]) for word in row]
+                [word for row in get_text(rows_c[corpus]) for word in row]
             ).value_counts(ascending=True)
         else:
-            if str(ngram).lower() in ("2", "bigram", "bigrams"):
-                ngram, finder = "bigrams", BigramCollocationFinder
-            elif str(ngram).lower() in ("3", "trigram", "trigrams"):
-                ngram, finder = "trigrams", TrigramCollocationFinder
-            elif str(ngram).lower() in ("4", "quadgram", "quadgrams"):
-                ngram, finder = "quadgrams", QuadgramCollocationFinder
-            else:
-                raise ValueError(
-                    f"Invalid value for the ngram parameter, got {ngram}. "
-                    "Choose from: words, bigram, trigram, quadgram."
-                )
+            if str(ngram) in ("2", "bigram"):
+                ngram_c, finder = "bigrams", BigramCollocationFinder
+            elif str(ngram) in ("3", "trigram"):
+                ngram_c, finder = "trigrams", TrigramCollocationFinder
+            elif str(ngram) in ("4", "quadgram"):
+                ngram_c, finder = "quadgrams", QuadgramCollocationFinder
 
-            ngram_fd = finder.from_documents(get_text(rows[corpus])).ngram_fd
+            ngram_fd = finder.from_documents(get_text(rows_c[corpus])).ngram_fd
             series = pd.Series(
                 data=[x[1] for x in ngram_fd.items()],
                 index=[" ".join(x[0]) for x in ngram_fd.items()],
@@ -534,17 +543,17 @@ class DataPlot(BasePlot):
 
         fig.add_trace(
             go.Bar(
-                x=(data := series[-show:]),
+                x=(data := series[-self._get_show(show, len(series)):]),
                 y=data.index,
                 orientation="h",
                 marker=dict(
-                    color=f"rgba({BasePlot._fig.get_elem(ngram)[4:-1]}, 0.2)",
-                    line=dict(width=2, color=BasePlot._fig.get_elem(ngram)),
+                    color=f"rgba({BasePlot._fig.get_elem(ngram_c)[4:-1]}, 0.2)",
+                    line=dict(width=2, color=BasePlot._fig.get_elem(ngram_c)),
                 ),
                 hovertemplate="%{x}<extra></extra>",
-                name=f"Total {ngram}: {len(series)}",
-                legendgroup=ngram,
-                showlegend=BasePlot._fig.showlegend(ngram, legend),
+                name=f"Total {ngram_c}: {len(series)}",
+                legendgroup=ngram_c,
+                showlegend=BasePlot._fig.showlegend(ngram_c, legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
@@ -555,7 +564,7 @@ class DataPlot(BasePlot):
             xlabel="Counts",
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_ngrams",
             filename=filename,
             display=display,
@@ -565,13 +574,13 @@ class DataPlot(BasePlot):
     def plot_qq(
         self,
         columns: ColumnSelector = 0,
-        distributions: str | Sequence = "norm",
+        distributions: str | Sequence[str] = "norm",
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a quantile-quantile plot.
 
@@ -605,7 +614,7 @@ class DataPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -639,16 +648,15 @@ class DataPlot(BasePlot):
         ```
 
         """
-        columns = self.branch._get_columns(columns)
+        columns_c = self.branch._get_columns(columns)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         percentiles = np.linspace(0, 100, 101)
-        for col in columns:
+        for col in columns_c:
             # Drop missing values for compatibility with scipy.stats
-            missing = self.missing + [np.inf, -np.inf]
-            values = self.dataset[col].replace(missing, np.NaN).dropna()
+            values = replace_missing(self.branch.dataset[col], self.missing).dropna()
 
             for dist in lst(distributions):
                 stat = getattr(stats, dist)
@@ -660,7 +668,7 @@ class DataPlot(BasePlot):
                         x=np.percentile(samples, percentiles),
                         y=np.percentile(values, percentiles),
                         mode="markers",
-                        multiparent=len(columns) > 1,
+                        multiparent=len(columns_c) > 1,
                         parent=col,
                         child=dist,
                         legend=legend,
@@ -686,13 +694,13 @@ class DataPlot(BasePlot):
     @crash
     def plot_relationships(
         self,
-        columns: slice | Sequence = (0, 1, 2),
+        columns: Segment | Sequence[Int | str] | DataFrame = (0, 1, 2),
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (900, 900),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot pairwise relationships in a dataset.
 
@@ -704,7 +712,7 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        columns: slice or sequence, default=(0, 1, 2)
+        columns: segment, sequence or dataframe, default=(0, 1, 2)
             Columns to plot. Selected categorical columns are ignored.
 
         title: str, dict or None, default=None
@@ -720,7 +728,7 @@ class DataPlot(BasePlot):
         figsize: tuple, default=(900, 900)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -753,27 +761,27 @@ class DataPlot(BasePlot):
         ```
 
         """
-        columns = self.branch._get_columns(columns, only_numerical=True)
+        columns_c = self.branch._get_columns(columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
-        sample = lambda col: self.dataset[col].sample(
-            n=min(len(self.dataset), 250), random_state=self.random_state
+        sample = lambda col: self.branch.dataset[col].sample(
+            n=min(len(self.branch.dataset), 250), random_state=self.random_state
         )
 
         fig = self._get_figure()
         color = BasePlot._fig.get_elem()
-        for i in range(len(columns)**2):
-            x, y = i // len(columns), i % len(columns)
+        for i in range(len(columns_c) ** 2):
+            x, y = i // len(columns_c), i % len(columns_c)
 
             # Calculate the distance between subplots
-            offset = divide(0.0125, (len(columns) - 1))
+            offset = divide(0.0125, (len(columns_c) - 1))
 
             # Calculate the size of the subplot
-            size = (1 - ((offset * 2) * (len(columns) - 1))) / len(columns)
+            size = (1 - ((offset * 2) * (len(columns_c) - 1))) / len(columns_c)
 
             # Determine the position for the axes
             x_pos = y * (size + 2 * offset)
-            y_pos = (len(columns) - x - 1) * (size + 2 * offset)
+            y_pos = (len(columns_c) - x - 1) * (size + 2 * offset)
 
             xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(x_pos, rnd(x_pos + size)),
@@ -781,7 +789,7 @@ class DataPlot(BasePlot):
                 coloraxis=dict(
                     colorscale=PALETTE.get(color, "Blues"),
                     cmin=0,
-                    cmax=len(self.dataset),
+                    cmax=len(self.branch.dataset),
                     showscale=False,
                 )
             )
@@ -789,12 +797,12 @@ class DataPlot(BasePlot):
             if x == y:
                 fig.add_trace(
                     go.Histogram(
-                        x=self.dataset[columns[x]],
+                        x=self.branch.dataset[columns_c[x]],
                         marker=dict(
                             color=f"rgba({color[4:-1]}, 0.2)",
                             line=dict(width=2, color=color),
                         ),
-                        name=columns[x],
+                        name=columns_c[x],
                         showlegend=False,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -803,8 +811,8 @@ class DataPlot(BasePlot):
             elif x > y:
                 fig.add_trace(
                     go.Scatter(
-                        x=sample(columns[y]),
-                        y=sample(columns[x]),
+                        x=sample(columns_c[y]),
+                        y=sample(columns_c[x]),
                         mode="markers",
                         marker=dict(color=color),
                         hovertemplate="(%{x}, %{y})<extra></extra>",
@@ -816,8 +824,8 @@ class DataPlot(BasePlot):
             elif y > x:
                 fig.add_trace(
                     go.Histogram2dContour(
-                        x=self.dataset[columns[y]],
-                        y=self.dataset[columns[x]],
+                        x=self.branch.dataset[columns_c[y]],
+                        y=self.branch.dataset[columns_c[x]],
                         coloraxis=f"coloraxis{xaxis[1:]}",
                         hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                         showlegend=False,
@@ -826,15 +834,15 @@ class DataPlot(BasePlot):
                     )
                 )
 
-            if x < len(columns) - 1:
+            if x < len(columns_c) - 1:
                 fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
             if y > 0:
                 fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
 
             self._plot(
                 ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                xlabel=columns[y] if x == len(columns) - 1 else None,
-                ylabel=columns[x] if y == 0 else None,
+                xlabel=columns_c[y] if x == len(columns_c) - 1 else None,
+                ylabel=columns_c[x] if y == 0 else None,
             )
 
         return self._plot(
@@ -851,11 +859,11 @@ class DataPlot(BasePlot):
         self,
         rows: RowSelector = "dataset",
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
         **kwargs,
     ) -> go.Figure | None:
         """Plot a wordcloud from the corpus.
@@ -866,7 +874,7 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        rows: hashable, slice, sequence or dataframe, default="dataset"
+        rows: hashable, segment, sequence or dataframe, default="dataset"
             [Selection of rows][row-and-column-selection] in the corpus
             to include in the wordcloud.
 
@@ -883,7 +891,7 @@ class DataPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -938,8 +946,8 @@ class DataPlot(BasePlot):
         check_dependency("wordcloud")
         from wordcloud import WordCloud
 
-        corpus = get_corpus(self.X)
-        rows = self.branch._get_rows(rows)
+        corpus = get_corpus(self.branch.X)
+        rows_c = self.branch._get_rows(rows)
 
         wordcloud = WordCloud(
             width=figsize[0],
@@ -954,7 +962,7 @@ class DataPlot(BasePlot):
 
         fig.add_trace(
             go.Image(
-                z=wordcloud.generate(get_text(rows[corpus])),
+                z=wordcloud.generate(get_text(rows_c[corpus])),
                 hoverinfo="skip",
                 xaxis=xaxis,
                 yaxis=yaxis,

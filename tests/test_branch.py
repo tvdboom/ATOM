@@ -3,18 +3,20 @@
 """
 Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
-Description: Unit tests for branch.py
+Description: Unit tests for the branch module.
 
 """
 import glob
+import os
+from pathlib import Path
 
 import pandas as pd
 import pytest
-from joblib.memory import Memory
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.branch import Branch
-from atom.utils.utils import DataContainer, merge
+from atom.branch import Branch, BranchManager
+from atom.training import DirectClassifier
+from atom.utils.utils import merge
 
 from .conftest import (
     X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,
@@ -22,52 +24,40 @@ from .conftest import (
 )
 
 
-# Test magic methods =============================================== >>
+# Test Branch ====================================================== >>
 
-def test_init_pipeline_to_empty_series():
-    """Assert that when starting atom, the estimators are empty."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.pipeline.empty
-
-
-def test_init_attrs_are_passed():
-    """Assert that the attributes from the parent are passed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.balance()
-    atom.branch = "b2"
-    assert atom.b2._data is not atom.main._data
-    assert atom.b2.adasyn is atom.main.adasyn
+def test_init_empty_pipeline():
+    """Assert that an empty branch has an empty pipeline."""
+    branch = Branch(name="main")
+    assert branch.pipeline.steps == []
 
 
-def test_repr():
-    """Assert that the __repr__  method returns the list of available branches."""
-    branch = Branch(name="main", memory=Memory(None))
+def test_location_is_assigned():
+    """Assert that a memory location is assigned."""
+    branch = Branch(name="main", memory="")
+    assert isinstance(branch._location, Path)
+
+
+def test_branch_repr():
+    """Assert that the __repr__ method returns the branch's name."""
+    branch = Branch(name="main")
     assert str(branch) == "Branch(main)"
 
 
-def test_bool():
-    """Assert that the __bool__ method checks if there's data."""
-    branch = Branch(name="main", memory=Memory(None))
-    assert not branch
-    branch = Branch(
-        name="main",
-        memory=Memory(None),
-        data=DataContainer(X_bin, [], [], 1),
-    )
-    assert branch
+def test_data_property():
+    """Assert that the _data property returns the data container."""
+    atom = ATOMClassifier(X_bin, y_bin, memory=True, random_state=1)
+    atom.branch = "b2"
+    assert atom._branches["main"]._container is None  # Inactive branch
+    assert atom._branches["main"]._data is not None  # Loads the data
 
 
-def test_del():
-    """Assert that the cache is deleted when deleting the instance."""
-    atom = ATOMClassifier(X_bin, y_bin, memory="", random_state=1)
-    atom.branch = "2"
-    assert glob.glob("joblib/atom/Branch(main).pkl")
-    atom.branch = "main"
-    del atom.branch
-    assert not glob.glob("joblib/atom/Branch(main).pkl")
+def test_data_property_unassigned_data():
+    """Assert that an error is raised when the data is still unassigned."""
+    trainer = DirectClassifier("LR")
+    with pytest.raises(RuntimeError, match=".*no dataset assigned.*"):
+        print(trainer.dataset)
 
-
-# Test name property =============================================== >>
 
 def test_name_empty_name():
     """Assert that an error is raised when name is empty."""
@@ -89,8 +79,6 @@ def test_name_setter():
     atom.branch.name = "b1"
     assert atom.branch.name == "b1"
 
-
-# Test data properties ============================================= >>
 
 def test_pipeline_property():
     """Assert that the pipeline property returns the current pipeline."""
@@ -145,31 +133,27 @@ def test_y_property():
 
 def test_X_train_property():
     """Assert that the X_train property returns the training feature set."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    nrows, ncols = int((1 - test_size) * len(X_bin)) + 1, X_bin.shape[1]
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    nrows, ncols = int((1 - 0.3) * len(X_bin)) + 1, X_bin.shape[1]
     assert atom.branch.X_train.shape == (nrows, ncols)
 
 
 def test_X_test_property():
     """Assert that the X_test property returns the test feature set."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.branch.X_test.shape == (int(test_size * len(X_bin)), X_bin.shape[1])
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom.branch.X_test.shape == (int(0.3 * len(X_bin)), X_bin.shape[1])
 
 
 def test_y_train_property():
     """Assert that the y_train property returns the training target column."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.branch.y_train.shape == (int((1 - test_size) * len(X_bin)) + 1,)
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom.branch.y_train.shape == (int((1 - 0.3) * len(X_bin)) + 1,)
 
 
 def test_y_test_property():
     """Assert that the y_test property returns the training target column."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.branch.y_test.shape == (int(test_size * len(X_bin)),)
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom.branch.y_test.shape == (int(0.3 * len(X_bin)),)
 
 
 def test_shape_property():
@@ -214,8 +198,6 @@ def test_all_property():
     assert len(atom.branch.dataset) != len(X_bin)
     assert len(atom.branch._all) == len(X_bin)
 
-
-# Test property setters ============================================ >>
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
@@ -346,8 +328,6 @@ def test_setter_error_unequal_target_names():
         atom.y_train = new_y_train
 
 
-# Test utility methods ============================================= >>
-
 def test_get_rows_is_dataframe():
     """Assert that a dataframe returns the rows directly."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
@@ -396,7 +376,7 @@ def test_get_rows_by_str():
 def test_get_rows_none_selected():
     """Assert that an error is raised when no rows are selected."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=".*has to be selected.*"):
+    with pytest.raises(ValueError, match=".*No rows were selected.*"):
         atom.branch._get_rows(rows=slice(1000, 2000))
 
 
@@ -424,7 +404,7 @@ def test_get_columns_by_slice():
 def test_get_columns_by_int():
     """Assert that columns can be retrieved by index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*out of range for a dataset.*"):
+    with pytest.raises(IndexError, match=".*out of range for data.*"):
         atom.branch._get_columns(columns=40)
     assert atom.branch._get_columns(columns=0) == ["mean radius"]
 
@@ -446,13 +426,6 @@ def test_get_columns_by_type():
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     assert len(atom.branch._get_columns(columns="number")) == 4
     assert len(atom.branch._get_columns(columns="!number")) == 1
-
-
-def test_get_columns_invalid_type():
-    """Assert that an error is raised when the type is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(TypeError, match=".*Invalid type for the columns.*"):
-        atom.branch._get_columns(columns=[3.2])
 
 
 def test_get_columns_exclude():
@@ -546,3 +519,132 @@ def test_get_target_tuple_invalid_length():
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
     with pytest.raises(ValueError, match=".*a tuple of length 2.*"):
         atom.branch._get_target(target=(2, 1, 2))
+
+
+def test_load_store():
+    """Assert that inactive branches are stored and loaded from memory."""
+    atom = ATOMClassifier(X_bin, y=y_bin, memory="", random_state=1)
+    atom.branch = "2"
+    assert atom._branches["main"]._container is None  # Stored
+    assert atom._branches["main"].load(assign=False) is not None  # Loaded
+
+
+def test_load_no_file():
+    """Assert that an error is raised when trying to load without a file."""
+    atom = ATOMClassifier(X_bin, y=y_bin, memory="", random_state=1)
+    atom.branch = "2"
+    os.remove(atom.branch._location.joinpath("Branch(main).pkl"))
+    with pytest.raises(FileNotFoundError, match=".*no data stored.*"):
+        atom.branch = "main"
+
+
+def test_load_no_dir():
+    """Assert that an error is raised when trying to load without a directory."""
+    atom = ATOMClassifier(X_bin, y=y_bin, memory="", random_state=1)
+    atom.branch = "2"
+    atom.memory.clear()
+    with pytest.raises(FileNotFoundError, match=".*does not exist.*"):
+        atom.branch = "main"
+
+
+# Test BranchManager =============================================== >>
+
+def test_branchmanager_repr():
+    """Assert that the __repr__ method returns the branches."""
+    assert str(BranchManager()) == "BranchManager([main], og=main)"
+
+
+def test_branchmanager_len():
+    """Assert that the __len__ method returns the number of branches."""
+    assert len(BranchManager()) == 1
+
+
+def test_branchmanager_iter():
+    """Assert that the __iter__ method iterates over the branches."""
+    assert str(list(b for b in BranchManager())[0]) == "Branch(main)"
+
+
+def test_branchmanager_contains():
+    """Assert that the __contains__ method checks if there is a branch."""
+    assert "main" in BranchManager()
+
+
+def test_branchmanager_getitem():
+    """Assert that the __getitem__ method returns a branch."""
+    assert BranchManager()[0].name == "main"
+
+
+def test_og():
+    """Assert that the og property returns the original branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom._branches.og is atom._branches["main"]
+    atom.scale()
+    assert atom._branches.og is atom._branches._og
+
+
+def test_current():
+    """Assert that the current property returns the active branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom._branches.current is atom._branches["main"]
+    atom.branch = "b2"
+    assert atom._branches.current is atom._branches["b2"]
+
+
+def test_current_setter():
+    """Assert that the current property returns the active branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom._branches.current is atom._branches["main"]
+    atom.branch = "b2"
+    assert atom._branches.current is atom._branches["b2"]
+
+
+def test_add_og():
+    """Assert that the og branch is created separately."""
+    atom = ATOMClassifier(X_bin, y_bin, memory="", random_state=1)
+    atom.scale()
+    assert atom._branches.og.name == "og"
+    assert atom._branches.og._container is None
+    assert atom._branches.og._data is not None
+    assert glob.glob("joblib/atom/Branch(og).pkl")
+
+
+def test_add_store_previous_branch():
+    """Assert that old branches are stored when inactive."""
+    atom = ATOMClassifier(X_bin, y_bin, memory="", random_state=1)
+    atom.scale()
+    atom.branch = "b2"
+    assert atom._branches["main"]._container is None
+    assert atom._branches.current is atom._branches["b2"]
+
+
+def test_add_copy_from_parent():
+    """Assert that the parent's data is passed to the new branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale()
+    atom.branch = "b2"
+    pd.testing.assert_frame_equal(atom.dataset, atom._branches["main"].dataset)
+    assert atom.pipeline is not atom._branches["main"].pipeline
+    assert atom.pipeline.steps[0][1] is atom._branches["main"].pipeline.steps[0][1]
+    assert atom.branch._mapping is not atom._branches["main"]._mapping
+    assert atom.standard_ is atom._branches["main"].standard_
+
+
+def test_holdout_is_same():
+    """Assert that the holdout data set is the same across branches."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.branch = "b2"
+    assert atom.holdout is atom._branches["b2"].holdout
+
+
+def test_reset():
+    """Assert that the reset methods delete all branches."""
+    atom = ATOMClassifier(X_bin, y_bin, memory="", random_state=1)
+    atom.scale()
+    atom.branch = "b2"
+    assert atom.og is not atom.branch
+    assert len(atom._branches) == 2
+    assert glob.glob("joblib/atom/Branch(main).pkl")
+    atom._branches.reset(hard=True)
+    assert len(atom._branches) == 1
+    assert not glob.glob("joblib/atom/Branch(main).pkl")
+    assert atom.og is atom.branch

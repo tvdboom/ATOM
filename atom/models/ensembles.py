@@ -33,10 +33,12 @@ class Stacking(ClassRegModel):
     has_validation = None
     native_multilabel = False
     native_multioutput = False
-    supports_engines = []
+    supports_engines: list[str] = []
 
     _module = "atom.ensembles"
-    _estimators = CustomDict({"class": "StackingClassifier", "reg": "StackingRegressor"})
+    _estimators = CustomDict(
+        {"classification": "StackingClassifier", "regression": "StackingRegressor"}
+    )
 
     def __init__(self, models: ClassMap, **kwargs):
         self._models = models
@@ -89,10 +91,12 @@ class Voting(ClassRegModel):
     has_validation = None
     native_multilabel = False
     native_multioutput = False
-    supports_engines = []
+    supports_engines: list[str] = []
 
     _module = "atom.ensembles"
-    _estimators = CustomDict({"class": "VotingClassifier", "reg": "VotingRegressor"})
+    _estimators = CustomDict(
+        {"classification": "VotingClassifier", "regression": "VotingRegressor"}
+    )
 
     def __init__(self, models: ClassMap, **kwargs):
         self._models = models

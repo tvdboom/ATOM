@@ -6,19 +6,19 @@ repos:
     rev: 5.11.4
     hooks:
       - id: isort
-        files: atom tests
+        files: ^atom/.*\.py$|tests/.*\.py$
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
       - id: flake8
         additional_dependencies: [flake8-pyproject]
-        files: atom tests
+        files: ^atom/.*\.py$|tests/.*\.py$
         args: ["--show-source", "--statistics"]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-requests, pandas-stubs]
-        files: atom tests
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: v1.5.1
+#    hooks:
+#      - id: mypy
+#        additional_dependencies: [types-requests, pandas-stubs]
+#        files: ^atom/.*\.py$|tests/.*\.py$

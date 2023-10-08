@@ -87,7 +87,7 @@ three ways of defining the scorer:
 
 Note that all scorers follow the convention that higher return values
 are better than lower return values. Thus, metrics which measure the
-distance between the model and the data (i.e. loss functions), like
+distance between the model and the data (i.e., loss functions), like
 `max_error` or `mean_squared_error`, will return the negated value of
 the metric.
 

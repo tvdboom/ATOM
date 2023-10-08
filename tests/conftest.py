@@ -15,6 +15,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from beartype.typing import Any
+from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
     make_multilabel_classification,
@@ -28,7 +30,7 @@ from atom.utils.types import DataFrame, Features, Pandas, Sequence
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 
-class DummyTransformer:
+class DummyTransformer(BaseEstimator):
     """Transformer class for testing name keeping of arrays.
 
     Parameters
@@ -76,7 +78,7 @@ def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
 
 def get_train_test(
     X: Features | None,
-    y: Sequence | DataFrame,
+    y: Sequence[Any] | DataFrame,
 ) -> Pandas | tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.
 

@@ -9,17 +9,24 @@ Description: Module containing the ShapPlot class.
 
 from __future__ import annotations
 
+from abc import ABC
 from importlib.util import find_spec
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import shap
+from beartype import beartype
+from beartype.typing import Any
 
 from atom.plots.base import BasePlot
-from atom.utils.types import Int, Legend, Model, RowSelector
-from atom.utils.utils import check_canvas, composed, crash, plot_from_model
+from atom.utils.types import (
+    Bool, Int, IntLargerZero, Legend, ModelSelector, RowSelector,
+)
+from atom.utils.utils import check_canvas, crash
 
 
-class ShapPlot(BasePlot):
+@beartype
+class ShapPlot(BasePlot, ABC):
     """Shap plots.
 
     ATOM wrapper for plots made by the shap package, using Shapley
@@ -29,19 +36,19 @@ class ShapPlot(BasePlot):
 
     """
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_shap_bar(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot SHAP's bar plot.
 
@@ -59,7 +66,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_bar()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot.
 
         show: int or None, default=None
@@ -86,7 +93,7 @@ class ShapPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -120,17 +127,18 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        X, _ = models.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, models)
+        m = self._get_plot_models(models, max_one=True)[0]
+        X, _ = m.branch._get_rows(rows, return_X_y=True)
+        show = self._get_show(show, m)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(X, target)
+        explanation = m._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_bar")
 
         shap.plots.bar(explanation, max_display=show, show=False)
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -142,19 +150,19 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_shap_beeswarm(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot SHAP's beeswarm plot.
 
@@ -169,7 +177,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_beeswarm()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_beeswarm method does not support plotting a single
             sample.
@@ -198,7 +206,7 @@ class ShapPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -232,17 +240,18 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        X, _ = models.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, models)
+        m = self._get_plot_models(models, max_one=True)[0]
+        X, _ = m.branch._get_rows(rows, return_X_y=True)
+        show = self._get_show(show, m)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(X, target)
+        explanation = m._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_beeswarm")
 
         shap.plots.beeswarm(explanation, max_display=show, show=False)
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -253,19 +262,19 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_shap_decision(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot SHAP's decision plot.
 
@@ -285,7 +294,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_decision()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot.
 
         show: int or None, default=None
@@ -312,7 +321,7 @@ class ShapPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -347,10 +356,11 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        X, _ = models.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, models)
+        m = self._get_plot_models(models, max_one=True)[0]
+        X, _ = m.branch._get_rows(rows, return_X_y=True)
+        show = self._get_show(show, m)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(X, target)
+        explanation = m._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_decision")
@@ -364,7 +374,7 @@ class ShapPlot(BasePlot):
             show=False,
         )
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -376,18 +386,18 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_shap_force(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (900, 300),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 300),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
         **kwargs,
     ) -> plt.Figure | None:
         """Plot SHAP's force plot.
@@ -406,7 +416,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_force()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot.
 
         target: int, str or tuple, default=1
@@ -428,14 +438,15 @@ class ShapPlot(BasePlot):
         figsize: tuple or None, default=(900, 300)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as png. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the figure.
+            Whether to render the plot. If None, it returns the figure
+            (only if `matplotlib=True` in `kwargs`).
 
         **kwargs
             Additional keyword arguments for [shap.plots.force][force].
@@ -465,9 +476,10 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        X, _ = models.branch._get_rows(rows, return_X_y=True)
+        m = self._get_plot_models(models, max_one=True)[0]
+        X, _ = m.branch._get_rows(rows, return_X_y=True)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(X, target)
+        explanation = m._shap.get_explanation(X, target)
 
         self._get_figure(create_figure=False, backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_force")
@@ -481,7 +493,7 @@ class ShapPlot(BasePlot):
         )
 
         if kwargs.get("matplotlib"):
-            BasePlot._fig.used_models.append(models)
+            BasePlot._fig.used_models.append(m)
             return self._plot(
                 fig=plt.gcf(),
                 ax=plt.gca(),
@@ -493,29 +505,31 @@ class ShapPlot(BasePlot):
                 display=display,
             )
         else:
-            if filename:  # Save to a html file
-                if not filename.endswith(".html"):
-                    filename += ".html"
-                shap.save_html(filename, plot)
+            if filename:  # Save to an html file
+                if (path := Path(filename)).suffix != ".html":
+                    path = path.with_suffix(".html")
+                shap.save_html(str(path), plot)
             if display and find_spec("IPython"):
-                from IPython.display import display
+                from IPython.display import display as ipydisplay
 
                 shap.initjs()
-                display(plot)
+                ipydisplay(plot)
 
-    @composed(crash, plot_from_model(max_one=True))
+            return None
+
+    @crash
     def plot_shap_heatmap(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot SHAP's heatmap plot.
 
@@ -533,7 +547,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_heatmap()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_heatmap method does not support plotting a single
             sample.
@@ -562,7 +576,7 @@ class ShapPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -596,17 +610,18 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        X, _ = models.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, models)
+        m = self._get_plot_models(models, max_one=True)[0]
+        X, _ = m.branch._get_rows(rows, return_X_y=True)
+        show = self._get_show(show, m)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(X, target)
+        explanation = m._shap.get_explanation(X, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_heatmap")
 
         shap.plots.heatmap(explanation, max_display=show, show=False)
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -618,19 +633,19 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_shap_scatter(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         columns: Int | str = 0,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot SHAP's scatter plot.
 
@@ -649,7 +664,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_scatter()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_scatter method does not support plotting a single
             sample.
@@ -676,7 +691,7 @@ class ShapPlot(BasePlot):
         figsize: tuple or None, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -710,20 +725,21 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        X, _ = models.branch._get_rows(rows, return_X_y=True)
-        column = models.branch._get_columns(columns, include_target=False)[0]
+        m = self._get_plot_models(models, max_one=True)[0]
+        X, _ = m.branch._get_rows(rows, return_X_y=True)
+        column = m.branch._get_columns(columns, include_target=False)[0]
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(X, target)
+        explanation = m._shap.get_explanation(X, target)
 
         # Get explanation for a specific column
-        explanation = explanation[:, models.columns.get_loc(column)]
+        explanation = explanation[:, m.columns.get_loc(column)]
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_scatter")
 
         shap.plots.scatter(explanation, color=explanation, ax=plt.gca(), show=False)
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -736,19 +752,19 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_shap_waterfall(
         self,
-        models: Int | str | Model | None = None,
+        models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot SHAP's waterfall plot.
 
@@ -772,7 +788,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_waterfall()`.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_waterfall method does not support plotting
             multiple samples.
@@ -801,7 +817,7 @@ class ShapPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -835,16 +851,17 @@ class ShapPlot(BasePlot):
         ```
 
         """
-        if len(row := models.branch._get_rows(rows)) > 1:
+        m = self._get_plot_models(models, max_one=True)[0]
+        if len(row := m.branch._get_rows(rows)) > 1:
             raise ValueError(
                 f"Invalid value for the rows parameter, got {rows}. "
                 "The plot_shap_waterfall method does not support "
-                f"plotting multiple samples, got {len(rows)}."
+                f"plotting multiple samples, got {len(row)}."
             )
 
-        show = self._get_show(show, models)
+        show = self._get_show(show, m)
         target = self.branch._get_target(target)
-        explanation = models._shap.get_explanation(row, target)
+        explanation = m._shap.get_explanation(row, target)
 
         # Waterfall accepts only one row
         explanation.values = explanation.values[0]
@@ -855,7 +872,7 @@ class ShapPlot(BasePlot):
 
         shap.plots.waterfall(explanation, max_display=show, show=False)
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.append(m)
         return self._plot(
             ax=plt.gca(),
             title=title,

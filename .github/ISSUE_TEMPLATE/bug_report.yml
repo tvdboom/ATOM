@@ -87,7 +87,7 @@ body:
     attributes:
       label: Python and package version
       description: |
-        Provide the used versions, i.e. run the following commands ans paste them below.
+        Provide the used versions, i.e., run the following commands ans paste them below.
 
         ```python
         import sys; print(sys.version)

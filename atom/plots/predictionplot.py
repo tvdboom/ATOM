@@ -12,12 +12,13 @@ from __future__ import annotations
 from collections import defaultdict
 from functools import reduce
 from itertools import chain
-from typing import Literal
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from beartype.typing import Any, Literal
 from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
@@ -34,13 +35,13 @@ from sktime.forecasting.base import ForecastingHorizon
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    ColumnSelector, Features, Float, Int, Legend, MetricSelector, Model,
-    ModelSelector, RowSelector, Scalar, Sequence,
+    Bool, ColumnSelector, Features, Float, Int, IntLargerFour, IntLargerZero,
+    Legend, MetricConstructor, Model, ModelsSelector, RowSelector, Scalar,
+    Sequence,
 )
 from atom.utils.utils import (
-    bk, check_canvas, check_dependency, check_predict_proba, composed, crash,
-    divide, get_best_score, get_custom_scorer, has_task, is_binary,
-    is_multioutput, lst, plot_from_model, rnd,
+    bk, check_canvas, check_dependency, check_predict_proba, crash, divide,
+    get_best_score, get_custom_scorer, has_task, lst, rnd,
 )
 
 
@@ -55,20 +56,20 @@ class PredictionPlot(BasePlot):
 
     """
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_calibration(
         self,
-        models: ModelSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        n_bins: Int = 10,
+        models: ModelsSelector = None,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        n_bins: IntLargerFour = 10,
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper left",
-        figsize: tuple[Int, Int] = (900, 900),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the calibration curve for a binary classifier.
 
@@ -82,7 +83,7 @@ class PredictionPlot(BasePlot):
 
         This figure shows two plots: the calibration curve, where the
         x-axis represents the average predicted probability in each bin
-        and the y-axis is the fraction of positives, i.e. the proportion
+        and the y-axis is the fraction of positives, i.e., the proportion
         of samples whose class is the positive class (in each bin); and
         a distribution of all predicted probabilities of the classifier.
         This plot is available only for models with a `predict_proba`
@@ -94,7 +95,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -129,7 +130,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 900)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -165,17 +166,11 @@ class PredictionPlot(BasePlot):
         """
         check_predict_proba(models, "plot_calibration")
 
-        if n_bins < 5:
-            raise ValueError(
-                "Invalid value for the n_bins parameter."
-                f"Value should be >=5, got {n_bins}."
-            )
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
 
                 # Get calibration (frac of positives and predicted values)
@@ -242,20 +237,20 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("class"))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("classification"))
+    @crash
     def plot_confusion_matrix(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: RowSelector = "test",
         target: Int | str = 0,
         threshold: Float = 0.5,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a model's confusion matrix.
 
@@ -270,7 +265,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: hashable, range, slice or sequence, default="test"
@@ -303,7 +298,7 @@ class PredictionPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the plot's type.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -396,7 +391,7 @@ class PredictionPlot(BasePlot):
                         texttemplate="%{text}<br>(%{z:.2f}%)",
                         textfont=dict(size=self.label_fontsize),
                         hovertemplate=(
-                            "<b>%{customdata}</b><br>" if is_binary(self.task) else ""
+                            "<b>%{customdata}</b><br>" if self.task.is_binary else ""
                             "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
                         ),
                         showlegend=False,
@@ -449,19 +444,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_det(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ):
         """Plot the Detection Error Tradeoff curve.
 
@@ -470,7 +465,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -502,7 +497,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -539,7 +534,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 # Get fpr-fnr pairs for different thresholds
                 fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -569,19 +564,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("reg"))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("regression"))
+    @crash
     def plot_errors(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a model's prediction errors.
 
@@ -594,7 +589,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -626,7 +621,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -661,7 +656,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 y_true, y_pred = m._get_pred(ds, target)
 
                 fig.add_trace(
@@ -679,7 +674,7 @@ class PredictionPlot(BasePlot):
 
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
-                model = OrdinaryLeastSquares(goal=self.goal, branches=self._branches)
+                model = OrdinaryLeastSquares(goal=self._goal, branches=self._branches)
                 estimator = model._get_est().fit(bk.DataFrame(y_true), y_pred)
 
                 fig.add_trace(
@@ -711,17 +706,17 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(ensembles=False))
+    @crash
     def plot_evals(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         dataset: Literal["train", "test", "train+test"] = "test",
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot evaluation curves.
 
@@ -731,7 +726,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         dataset: str, default="test"
@@ -756,7 +751,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -824,17 +819,17 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_feature_importance(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         show: Int | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a model's feature importance.
 
@@ -844,7 +839,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         show: int or None, default=None
@@ -870,7 +865,7 @@ class PredictionPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -958,20 +953,20 @@ class PredictionPlot(BasePlot):
         )
 
     @available_if(has_task("forecast"))
-    @composed(crash, plot_from_model(check_fitted=False))
+    @crash
     def plot_forecast(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         fh: int | str | range | Sequence | ForecastingHorizon = "test",
         X: Features | None = None,
         target: Int | str = 0,
         plot_interval: bool = True,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper left",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a time series with model forecasts.
 
@@ -979,7 +974,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected. If no
             models are selected, only the target column is plotted.
 
@@ -1018,7 +1013,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1094,7 +1089,7 @@ class PredictionPlot(BasePlot):
                 X = m.X.loc[fh]
 
             y_pred = m.predict(fh, X)
-            if is_multioutput(self.task):
+            if self.task.is_multioutput:
                 y_pred = y_pred[target]
 
             fig.add_trace(
@@ -1115,7 +1110,7 @@ class PredictionPlot(BasePlot):
                 except NotImplementedError:
                     continue  # Fails for some models like ES
 
-                if is_multioutput(self.task):
+                if self.task.is_multioutput:
                     # Select interval of target column for multivariate
                     y = y_pred.iloc[:, y_pred.columns.get_loc(target)]
                 else:
@@ -1164,19 +1159,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_gains(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the cumulative gains curve.
 
@@ -1185,7 +1180,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -1217,7 +1212,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1254,7 +1249,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 fig.add_trace(
@@ -1287,17 +1282,17 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(ensembles=False))
+    @crash
     def plot_learning_curve(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the learning curve: score vs number of training samples.
 
@@ -1306,7 +1301,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         metric: int, str, sequence or None, default=None
@@ -1332,7 +1327,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1365,7 +1360,7 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        metric = self._get_metric(metric, max_one=False)
+        metric = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -1440,19 +1435,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_lift(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the lift curve.
 
@@ -1460,7 +1455,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -1492,7 +1487,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1529,7 +1524,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
@@ -1562,18 +1557,18 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_parshap(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         columns: ColumnSelector | None = None,
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper left",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the partial correlation of shap values.
 
@@ -1589,10 +1584,10 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        columns: int, str, slice, sequence or None, default=None
+        columns: int, str, segment, sequence or None, default=None
             Features to plot. If None, it plots all features.
 
         target: int, str or tuple, default=1
@@ -1619,7 +1614,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1760,20 +1755,20 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_partial_dependence(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         columns: ColumnSelector | None = None,
         kind: str | Sequence = "average",
         pair: int | str | None = None,
         target: Int | str = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the partial dependence of features.
 
@@ -1793,10 +1788,10 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        columns: int, str, slice, sequence or None, default=None
+        columns: int, str, segment, sequence or None, default=None
             Features to get the partial dependence from. If None, it
             uses the first 3 features in the dataset.
 
@@ -1840,7 +1835,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1875,7 +1870,7 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        if any(self.task.startswith(t) for t in ("multilabel", "multiclass-multioutput")):
+        if self.task.is_classification and self.task.is_multioutput:
             raise PermissionError(
                 "The plot_partial_dependence method is not available for multilabel "
                 f"nor multiclass-multioutput classification tasks, got {self.task}."
@@ -2052,18 +2047,18 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_permutation_importance(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         show: Int | None = None,
         n_repeats: Int = 10,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the feature permutation importance of models.
 
@@ -2073,7 +2068,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         show: int or None, default=None
@@ -2102,7 +2097,7 @@ class PredictionPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of features shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -2197,18 +2192,18 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(check_fitted=False))
+    @crash
     def plot_pipeline(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: bool | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> plt.Figure | None:
         """Plot a diagram of the pipeline.
 
@@ -2219,7 +2214,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models for which to draw the pipeline. If None, all
             pipelines are plotted.
 
@@ -2244,7 +2239,7 @@ class PredictionPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the pipeline drawn.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -2504,19 +2499,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_prc(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower left",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the precision-recall curve.
 
@@ -2525,7 +2520,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -2557,7 +2552,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -2594,7 +2589,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 # Get precision-recall pairs for different thresholds
@@ -2628,19 +2623,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("class"))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("classification"))
+    @crash
     def plot_probabilities(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: RowSelector = "test",
         target: Int | str | tuple = 1,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the probability distribution of the target classes.
 
@@ -2649,7 +2644,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: hashable, range, slice or sequence, default="test"
@@ -2679,7 +2674,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -2723,15 +2718,15 @@ class PredictionPlot(BasePlot):
             X, y_true = m.branch._get_rows(rows, return_X_y=True)
             y_pred = m.predict_proba(X.index)
 
-            for value in np.unique(m.dataset[col]):
+            for v in np.unique(m.dataset[col]):
                 # Get indices per class
-                if is_multioutput(self.task):
+                if self.task.is_multioutput:
                     if self.task.startswith("multilabel"):
-                        hist = y_pred.loc[y_true[col] == value, col]
+                        hist = y_pred.loc[y_true[col] == v, col]
                     else:
-                        hist = y_pred.loc[cls, col].loc[y_true[col] == value]
+                        hist = y_pred.loc[cls, col].loc[y_true[col] == v]
                 else:
-                    hist = y_pred.loc[y_true == value, str(cls)]
+                    hist = y_pred.loc[y_true == v, str(cls)]
 
                 fig.add_trace(
                     go.Scatter(
@@ -2741,15 +2736,15 @@ class PredictionPlot(BasePlot):
                         line=dict(
                             width=2,
                             color=BasePlot._fig.get_elem(m.name),
-                            dash=BasePlot._fig.get_elem(value, "dash"),
+                            dash=BasePlot._fig.get_elem(str(v), "dash"),
                         ),
                         fill="tonexty",
                         fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
-                        fillpattern=dict(shape=BasePlot._fig.get_elem(value, "shape")),
-                        name=f"{col}={value}",
+                        fillpattern=dict(shape=BasePlot._fig.get_elem(str(v), "shape")),
+                        name=f"{col}={v}",
                         legendgroup=m.name,
                         legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
-                        showlegend=BasePlot._fig.showlegend(f"{m.name}-{value}", legend),
+                        showlegend=BasePlot._fig.showlegend(f"{m.name}-{v}", legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -2770,19 +2765,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("reg"))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("regression"))
+    @crash
     def plot_residuals(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper left",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a model's residuals.
 
@@ -2798,7 +2793,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -2830,7 +2825,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -2866,7 +2861,7 @@ class PredictionPlot(BasePlot):
         xaxis, yaxis = BasePlot._fig.get_axes(x=(0, 0.69))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(x=(0.71, 1.0))
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 y_true, y_pred = m._get_pred(ds, target)
 
                 fig.add_trace(
@@ -2922,17 +2917,17 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_results(
         self,
-        models: ModelSelector = None,
-        metric: Int | str | Sequence | None = None,
+        models: ModelsSelector = None,
+        metric: Int | str | Sequence[Int, str] | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the model results.
 
@@ -2944,7 +2939,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         metric: int, str, sequence or None, default=None
@@ -2972,7 +2967,7 @@ class PredictionPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of models.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -3033,7 +3028,7 @@ class PredictionPlot(BasePlot):
             else:
                 return model.bootstrap.iloc[:, metric].std()
 
-        metric = self._get_metric(metric, max_one=False)
+        metric = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -3122,19 +3117,19 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_roc(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         rows: str | Sequence | dict[str, RowSelector] = "test",
         target: Int | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the Receiver Operating Characteristics curve.
 
@@ -3143,7 +3138,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         rows: str, sequence or dict, default="test"
@@ -3175,7 +3170,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -3212,7 +3207,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models:
-            for child, ds in self._get_set(rows):
+            for child, ds in self._get_set(rows).items():
                 # Get False (True) Positive Rate as arrays
                 fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -3246,17 +3241,17 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(ensembles=False))
+    @crash
     def plot_successive_halving(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         metric: Int | str | Sequence | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot scores per iteration of the successive halving.
 
@@ -3265,7 +3260,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         metric: int, str, sequence or None, default=None
@@ -3291,7 +3286,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -3324,7 +3319,7 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        metric = self._get_metric(metric, max_one=False)
+        metric = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -3401,21 +3396,21 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task(["binary", "multilabel"]))
-    @composed(crash, plot_from_model)
+    @available_if(has_task("binary"))
+    @crash
     def plot_threshold(
         self,
-        models: ModelSelector = None,
-        metric: MetricSelector = None,
+        models: ModelsSelector = None,
+        metric: MetricConstructor = None,
         rows: RowSelector = "test",
         target: Int | str = 0,
         steps: Int = 100,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower left",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot metric performances against threshold values.
 
@@ -3424,7 +3419,7 @@ class PredictionPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
         metric: str, func, scorer, sequence or None, default=None
@@ -3434,7 +3429,7 @@ class PredictionPlot(BasePlot):
             between options to select more than one. If None, the
             metric used to run the pipeline is selected.
 
-        rows: hashable, slice, sequence or dataframe, default="test"
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 
@@ -3462,7 +3457,7 @@ class PredictionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,

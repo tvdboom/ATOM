@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
-Description: Unit tests for models.py
+Description: Unit tests for the models module.
 
 """
 
@@ -57,6 +57,7 @@ def test_all_models_binary():
             "RF": {"n_estimators": 5},
             "SGD": {"max_iter": 5},
         },
+        errors="raise",
     )
 
 
@@ -72,6 +73,7 @@ def test_all_models_multiclass():
             "ET": {"n_estimators": 5},
             "GBM": {"n_estimators": 5},
             "hGBM": {"max_iter": 5},
+            "KNN": {"n_neighbors": 2},
             "LR": {"max_iter": 5},
             "MLP": {"hidden_layer_sizes": (5,), "max_iter": 5},
             "PA": {"max_iter": 5},
@@ -79,7 +81,7 @@ def test_all_models_multiclass():
             "RF": {"n_estimators": 5},
             "SGD": {"max_iter": 5},
         },
-        ht_params={"catch": (ValueError,)},  # RNN trial fails
+        errors="raise",
     )
 
 
@@ -87,7 +89,7 @@ def test_all_models_regression():
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, n_rows=0.5, random_state=1)
     atom.run(
-        models=["!CatB", "!LGB", "!XGB"],
+        models=["!CatB", "!LGB", "!RNN", "!XGB"],
         n_trials=5,
         est_params={
             "AdaB": {"n_estimators": 5},
@@ -100,7 +102,7 @@ def test_all_models_regression():
             "RF": {"n_estimators": 5},
             "SGD": {"max_iter": 5},
         },
-        ht_params={"catch": (ValueError,)},  # RNN trial fails
+        errors="raise",
     )
 
 
@@ -207,6 +209,7 @@ def test_pruning_non_sklearn(model):
     atom.run(
         models=model,
         n_trials=7,
+        errors="raise",
         est_params={"n_estimators": 10, "max_depth": 2},
         ht_params={"pruner": PatientPruner(None, patience=1)},
     )
@@ -257,7 +260,7 @@ def test_MLP_custom_n_layers():
             }
         },
     )
-    assert len(atom.mlp.trials["params"][0]["hidden_layer_sizes"]) == 2
+    assert "hidden_layer_1" in atom.mlp.trials
 
 
 # Test ensembles =================================================== >>

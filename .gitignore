@@ -6,9 +6,14 @@ mlruns/
 /*.pkl
 /*.png
 
-# IDE
+# Caching
+.mypy_cache/
 .pytest_cache/
+
+# IDE
+.idea/
 .vscode/
+.spyproject/
 
 # Static Documentation
 site/
@@ -63,12 +68,6 @@ coverage.xml
 # IPython Notebooks
 .ipynb_checkpoints
 .ipynb_checkpoints/*
-
-# PyCharm
-.idea
-
-# Spyder
-.spyproject
 
 # Others
 .pylint.d

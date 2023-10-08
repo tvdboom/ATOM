@@ -29,7 +29,7 @@ class ARIMA(ForecastModel):
     efficacious in cases where data shows evidence of non-stationarity.
 
     The "AR" part of ARIMA indicates that the evolving variable of
-    interest is regressed on its own lagged (i.e., prior observed)
+    interest is regressed on its own lagged (i.e.,, prior observed)
     values. The "MA" part indicates that the regression error is
     actually a linear combination of error terms whose values occurred
     contemporaneously and at various times in the past. The "I" (for
@@ -80,7 +80,7 @@ class ARIMA(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.arima"
-    _estimators = CustomDict({"fc": "ARIMA"})
+    _estimators = CustomDict({"forecast": "ARIMA"})
 
     _order = ("p", "d", "q")
     _sorder = ("Ps", "Ds", "Qs", "S")
@@ -124,7 +124,7 @@ class ARIMA(ForecastModel):
         """
         params = super()._trial_to_est(params)
 
-        # Convert params to hyperparameters order and seasonal_order
+        # Convert params to hyperparameters 'order' and 'seasonal_order'
         if all(p in params for p in self._sorder):
             params.insert(0, "seasonal_order", tuple(params.pop(p) for p in self._sorder))
         if all(p in params for p in self._order):
@@ -176,7 +176,7 @@ class AutoARIMA(ForecastModel):
     ARIMA model, settling on a single fitted ARIMA model. This process
     is based on the commonly-used R function.
 
-    AutoARIMA works by conducting differencing tests (i.e.,
+    AutoARIMA works by conducting differencing tests (i.e.,,
     Kwiatkowski–Phillips–Schmidt–Shin, Augmented Dickey-Fuller or
     Phillips–Perron) to determine the order of differencing, d, and
     then fitting models within defined ranges. AutoARIMA also seeks
@@ -221,7 +221,7 @@ class AutoARIMA(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.arima"
-    _estimators = CustomDict({"fc": "AutoARIMA"})
+    _estimators = CustomDict({"forecast": "AutoARIMA"})
 
     @staticmethod
     def _get_distributions() -> CustomDict:
@@ -282,31 +282,7 @@ class ExponentialSmoothing(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.exp_smoothing"
-    _estimators = CustomDict({"fc": "ExponentialSmoothing"})
-
-    def _get_parameters(self, trial: Trial) -> CustomDict:
-        """Get the trial's hyperparameters.
-
-        Parameters
-        ----------
-        trial: [Trial][]
-            Current trial.
-
-        Returns
-        -------
-        CustomDict
-            Trial's hyperparameters.
-
-        """
-        params = super()._get_parameters(trial)
-
-        if self._get_param("trend", params) is None:
-            params.pop("damped_trend")
-
-        if self._get_param("sp", params) is None:
-            params.pop("seasonal")
-
-        return params
+    _estimators = CustomDict({"forecast": "ExponentialSmoothing"})
 
     @staticmethod
     def _get_distributions() -> CustomDict:
@@ -373,29 +349,7 @@ class ETS(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.ets"
-    _estimators = CustomDict({"fc": "AutoETS"})
-
-    def _get_parameters(self, trial: Trial) -> CustomDict:
-        """Get the trial's hyperparameters.
-
-        Parameters
-        ----------
-        trial: [Trial][]
-            Current trial.
-
-        Returns
-        -------
-        CustomDict
-            Trial's hyperparameters.
-
-        """
-        params = super()._get_parameters(trial)
-
-        # If no seasonal periodicity, set seasonal components to zero
-        if self._get_param("sp", params) == 1:
-            params.pop("seasonal")
-
-        return params
+    _estimators = CustomDict({"forecast": "AutoETS"})
 
     @staticmethod
     def _get_distributions() -> CustomDict:
@@ -462,7 +416,7 @@ class NaiveForecaster(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.naive"
-    _estimators = CustomDict({"fc": "NaiveForecaster"})
+    _estimators = CustomDict({"forecast": "NaiveForecaster"})
 
     @staticmethod
     def _get_distributions() -> CustomDict:
@@ -517,7 +471,7 @@ class PolynomialTrend(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.trend"
-    _estimators = CustomDict({"fc": "PolynomialTrendForecaster"})
+    _estimators = CustomDict({"forecast": "PolynomialTrendForecaster"})
 
     @staticmethod
     def _get_distributions() -> CustomDict:

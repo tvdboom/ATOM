@@ -9,10 +9,13 @@ Description: Module containing the HyperparameterTuningPlot class.
 
 from __future__ import annotations
 
+from abc import ABC
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
+from beartype.typing import Any, Callable
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.trial import TrialState
 from optuna.visualization._parallel_coordinate import (
@@ -25,15 +28,16 @@ from sklearn.utils._bunch import Bunch
 from atom.plots.base import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Int, IntTypes, Legend, Model, ModelSelector, Sequence,
+    Bool, Int, IntLargerEqualZero, IntLargerZero, IntTypes, Legend,
+    MetricSelector, Model, ModelSelector, ModelsSelector, ParamsSelector,
+    Scalar, Segment, SegmentTypes, Sequence,
 )
 from atom.utils.utils import (
-    check_dependency, check_hyperparams, composed, crash, divide, it, lst,
-    plot_from_model, rnd,
+    bk, check_dependency, crash, divide, get_segment, it, lst, rnd,
 )
 
 
-class HyperparameterTuningPlot(BasePlot):
+class HyperparameterTuningPlot(BasePlot, ABC):
     """Hyperparameter tuning plots.
 
     Plots that help interpret the model's study and corresponding
@@ -44,17 +48,111 @@ class HyperparameterTuningPlot(BasePlot):
 
     """
 
-    @composed(crash, plot_from_model)
+    @staticmethod
+    def _check_hyperparams(models: list[Model]) -> list[Model]:
+        """Filter for models that ran hyperparameter tuning.
+
+        If none of the provided models ran hyperparameter tuning,
+        raise an exception.
+
+        Parameters
+        ----------
+        models: list of Model
+            Models to check.
+
+        Returns
+        -------
+        list of Model
+            Models that ran hyperparameter tuning.
+
+        """
+        if not (models_c := [m for m in models if m.trials is not None]):
+            raise PermissionError(
+                "This plot method is only available for "
+                "models that ran hyperparameter tuning."
+            )
+
+        return models_c
+
+    @staticmethod
+    def _get_hyperparams(
+        params: str | Segment | Sequence[Int | str] | None,
+        model: Model,
+    ) -> list[str]:
+        """Check and return a model's hyperparameters.
+
+        Parameters
+        ----------
+        params: str, range, slice, sequence or None
+            Hyperparameters to get. Use a sequence or add `+` between
+            options to select more than one. If None, all the model's
+            hyperparameters are selected.
+
+        model: Model
+            Get the params from this model.
+
+        Returns
+        -------
+        list of str
+            Selected hyperparameters.
+
+        """
+        if params is None:
+            params_c = list(model._ht["distributions"])
+        elif isinstance(params, SegmentTypes):
+            params_c = list(get_segment(model._ht["distributions"], params))
+        else:
+            params_c = []
+            for param in lst(params):
+                if isinstance(param, IntTypes):
+                    params_c.append(list(model._ht["distributions"])[param])
+                elif isinstance(param, str):
+                    for p in param.split("+"):
+                        if p not in model._ht["distributions"]:
+                            raise ValueError(
+                                "Invalid value for the params parameter. "
+                                f"Hyperparameter {p} was not used during the "
+                                f"optimization of model {model.name}."
+                            )
+                        else:
+                            params_c.append(p)
+
+        if not params_c:
+            raise ValueError(f"Didn't find any hyperparameters for model {model.name}.")
+
+        return params_c
+
+    def _optuna_target(self, metric: str) -> Callable | None:
+        """Value for the target parameter in optuna's classes.
+
+        Parameters
+        ----------
+        metric: str
+            Name of the metric to get.
+
+        Returns
+        -------
+        lambda or None
+            Returns None for single-metric runs and a lambda that
+            returns the provided metric for multi-metric runs.
+
+        """
+        if len(self._metric) == 1:
+            return None
+        else:
+            return lambda x: x.values[self._metric.index(metric)]
+
+    @crash
     def plot_edf(
         self,
-        models: ModelSelector = None,
-        metric: Int | str | Sequence | None = None,
+        models: ModelsSelector = None,
+        metric: MetricSelector = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper left",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the Empirical Distribution Function of a study.
 
@@ -69,7 +167,7 @@ class HyperparameterTuningPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models that used hyperparameter
             tuning are selected.
 
@@ -96,7 +194,7 @@ class HyperparameterTuningPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -129,17 +227,17 @@ class HyperparameterTuningPlot(BasePlot):
         # Run three models with different search spaces
         atom.run(
             models="RF_1",
-            n_trials=10,
+            n_trials=20,
             ht_params={"distributions": {"n_estimators": IntDistribution(6, 10)}},
         )
         atom.run(
             models="RF_2",
-            n_trials=10,
+            n_trials=20,
             ht_params={"distributions": {"n_estimators": IntDistribution(11, 15)}},
         )
         atom.run(
             models="RF_3",
-            n_trials=10,
+            n_trials=20,
             ht_params={"distributions": {"n_estimators": IntDistribution(16, 20)}},
         )
 
@@ -147,35 +245,31 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        models = check_hyperparams(models, "plot_edf")
-        metric = self._get_metric(metric, max_one=False)
+        models_c = self._check_hyperparams(self._get_plot_models(models))
+        metric_c = self._get_metric(metric)
 
-        values = []
-        for m in models:
-            values.append([])
-            for met in metric:
-                values[-1].append(np.array([lst(row)[met] for row in m.trials["score"]]))
-
-        x_min = np.nanmin(np.array(values))
-        x_max = np.nanmax(np.array(values))
+        x_min = bk.concat([m.trials[metric_c] for m in models_c]).min(axis=None)
+        x_max = bk.concat([m.trials[metric_c] for m in models_c]).max(axis=None)
+        x = np.linspace(x_min, x_max, 100)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m, val in zip(models, values):
-            for met in metric:
+        for m in models_c:
+            for met in metric_c:
+                y = np.sum(m.trials[met].values[:, np.newaxis] <= x, axis=0)
                 fig.add_trace(
                     self._draw_line(
-                        x=(x := np.linspace(x_min, x_max, 100)),
-                        y=np.sum(val[met][:, np.newaxis] <= x, axis=0) / len(val[met]),
+                        x=x,
+                        y=y / len(m.trials),
                         parent=m.name,
-                        child=self._metric[met].name,
+                        child=met,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             ylim=(0, 1),
@@ -189,29 +283,29 @@ class HyperparameterTuningPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_hyperparameter_importance(
         self,
-        models: ModelSelector = None,
-        metric: int | str = 0,
-        show: Int | None = None,
+        models: ModelsSelector = None,
+        metric: IntLargerEqualZero | str = 0,
+        show: IntLargerZero | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot a model's hyperparameter importance.
 
-        The hyperparameter importance are calculated using the
-        [fANOVA][] importance evaluator. The sum of importances for all
-        parameters (per model) is 1. This plot is only available for
-        models that ran [hyperparameter tuning][].
+        The hyperparameter importances are calculated using the
+        [fANOVA][] importance evaluator. The sum of all importances for
+        all parameters (per model) is 1. This plot is only available
+        for models that ran [hyperparameter tuning][].
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models that used hyperparameter
             tuning are selected.
 
@@ -241,7 +335,7 @@ class HyperparameterTuningPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of hyperparameters shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -275,25 +369,16 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        models = check_hyperparams(models, "plot_hyperparameter_importance")
-        params = len(set([k for m in lst(models) for k in m._ht["distributions"]]))
-        met = self._get_metric(metric, max_one=True)
-
-        if show is None or show > params:
-            # Limit max features shown to avoid maximum figsize error
-            show = min(200, params)
-        elif show < 1:
-            raise ValueError(
-                f"Invalid value for the show parameter. Value should be >0, got {show}."
-            )
+        models_c = self._check_hyperparams(self._get_plot_models(models))
+        metric_c = self._get_metric(metric, max_one=True)[0]
+        params_c = len(set([k for m in models_c for k in m._ht["distributions"]]))
+        show_c = self._get_show(show, params_c)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            importances = FanovaImportanceEvaluator(seed=self.random_state).evaluate(
-                study=m.study,
-                target=None if len(self._metric) == 1 else lambda x: x.values[met],
-            )
+        for m in models_c:
+            fanova = FanovaImportanceEvaluator(seed=self.random_state)
+            importances = fanova.evaluate(m.study, target=self._optuna_target(metric_c))
 
             fig.add_trace(
                 go.Bar(
@@ -320,31 +405,31 @@ class HyperparameterTuningPlot(BasePlot):
             }
         )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Normalized hyperparameter importance",
-            ylim=(params - show - 0.5, params - 0.5),
+            ylim=(params_c - show_c - 0.5, params_c - 0.5),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_hyperparameter_importance",
             filename=filename,
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_hyperparameters(
         self,
-        models: Int | str | Model | None = None,
-        params: str | slice | Sequence = (0, 1),
-        metric: int | str = 0,
+        models: ModelSelector | None = None,
+        params: ParamsSelector = (0, 1),
+        metric: IntLargerEqualZero | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot hyperparameter relationships in a study.
 
@@ -361,7 +446,7 @@ class HyperparameterTuningPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_hyperparameters()`.
 
-        params: str, slice or sequence, default=(0, 1)
+        params: int, str, segment or sequence, default=(0, 1)
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one.
 
@@ -382,7 +467,7 @@ class HyperparameterTuningPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of hyperparameters shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -416,18 +501,17 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        m = check_hyperparams(models, "plot_hyperparameters")[0]
+        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
+        metric_c = self._get_metric(metric, max_one=True)[0]
 
-        if len(params := self._get_hyperparams(params, models)) < 2:
+        if len(params_c := self._get_hyperparams(params, models_c)) < 2:
             raise ValueError(
                 "Invalid value for the hyperparameters parameter. A minimum "
-                f"of two parameters is required, got {len(params)}."
+                f"of two parameters is required, got {len(params_c)}."
             )
 
-        met = self._get_metric(metric, max_one=True)
-
         fig = self._get_figure()
-        for i in range((length := len(params) - 1) ** 2):
+        for i in range((length := len(params_c) - 1) ** 2):
             x, y = i // length, i % length
 
             if y <= x:
@@ -443,40 +527,32 @@ class HyperparameterTuningPlot(BasePlot):
                     y=(y_pos, rnd(y_pos + size)),
                     coloraxis=dict(
                         axes="99",
-                        colorscale=PALETTE.get(BasePlot._fig.get_elem(m.name), "Blues"),
-                        cmin=np.nanmin(
-                            m.trials.apply(lambda x: lst(x["score"])[met], axis=1)
+                        colorscale=PALETTE.get(
+                            BasePlot._fig.get_elem(models_c.name), "Blues"
                         ),
-                        cmax=np.nanmax(
-                            m.trials.apply(lambda x: lst(x["score"])[met], axis=1)
-                        ),
+                        cmin=models_c.trials[metric_c].min(),
+                        cmax=models_c.trials[metric_c].max(),
                         showscale=False,
                     )
                 )
 
-                x_values = lambda row: row["params"].get(params[y], None)
-                y_values = lambda row: row["params"].get(params[x + 1], None)
-
                 fig.add_trace(
                     go.Scatter(
-                        x=m.trials.apply(x_values, axis=1),
-                        y=m.trials.apply(y_values, axis=1),
+                        x=models_c.trials[params_c[y]],
+                        y=models_c.trials[params_c[x + 1]],
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=BasePlot._fig.get_elem(m.name),
+                            color=BasePlot._fig.get_elem(models_c.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
                         customdata=list(
-                            zip(
-                                m.trials.index.tolist(),
-                                m.trials.apply(lambda x: lst(x["score"])[met], axis=1),
-                            )
+                            zip(list(models_c.trials.index), models_c.trials[metric_c])
                         ),
                         hovertemplate=(
-                            f"{params[y]}:%{{x}}<br>"
-                            f"{params[x + 1]}:%{{y}}<br>"
-                            f"{self._metric[met].name}:%{{customdata[1]:.4f}}"
+                            f"{params_c[y]}:%{{x}}<br>"
+                            f"{params_c[x + 1]}:%{{y}}<br>"
+                            f"{metric_c}:%{{customdata[1]:.4f}}"
                             "<extra>Trial %{customdata[0]}</extra>"
                         ),
                         showlegend=False,
@@ -487,9 +563,9 @@ class HyperparameterTuningPlot(BasePlot):
 
                 fig.add_trace(
                     go.Contour(
-                        x=m.trials.apply(x_values, axis=1),
-                        y=m.trials.apply(y_values, axis=1),
-                        z=m.trials.apply(lambda i: lst(i["score"])[met], axis=1),
+                        x=models_c.trials[params_c[y]],
+                        y=models_c.trials[params_c[x + 1]],
+                        z=models_c.trials[metric_c],
                         contours=dict(
                             showlabels=True,
                             labelfont=dict(size=self.tick_fontsize, color="white")
@@ -502,9 +578,9 @@ class HyperparameterTuningPlot(BasePlot):
                     )
                 )
 
-                if _is_log_scale(m.study.trials, params[y]):
+                if _is_log_scale(models_c.study.trials, params_c[y]):
                     fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
-                if _is_log_scale(m.study.trials, params[x + 1]):
+                if _is_log_scale(models_c.study.trials, params_c[x + 1]):
                     fig.update_layout({f"yaxis{xaxis[1:]}_type": "log"})
 
                 if x < length - 1:
@@ -524,11 +600,11 @@ class HyperparameterTuningPlot(BasePlot):
 
                 self._plot(
                     ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                    xlabel=params[y] if x == length - 1 else None,
-                    ylabel=params[x + 1] if y == 0 else None,
+                    xlabel=params_c[y] if x == length - 1 else None,
+                    ylabel=params_c[x + 1] if y == 0 else None,
                 )
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             title=title,
             legend=legend,
@@ -538,18 +614,18 @@ class HyperparameterTuningPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_parallel_coordinate(
         self,
-        models: Int | str | Model | None = None,
-        params: str | slice | Sequence | None = None,
-        metric: Int | str = 0,
+        models: ModelSelector | None = None,
+        params: ParamsSelector | None = None,
+        metric: IntLargerEqualZero | str = 0,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot high-dimensional parameter relationships in a study.
 
@@ -564,7 +640,7 @@ class HyperparameterTuningPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_parallel_coordinate()`.
 
-        params: str, slice, sequence or None, default=None
+        params: int, str, segment, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.
@@ -586,7 +662,7 @@ class HyperparameterTuningPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of hyperparameters shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -637,7 +713,8 @@ class HyperparameterTuningPlot(BasePlot):
                 Sorted values.
 
             """
-            numbers, categorical = [], []
+            numbers: list[Scalar] = []
+            categorical: list[str] = []
             for elem in values:
                 try:
                     numbers.append(it(float(elem)))
@@ -646,21 +723,22 @@ class HyperparameterTuningPlot(BasePlot):
 
             return list(map(str, sorted(numbers))) + sorted(categorical)
 
-        m = check_hyperparams(models, "plot_parallel_coordinate")[0]
-        params = self._get_hyperparams(params, models)
-        met = self._get_metric(metric, max_one=True)
+        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
+        params_c = self._get_hyperparams(params, models_c)
+        metric_c = self._get_metric(metric, max_one=True)[0]
 
         dims = _get_dims_from_info(
             _get_parallel_coordinate_info(
-                study=m.study,
-                params=params,
-                target=None if len(self._metric) == 1 else lambda x: x.values[met],
-                target_name=self._metric[met].name,
+                study=models_c.study,
+                params=params_c,
+                target=self._optuna_target(metric_c),
+                target_name=metric_c,
             )
         )
 
-        # Clean up dimensions for nicer view
-        for d in [dims[0]] + sorted(dims[1:], key=lambda x: params.index(x["label"])):
+        # Clean and sort dimensions for nicer view
+        dims = [dims[0]] + sorted(dims[1:], key=lambda x: params_c.index(x["label"]))
+        for d in dims:
             if "ticktext" in d:
                 # Skip processing for logarithmic params
                 if all(isinstance(i, IntTypes) for i in d["values"]):
@@ -670,17 +748,17 @@ class HyperparameterTuningPlot(BasePlot):
                     d["values"] = [d["ticktext"].index(v) for v in mapping]
             else:
                 # Round numerical values
-                d["tickvals"] = list(
-                    map(rnd, np.linspace(min(d["values"]), max(d["values"]), 5))
-                )
+                d["tickvals"] = [
+                    rnd(v) for v in np.linspace(min(d["values"]), max(d["values"]), 5)
+                ]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(
             coloraxis=dict(
-                colorscale=PALETTE.get(BasePlot._fig.get_elem(m.name), "Blues"),
+                colorscale=PALETTE.get(BasePlot._fig.get_elem(models_c.name), "Blues"),
                 cmin=min(dims[0]["values"]),
                 cmax=max(dims[0]["values"]),
-                title=self._metric[met].name,
+                title=metric_c,
                 font_size=self.label_fontsize,
             )
         )
@@ -698,35 +776,34 @@ class HyperparameterTuningPlot(BasePlot):
             )
         )
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
-            figsize=figsize or (700 + len(params) * 50, 600),
+            figsize=figsize or (700 + len(params_c) * 50, 600),
             plotname="plot_parallel_coordinate",
             filename=filename,
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_pareto_front(
         self,
-        models: Int | str | Model | None = None,
-        metric: str | Sequence | None = None,
+        models: ModelSelector | None = None,
+        metric: MetricSelector = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the Pareto front of a study.
 
         Shows the trial scores plotted against each other. The marker's
         colors indicate the trial number. This plot is only available
-        for models that ran [multi-metric runs][] with
-        [hyperparameter tuning][].
+        for models with [multi-metric runs][] and [hyperparameter tuning][].
 
         Parameters
         ----------
@@ -755,7 +832,7 @@ class HyperparameterTuningPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of metrics shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -793,16 +870,22 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        m = check_hyperparams(models, "plot_pareto_front")[0]
+        if len(self._metric) == 1:
+            raise PermissionError(
+                "The plot_pareto_front method is only "
+                "available for models with multi-metric runs."
+            )
 
-        if len(metric := self._get_metric(metric, max_one=False)) < 2:
+        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
+
+        if len(metric_c := self._get_metric(metric)) < 2:
             raise ValueError(
                 "Invalid value for the metric parameter. A minimum "
-                f"of two metrics are required, got {len(metric)}."
+                f"of two metrics are required, got {metric_c}."
             )
 
         fig = self._get_figure()
-        for i in range((length := len(metric) - 1) ** 2):
+        for i in range((length := len(metric_c) - 1) ** 2):
             x, y = i // length, i % length
 
             if y <= x:
@@ -823,34 +906,34 @@ class HyperparameterTuningPlot(BasePlot):
 
                 fig.add_trace(
                     go.Scatter(
-                        x=m.trials.apply(lambda row: row["score"][y], axis=1),
-                        y=m.trials.apply(lambda row: row["score"][x + 1], axis=1),
+                        x=models_c.trials[metric_c[y]],
+                        y=models_c.trials[metric_c[x + 1]],
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=m.trials.index,
+                            color=models_c.trials.index,
                             colorscale="Teal",
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
-                        customdata=m.trials.index,
+                        customdata=models_c.trials.index,
                         hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
 
-                if x < len(metric) - 1:
+                if x < length - 1:
                     fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
                 if y > 0:
                     fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
 
                 self._plot(
                     ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                    xlabel=self._metric[y].name if x == length - 1 else None,
-                    ylabel=self._metric[x + 1].name if y == 0 else None,
+                    xlabel=metric_c[y] if x == length - 1 else None,
+                    ylabel=metric_c[x + 1] if y == 0 else None,
                 )
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             title=title,
             legend=legend,
@@ -860,22 +943,22 @@ class HyperparameterTuningPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model(max_one=True))
+    @crash
     def plot_slice(
         self,
-        models: Int | str | Model | None = None,
-        params: str | slice | Sequence | None = None,
-        metric: Int | str | Sequence | None = None,
+        models: ModelSelector | None = None,
+        params: ParamsSelector | None = None,
+        metric: MetricSelector = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the parameter relationship in a study.
 
-        The color of the markers indicate the trial. This plot is only
+        The color of the markers indicates the trial. This plot is only
         available for models that ran [hyperparameter tuning][].
 
         Parameters
@@ -886,7 +969,7 @@ class HyperparameterTuningPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_slice()`.
 
-        params: str, slice, sequence or None, default=None
+        params: int, str, segment, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.
@@ -910,7 +993,7 @@ class HyperparameterTuningPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of hyperparameters shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -948,25 +1031,25 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        m = check_hyperparams(models, "plot_slice")[0]
-        params = self._get_hyperparams(params, models)
-        metric = self._get_metric(metric, max_one=False)
+        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
+        params_c = self._get_hyperparams(params, models_c)
+        metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
-        for i in range(len(params) * len(metric)):
-            x, y = i // len(params), i % len(params)
+        for i in range(len(params_c) * len(metric_c)):
+            x, y = i // len(params_c), i % len(params_c)
 
             # Calculate the distance between subplots
-            x_offset = divide(0.0125, (len(params) - 1))
-            y_offset = divide(0.0125, (len(metric) - 1))
+            x_offset = divide(0.0125, (len(params_c) - 1))
+            y_offset = divide(0.0125, (len(metric_c) - 1))
 
             # Calculate the size of the subplot
-            x_size = (1 - ((x_offset * 2) * (len(params) - 1))) / len(params)
-            y_size = (1 - ((y_offset * 2) * (len(metric) - 1))) / len(metric)
+            x_size = (1 - ((x_offset * 2) * (len(params_c) - 1))) / len(params_c)
+            y_size = (1 - ((y_offset * 2) * (len(metric_c) - 1))) / len(metric_c)
 
             # Determine the position for the axes
             x_pos = y * (x_size + 2 * x_offset)
-            y_pos = (len(metric) - x - 1) * (y_size + 2 * y_offset)
+            y_pos = (len(metric_c) - x - 1) * (y_size + 2 * y_offset)
 
             xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(x_pos, rnd(x_pos + x_size)),
@@ -975,56 +1058,56 @@ class HyperparameterTuningPlot(BasePlot):
 
             fig.add_trace(
                 go.Scatter(
-                    x=m.trials.apply(lambda r: r["params"].get(params[y], None), axis=1),
-                    y=m.trials.apply(lambda r: lst(r["score"])[x], axis=1),
+                    x=models_c.trials[params_c[y]],
+                    y=models_c.trials[metric_c[x]],
                     mode="markers",
                     marker=dict(
                         size=self.marker_size,
-                        color=m.trials.index,
+                        color=models_c.trials.index,
                         colorscale="Teal",
                         line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     ),
-                    customdata=m.trials.index,
+                    customdata=models_c.trials.index,
                     hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
             )
 
-            if _is_log_scale(m.study.trials, params[y]):
+            if _is_log_scale(models_c.study.trials, params_c[y]):
                 fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
 
-            if x < len(metric) - 1:
+            if x < len(metric_c) - 1:
                 fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
             if y > 0:
                 fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
 
             self._plot(
                 ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                xlabel=params[y] if x == len(metric) - 1 else None,
-                ylabel=self._metric[x].name if y == 0 else None,
+                xlabel=params_c[y] if x == len(metric_c) - 1 else None,
+                ylabel=metric_c[x] if y == 0 else None,
             )
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             title=title,
             legend=legend,
-            figsize=figsize or (800 + 100 * len(params), 500 + 100 * len(metric)),
+            figsize=figsize or (800 + 100 * len(params_c), 500 + 100 * len(metric_c)),
             plotname="plot_slice",
             filename=filename,
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_terminator_improvement(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the potentials for future objective improvement.
 
@@ -1044,7 +1127,7 @@ class HyperparameterTuningPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models that used hyperparameter
             tuning are selected.
 
@@ -1066,7 +1149,7 @@ class HyperparameterTuningPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y)
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1102,15 +1185,15 @@ class HyperparameterTuningPlot(BasePlot):
         """
         check_dependency("botorch")
 
-        models = check_hyperparams(models, "plot_terminator_improvement")
+        models_c = self._check_hyperparams(self._get_plot_models(models))
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
+        for m in models_c:
             if m._ht["cv"] > 1:
-                info = self._memory.cache(_get_improvement_info)(m.study, get_error=True)
+                info = self.memory.cache(_get_improvement_info)(m.study, get_error=True)
             else:
-                raise ValueError(
+                raise PermissionError(
                     "The plot_terminator_improvement method is only available for "
                     "models that ran hyperparameter tuning using cross-validation, "
                     "e.g., using ht_params={'cv': 5}."
@@ -1129,7 +1212,7 @@ class HyperparameterTuningPlot(BasePlot):
                 )
             )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Trial",
@@ -1142,16 +1225,16 @@ class HyperparameterTuningPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_timeline(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the timeline of a study.
 
@@ -1160,7 +1243,7 @@ class HyperparameterTuningPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models that used hyperparameter
             tuning are selected.
 
@@ -1182,7 +1265,7 @@ class HyperparameterTuningPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y)
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1221,7 +1304,7 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        models = check_hyperparams(models, "plot_timeline")
+        models_c = self._check_hyperparams(self._get_plot_models(models))
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -1234,7 +1317,7 @@ class HyperparameterTuningPlot(BasePlot):
             "WAITING": "rgb(220, 220, 220)",  # Gray
         }
 
-        for m in models:
+        for m in models_c:
             info = []
             for trial in m.study.get_trials(deepcopy=False):
                 date_complete = trial.datetime_complete or datetime.now()
@@ -1282,7 +1365,7 @@ class HyperparameterTuningPlot(BasePlot):
 
         fig.update_layout({f"xaxis{yaxis[1:]}_type": "date", "barmode": "group"})
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Datetime",
@@ -1295,17 +1378,17 @@ class HyperparameterTuningPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model)
+    @crash
     def plot_trials(
         self,
-        models: ModelSelector = None,
-        metric: Int | str | Sequence | None = None,
+        models: ModelsSelector = None,
+        metric: Int | str | Sequence[Int | str] | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "upper left",
-        figsize: tuple[Int, Int] = (900, 800),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 800),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the hyperparameter tuning trials.
 
@@ -1318,7 +1401,7 @@ class HyperparameterTuningPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models that used hyperparameter
             tuning are selected.
 
@@ -1345,7 +1428,7 @@ class HyperparameterTuningPlot(BasePlot):
         figsize: tuple, default=(900, 800)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -1379,26 +1462,24 @@ class HyperparameterTuningPlot(BasePlot):
         ```
 
         """
-        models = check_hyperparams(models, "plot_trials")
-        metric = self._get_metric(metric, max_one=False)
+        models_c = self._check_hyperparams(self._get_plot_models(models))
+        metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
-        for m in models:
-            for met in metric:
-                y = m.trials["score"].apply(lambda value: lst(value)[met])
-
-                # Create star symbol at best trial
-                symbols = ["circle"] * len(y)
+        for m in models_c:
+            for met in metric_c:
+                # Place a star symbol at the best trial
+                symbols = ["circle"] * len(m.trials)
                 symbols[m.best_trial.number] = "star"
-                sizes = [self.marker_size] * len(y)
+                sizes = [self.marker_size] * len(m.trials)
                 sizes[m.best_trial.number] = self.marker_size * 1.5
 
                 fig.add_trace(
                     self._draw_line(
-                        x=list(range(len(y))),
-                        y=y,
+                        x=m.trials.index,
+                        y=m.trials[met],
                         mode="lines+markers",
                         marker_symbol=symbols,
                         marker_size=sizes,
@@ -1413,8 +1494,8 @@ class HyperparameterTuningPlot(BasePlot):
 
                 fig.add_trace(
                     self._draw_line(
-                        x=list(range(1, len(y))),
-                        y=np.abs(np.diff(y)),
+                        x=m.trials.index,
+                        y=m.trials[met].diff(),
                         mode="lines+markers",
                         marker_symbol="circle",
                         parent=m.name,
@@ -1439,7 +1520,7 @@ class HyperparameterTuningPlot(BasePlot):
             ylabel="d",
         )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",

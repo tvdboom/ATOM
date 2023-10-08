@@ -35,7 +35,7 @@ packages are necessary for its correct functioning.
 * **[featuretools](https://www.featuretools.com/)** (>=1.27.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.3.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.7.2)
-* **[mlflow](https://mlflow.org/)** (>=2.5.0)
+* **[mlflow](https://mlflow.org/)** (>=2.7.1)
 * **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.23.0)
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
 * **[numpy](https://numpy.org/)** (>=1.23.0)

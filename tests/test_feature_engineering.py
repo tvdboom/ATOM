@@ -136,7 +136,7 @@ def test_genetic_non_improving_features():
         random_state=1,
     )
     _ = generator.fit_transform(X_reg, y_reg)
-    assert generator.genetic_features is None
+    assert generator.genetic_features_ is None
 
 
 def test_attribute_genetic_features():
@@ -149,7 +149,7 @@ def test_attribute_genetic_features():
         random_state=1,
     )
     _ = generator.fit_transform(X_bin, y_bin)
-    assert not generator.genetic_features.empty
+    assert not generator.genetic_features_.empty
 
 
 def test_updated_dataset():
@@ -160,7 +160,7 @@ def test_updated_dataset():
 
 
 def test_default_feature_names():
-    """Assert that the new features get correct default names."""
+    """Assert that the new features get the correct default names."""
     X = X_bin.copy()
     X["x31"] = range(len(X))
 
@@ -176,20 +176,6 @@ def test_default_feature_names():
 
 
 # Test FeatureGrouper ============================================= >>
-
-def test_groups_invalid_int():
-    """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper({"g1": [0, 99]})
-    with pytest.raises(ValueError, match=".*out of range.*"):
-        grouper.transform(X_bin)
-
-
-def test_groups_invalid_str():
-    """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper({"g1": [0, "invalid"]})
-    with pytest.raises(ValueError, match=".*not find any column.*"):
-        grouper.transform(X_bin)
-
 
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
@@ -226,13 +212,6 @@ def test_columns_are_kept():
     grouper = FeatureGrouper({"g1": [0, 1, 2]}, drop_columns=False)
     X = grouper.transform(X_bin)
     assert X.columns[0] == X_bin.columns[0]
-
-
-def test_attribute_is_created():
-    """Assert that the groups attribute is created."""
-    grouper = FeatureGrouper({"group_1": [0, 1], "group_2": [2, 3]})
-    grouper.transform(X_bin)
-    assert list(grouper.groups) == ["group_1", "group_2"]
 
 
 # Test FeatureSelector ============================================= >>

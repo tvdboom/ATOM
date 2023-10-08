@@ -201,7 +201,7 @@ def test_xgb_optimizes_score():
         est_params={"n_estimators": 10},
         ht_params={"pruner": PatientPruner(None, patience=1)},
     )
-    assert atom.xgb.trials["score"].sum() > 0  # All scores are positive
+    assert atom.xgb.trials["f1"].sum() > 0  # All scores are positive
 
 
 @patch("optuna.study.Study.get_trials")

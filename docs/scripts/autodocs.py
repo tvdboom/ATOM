@@ -21,6 +21,8 @@ import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
 
+from atom.utils.utils import Goal, Task
+
 
 # Variables ======================================================== >>
 
@@ -244,7 +246,7 @@ CUSTOM_URLS = dict(
 class DummyTrainer:
     """Dummy trainer class to call model instances."""
 
-    goal: str
+    goal: Goal
     device: str
     engine: str
 
@@ -657,7 +659,7 @@ class AutoDocs:
             """
             # Create the model from the trainer
             model = self.obj(goal=trainer.goal)
-            model.task = "binary" if trainer.goal == "class" else "reg"
+            model._task = Task(0) if trainer.goal.value == 0 else Task(1)
 
             text = ""
             for name, dist in model._get_distributions().items():
@@ -674,10 +676,7 @@ class AutoDocs:
         for goal in self.obj._estimators:
             if len(self.obj._estimators) > 1:
                 indent = " " * 4
-                if goal == "class":
-                    content += '\n=== "classification"\n'
-                elif goal == "reg":
-                    content += '\n=== "regression"\n'
+                content += f'\n=== "{goal}"\n'
 
             for engine in self.obj.supports_engines:
                 sub_indent = indent
@@ -690,11 +689,11 @@ class AutoDocs:
                     for device in ("cpu", "gpu"):
                         content += f'\n{sub_indent}=== "{device}"\n'
 
-                        trainer = DummyTrainer(goal, device, engine)
+                        trainer = DummyTrainer(Goal(goal), device, engine)
                         content += f"{sub_indent + ' ' * 4}{create_table(trainer)}\n\n"
                 else:
                     trainer = DummyTrainer(
-                        goal=goal,
+                        goal=Goal(goal),
                         device="cpu" if engine == "sklearn" else "gpu",
                         engine=engine,
                     )

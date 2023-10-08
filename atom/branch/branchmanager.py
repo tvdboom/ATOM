@@ -13,7 +13,9 @@ import shutil
 from copy import copy, deepcopy
 
 from beartype import beartype
+from beartype.typing import Iterator
 from joblib.memory import Memory
+from sklearn.utils.validation import check_memory
 
 from atom.branch.branch import Branch
 from atom.utils.types import Bool, DataFrame, Int
@@ -22,29 +24,37 @@ from atom.utils.utils import ClassMap, DataContainer
 
 @beartype
 class BranchManager:
-    """Object to manage branches.
+    """Object that manages branches.
 
     Maintains references to a series of branches and the current
-    active branch. Additionally, stores an 'original' branch separately
-    from the rest, intended for the branch containing the original
-    dataset (previous to any transformations). The branches share a
-    reference to any holdout set, not the BranchManager self.
+    active branch. Additionally, always stores an 'original' branch
+    containing the original dataset (previous to any transformations).
+    The branches share a reference to a holdout set, not the instance
+    self. When a memory object is specified, it stores inactive
+    branches in memory.
 
     Read more in the [user guide][branches].
 
+    !!! warning
+        This class should not be called directly. The BranchManager is
+        created internally by the [ATOMClassifier][], [ATOMForecaster][]
+        and [ATOMRegressor][] classes.
+
     Parameters
     ----------
-    memory: [Memory][joblibmemory]
+    memory: str, [Memory][joblibmemory] or None, default=None
         Location to store inactive branches. If None, all branches
-        are kept in memory.
+        are kept in memory. This memory object is passed to the
+        branches for pipeline caching.
 
     Attributes
     ----------
     branches: ClassMap
         Collection of branches.
 
-    og: [Branch][] or None
-        Original branch. None if no branches have transformations.
+    og: [Branch][]
+        Branch containing the original dataset. It can be any branch
+        in `branches` or an internally made branch called `og`.
 
     current: [Branch][]
         Current active branch.
@@ -79,31 +89,31 @@ class BranchManager:
 
     """
 
-    def __init__(self, memory: Memory):
-        self.memory = memory
+    def __init__(self, memory: str | Memory | None = None):
+        self.memory = check_memory(memory)
 
         self.branches = ClassMap()
         self.add("main")
 
-        self._og = None
+        self._og: Branch | None = None
 
     def __repr__(self) -> str:
-        return f"BranchManager([{', '.join(self.branches.keys())}], og={self.og})"
+        return f"BranchManager([{', '.join(self.branches.keys())}], og={self.og.name})"
 
     def __len__(self) -> Int:
         return len(self.branches)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Branch]:
         yield from self.branches
 
     def __contains__(self, item: str) -> Bool:
         return item in self.branches
 
     def __getitem__(self, item: Int | str) -> Branch:
-        if item in self.branches:
+        try:
             return self.branches[item]
-        else:
-            raise RuntimeError(
+        except KeyError:
+            raise IndexError(
                 f"This {self.__class__.__name__} instance has no branch {item}."
             )
 
@@ -112,26 +122,22 @@ class BranchManager:
         """Branch containing the original dataset.
 
         This branch contains the data prior to any transformations.
-        It redirects to the first branch with an empty pipeline to not
-        have the same data in memory twice.
+        It redirects to the first branch with an empty pipeline (if
+        it exists), or to an internally made branch called `og`.
 
         """
         return self._og or next(b for b in self.branches if not b.pipeline.steps)
 
     @property
     def current(self) -> Branch:
+        """Current active branch."""
         return self._current
 
     @current.setter
     def current(self, branch: str):
         self._current.store()
-        self._current = self.branches[branch]
+        self._current: Branch = self.branches[branch]
         self._current.load()
-
-    @current.deleter
-    def current(self):
-        del self.branches[self.current.name]
-        self._current = self.branches[0]
 
     @staticmethod
     def _copy_from_parent(branch: Branch, parent: Branch):
@@ -146,18 +152,21 @@ class BranchManager:
             Parent branch from which to get the info from.
 
         """
-        if branch.name == "og" and parent._location:
+        if branch.name == "og" and parent._location and branch._location:
             # Make a new copy of the data for the og branch
             parent.store(assign=False)
-            shutil.copy(f"{parent._location}.pkl", f"{branch._location}.pkl")
+            shutil.copy(
+                parent._location.joinpath(f"{parent}.pkl"),
+                branch._location.joinpath(f"{branch}.pkl"),
+            )
         elif parent._location:
             # Transfer data from memory to avoid having
             # the datasets in memory twice at one time
             parent.store()
-            setattr(branch, "_data", parent.load(assign=False))
+            setattr(branch, "_container", parent.load(assign=False))
         else:
             # Copy the dataset in-memory
-            setattr(branch, "_data", deepcopy(parent._data))
+            setattr(branch, "_container", deepcopy(parent._container))
 
         # Deepcopy the pipeline but use the same estimators
         setattr(branch, "_pipeline", deepcopy(getattr(parent, "_pipeline")))
@@ -212,7 +221,7 @@ class BranchManager:
             Holdout data set (if any).
 
         """
-        self.current._data = data
+        self.current._container = data
         self.current._holdout = holdout
 
     def reset(self, hard: Bool = False):
@@ -225,7 +234,7 @@ class BranchManager:
         Parameters
         ----------
         hard: bool, default=False
-            If True, also deletes the cached memory (if enabled).
+            If True, flushes completely the cache.
 
         """
         self.branches = ClassMap()
@@ -233,4 +242,4 @@ class BranchManager:
         self._og = None
 
         if hard:
-            self.pipeline._memory.clear()
+            self.memory.clear(warn=False)

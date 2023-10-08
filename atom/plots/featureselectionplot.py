@@ -9,16 +9,22 @@ Description: Module containing the FeatureSelectionPlot class.
 
 from __future__ import annotations
 
+from abc import ABC
+from pathlib import Path
+
 import numpy as np
 import plotly.graph_objects as go
-from sklearn.utils.metaestimators import available_if
+from beartype import beartype
+from beartype.typing import Any
+from sklearn.base import is_classifier
 
 from atom.plots.base import BasePlot
-from atom.utils.types import Int, Legend
-from atom.utils.utils import crash, has_attr
+from atom.utils.types import Bool, IntLargerZero, Legend
+from atom.utils.utils import crash
 
 
-class FeatureSelectionPlot(BasePlot):
+@beartype
+class FeatureSelectionPlot(BasePlot, ABC):
     """Feature selection plots.
 
     These plots are accessible from atom or from the FeatureSelector
@@ -26,17 +32,16 @@ class FeatureSelectionPlot(BasePlot):
 
     """
 
-    @available_if(has_attr("pca_"))
     @crash
     def plot_components(
         self,
-        show: Int | None = None,
+        show: IntLargerZero | None = None,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "lower right",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the explained variance ratio per component.
 
@@ -68,7 +73,7 @@ class FeatureSelectionPlot(BasePlot):
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of components shown.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -101,17 +106,17 @@ class FeatureSelectionPlot(BasePlot):
         ```
 
         """
-        if show is None or show > self.pca_.components_.shape[0]:
-            # Limit max features shown to avoid maximum figsize error
-            show = min(200, self.pca_.components_.shape[0])
-        elif show < 1:
+        if not hasattr(self, "pca_"):
             raise ValueError(
-                "Invalid value for the show parameter. "
-                f"Value should be >0, got {show}."
+                "The plot_pca method is only available for instances "
+                "that ran feature selection using the 'pca' strategy, "
+                "e.g., atom.feature_selection(strategy='pca')."
             )
 
         # Get the variance ratio per component
         variance = np.array(self.pca_.explained_variance_ratio_)
+
+        show_c = self._get_show(show, len(variance))
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -143,25 +148,24 @@ class FeatureSelectionPlot(BasePlot):
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Explained variance ratio",
-            ylim=(len(variance) - show - 0.5, len(variance) - 0.5),
+            ylim=(len(variance) - show_c - 0.5, len(variance) - 0.5),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_components",
             filename=filename,
             display=display,
         )
 
-    @available_if(has_attr("pca_"))
     @crash
     def plot_pca(
         self,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the explained variance ratio vs number of components.
 
@@ -187,7 +191,7 @@ class FeatureSelectionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -220,6 +224,13 @@ class FeatureSelectionPlot(BasePlot):
         ```
 
         """
+        if not hasattr(self, "pca_"):
+            raise ValueError(
+                "The plot_components method is only available for instances "
+                "that ran feature selection using the 'pca' strategy, "
+                "e.g., atom.feature_selection(strategy='pca')."
+            )
+
         # Create star symbol at selected number of components
         symbols = ["circle"] * self.pca_.n_features_in_
         symbols[self.pca_._comps - 1] = "star"
@@ -269,16 +280,15 @@ class FeatureSelectionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_attr("rfecv_"))
     @crash
     def plot_rfecv(
         self,
         *,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = None,
-        figsize: tuple[Int, Int] = (900, 600),
-        filename: str | None = None,
-        display: bool | None = True,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the rfecv results.
 
@@ -306,7 +316,7 @@ class FeatureSelectionPlot(BasePlot):
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,
@@ -339,10 +349,17 @@ class FeatureSelectionPlot(BasePlot):
         ```
 
         """
+        if not hasattr(self, "rfecv_"):
+            raise ValueError(
+                "The plot_rfecv method is only available for instances "
+                "that ran feature selection using the 'rfecv' strategy, "
+                "e.g., atom.feature_selection(strategy='rfecv')."
+            )
+
         try:  # Define the y-label for the plot
             ylabel = self.rfecv_.get_params()["scoring"].name
         except AttributeError:
-            ylabel = "accuracy" if self.goal.startswith("class") else "r2"
+            ylabel = "accuracy" if is_classifier(self.rfecv_.estimator_) else "r2"
 
         x = range(self.rfecv_.min_features_to_select, self.rfecv_.n_features_in_ + 1)
 

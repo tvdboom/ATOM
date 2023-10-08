@@ -10,17 +10,17 @@ Description: Module containing the BaseTrainer class.
 from __future__ import annotations
 
 import traceback
+from abc import ABC
 from datetime import datetime as dt
-from typing import Any
 
 import joblib
 import mlflow
 import numpy as np
 import ray
+from beartype.typing import Any
 from joblib import Parallel, delayed
 from optuna import Study, create_study
 
-from atom.basemodel import BaseModel
 from atom.baserunner import BaseRunner
 from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
@@ -28,12 +28,12 @@ from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
 from atom.utils.types import Model, SequenceTypes
 from atom.utils.utils import (
-    ClassMap, DataConfig, check_dependency, get_best_score, get_custom_scorer,
-    lst, sign, time_to_str,
+    ClassMap, DataConfig, Goal, Task, check_dependency, get_best_score,
+    get_custom_scorer, lst, sign, time_to_str,
 )
 
 
-class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
+class BaseTrainer(BaseRunner, RunnerPlot, ABC):
     """Base class for trainers.
 
     Implements methods to check the validity of the parameters,
@@ -75,8 +75,6 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         self._config = DataConfig()
         self._branches = BranchManager(memory=self.memory)
 
-        self.task = None
-
         self._n_trials = {}
         self._n_bootstrap = {}
         self._ht_params = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
@@ -103,7 +101,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         Returns
         -------
         dict
-            Parameter with model names as key.
+            Parameter with model names as keys.
 
         """
         if isinstance(value, SequenceTypes):
@@ -130,20 +128,20 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
 
         # Assign default scorer
         if not self._metric:
-            if self.goal.startswith("class"):
-                if self.task.startswith("bin"):
+            if self.task.is_classification:
+                if self.task is Task.binary_classification:
                     # Binary classification
                     self._metric = ClassMap(get_custom_scorer("f1"))
-                elif self.task.startswith("multiclass"):
+                elif self.task.is_multiclass:
                     # Multiclass, multiclass-multioutput classification
                     self._metric = ClassMap(get_custom_scorer("f1_weighted"))
-                elif self.task.startswith("multilabel"):
+                elif self.task is Task.multilabel_classification:
                     # Multilabel classification
                     self._metric = ClassMap(get_custom_scorer("ap"))
-            elif self.goal.startswith("reg"):
+            elif self.task.is_regression:
                 # Regression, multioutput regression
                 self._metric = ClassMap(get_custom_scorer("r2"))
-            else:
+            elif self.task.is_forecast:
                 # Forecasting
                 self._metric = ClassMap(get_custom_scorer("mape"))
         elif not isinstance(self._metric, ClassMap):
@@ -159,14 +157,15 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         # Define models ============================================ >>
 
         kwargs = dict(
-            goal=self.goal,
+            goal=self._goal,
             config=self._config,
             branches=self._branches,
             metric=self._metric,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 
-        inc, exc = [], []
+        inc: list[str] = []
+        exc: list[str] = []
         for model in self._models:
             if isinstance(model, str):
                 for m in model.split("+"):
@@ -185,12 +184,11 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
                             raise ValueError(
                                 f"Invalid value for the models parameter, got {m}. "
                                 "Note that tags must be separated by an underscore. "
-                                f"Available model are:\n" + "\n".join(
-                                    [
-                                        f" --> {m.__name__} ({m.acronym})"
-                                        for m in MODELS if self.goal in m._estimators
-                                    ]
-                                )
+                                f"Available model are:\n"
+                                "\n".join([
+                                    f" --> {m.__name__} ({m.acronym})"
+                                    for m in MODELS if self._goal.name in m._estimators
+                                ])
                             )
 
                         # Check if libraries for non-sklearn models are available
@@ -203,20 +201,23 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
                         if cls.acronym in dependencies:
                             check_dependency(dependencies[cls.acronym])
 
-                        inc.append(instance := cls(f"{cls.acronym}{tag}", **kwargs))
-
                         # Check if the model supports the task
-                        if self.goal not in inc[-1]._estimators:
+                        if self._goal.name not in cls._estimators:
                             # Forecast task can use regression models
-                            if self.goal == "fc" and "reg" in inc[-1]._estimators:
-                                pass  # TODO
+                            if (
+                                self._goal.name == "forecast"
+                                and "regression" in cls._estimators
+                            ):
+                                kwargs["goal"] = Goal.Regression
                             else:
                                 raise ValueError(
-                                    f"The {instance._fullname} model is "
-                                    f"not available for {self.task} tasks!"
+                                    f"The {cls.__name__} model is not "
+                                    f"available for {self.task.name} tasks!"
                                 )
 
-            elif isinstance(model, BaseModel):  # For reruns
+                        inc.append(cls(name=f"{cls.acronym}{tag}", **kwargs))
+
+            elif isinstance(model, Model):  # For new instances or reruns
                 inc.append(model)
 
             else:  # Model is a custom estimator
@@ -239,7 +240,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
         else:
             self._models = ClassMap(
                 model(**kwargs) for model in MODELS
-                if self.goal in model._estimators and model.acronym not in exc
+                if self._goal.name in model._estimators and model.acronym not in exc
             )
 
         # Prepare est_params ======================================= >>
@@ -384,7 +385,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
             if self.backend == "ray":
                 # This implementation is more efficient than through joblib's
                 # ray backend. The difference is that in this one you start N
-                # tasks, and in the other, you start N actors and then has them
+                # tasks, and in the other, you start N actors and then have them
                 # each run the function
                 execute_remote = ray.remote(num_cpus=self.n_jobs)(execute_model)
                 models = ray.get([execute_remote.remote(m) for m in self._models])
@@ -406,7 +407,8 @@ class BaseTrainer(BaseTransformer, BaseRunner, RunnerPlot):
 
         if not self._models:
             raise RuntimeError(
-                "All models failed to run. Use the logger to investigate the exceptions."
+                "All models failed to run. Use the logger to investigate the "
+                "exceptions or set parameter errors='raise' to raise the exception."
             )
 
         self._log(f"\n\nFinal results {'=' * 20} >>", 1)

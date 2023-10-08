@@ -25,7 +25,7 @@ different data sets:
   The holdout set is immediately set apart during initialization and is
   not considered part of atom's dataset (the `dataset` attribute only
   returns the train and test sets). The holdout set is left untouched
-  until predictions are made on it, i.e. it does not undergo any pipeline
+  until predictions are made on it, i.e., it does not undergo any pipeline
   transformations until the data set is requested for the first time.
   The holdout set is stored in atom's `holdout` attribute. See
   [here][example-holdout-set]an example that shows how to use the holdout
@@ -108,7 +108,7 @@ Click [here][example-nlp] to see an example that uses sparse data.
 
 ## Multioutput tasks
 
-Multioutput is a task where there are more than one target column, i.e.
+Multioutput is a task where there are more than one target column, i.e.,
 the goal is to predict multiple targets at the same time. When providing
 a dataframe as target, use the [y][atomclassifier-y] parameter. Providing
 `y` without keyword makes ATOM think you are providing `train, test` (see

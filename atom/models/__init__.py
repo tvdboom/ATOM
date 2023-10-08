@@ -5,9 +5,9 @@ Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
 Description: Module for models.
 
-To add new models note the following:
+To add new models, note the following:
 
-1. Add the class in the right file depending on task.
+1. Add the class in the right file depending on the task.
 2. Models are ordered alphabetically.
 3. Models have the following structure:
 
@@ -39,7 +39,7 @@ To add new models note the following:
 
     _module: str
         Module from which to load the class. If one of engines,
-        ignore the engine name, i.e. use "ensemble" instead of
+        ignore the engine name, i.e., use "ensemble" instead of
         "sklearn.ensemble".
 
     _estimators: CustomDict
@@ -55,9 +55,9 @@ To add new models note the following:
     Methods
     -------
     _get_parameters(self, x) -> CustomDict:
-        Return the trial's suggestions with rounded decimals and
-        (optionally) custom changes to the params. Don't implement
-        if the parent's implementation is sufficient.
+        Return the trial's suggestions with (optionally) custom changes
+        to the params. Don't implement if the parent's implementation
+        is sufficient.
 
     _trial_to_est(self, params) -> CustomDict:
         Convert trial's hyperparameters to parameters for the
@@ -74,7 +74,6 @@ To add new models note the following:
 
 """
 
-from atom.basemodel import ClassRegModel
 from atom.models.classreg import (
     AdaBoost, AutomaticRelevanceDetermination, Bagging, BayesianRidge,
     BernoulliNB, CatBoost, CategoricalNB, ComplementNB, DecisionTree, Dummy,
@@ -87,6 +86,7 @@ from atom.models.classreg import (
     QuadraticDiscriminantAnalysis, RadiusNearestNeighbors, RandomForest, Ridge,
     StochasticGradientDescent, SupportVectorMachine, XGBoost,
 )
+from atom.models.custom import CustomModel
 from atom.models.ensembles import Stacking, Voting
 from atom.models.ts import (
     ARIMA, ETS, AutoARIMA, ExponentialSmoothing, NaiveForecaster,
@@ -150,59 +150,3 @@ ENSEMBLES = ClassMap(Stacking, Voting, key="acronym")
 
 # Available models + ensembles
 MODELS_ENSEMBLES = ClassMap(*MODELS, *ENSEMBLES, key="acronym")
-
-
-class CustomModel(ClassRegModel):
-    """Model with estimator provided by user."""
-
-    def __init__(self, **kwargs):
-        if callable(est := kwargs.pop("estimator")):  # Estimator provided by the user
-            self._est = est
-            self._params = {}
-        else:
-            self._est = est.__class__
-            self._params = est.get_params()  # Store the provided parameters
-
-        if hasattr(est, "name"):
-            name = est.name
-        else:
-            # If no name is provided, use the name of the class
-            name = self._fullname
-            if len(n := list(filter(str.isupper, name))) >= 2 and n not in MODELS:
-                name = "".join(n)
-
-        self.acronym = getattr(est, "acronym", name)
-        if not name.startswith(self.acronym):
-            raise ValueError(
-                f"The name ({name}) and acronym ({self.acronym}) of model "
-                f"{self._fullname} do not match. The name should start with "
-                f"the model's acronym."
-            )
-
-        self.needs_scaling = getattr(est, "needs_scaling", False)
-        self.native_multilabel = getattr(est, "native_multilabel", False)
-        self.native_multioutput = getattr(est, "native_multioutput", False)
-        self.has_validation = getattr(est, "has_validation", None)
-
-        super().__init__(name=name, **kwargs)
-
-    @property
-    def _fullname(self) -> str:
-        """Return the estimator's class name."""
-        return self._est_class.__name__
-
-    @property
-    def _est_class(self):
-        """Return the estimator's class."""
-        return self._est
-
-    def _get_est(self, **params) -> Predictor:
-        """Get the model's estimator with unpacked parameters.
-
-        Returns
-        -------
-        Predictor
-            Estimator instance.
-
-        """
-        return super()._get_est(**{**self._params, **params})

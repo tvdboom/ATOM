@@ -20,13 +20,13 @@ from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Callable
 
 import dagshub
 import mlflow
 import numpy as np
 import ray
 import requests
+from beartype.typing import Callable, TypeVar
 from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from ray.util.joblib import register_ray
@@ -36,8 +36,8 @@ from sktime.datatypes import check_is_mtype
 
 from atom.utils.types import (
     Backend, Bool, DataFrame, DataFrameTypes, Engine, Estimator, Features, Int,
-    IntTypes, Pandas, Scalar, Sequence, SequenceTypes, Severity, Target,
-    Verbose, Warnings,
+    IntTypes, Pandas, Sequence, SequenceTypes, Severity, Target, Verbose,
+    Warnings,
 )
 from atom.utils.utils import (
     DataContainer, bk, crash, get_cols, lst, merge, n_cols, pd, sign, to_df,
@@ -45,11 +45,14 @@ from atom.utils.utils import (
 )
 
 
+T_Estimator = TypeVar("T_Estimator", bound=Estimator)
+
+
 class BaseTransformer:
     """Base class for transformers in the package.
 
     Note that this includes atom and runners. Contains shared
-    properties, data preparation methods and utility methods.
+    properties, data preparation methods, and utility methods.
 
     Parameters
     ----------
@@ -126,7 +129,7 @@ class BaseTransformer:
             )
 
         # Update env variable to use for PandasModin in utils.py
-        os.environ["ATOM_DATA_Engine"] = value.get("data", "numpy")
+        os.environ["ATOM_DATA_ENGINE"] = value.get("data", "numpy")
 
         if value.get("estimator") == "sklearnex":
             if not find_spec("sklearnex"):
@@ -174,12 +177,14 @@ class BaseTransformer:
         return self._memory
 
     @memory.setter
-    def memory(self, value: Bool | str | Memory):
+    def memory(self, value: Bool | str | Path | Memory):
         """Create a new internal memory object."""
         if value is False:
             value = None
         elif value is True:
             value = tempfile.gettempdir()
+        elif isinstance(value, Path):
+            value = str(value)
 
         self._memory = check_memory(value)
 
@@ -211,7 +216,7 @@ class BaseTransformer:
         warnings.filterwarnings("ignore", category=ResourceWarning, module=".*ray.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
         warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*shap.*")
-        os.environ["PYTHONWarnings"] = self._warnings  # Affects subprocesses (joblib)
+        os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
 
     @property
     def logger(self) -> Logger | None:
@@ -251,7 +256,7 @@ class BaseTransformer:
                 logger.handlers.clear()
 
                 # Prepare the FileHandler
-                if not (path := Path(value)).suffix == ".log":
+                if (path := Path(value)).suffix != ".log":
                     path = path.with_suffix(".log")
                 if path.name == "auto.log":
                     now = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
@@ -299,12 +304,12 @@ class BaseTransformer:
             mlflow.set_experiment(value)
 
     @property
-    def random_state(self) -> Int | None:
+    def random_state(self) -> int | None:
         """Seed used by the random number generator."""
         return self._random_state
 
     @random_state.setter
-    def random_state(self, value: Int | None):
+    def random_state(self, value: int | None):
         if value and value < 0:
             raise ValueError(
                 "Invalid value for the random_state parameter. "
@@ -336,7 +341,7 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _inherit(self, obj: Estimator) -> Estimator:
+    def _inherit(self, obj: T_Estimator) -> T_Estimator:
         """Inherit n_jobs and/or random_state from parent.
 
         Utility method to set the n_jobs and random_state parameters
@@ -344,12 +349,12 @@ class BaseTransformer:
 
         Parameters
         ----------
-        obj: object
+        obj: Estimator
             Object in which to change the parameters.
 
         Returns
         -------
-        object
+        Estimator
             Same object with changed parameters.
 
         """
@@ -360,10 +365,10 @@ class BaseTransformer:
 
         return obj
 
-    def _get_est_class(self, name: str, module: str) -> Estimator:
+    def _get_est_class(self, name: str, module: str) -> type[Estimator]:
         """Import a class from a module.
 
-        When the import fails, for example if atom uses sklearnex and
+        When the import fails, for example, if atom uses sklearnex and
         that's passed to a transformer, use sklearn's (default engine).
 
         Parameters
@@ -390,7 +395,7 @@ class BaseTransformer:
     def _prepare_input(
         X: Callable | Features | None = None,
         y: Target | None = None,
-        columns: Sequence | None = None,
+        columns: Sequence[str] | None = None,
     ) -> tuple[DataFrame | None, Pandas | None]:
         """Prepare the input data.
 
@@ -612,9 +617,9 @@ class BaseTransformer:
 
     def _get_data(
         self,
-        arrays: Sequence,
+        arrays: tuple,
         y: Target = -1,
-    ) -> tuple[DataFrame, DataContainer, DataFrame | None]:
+    ) -> tuple[DataContainer, DataFrame | None]:
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -622,7 +627,7 @@ class BaseTransformer:
 
         Parameters
         ----------
-        arrays: sequence of indexables
+        arrays: tuple of indexables
             Data set(s) provided. Should follow the API input format.
 
         y: int, str or sequence, default=-1
@@ -630,11 +635,8 @@ class BaseTransformer:
 
         Returns
         -------
-        dataframe
-            Dataset containing the train and test sets.
-
         DataContainer
-            Indices of the train and test sets.
+            Train and test sets.
 
         dataframe or None
             Holdout data set. Returns None if not specified.
@@ -666,7 +668,7 @@ class BaseTransformer:
 
             if self.shuffle:
                 return df.iloc[random.sample(range(len(df)), k=n_rows)]
-            elif self.goal == "fc":
+            elif self._goal == "fc":
                 return df.iloc[-n_rows:]  # For forecasting, select from tail
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
@@ -901,7 +903,7 @@ class BaseTransformer:
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self.goal == "fc" and not isinstance(y, (Int, str)):
+            if self._goal == "fc" and not isinstance(y, (Int, str)):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._prepare_input(y=y))
             elif not self.branch._data:
@@ -927,7 +929,7 @@ class BaseTransformer:
                     # arrays=(X, y)
                     sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
                 except ValueError as ex:
-                    if self.goal == "fc":
+                    if self._goal == "fc":
                         # arrays=(train, test) for forecast
                         X_train, y_train = self._prepare_input(y=arrays[0])
                         X_test, y_test = self._prepare_input(y=arrays[1])
@@ -972,7 +974,7 @@ class BaseTransformer:
                 "Invalid data arrays. See the documentation for the allowed formats."
             )
 
-        if self.goal == "fc":
+        if self._goal == "fc":
             # For forecasting, check if index complies with sktime's standard
             valid, msg, _ = check_is_mtype(
                 obj=pd.DataFrame(bk.concat([sets[0].data, sets[1]])),
@@ -994,12 +996,12 @@ class BaseTransformer:
         return sets
 
     @crash
-    def _log(self, msg: Scalar | str, level: Int = 0, severity: Severity = "info"):
+    def _log(self, msg: str, level: Int = 0, severity: Severity = "info"):
         """Print message and save to log file.
 
         Parameters
         ----------
-        msg: int, float or str
+        msg: str
             Message to save to the logger and print to stdout.
 
         level: int, default=0

@@ -16,16 +16,16 @@ import warnings
 from collections import deque
 from collections.abc import MutableMapping
 from contextlib import contextmanager
-from copy import copy
+from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import datetime as dt
+from enum import Enum
 from functools import wraps
 from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import Any, Callable
 from unittest.mock import patch
 
 import mlflow
@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
+from beartype.typing import Any, Callable, Hashable, TypeVar
 from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
@@ -51,10 +52,14 @@ from sklearn.utils import _print_elapsed_time
 from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, Estimator, Features, Float, Index,
-    IndexSelector, Int, IntTypes, Model, Pandas, PandasTypes, Predictor,
-    Scalar, Scorer, Sequence, SequenceTypes, Series, SeriesTypes, Target,
-    Transformer, Verbose,
+    IndexSelector, Int, IntTypes, MetricConstructor, Model, Pandas,
+    PandasTypes, Predictor, Scalar, Scorer, Segment, SegmentTypes, Sequence,
+    SequenceTypes, Series, SeriesTypes, Target, Transformer, Verbose,
 )
+
+
+T = TypeVar("T")
+T_Pandas = TypeVar("T_Pandas", Series, DataFrame)
 
 
 # Classes ========================================================== >>
@@ -66,6 +71,97 @@ class NotFittedError(ValueError, AttributeError):
     help with exception handling and backward compatibility.
 
     """
+
+
+class Goal(Enum):
+    """Supported goals by ATOM."""
+    classification = 1
+    regression = 2
+    forecast = 3
+
+    def infer_task(self, y: Pandas) -> Task:
+        """Infer the task corresponding to a target column.
+
+        Parameters
+        ----------
+        y: series or dataframe
+            Target column(s).
+
+        Returns
+        -------
+        Task
+            Inferred task.
+
+        """
+        if self.value == 2:
+            if y.ndim == 1:
+                return Task.regression
+            else:
+                return Task.multioutput_regression
+        elif self.value == 3:
+            if y.ndim == 1:
+                return Task.univariate_forecast
+            else:
+                return Task.multivariate_forecast
+
+        if y.ndim > 1:
+            if all(y[col].nunique() == 2 for col in y):
+                return Task.multilabel_classification
+            else:
+                return Task.multiclass_multioutput_classification
+        elif isinstance(y.iloc[0], SequenceTypes):
+            return Task.multilabel_classification
+        elif y.nunique() == 1:
+            raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
+        elif y.nunique() == 2:
+            return Task.binary_classification
+        else:
+            return Task.multiclass_classification
+
+
+class Task(Enum):
+    """Supported tasks by ATOM."""
+    binary_classification = 1
+    multiclass_classification = 2
+    multilabel_classification = 3
+    multiclass_multioutput_classification = 4
+    regression = 5
+    multioutput_regression = 6
+    univariate_forecast = 7
+    multivariate_forecast = 8
+
+    def __str__(self) -> str:
+        return self.name.replace("_", " ").capitalize()
+
+    @property
+    def is_classification(self) -> Bool:
+        """Return whether the task is a classification task."""
+        return self.value in (1, 2, 3, 4)
+
+    @property
+    def is_regression(self) -> Bool:
+        """Return whether the task is a regression task."""
+        return self.value in (5, 6)
+
+    @property
+    def is_forecast(self) -> Bool:
+        """Return whether the task is a forecast task."""
+        return self.value in (7, 8)
+
+    @property
+    def is_binary(self) -> Bool:
+        """Return whether the task is binary or multilabel."""
+        return self.value in (1, 3)
+
+    @property
+    def is_multiclass(self) -> Bool:
+        """Return whether the task is multiclass or multiclass-multioutput."""
+        return self.value in (2, 4)
+
+    @property
+    def is_multioutput(self) -> Bool:
+        """Return whether the task has more than one target column."""
+        return self.value in (3, 4, 6, 8)
 
 
 @dataclass
@@ -92,15 +188,26 @@ class DataContainer:
     n_cols: Int  # Number of target columns
 
 
+@dataclass
+class Aesthetics:
+    """Keeps track of plot aesthetics."""
+    palette: str | Sequence[str] | dict[str, str]  # Sequence of colors
+    title_fontsize: Int  # Fontsize for titles
+    label_fontsize: Int  # Fontsize for labels, legend and hoverinfo
+    tick_fontsize: Int  # Fontsize for ticks
+    line_width: Int  # Width of the line plots
+    marker_size: Int  # Size of the markers
+
+
 class PandasModin:
     """Utility class to select the right data engine.
 
     Returns pandas or modin depending on the env variable
-    ATOM_DATA_Engine, which is set in BaseTransformer.py.
+    ATOM_DATA_ENGINE, which is set in BaseTransformer.py.
 
     """
     def __getattr__(self, item: str) -> Any:
-        if os.environ.get("ATOM_DATA_Engine") == "modin":
+        if os.environ.get("ATOM_DATA_ENGINE") == "modin":
             return getattr(md, item)
         else:
             return getattr(pd, item)
@@ -118,11 +225,11 @@ class CatBMetric:
     scorer: Scorer
         Scorer to evaluate. It's always the runner's main metric.
 
-    task: str
+    task: Task
         Model's task.
 
     """
-    def __init__(self, scorer: Scorer, task: str):
+    def __init__(self, scorer: Scorer, task: Task):
         self.scorer = scorer
         self.task = task
 
@@ -175,14 +282,14 @@ class CatBMetric:
             Total weight.
 
         """
-        if is_binary(self.task):
+        if self.task.is_binary:
             # Convert CatBoost predictions to probabilities
             e = np.exp(approxes[0])
             y_pred = e / (1 + e)
             if self.scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = (y_pred > 0.5).astype(int)
 
-        elif self.task.startswith("multiclass"):
+        elif self.task.is_multiclass:
             y_pred = np.array(approxes).T
             if self.scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = np.argmax(y_pred, axis=1)
@@ -207,11 +314,11 @@ class LGBMetric:
     scorer: Scorer
         Scorer to evaluate. It's always the runner's main metric.
 
-    task: str
+    task: Task
         Model's task.
 
     """
-    def __init__(self, scorer: Scorer, task: str):
+    def __init__(self, scorer: Scorer, task: Task):
         self.scorer = scorer
         self.task = task
 
@@ -247,9 +354,9 @@ class LGBMetric:
 
         """
         if self.scorer.__class__.__name__ == "_PredictScorer":
-            if is_binary(self.task):
+            if self.task.is_binary:
                 y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.startswith("multiclass"):
+            elif self.task.is_multiclass:
                 y_pred = y_pred.reshape(len(np.unique(y_true)), len(y_true)).T
                 y_pred = np.argmax(y_pred, axis=1)
 
@@ -270,11 +377,11 @@ class XGBMetric:
     scorer: Scorer
         Scorer to evaluate. It's always the runner's main metric.
 
-    task: str
+    task: Task
         Model's task.
 
     """
-    def __init__(self, scorer: Scorer, task: str):
+    def __init__(self, scorer: Scorer, task: Task):
         self.scorer = scorer
         self.task = task
 
@@ -284,9 +391,9 @@ class XGBMetric:
 
     def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> Float:
         if self.scorer.__class__.__name__ == "_PredictScorer":
-            if is_binary(self.task):
+            if self.task.is_binary:
                 y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.startswith("multiclass"):
+            elif self.task.is_multiclass:
                 y_pred = np.argmax(y_pred, axis=1)
 
         score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
@@ -300,7 +407,7 @@ class Table:
     ----------
     headers: sequence
         Name of each column in the table. If an element is a tuple,
-        the second element, should be the position of the text in the
+        the second element should be the position of the text in the
         cell (left or right).
 
     spaces: sequence
@@ -397,7 +504,7 @@ class Table:
         """
         out = []
         for header, pos, space in zip(self.headers, self.positions, self.spaces):
-            out.append(self.to_cell(sequence.get(header, "---"), pos, space))
+            out.append(self.to_cell(rnd(sequence.get(header, "---")), pos, space))
 
         return "| " + " | ".join(out) + " |"
 
@@ -415,8 +522,7 @@ class TrialsCallback:
         Model from which the study is created.
 
     n_jobs: int
-        Number of parallel jobs for the study. If >1, no output is
-        showed.
+        Number of parallel jobs. If >1, no output is shown.
 
     """
 
@@ -432,34 +538,33 @@ class TrialsCallback:
     def __call__(self, study: Study, trial: FrozenTrial):
         # The trial values are None when it fails
         if len(self.T._metric) == 1:
-            score = [trial.value if trial.value is not None else np.NaN]
+            scores = [trial.value if trial.value is not None else np.NaN]
         else:
-            score = trial.values or [np.NaN] * len(self.T._metric)
+            scores = trial.values or [np.NaN] * len(self.T._metric)
 
         if trial.state.name == "PRUNED" and self.T.acronym == "XGB":
             # XGBoost's eval_metric minimizes the function
-            score = np.negative(score)
+            scores = np.negative(scores)
 
-        params = self.T._trial_to_est(trial.params)
         estimator = trial.user_attrs.get("estimator", None)
 
-        # Add row to the trials attribute
+        # Compute durations
         time_trial = (dt.now() - trial.datetime_start).total_seconds()
         time_ht = self.T._trials["time_trial"].sum() + time_trial
-        self.T._trials.loc[trial.number] = pd.Series(
-            {
-                "params": dict(params),  # To dict because of how pandas prints it
-                "estimator": estimator,
-                "score": flt(score),
-                "time_trial": time_trial,
-                "time_ht": time_ht,
-                "state": trial.state.name,
-            }
-        )
+
+        # Add row to the `trials` attribute
+        row = {"trial": trial.number, **trial.params}
+        for i, name in enumerate(self.T._metric.keys()):
+            row[name] = scores[i]
+            row[f"best_{name}"] = max(scores[i], self.T.trials[name].max())
+        row["time_trial"] = time_trial
+        row["time_ht"] = time_trial
+        row["state"] = trial.state.name
+        self.T._trials.loc[trial.number] = row
 
         # Save trials to mlflow experiment as nested runs
         if self.T.experiment and self.T.log_ht:
-            with mlflow.start_run(run_id=self.T._run.info.run_id):
+            with mlflow.start_run(run_id=self.T.run.info.run_id):
                 run_name = f"{self.T.name} - {trial.number}"
                 with mlflow.start_run(run_name=run_name, nested=True):
                     mlflow.set_tags(
@@ -473,14 +578,14 @@ class TrialsCallback:
                     )
 
                     # Mlflow only accepts params with char length <=250
-                    pars = estimator.get_params() if estimator else params
+                    pars = estimator.get_params() if estimator else trial.params
                     mlflow.log_params(
                         {k: v for k, v in pars.items() if len(str(v)) <= 250}
                     )
 
                     mlflow.log_metric("time_trial", time_trial)
                     for i, name in enumerate(self.T._metric.keys()):
-                        mlflow.log_metric(f"{name}_validation", score[i])
+                        mlflow.log_metric(f"{name}_validation", scores[i])
 
                     if estimator:
                         mlflow.sklearn.log_model(
@@ -494,14 +599,10 @@ class TrialsCallback:
                         )
 
         if self.n_jobs == 1:
-            sequence = {"trial": trial.number, **trial.params}
-            for i, m in enumerate(self.T._metric):
-                best_score = rnd(np.nanmax([lst(s)[i] for s in self.T.trials["score"]]))
-                sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
+            sequence = {"trial": trial.number}
+            sequence.update(self.T._trials.loc[trial.number].to_dict())
             sequence["time_trial"] = time_to_str(time_trial)
             sequence["time_ht"] = time_to_str(time_ht)
-            sequence["state"] = trial.state.name
-
             self.T._log(self._table.print(sequence), 2)
 
     def create_table(self) -> Table:
@@ -522,7 +623,7 @@ class TrialsCallback:
         spaces = [len(str(headers[0][0]))]
         for name, dist in self.T._ht["distributions"].items():
             # If the distribution is categorical, take the mean of the widths
-            # Else take the max of 7 (minimum width) and the width of the name
+            # Else take the max of seven (minimum width) and the width of the name
             if hasattr(dist, "choices"):
                 options = np.mean([len(str(x)) for x in dist.choices], axis=0, dtype=int)
             else:
@@ -562,7 +663,7 @@ class PlotCallback:
 
     max_len = 15  # Maximum trials to show at once in the plot
 
-    def __init__(self, name: str, metric: list[str], aesthetics: Any):
+    def __init__(self, name: str, metric: list[str], aesthetics: Aesthetics):
         self.y1 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
         self.y2 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
 
@@ -692,7 +793,7 @@ class ShapExplanation:
     estimator: Predictor
         Estimator to get the shap values from.
 
-    task: str
+    task: Task
         Model's task.
 
     branch: Branch
@@ -706,7 +807,7 @@ class ShapExplanation:
     def __init__(
         self,
         estimator: Predictor,
-        task: str,
+        task: Task,
         branch: Any,
         random_state: Int | None = None,
     ):
@@ -825,7 +926,7 @@ class ShapExplanation:
         explanation.base_values = self._explanation.base_values[0]
         explanation.data = self.branch._all.loc[df.index].to_numpy()
 
-        if is_multioutput(self.task):
+        if self.task.is_multioutput:
             if explanation.values.shape[-1] == self.branch.y.shape[1]:
                 # One explanation per column
                 explanation.values = explanation.values[:, :, target[0]]
@@ -896,6 +997,8 @@ class ClassMap:
     def __getitem__(self, key):
         if isinstance(key, SequenceTypes):
             return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
+        elif isinstance(key, SegmentTypes):
+            return self.__class__(*get_segment(self.__data, key), key=self.__key)
         elif isinstance(key, slice):
             return self.__class__(*self.__data[key], key=self.__key)
         else:
@@ -941,6 +1044,9 @@ class ClassMap:
 
     def keys(self) -> list:
         return [getattr(x, self.__key) for x in self.__data]
+
+    def values(self) -> list:
+        return self.__data
 
     def keys_lower(self) -> list:
         return list(map(self._conv, self.keys()))
@@ -1124,6 +1230,9 @@ class CustomDict(MutableMapping):
     def copy(self):
         return copy(self)
 
+    def deepcopy(self):
+        return deepcopy(self)
+
     def index(self, key):
         return self.__keys.index(self._get_key(key))
 
@@ -1160,8 +1269,8 @@ def flt(x: Any) -> Any:
     return x[0] if isinstance(x, SequenceTypes) and len(x) == 1 else x
 
 
-def lst(x: Any) -> Sequence:
-    """Make a sequence from an item if not a sequence already.
+def lst(x: Any) -> list[Any]:
+    """Make a list from an item if not a sequence already.
 
     Parameters
     ----------
@@ -1170,11 +1279,11 @@ def lst(x: Any) -> Sequence:
 
     Returns
     -------
-    sequence
-        Item as sequence with length 1 or provided sequence.
+    list
+        Item as list with length 1 or provided sequence as list.
 
     """
-    return x if isinstance(x, (dict, CustomDict, ClassMap, *SequenceTypes)) else [x]
+    return list(x) if isinstance(x, (dict, CustomDict, ClassMap, *SequenceTypes)) else [x]
 
 
 def it(x: Any) -> Any:
@@ -1305,7 +1414,7 @@ def merge(*args) -> DataFrame:
         return bk.DataFrame(bk.concat([*args], axis=1))
 
 
-def replace_missing_values(X: Pandas, missing_values: list[Any] | None = None) -> Pandas:
+def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_Pandas:
     """Replace all values considered 'missing' in a dataset.
 
     This method replaces the missing values in columns with pandas'
@@ -1329,10 +1438,18 @@ def replace_missing_values(X: Pandas, missing_values: list[Any] | None = None) -
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
 
-    return X.replace(
-        to_replace={k: (missing_values or []) + default_values for k in X},
-        value={k: np.NaN if isinstance(X[k].dtype, np.dtype) else pd.NA for k in X},
-    )
+    get_nan = lambda dtype: np.NaN if isinstance(dtype, np.dtype) else pd.NA
+
+    if isinstance(X, SeriesTypes):
+        return X.replace(
+            to_replace=(missing_values or []) + default_values,
+            value=get_nan(X.dtype),
+        )
+    else:
+        return X.replace(
+            to_replace={k: (missing_values or []) + default_values for k in X},
+            value={k: get_nan(X[k].dtype) for k in X},
+        )
 
 
 def get_cols(elem: Pandas) -> list[Series]:
@@ -1384,6 +1501,29 @@ def variable_return(
         return y
     else:
         return X, y
+
+
+def get_segment(obj: Sequence[T], segment: Segment) -> Sequence[T]:
+    """Get a subset of a sequence by range or slice.
+
+    Parameters
+    ----------
+    obj: sequence
+        Object to slice.
+
+    segment: range or slice
+        Segment to extract from the sequence.
+
+    Returns
+    -------
+    sequence
+        Subset of the original sequence.
+
+    """
+    if isinstance(segment, range):
+        return obj[segment]
+    else:
+        return obj[slice(segment.start, segment.stop, segment.step)]
 
 
 def is_sparse(obj: Pandas) -> bool:
@@ -1439,7 +1579,7 @@ def check_dependency(name: str):
         )
 
 
-def check_canvas(is_canvas: bool, method: str):
+def check_canvas(is_canvas: Bool, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
     Parameters
@@ -1458,34 +1598,6 @@ def check_canvas(is_canvas: bool, method: str):
         )
 
 
-def check_hyperparams(models: Model | Sequence, method: str) -> list[Model]:
-    """Check if the models ran hyperparameter tuning.
-
-    If no models did, raise an exception.
-
-    Parameters
-    ----------
-    models: model or sequence
-        Models to check.
-
-    method: str
-        Name of the method from which the check is called.
-
-    Returns
-    -------
-    list of models
-        Models that ran hyperparameter tuning.
-
-    """
-    if not (models := list(filter(lambda x: x.trials is not None, lst(models)))):
-        raise ValueError(
-            f"The {method} method is only available "
-            "for models that ran hyperparameter tuning."
-        )
-
-    return models
-
-
 def check_predict_proba(models: Model | Sequence, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
@@ -1500,7 +1612,7 @@ def check_predict_proba(models: Model | Sequence, method: str):
     """
     for m in lst(models):
         if not hasattr(m.estimator, "predict_proba"):
-            raise AttributeError(
+            raise PermissionError(
                 f"The {method} method is only available for "
                 f"models with a predict_proba method, got {m.name}."
             )
@@ -1597,7 +1709,7 @@ def adjust_verbosity(estimator: Estimator, verbose: Verbose | None):
             estimator.verbose = verbosity
 
 
-def get_versions(models: ClassMap) -> dict:
+def get_versions(models: ClassMap) -> dict[str, str]:
     """Get the versions of ATOM and the models' packages.
 
     Parameters
@@ -1747,8 +1859,8 @@ def to_pyarrow(column: Series, inverse: bool = False) -> str:
 
 def to_df(
     data: Features | None,
-    index: Sequence | None = None,
-    columns: Sequence | None = None,
+    index: Sequence[Hashable] | None = None,
+    columns: Sequence[str] | None = None,
     dtype: str | np.dtype | dict[str, str | np.dtype] | None = None,
 ) -> DataFrame | None:
     """Convert a dataset to a dataframe.
@@ -1792,15 +1904,15 @@ def to_df(
             if dtype is not None:
                 data = data.astype(dtype)
 
-        if os.environ.get("ATOM_DATA_Engine") == "pyarrow":
+        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
             data = data.astype({name: to_pyarrow(col) for name, col in data.items()})
 
     return data
 
 
 def to_series(
-    data: Sequence | None,
-    index: Sequence | None = None,
+    data: Sequence[Any] | None,
+    index: Sequence[Hashable] | None = None,
     name: str = "target",
     dtype: str | np.dtype | None = None,
 ) -> Series | None:
@@ -1840,16 +1952,16 @@ def to_series(
                     dtype=dtype,
                 )
 
-        if os.environ.get("ATOM_DATA_Engine") == "pyarrow":
+        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
             data = data.astype(to_pyarrow(data))
 
     return data
 
 
 def to_pandas(
-    data: Sequence | DataFrame | None,
-    index: Sequence | None = None,
-    columns: Sequence | None = None,
+    data: dict[str, Sequence[Any]] | Sequence[Sequence[Any]] | DataFrame | None,
+    index: Sequence[Hashable] | None = None,
+    columns: Sequence[str] | None = None,
     name: str = "target",
     dtype: str | dict | np.dtype | None = None,
 ) -> Pandas | None:
@@ -1888,10 +2000,10 @@ def to_pandas(
 
 
 def check_is_fitted(
-    estimator: Estimator,
-    exception: bool = True,
-    attributes: str | Sequence | None = None,
-) -> bool:
+    obj: Any,
+    exception: Bool = True,
+    attributes: str | Sequence[str] | None = None,
+) -> Bool:
     """Check whether an estimator is fitted.
 
     Checks if the estimator is fitted by verifying the presence of
@@ -1901,7 +2013,7 @@ def check_is_fitted(
 
     Parameters
     ----------
-    estimator: Estimator
+    obj: object
         Instance to check.
 
     exception: bool, default=True
@@ -1920,7 +2032,7 @@ def check_is_fitted(
 
     """
 
-    def check_attr(attr: str) -> bool:
+    def check_attr(attr: str) -> Bool:
         """Return whether an attribute is False or empty.
 
         Parameters
@@ -1935,17 +2047,17 @@ def check_is_fitted(
 
         """
         if attr:
-            if isinstance(value := getattr(estimator, attr), PandasTypes):
+            if isinstance(value := getattr(obj, attr), PandasTypes):
                 return value.empty
             else:
                 return not value
 
     is_fitted = False
-    if hasattr(estimator, "__sklearn_is_fitted__"):
-        return estimator.__sklearn_is_fitted__()
+    if hasattr(obj, "__sklearn_is_fitted__"):
+        return obj.__sklearn_is_fitted__()
     elif attributes is None:
         # Check for attributes from a fitted object
-        for k, v in vars(estimator).items():
+        for k, v in vars(obj).items():
             if k.endswith("_") and not k.startswith("__") and v is not None:
                 is_fitted = True
                 break
@@ -1955,9 +2067,9 @@ def check_is_fitted(
     if not is_fitted:
         if exception:
             raise NotFittedError(
-                f"This {type(estimator).__name__} instance is not fitted yet. "
-                f"Call {'run' if hasattr(estimator, 'run') else 'fit'} with "
-                "appropriate arguments before using this estimator."
+                f"This {type(obj).__name__} instance is not fitted yet. "
+                f"Call {'run' if hasattr(obj, 'run') else 'fit'} with "
+                "appropriate arguments before using this object."
             )
         else:
             return False
@@ -1965,7 +2077,7 @@ def check_is_fitted(
     return True
 
 
-def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
+def get_custom_scorer(metric: MetricConstructor) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -2052,62 +2164,9 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
     return scorer
 
 
-def infer_task(y: Pandas, goal: str = "class") -> str:
-    """Infer the task corresponding to a target column.
-
-    Parameters
-    ----------
-    y: series or dataframe
-        Target column(s).
-
-    goal: str, default="class"
-        Classification or regression goal.
-
-    Returns
-    -------
-    str
-        Inferred task.
-
-    """
-    if goal == "reg":
-        if y.ndim == 1:
-            return "regression"
-        else:
-            return "multioutput regression"
-    elif goal == "fc":
-        if y.ndim == 1:
-            return "univariate forecast"
-        else:
-            return "multivariate forecast"
-
-    if y.ndim > 1:
-        if all(y[col].nunique() == 2 for col in y):
-            return "multilabel classification"
-        else:
-            return "multiclass-multioutput classification"
-    elif isinstance(y.iloc[0], SequenceTypes):
-        return "multilabel classification"
-    elif y.nunique() == 1:
-        raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
-    elif y.nunique() == 2:
-        return "binary classification"
-    else:
-        return "multiclass classification"
-
-
-def is_binary(task) -> bool:
-    """Return whether the task is binary or multilabel."""
-    return task in ("binary classification", "multilabel classification")
-
-
-def is_multioutput(task) -> bool:
-    """Return whether the task is binary or multilabel."""
-    return any(t in task for t in ("multilabel", "multioutput", "multivariate"))
-
-
 def get_feature_importance(
     est: Predictor,
-    attributes: Sequence | None = None,
+    attributes: Sequence[str] | None = None,
 ) -> np.ndarray | None:
     """Return the feature importance from an estimator.
 
@@ -2605,24 +2664,35 @@ def score(f: Callable) -> Callable:
 
 # Decorators ======================================================= >>
 
-def has_task(task: str | list[str], inverse: bool = False) -> Callable:
-    """Check that the instance is from a specific task.
+def has_task(task: str | Sequence[str]) -> Callable:
+    """Checks that the instance has a specific task.
+
+    If the check returns False, the decorated function becomes
+    unavailable for the instance.
 
     Parameters
     ----------
-    task: str or list of str
-        Task(s) to check.
+    task: str or sequence
+        Tasks to check. Choose from: classification, regression,
+        forecast, binary, multioutput. Add the character `!` before
+        a task to not allow that task instead.
 
-    inverse: bool, default=False
-        If True, checks that the parameter is not part of the task.
+    Returns
+    -------
+    func
+        Function to check.
 
     """
 
-    def check(self: Any) -> bool:
-        if inverse:
-            return not any(t in self.task for t in lst(task))
-        else:
-            return any(t in self.task for t in lst(task))
+    def check(runner: Any) -> Bool:
+        checks = []
+        for t in lst(task):
+            if t.startswith("!"):
+                checks.append(not getattr(runner.task, f"is_{t[1:]}"))
+            else:
+                checks.append(getattr(runner.task, f"is_{t}"))
+
+        return all(checks)
 
     return check
 
@@ -2637,9 +2707,9 @@ def has_attr(attr: str) -> Callable:
 
     """
 
-    def check(self: Any) -> bool:
+    def check(runner: Any) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
-        getattr(self, attr)
+        getattr(runner, attr)
         return True
 
     return check
@@ -2655,9 +2725,9 @@ def estimator_has_attr(attr: str) -> Callable:
 
     """
 
-    def check(self: Any) -> bool:
+    def check(runner: Any) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
-        getattr(self.estimator, attr)
+        getattr(runner.estimator, attr)
         return True
 
     return check
@@ -2681,7 +2751,10 @@ def composed(*decs) -> Callable:
     return decorator
 
 
-def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
+def crash(
+    f: Callable,
+    cache: dict[str, Exception | None] = {"last_exception": None},
+) -> Callable:
     """Save program crashes to log file.
 
     We use a mutable argument to cache the last exception raised. If
@@ -2696,7 +2769,7 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
             return f(*args, **kwargs)
 
         except Exception as ex:
-            # If exception is not same as last, write to log
+            # If exception is not the same as last, write to log
             if ex is not cache["last_exception"] and args[0].logger:
                 cache["last_exception"] = ex
                 args[0].logger.exception("Exception encountered:")
@@ -2717,72 +2790,6 @@ def method_to_log(f: Callable) -> Callable:
             args[0].logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
 
         return f(*args, **kwargs)
-
-    return wrapper
-
-
-def plot_from_model(
-    func: Callable | None = None,
-    max_one: bool = False,
-    ensembles: bool = True,
-    check_fitted: bool = True,
-) -> Callable:
-    """If a plot is called from a model, adapt the `models` parameter.
-
-    Parameters
-    ----------
-    func: callable or None
-        Function to decorate. When the decorator is called with no
-        optional arguments, the function is passed as the first
-        argument, and the decorator just returns the decorated
-        function.
-
-    max_one: bool, default=False
-        Whether one or multiple models are allowed. If True, return
-        the model instead of a list of models.
-
-    ensembles: bool, default=True
-        If False, drop ensemble models from selection.
-
-    check_fitted: bool, default=True
-        Raise an exception if the runner isn't fitted (has no models).
-
-    """
-
-    @wraps(func)
-    def wrapper(f: Callable) -> Callable:
-
-        @wraps(f)
-        def wrapped_f(*args, **kwargs) -> Any:
-            if hasattr(args[0], "_get_models"):
-                # Called from runner, get models for `models` parameter
-                if check_fitted:
-                    check_is_fitted(args[0], attributes="_models")
-
-                if len(args) > 1:
-                    models = args[1]
-                    args = [args[0]] + list(args[2:])  # Remove models from args
-                elif "models" in kwargs:
-                    models = kwargs.pop("models")
-                else:
-                    models = None
-
-                models = args[0]._get_models(models, ensembles=ensembles)
-                if max_one:
-                    if len(models) > 1:
-                        raise ValueError(f"The {f.__name__} plot only accepts one model.")
-                    else:
-                        models = models[0]
-
-                return f(args[0], models, *args[1:], **kwargs)
-            else:
-                # Called from model, send model directly to `models` parameter
-                return f(args[0], args[0] if max_one else [args[0]], *args[1:], **kwargs)
-
-        return wrapped_f
-
-    if func:
-        return wrapper(func)
 
     return wrapper
 

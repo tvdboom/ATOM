@@ -9,20 +9,19 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 from __future__ import annotations
 
-from typing import Any, Generator
-
 import numpy as np
+from beartype.typing import Any, Generator
 from joblib import Memory
 from sklearn.base import clone
-from sklearn.pipeline import Pipeline as skPipeline
+from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Features, Float, Int, Pandas, Sequence, Target,
-    Verbose,
+    Bool, DataFrame, Estimator, Features, Float, Int, Pandas, Scalar, Sequence,
+    Target, Verbose,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
@@ -30,7 +29,7 @@ from atom.utils.utils import (
 )
 
 
-class Pipeline(skPipeline):
+class Pipeline(SkPipeline):
     """Pipeline of transforms with a final estimator.
 
     Sequentially apply a list of transforms and a final estimator.
@@ -615,7 +614,7 @@ class Pipeline(skPipeline):
         self,
         X: Features,
         y: Target,
-        sample_weight: Sequence | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> Float:
         """Transform, then score of the final estimator.
 

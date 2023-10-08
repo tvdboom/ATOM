@@ -9,7 +9,7 @@ algorithms. Although feature engineering works best when the data
 scientist applies use-case specific transformations, there are ways to
 do this in an automated manner, without prior domain knowledge. One of
 the problems of creating new features without human expert intervention,
-is that many of the newly created features can be useless, i.e. they do
+is that many of the newly created features can be useless, i.e., they do
 not help the algorithm to make better predictions. Even worse, having
 useless features can drop your performance. To avoid this, we perform
 feature selection, a process in which we select the relevant features 
@@ -164,7 +164,7 @@ Applying PCA reduces the dimensionality of the dataset by maximizing
 the variance of each dimension. The new features are called `pca0`,
 `pca1`, etc... PCA can be applied in three ways:
 
-* If the data is dense (i.e. not sparse), the estimator used is [PCA][].
+* If the data is dense (i.e., not sparse), the estimator used is [PCA][].
   Before fitting the transformer, the data is scaled to mean=0 and std=1
   if it wasn't already. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
 * If the data is [sparse][sparse datasets] (often the case for term-document
@@ -305,7 +305,7 @@ either different or exactly the same.
 <br style="display: block; margin-top: 2em; content: ' '">
 
 **Removing features with multi-collinearity**<br>
-Two features that are highly correlated are redundant, i.e. two will
+Two features that are highly correlated are redundant, i.e., two will
 not contribute more to the model than only one of them. [FeatureSelector][]
 will drop a feature that has a [Pearson correlation coefficient][pearson]
 larger than `max_correlation` with another feature. A correlation of 1

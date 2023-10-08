@@ -9,23 +9,29 @@ Description: Module containing the Branch class.
 
 from __future__ import annotations
 
-import os
 import re
 from functools import cached_property
+from pathlib import Path
+from typing import overload
 
 import dill as pickle
+from beartype import beartype
+from beartype.typing import Hashable, Literal
 from joblib.memory import Memory
+from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, DataFrameTypes, Features, Index, Int,
-    IntTypes, Pandas, RowSelector, Sequence, SeriesTypes, Target,
+    IntTypes, Pandas, RowSelector, Scalar, SegmentTypes, Sequence, SeriesTypes,
+    Target,
 )
 from atom.utils.utils import (
     CustomDict, DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
 )
 
 
+@beartype
 class Branch:
     """Object that contains the data.
 
@@ -34,15 +40,24 @@ class Branch:
     data and utility attributes that refer to that dataset. Branches
     can be created and accessed through atom's `branch` attribute.
 
-    All properties and attributes of the branch (except the private
-    ones, starting with underscore) can be accessed from the parent.
+    All public properties and attributes of the branch can be accessed
+    from the parent.
 
     Read more in the [user guide][branches].
+
+    !!! warning
+        This class should not be called directly. Branches are created
+        internally by the [ATOMClassifier][], [ATOMForecaster][] and
+        [ATOMRegressor][] classes.
 
     Parameters
     ----------
     name: str
         Name of the branch.
+
+    memory: str, [Memory][joblibmemory] or None, default=None
+        Memory object for pipeline caching and to store the data when
+        the branch is inactive.
 
     data: DataContainer or None, default=None
         Data for the branch.
@@ -83,12 +98,12 @@ class Branch:
     def __init__(
         self,
         name: str,
-        memory: Memory,
+        memory: str | Memory | None = None,
         data: DataContainer | None = None,
         holdout: DataFrame | None = None,
     ):
         self.name = name
-        self.memory = memory
+        self.memory = check_memory(memory)
 
         self._container = data
         self._holdout = holdout
@@ -96,27 +111,26 @@ class Branch:
         self._mapping = CustomDict()
 
         # Path to store the data
-        if memory.location is None:
+        if self.memory.location is None:
             self._location = None
         else:
-            self._location = os.path.join(memory.location, "joblib", "atom", str(self))
+            self._location = Path(self.memory.location).joinpath("joblib", "atom")
 
     def __repr__(self) -> str:
         return f"Branch({self.name})"
 
     @property
-    def _data(self) -> DataFrame | None:
+    def _data(self) -> DataContainer:
         """Get the branch's data.
 
         Load from memory if the data container is empty. This property
         is required to access the data for inactive branches.
 
         """
-        return self.load(assign=False)
+        if data := self.load(assign=False):
+            return data
 
-    @_data.setter
-    def _data(self, value: DataContainer):
-        self._container = value
+        raise RuntimeError("This branch has no dataset assigned.")
 
     @property
     def name(self) -> str:
@@ -138,23 +152,28 @@ class Branch:
                         f"is the acronym of the {model.__name__} model."
                     )
 
-        self._name = value
+        self._name: str = value
 
     # Data properties ============================================== >>
 
-    def _check_setter(self, name: str, value: Sequence | Features) -> Pandas:
-        """Check the property setter.
+    def _check_setter(
+        self,
+        name: str,
+        value: Sequence[Scalar | str] | Features,
+    ) -> Pandas:
+        """Check the data set's setter property.
 
         Convert the property to a pandas object and compare with the
-        rest of the dataset to check if it has the right dimensions.
+        rest of the dataset, to check if it has the right indices and
+        dimensions.
 
         Parameters
         ----------
         name: str
-            Name of the property to check.
+            Name of the data set to check.
 
         value: sequence or dataframe-like
-            New values for the property.
+            New values for the data set.
 
         Returns
         -------
@@ -163,7 +182,7 @@ class Branch:
 
         """
 
-        def counter(name: str, dim: str) -> str:
+        def counter(name: str, dim: str) -> str | None:
             """Return the opposite dimension of the provided data set.
 
             Parameters
@@ -176,8 +195,9 @@ class Branch:
 
             Returns
             -------
-            str
-                Name of the opposite dimension.
+            str or None
+                Name of the opposite dimension. Returns None when there
+                is no opposite dimension, e.g., train with dim="side".
 
             """
             if name == "dataset":
@@ -193,56 +213,58 @@ class Branch:
                 if "test" in name:
                     return name.replace("test", "train")
 
+            return None
+
         # Define the data attrs side and under
         if side_name := counter(name, "side"):
             side = getattr(self, side_name)
         if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-        value = to_pandas(
+        obj: Pandas = to_pandas(
             data=value,
             index=side.index if side_name else None,
-            name=getattr(under, "name", None) if under_name else "target",
+            name=getattr(under, "name", "target") if under_name else "target",
             columns=getattr(under, "columns", None) if under_name else None,
             dtype=under.dtypes if under_name else None,
         )
 
         if side_name:  # Check for equal rows
-            if len(value) != len(side):
+            if len(obj) != len(side):
                 raise ValueError(
                     f"{name} and {side_name} must have the same "
-                    f"number of rows, got {len(value)} != {len(side)}."
+                    f"number of rows, got {len(obj)} != {len(side)}."
                 )
-            if not value.index.equals(side.index):
+            if not obj.index.equals(side.index):
                 raise ValueError(
                     f"{name} and {side_name} must have the same "
-                    f"indices, got {value.index} != {side.index}."
+                    f"indices, got {obj.index} != {side.index}."
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(value, SeriesTypes):
-                if value.name != under.name:
+            if isinstance(obj, SeriesTypes):
+                if obj.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
-                        f"same name, got {value.name} != {under.name}."
+                        f"same name, got {obj.name} != {under.name}."
                     )
             else:
-                if value.shape[1] != under.shape[1]:
+                if obj.shape[1] != under.shape[1]:
                     raise ValueError(
                         f"{name} and {under_name} must have the same number "
-                        f"of columns, got {value.shape[1]} != {under.shape[1]}."
+                        f"of columns, got {obj.shape[1]} != {under.shape[1]}."
                     )
 
-                if not value.columns.equals(under.columns):
+                if not obj.columns.equals(under.columns):
                     raise ValueError(
                         f"{name} and {under_name} must have the same "
-                        f"columns, got {value.columns} != {under.columns}."
+                        f"columns, got {obj.columns} != {under.columns}."
                     )
 
         # Reset holdout calculation
         self.__dict__.pop("holdout", None)
 
-        return value
+        return obj
 
     @property
     def pipeline(self) -> Pipeline:
@@ -306,6 +328,8 @@ class Branch:
                     y=self._holdout[self.target],
                 )
             )
+        else:
+            return None
 
     @property
     def X(self) -> DataFrame:
@@ -409,6 +433,20 @@ class Branch:
 
     # Utility methods ============================================== >>
 
+    @overload
+    def _get_rows(
+        self,
+        rows: RowSelector,
+        return_X_y: Literal[False] = ...,
+    ) -> DataFrame: ...
+
+    @overload
+    def _get_rows(
+        self,
+        rows: RowSelector,
+        return_X_y: Literal[True],
+    ) -> tuple[DataFrame, Pandas]: ...
+
     def _get_rows(
         self,
         rows: RowSelector,
@@ -426,7 +464,7 @@ class Branch:
 
         Parameters
         ----------
-        rows: RowSelector
+        rows: hashable, segment, sequence or dataframe
             Rows to select.
 
         return_X_y: bool, default=False
@@ -443,18 +481,19 @@ class Branch:
         """
         indices = self._all.index
 
-        inc, exc = [], []
+        inc: list[Hashable] = []
+        exc: list[Hashable] = []
         if isinstance(rows, DataFrameTypes):
             inc.extend(rows.index)
-        elif isinstance(rows, (range, slice)):
+        elif isinstance(rows, SegmentTypes):
             inc.extend(indices[rows])
         else:
             for row in lst(rows):
                 if row in indices:
                     inc.append(row)
                 elif isinstance(row, IntTypes):
-                    if -len(indices) <= row <= len(indices):
-                        inc.append(indices[row])
+                    if -len(indices) <= row < len(indices):
+                        inc.append(indices[int(row)])
                     else:
                         raise IndexError(
                             f"Invalid value for the rows parameter. Value {rows} "
@@ -475,7 +514,7 @@ class Branch:
                                 raise ValueError(
                                     "Invalid value for the rows parameter. No holdout "
                                     "data set was declared when initializing atom."
-                                )
+                                ) from None
                         elif (matches := indices.str.fullmatch(r)).sum() > 0:
                             array.extend(indices[matches])
 
@@ -491,10 +530,11 @@ class Branch:
             )
         elif exc:
             # If rows were excluded with `!`, select all but those
-            inc = indices[~indices.isin(exc)]
+            inc = list(indices[~indices.isin(exc)])
 
         if return_X_y:
-            return self._all.loc[inc, self.features], self._all.loc[inc, self.target]
+            X, y = self._all[self.features], self._all[self.target]
+            return X.loc[inc], y.loc[inc]
         else:
             return self._all.loc[inc]
 
@@ -533,21 +573,22 @@ class Branch:
         # Select dataframe from which to get the columns
         df = self.dataset if include_target else self.X
 
-        inc, exc = [], []
+        inc: list[str] = []
+        exc: list[str] = []
         if columns is None:
             if only_numerical:
                 return list(df.select_dtypes(include=["number"]).columns)
             else:
                 return list(df.columns)
         elif isinstance(columns, DataFrameTypes):
-            inc = list(columns.columns)
-        elif isinstance(columns, (range, slice)):
-            inc = list(df.columns[columns])
+            inc.extend(list(columns.columns))
+        elif isinstance(columns, SegmentTypes):
+            inc.extend(list(df.columns[columns]))
         else:
             for col in lst(columns):
                 if isinstance(col, IntTypes):
-                    if -df.shape[1] <= col <= df.shape[1]:
-                        inc.append(df.columns[col])
+                    if -df.shape[1] <= col < df.shape[1]:
+                        inc.append(df.columns[int(col)])
                     else:
                         raise IndexError(
                             f"Invalid value for the columns parameter. Value {col} "
@@ -560,18 +601,18 @@ class Branch:
                             array = exc
                             c = c[1:]
 
-                    # Find columns using regex matches
-                    if (matches := df.columns.str.fullmatch(c)).sum() > 0:
-                        array.extend(matches)
-                    else:
-                        # Find columns by type
-                        try:
-                            array.extend(list(df.select_dtypes(c).columns))
-                        except TypeError:
-                            raise ValueError(
-                                "Invalid value for the columns parameter. "
-                                f"Could not find any column that matches {c}."
-                            )
+                        # Find columns using regex matches
+                        if (matches := df.columns.str.fullmatch(c)).sum() > 0:
+                            array.extend(df.columns[matches])
+                        else:
+                            # Find columns by type
+                            try:
+                                array.extend(df.select_dtypes(c).columns)
+                            except TypeError:
+                                raise ValueError(
+                                    "Invalid value for the columns parameter. "
+                                    f"Could not find any column that matches {c}."
+                                ) from None
 
         if len(inc) + len(exc) == 0:
             raise ValueError(
@@ -585,13 +626,13 @@ class Branch:
             )
         elif exc:
             # If columns were excluded with `!`, select all but those
-            inc = df.columns[~df.columns.isin(exc)]
+            inc = list(df.columns[~df.columns.isin(exc)])
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
     def _get_target(
         self,
-        target: Int | str | tuple,
+        target: Int | str | tuple[Int | str, ...],
         only_columns: Bool = False,
     ) -> str | tuple[Int, Int]:
         """Get a target column and/or class in target column.
@@ -646,7 +687,7 @@ class Branch:
                 else:
                     return lst(self.target)[target]
 
-        def get_class(target: Int | str, column: int = 0) -> int:
+        def get_class(target: Int | str, column: Int = 0) -> Int:
             """Get the class in the target column.
 
             Parameters
@@ -681,7 +722,7 @@ class Branch:
                 else:
                     return target
 
-        if only_columns:
+        if only_columns and not isinstance(target, tuple):
             return get_column(target)
         elif isinstance(target, tuple):
             if not isinstance(self.y, DataFrameTypes):
@@ -720,10 +761,10 @@ class Branch:
         """
         if self._container is None and self._location:
             try:
-                with open(f"{self._location}.pkl", "rb") as file:
+                with open(self._location.joinpath(f"{self}.pkl"), "rb") as file:
                     data = pickle.load(file)
             except FileNotFoundError:
-                raise ValueError(f"Branch {self.name} has no data stored.")
+                raise FileNotFoundError(f"Branch {self.name} has no data stored.")
 
             if assign:
                 self._container = data
@@ -735,7 +776,7 @@ class Branch:
     def store(self, assign: Bool = True):
         """Store the branch's data as a pickle in memory.
 
-        After storage, the data is deleted and the branch is no longer
+        After storage, the data is deleted, and the branch is no longer
         usable until [load][self-load] is called. This method is used
         to store the data for inactive branches.
 
@@ -750,8 +791,11 @@ class Branch:
 
         """
         if self._container is not None and self._location:
-            with open(f"{self._location}.pkl", "wb") as file:
-                pickle.dump(self._container, file)
+            try:
+                with open(self._location.joinpath(f"{self}.pkl"), "wb") as file:
+                    pickle.dump(self._container, file)
+            except FileNotFoundError:
+                raise FileNotFoundError(f"The {self._location} directory does not exist.")
 
             if assign:
                 self._container = None

@@ -9,20 +9,18 @@ Description: Module containing the feature engineering transformers.
 
 from __future__ import annotations
 
-import re
-from collections import defaultdict
 from logging import Logger
 from pathlib import Path
 from random import sample
-from typing import Callable, Literal
 
 import featuretools as ft
 import joblib
 import numpy as np
 import pandas as pd
+from beartype.typing import Literal
 from gplearn.genetic import SymbolicTransformer
 from scipy import stats
-from sklearn.base import BaseEstimator, is_regressor
+from sklearn.base import BaseEstimator, is_classifier
 from sklearn.feature_selection import (
     RFE, RFECV, SelectFromModel, SelectKBest, SequentialFeatureSelector, chi2,
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -38,14 +36,14 @@ from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
-    Backend, Bool, DataFrame, Engine, Estimator, Features,
-    FeatureSelectionStrats, Float, Int, IntTypes, NJobs, Operators, Scalar,
-    Sequence, SequenceTypes, SeriesTypes, Target, Verbose,
+    Backend, Bool, DataFrame, Engine, Features, FeatureSelectionSolvers,
+    FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
+    FloatZeroToOneInc, Int, IntLargerZero, NJobs, Operators, Sequence,
+    SequenceTypes, SeriesTypes, Target, Verbose,
 )
 from atom.utils.utils import (
-    CustomDict, check_is_fitted, check_scaling, composed, crash,
-    get_custom_scorer, infer_task, is_sparse, lst, merge, method_to_log, sign,
-    to_df,
+    CustomDict, Goal, Task, check_is_fitted, check_scaling, composed, crash,
+    get_custom_scorer, is_sparse, lst, merge, method_to_log, sign, to_df,
 )
 
 
@@ -166,8 +164,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        features: str | Sequence = ("day", "month", "year"),
-        fmt: str | Sequence | None = None,
+        features: str | Sequence[str] = ("day", "month", "year"),
+        fmt: str | Sequence[str] | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
         drop_columns: Bool = True,
@@ -421,8 +419,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: Literal["dfs", "gfg"] = "dfs",
         *,
-        n_features: Int | None = None,
-        operators: Operators | Sequence | None = None,
+        n_features: IntLargerZero | None = None,
+        operators: Operators | Sequence[Operators] | None = None,
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
@@ -485,17 +483,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             tan="tangent",
         )
 
-        if self.n_features is not None and self.n_features <= 0:
-            raise ValueError(
-                "Invalid value for the n_features parameter."
-                f"Value should be >0, got {self.n_features}."
-            )
-
         if not self.operators:  # None or empty list
             operators = list(all_operators)
         else:
-            operators = lst(self.operators)
-            for op in operators:
+            for op in lst(self.operators).split("+"):
                 if op not in all_operators:
                     raise ValueError(
                         "Invalid value in the operators parameter, got "
@@ -519,7 +510,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             # Select the new features (dfs also returns originals)
             self._dfs = self._dfs[X.shape[1] - 1:]
 
-            # Get random selection of features
+            # Get a random selection of features
             if self.n_features and self.n_features < len(self._dfs):
                 self._dfs = sample(self._dfs, self.n_features)
 
@@ -584,7 +575,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             # Get the names and fitness of the new features
             df = pd.DataFrame(columns=["name", "description", "fitness"])
-            for i, fx in enumerate(self.gfg):
+            for i, fx in enumerate(self.gfg_):
                 if str(fx) not in X.columns:  # Drop unchanged features
                     df.loc[i] = ["", str(fx), fx.fitness_]
 
@@ -602,10 +593,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             # If there are not enough features remaining, notify the user
             if len(df) != self.n_features:
                 self._log(
-                    f" --> Dropping {(self.n_features or len(self.gfg)) - len(df)} "
+                    f" --> Dropping {(self.n_features or len(self.gfg_)) - len(df)} "
                     "features due to repetition.", 2)
 
-            for i, array in enumerate(self.gfg.transform(X)[:, df.index].T):
+            for i, array in enumerate(self.gfg_.transform(X)[:, df.index].T):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
@@ -636,16 +627,11 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
     [atomclassifier-feature_grouping] method. Read more in the
     [user guide][grouping-similar-features].
 
-    !!! tip
-        Use a regex pattern with the `groups` parameter to select
-        groups easier, e.g., `atom.feature_grouping({"group1": "var_.+")`
-        to select all features that start with `var_`.
-
     Parameters
     ----------
-    group: dict
-        Group names and features. Select the features by name, position
-        or regex pattern. A feature can belong to multiple groups.
+    groups: dict
+        Group names and [features][row-and-column-selection]. A feature
+        can belong to multiple groups.
 
     operators: str, sequence or None, default=None
         Statistical operators to apply on the groups. Any operator from
@@ -670,9 +656,6 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    groups_: dict
-        Names and features of every created group.
-
     feature_names_in_: np.array
         Names of features seen during fit.
 
@@ -723,15 +706,15 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        group: dict[str, Int | str | Sequence],
+        groups: dict[str, list[str]],
         *,
-        operators: str | Sequence | None = None,
+        operators: str | Sequence[str] | None = None,
         drop_columns: Bool = True,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
-        self.group = group
+        self.groups = groups
         self.operators = operators
         self.drop_columns = drop_columns
 
@@ -757,38 +740,13 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._log("Grouping features...", 1)
 
-        # Make the groups
-        self.groups_ = defaultdict(list)
-        for name, group in self.groups_.items():
-            for col in lst(group):
-                if isinstance(col, IntTypes):
-                    try:
-                        self.groups_[name].append(X.columns[col])
-                    except IndexError:
-                        raise ValueError(
-                            f"Invalid value for the groups parameter. Value {col} "
-                            f"is out of range for a dataset with {X.shape[1]} columns."
-                        )
-                else:
-                    # Find columns using regex matches
-                    if matches := [c for c in X.columns if re.fullmatch(col, c)]:
-                        self.groups_[name].extend(matches)
-                    else:
-                        try:
-                            self.groups_[name].extend(list(X.select_dtypes(col).columns))
-                        except TypeError:
-                            raise ValueError(
-                                "Invalid value for the groups parameter. "
-                                f"Could not find any column that matches {col}."
-                            )
-
         if self.operators is None:
             operators = ["min", "max", "mean", "median", "mode", "std"]
         else:
             operators = lst(self.operators)
 
         to_drop = set()
-        for name, group in self.groups_.items():
+        for name, group in self.groups.items():
             for operator in operators:
                 try:
                     result = X[group].apply(getattr(np, operator), axis=1)
@@ -821,7 +779,6 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 class FeatureSelector(
     BaseEstimator,
     TransformerMixin,
-    BaseTransformer,
     FeatureSelectionPlot,
 ):
     """Reduce the number of features in the data.
@@ -944,7 +901,7 @@ class FeatureSelector(
     min_repeated: int, float or None, default=2
         Remove categorical features if there isn't any repeated value
         in at least `min_repeated` rows. The default is to keep all
-        features with non-maximum variance, i.e. remove the features
+        features with non-maximum variance, i.e., remove the features
         which number of unique values is equal to the number of rows
         (usually the case for names, IDs, etc...).
 
@@ -955,7 +912,7 @@ class FeatureSelector(
     max_repeated: int, float or None, default=1.0
         Remove categorical features with the same value in at least
         `max_repeated` rows. The default is to keep all features with
-        non-zero variance, i.e. remove the features that have the same
+        non-zero variance, i.e., remove the features that have the same
         value in all samples.
 
         - If None: No check for maximum repetition.
@@ -1096,11 +1053,11 @@ class FeatureSelector(
         self,
         strategy: FeatureSelectionStrats | None = None,
         *,
-        solver: str | Callable[..., Sequence | Sequence] | Estimator | None = None,
-        n_features: Scalar | None = None,
-        min_repeated: Scalar | None = 2,
-        max_repeated: Scalar | None = 1.0,
-        max_correlation: Float | None = 1.0,
+        solver: FeatureSelectionSolvers = None,
+        n_features: FloatLargerZero | None = None,
+        min_repeated: FloatLargerEqualZero | None = 2,
+        max_repeated: FloatLargerEqualZero | None = 1.0,
+        max_correlation: FloatZeroToOneInc | None = 1.0,
         n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
@@ -1213,10 +1170,10 @@ class FeatureSelector(
                 elif isinstance(self.solver, str):
                     # Assign goal to initialize the predefined model
                     if self.solver[-6:] == "_class":
-                        goal = "class"
+                        goal = Goal.classification
                         solver = self.solver[:-6]
                     elif self.solver[-4:] == "_reg":
-                        goal = "reg"
+                        goal = Goal.regression
                         solver = self.solver[:-4]
                     else:
                         solver = self.solver
@@ -1225,16 +1182,12 @@ class FeatureSelector(
                     if solver in MODELS:
                         model = MODELS[solver](
                             goal=goal,
-                            n_jobs=self.n_jobs,
-                            device=self.device,
-                            engine=self.engine,
-                            backend=self.backend,
-                            verbose=self.verbose,
-                            logger=self.logger,
-                            random_state=self.random_state,
+                            **{
+                                x: getattr(self, x)
+                                for x in BaseTransformer.attrs if hasattr(self, x)
+                            },
                         )
-                        model.task = infer_task(y, goal)
-                        solver = model._get_est()
+                        solver = model._inherit(model._est_class())
                     else:
                         raise ValueError(
                             "Invalid value for the solver parameter. Unknown "
@@ -1252,11 +1205,6 @@ class FeatureSelector(
 
         if self.n_features is None:
             self._n_features = X.shape[1]
-        elif self.n_features <= 0:
-            raise ValueError(
-                "Invalid value for the n_features parameter. "
-                f"Value should be >0, got {self.n_features}."
-            )
         elif self.n_features < 1:
             self._n_features = int(self.n_features * X.shape[1])
         else:
@@ -1264,11 +1212,6 @@ class FeatureSelector(
 
         if self.min_repeated is None:
             min_repeated = 1
-        elif self.min_repeated < 0:
-            raise ValueError(
-                "Invalid value for the min_repeated parameter. Value "
-                f"should be >0, got {self.min_repeated}."
-            )
         elif self.min_repeated <= 1:
             min_repeated = self.min_repeated * len(X)
         else:
@@ -1276,11 +1219,6 @@ class FeatureSelector(
 
         if self.max_repeated is None:
             max_repeated = len(X)
-        elif self.max_repeated < 0:
-            raise ValueError(
-                "Invalid value for the max_repeated parameter. Value "
-                f"should be >0, got {self.max_repeated}."
-            )
         elif self.max_repeated <= 1:
             max_repeated = self.max_repeated * len(X)
         else:
@@ -1290,12 +1228,6 @@ class FeatureSelector(
             raise ValueError(
                 "The min_repeated parameter can't be higher than "
                 f"max_repeated, got {min_repeated} > {max_repeated}. "
-            )
-
-        if self.max_correlation is not None and not 0 <= self.max_correlation <= 1:
-            raise ValueError(
-                "Invalid value for the max_correlation parameter. Value "
-                f"shouldbe between 0 and 1, got {self.max_correlation}."
             )
 
         self._log("Fitting FeatureSelector...", 1)
@@ -1426,13 +1358,13 @@ class FeatureSelector(
             )
 
         elif self.strategy.lower() == "sfm":
-            # If any of these attr exists, model is already fitted
+            # If any of these attr exists, the model is already fitted
             if any(hasattr(solver, a) for a in ("coef_", "feature_importances_")):
                 prefit = kwargs.pop("prefit", True)
             else:
                 prefit = False
 
-            # If threshold is not specified, select only based on _n_features
+            # If a threshold is not specified, select only based on _n_features
             if not self.kwargs.get("threshold"):
                 kwargs["threshold"] = -np.inf
 
@@ -1520,11 +1452,11 @@ class FeatureSelector(
                 if kwargs.get("scoring"):
                     kwargs["scoring"] = get_custom_scorer(kwargs["scoring"])
                 else:
-                    goal = "reg" if is_regressor(solver) else "class"
-                    task = infer_task(y, goal=goal)
-                    if task.startswith("bin"):
+                    goal = Goal(0) if is_classifier(solver) else Goal(1)
+                    task = goal.infer_task(y)
+                    if task is Task.binary_classification:
                         kwargs["scoring"] = get_custom_scorer("f1")
-                    elif task.startswith("multi") and goal.startswith("class"):
+                    elif task.is_multiclass:
                         kwargs["scoring"] = get_custom_scorer("f1_weighted")
                     else:
                         kwargs["scoring"] = get_custom_scorer("r2")
@@ -1608,11 +1540,11 @@ class FeatureSelector(
                 f"{self._n_features} features from the dataset.", 2
             )
             for n, column in enumerate(X):
-                if not self.univariate.get_support()[n]:
+                if not self.univariate_.get_support()[n]:
                     self._log(
                         f"   --> Dropping feature {column} "
-                        f"(score: {self.univariate.scores_[n]:.2f}  "
-                        f"p-value: {self.univariate.pvalues_[n]:.2f}).", 2
+                        f"(score: {self.univariate_.scores_[n]:.2f}  "
+                        f"p-value: {self.univariate_.pvalues_[n]:.2f}).", 2
                     )
                     X = X.drop(column, axis=1)
 

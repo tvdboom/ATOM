@@ -7,6 +7,8 @@ Description: Module for plots.
 
 """
 
+from abc import ABC
+
 from atom.plots.dataplot import DataPlot
 from atom.plots.featureselectionplot import FeatureSelectionPlot
 from atom.plots.hyperparametertuningplot import HyperparameterTuningPlot
@@ -20,11 +22,12 @@ class ATOMPlot(
     HyperparameterTuningPlot,
     PredictionPlot,
     ShapPlot,
+    ABC,
 ):
     """Plot classes inherited by main ATOM classes."""
     pass
 
 
-class RunnerPlot(HyperparameterTuningPlot, PredictionPlot, ShapPlot):
+class RunnerPlot(HyperparameterTuningPlot, PredictionPlot, ShapPlot, ABC):
     """Plot classes inherited by the runners and callable from models."""
     pass

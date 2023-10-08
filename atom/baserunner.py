@@ -12,10 +12,11 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Literal
 
 import dill as pickle
 import pandas as pd
+from beartype import beartype
+from beartype.typing import Any, Literal
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 
@@ -26,12 +27,12 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, Float, Int, IntTypes, MetricSelector, Model,
-    ModelSelector, Runner, Sequence, Series,
+    Bool, DataFrame, Float, Int, IntTypes, MetricConstructor, Model,
+    ModelSelector, ModelsSelector, Scalar, SegmentTypes, Sequence, Series,
 )
 from atom.utils.utils import (
-    ClassMap, CustomDict, check_is_fitted, composed, crash, divide, flt,
-    get_best_score, get_versions, has_task, is_multioutput, lst, method_to_log,
+    ClassMap, CustomDict, Task, check_is_fitted, composed, crash, divide, flt,
+    get_best_score, get_segment, get_versions, has_task, lst, method_to_log,
 )
 
 
@@ -42,18 +43,17 @@ class BaseRunner(BaseTracker):
 
     """
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, Any]:
         # Store an extra attribute with the package versions
         return {**self.__dict__, "_versions": get_versions(self._models)}
 
-    def __setstate__(self, state: dict):
+    def __setstate__(self, state: dict[str, Any]):
         versions = state.pop("_versions", None)
         self.__dict__.update(state)
 
         # Check that all package versions match or raise a warning
         if versions:
-            current_versions = get_versions(state["_models"])
-            for key, value in current_versions.items():
+            for key, value in get_versions(state["_models"]).items():
                 if versions[key] != value:
                     self._log(
                         f"The loaded instance used the {key} package with version "
@@ -121,6 +121,11 @@ class BaseRunner(BaseTracker):
     # Utility properties =========================================== >>
 
     @property
+    def task(self) -> Task:
+        """Dataset's [task][] type."""
+        return self._goal.infer_task(self.y)
+
+    @property
     def og(self) -> Branch:
         """Branch containing the original dataset.
 
@@ -133,32 +138,8 @@ class BaseRunner(BaseTracker):
 
     @property
     def branch(self) -> Branch:
-        """Current active branch.
-
-        Use the property's `@setter` to change the branch or to create
-        a new one. If the value is the name of an existing branch,
-        switch to that one. Else, create a new branch using that name.
-        The new branch is split from the current branch. Use `__from__`
-        to split the new branch from any other existing branch. Read
-        more in the [user guide][branches].
-
-        """
+        """Current active branch."""
         return self._branches.current
-
-    @branch.deleter
-    def branch(self):
-        """Delete the current active branch."""
-        if len(self._branches) == 1:
-            raise PermissionError("Can't delete the last branch!")
-
-        # Delete all depending models
-        for model in self._models:
-            if model.branch is self.branch:
-                self._delete_models(model.name)
-
-        self._log(f"Deleting branch {self.branch.name}...", 1)
-        del self._branches.current
-        self._log(f"Switched to branch {self.branch.name}.", 1)
 
     @property
     def holdout(self) -> DataFrame | None:
@@ -277,7 +258,7 @@ class BaseRunner(BaseTracker):
 
     def _get_models(
         self,
-        models: ModelSelector = None,
+        models: ModelsSelector = None,
         ensembles: Bool = True,
         branch: Branch | None = None,
     ) -> list[Model]:
@@ -290,7 +271,7 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: int, str, Model, range, slice, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to select. If None, it returns all models.
 
         ensembles: bool, default=True
@@ -309,9 +290,9 @@ class BaseRunner(BaseTracker):
         """
         inc, exc = [], []
         if models is None:
-            return self._models
-        elif isinstance(models, (range, slice)):
-            return self._models[models]
+            return self._models.values()
+        elif isinstance(models, SegmentTypes):
+            return get_segment(self._models, models)
         else:
             for model in lst(models):
                 if isinstance(model, IntTypes):
@@ -359,7 +340,7 @@ class BaseRunner(BaseTracker):
             inc = [m for m in self._models if m not in exc]
 
         if not ensembles:
-            inc = list(filter(lambda m: m.acronym in ("Stack", "Vote"), inc))
+            inc = list(filter(lambda m: m.acronym not in ("Stack", "Vote"), inc))
 
         if branch and not all(m.branch is branch for m in inc):
             raise ValueError(
@@ -416,8 +397,8 @@ class BaseRunner(BaseTracker):
         """
         rows = []
         for model in MODELS:
-            m = model(goal=self.goal)
-            if self.goal in m._estimators:
+            m = model(goal=self._goal)
+            if self._goal in m._estimators:
                 rows.append(
                     {
                         "acronym": m.acronym,
@@ -455,11 +436,8 @@ class BaseRunner(BaseTracker):
         for model in self._models:
             model.clear()
 
-    @composed(crash, method_to_log)
-    def delete(
-        self,
-        models: Int | str | slice | Model | Sequence | None = None
-    ):
+    @composed(crash, method_to_log, beartype)
+    def delete(self, models: ModelsSelector = None):
         """Delete models.
 
         If all models are removed, the metric is reset. Use this method
@@ -469,7 +447,7 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: int, str, slice, Model, sequence or None, default=None
+        models: int, str, Model, segment, sequence or None, default=None
             Models to delete. If None, all models are deleted.
 
         """
@@ -482,14 +460,14 @@ class BaseRunner(BaseTracker):
                 self._delete_models(m.name)
                 self._log(f" --> Model {m.name} successfully deleted.", 1)
 
-    @crash
+    @composed(crash, beartype)
     def evaluate(
         self,
-        metric: MetricSelector = None,
+        metric: MetricConstructor = None,
         dataset: Literal["train", "test", "holdout"] = "test",
         *,
-        threshold: Float | Sequence = 0.5,
-        sample_weight: Sequence | None = None,
+        threshold: Float | Sequence[Float] = 0.5,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -540,7 +518,7 @@ class BaseRunner(BaseTracker):
 
         return pd.DataFrame(evaluations)
 
-    @crash
+    @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
         """Export the internal pipeline.
 
@@ -567,8 +545,8 @@ class BaseRunner(BaseTracker):
         else:
             return deepcopy(self.pipeline)
 
-    @available_if(has_task("class"))
-    @crash
+    @available_if(has_task("classification"))
+    @composed(crash, beartype)
     def get_class_weight(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
@@ -594,7 +572,7 @@ class BaseRunner(BaseTracker):
 
         """
         y = self.classes[dataset]
-        if is_multioutput(self.task):
+        if self.task.is_multioutput:
             weights = {
                 t: {i: round(divide(sum(y.loc[t]), v), 3) for i, v in y.items()}
                 for t in self.target
@@ -604,8 +582,8 @@ class BaseRunner(BaseTracker):
 
         return CustomDict(weights)
 
-    @available_if(has_task("class"))
-    @crash
+    @available_if(has_task("classification"))
+    @composed(crash, beartype)
     def get_sample_weight(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
@@ -631,8 +609,8 @@ class BaseRunner(BaseTracker):
         weights = compute_sample_weight("balanced", y=getattr(self, dataset))
         return pd.Series(weights, name="sample_weight").round(3)
 
-    @composed(crash, method_to_log)
-    def merge(self, other: Runner, /, suffix: str = "2"):
+    @composed(crash, method_to_log, beartype)
+    def merge(self, other: BaseRunner, /, suffix: str = "2"):
         """Merge another instance of the same class into this one.
 
         Branches, models, metrics and attributes of the other instance
@@ -693,7 +671,7 @@ class BaseRunner(BaseTracker):
         if hasattr(self, "missing"):
             self.missing.extend([x for x in other.missing if x not in self.missing])
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def save(self, filename: str | Path = "auto", *, save_data: Bool = True):
         """Save the instance to a pickle file.
 
@@ -712,18 +690,18 @@ class BaseRunner(BaseTracker):
         """
         if not save_data:
             data = {}
-            og = self._branches.og._data
-            self._branches._og._data = None
+            og = self._branches.og._container
+            self._branches._og._container = None
             for branch in self._branches:
                 data[branch.name] = dict(
-                    _data=deepcopy(branch._data),
+                    _data=deepcopy(branch._container),
                     _holdout=deepcopy(branch._holdout),
                     holdout=branch.__dict__.pop("holdout", None)  # Clear cached holdout
                 )
-                branch._data = None
+                branch._container = None
                 branch._holdout = None
 
-        if not (path := Path(filename)).suffix(".pkl"):
+        if (path := Path(filename)).suffix != ".pkl":
             path = path.with_suffix(".pkl")
 
         if path.name == "auto.csv":
@@ -735,19 +713,19 @@ class BaseRunner(BaseTracker):
 
         # Restore the data to the attributes
         if not save_data:
-            self._branches._og._data = og
+            self._branches._og._container = og
             for branch in self._branches:
-                branch._data = data[branch.name]["_data"]
+                branch._container = data[branch.name]["_data"]
                 branch._holdout = data[branch.name]["_holdout"]
                 if data[branch.name]["holdout"] is not None:
                     branch.__dict__["holdout"] = data[branch.name]["holdout"]
 
         self._log(f"{self.__class__.__name__} successfully saved.", 1)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def stacking(
         self,
-        models: slice | Sequence | None = None,
+        models: range | slice | Sequence[ModelSelector] | None = None,
         name: str = "Stack",
         **kwargs,
     ):
@@ -759,7 +737,7 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: slice, sequence or None, default=None
+        models: range, slice, sequence or None, default=None
             Models that feed the stacking estimator. The models must have
             been fitted on the current branch.
 
@@ -793,7 +771,7 @@ class BaseRunner(BaseTracker):
             )
 
         kw_model = dict(
-            goal=self.goal,
+            goal=self._goal,
             config=self._config,
             branches=self._branches,
             metric=self._metric,
@@ -809,7 +787,7 @@ class BaseRunner(BaseTracker):
                 )
             else:
                 model = MODELS[kwargs["final_estimator"]](**kw_model)
-                if self.goal not in model._estimators:
+                if self._goal not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
                         f"{model._fullname} can not perform {self.task} tasks."
@@ -821,10 +799,10 @@ class BaseRunner(BaseTracker):
 
         self[name].fit()
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def voting(
         self,
-        models: slice | Sequence | None = None,
+        models: range | slice | Sequence[ModelSelector] | None = None,
         name: str = "Vote",
         **kwargs,
     ):
@@ -836,7 +814,7 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: slice, sequence or None, default=None
+        models: range, slice, sequence or None, default=None
             Models that feed the stacking estimator. The models must have
             been fitted on the current branch.
 
@@ -871,7 +849,7 @@ class BaseRunner(BaseTracker):
             Voting(
                 models=m,
                 name=name,
-                goal=self.goal,
+                goal=self._goal,
                 config=self._config,
                 branches=self._branches,
                 metric=self._metric,

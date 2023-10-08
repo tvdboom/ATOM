@@ -8,6 +8,7 @@ Description: Unit tests for atom.py
 """
 
 import glob
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -33,9 +34,9 @@ from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_label, X_reg, X_sparse, X_text, merge, y10, y10_label,
-    y10_label2, y10_sn, y10_str, y_bin, y_class, y_fc, y_label, y_multiclass,
-    y_multireg, y_reg,
+    X_class, X_label, X_reg, X_sparse, X_text, y10, y10_label, y10_label2,
+    y10_sn, y10_str, y_bin, y_class, y_fc, y_label, y_multiclass, y_multireg,
+    y_reg,
 )
 
 
@@ -44,38 +45,38 @@ from .conftest import (
 def test_task_assignment():
     """Assert that the correct task is assigned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.task == "binary classification"
+    assert atom.task.name == "binary_classification"
 
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert atom.task == "multiclass classification"
+    assert atom.task.name == "multiclass_classification"
 
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
-    assert atom.task == "multilabel classification"
+    assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
-    assert atom.task == "multilabel classification"
+    assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X10, y=y10_label2, stratify=False, random_state=1)
-    assert atom.task == "multilabel classification"
+    assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    assert atom.task == "multiclass-multioutput classification"
+    assert atom.task.name == "multiclass_multioutput_classification"
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    assert atom.task == "regression"
+    assert atom.task.name == "regression"
 
     atom = ATOMRegressor(X_class, y=y_multiclass, random_state=1)
-    assert atom.task == "multioutput regression"
+    assert atom.task.name == "multioutput_regression"
 
 
 def test_raise_one_target_value():
-    """Assert that error raises when there is only 1 target value."""
+    """Assert that error raises when there is only one target value."""
     with pytest.raises(ValueError, match=".*1 target value.*"):
         ATOMClassifier(X_bin, [1] * len(X_bin), random_state=1)
 
 
 def test_backend_with_n_jobs_1():
-    """Assert that a warning is raised ."""
+    """Assert that a warning is raised."""
     with pytest.warns(UserWarning, match=".*Leaving n_jobs=1 ignores.*"):
         ATOMClassifier(X_bin, y_bin, warnings=True, backend="threading", random_state=1)
 
@@ -101,6 +102,12 @@ def test_iter():
 
 # Test utility properties =========================================== >>
 
+def test_branch():
+    """Assert that we can get the current branch."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    assert atom.branch.name == "main"
+
+
 def test_branch_same():
     """Assert that we can stay on the same branch."""
     atom = ATOMClassifier(X10, y10, random_state=1)
@@ -114,7 +121,7 @@ def test_branch_change():
     atom.branch = "b2"
     atom.clean()
     atom.branch = "main"
-    assert atom.pipeline.empty  # Has no Cleaner
+    assert atom.pipeline.steps == []  # Has no Cleaner
 
 
 def test_branch_existing_name():
@@ -150,6 +157,20 @@ def test_branch_from_valid():
     assert atom.n_nans > 0
 
 
+def test_missing():
+    """Assert that the missing property returns the values considered 'missing'."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert "NA" in atom.missing
+
+
+def test_missing_setter():
+    """Assert that we can change the missing property."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.missing = (1, 2)
+    assert isinstance(atom.missing, list)
+    assert "NA" not in atom.missing
+
+
 def test_scaled():
     """Assert that scaled returns if the dataset is scaled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -165,7 +186,7 @@ def test_duplicates():
 
 
 def test_nans():
-    """Assert that nans returns a series of missing values."""
+    """Assert that the nans property returns a series of missing values."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     assert atom.nans.sum() == 2
 
@@ -224,6 +245,28 @@ def test_n_classes():
     assert atom.n_classes == 3
 
 
+def test_unavailable_sparse_properties():
+    """Assert that certain properties are unavailable for sparse datasets."""
+    atom = ATOMClassifier(X_sparse, y10, random_state=1)
+    with pytest.raises(AttributeError):
+        print(atom.nans)
+    with pytest.raises(AttributeError):
+        print(atom.n_nans)
+    with pytest.raises(AttributeError):
+        print(atom.outliers)
+    with pytest.raises(AttributeError):
+        print(atom.n_outliers)
+
+
+def test_unavailable_regression_properties():
+    """Assert that certain properties are unavailable for regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    with pytest.raises(AttributeError):
+        print(atom.classes)
+    with pytest.raises(AttributeError):
+        print(atom.n_classes)
+
+
 # Test utility methods ============================================= >>
 
 @patch("evalml.AutoMLSearch")
@@ -234,7 +277,7 @@ def test_automl(cls):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="accuracy")
-    atom.branch = "automl"  # Change branch since new pipeline
+    atom.branch = "automl"  # Change branch since we need a new pipeline
     atom.automl()
     cls.assert_called_once()
     assert len(atom.pipeline) == 1
@@ -273,7 +316,15 @@ def test_eda(cls):
     """Assert that the eda method creates a report."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.eda(filename="report")
-    cls.return_value.to_file.assert_called_once_with("report.html")
+    cls.return_value.to_file.assert_called_once_with(Path("report.html"))
+
+
+def test_inverse_transform():
+    """Assert that the inverse_transform method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
+    atom.scale()
+    atom.impute()  # Does nothing, but doesn't crash either
+    pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
 def test_load_no_atom():
@@ -289,25 +340,7 @@ def test_load_already_contains_data():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save("atom", save_data=True)
     with pytest.raises(ValueError, match=".*already contains data.*"):
-        ATOMClassifier.load("atom", data=(X_bin,))
-
-
-def test_load_with_data():
-    """Assert that data can be loaded."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save("atom", save_data=False)
-
-    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin))
-    pd.testing.assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
-
-
-def test_load_ignores_n_rows_parameter():
-    """Assert that n_rows is not used when transform_data=False."""
-    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.6, random_state=1)
-    atom.save("atom", save_data=False)
-
-    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin), transform_data=False)
-    assert len(atom2.dataset) == len(X_bin)
+        ATOMClassifier.load("atom", data=(X_bin, y_bin))
 
 
 def test_load_transform_data():
@@ -319,16 +352,13 @@ def test_load_transform_data():
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
     atom.save("atom", save_data=False)
 
-    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin), transform_data=True)
+    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin))
     assert atom2.dataset.shape == atom.dataset.shape
-
-    atom3 = ATOMClassifier.load("atom", data=(X_bin, y_bin), transform_data=False)
-    assert atom3.dataset.shape == merge(X_bin, y_bin).shape
 
 
 def test_load_transform_data_multiple_branches():
     """Assert that the data is transformed with multiple branches."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.prune()
     atom.branch = "b2"
     atom.balance()
@@ -337,21 +367,15 @@ def test_load_transform_data_multiple_branches():
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=20)
     atom.save("atom_2", save_data=False)
 
-    atom2 = ATOMClassifier.load("atom_2", data=(X_bin, y_bin), transform_data=True)
+    atom2 = ATOMClassifier.load("atom_2", data=(X_bin, y_bin))
+
+    pd.testing.assert_frame_equal(atom2.og.X, X_bin)
     for branch in atom._branches:
         pd.testing.assert_frame_equal(
-            left=atom2._branches[branch.name]._data,
-            right=atom._branches[branch.name]._data,
+            left=atom2._branches[branch.name]._data.data,
+            right=atom._branches[branch.name]._data.data,
             check_dtype=False,
         )
-
-
-def test_inverse_transform():
-    """Assert that the inverse_transform method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
-    atom.scale()
-    atom.impute()  # Does nothing, but doesn't crash either
-    pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
 def test_reset():
@@ -360,8 +384,8 @@ def test_reset():
     atom.scale()
     atom.branch = "2"
     atom.encode()
-    atom.run("LR")
-    atom.reset()
+    atom.run("LR", errors="raise")
+    atom.reset(hard=True)
     assert not atom.models and len(atom._branches) == 1
     assert atom["x2"].dtype.name == "object"  # Is reset back to str
 
@@ -501,6 +525,13 @@ def test_add_basetransformer_params_are_attached():
     atom.add(PCA(random_state=2))  # When changed
     assert atom.pipeline[0].get_params()["random_state"] == 1
     assert atom.pipeline[1].get_params()["random_state"] == 2
+
+
+def test_add_class_not_instance():
+    """Assert that atom accepts transformer classes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.add(StandardScaler)
+    assert check_scaling(atom.X)
 
 
 def test_add_train_only():
@@ -684,6 +715,16 @@ def test_add_pipeline():
     assert isinstance(atom.pipeline[1], SelectFromModel)
 
 
+def test_attributes_are_attached():
+    """Assert that the transformer's attributes are attached to the branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.scale()
+    assert hasattr(atom, "standard_")
+    atom.branch = "main"
+    assert not hasattr(atom, "standard_")
+
+
 def test_apply():
     """Assert that a function can be applied to the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
@@ -694,16 +735,15 @@ def test_apply():
 # Test data cleaning transformers =================================== >>
 
 def test_balance_wrong_task():
-    """Assert that an error is raised for regression tasks."""
+    """Assert that an error is raised for regression and multioutput tasks."""
+    # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     with pytest.raises(AttributeError, match=".*has no attribute.*"):
         atom.balance()
 
-
-def test_balance_multioutput_task():
-    """Assert that an error is raised for multioutput tasks."""
+    # For multioutput tasks
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    with pytest.raises(ValueError, match=".*not support multioutput.*"):
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
         atom.balance()
 
 
@@ -713,7 +753,6 @@ def test_balance():
     length = (atom.y_train == 1).sum()
     atom.balance(strategy="NearMiss")
     assert (atom.y_train == 1).sum() != length
-    assert hasattr(atom, "nearmiss")
 
 
 def test_clean():
@@ -751,7 +790,6 @@ def test_normalize():
     X = atom.X
     atom.normalize()
     assert not atom.X.equals(X)
-    assert hasattr(atom, "yeojohnson")
 
 
 def test_prune():
@@ -760,7 +798,6 @@ def test_prune():
     len_train, len_test = len(atom.train), len(atom.test)
     atom.prune(strategy="lof")
     assert len(atom.train) != len_train and len(atom.test) == len_test
-    assert hasattr(atom, "lof")
 
 
 def test_scale():
@@ -768,7 +805,6 @@ def test_scale():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     assert check_scaling(atom.dataset)
-    assert hasattr(atom, "standard")
 
 
 # Test nlp transformers ============================================ >>
@@ -778,7 +814,6 @@ def test_textclean():
     atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
     atom.textclean()
     assert atom["corpus"][0] == "i am in new york"
-    assert hasattr(atom, "drops")
 
 
 def test_textnormalize():
@@ -801,7 +836,6 @@ def test_vectorize():
     atom.vectorize(strategy="hashing", n_features=5)
     assert "corpus" not in atom
     assert atom.shape == (10, 6)
-    assert hasattr(atom, "hashing")
 
 
 # Test feature engineering transformers ============================ >>
@@ -824,24 +858,7 @@ def test_feature_grouping():
     """Assert that the feature_grouping method group features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_grouping({"g1": [0, 1], "g2": [1, 2]})
-    assert atom.X.shape[1] == X_bin.shape[1] - 3 + 12
-    assert hasattr(atom, "groups")
-
-
-def test_feature_generation_attributes():
-    """Assert that the attrs from feature_generation are passed to atom."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_generation("gfg", n_features=2, population_size=30, hall_of_fame=10)
-    assert hasattr(atom, "gfg")
-    assert hasattr(atom, "genetic_features")
-
-
-def test_feature_selection_attrs():
-    """Assert that feature_selection attaches only used attributes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy="univariate", n_features=8)
-    assert hasattr(atom, "univariate")
-    assert not hasattr(atom, "RFE")
+    assert atom.n_features == X_bin.shape[1] - 3 + 12
 
 
 def test_default_solver_univariate():
@@ -849,12 +866,12 @@ def test_default_solver_univariate():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0].univariate.score_func.__name__ == "f_classif"
+    assert atom.pipeline[0].univariate_.score_func.__name__ == "f_classif"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0].univariate.score_func.__name__ == "f_regression"
+    assert atom.pipeline[0].univariate_.score_func.__name__ == "f_regression"
 
 
 def test_default_solver_from_task():
@@ -862,12 +879,12 @@ def test_default_solver_from_task():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="rfe", solver="tree", n_features=8)
-    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "DecisionTreeClassifier"
+    assert atom.pipeline[0].rfe_.estimator_.__class__.__name__ == "DecisionTreeClassifier"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="rfe", solver="tree", n_features=25)
-    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "DecisionTreeRegressor"
+    assert atom.pipeline[0].rfe_.estimator_.__class__.__name__ == "DecisionTreeRegressor"
 
 
 @patch("atom.feature_engineering.SequentialFeatureSelector")

@@ -95,7 +95,7 @@ depending on the chosen strategy.
 <div id="outlier-value"><strong>outlier value</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 Value that lies further than 3 times the standard deviation away
-from the mean of its column, i.e. |z-score| > 3.
+from the mean of its column, i.e., |z-score| > 3.
 </div>
 
 <div id="predictor"><strong>predictor</strong></div>
@@ -109,6 +109,14 @@ A non-estimator callable object which evaluates an estimator on given
 test data, returning a number. Unlike evaluation metrics, a greater
 returned number must correspond with a better score. See sklearn's
 [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter).
+</div>
+
+<div id="segment"><strong>segment</strong></div>
+<div markdown style="margin: -1em 0 0 1.2em">
+Subset (segment) of a sequence, whether through slicing or generating a
+range of values. When given as a parameter type, it includes both
+[range](https://docs.python.org/3/library/functions.html#func-range)
+and [slice](https://docs.python.org/3/library/functions.html#slice).
 </div>
 
 <div id="sequence"><strong>sequence</strong></div>
@@ -143,8 +151,8 @@ One of the supervised machine learning approaches that ATOM supports:
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multiclass-multioutput-classification">multiclass-multioutput classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 <li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multioutput-regression">multioutput regression</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Forecasting">univariate forecasting</a></li>
-<li><a href="https://www.sktime.net/en/latest/examples/01_forecasting.html#1.2.4.-Multivariate-forecasting">multivariate forecasting</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Forecasting">univariate forecast</a></li>
+<li><a href="https://www.sktime.net/en/latest/examples/01_forecasting.html#1.2.4.-Multivariate-forecasting">multivariate forecast</a></li>
 </ul>
 </div>
 

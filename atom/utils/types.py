@@ -9,27 +9,33 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from typing import (
-    Any, Callable, Hashable, Literal, NotRequired, TypedDict, Union,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING
 
 import modin.pandas as md
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 from beartype.door import is_bearable
-from beartype.typing import Annotated, Iterable, Protocol, TypeVar
+from beartype.typing import (
+    Annotated, Any, Callable, Hashable, Iterable, Iterator, Literal, Protocol,
+    TypeAlias, TypedDict, TypeVar, Union, runtime_checkable,
+)
 from beartype.vale import Is
+
+
+if TYPE_CHECKING:
+    from atom.branch import Branch
+    from atom.utils.utils import ClassMap, Goal, ShapExplanation
 
 
 # Variable types for isinstance ==================================== >>
 
-# TODO: From Python 3.10, isinstance accepts pipe operator (change by then)
+# TODO: From Python 3.10, isinstance accepts pipe operator (change to TypeAlias)
 BoolTypes = (bool, np.bool_)
 IntTypes = (int, np.integer)
 FloatTypes = (float, np.floating)
 ScalarTypes = (*IntTypes, *FloatTypes)
+SegmentTypes = (range, slice)
 IndexTypes = (pd.Index, md.Index)
 TSIndexTypes = (
     pd.PeriodIndex,
@@ -55,12 +61,15 @@ class Engine(TypedDict, total=False):
     estimator: Literal["sklearn", "sklearnex", "cuml"]
 
 
-# class Literal(typing.Literal):
-#
-#     def __class_getitem__(cls, X: tuple[str]) -> Annotated[str, Is]:
-#         return Annotated[str, Is[lambda x: x.lower() in X]]
+class Style(TypedDict):
+    """Types for the plotting styles."""
+    palette: dict[str, str]
+    marker: dict[str, str]
+    dash: dict[str, str]
+    shape: dict[str, str]
 
 
+@runtime_checkable
 class Sequence(Protocol[T]):
     """Type hint factory for sequences with subscripted types.
 
@@ -89,7 +98,7 @@ class Sequence(Protocol[T]):
 
     """
 
-    def __iter__(self) -> Iterable[T]: ...
+    def __iter__(self) -> Iterator[T]: ...
     def __getitem__(self, item) -> T: ...
     def __len__(self) -> Int: ...
 
@@ -97,89 +106,126 @@ class Sequence(Protocol[T]):
     def __class_getitem__(cls, item: Any) -> Annotated[Sequence, Is]:
         return Annotated[
             cls,
-            Is[lambda lst: not isinstance(lst, str)]
-            & Is[lambda lst: np.array(lst).ndim == 1]
+            Is[lambda lst: isinstance(lst, SequenceTypes)]
             & Is[lambda lst: all(is_bearable(i, item) for i in lst)]
         ]
 
 
 @runtime_checkable
-class Scorer(Protocol):
-    """Protocol for all scorers."""
-    def _score(self, method_caller, clf, X, y, sample_weight=None): ...
+class SkScorer(Protocol):
+    """Protocol for sklearn's scorers."""
+    def _score(self, *args, **kwargs): ...
 
 
 @runtime_checkable
-class Transformer(Protocol):
-    """Protocol for all predictors."""
-    def transform(self, **params): ...
+class Scorer(SkScorer, Protocol):
+    """Protocol for ATOM's scorers.
 
+    ATOM's scorers are the same objects as sklearn's scorers
+    but with an extra 'name' attribute.
 
-@runtime_checkable
-class Predictor(Protocol):
-    """Protocol for all predictors."""
-    name: NotRequired[str]
-    acronym: NotRequired[str]
-    needs_scaling: NotRequired[Bool]
-    native_multilabel: NotRequired[Bool]
-    native_multioutput: NotRequired[Bool]
-    has_validation: NotRequired[str | None]
-
-    def fit(self, **params): ...
-    def predict(self, **params): ...
+    """
+    name: str
 
 
 @runtime_checkable
 class Estimator(Protocol):
-    """Protocol for all estimators."""
-    def fit(self, **params): ...
+    """Protocol for sklearn-like estimators."""
+    def __init__(self, *args, **kwargs): ...
+    def get_params(self, *args, **kwargs): ...
+    def set_params(self, *args, **kwargs): ...
+
+
+@runtime_checkable
+class Transformer(Estimator, Protocol):
+    """Protocol for sklearn-like transformers."""
+    def transform(self, *args, **kwargs): ...
+
+
+@runtime_checkable
+class Predictor(Estimator, Protocol):
+    """Protocol for sklearn-like predictors."""
+    def fit(self, *args, **kwargs): ...
+    def predict(self, *args, **kwargs): ...
 
 
 @runtime_checkable
 class Model(Protocol):
     """Protocol for all models."""
-    def _est_class(self): ...
-    def _get_est(self, **params): ...
+    _goal: Goal
+    _metric: ClassMap
+    _ht: dict[str, Any]
+    _shap: ShapExplanation
 
-
-@runtime_checkable
-class Runner(Protocol):
-    """Protocol for all runners."""
-    def run(self, **params): ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def branch(self) -> Branch: ...
+    # @property
+    # def run(self) -> Run: ...
+    # @property
+    # def study(self) -> Study: ...
+    # @property
+    # def best_trial(self) -> FrozenTrial: ...
+    # @property
+    # def trials(self) -> pd.DataFrame: ...
 
 
 # Variable types for type hinting ================================== >>
 
+# General types
 Bool = Union[bool, np.bool_]
 Int = Union[int, np.integer]
 Float = Union[float, np.floating]
 Scalar = Union[Int, Float]
+Segment = Union[range, slice]
 Index = Union[pd.Index, md.Index]
 Series = Union[pd.Series, md.Series]
 DataFrame = Union[pd.DataFrame, md.DataFrame]
 Pandas = Union[Series, DataFrame]
 
+# Numerical types
+IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
+IntLargerEqualZero: TypeAlias = Annotated[Int, Is[lambda x: x >= 0]]
+IntLargerTwo: TypeAlias = Annotated[Int, Is[lambda x: x > 2]]
+IntLargerFour: TypeAlias = Annotated[Int, Is[lambda x: x > 4]]
+FloatLargerZero: TypeAlias = Annotated[Scalar, Is[lambda x: x > 0]]
+FloatLargerEqualZero: TypeAlias = Annotated[Scalar, Is[lambda x: x >= 0]]
+FloatZeroToOneInc: TypeAlias = Annotated[Float, Is[lambda x: 0 <= x <= 1]]
+FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
+
 # Types for X and y
-Features = Union[Iterable, dict, list, tuple, np.ndarray, sps.spmatrix, DataFrame]
-Target = Union[Int, str, dict, Sequence[Int, str], DataFrame]
+Features = Union[Iterable, Sequence[Sequence[Any]], np.ndarray, sps.spmatrix, DataFrame]
+Target = Union[Int, str, dict[str, Any], Sequence[Any], DataFrame]
 
 # Selection of rows or columns by name or position
-ColumnSelector = Union[Int, str, range, slice, Sequence[Int, str], DataFrame]
+ColumnSelector = Union[Int, str, Segment, Sequence[Union[Int, str]], DataFrame]
 RowSelector = Union[Hashable, Sequence[Hashable], ColumnSelector]
 
 # Assignment of index or stratify parameter
 IndexSelector = Union[Bool, Int, str, Sequence[Hashable]]
 
-# Types to initialize models and metric
-ModelSelector = Union[Int, str, Model, range, slice, Sequence[Int, str, Model], None]
-MetricFunction = Callable[[Sequence[Scalar], Sequence[Scalar], ...], Scalar]
-MetricSelector = Union[str, MetricFunction, Sequence[str, MetricFunction], None]
-
-# Allowed values for method selection
-MethodSelector = Literal["predict", "predict_proba", "decision_function", "thresh"]
+# Types to initialize and select models and metric
+ModelsConstructor = Union[str, Predictor, Sequence[str, Predictor], None]
+ModelSelector = Union[Int, str, Model]
+ModelsSelector = Union[ModelSelector, Segment, Sequence[ModelSelector], None]
+MetricFunction = Callable[[Sequence[Scalar], Sequence[Scalar]], Scalar]
+MetricConstructor = Union[
+    str,
+    MetricFunction,
+    SkScorer,
+    Sequence[Union[str, MetricFunction, SkScorer]],
+    None,
+]
+MetricSelector = Union[
+    IntLargerEqualZero,
+    str,
+    Sequence[Union[IntLargerEqualZero, str]],
+    None,
+]
 
 # Allowed values for BaseTransformer parameter
-NJobs = Annotated[Int, Is[lambda x: x >= 0]]
+NJobs = Annotated[Int, Is[lambda x: x != 0]]
 Backend = Literal["loky", "multiprocessing", "threading", "ray"]
 Warnings = Literal["default", "error", "ignore", "always", "module", "once"]
 Severity = Literal["debug", "info", "warning", "error", "critical"]
@@ -189,18 +235,50 @@ Verbose = Literal[0, 1, 2]
 NumericalStrats = Union[Scalar, Literal["drop", "mean", "median", "knn", "most_frequent"]]
 CategoricalStrats = Union[str, Literal["drop", "most_frequent"]]
 DiscretizerStrats = Literal["uniform", "quantile", "kmeans", "custom"]
+Bins = Union[
+    IntLargerZero,
+    Sequence[IntLargerZero],
+    dict[str, Union[IntLargerZero, Sequence[IntLargerZero]]],
+]
+NormalizerStrats = Literal["yeojohnson", "boxcox", "quantile"]
 PrunerStrats = Literal[
     "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"
 ]
 ScalerStrats = Literal["standard", "minmax", "maxabs", "robust"]
+
+# NLP parameters
+VectorizerStarts = Literal["bow", "tfidf", "hashing"]
 
 # Feature engineering parameters
 Operators = Literal["add", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
 FeatureSelectionStrats = Literal[
     "univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "hho", "gwo", "dfo", "go"
 ]
+FeatureSelectionSolvers = Union[
+    str,
+    Callable[..., tuple[Sequence[Scalar], Sequence[Scalar]]],  # e.g., f_classif
+    Estimator,
+    None,
+]
+
+# Runner parameters
+NItems = Union[
+    IntLargerEqualZero,
+    dict[str, IntLargerEqualZero],
+    Sequence[IntLargerEqualZero],
+]
+
+# Allowed values for method selection
+PredictionMethod = Literal["predict", "predict_proba", "decision_function", "thresh"]
 
 # Plotting parameters
+PlotBackend = Literal["plotly", "matplotlib"]
+ParamsSelector = Union[
+    IntLargerEqualZero,
+    str,
+    Segment,
+    Sequence[Union[IntLargerEqualZero, str]],
+]
 Legend = Literal[
     "upper left", "lower left", "upper right", "lower right", "upper center",
     "lower center", "center left", "center right", "center", "out",

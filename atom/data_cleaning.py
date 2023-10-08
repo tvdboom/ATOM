@@ -13,23 +13,15 @@ import re
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
-from category_encoders.backward_difference import BackwardDifferenceEncoder
-from category_encoders.basen import BaseNEncoder
-from category_encoders.binary import BinaryEncoder
-from category_encoders.cat_boost import CatBoostEncoder
-from category_encoders.helmert import HelmertEncoder
-from category_encoders.james_stein import JamesSteinEncoder
-from category_encoders.m_estimate import MEstimateEncoder
-from category_encoders.one_hot import OneHotEncoder
-from category_encoders.ordinal import OrdinalEncoder
-from category_encoders.polynomial import PolynomialEncoder
-from category_encoders.sum_coding import SumEncoder
-from category_encoders.target_encoder import TargetEncoder
-from category_encoders.woe import WOEEncoder
+from beartype.typing import Any, Literal
+from category_encoders import (
+    BackwardDifferenceEncoder, BaseNEncoder, BinaryEncoder, CatBoostEncoder,
+    HelmertEncoder, JamesSteinEncoder, MEstimateEncoder, OneHotEncoder,
+    OrdinalEncoder, PolynomialEncoder, SumEncoder, TargetEncoder, WOEEncoder,
+)
 from imblearn.combine import SMOTEENN, SMOTETomek
 from imblearn.over_sampling import (
     ADASYN, SMOTE, SMOTEN, SMOTENC, SVMSMOTE, BorderlineSMOTE, KMeansSMOTE,
@@ -47,14 +39,15 @@ from sklearn.impute import KNNImputer
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
-    Bool, CategoricalStrats, DataFrame, DataFrameTypes, DiscretizerStrats,
-    Engine, Estimator, Features, Float, Int, NJobs, NumericalStrats, Pandas,
+    Bins, Bool, CategoricalStrats, DataFrame, DataFrameTypes,
+    DiscretizerStrats, Engine, Estimator, Features, FloatLargerZero, Int,
+    IntLargerTwo, NJobs, NormalizerStrats, NumericalStrats, Pandas,
     PrunerStrats, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
     SeriesTypes, Target, Transformer, Verbose,
 )
 from atom.utils.utils import (
     CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
-    method_to_log, n_cols, replace_missing_values, sign, to_df, to_series,
+    method_to_log, n_cols, replace_missing, sign, to_df, to_series,
     variable_return,
 )
 
@@ -685,7 +678,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         *,
         convert_dtypes: Bool = True,
-        drop_dtypes: str | Sequence | None = None,
+        drop_dtypes: str | Sequence[str] | None = None,
         drop_chars: str | None = None,
         strip_categorical: Bool = True,
         drop_duplicates: Bool = False,
@@ -760,7 +753,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
 
             if self.drop_missing_target:
-                y = replace_missing_values(y, self.missing_).dropna(axis=0)
+                y = replace_missing(y, self.missing_).dropna(axis=0)
 
             if self.encode_target:
                 for col in get_cols(y):
@@ -818,7 +811,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if X is not None:
             # Unify all missing values
-            X = replace_missing_values(X, self.missing_)
+            X = replace_missing(X, self.missing_)
 
             for name, column in X.items():
                 dtype = column.dtype.name
@@ -860,7 +853,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             # Delete samples with missing values in target
             if self.drop_missing_target:
                 length = len(y)  # Save original length to count deleted rows later
-                y = replace_missing_values(y, self.missing_).dropna()
+                y = replace_missing(y, self.missing_).dropna()
 
                 if X is not None:
                     X = X[X.index.isin(y.index)]  # Select only indices that remain
@@ -1007,7 +1000,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
               to the n-th column that is transformed. Note that
               categorical columns are automatically ignored.
             - For strategy="custom": Bin edges with length=n_bins - 1.
-              The outermost edges are always `-inf` and `+inf`, e.g.
+              The outermost edges are always `-inf` and `+inf`, e.g.,
               bins `[1, 2]` indicate `(-inf, 1], (1, 2], (2, inf]`.
         - If dict: One of the aforementioned options per column, where
           the key is the column's name.
@@ -1124,8 +1117,8 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: DiscretizerStrats = "quantile",
         *,
-        bins: Int | Sequence | dict = 5,
-        labels: Sequence | dict | None = None,
+        bins: Bins = 5,
+        labels: Sequence[str] | dict[str, Sequence[str]] | None = None,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
@@ -1431,9 +1424,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str | Transformer = "Target",
         *,
-        max_onehot: Int | None = 10,
-        ordinal: dict[str, Sequence] | None = None,
-        infrequent_to_value: Scalar | None = None,
+        max_onehot: IntLargerTwo | None = 10,
+        ordinal: dict[str, Sequence[Any]] | None = None,
+        infrequent_to_value: FloatLargerZero | None = None,
         value: str = "infrequent",
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
@@ -1522,21 +1515,11 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.max_onehot is None:
             max_onehot = 0
-        elif self.max_onehot <= 2:  # If <=2, it would never use one-hot
-            raise ValueError(
-                "Invalid value for the max_onehot parameter."
-                f"Value should be > 2, got {self.max_onehot}."
-            )
         else:
             max_onehot = self.max_onehot
 
         if self.infrequent_to_value:
-            if self.infrequent_to_value < 0:
-                raise ValueError(
-                    "Invalid value for the infrequent_to_value parameter. "
-                    f"Value should be >0, got {self.infrequent_to_value}."
-                )
-            elif self.infrequent_to_value < 1:
+            if self.infrequent_to_value < 1:
                 infrequent_to_value = int(self.infrequent_to_value * len(X))
             else:
                 infrequent_to_value = self.infrequent_to_value
@@ -1827,8 +1810,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         strat_num: NumericalStrats = "drop",
         strat_cat: CategoricalStrats = "drop",
         *,
-        max_nan_rows: Scalar | None = None,
-        max_nan_cols: Float | None = None,
+        max_nan_rows: FloatLargerZero | None = None,
+        max_nan_cols: FloatLargerZero | None = None,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
@@ -1874,23 +1857,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         # Check input Parameters
         if self.max_nan_rows:
-            if self.max_nan_rows < 0:
-                raise ValueError(
-                    "Invalid value for the max_nan_rows parameter. "
-                    f"Value should be >0, got {self.max_nan_rows}."
-                )
-            elif self.max_nan_rows <= 1:
+            if self.max_nan_rows <= 1:
                 self._max_nan_rows = int(X.shape[1] * self.max_nan_rows)
             else:
                 self._max_nan_rows = self.max_nan_rows
 
         if self.max_nan_cols:
-            if self.max_nan_cols < 0:
-                raise ValueError(
-                    "Invalid value for the max_nan_cols parameter. "
-                    f"Value should be >0, got {self.max_nan_cols}."
-                )
-            elif self.max_nan_cols <= 1:
+            if self.max_nan_cols <= 1:
                 max_nan_cols = int(X.shape[0] * self.max_nan_cols)
             else:
                 max_nan_cols = self.max_nan_cols
@@ -1898,7 +1871,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._log("Fitting Imputer...", 1)
 
         # Unify all values to impute
-        X = replace_missing_values(X, self.missing_)
+        X = replace_missing(X, self.missing_)
 
         # Drop rows with too many NaN values
         if self._max_nan_rows is not None:
@@ -1999,7 +1972,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._log("Imputing missing values...", 1)
 
         # Unify all values to impute
-        X = replace_missing_values(X, self.missing_)
+        X = replace_missing(X, self.missing_)
 
         # Drop rows with too many missing values
         if self._max_nan_rows is not None:
@@ -2218,7 +2191,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: Literal["yeojohnson", "boxcox", "quantile"] = "yeojohnson",
+        strategy: NormalizerStrats = "yeojohnson",
         *,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
@@ -2513,10 +2486,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: PrunerStrats | Sequence = "zscore",
+        strategy: PrunerStrats | Sequence[PrunerStrats] = "zscore",
         *,
         method: Scalar | Literal["drop", "minmax"] = "drop",
-        max_sigma: Scalar = 3,
+        max_sigma: FloatLargerZero = 3,
         include_target: Bool = False,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
@@ -2589,12 +2562,6 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                     "Invalid value for the method parameter. Only the zscore "
                     f"strategy accepts another method than 'drop', got {self.method}."
                 )
-
-        if self.max_sigma <= 0:
-            raise ValueError(
-                "Invalid value for the max_sigma parameter."
-                f"Value should be > 0, got {self.max_sigma}."
-            )
 
         # Allocate kwargs to every estimator
         kwargs = CustomDict()

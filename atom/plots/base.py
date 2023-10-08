@@ -9,36 +9,35 @@ Description: Module containing the base classes for plotting.
 
 from __future__ import annotations
 
+from abc import ABC
 from contextlib import contextmanager
-from dataclasses import dataclass
 from itertools import cycle
-from typing import Iterator, Literal
+from pathlib import Path
+from typing import TYPE_CHECKING, overload
 
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+from beartype import beartype
+from beartype.typing import Any, Literal
 from mlflow.tracking import MlflowClient
 
+from atom.basetracker import BaseTracker
+from atom.basetransformer import BaseTransformer
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, DataFrame, Float, Index, Int, IntTypes, Legend, Model, RowSelector,
-    Scalar, Sequence, SequenceTypes,
+    Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Index, Int,
+    IntLargerZero, IntTypes, Legend, MetricSelector, Model, ModelsSelector,
+    PlotBackend, RowSelector, Scalar, Sequence, SequenceTypes, Style,
 )
 from atom.utils.utils import (
-    composed, crash, divide, get_custom_scorer, lst, rnd, to_rgb,
+    Aesthetics, check_is_fitted, composed, crash, divide, get_custom_scorer,
+    lst, rnd, to_rgb,
 )
 
 
-@dataclass
-class Aesthetics:
-    """Keeps track of plot aesthetics."""
-
-    palette: Sequence  # Sequence of colors
-    title_fontsize: Int  # Fontsize for titles
-    label_fontsize: Int  # Fontsize for labels, legend and hoverinfo
-    tick_fontsize: Int  # Fontsize for ticks
-    line_width: Int  # Width of the line plots
-    marker_size: Int  # Size of the markers
+if TYPE_CHECKING:
+    from atom.baserunner import BaseRunner
 
 
 class BaseFigure:
@@ -78,18 +77,18 @@ class BaseFigure:
     """
 
     _marker = ["circle", "x", "diamond", "pentagon", "star", "hexagon"]
-    _dash = [None, "dashdot", "dash", "dot", "longdash", "longdashdot"]
+    _dash = ["solid", "dashdot", "dash", "dot", "longdash", "longdashdot"]
     _shape = ["", "/", "x", "\\", "-", "|", "+", "."]
 
     def __init__(
         self,
-        rows: Int = 1,
-        cols: Int = 1,
-        horizontal_spacing: Float = 0.05,
-        vertical_spacing: Float = 0.07,
-        palette: str | Sequence = "Prism",
+        rows: IntLargerZero = 1,
+        cols: IntLargerZero = 1,
+        horizontal_spacing: FloatZeroToOneExc = 0.05,
+        vertical_spacing: FloatZeroToOneExc = 0.07,
+        palette: str | Sequence[str] = "Prism",
         is_canvas: Bool = False,
-        backend: Literal["plotly", "matplotlib"] = "plotly",
+        backend: PlotBackend = "plotly",
         create_figure: Bool = True,
     ):
         self.rows = rows
@@ -99,7 +98,7 @@ class BaseFigure:
         if isinstance(palette, str):
             self._palette = getattr(px.colors.qualitative, palette)
             self.palette = cycle(self._palette)
-        else:
+        elif isinstance(palette, SequenceTypes):
             # Convert color names or hex to rgb
             self._palette = list(map(to_rgb, palette))
             self.palette = cycle(self._palette)
@@ -115,28 +114,15 @@ class BaseFigure:
             else:
                 self.figure, _ = plt.subplots()
 
-        self.groups = []
-        self.style = dict(palette={}, marker={}, dash={}, shape={})
+        self.groups: list[str] = []
+        self.style: Style = dict(palette={}, marker={}, dash={}, shape={})
         self.marker = cycle(self._marker)
         self.dash = cycle(self._dash)
         self.shape = cycle(self._shape)
 
-        self.pos = {}  # Subplot position to use for title
-        self.custom_layout = {}  # Layout params specified by user
-        self.used_models = []  # Models plotted in this figure
-
-        # Perform parameter checks
-        if not 0 < horizontal_spacing < 1:
-            raise ValueError(
-                "Invalid value for the horizontal_spacing parameter. The "
-                f"value must lie between 0 and 1, got {horizontal_spacing}."
-            )
-
-        if not 0 < vertical_spacing < 1:
-            raise ValueError(
-                "Invalid value for the vertical_spacing parameter. The "
-                f"value must lie between 0 and 1, got {vertical_spacing}."
-            )
+        self.pos: dict[str, tuple[Scalar, Scalar]] = {}  # Subplot position for title
+        self.custom_layout: dict[str, Any] = {}  # Layout params specified by user
+        self.used_models: list[Model] = []  # Models plotted in this figure
 
     @property
     def grid(self) -> tuple[Int, Int]:
@@ -174,12 +160,14 @@ class BaseFigure:
 
         if self.create_figure:
             return self.figure
+        else:
+            return None
 
     def get_elem(
         self,
-        name: Scalar | str | None = None,
+        name: str | None = None,
         element: Literal["palette", "marker", "dash", "shape"] = "palette",
-    ) -> str | None:
+    ) -> str:
         """Get the plot element for a specific name.
 
         This method is used to assign the same element (color, marker,
@@ -197,7 +185,7 @@ class BaseFigure:
 
         Returns
         -------
-        str or None
+        str
             Element code.
 
         """
@@ -238,7 +226,7 @@ class BaseFigure:
         self,
         x: tuple[Scalar, Scalar] = (0, 1),
         y: tuple[Scalar, Scalar] = (0, 1),
-        coloraxis: dict | None = None,
+        coloraxis: dict[str, Any] | None = None,
     ) -> tuple[str, str]:
         """Create and update the plot's axes.
 
@@ -299,7 +287,9 @@ class BaseFigure:
         if coloraxis:
             if title := coloraxis.pop("title", None):
                 coloraxis["colorbar_title"] = dict(
-                    text=title, side="right", font_size=coloraxis.pop("font_size")
+                    text=title,
+                    side="right",
+                    font_size=coloraxis.pop("font_size"),
                 )
 
             coloraxis["colorbar_x"] = rnd(x_pos + ax_size) + ax_size / 40
@@ -317,17 +307,17 @@ class BaseFigure:
         return xaxis, yaxis
 
 
-class BasePlot:
-    """Base class for all plotting methods.
+class BasePlot(BaseTransformer, BaseTracker, ABC):
+    """Abstract base class for all plotting methods.
 
     This base class defines the properties that can be changed
     to customize the plot's aesthetics.
 
     """
 
-    _fig = None
-    _custom_layout = {}
-    _custom_traces = {}
+    _fig = BaseFigure()
+    _custom_layout: dict[str, Any] = {}
+    _custom_traces: dict[str, Any] = {}
     _aesthetics = Aesthetics(
         palette=list(PALETTE),
         title_fontsize=24,
@@ -354,7 +344,7 @@ class BasePlot:
         self.marker_size = value.get("marker_size", self.marker_size)
 
     @property
-    def palette(self) -> str | Sequence:
+    def palette(self) -> str | Sequence[str]:
         """Color palette.
 
         Specify one of plotly's [built-in palettes][palette] or create
@@ -364,7 +354,7 @@ class BasePlot:
         return self._aesthetics.palette
 
     @palette.setter
-    def palette(self, value: str | Sequence):
+    def palette(self, value: str | Sequence[str]):
         if isinstance(value, str) and not hasattr(px.colors.qualitative, value):
             raise ValueError(
                 f"Invalid value for the palette parameter, got {value}. Choose "
@@ -375,78 +365,48 @@ class BasePlot:
         self._aesthetics.palette = value
 
     @property
-    def title_fontsize(self) -> Int:
+    def title_fontsize(self) -> FloatLargerZero:
         """Fontsize for the plot's title."""
         return self._aesthetics.title_fontsize
 
     @title_fontsize.setter
-    def title_fontsize(self, value: Int):
-        if value <= 0:
-            raise ValueError(
-                "Invalid value for the title_fontsize parameter. "
-                f"Value should be >=0, got {value}."
-            )
-
+    def title_fontsize(self, value: FloatLargerZero):
         self._aesthetics.title_fontsize = value
 
     @property
-    def label_fontsize(self) -> Int:
+    def label_fontsize(self) -> FloatLargerZero:
         """Fontsize for the labels, legend and hover information."""
         return self._aesthetics.label_fontsize
 
     @label_fontsize.setter
-    def label_fontsize(self, value: Int):
-        if value <= 0:
-            raise ValueError(
-                "Invalid value for the label_fontsize parameter. "
-                f"Value should be >=0, got {value}."
-            )
-
+    def label_fontsize(self, value: FloatLargerZero):
         self._aesthetics.label_fontsize = value
 
     @property
-    def tick_fontsize(self) -> Int:
+    def tick_fontsize(self) -> FloatLargerZero:
         """Fontsize for the ticks along the plot's axes."""
         return self._aesthetics.tick_fontsize
 
     @tick_fontsize.setter
-    def tick_fontsize(self, value: Int):
-        if value <= 0:
-            raise ValueError(
-                "Invalid value for the tick_fontsize parameter. "
-                f"Value should be >=0, got {value}."
-            )
-
+    def tick_fontsize(self, value: FloatLargerZero):
         self._aesthetics.tick_fontsize = value
 
     @property
-    def line_width(self) -> Int:
+    def line_width(self) -> FloatLargerZero:
         """Width of the line plots."""
         return self._aesthetics.line_width
 
     @line_width.setter
-    def line_width(self, value: Int):
-        if value <= 0:
-            raise ValueError(
-                "Invalid value for the line_width parameter. "
-                f"Value should be >=0, got {value}."
-            )
-
+    def line_width(self, value: FloatLargerZero):
         self._aesthetics.line_width = value
 
     @property
-    def marker_size(self) -> Int:
+    def marker_size(self) -> FloatLargerZero:
         """Size of the markers."""
         return self._aesthetics.marker_size
 
     @marker_size.setter
-    def marker_size(self, value: Int):
-        if value <= 0:
-            raise ValueError(
-                "Invalid value for the marker_size parameter. "
-                f"Value should be >=0, got {value}."
-            )
-
+    def marker_size(self, value: FloatLargerZero):
         self._aesthetics.marker_size = value
 
     # Methods ====================================================== >>
@@ -476,16 +436,16 @@ class BasePlot:
             return df.index
 
     @staticmethod
-    def _get_show(show: Int | None, model: Model | list[Model]) -> Int:
+    def _get_show(show: IntLargerZero | None, maximum: IntLargerZero) -> Int:
         """Check and return the number of features to show.
 
         Parameters
         ----------
         show: int or None
-            Number of features to show. If None, select all (max 200).
+            Number of features to show. If None, select up to 200.
 
-        model: Model or list
-            Models from which to get the features.
+        maximum: int
+            Maximum number of features allowed.
 
         Returns
         -------
@@ -493,69 +453,18 @@ class BasePlot:
             Number of features to show.
 
         """
-        max_fxs = max(m.n_features for m in lst(model))
-        if show is None or show > max_fxs:
+        if show is None or show > maximum:
             # Limit max features shown to avoid maximum figsize error
-            show = min(200, max_fxs)
-        elif show < 1:
-            raise ValueError(
-                f"Invalid value for the show parameter. Value should be >0, got {show}."
-            )
-
-        return show
-
-    @staticmethod
-    def _get_hyperparams(
-        params: str | slice | Sequence | None,
-        model: Model,
-    ) -> list[str]:
-        """Check and return a model's hyperparameters.
-
-        Parameters
-        ----------
-        params: str, slice, sequence or None
-            Hyperparameters to get. Use a sequence or add `+` between
-            options to select more than one. If None, all the model's
-            hyperparameters are selcted.
-
-        model: Model
-            Get the params from this model.
-
-        Returns
-        -------
-        list of str
-            Selected hyperparameters.
-
-        """
-        if params is None:
-            hyperparameters = list(model._ht["distributions"])
-        elif isinstance(params, slice):
-            hyperparameters = list(model._ht["distributions"])[params]
+            show_c = min(200, maximum)
         else:
-            hyperparameters = []
-            for param in lst(params):
-                if isinstance(param, IntTypes):
-                    hyperparameters.append(list(model._ht["distributions"])[param])
-                elif isinstance(param, str):
-                    for p in param.split("+"):
-                        if p not in model._ht["distributions"]:
-                            raise ValueError(
-                                "Invalid value for the params parameter. "
-                                f"Hyperparameter {p} was not used during the "
-                                f"optimization of model {model.name}."
-                            )
-                        else:
-                            hyperparameters.append(p)
+            show_c = show
 
-        if not hyperparameters:
-            raise ValueError(f"Didn't find any hyperparameters for model {model.name}.")
-
-        return hyperparameters
+        return show_c
 
     @staticmethod
     def _get_set(
-        rows: str | Sequence | dict[str, RowSelector]
-    ) -> Iterator[str, RowSelector]:
+        rows: str | Sequence[str] | dict[str, RowSelector]
+    ) -> dict[str, RowSelector]:
         """Get the row selection.
 
         Convert provided rows to a dict where the keys are the names of
@@ -567,27 +476,22 @@ class BasePlot:
         rows: str, sequence or dict
             Selection of rows to plot.
 
-        Yields
-        ------
-        str
-            Name of the row set.
-
-        RowSelector
-            Selection of rows for this set.
+        Returns
+        -------
+        dict
+            Name of the row set with their corresponding selection.
 
         """
         if isinstance(rows, SequenceTypes):
-            rows = {row: row for row in rows}
+            rows_c = {row: row for row in rows}
         elif isinstance(rows, str):
-            rows = {rows: rows}
+            rows_c = {rows: rows}
+        elif isinstance(rows, dict):
+            rows_c = rows
 
-        yield from rows.items()
+        return rows_c
 
-    def _get_metric(
-        self,
-        metric: Int | str | Sequence | None,
-        max_one: Bool,
-    ) -> Int | str | list[Int | str]:
+    def _get_metric(self, metric: MetricSelector, max_one: Bool = False) -> list[str]:
         """Check and return the provided metric index.
 
         Parameters
@@ -595,24 +499,24 @@ class BasePlot:
         metric: int, str, sequence or None
             Metric to retrieve. If None, all metrics are returned.
 
-        max_one: bool
-            Whether one or multiple metrics are allowed.
+        max_one: bool, default=False
+            Whether one or multiple metrics are allowed. If True, raise
+            an exception if more than one metric is selected.
 
         Returns
         -------
-        int or list
-            Position index of the metric. If `max_one=False`, returns
-            a list of metric positions.
+        list of str
+            Names of the selected metrics.
 
         """
         if metric is None:
-            return list(range(len(self._metric)))
+            return self._metric.keys()
         else:
-            inc = []
+            inc: list[str] = []
             for met in lst(metric):
                 if isinstance(met, IntTypes):
-                    if 0 <= met < len(self._metric):
-                        inc.append(met)
+                    if int(met) < len(self._metric):
+                        inc.append(self._metric[met].name)
                     else:
                         raise ValueError(
                             f"Invalid value for the metric parameter. Value {met} is out "
@@ -623,23 +527,96 @@ class BasePlot:
                     for m in met.split("+"):
                         if m in ("time_ht", "time_fit", "time_bootstrap", "time"):
                             inc.append(m)
-                        elif (name := get_custom_scorer(m).name) in self.metric:
-                            inc.append(self._metric.index(name))
+                        elif (name := get_custom_scorer(m).name) in self._metric:
+                            inc.append(name)
                         else:
                             raise ValueError(
                                 "Invalid value for the metric parameter. The "
                                 f"{name} metric wasn't used to fit the models."
                             )
 
-        if len(inc) > 1 and max_one:
+        if max_one and len(inc) > 1:
             raise ValueError(
-                "Invalid value for the metric parameter. "
-                f"Only one metric is allowed, got {inc}."
+                f"Invalid value for the metric parameter, got {metric}. "
+                f"This plotting method only accepts one metric."
             )
 
-        return inc[0] if max_one else inc
+        return inc
 
-    def _get_figure(self, **kwargs) -> go.Figure | plt.Figure | None:
+    def _get_plot_models(
+        self,
+        models: ModelsSelector,
+        max_one: Bool = False,
+        ensembles: Bool = True,
+        check_fitted: Bool = True,
+    ) -> list[Model]:
+        """If a plot is called from a model, adapt the `models` parameter.
+
+        Parameters
+        ----------
+        func: func or None
+            Function to decorate. When the decorator is called with no
+            optional arguments, the function is passed as the first
+            argument, and the decorator just returns the decorated
+            function.
+
+        max_one: bool, default=False
+            Whether one or multiple models are allowed. If True, raise
+            an exception if more than one model is selected.
+
+        ensembles: bool, default=True
+            If False, drop ensemble models from selection.
+
+        check_fitted: bool, default=True
+            Raise an exception if the runner isn't fitted (has no models).
+
+        Returns
+        -------
+        list
+            Models to plot.
+
+        """
+        if isinstance(self, BaseRunner):
+            if check_fitted:
+                check_is_fitted(self, attributes="_models")
+
+            models_c = self._get_models(models, ensembles=ensembles)
+            if max_one and len(models_c) > 1:
+                raise ValueError(
+                    f"Invalid value for the models parameter, got {models_c}. "
+                    f"This plotting method only accepts one model."
+                )
+
+            return models_c
+
+        return [self]  # type: ignore
+
+    @overload
+    def _get_figure(
+        self,
+        backend: Literal["plotly"] = ...,
+        create_figure: Literal[True] = ...,
+    ) -> go.Figure: ...
+
+    @overload
+    def _get_figure(
+        self,
+        backend: Literal["matplotlib"],
+        create_figure: Literal[True] = ...,
+    ) -> plt.Figure: ...
+
+    @overload
+    def _get_figure(
+        self,
+        backend: PlotBackend = ...,
+        create_figure: Literal[False] = ...,
+    ) -> None: ...
+
+    def _get_figure(
+        self,
+        backend: PlotBackend = "plotly",
+        create_figure: Bool = True,
+    ) -> go.Figure | plt.Figure | None:
         """Return an existing figure if in canvas, else a new figure.
 
         Every time this method is called from a canvas, the plot
@@ -648,8 +625,11 @@ class BasePlot:
 
         Parameters
         ----------
-        **kwargs
-            Additional keyword arguments for BaseFigure.
+        backend: str, default="plotly"
+            Figure's backend. Choose between plotly or matplotlib.
+
+        create_figure: bool, default=True
+            Whether to create a new figure.
 
         Returns
         -------
@@ -661,14 +641,18 @@ class BasePlot:
         if BasePlot._fig and BasePlot._fig.is_canvas:
             return BasePlot._fig.next_subplot
         else:
-            BasePlot._fig = BaseFigure(palette=self.palette, **kwargs)
+            BasePlot._fig = BaseFigure(
+                palette=self.palette,
+                backend=backend,
+                create_figure=create_figure,
+            )
             return BasePlot._fig.next_subplot
 
     def _draw_line(
         self,
         parent: str,
         child: str | None = None,
-        legend: Legend | dict | None = None,
+        legend: Legend | dict[str, Any] | None = None,
         **kwargs,
     ) -> go.Scatter:
         """Draw a line.
@@ -798,18 +782,16 @@ class BasePlot:
             Created figure. Only returned if `display=None`.
 
         """
-        # Set name with which to save the file
+        # Set a Path with which to save the file
         if kwargs.get("filename"):
-            if kwargs["filename"].endswith("auto"):
-                name = kwargs["filename"].replace("auto", kwargs["plotname"])
-            else:
-                name = kwargs["filename"]
+            if (path := Path(kwargs["filename"])).name == "auto":
+                path = path.with_name(kwargs["plotname"])
         else:
-            name = kwargs.get("plotname")
+            path = Path(kwargs.get("plotname", ""))
 
         fig = fig or BasePlot._fig.figure
         if BasePlot._fig.backend == "plotly":
-            if ax:
+            if isinstance(ax, tuple):
                 fig.update_layout(
                     {
                         f"{ax[0]}_title": dict(
@@ -909,18 +891,18 @@ class BasePlot:
                 fig.update_layout(**self._custom_layout)
 
                 if kwargs.get("filename"):
-                    if "." not in name or name.endswith(".html"):
-                        fig.write_html(name if "." in name else name + ".html")
+                    if path.suffix in ("", ".html"):
+                        fig.write_html(path.with_suffix(".html"))
                     else:
-                        fig.write_image(name)
+                        fig.write_image(path)
 
                 # Log plot to mlflow run of every model visualized
                 if getattr(self, "experiment", None) and self.log_plots:
                     for m in set(BasePlot._fig.used_models):
                         MlflowClient().log_figure(
-                            run_id=m._run.info.run_id,
+                            run_id=m.run.info.run_id,
                             figure=fig,
-                            artifact_file=name if "." in name else f"{name}.html",
+                            artifact_file=str(path.with_suffix(".html")),
                         )
 
                 if kwargs.get("display") is True:
@@ -928,51 +910,51 @@ class BasePlot:
                 elif kwargs.get("display") is None:
                     return fig
 
-        else:
-            if kwargs.get("title"):
-                ax.set_title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
-            if kwargs.get("xlabel"):
-                ax.set_xlabel(kwargs["xlabel"], fontsize=self.label_fontsize, labelpad=12)
-            if kwargs.get("ylabel"):
-                ax.set_ylabel(kwargs["ylabel"], fontsize=self.label_fontsize, labelpad=12)
-            if ax is not None:
+        elif BasePlot._fig.backend == "matplotlib":
+            if isinstance(ax, plt.Axes):
+                if title := kwargs.get("title"):
+                    ax.set_title(title, fontsize=self.title_fontsize, pad=20)
+                if xlabel := kwargs.get("xlabel"):
+                    ax.set_xlabel(xlabel, fontsize=self.label_fontsize, labelpad=12)
+                if ylabel := kwargs.get("ylabel"):
+                    ax.set_ylabel(ylabel, fontsize=self.label_fontsize, labelpad=12)
                 ax.tick_params(axis="both", labelsize=self.tick_fontsize)
 
-            if kwargs.get("figsize"):
+            if size := kwargs.get("figsize"):
                 # Convert from pixels to inches
-                fig.set_size_inches(
-                    kwargs["figsize"][0] // fig.get_dpi(),
-                    kwargs["figsize"][1] // fig.get_dpi(),
-                )
+                fig.set_size_inches(size[0] // fig.get_dpi(), size[1] // fig.get_dpi())
+
             plt.tight_layout()
             if kwargs.get("filename"):
-                fig.savefig(name)
+                fig.savefig(path.with_suffix(".png"))
 
             # Log plot to mlflow run of every model visualized
             if self.experiment and self.log_plots:
                 for m in set(BasePlot._fig.used_models):
                     MlflowClient().log_figure(
-                        run_id=m._run.info.run_id,
+                        run_id=m.run.info.run_id,
                         figure=fig,
-                        artifact_file=name if "." in name else f"{name}.png",
+                        artifact_file=str(path.with_suffix(".png")),
                     )
 
             plt.show() if kwargs.get("display") else plt.close()
             if kwargs.get("display") is None:
                 return fig
 
-    @composed(contextmanager, crash)
+        return None  # display!=None or not final figures
+
+    @composed(beartype, contextmanager, crash)
     def canvas(
         self,
-        rows: Int = 1,
-        cols: Int = 2,
+        rows: IntLargerZero = 1,
+        cols: IntLargerZero = 2,
         *,
-        horizontal_spacing: Float = 0.05,
-        vertical_spacing: Float = 0.07,
-        title: str | dict | None = None,
-        legend: Legend | dict | None = "out",
-        figsize: tuple[Int, Int] | None = None,
-        filename: str | None = None,
+        horizontal_spacing: FloatZeroToOneExc = 0.05,
+        vertical_spacing: FloatZeroToOneExc = 0.07,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "out",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
         display: Bool = True,
     ):
         """Create a figure with multiple plots.
@@ -1016,7 +998,7 @@ class BasePlot:
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of plots in the canvas.
 
-        filename: str or None, default=None
+        filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
             (.html, .png, .pdf, etc...). If `filename` has no file type,

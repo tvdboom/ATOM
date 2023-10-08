@@ -111,10 +111,10 @@ Additional things to take into account:
 * Custom models can be accessed through their acronym like any other model, e.g.
   `atom.ransac` in the example above.
 * Custom models are not restricted to sklearn estimators, but they should
-  follow [sklearn's API][api], i.e. have a fit and predict method.
+  follow [sklearn's API][api], i.e., have a fit and predict method.
 * [Parameter customization][] (for the initializer) is only possible for
   custom models which provide an estimator that has a `set_params()` method,
-  i.e. it's a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
+  i.e., it's a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
 * [Hyperparameter tuning][] for custom models is ignored unless appropriate
   dimensions are provided through `ht_params`.
 

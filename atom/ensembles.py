@@ -25,7 +25,7 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils.types import Bool, Features, Int, Predictor, Sequence
+from atom.utils.types import Bool, Features, Int, Predictor, Scalar, Sequence
 from atom.utils.utils import check_is_fitted
 
 
@@ -55,7 +55,7 @@ class BaseVoting(BaseEnsemble):
         self,
         X: Features,
         y: Sequence,
-        sample_weight: Sequence | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> BaseVoting:
         """Fit the estimators in the ensemble.
 
@@ -118,7 +118,7 @@ class BaseStacking(BaseEnsemble):
         self,
         X: Features,
         y: Sequence,
-        sample_weight: Sequence | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> BaseStacking:
         """Fit the estimators in the ensemble.
 
@@ -234,7 +234,7 @@ class VotingClassifier(BaseVoting, VC):
         estimators: list[tuple[str, Predictor]],
         *,
         voting: str = "hard",
-        weights: Sequence | None = None,
+        weights: Sequence[Scalar] | None = None,
         n_jobs: Int | None = None,
         flatten_transform: Bool = True,
         verbose: Bool = False,
@@ -257,7 +257,7 @@ class VotingClassifier(BaseVoting, VC):
         self,
         X: Features,
         y: Sequence,
-        sample_weight: Sequence | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> VotingClassifier:
         """Fit the estimators, skipping prefit ones.
 
@@ -341,7 +341,7 @@ class VotingRegressor(BaseVoting, VR):
         self,
         estimators: list[tuple[str, Predictor]],
         *,
-        weights: Sequence | None = None,
+        weights: Sequence[Scalar] | None = None,
         n_jobs: Int | None = None,
         verbose: Bool = False,
     ):
@@ -374,7 +374,7 @@ class StackingClassifier(BaseStacking, SC):
         self,
         X: Features,
         y: Sequence,
-        sample_weight: Sequence | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> StackingClassifier:
         """Fit the estimators, skipping prefit ones.
 
@@ -419,7 +419,7 @@ class StackingRegressor(BaseStacking, SR):
         self,
         X: Features,
         y: Sequence,
-        sample_weight: Sequence | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> StackingRegressor:
         """Fit the estimators, skipping prefit ones.
 

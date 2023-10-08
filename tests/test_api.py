@@ -36,16 +36,16 @@ def test_atommodel():
 def test_atomclassifier():
     """Assert that the goal is set correctly for ATOMClassifier."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.goal == "class"
+    assert atom._goal.name == "classification"
 
 
 def test_atomforecaster():
     """Assert that the goal is set correctly for ATOMForecaster."""
     atom = ATOMForecaster(y_fc, random_state=1)
-    assert atom.goal == "fc"
+    assert atom._goal.name == "forecast"
 
 
 def test_atomregressor():
     """Assert that the goal is set correctly for ATOMRegressor."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    assert atom.goal == "reg"
+    assert atom._goal.name == "regression"

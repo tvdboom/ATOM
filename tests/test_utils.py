@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modeling (ATOM)
 Author: Mavs
-Description: Unit tests for utils.py
+Description: Unit tests for the utils module.
 
 """
 

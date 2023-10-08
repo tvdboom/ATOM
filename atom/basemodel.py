@@ -16,7 +16,6 @@ from functools import lru_cache
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
-from typing import Any, Literal
 from unittest.mock import patch
 
 import dill as pickle
@@ -24,9 +23,11 @@ import mlflow
 import numpy as np
 import pandas as pd
 import ray
+from beartype.typing import Any
 from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.data import from_pandas
+from mlflow.entities import Run
 from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
@@ -52,40 +53,37 @@ from sktime.forecasting.model_selection import SingleWindowSplitter
 from sktime.proba.normal import Normal
 from starlette.requests import Request
 
-from atom.basetracker import BaseTracker
-from atom.basetransformer import BaseTransformer
-from atom.branch import BranchManager
+from atom.branch import Branch, BranchManager
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
-    FloatTypes, Int, IntTypes, MethodSelector, MetricSelector, NJobs, Pandas,
-    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Target, Verbose,
-    Warnings,
+    FloatTypes, Int, IntLargerEqualZero, IntTypes, MetricConstructor, NJobs,
+    Pandas, PredictionMethod, Predictor, RowSelector, Scalar, Scorer, Sequence,
+    Stages, Target, Verbose, Warnings,
 )
 from atom.utils.utils import (
-    ClassMap, CustomDict, DataConfig, PlotCallback, ShapExplanation,
-    TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
+    ClassMap, CustomDict, DataConfig, Goal, PlotCallback, ShapExplanation,
+    Task, TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
     check_scaling, composed, crash, estimator_has_attr, fit_and_score, flt,
-    get_cols, get_custom_scorer, get_feature_importance, has_task, infer_task,
-    is_binary, is_multioutput, it, lst, merge, method_to_log, rnd, sign,
-    time_to_str, to_df, to_pandas, to_series,
+    get_cols, get_custom_scorer, get_feature_importance, has_task, it, lst,
+    merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
 )
 
 
-class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
+class BaseModel(RunnerPlot):
     """Base class for all models.
 
     Parameters
     ----------
+    goal: Goal
+        Model's goal (classification, regression or forecast).
+
     name: str or None, default=None
         Name for the model. If None, the name is the same as the
         model's acronym.
-
-    goal: str, default="class"
-        Model's goal. Choose from: "class", "fc", "reg".
 
     config: DataConfig or None, default=None
         Data configuration. If None, use the default config values.
@@ -180,8 +178,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     def __init__(
         self,
+        goal: Goal,
         name: str | None = None,
-        goal: Literal["class", "reg", "fc"] = "class",
         config: DataConfig | None = None,
         branches: BranchManager | None = None,
         metric: ClassMap | None = None,
@@ -209,17 +207,16 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             random_state=random_state,
         )
 
+        self._goal = goal
         self._name = name or self.acronym
-        self.goal = goal
 
         self._config = config or DataConfig()
-        self._metric = metric
+        self._metric = metric or ClassMap()
 
         self.scaler = None
         self.app = None
         self.dashboard = None
 
-        self._run = None  # mlflow run (if experiment is active)
         if self.experiment:
             self._run = mlflow.start_run(run_name=self.name)
             mlflow.end_run()
@@ -246,11 +243,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         # Skip this part if not called for the estimator
         if branches:
-            self.og = branches.og
-            self.branch = branches.current
+            self._og = branches.og
+            self._branch = branches.current
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
-
-            self.task = infer_task(self.y, goal=self.goal)
 
             if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
                 self.scaler = Scaler().fit(self.X_train)
@@ -258,8 +253,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
+    def __setstate__(self, state: dict[str, Any]):
+        self.__dict__.update(state)
+
     def __getattr__(self, item: str) -> Any:
-        if item in dir(self.branch) and not item.startswith("_"):
+        if item in dir(self.__dict__.get("_branch")) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column
@@ -285,20 +283,25 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         return self.__class__.__name__
 
     @property
-    def _est_class(self) -> Predictor:
-        """Return the estimator's class (not instance)."""
+    def _est_class(self) -> type[Predictor]:
+        """Return the estimator's class (not instance).
+
+        This property checks which estimator engine is enabled and
+        retrieves the model's estimator from the right library.
+
+        """
         try:
             engine = self.engine.get("estimator", "sklearn")
             module = import_module(f"{engine}.{self._module}")
-            cls = self._estimators.get(self.goal, self._estimators.get("reg"))
+            c = self._estimators.get(self._goal.name, self._estimators.get("regression"))
         except (ModuleNotFoundError, AttributeError):
             if "sklearn" in self.supports_engines:
                 module = import_module(f"sklearn.{self._module}")
             else:
                 module = import_module(self._module)
-            cls = self._estimators.get(self.goal, self._estimators.get("reg"))
+            c = self._estimators.get(self._goal.name, self._estimators.get("regression"))
 
-        return getattr(module, cls)
+        return getattr(module, c)
 
     @property
     def _shap(self) -> ShapExplanation:
@@ -356,9 +359,6 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -371,16 +371,15 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         """
         return CustomDict(
-            {k: rnd(trial._suggest(k, v)) for k, v in self._ht["distributions"].items()}
+            {k: trial._suggest(k, v) for k, v in self._ht["distributions"].items()}
         )
 
-    @staticmethod
-    def _trial_to_est(params: CustomDict) -> CustomDict:
+    def _trial_to_est(self, params: CustomDict) -> CustomDict:
         """Convert trial's parameters to parameters for the estimator.
 
         Some models, such as MLP, use different hyperparameters for the
         study as for the estimator (this is the case when the estimator's
-        parameter can not be modeled according to an integer, float or
+        parameter cannot be modeled according to an integer, float or
         categorical distribution). This method converts the parameters
         from the trial to those that can be ingested by the estimator.
         This method is overriden by implementations in the child classes.
@@ -397,7 +396,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Estimator's hyperparameters.
 
         """
-        return deepcopy(params)
+        return params.deepcopy()
 
     def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
@@ -430,14 +429,14 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         estimator = self._inherit(self._est_class(**base_params))
         estimator.set_params(**sub_params)
 
-        if self.task.startswith("multilabel") and not self.native_multilabel:
+        if self.task is Task.multilabel_classification and not self.native_multilabel:
             estimator = ClassifierChain(estimator)
-        elif "multioutput" in self.task and not self.native_multioutput:
-            if self.goal.startswith("class"):
+        elif self.task.is_multioutput and not self.native_multioutput:
+            if self.task.is_classification:
                 estimator = MultiOutputClassifier(estimator)
-            else:
+            elif self.task.is_regression:
                 estimator = MultiOutputRegressor(estimator)
-        elif hasattr(self, "_estimators") and self.goal not in self._estimators:
+        elif hasattr(self, "_estimators") and self._goal.name not in self._estimators:
             # Forecasting task with a regressor
             estimator = make_reduction(estimator)
 
@@ -501,8 +500,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
             for step in range(steps):
                 kwargs = {}
-                if self.goal.startswith("class"):
-                    if is_multioutput(self.task):
+                if self.task.is_classification:
+                    if self.task.is_multioutput:
                         if self.native_multilabel:
                             kwargs["classes"] = list(range(self.y.shape[1]))
                         else:
@@ -513,7 +512,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
                 if not trial:
-                    # Store train and validation scores on main metric in evals attribute
+                    # Store train and validation scores on the main metric in evals attr
                     self._evals[0].append(
                         self._score_from_est(self._metric[0], estimator, *data)
                     )
@@ -537,8 +536,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                         raise TrialPruned()
 
         else:
-            # Add forecasting horizon to sktime estimators
-            if self.goal == "fc":
+            # Add the forecasting horizon to sktime estimators
+            if self._goal == "fc":
                 if "fh" in sign(estimator.fit):
                     if estimator.get_tag("requires-fh-in-fit"):
                         est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
@@ -578,7 +577,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                     ]
                 )
 
-            if self.goal != "fc":
+            if self._goal != "fc":
                 # Annotate if model overfitted when train 20% > test on main metric
                 score_train = lst(self.score_train)[0]
                 score_test = lst(self.score_test)[0]
@@ -594,7 +593,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self,
         rows: RowSelector,
         target: str | None = None,
-        attr: MethodSelector = "predict",
+        attr: PredictionMethod = "predict",
     ) -> tuple[Pandas, Pandas]:
         """Get the true and predicted values for a column.
 
@@ -604,7 +603,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        rows: hashable, slice, sequence or dataframe
+        rows: hashable, segment, sequence or dataframe
             [Selection of rows][row-and-column-selection] for which to
             get the predictions.
 
@@ -639,11 +638,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         X, y_true = self.branch._get_rows(rows, return_X_y=True)
         y_pred = getattr(self, attr)(X.index)
 
-        if is_multioutput(self.task):
+        if self.task.is_multioutput:
             if target is not None:
                 target = self.branch._get_target(target, only_columns=True)
                 return y_true.loc[:, target], y_pred.loc[:, target]
-        elif self.task.startswith("bin") and y_pred.ndim > 1:
+        elif self.task.is_binary and y_pred.ndim > 1:
             return y_true, y_pred.iloc[:, 1]
 
         return y_true, y_pred
@@ -681,11 +680,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Calculated score.
 
         """
-        if self.goal == "fc":
+        if self.task.is_forecast:
             # Sktime uses signature estimator.predict(fh, X)
             y_pred = to_series(estimator.predict(y.index, check_empty(X)), index=y.index)
             return self._score_from_pred(scorer, y, y_pred, **kwargs)
-        elif self.task.startswith("multiclass-multioutput"):
+        elif self.task is Task.multiclass_multioutput_classification:
             # Calculate predictions with shape=(n_samples, n_targets)
             y_pred = to_df(estimator.predict(X), index=y.index, columns=y.columns)
             return self._score_from_pred(scorer, y, y_pred, **kwargs)
@@ -728,10 +727,10 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         func = lambda x, y: scorer._score_func(x, y, **scorer._kwargs, **kwargs)
 
         # Forecasting models can have first prediction NaN
-        if self.goal == "fc" and all(x.isna()[0] for x in get_cols(y_pred)):
+        if self.task.is_forecast and all(x.isna()[0] for x in get_cols(y_pred)):
             y_true, y_pred, = y_true.iloc[1:], y_pred.iloc[1:]
 
-        if self.task.startswith("multiclass-multioutput"):
+        if self.task is Task.multiclass_multioutput_classification:
             # Get mean of scores over target columns
             return np.mean(
                 [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred], axis=0
@@ -758,7 +757,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        rows: hashable, slice, sequence or dataframe
+        rows: hashable, segment, sequence or dataframe
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 
@@ -786,7 +785,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         elif scorer.__class__.__name__ == "_ProbaScorer":
             y_true, y_pred = self._get_pred(rows, attr="predict_proba")
         else:
-            if threshold and is_binary(self.task) and hasattr(self, "predict_proba"):
+            if threshold and self.task.is_binary and hasattr(self, "predict_proba"):
                 y_true, y_pred = self._get_pred(rows, attr="predict_proba")
                 if isinstance(y_pred, DataFrameTypes):
                     # Update every target column with its corresponding threshold
@@ -804,9 +803,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         result = rnd(self._score_from_pred(scorer, y_true, y_pred, **kwargs))
 
         # Log metric to mlflow run for predictions on data sets
-        if self._run and isinstance(rows, str):
+        if self.experiment and isinstance(rows, str):
             MlflowClient().log_metric(
-                run_id=self._run.info.run_id,
+                run_id=self.run.info.run_id,
                 key=f"{scorer.name}_{rows}",
                 value=it(result),
             )
@@ -918,8 +917,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             params = self._get_parameters(trial)
 
             # Since the suggested values are not the exact same values used in
-            # the estimator (often changed by _get_parameters in models.py),
-            # we implement this hacky method to overwrite the params in storage
+            # the estimator (changed by _get_parameters in the 'models' module
+            # when there are invalid combinations), we implement this hacky
+            # method to overwrite the params in storage
             trial._cached_frozen_trial.params = params
             frozen_trial = self.study._storage._get_trial(trial.number)
             frozen_trial.params = params
@@ -930,18 +930,19 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             for key, value in self._ht["tags"].items():
                 trial.set_user_attr(key, value)
 
-            # Create estimator instance with trial specific hyperparameters
+            # Create estimator instance with trial-specific hyperparameters
             estimator = self._get_est(
                 **{**self._est_params, **self._trial_to_est(params)}
             )
 
-            # Skip if the eval function has already been evaluated at this point
-            if dict(params) not in self.trials["params"].tolist():
-                # Follow same stratification strategy as atom
+            # Check if the same parameters have already been evaluated
+            current_params = self.trials[params].to_dict("records")
+            if dict(params) not in current_params:
+                # Follow the same stratification strategy as atom
                 cols = self._get_stratify_columns(self.og.train, self.og.y_train)
 
                 if isinstance(cv := self._ht["cv"], IntTypes):
-                    if self.goal == "fc":
+                    if self._goal == "fc":
                         if cv == 1:
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
@@ -975,13 +976,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 score = list(np.mean(scores := [r[1] for r in results], axis=0))
 
                 if len(results) > 1:
-                    # Report cv scores for termination judgement
+                    # Report cv scores for termination judgment
                     report_cross_validation_scores(trial, scores)
             else:
                 # Get same estimator and score as previous evaluation
-                idx = self.trials.index[self.trials["params"] == params][0]
-                estimator = self.trials.at[idx, "estimator"]
-                score = lst(self.trials.at[idx, "score"])
+                idx = current_params.index(dict(params))
+                estimator = deepcopy(self.trials.at[idx, "estimator"])
+                score = list(self.trials.loc[idx, self._metric.keys()])
 
             trial.set_user_attr("estimator", estimator)
 
@@ -991,7 +992,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         self._log(f"Running hyperparameter tuning for {self._fullname}...", 1)
 
-        # Check validity of provided parameters
+        # Check the validity of the provided parameters
         self._check_est_params()
 
         # Assign custom distributions or use predefined
@@ -1038,7 +1039,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             if k not in self._est_params
         }
 
-        # If no hyperparameters to optimize, skip BO
+        # If no hyperparameters to optimize, skip ht
         if not self._ht["distributions"]:
             self._log(" --> Skipping study. No hyperparameters to optimize.", 2)
             return
@@ -1054,9 +1055,9 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
             self._trials = pd.DataFrame(
                 columns=[
-                    "params",
+                    *self._ht["distributions"],
                     "estimator",
-                    "score",
+                    *[m for met in self._metric.keys() for m in (met, f"best_{met}")],
                     "time_trial",
                     "time_ht",
                     "state",
@@ -1096,14 +1097,6 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 "Skipping hyperparameter tuning.", 1, severity="warning"
             )
             return
-
-        if len(self._metric) == 1:
-            self._best_trial = self.study.best_trial
-        else:
-            # Sort trials by best score on main metric
-            self._best_trial = sorted(
-                self.study.best_trials, key=lambda x: x.values[0]
-            )[0]
 
         self._log(f"Hyperparameter tuning {'-' * 27}", 1)
         self._log(f"Best trial --> {self.best_trial.number}", 1)
@@ -1145,7 +1138,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         self.clear()  # Reset model's state
 
-        if self.trials is None:
+        if self._study is None:
             self._log(f"Results for {self._fullname}:", 1)
         self._log(f"Fit {'-' * 45}", 1)
 
@@ -1176,7 +1169,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         # Log parameters, metrics, model and data to mlflow
         if self.experiment:
-            with mlflow.start_run(run_id=self._run.info.run_id):
+            with mlflow.start_run(run_id=self.run.info.run_id):
                 mlflow.set_tags(
                     {
                         "name": self.name,
@@ -1315,25 +1308,70 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         # Add the acronym in front (with right capitalization)
         self._name = f"{self.acronym}{f'_{value}' if value else ''}"
 
-        if self._run:  # Change name in mlflow's run
-            MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
+        if self.experiment:  # Change name in mlflow's run
+            MlflowClient().set_tag(self.run.info.run_id, "mlflow.runName", self.name)
 
         self._log(f"Model {self.name} successfully renamed to {self._name}.", 1)
 
     @property
-    def study(self) -> Study | None:
-        """Optuna study used for [hyperparameter tuning][]."""
-        return self._study
+    def task(self) -> Task:
+        """Dataset's [task][] type."""
+        return self._goal.infer_task(self.y)
 
     @property
-    def trials(self) -> pd.DataFrame | None:
+    def og(self) -> Branch:
+        """Branch containing the original dataset.
+
+        This branch contains the data prior to any transformations.
+        It redirects to the current branch if its pipeline is empty
+        to not have the same data in memory twice.
+
+        """
+        return self._og
+
+    @property
+    def branch(self) -> Branch:
+        """Current active branch."""
+        return self._branch
+
+    @property
+    def run(self) -> Run:
+        """Mlflow run corresponding to this model.
+
+        This property is only available for models that with mlflow
+        [tracking][] enabled.
+
+        """
+        if self.experiment:
+            return self._run
+
+        raise AttributeError("This model has no mlflow experiment.")
+
+    @property
+    def study(self) -> Study:
+        """Optuna study used for hyperparameter tuning.
+
+        This property is only available for models that ran
+        [hyperparameter tuning][].
+
+        """
+        if self._study is not None:
+            return self._study
+
+        raise AttributeError("This model didn't run hyperparameter tuning.")
+
+    @property
+    def trials(self) -> pd.DataFrame:
         """Overview of the trials' results.
 
-        All durations are in seconds. Columns include:
+        This property is only available for models that ran
+        [hyperparameter tuning][]. All durations are in seconds.
+        Columns include:
 
-        - **params:** Parameters used for this trial.
-        - **estimator:** Estimator used for this trial.
-        - **score:** Objective score(s) of the trial.
+        - **[param_name]:** Parameter value used in this trial.
+        - **estimator:** Estimator used in this trial.
+        - **[metric_name]:** Metric score of the trial.
+        - **[best_metric_name]:** Best score so far in this study.
         - **time_trial:** Duration of the trial.
         - **time_ht:** Duration of the hyperparameter tuning.
         - **state:** Trial's state (COMPLETE, PRUNED, FAIL).
@@ -1342,22 +1380,36 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         if self._trials is not None:
             return self._trials.sort_index()  # Can be in disorder for n_jobs>1
 
+        raise AttributeError("The model didn't run hyperparameter tuning.")
+
     @property
-    def best_trial(self) -> FrozenTrial | None:
+    def best_trial(self) -> FrozenTrial:
         """Trial that returned the highest score.
 
         For [multi-metric runs][], the best trial is the trial that
         performed best on the main metric. Use the property's `@setter`
         to change the best trial. See [here][example-hyperparameter-tuning]
-        an example.
+        an example. This property is only available for models that
+        ran [hyperparameter tuning][].
 
         """
-        return self._best_trial
+        if self._study is not None:
+            if self._best_trial:
+                return self._best_trial
+            elif len(self._metric) == 1:
+                return self.study.best_trial
+            else:
+                # Sort trials by the best score on the main metric
+                return sorted(self.study.best_trials, key=lambda x: x.values[0])[0]
+
+        raise AttributeError("The model didn't run hyperparameter tuning.")
 
     @best_trial.setter
-    def best_trial(self, value: Int):
+    def best_trial(self, value: IntLargerEqualZero | None):
         """Change the selected best trial."""
-        if value not in self.trials.index:
+        if value is None:
+            self._best_trial = None  # Reset best trial selection
+        elif value not in self.trials.index:
             raise ValueError(
                 "Invalid value for the best_trial. The "
                 f"value should be a trial number, got {value}."
@@ -1365,24 +1417,43 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self._best_trial = self.study.trials[value]
 
     @property
-    def best_params(self) -> dict:
-        """Hyperparameters used by the [best trial][self-best_trial]."""
-        if self.best_trial:
-            return self.trials.at[self.best_trial.number, "params"]
+    def best_params(self) -> dict[str, Any]:
+        """Estimator's parameters in the [best trial][self-best_trial].
+
+        This property is only available for models that ran
+        [hyperparameter tuning][].
+
+        """
+        if self._study is not None:
+            return dict(self._trial_to_est(self.best_trial.params))
         else:
             return {}
 
     @property
-    def score_ht(self) -> Scalar | list[Scalar] | None:
-        """Metric score obtained by the [best trial][self-best_trial]."""
-        if self.best_trial:
-            return self.trials.at[self.best_trial.number, "score"]
+    def score_ht(self) -> Scalar | list[Scalar]:
+        """Metric score obtained by the [best trial][self-best_trial].
+
+        This property is only available for models that ran
+        [hyperparameter tuning][].
+
+        """
+        if self._study is not None:
+            return self.trials.loc[self.best_trial.number, self._metric.keys()]
+
+        raise AttributeError("The model didn't run hyperparameter tuning.")
 
     @property
-    def time_ht(self) -> Float | None:
-        """Duration of the hyperparameter tuning (in seconds)."""
-        if self.trials is not None:
+    def time_ht(self) -> Float:
+        """Duration of the hyperparameter tuning (in seconds).
+
+        This property is only available for models that ran
+        [hyperparameter tuning][].
+
+        """
+        if self._study is not None:
             return self.trials.iat[-1, -2]
+
+        raise AttributeError("The model didn't run hyperparameter tuning.")
 
     @property
     def estimator(self) -> Predictor:
@@ -1394,8 +1465,8 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         """Scores obtained per iteration of the training.
 
         Only the scores of the [main metric][metric] are tracked.
-        Included keys are: train and test. Read more in the
-        [user guide][in-training-validation].
+        Included keys are: train and test. This property is only
+        available for models with [in-training-validation][].
 
         """
         return self._evals
@@ -1447,7 +1518,10 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @property
     def time(self) -> Float:
         """Total duration of the run (in seconds)."""
-        return (self.time_ht or 0) + self._time_fit + self._time_bootstrap
+        if self._study is None:
+            return self._time_fit + self._time_bootstrap
+        else:
+            return self.time_ht + self._time_fit + self._time_bootstrap
 
     @property
     def feature_importance(self) -> pd.Series | None:
@@ -1589,7 +1663,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
     # Utility methods ============================================== >>
 
-    @available_if(has_task("class"))
+    @available_if(has_task("classification"))
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the model.
@@ -1623,7 +1697,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             self._estimator = calibrator.fit(self.X_test, self.y_test)
 
         # Assign a mlflow run to the new estimator
-        if self._run:
+        if self.experiment:
             self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
             mlflow.end_run()
 
@@ -1720,13 +1794,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             **{k: v for k, v in kwargs.items() if k in sign(Interface.launch)}
         )
 
-    @available_if(has_task("multioutput", inverse=True))
+    @available_if(has_task("!multioutput"))
     @composed(crash, method_to_log)
     def create_dashboard(
         self,
         rows: RowSelector = "test",
         *,
-        filename: str | None = None,
+        filename: str | Path | None = None,
         **kwargs,
     ):
         """Create an interactive dashboard to analyze the model.
@@ -1751,13 +1825,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        rows: hashable, slice, sequence or dataframe-like
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to get the
             report from.
 
-        filename: str or None, default=None
-            Name to save the file with (as .html). None to not save
-            anything.
+        filename: str, Path or None, default=None
+            Filename or [pathlib.Path][] of the file to save. None to not
+            save anything.
 
         **kwargs
             Additional keyword arguments for the [ExplainerDashboard][]
@@ -1777,7 +1851,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         exp = self._shap.get_explanation(X, target=(0,))
 
         # Explainerdashboard requires all the target classes
-        if self.goal.startswith("class"):
+        if self.task.is_classification:
             if self.task.startswith("bin"):
                 if exp.values.shape[-1] != 2:
                     exp.base_values = [np.array(1 - exp.base_values), exp.base_values]
@@ -1787,7 +1861,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
                 exp.values = list(np.moveaxis(exp.values, -1, 0))
 
         params = dict(permutation_metric=self._metric, n_jobs=self.n_jobs)
-        if self.goal == "class":
+        if self.task.is_classification:
             explainer = ClassifierExplainer(self.estimator, X, y, **params)
         else:
             explainer = RegressionExplainer(self.estimator, X, y, **params)
@@ -1802,9 +1876,10 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
         self.dashboard.run()
 
         if filename:
-            if not filename.endswith(".html"):
-                filename += ".html"
-            self.dashboard.save_html(filename)
+            if (path := Path(filename)).suffix != ".html":
+                path = path.with_suffix(".html")
+
+            self.dashboard.save_html(path)
             self._log("Dashboard successfully saved.", 1)
 
     @composed(crash, method_to_log)
@@ -1867,11 +1942,11 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
     @crash
     def evaluate(
         self,
-        metric: MetricSelector = None,
+        metric: MetricConstructor = None,
         rows: RowSelector = "test",
         *,
-        threshold: Float | Sequence = 0.5,
-        sample_weight: Sequence | None = None,
+        threshold: Float | Sequence[Float] = 0.5,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
@@ -1886,7 +1961,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        rows: hashable, slice, sequence or dataframe
+        rows: hashable, segment, sequence or dataframe
             [Selection of rows][row-and-column-selection] to calculate
             metric on.
 
@@ -1929,7 +2004,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         # Predefined metrics to show
         if metric is None:
-            if self.goal.startswith("class"):
+            if self.task.is_classification:
                 if self.task.startswith("bin"):
                     metric = [
                         "accuracy",
@@ -2031,13 +2106,13 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             X, y = self.X, self.y
 
         # Assign a mlflow run to the new estimator
-        if self._run:
+        if self.experiment:
             self._run = mlflow.start_run(run_name=f"{self.name}_full_train")
             mlflow.end_run()
 
         self.fit(X, y)
 
-    @available_if(has_task(["binary", "multilabel"]))
+    @available_if(has_task("binary"))
     @available_if(estimator_has_attr("predict_proba"))
     @crash
     def get_best_threshold(self, rows: RowSelector = "train") -> Float | list[Float]:
@@ -2048,7 +2123,7 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
 
         Parameters
         ----------
-        rows: hashable, slice, sequence or dataframe
+        rows: hashable, segment, sequence or dataframe
             [Selection of rows][row-and-column-selection] on which to
             calculate the threshold.
 
@@ -2147,14 +2222,14 @@ class BaseModel(BaseTransformer, BaseTracker, RunnerPlot):
             "Staging" or "Production", otherwise an error will be raised.
 
         """
-        if not self._run:
+        if not self.experiment:
             raise PermissionError(
                 "The register method is only available when "
                 "there is a mlflow experiment active."
             )
 
         model = mlflow.register_model(
-            model_uri=f"runs:/{self._run.info.run_id}/{self._est_class.__name__}",
+            model_uri=f"runs:/{self.run.info.run_id}/{self._est_class.__name__}",
             name=name or self._fullname,
             tags=self._ht["tags"] or None,
         )
@@ -2318,8 +2393,8 @@ class ClassRegModel(BaseModel):
         self,
         X: RowSelector | Features,
         y: Target | None = None,
-        metric: MetricSelector = None,
-        sample_weight: Sequence | None = None,
+        metric: MetricConstructor = None,
+        sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
         method: str = "predict",
     ) -> Float | Pandas:
@@ -2381,7 +2456,7 @@ class ClassRegModel(BaseModel):
                 Columns for the dataframe.
 
             """
-            if is_multioutput(self.task):
+            if self.task.is_multioutput:
                 return self.target  # When multioutput, target is list of str
             else:
                 return self.mapping.get(self.target, np.unique(self.y).astype(str))
@@ -2586,8 +2661,8 @@ class ClassRegModel(BaseModel):
         X: RowSelector | Features,
         y: Target | None = None,
         *,
-        metric: MetricSelector = None,
-        sample_weight: Sequence | None = None,
+        metric: MetricConstructor = None,
+        sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
     ) -> Float:
         """Get a metric score on new data.
@@ -2656,7 +2731,7 @@ class ForecastModel(BaseModel):
 
     def _prediction(
         self,
-        metric: MetricSelector = None,
+        metric: MetricConstructor = None,
         verbose: Int | None = None,
         method: str = "predict",
         **kwargs,
@@ -2709,7 +2784,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict(
         self,
-        fh: int | range | Sequence | ForecastingHorizon,
+        fh: int | range | Sequence[Any] | ForecastingHorizon,
         X: Features | None = None,
         *,
         verbose: Int | None = None,
@@ -2748,10 +2823,10 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_interval(
         self,
-        fh: int | range | Sequence | ForecastingHorizon,
+        fh: int | range | Sequence[Any] | ForecastingHorizon,
         X: Features | None = None,
         *,
-        coverage: Float | Sequence = 0.9,
+        coverage: Float | Sequence[Float] = 0.9,
         verbose: Int | None = None,
     ) -> DataFrame:
         """Get prediction intervals on new data or existing rows.
@@ -2797,7 +2872,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_proba(
         self,
-        fh: int | range | Sequence | ForecastingHorizon,
+        fh: int | range | Sequence[Any] | ForecastingHorizon,
         X: Features | None = None,
         *,
         marginal: Bool = True,
@@ -2845,7 +2920,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_quantiles(
         self,
-        fh: int | range | Sequence | ForecastingHorizon,
+        fh: int | range | Sequence[Any] | ForecastingHorizon,
         X: Features | None = None,
         *,
         alpha: Float | list[Float] = [0.05, 0.95],
@@ -2896,7 +2971,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_residuals(
         self,
-        y: Sequence | DataFrame,
+        y: Sequence[Any] | DataFrame,
         X: Features | None = None,
         *,
         verbose: Int | None = None,
@@ -2934,7 +3009,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def predict_var(
         self,
-        fh: int | range | Sequence | ForecastingHorizon,
+        fh: int | range | Sequence[Any] | ForecastingHorizon,
         X: Features | None = None,
         *,
         cov: Bool = False,
@@ -2984,11 +3059,11 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log)
     def score(
         self,
-        y: Sequence | DataFrame,
+        y: Sequence[Any] | DataFrame,
         X: DataFrame | None = None,
-        fh: int | Sequence | ForecastingHorizon | None = None,
+        fh: int | Sequence[Any] | ForecastingHorizon | None = None,
         *,
-        metric: MetricSelector = None,
+        metric: MetricConstructor = None,
         verbose: Int | None = None,
     ) -> Float:
         """Get a metric score on new data.
