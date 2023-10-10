@@ -426,7 +426,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
 
             try:
                 scores.append(get_best_score(model))
-            except ValueError:  # Fails when model failed but errors="keep"
+            except (ValueError, AttributeError):  # Fails when errors="keep"
                 scores.append(-np.inf)
 
             maxlen = max(maxlen, len(names[-1]))

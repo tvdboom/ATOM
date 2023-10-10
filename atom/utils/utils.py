@@ -18,7 +18,6 @@ from collections.abc import MutableMapping
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import dataclass
-from datetime import datetime as dt
 from enum import Enum
 from functools import wraps
 from importlib import import_module
@@ -369,37 +368,6 @@ class LGBMetric:
         return self.scorer.name, self.scorer._sign * score, True
 
 
-class XGBMetric:
-    """Custom evaluation metric for the XGBoost model.
-
-    Parameters
-    ----------
-    scorer: Scorer
-        Scorer to evaluate. It's always the runner's main metric.
-
-    task: Task
-        Model's task.
-
-    """
-    def __init__(self, scorer: Scorer, task: Task):
-        self.scorer = scorer
-        self.task = task
-
-    @property
-    def __name__(self):
-        return self.scorer.name
-
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> Float:
-        if self.scorer.__class__.__name__ == "_PredictScorer":
-            if self.task.is_binary:
-                y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.is_multiclass:
-                y_pred = np.argmax(y_pred, axis=1)
-
-        score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
-        return -self.scorer._sign * score  # Negative because XGBoost minimizes
-
-
 class Table:
     """Class to print nice tables per row.
 
@@ -488,7 +456,7 @@ class Table:
         """
         return self.print({k: "-" * s for k, s in zip(self.headers, self.spaces)})
 
-    def print(self, sequence: dict) -> str:
+    def print(self, sequence: dict[str, Any]) -> str:
         """Convert a sequence to a nice formatted table row.
 
         Parameters
@@ -536,31 +504,7 @@ class TrialsCallback:
             self.T._log(self._table.print_line(), 2)
 
     def __call__(self, study: Study, trial: FrozenTrial):
-        # The trial values are None when it fails
-        if len(self.T._metric) == 1:
-            scores = [trial.value if trial.value is not None else np.NaN]
-        else:
-            scores = trial.values or [np.NaN] * len(self.T._metric)
-
-        if trial.state.name == "PRUNED" and self.T.acronym == "XGB":
-            # XGBoost's eval_metric minimizes the function
-            scores = np.negative(scores)
-
-        estimator = trial.user_attrs.get("estimator", None)
-
-        # Compute durations
-        time_trial = (dt.now() - trial.datetime_start).total_seconds()
-        time_ht = self.T._trials["time_trial"].sum() + time_trial
-
-        # Add row to the `trials` attribute
-        row = {"trial": trial.number, **trial.params}
-        for i, name in enumerate(self.T._metric.keys()):
-            row[name] = scores[i]
-            row[f"best_{name}"] = max(scores[i], self.T.trials[name].max())
-        row["time_trial"] = time_trial
-        row["time_ht"] = time_trial
-        row["state"] = trial.state.name
-        self.T._trials.loc[trial.number] = row
+        trial_info = self.T.trials.reset_index(names="trial").loc[trial.number]
 
         # Save trials to mlflow experiment as nested runs
         if self.T.experiment and self.T.log_ht:
@@ -572,22 +516,24 @@ class TrialsCallback:
                             "name": self.T.name,
                             "model": self.T._fullname,
                             "branch": self.T.branch.name,
-                            "trial_state": trial.state.name,
+                            "trial_state": trial_info.state,
                             **self.T._ht["tags"],
                         }
                     )
 
-                    # Mlflow only accepts params with char length <=250
-                    pars = estimator.get_params() if estimator else trial.params
-                    mlflow.log_params(
-                        {k: v for k, v in pars.items() if len(str(v)) <= 250}
-                    )
+                    mlflow.log_metric("time_trial", trial_info["time_trial"])
+                    for met in self.T._metric.keys():
+                        mlflow.log_metric(f"{met}_validation", trial_info[met])
 
-                    mlflow.log_metric("time_trial", time_trial)
-                    for i, name in enumerate(self.T._metric.keys()):
-                        mlflow.log_metric(f"{name}_validation", scores[i])
+                    if estimator := trial_info["estimator"]:
+                        # Mlflow only accepts params with char length <=250
+                        mlflow.log_params(
+                            {
+                                k: v for k, v in estimator.get_params().items()
+                                if len(str(v)) <= 250
+                            }
+                        )
 
-                    if estimator:
                         mlflow.sklearn.log_model(
                             sk_model=estimator,
                             artifact_path=estimator.__class__.__name__,
@@ -597,13 +543,19 @@ class TrialsCallback:
                             ),
                             input_example=pd.DataFrame(self.T.X.iloc[[0], :]),
                         )
+                    else:
+                        mlflow.log_params(
+                            {
+                                k: v for k, v in trial.params.items()
+                                if len(str(v)) <= 250
+                            }
+                        )
 
         if self.n_jobs == 1:
-            sequence = {"trial": trial.number}
-            sequence.update(self.T._trials.loc[trial.number].to_dict())
-            sequence["time_trial"] = time_to_str(time_trial)
-            sequence["time_ht"] = time_to_str(time_ht)
-            self.T._log(self._table.print(sequence), 2)
+            # Print overview of trials
+            trial_info["time_trial"] = time_to_str(trial_info["time_trial"])
+            trial_info["time_ht"] = time_to_str(trial_info["time_ht"])
+            self.T._log(self._table.print(trial_info), 2)
 
     def create_table(self) -> Table:
         """Create the trial table.

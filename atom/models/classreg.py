@@ -22,11 +22,11 @@ from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import DataFrame, Pandas, Predictor
-from atom.utils.utils import CatBMetric, CustomDict, LGBMetric, XGBMetric
+from atom.utils.utils import CatBMetric, CustomDict, LGBMetric
 
 
 class AdaBoost(ClassRegModel):
-    """Adaptive Boosting (with decision tree as base estimator).
+    """Adaptive Boosting.
 
     AdaBoost is a meta-estimator that begins by fitting a
     classifier/regressor on the original dataset and then fits
@@ -3040,12 +3040,8 @@ class XGBoost(ClassRegModel):
             Estimator instance.
 
         """
-        eval_metric = None
-        if getattr(self, "_metric", None):
-            eval_metric = XGBMetric(self._metric[0], task=self.task)
-
         return self._est_class(
-            eval_metric=params.pop("eval_metric", eval_metric),
+            eval_metric=params.pop("eval_metric", self._metric[0]._score_func),
             n_jobs=params.pop("n_jobs", self.n_jobs),
             device=params.pop("device", self.device),
             verbosity=params.pop("verbosity", 0),

@@ -10,9 +10,10 @@ Description: Module containing the BaseModel class.
 from __future__ import annotations
 
 import re
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime as dt
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
@@ -67,9 +68,10 @@ from atom.utils.types import (
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, Goal, PlotCallback, ShapExplanation,
     Task, TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
-    check_scaling, composed, crash, estimator_has_attr, fit_and_score, flt,
-    get_cols, get_custom_scorer, get_feature_importance, has_task, it, lst,
-    merge, method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
+    check_is_fitted, check_scaling, composed, crash, estimator_has_attr,
+    fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
+    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
+    to_pandas, to_series,
 )
 
 
@@ -232,7 +234,6 @@ class BaseModel(RunnerPlot):
         # Hyperparameter tuning attributes
         self._ht = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
         self._study = None
-        self._trials = None
         self._best_trial = None
 
         self._estimator = None
@@ -578,13 +579,13 @@ class BaseModel(RunnerPlot):
                 )
 
             if self._goal != "fc":
-                # Annotate if model overfitted when train 20% > test on main metric
+                # Annotate if model overfitted when train 20% > test on the main metric
                 score_train = lst(self.score_train)[0]
                 score_test = lst(self.score_test)[0]
                 if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
                     out += " ~"
 
-        except TypeError:  # Fails when model failed but errors="keep"
+        except (TypeError, AttributeError):  # Fails when errors="keep"
             out = "FAIL"
 
         return out
@@ -936,8 +937,13 @@ class BaseModel(RunnerPlot):
             )
 
             # Check if the same parameters have already been evaluated
-            current_params = self.trials[params].to_dict("records")
-            if dict(params) not in current_params:
+            for t in trial.study.get_trials(False, states=(TrialState.COMPLETE,))[::-1]:
+                if trial.params == t.params:
+                    # Get same estimator and score as previous evaluation
+                    estimator = deepcopy(t.user_attrs.get("estimator"))
+                    score = t.value if len(self._metric) == 1 else t.values
+
+            if not check_is_fitted(estimator, exception=False):
                 # Follow the same stratification strategy as atom
                 cols = self._get_stratify_columns(self.og.train, self.og.y_train)
 
@@ -948,7 +954,7 @@ class BaseModel(RunnerPlot):
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
                     elif isinstance(self._ht["cv"], Int):
-                        # We use ShuffleSplit instead of Kfold because it
+                        # We use ShuffleSplit instead of K-fold because it
                         # works with n_splits=1 and multioutput stratification
                         if cols is None:
                             splitter = ShuffleSplit
@@ -975,14 +981,9 @@ class BaseModel(RunnerPlot):
                 estimator = results[0][0]
                 score = list(np.mean(scores := [r[1] for r in results], axis=0))
 
-                if len(results) > 1:
-                    # Report cv scores for termination judgment
-                    report_cross_validation_scores(trial, scores)
-            else:
-                # Get same estimator and score as previous evaluation
-                idx = current_params.index(dict(params))
-                estimator = deepcopy(self.trials.at[idx, "estimator"])
-                score = list(self.trials.loc[idx, self._metric.keys()])
+            if len(results) > 1:
+                # Report cv scores for termination judgment
+                report_cross_validation_scores(trial, scores)
 
             trial.set_user_attr("estimator", estimator)
 
@@ -1053,17 +1054,6 @@ class BaseModel(RunnerPlot):
                 kw["directions"] = ["maximize"] * len(self._metric)
                 kw["sampler"] = kw.pop("sampler", NSGAIISampler(seed=self.random_state))
 
-            self._trials = pd.DataFrame(
-                columns=[
-                    *self._ht["distributions"],
-                    "estimator",
-                    *[m for met in self._metric.keys() for m in (met, f"best_{met}")],
-                    "time_trial",
-                    "time_ht",
-                    "state",
-                ]
-            )
-            self._trials.index.name = "trial"
             self._study = create_study(study_name=self.name, **kw)
 
         kw = {k: v for k, v in self._ht.items() if k in sign(Study.optimize)}
@@ -1092,6 +1082,7 @@ class BaseModel(RunnerPlot):
         )
 
         if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
+            self._study = None
             self._log(
                 "The study didn't complete any trial successfully. "
                 "Skipping hyperparameter tuning.", 1, severity="warning"
@@ -1256,7 +1247,7 @@ class BaseModel(RunnerPlot):
                 stratify=self.y_train,
             )
 
-            # Fit on bootstrapped set
+            # Fit on a bootstrapped set
             estimator = self._fit_estimator(
                 estimator=self.estimator,
                 data=(sample_x, sample_y),
@@ -1377,8 +1368,26 @@ class BaseModel(RunnerPlot):
         - **state:** Trial's state (COMPLETE, PRUNED, FAIL).
 
         """
-        if self._trials is not None:
-            return self._trials.sort_index()  # Can be in disorder for n_jobs>1
+        if self._study is not None:
+            data = defaultdict(list)
+            for t in self._study.trials:
+                data["trial"].append(t.number)
+                for p in t.params:
+                    data[p].append(t.params[p])
+                data["estimator"].append(t.user_attrs.get("estimator"))
+                for i, met in enumerate(self._metric.keys()):
+                    if len(self._metric) == 1:
+                        data[met].append(t.value or np.NaN)
+                    else:
+                        data[met].append(t.values[i] if t.values else np.NaN)
+                    data[f"best_{met}"] = np.nanmax(data[met])
+                data["time_trial"].append(
+                    (t.datetime_complete - t.datetime_start).total_seconds()
+                )
+                data["time_ht"].append(np.sum(data["time_trial"]))
+                data["state"].append(t.state.name)
+
+            return pd.DataFrame(data).set_index("trial")
 
         raise AttributeError("The model didn't run hyperparameter tuning.")
 
@@ -1573,7 +1582,7 @@ class BaseModel(RunnerPlot):
 
     # Data Properties ============================================== >>
 
-    @property
+    @cached_property
     def pipeline(self) -> Pipeline:
         """Pipeline of transforms.
 
@@ -1585,9 +1594,10 @@ class BaseModel(RunnerPlot):
 
          """
         if self.scaler:
-            pipeline = deepcopy(self.branch.pipeline)
-            pipeline.steps.append(("AutomatedScaler", self.scaler))
-            return pipeline
+            return Pipeline(
+                steps=self.branch.pipeline.steps + [("AutomatedScaler", self.scaler)],
+                memory=self.memory,
+            )
         else:
             return self.branch.pipeline
 

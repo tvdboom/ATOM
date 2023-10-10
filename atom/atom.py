@@ -156,18 +156,18 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
                 "Leaving n_jobs=1 ignores all parallelization. Set n_jobs>1 to make use "
                 f"of the {self.backend} parallelization backend.", 1, severity="warning"
             )
-        if "gpu" in self.device.lower():
-            self._log("GPU training enabled.", 1)
+        if "cpu" not in self.device.lower():
+            self._log(f"Device: {self.device}", 1)
         if (data := self.engine.get("data", "numpy")) != "numpy":
-            self._log(f"Data engine: {data}.", 1)
+            self._log(f"Data engine: {data}", 1)
         if (models := self.engine.get("estimator", "sklearn")) != "sklearn":
-            self._log(f"Estimator engine: {models}.", 1)
+            self._log(f"Estimator engine: {models}", 1)
         if self.backend == "ray" or self.n_jobs > 1:
             self._log(f"Parallelization backend: {self.backend}", 1)
         if self.memory.location is not None:
             self._log(f"Cache storage: {os.path.join(self.memory.location, 'joblib')}", 1)
         if self.experiment:
-            self._log(f"Mlflow experiment: {self.experiment}.", 1)
+            self._log(f"Mlflow experiment: {self.experiment}", 1)
 
         # System settings only to logger
         self._log("\nSystem info ====================== >>", 3)
