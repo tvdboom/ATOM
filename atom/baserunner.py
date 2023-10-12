@@ -32,7 +32,7 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, Task, check_is_fitted, composed, crash, divide, flt,
-    get_best_score, get_segment, get_versions, has_task, lst, method_to_log,
+    get_segment, get_versions, has_task, lst, method_to_log,
 )
 
 
@@ -177,7 +177,7 @@ class BaseRunner(BaseTracker):
         """
         if self._models:  # Returns None if not fitted
             return sorted(
-                self._models, key=lambda x: (get_best_score(x), x.time_fit), reverse=True
+                self._models, key=lambda x: (x._best_score(), x.time_fit), reverse=True
             )
 
     @property

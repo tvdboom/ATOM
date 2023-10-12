@@ -56,9 +56,9 @@ from atom.utils.types import (
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
-    NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
-    PrunerStrats, RowSelector, Scalar, ScalerStrats, Sequence, Series, Target,
-    Transformer, TSIndexTypes, VectorizerStarts, Verbose, Warnings,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
+    RowSelector, Scalar, ScalerStrats, Sequence, Series, Target, Transformer,
+    TSIndexTypes, VectorizerStarts, Verbose, Warnings,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -1881,7 +1881,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
     @composed(crash, method_to_log)
     def feature_extraction(
         self,
-        features: str | Sequence[str] = ["day", "month", "year"],
+        features: str | Sequence[str] = ("day", "month", "year"),
         fmt: str | Sequence[str] | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
@@ -2227,7 +2227,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
     @composed(crash, method_to_log)
     def train_sizing(
         self,
-        models: str | Predictor | Sequence,
+        models: ModelsConstructor = None,
         metric: MetricConstructor = None,
         *,
         train_sizes: FloatLargerZero | Sequence[FloatLargerZero] = 5,

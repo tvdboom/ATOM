@@ -26,7 +26,7 @@ from atom.utils.types import (
     Warnings,
 )
 from atom.utils.utils import (
-    ClassMap, Goal, composed, crash, get_best_score, lst, method_to_log,
+    ClassMap, Goal, composed, crash, lst, method_to_log,
 )
 
 
@@ -148,7 +148,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
 
             # Select best models for halving
             best = pd.Series(
-                data=[get_best_score(m) for m in self._models],
+                data=[m._best_score() for m in self._models],
                 index=[m._group for m in self._models],
                 dtype=float,
             ).nlargest(n=len(self._models) // 2, keep="first")

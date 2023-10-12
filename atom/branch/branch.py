@@ -23,8 +23,8 @@ from sklearn.utils.validation import check_memory
 from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, DataFrameTypes, Features, Index, Int,
-    IntTypes, Pandas, RowSelector, Scalar, SegmentTypes, Sequence, SeriesTypes,
-    Target,
+    IntLargerEqualZero, IntTypes, Pandas, RowSelector, Scalar, SegmentTypes,
+    Sequence, SeriesTypes, Target, TargetSelector, TargetsSelector,
 )
 from atom.utils.utils import (
     CustomDict, DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
@@ -630,11 +630,25 @@ class Branch:
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
+    @overload
     def _get_target(
         self,
-        target: Int | str | tuple[Int | str, ...],
+        target: TargetsSelector,
+        only_columns: Literal[False] = ...,
+    ) -> tuple[IntLargerEqualZero, IntLargerEqualZero]: ...
+
+    @overload
+    def _get_target(
+        self,
+        target: TargetsSelector,
+        only_columns: Literal[True],
+    ) -> str: ...
+
+    def _get_target(
+        self,
+        target: TargetsSelector,
         only_columns: Bool = False,
-    ) -> str | tuple[Int, Int]:
+    ) -> str | tuple[IntLargerEqualZero, IntLargerEqualZero]:
         """Get a target column and/or class in target column.
 
         Parameters
@@ -656,7 +670,7 @@ class Branch:
 
         """
 
-        def get_column(target: Int | str) -> str:
+        def get_column(target: TargetSelector) -> str:
             """Get the target column.
 
             Parameters
@@ -687,7 +701,10 @@ class Branch:
                 else:
                     return lst(self.target)[target]
 
-        def get_class(target: Int | str, column: Int = 0) -> Int:
+        def get_class(
+            target: TargetSelector,
+            column: IntLargerEqualZero = 0,
+        ) -> IntLargerEqualZero:
             """Get the class in the target column.
 
             Parameters

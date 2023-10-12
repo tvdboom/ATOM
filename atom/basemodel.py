@@ -22,6 +22,7 @@ from unittest.mock import patch
 import dill as pickle
 import mlflow
 import numpy as np
+import optuna
 import pandas as pd
 import ray
 from beartype.typing import Any
@@ -61,18 +62,22 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
-    FloatTypes, Int, IntLargerEqualZero, IntTypes, MetricConstructor, NJobs,
-    Pandas, PredictionMethod, Predictor, RowSelector, Scalar, Scorer, Sequence,
-    Stages, Target, Verbose, Warnings,
+    FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes,
+    MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor, RowSelector,
+    Scalar, Scorer, Sequence, Stages, Target, TargetSelector, Verbose,
+    Warnings,
 )
 from atom.utils.utils import (
     ClassMap, CustomDict, DataConfig, Goal, PlotCallback, ShapExplanation,
     Task, TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
     check_is_fitted, check_scaling, composed, crash, estimator_has_attr,
-    fit_and_score, flt, get_cols, get_custom_scorer, get_feature_importance,
-    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
-    to_pandas, to_series,
+    fit_and_score, flt, get_cols, get_custom_scorer, has_task, it, lst, merge,
+    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
 )
+
+
+# Disable optuna info logs (ATOM already displays the same info)
+optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
 class BaseModel(RunnerPlot):
@@ -258,7 +263,7 @@ class BaseModel(RunnerPlot):
         self.__dict__.update(state)
 
     def __getattr__(self, item: str) -> Any:
-        if item in dir(self.__dict__.get("_branch")) and not item.startswith("_"):
+        if item in dir(self.branch) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column
@@ -360,6 +365,9 @@ class BaseModel(RunnerPlot):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
+        This method fetches the suggestions from the trial and
+        rounds floats to the 4th digit.
+
         Parameters
         ----------
         trial: [Trial][]
@@ -372,7 +380,7 @@ class BaseModel(RunnerPlot):
 
         """
         return CustomDict(
-            {k: trial._suggest(k, v) for k, v in self._ht["distributions"].items()}
+            {k: rnd(trial._suggest(k, v)) for k, v in self._ht["distributions"].items()}
         )
 
     def _trial_to_est(self, params: CustomDict) -> CustomDict:
@@ -538,7 +546,7 @@ class BaseModel(RunnerPlot):
 
         else:
             # Add the forecasting horizon to sktime estimators
-            if self._goal == "fc":
+            if self.task.is_forecast:
                 if "fh" in sign(estimator.fit):
                     if estimator.get_tag("requires-fh-in-fit"):
                         est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
@@ -549,6 +557,29 @@ class BaseModel(RunnerPlot):
                 estimator.fit(*data, **est_params_fit)
 
         return estimator
+
+    def _best_score(self, metric: str | None = None) -> Scalar:
+        """Returns the best score for the model.
+
+        The best score is the bootstrap or test score, checked in
+        that order.
+
+        Parameters
+        ----------
+        metric: str or None, default=None
+            Name of the metric to use (for multi-metric runs). If None,
+            the main metric is selected.
+
+        Returns
+        -------
+        float
+            Best score.
+
+        """
+        if self._bootstrap is None:
+            return self.results[f"{metric or self._metric[0].name}_test"]
+        else:
+            return self.results[f"{metric or self._metric[0].name}_bootstrap"]
 
     def _final_output(self) -> str:
         """Returns the model's final output as a string.
@@ -565,23 +596,23 @@ class BaseModel(RunnerPlot):
             if self.bootstrap is None:
                 out = "   ".join(
                     [
-                        f"{name}: {rnd(lst(self.score_test)[i])}"
-                        for i, name in enumerate(self._metric.keys())
+                        f"{met}: {rnd(self._best_score(met))}"
+                        for met in self._metric.keys()
                     ]
                 )
             else:
                 out = "   ".join(
                     [
-                        f"{name}: {rnd(self.bootstrap[name].mean())} "
-                        f"\u00B1 {rnd(self.bootstrap[name].std())}"
-                        for name in self._metric.keys()
+                        f"{met}: {rnd(self.bootstrap[met].mean())} "
+                        f"\u00B1 {rnd(self.bootstrap[met].std())}"
+                        for met in self._metric.keys()
                     ]
                 )
 
-            if self._goal != "fc":
+            if not self.task.is_forecast:
                 # Annotate if model overfitted when train 20% > test on the main metric
-                score_train = lst(self.score_train)[0]
-                score_test = lst(self.score_test)[0]
+                score_train = self.results[f"{self._metric[0].name}_train"]
+                score_test = self.results[f"{self._metric[0].name}_test"]
                 if (1.2 if score_train < 0 else 0.8) * score_train > score_test:
                     out += " ~"
 
@@ -593,7 +624,7 @@ class BaseModel(RunnerPlot):
     def _get_pred(
         self,
         rows: RowSelector,
-        target: str | None = None,
+        target: TargetSelector | None = None,
         attr: PredictionMethod = "predict",
     ) -> tuple[Pandas, Pandas]:
         """Get the true and predicted values for a column.
@@ -744,7 +775,7 @@ class BaseModel(RunnerPlot):
         self,
         scorer: Scorer,
         rows: RowSelector,
-        threshold: tuple[Float] | None = None,
+        threshold: tuple[FloatZeroToOneExc] | None = None,
         sample_weight: tuple | None = None,
     ) -> Scalar:
         """Calculate a metric score using the prediction attributes.
@@ -917,14 +948,12 @@ class BaseModel(RunnerPlot):
 
             params = self._get_parameters(trial)
 
-            # Since the suggested values are not the exact same values used in
-            # the estimator (changed by _get_parameters in the 'models' module
-            # when there are invalid combinations), we implement this hacky
-            # method to overwrite the params in storage
+            # Since the suggested values are not the exact same values used
+            # in the estimator (rounded by _get_parameters), we implement
+            # this hacky method to overwrite the params in storage
             trial._cached_frozen_trial.params = params
             frozen_trial = self.study._storage._get_trial(trial.number)
             frozen_trial.params = params
-            frozen_trial.distributions = self._ht["distributions"]
             self.study._storage._set_trial(trial.number, frozen_trial)
 
             # Store user defined tags
@@ -1094,11 +1123,11 @@ class BaseModel(RunnerPlot):
         self._log("Best parameters:", 1)
         self._log("\n".join([f" --> {k}: {v}" for k, v in self.best_params.items()]), 1)
         out = [
-            f"{m.name}: {rnd(lst(self.score_ht)[i])}"
-            for i, m in enumerate(self._metric)
+            f"{met}: {rnd(self.trials.loc[self.best_trial.number, met])}"
+            for met in self._metric.keys()
         ]
         self._log(f"Best evaluation --> {'   '.join(out)}", 1)
-        self._log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
+        self._log(f"Time elapsed: {time_to_str(self.trials.iat[-1, -2])}", 1)
 
     @composed(crash, method_to_log)
     def fit(self, X: DataFrame | None = None, y: Pandas | None = None):
@@ -1154,7 +1183,7 @@ class BaseModel(RunnerPlot):
 
         # Get duration and print to log
         self._time_fit += (dt.now() - t_init).total_seconds()
-        self._log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
+        self._log(f"Time elapsed: {time_to_str(self._time_fit)}", 1)
 
         # Track results in mlflow ================================== >>
 
@@ -1192,7 +1221,7 @@ class BaseModel(RunnerPlot):
                     artifact_path=self._est_class.__name__,
                     signature=infer_signature(
                         model_input=pd.DataFrame(self.X),
-                        model_output=self.predict_test.to_numpy(),
+                        model_output=self.estimator.predict(self.test.iloc[0]),
                     ),
                     input_example=pd.DataFrame(self.X.iloc[[0], :]),
                 )
@@ -1210,7 +1239,7 @@ class BaseModel(RunnerPlot):
                         artifact_path=f"{self._est_class.__name__}_pipeline",
                         signature=infer_signature(
                             model_input=pd.DataFrame(self.X),
-                            model_output=self.predict_test.to_numpy(),
+                            model_output=self.estimator.predict(self.test.iloc[0]),
                         ),
                         input_example=pd.DataFrame(self.X.iloc[[0], :]),
                     )
@@ -1236,6 +1265,7 @@ class BaseModel(RunnerPlot):
         if self._bootstrap is None or reset:
             self._bootstrap = pd.DataFrame(columns=self._metric.keys())
             self._bootstrap.index.name = "sample"
+            self._time_bootstrap = 0
 
         for i in range(n_bootstrap):
             # Create stratified samples with replacement
@@ -1439,32 +1469,6 @@ class BaseModel(RunnerPlot):
             return {}
 
     @property
-    def score_ht(self) -> Scalar | list[Scalar]:
-        """Metric score obtained by the [best trial][self-best_trial].
-
-        This property is only available for models that ran
-        [hyperparameter tuning][].
-
-        """
-        if self._study is not None:
-            return self.trials.loc[self.best_trial.number, self._metric.keys()]
-
-        raise AttributeError("The model didn't run hyperparameter tuning.")
-
-    @property
-    def time_ht(self) -> Float:
-        """Duration of the hyperparameter tuning (in seconds).
-
-        This property is only available for models that ran
-        [hyperparameter tuning][].
-
-        """
-        if self._study is not None:
-            return self.trials.iat[-1, -2]
-
-        raise AttributeError("The model didn't run hyperparameter tuning.")
-
-    @property
     def estimator(self) -> Predictor:
         """Estimator fitted on the training set."""
         return self._estimator
@@ -1481,104 +1485,104 @@ class BaseModel(RunnerPlot):
         return self._evals
 
     @property
-    def score_train(self) -> Scalar | list[Scalar]:
-        """Metric score on the training set."""
-        return flt([self._get_score(m, "train") for m in self._metric])
-
-    @property
-    def score_test(self) -> Scalar | list[Scalar]:
-        """Metric score on the test set."""
-        return flt([self._get_score(m, "test") for m in self._metric])
-
-    @property
-    def score_holdout(self) -> Scalar | list[Scalar]:
-        """Metric score on the holdout set."""
-        return flt([self._get_score(m, "holdout") for m in self._metric])
-
-    @property
-    def time_fit(self) -> Float:
-        """Duration of the model fitting on the train set (in seconds)."""
-        return self._time_fit
-
-    @property
     def bootstrap(self) -> pd.DataFrame | None:
         """Overview of the bootstrapping scores.
 
         The dataframe has shape=(n_bootstrap, metric) and shows the
         score obtained by every bootstrapped sample for every metric.
         Using `atom.bootstrap.mean()` yields the same values as
-        [score_bootstrap][self-score_bootstrap].
+        [score_bootstrap][self-score_bootstrap]. This property is only
+        available for models that ran [bootstrapping][].
 
         """
-        return self._bootstrap
+        if self._bootstrap is not None:
+            return self._bootstrap
 
     @property
-    def score_bootstrap(self) -> Scalar | list[Scalar] | None:
-        """Mean metric score on the bootstrapped samples."""
-        if self.bootstrap is not None:
-            return flt(self.bootstrap.mean().tolist())
+    def results(self) -> pd.Series:
+        """Overview of the model results.
+
+        All durations are in seconds. Possible values include:
+
+        - **[metric]_ht:** Score obtained by the hyperparameter tuning.
+        - **time_ht:** Duration of the hyperparameter tuning.
+        - **[metric]_train:** Metric score on the train set.
+        - **[metric]_test:** Metric score on the test set.
+        - **time_fit:** Duration of the model fitting on the train set.
+        - **[metric]_bootstrap:** Mean score on the bootstrapped samples.
+        - **time_bootstrap:** Duration of the bootstrapping.
+        - **time:** Total duration of the run.
+
+        """
+        data = {}
+        if self._study is not None:
+            for met in self._metric.keys():
+                data[f"{met}_ht"] = self.trials.loc[self.best_trial.number, met]
+            data["time_ht"] = self.trials.iat[-1, -2]
+        for met in self._metric:
+            for ds in ("train", "test"):
+                data[f"{met.name}_{ds}"] = self._get_score(met, ds)
+        data["time_fit"] = self._time_fit
+        if self._bootstrap is not None:
+            for met in self._metic.keys():
+                data[f"{met}_bootstrap"] = self.bootstrap[met].mean()
+            data["time_bootstrap"] = self._time_bootstrap
+        data["time"] = data.get("time_ht", 0) + self._time_fit + self._time_bootstrap
+        return pd.Series(data, name=self.name)
 
     @property
-    def time_bootstrap(self) -> Float | None:
-        """Duration of the bootstrapping (in seconds)."""
-        if self._time_bootstrap:
-            return self._time_bootstrap
-
-    @property
-    def time(self) -> Float:
-        """Total duration of the run (in seconds)."""
-        if self._study is None:
-            return self._time_fit + self._time_bootstrap
-        else:
-            return self.time_ht + self._time_fit + self._time_bootstrap
-
-    @property
-    def feature_importance(self) -> pd.Series | None:
+    def feature_importance(self) -> pd.Series:
         """Normalized feature importance scores.
 
         The sum of importances for all features is 1. The scores are
         extracted from the estimator's `scores_`, `coef_` or
         `feature_importances_` attribute, checked in that order.
-        Returns None for estimators without any of those attributes.
+        This property is only available for estimators with at least
+        one of those attributes.
 
         """
-        if (data := get_feature_importance(self.estimator)) is not None:
+        data: np.ndarray | None = None
+
+        for attr in ("scores_", "coef_", "feature_importances_"):
+            if hasattr(self.estimator, attr):
+                data = getattr(self.estimator, attr)
+
+        # Get the mean value for meta-estimators
+        if data is None and hasattr(self.estimator, "estimators_"):
+            estimators = self.estimator.estimators_
+            if all(hasattr(x, "feature_importances_") for x in estimators):
+                data = [fi.feature_importances_ for fi in estimators]
+            elif all(hasattr(x, "coef_") for x in estimators):
+                data = [
+                    np.linalg.norm(fi.coef_, axis=np.argmin(fi.coef_.shape), ord=1)
+                    for fi in estimators
+                ]
+            else:
+                # For ensembles that mix attributes
+                raise ValueError(
+                    "Failed to calculate the feature importance for meta-estimator "
+                    f"{self._est_class.__name__}. The underlying estimators have a "
+                    "mix of feature_importances_ and coef_ attributes."
+                )
+
+            # Trim each coef to the number of features in the 1st estimator
+            # ClassifierChain adds features to subsequent estimators
+            min_length = min(map(len, data))
+            data = np.mean([c[:min_length] for c in data], axis=0)
+
+        if data is not None:
             return pd.Series(
-                data=data / data.sum(),
+                data=(data := np.abs(data.flatten())) / data.sum(),
                 index=self.features,
                 name="feature_importance",
                 dtype=float,
             ).sort_values(ascending=False)
-
-    @property
-    def results(self) -> pd.Series:
-        """Overview of the training results.
-
-        All durations are in seconds. Values include:
-
-        - **score_ht:** Score obtained by the hyperparameter tuning.
-        - **time_ht:** Duration of the hyperparameter tuning.
-        - **score_train:** Metric score on the train set.
-        - **score_test:** Metric score on the test set.
-        - **time_fit:** Duration of the model fitting on the train set.
-        - **score_bootstrap:** Mean score on the bootstrapped samples.
-        - **time_bootstrap:** Duration of the bootstrapping.
-        - **time:** Total duration of the run.
-
-        """
-        return pd.Series(
-            {
-                "score_ht": self.score_ht,
-                "time_ht": self.time_ht,
-                "score_train": self.score_train,
-                "score_test": self.score_test,
-                "time_fit": self.time_fit,
-                "score_bootstrap": self.score_bootstrap,
-                "time_bootstrap": self.time_bootstrap,
-                "time": self.time,
-            },
-            name=self.name,
-        )
+        else:
+            raise AttributeError(
+                "Failed to calculate the feature importance for estimator "
+                f"{self._est_class.__name__}. The estimator doesn't have the"
+                f"scores_, coef_ nor feature_importances_ attribute."
+            )
 
     # Data Properties ============================================== >>
 
@@ -2471,13 +2475,15 @@ class ClassRegModel(BaseModel):
             else:
                 return self.mapping.get(self.target, np.unique(self.y).astype(str))
 
-        if np.array(X).ndim != 2:
+        # Duck type getting the rows from the branch
+        # If it fails, we assume the data is new
+        try:
             X, y = self.branch._get_rows(X, return_X_y=True)
 
             if self.scaler:
                 X = self.scaler.transform(X)
 
-        else:
+        except (IndexError, ValueError):
             if isinstance(X := self.transform(X, y, verbose=verbose), tuple):
                 X, y = X
 

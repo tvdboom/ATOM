@@ -369,7 +369,7 @@ The check is performed in the order described hereunder:
 
 1. By actual dataset, e.g., `#!python rows=atom.test` is equal to `#!python rows="test"`.
 2. By range or slice, e.g., `#!python rows=range(100)` to select the first 100
-   rows or `#!python rows=slice(20, 100)` to select rows 20 to 99.
+   rows from the dataset or `#!python rows=slice(20, 100)` to select rows 20 to 99.
 3. By exact name, e.g., `#!python rows=["row1", "row2"]` to select rows with
    indices `row1` and `row2` or `#!python columns=["col1", "col2"]` to select
    columns `col1` and `col2`. It's also possible to use the `+` sign to select

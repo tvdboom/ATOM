@@ -18,9 +18,10 @@ import shap
 from beartype import beartype
 from beartype.typing import Any
 
-from atom.plots.base import BasePlot
+from atom.plots.baseplot import BasePlot
 from atom.utils.types import (
     Bool, Int, IntLargerZero, Legend, ModelSelector, RowSelector,
+    TargetsSelector,
 )
 from atom.utils.utils import check_canvas, crash
 
@@ -42,7 +43,7 @@ class ShapPlot(BasePlot, ABC):
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -156,7 +157,7 @@ class ShapPlot(BasePlot, ABC):
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -268,7 +269,7 @@ class ShapPlot(BasePlot, ABC):
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -391,7 +392,7 @@ class ShapPlot(BasePlot, ABC):
         self,
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -523,7 +524,7 @@ class ShapPlot(BasePlot, ABC):
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -639,7 +640,7 @@ class ShapPlot(BasePlot, ABC):
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
         columns: Int | str = 0,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -758,7 +759,7 @@ class ShapPlot(BasePlot, ABC):
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
         show: Int | None = None,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,

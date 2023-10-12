@@ -25,7 +25,7 @@ from beartype.vale import Is
 
 if TYPE_CHECKING:
     from atom.branch import Branch
-    from atom.utils.utils import ClassMap, Goal, ShapExplanation
+    from atom.utils.utils import ClassMap, CustomDict, Goal, ShapExplanation
 
 
 # Variable types for isinstance ==================================== >>
@@ -75,9 +75,8 @@ class Sequence(Protocol[T]):
 
     Dynamically creates new `Annotated[Sequence[...], ...]` type hints,
     subscripted by the passed type. For subscripted types, it passes
-    when the type is no string (since strings has the required dunder
-    methods), is one-dimensional, and all items in the sequence are of
-    the subscripted type.
+    when the type is of a sequence type and all items in the sequence
+    are of the subscripted type.
 
     Parameters
     ----------
@@ -85,7 +84,7 @@ class Sequence(Protocol[T]):
         Arbitrary child type hint with which to subscript the protocol.
 
     Returns
-    ----------
+    -------
     Annotated
         Type hint validating that all items of this sequence satisfy
         this child type hint.
@@ -161,6 +160,14 @@ class Model(Protocol):
     def name(self) -> str: ...
     @property
     def branch(self) -> Branch: ...
+    @property
+    def estimator(self) -> Predictor: ...
+    @property
+    def _est_class(self) -> type[Predictor]: ...
+    @property
+    def evals(self) -> CustomDict: ...
+    @property
+    def feature_importance(self) -> pd.Series: ...
     # @property
     # def run(self) -> Run: ...
     # @property
@@ -169,6 +176,10 @@ class Model(Protocol):
     # def best_trial(self) -> FrozenTrial: ...
     # @property
     # def trials(self) -> pd.DataFrame: ...
+
+    def _get_pred(self, *args, **kwargs) -> tuple[Pandas, Pandas]: ...
+    def predict(self, *args, **kwargs) -> Pandas: ...
+    def predict_interval(self, *args, **kwargs) -> DataFrame: ...
 
 
 # Variable types for type hinting ================================== >>
@@ -213,8 +224,8 @@ MetricFunction = Callable[[Sequence[Scalar], Sequence[Scalar]], Scalar]
 MetricConstructor = Union[
     str,
     MetricFunction,
-    SkScorer,
-    Sequence[Union[str, MetricFunction, SkScorer]],
+    Scorer,
+    Sequence[Union[str, MetricFunction, Scorer]],
     None,
 ]
 MetricSelector = Union[
@@ -279,6 +290,9 @@ ParamsSelector = Union[
     Segment,
     Sequence[Union[IntLargerEqualZero, str]],
 ]
+TargetSelector = Union[IntLargerEqualZero, str]
+TargetsSelector = Union[TargetSelector, tuple[TargetSelector, TargetSelector]]
+Kind = Literal["average", "individual", "average+individual", "individual+average"]
 Legend = Literal[
     "upper left", "lower left", "upper right", "lower right", "upper center",
     "lower center", "center left", "center right", "center", "out",

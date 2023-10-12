@@ -18,7 +18,7 @@ from beartype import beartype
 from beartype.typing import Any
 from sklearn.base import is_classifier
 
-from atom.plots.base import BasePlot
+from atom.plots.baseplot import BasePlot
 from atom.utils.types import Bool, IntLargerZero, Legend
 from atom.utils.utils import crash
 

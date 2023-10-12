@@ -9,6 +9,7 @@ Description: Module containing the PredictionPlot class.
 
 from __future__ import annotations
 
+from abc import ABC
 from collections import defaultdict
 from functools import reduce
 from itertools import chain
@@ -18,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from beartype import beartype
 from beartype.typing import Any, Literal
 from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
@@ -32,20 +34,22 @@ from sklearn.utils import _safe_indexing
 from sklearn.utils.metaestimators import available_if
 from sktime.forecasting.base import ForecastingHorizon
 
-from atom.plots.base import BasePlot
+from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, ColumnSelector, Features, Float, Int, IntLargerFour, IntLargerZero,
-    Legend, MetricConstructor, Model, ModelsSelector, RowSelector, Scalar,
-    Sequence,
+    Bool, ColumnSelector, Features, FloatZeroToOneExc, Int, IntLargerEqualZero,
+    IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
+    MetricSelector, Model, ModelsSelector, RowSelector, Scalar, Sequence,
+    TargetSelector, TargetsSelector,
 )
 from atom.utils.utils import (
-    bk, check_canvas, check_dependency, check_predict_proba, crash, divide,
-    get_best_score, get_custom_scorer, has_task, lst, rnd,
+    Task, bk, check_canvas, check_dependency, check_predict_proba, crash,
+    divide, get_custom_scorer, has_task, lst, rnd,
 )
 
 
-class PredictionPlot(BasePlot):
+@beartype
+class PredictionPlot(BasePlot, ABC):
     """Prediction plots.
 
     Plots that use the model's predictions. These plots are accessible
@@ -63,7 +67,7 @@ class PredictionPlot(BasePlot):
         models: ModelsSelector = None,
         rows: str | Sequence[str] | dict[str, RowSelector] = "test",
         n_bins: IntLargerFour = 10,
-        target: Int | str = 0,
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
@@ -164,13 +168,14 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        check_predict_proba(models, "plot_calibration")
+        models_c = self._get_plot_models(models)
+        check_predict_proba(models_c, "plot_calibration")
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
 
                 # Get calibration (frac of positives and predicted values)
@@ -223,7 +228,7 @@ class PredictionPlot(BasePlot):
             xlim=(0, 1),
         )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -243,8 +248,8 @@ class PredictionPlot(BasePlot):
         self,
         models: ModelsSelector = None,
         rows: RowSelector = "test",
-        target: Int | str = 0,
-        threshold: Float = 0.5,
+        target: TargetSelector = 0,
+        threshold: FloatZeroToOneExc = 0.5,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
@@ -332,10 +337,10 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        rows = self.branch._get_rows(rows)
-        target = self.branch._get_target(target, only_columns=True)
+        models_c = self._get_plot_models(models)
+        target_c = self.branch._get_target(target, only_columns=True)
 
-        if self.task.startswith("multiclass") and len(models) > 1:
+        if self.task.is_multiclass and len(models_c) > 1:
             raise NotImplementedError(
                 "The plot_confusion_matrix method does not support "
                 "the comparison of multiple models for multiclass "
@@ -347,7 +352,7 @@ class PredictionPlot(BasePlot):
         )
 
         fig = self._get_figure()
-        if len(models) == 1:
+        if len(models_c) == 1:
             xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(0, 0.87),
                 coloraxis=dict(
@@ -361,13 +366,13 @@ class PredictionPlot(BasePlot):
         else:
             xaxis, yaxis = BasePlot._fig.get_axes()
 
-        for m in models:
-            y_true, y_pred = m._get_pred(rows, target, attr="predict")
+        for m in models_c:
+            y_true, y_pred = m._get_pred(rows, target_c, attr="predict")
             if threshold != 0.5:
-                y_pred = (y_pred > threshold).astype("int")
+                y_pred = (y_pred > threshold).astype(int)
 
             cm = confusion_matrix(y_true, y_pred)
-            if len(models) == 1:  # Create matrix heatmap
+            if len(models_c) == 1:  # Create matrix heatmap
                 xaxis, yaxis = BasePlot._fig.get_axes(
                     x=(0, 0.87),
                     coloraxis=dict(
@@ -379,7 +384,11 @@ class PredictionPlot(BasePlot):
                     ),
                 )
 
-                ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
+                # Get mapping from branch or use unique values
+                ticks = m.branch.mapping.get(
+                    target_c, np.unique(m.branch.dataset[target_c]).astype(str)
+                )
+
                 fig.add_trace(
                     go.Heatmap(
                         x=ticks,
@@ -410,15 +419,14 @@ class PredictionPlot(BasePlot):
                 )
 
             else:
-                color = BasePlot._fig.get_elem(m.name)
                 fig.add_trace(
                     go.Bar(
                         x=cm.ravel(),
                         y=labels.ravel(),
                         orientation="h",
                         marker=dict(
-                            color=f"rgba({color[4:-1]}, 0.2)",
-                            line=dict(width=2, color=color),
+                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
                         ),
                         hovertemplate="%{x}<extra></extra>",
                         name=m.name,
@@ -431,14 +439,14 @@ class PredictionPlot(BasePlot):
 
                 fig.update_layout(bargroupgap=0.05)
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel="Predicted label" if len(models) == 1 else "Count",
-            ylabel="True label" if len(models) == 1 else None,
+            xlabel="Predicted label" if len(models_c) == 1 else "Count",
+            ylabel="True label" if len(models_c) == 1 else None,
             title=title,
             legend=legend,
-            figsize=figsize or ((800, 800) if len(models) == 1 else (900, 600)),
+            figsize=figsize or ((800, 800) if len(models_c) == 1 else (900, 600)),
             plotname="plot_confusion_matrix",
             filename=filename,
             display=display,
@@ -449,8 +457,8 @@ class PredictionPlot(BasePlot):
     def plot_det(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
@@ -531,10 +539,12 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 # Get fpr-fnr pairs for different thresholds
                 fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -551,7 +561,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="FPR",
@@ -569,8 +579,8 @@ class PredictionPlot(BasePlot):
     def plot_errors(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -653,10 +663,12 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target)
 
                 fig.add_trace(
@@ -674,7 +686,7 @@ class PredictionPlot(BasePlot):
 
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
-                model = OrdinaryLeastSquares(goal=self._goal, branches=self._branches)
+                model = OrdinaryLeastSquares(goal=self.task.goal)
                 estimator = model._get_est().fit(bk.DataFrame(y_true), y_pred)
 
                 fig.add_trace(
@@ -692,7 +704,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -783,9 +795,11 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
+        for m in models_c:
             if not m.evals:
                 raise ValueError(
                     "Invalid value for the models parameter. Model "
@@ -806,7 +820,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        BasePlot._fig.used_models.append(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Iterations",
@@ -823,7 +837,7 @@ class PredictionPlot(BasePlot):
     def plot_feature_importance(
         self,
         models: ModelsSelector = None,
-        show: Int | None = None,
+        show: IntLargerZero | None = None,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -899,15 +913,18 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        show = self._get_show(show, models)
+        models_c = self._get_plot_models(models)
+        show_c = self._get_show(show, models_c)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            if (fi := m.feature_importance) is None:
+        for m in models_c:
+            try:
+                fi = m.feature_importance
+            except AttributeError:
                 raise ValueError(
-                    "Invalid value for the models parameter. The estimator "
-                    f"{m.estimator.__class__.__name__} has no feature_importances_ "
+                    "Invalid value for the models parameter. Estimator "
+                    f"{m._est_class.__name__} has no scores_, feature_importances_ "
                     "nor coef_ attribute."
                 )
 
@@ -937,16 +954,16 @@ class PredictionPlot(BasePlot):
         )
 
         # Unique number of features over all branches
-        n_fxs = len(set([fx for m in models for fx in m.features]))
+        n_fxs = len(set([fx for m in models_c for fx in m.branch.features]))
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Normalized feature importance",
-            ylim=(n_fxs - show - 0.5, n_fxs - 0.5),
+            ylim=(n_fxs - show_c - 0.5, n_fxs - 0.5),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_feature_importance",
             filename=filename,
             display=display,
@@ -957,10 +974,10 @@ class PredictionPlot(BasePlot):
     def plot_forecast(
         self,
         models: ModelsSelector = None,
-        fh: int | str | range | Sequence | ForecastingHorizon = "test",
+        fh: RowSelector | ForecastingHorizon = "test",
         X: Features | None = None,
-        target: Int | str = 0,
-        plot_interval: bool = True,
+        target: TargetSelector = 0,
+        plot_interval: Bool = True,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
@@ -978,10 +995,9 @@ class PredictionPlot(BasePlot):
             Models to plot. If None, all models are selected. If no
             models are selected, only the target column is plotted.
 
-        fh: int, str, range, sequence or [ForecastingHorizon][], default="test"
-            Forecast horizon for which to plot the predictions. If
-            string, choose from: "train", "test" or "holdout". Use a
-            sequence or add `+` between options to select more than one.
+        fh: hashable, segment, sequence or [ForecastingHorizon][], default="test"
+            [Forecast horizon][row-and-column-selection] for which to
+            plot the predictions.
 
         X: dataframe-like or None, default=None
             Exogenous time series corresponding to fh. This parameter
@@ -1055,7 +1071,8 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        target = self.branch._get_target(target, only_columns=True)
+        models_c = self._get_plot_models(models)
+        target_c = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -1065,7 +1082,7 @@ class PredictionPlot(BasePlot):
             fig.add_trace(
                 go.Scatter(
                     x=self._get_plot_index(getattr(self, ds)),
-                    y=getattr(self, ds)[target],
+                    y=getattr(self, ds)[target_c],
                     mode="lines+markers",
                     line=dict(
                         width=2,
@@ -1081,16 +1098,17 @@ class PredictionPlot(BasePlot):
             )
 
         # Draw predictions
-        for m in models:
-            if isinstance(fh, str):
-                # Get fh and corresponding X from data set
-                datasets = self._get_set(fh, max_one=False)
-                fh = bk.concat([getattr(m, ds) for ds in datasets]).index
-                X = m.X.loc[fh]
+        for m in models_c:
+            # TODO: Fix the way we get fh
+            # if isinstance(fh, str):
+            #     # Get fh and corresponding X from data set
+            #     datasets = self._get_set(fh, max_one=False)
+            #     fh = bk.concat([getattr(m, ds) for ds in datasets]).index
+            #     X = m.X.loc[fh]
 
             y_pred = m.predict(fh, X)
             if self.task.is_multioutput:
-                y_pred = y_pred[target]
+                y_pred = y_pred[target_c]
 
             fig.add_trace(
                 self._draw_line(
@@ -1145,11 +1163,11 @@ class PredictionPlot(BasePlot):
                     ]
                 )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup" if plot_interval else "toggleitem",
-            xlabel=self.y.index.name,
+            xlabel=self.branch.y.index.name or "index",
             ylabel=target,
             title=title,
             legend=legend,
@@ -1164,8 +1182,8 @@ class PredictionPlot(BasePlot):
     def plot_gains(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -1246,10 +1264,12 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 fig.add_trace(
@@ -1267,7 +1287,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Fraction of sample",
@@ -1286,7 +1306,7 @@ class PredictionPlot(BasePlot):
     def plot_learning_curve(
         self,
         models: ModelsSelector = None,
-        metric: Int | str | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -1360,16 +1380,17 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        metric = self._get_metric(metric)
+        models_c = self._get_plot_models(models)
+        metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        for met in metric:
+        for met in metric_c:
             x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
-            for m in models:
+            for m in models_c:
                 x[m._group].append(m._train_idx)
-                y[m._group].append(get_best_score(m, met))
+                y[m._group].append(m._best_score(met))
                 if m.bootstrap is not None:
                     std[m._group].append(m.bootstrap.iloc[:, met].std())
 
@@ -1421,7 +1442,7 @@ class PredictionPlot(BasePlot):
                         ]
                     )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -1440,8 +1461,8 @@ class PredictionPlot(BasePlot):
     def plot_lift(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
@@ -1521,10 +1542,12 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
@@ -1543,7 +1566,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y=1, xaxis=xaxis, yaxis=yaxis)
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Fraction of sample",
@@ -1562,7 +1585,7 @@ class PredictionPlot(BasePlot):
         self,
         models: ModelsSelector = None,
         columns: ColumnSelector | None = None,
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
@@ -1649,12 +1672,13 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        target = self.branch._get_target(target)
+        models_c = self._get_plot_models(models)
+        target_c = self.branch._get_target(target)
 
         fig = self._get_figure()
 
         # Colorbar is only needed when a model has feature_importance
-        if all(m.feature_importance is None for m in models):
+        if all(m.feature_importance is None for m in models_c):
             xaxis, yaxis = BasePlot._fig.get_axes()
         else:
             xaxis, yaxis = BasePlot._fig.get_axes(
@@ -1666,19 +1690,19 @@ class PredictionPlot(BasePlot):
                 )
             )
 
-        for m in models:
+        for m in models_c:
             parshap = {}
             fxs = m.branch._get_columns(columns, include_target=False)
 
             for ds in ("train", "test"):
                 # Calculating shap values is computationally expensive,
-                # therefore select a random subsample for large data sets
+                # therefore, select a random subsample for large data sets
                 if len(data := getattr(m, ds)) > 500:
                     data = data.sample(500, random_state=self.random_state)
 
                 # Replace data with the calculated shap values
-                explanation = m._shap.get_explanation(data[m.features], target)
-                data[m.features] = explanation.values
+                explanation = m._shap.get_explanation(data[m.branch.features], target_c)
+                data[m.branch.features] = explanation.values
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
@@ -1724,7 +1748,7 @@ class PredictionPlot(BasePlot):
                         coloraxis=f"coloraxis{xaxis[1:]}",
                         line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     ),
-                    text=m.features,
+                    text=m.branch.features,
                     textposition="top center",
                     customdata=(data := None if isinstance(color, str) else list(color)),
                     hovertemplate=(
@@ -1742,7 +1766,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Training set",
@@ -1759,10 +1783,10 @@ class PredictionPlot(BasePlot):
     def plot_partial_dependence(
         self,
         models: ModelsSelector = None,
-        columns: ColumnSelector | None = None,
-        kind: str | Sequence = "average",
-        pair: int | str | None = None,
-        target: Int | str = 1,
+        columns: ColumnSelector = (0, 1, 2),
+        kind: Kind | Sequence[Kind] = "average",
+        pair: IntLargerEqualZero | str | None = None,
+        target: TargetSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -1791,12 +1815,12 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        columns: int, str, segment, sequence or None, default=None
-            Features to get the partial dependence from. If None, it
-            uses the first 3 features in the dataset.
+        columns: int, str, segment, sequence, dataframe, default=(0, 1, 2)
+            [Features][row-and-column-selection] to get the partial
+            dependence from.
 
         kind: str or sequence, default="average"
-            Kind of depedence to plot. Use a sequence or add `+` between
+            Kind of dependence to plot. Use a sequence or add `+` between
             options to select more than one. Choose from:
 
             - "average": Partial dependence averaged across all samples
@@ -1810,7 +1834,7 @@ class PredictionPlot(BasePlot):
             Feature with which to pair the features selected by
             `columns`. If specified, the resulting figure displays
             contour plots. Only allowed when plotting a single model.
-            If None, the plots show the partial dependece of single
+            If None, the plots show the partial dependence of single
             features.
 
         target: int or str, default=1
@@ -1875,49 +1899,43 @@ class PredictionPlot(BasePlot):
                 "The plot_partial_dependence method is not available for multilabel "
                 f"nor multiclass-multioutput classification tasks, got {self.task}."
             )
-        elif self.task.startswith("multiclass"):
-            _, target = self.branch._get_target(target)
+        elif self.task.is_multiclass:
+            _, target_c = self.branch._get_target(target)
         else:
-            target = 0
+            target_c = 0
 
-        kind = "+".join(lst(kind)).lower()
-        if any(k not in ("average", "individual") for k in kind.split("+")):
-            raise ValueError(
-                f"Invalid value for the kind parameter, got {kind}. "
-                "Choose from: average, individual."
-            )
+        models_c = self._get_plot_models(models)
 
-        axes, names = [], []
+        axes: list[tuple[str, str]] = []
+        names: list[str] = []
         fig = self._get_figure()
-        for m in models:
+        for m in models_c:
             color = BasePlot._fig.get_elem(m.name)
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
-            cols = m.branch._get_columns(
-                columns=(0, 1, 2) if columns is None else columns,
-                include_target=False,
-            )
+            columns_c = m.branch._get_columns(columns, include_target=False)
 
             if not names:
-                names = cols
-            elif names != cols:
+                names = columns_c
+            elif names != columns_c:
                 raise ValueError(
                     "Invalid value for the columns parameter. Not all "
-                    f"models use the same features, got {names} and {cols}."
+                    f"models use the same features, got {names} and {columns_c}."
                 )
 
+            cols: list[tuple[str, ...]]
             if pair is not None:
-                if len(models) > 1:
+                if len(models_c) > 1:
                     raise ValueError(
                         f"Invalid value for the pair parameter, got {pair}. "
                         "The value must be None when plotting multiple models"
                     )
                 else:
                     pair = m.branch._get_columns(pair, include_target=False)
-                    cols = [(c, pair[0]) for c in cols]
+                    cols = [(c, pair[0]) for c in columns_c]
             else:
-                cols = [(c,) for c in cols]
+                cols = [(c,) for c in columns_c]
 
             # Create new axes
             if not axes:
@@ -1938,7 +1956,7 @@ class PredictionPlot(BasePlot):
             predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
-                    X=m.X_test,
+                    X=m.branch.X_test,
                     features=col,
                     kind="both" if "individual" in kind else "average",
                 ) for col in cols
@@ -1949,14 +1967,14 @@ class PredictionPlot(BasePlot):
                 deciles = {}
                 for fx in chain.from_iterable(cols):
                     if fx not in deciles:  # Skip if the feature is repeated
-                        X_col = _safe_indexing(m.X_test, fx, axis=1)
+                        X_col = _safe_indexing(m.branch.X_test, fx, axis=1)
                         deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
-            for i, (ax, fx, pred) in enumerate(zip(axes, cols, predictions)):
+            for i, (ax, fxs, pred) in enumerate(zip(axes, cols, predictions)):
                 # Draw line or contour plot
                 if len(pred["values"]) == 1:
                     # For both average and individual: draw ticks on the horizontal axis
-                    for line in deciles[fx[0]]:
+                    for line in deciles[fxs[0]]:
                         fig.add_shape(
                             type="line",
                             x0=line,
@@ -1975,7 +1993,7 @@ class PredictionPlot(BasePlot):
                         fig.add_trace(
                             go.Scatter(
                                 x=pred["values"][0],
-                                y=pred["average"][target].ravel(),
+                                y=pred["average"][target_c].ravel(),
                                 mode="lines",
                                 line=dict(width=2, color=color),
                                 name=m.name,
@@ -1990,11 +2008,11 @@ class PredictionPlot(BasePlot):
                     if "individual" in kind:
                         # Select up to 50 random samples to plot
                         idx = np.random.choice(
-                            list(range(len(pred["individual"][target]))),
-                            size=min(len(pred["individual"][target]), 50),
+                            list(range(len(pred["individual"][target_c]))),
+                            size=min(len(pred["individual"][target_c]), 50),
                             replace=False,
                         )
-                        for sample in pred["individual"][target, idx, :]:
+                        for sample in pred["individual"][target_c, idx, :]:
                             fig.add_trace(
                                 go.Scatter(
                                     x=pred["values"][0],
@@ -2015,7 +2033,7 @@ class PredictionPlot(BasePlot):
                         go.Contour(
                             x=pred["values"][0],
                             y=pred["values"][1],
-                            z=pred["average"][target],
+                            z=pred["average"][target_c],
                             contours=dict(
                                 showlabels=True,
                                 labelfont=dict(size=self.tick_fontsize, color="white")
@@ -2036,7 +2054,7 @@ class PredictionPlot(BasePlot):
                     ylabel=(fx[1] if len(fx) > 1 else "Score") if i == 0 else None,
                 )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             groupclick="togglegroup",
             title=title,
@@ -2052,7 +2070,7 @@ class PredictionPlot(BasePlot):
         self,
         models: ModelsSelector = None,
         show: Int | None = None,
-        n_repeats: Int = 10,
+        n_repeats: IntLargerZero = 10,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -2131,23 +2149,18 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        show = self._get_show(show, models)
-
-        if n_repeats <= 0:
-            raise ValueError(
-                "Invalid value for the n_repeats parameter."
-                f"Value should be >0, got {n_repeats}."
-            )
+        models_c = self._get_plot_models(models)
+        show_c = self._get_show(show, models)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        for m in models:
+        for m in models_c:
             # Permutation importances returns Bunch object
             permutations = self._memory.cache(permutation_importance)(
                 estimator=m.estimator,
-                X=m.X_test,
-                y=m.y_test,
+                X=m.branch.X_test,
+                y=m.branch.y_test,
                 scoring=self._metric[0],
                 n_repeats=n_repeats,
                 n_jobs=self.n_jobs,
@@ -2157,7 +2170,7 @@ class PredictionPlot(BasePlot):
             fig.add_trace(
                 go.Box(
                     x=permutations["importances"].ravel(),
-                    y=list(np.array([[fx] * n_repeats for fx in m.features]).ravel()),
+                    y=list(np.ravel([[fx] * n_repeats for fx in m.branch.features])),
                     marker_color=BasePlot._fig.get_elem(m.name),
                     boxpoints="outliers",
                     orientation="h",
@@ -2177,16 +2190,16 @@ class PredictionPlot(BasePlot):
         )
 
         # Unique number of features over all branches
-        n_fxs = len(set([fx for m in models for fx in m.features]))
+        n_fxs = len(set([fx for m in models_c for fx in m.branch.features]))
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Score",
-            ylim=(n_fxs - show - 0.5, n_fxs - 0.5),
+            ylim=(n_fxs - show_c - 0.5, n_fxs - 0.5),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_permutation_importance",
             filename=filename,
             display=display,
@@ -2319,14 +2332,16 @@ class PredictionPlot(BasePlot):
         from schemdraw.flow import Data, RoundBox, Subroutine, Wire
         from schemdraw.util import Point
 
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_pipeline")
 
-        # Define branches to plot (if called from model, it's only one)
+        # Define branches to plot (if called from a model, it's only one)
         branches = []
         for branch in getattr(self, "_branches", [self.branch]):
             draw_models, draw_ensembles = [], []
-            for m in models:
+            for m in models_c:
                 if m.branch is branch:
                     if m.acronym not in ("Stack", "Vote"):
                         draw_models.append(m)
@@ -2336,7 +2351,7 @@ class PredictionPlot(BasePlot):
                         # Additionally, add all dependent models (if not already there)
                         draw_models.extend([i for i in m._models if i not in draw_models])
 
-            if not models or draw_models:
+            if not models_c or draw_models:
                 branches.append(
                     {
                         "name": branch.name,
@@ -2372,9 +2387,9 @@ class PredictionPlot(BasePlot):
 
         # Add positions for scaling, hyperparameter tuning and models
         x_pos.extend([x_pos[-1], x_pos[-1]])
-        if any(m.scaler for m in models):
+        if any(m.scaler for m in models_c):
             x_pos[-1] = x_pos[-2] = x_pos[-3] + length + 7
-        if draw_hyperparameter_tuning and any(m.trials is not None for m in models):
+        if draw_hyperparameter_tuning and any(m.trials is not None for m in models_c):
             x_pos[-1] = x_pos[-2] + length + 11
 
         positions = {0: d.here}  # Contains the position of every element
@@ -2488,7 +2503,7 @@ class PredictionPlot(BasePlot):
         d.draw(canvas=plt.gca(), showframe=False, show=False)
         plt.axis("off")
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=plt.gca(),
             title=title,
@@ -2504,8 +2519,8 @@ class PredictionPlot(BasePlot):
     def plot_prc(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower left",
@@ -2586,10 +2601,12 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 # Get precision-recall pairs for different thresholds
@@ -2601,16 +2618,20 @@ class PredictionPlot(BasePlot):
                         y=prec,
                         mode="lines",
                         parent=m.name,
-                        child=ds,
+                        child=child,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
 
-        self._draw_straight_line(sum(m.y_test) / len(m.y_test), xaxis=xaxis, yaxis=yaxis)
+        self._draw_straight_line(
+            y=sum(m.branch.y_test) / len(m.branch.y_test),
+            xaxis=xaxis,
+            yaxis=yaxis,
+        )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Recall",
@@ -2629,7 +2650,7 @@ class PredictionPlot(BasePlot):
         self,
         models: ModelsSelector = None,
         rows: RowSelector = "test",
-        target: Int | str | tuple = 1,
+        target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
@@ -2708,20 +2729,22 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        check_predict_proba(models, "plot_probabilities")
+        models_c = self._get_plot_models(models)
+        check_predict_proba(models_c, "plot_probabilities")
+
         col, cls = self.branch._get_target(target)
-        col = lst(self.target)[col]
+        col = lst(self.branch.target)[col]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
+        for m in models_c:
             X, y_true = m.branch._get_rows(rows, return_X_y=True)
             y_pred = m.predict_proba(X.index)
 
             for v in np.unique(m.dataset[col]):
                 # Get indices per class
                 if self.task.is_multioutput:
-                    if self.task.startswith("multilabel"):
+                    if self.task is Task.multilabel_classification:
                         hist = y_pred.loc[y_true[col] == v, col]
                     else:
                         hist = y_pred.loc[cls, col].loc[y_true[col] == v]
@@ -2750,7 +2773,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="toggleitem",
@@ -2770,8 +2793,8 @@ class PredictionPlot(BasePlot):
     def plot_residuals(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
@@ -2857,11 +2880,13 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(x=(0, 0.69))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(x=(0.71, 1.0))
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target)
 
                 fig.add_trace(
@@ -2903,7 +2928,7 @@ class PredictionPlot(BasePlot):
             title=title,
         )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -2921,7 +2946,7 @@ class PredictionPlot(BasePlot):
     def plot_results(
         self,
         models: ModelsSelector = None,
-        metric: Int | str | Sequence[Int, str] | None = None,
+        metric: MetricSelector = None,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -2944,9 +2969,9 @@ class PredictionPlot(BasePlot):
 
         metric: int, str, sequence or None, default=None
             Metric to plot (only for multi-metric runs). Other available
-            options are "time_bo", "time_fit", "time_bootstrap" and
-            "time". If str, add `+` between options to select more than
-            one. If None, the metric used to run the pipeline is selected.
+            options are: "time_bo", "time_fit", "time_bootstrap", "time".
+            If str, add `+` between options to select more than one. If
+            None, the metric used to run the pipeline is selected.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3006,7 +3031,7 @@ class PredictionPlot(BasePlot):
 
         """
 
-        def get_std(model: Model, metric: int) -> Scalar:
+        def get_std(model: Model, metric: IntLargerZero) -> Scalar:
             """Get the standard deviation of the bootstrap scores.
 
             Parameters
@@ -3028,18 +3053,19 @@ class PredictionPlot(BasePlot):
             else:
                 return model.bootstrap.iloc[:, metric].std()
 
-        metric = self._get_metric(metric)
+        models_c = self._get_plot_models(models)
+        metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        for met in metric:
-            if isinstance(met, str):
+        for met in metric_c:
+            if "time" in met:
                 color = BasePlot._fig.get_elem(met)
                 fig.add_trace(
                     go.Bar(
-                        x=[getattr(m, met) for m in models],
-                        y=[m.name for m in models],
+                        x=[getattr(m, met) for m in models_c],
+                        y=[m.name for m in models_c],
                         orientation="h",
                         marker=dict(
                             color=f"rgba({color[4:-1]}, 0.2)",
@@ -3054,12 +3080,11 @@ class PredictionPlot(BasePlot):
                     )
                 )
             else:
-                name = self._metric[met].name
                 color = BasePlot._fig.get_elem()
 
-                if all(m.score_bootstrap for m in models):
-                    x = np.array([m.bootstrap.iloc[:, met] for m in models]).ravel()
-                    y = np.array([[m.name] * len(m.bootstrap) for m in models]).ravel()
+                if all(m.score_bootstrap for m in models_c):
+                    x = np.array([m.bootstrap.iloc[:, met] for m in models_c]).ravel()
+                    y = np.array([[m.name] * len(m.bootstrap) for m in models_c]).ravel()
                     fig.add_trace(
                         go.Box(
                             x=x,
@@ -3067,9 +3092,9 @@ class PredictionPlot(BasePlot):
                             marker_color=color,
                             boxpoints="outliers",
                             orientation="h",
-                            name=name,
-                            legendgroup=name,
-                            showlegend=BasePlot._fig.showlegend(name, legend),
+                            name=met,
+                            legendgroup=met,
+                            showlegend=BasePlot._fig.showlegend(met, legend),
                             xaxis=xaxis,
                             yaxis=yaxis,
                         )
@@ -3077,11 +3102,11 @@ class PredictionPlot(BasePlot):
                 else:
                     fig.add_trace(
                         go.Bar(
-                            x=[get_best_score(m, met) for m in models],
-                            y=[m.name for m in models],
+                            x=[m._best_score(met) for m in models_c],
+                            y=[m.name for m in models_c],
                             error_x=dict(
                                 type="data",
-                                array=[get_std(m, met) for m in models],
+                                array=[get_std(m, met) for m in models_c],
                             ),
                             orientation="h",
                             marker=dict(
@@ -3089,9 +3114,9 @@ class PredictionPlot(BasePlot):
                                 line=dict(width=2, color=color),
                             ),
                             hovertemplate="%{x}<extra></extra>",
-                            name=name,
-                            legendgroup=name,
-                            showlegend=BasePlot._fig.showlegend(name, legend),
+                            name=met,
+                            legendgroup=met,
+                            showlegend=BasePlot._fig.showlegend(met, legend),
                             xaxis=xaxis,
                             yaxis=yaxis,
                         )
@@ -3105,13 +3130,13 @@ class PredictionPlot(BasePlot):
             }
         )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel="time (s)" if all(isinstance(m, str) for m in metric) else "Score",
+            xlabel="time (s)" if all("time" in m for m in metric_c) else "score",
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + len(models) * 50),
+            figsize=figsize or (900, 400 + len(models_c) * 50),
             plotname="plot_results",
             filename=filename,
             display=display,
@@ -3122,8 +3147,8 @@ class PredictionPlot(BasePlot):
     def plot_roc(
         self,
         models: ModelsSelector = None,
-        rows: str | Sequence | dict[str, RowSelector] = "test",
-        target: Int | str = 0,
+        rows: str | Sequence[str] | dict[str, RowSelector] = "test",
+        target: TargetSelector = 0,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -3204,10 +3229,12 @@ class PredictionPlot(BasePlot):
         ```
 
         """
+        models_c = self._get_plot_models(models)
+
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        for m in models:
-            for child, ds in self._get_set(rows).items():
+        for m in models_c:
+            for child, ds in self._get_set(rows):
                 # Get False (True) Positive Rate as arrays
                 fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
 
@@ -3226,7 +3253,7 @@ class PredictionPlot(BasePlot):
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlim=(-0.03, 1.03),
@@ -3245,7 +3272,7 @@ class PredictionPlot(BasePlot):
     def plot_successive_halving(
         self,
         models: ModelsSelector = None,
-        metric: Int | str | Sequence | None = None,
+        metric: MetricSelector = None,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -3319,16 +3346,17 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        metric = self._get_metric(metric)
+        models_c = self._get_plot_models(models)
+        metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        for met in metric:
+        for met in metric_c:
             x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
-            for m in models:
+            for m in models_c:
                 x[m._group].append(len(m.branch._data.train_idx) // m._train_idx)
-                y[m._group].append(get_best_score(m, met))
+                y[m._group].append(m._best_score(met))
                 if m.bootstrap is not None:
                     std[m._group].append(m.bootstrap.iloc[:, met].std())
 
@@ -3382,7 +3410,7 @@ class PredictionPlot(BasePlot):
 
         fig.update_layout({f"xaxis{yaxis[1:]}": dict(dtick=1, autorange="reversed")})
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
@@ -3403,8 +3431,8 @@ class PredictionPlot(BasePlot):
         models: ModelsSelector = None,
         metric: MetricConstructor = None,
         rows: RowSelector = "test",
-        target: Int | str = 0,
-        steps: Int = 100,
+        target: TargetSelector = 0,
+        steps: IntLargerZero = 100,
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower left",
@@ -3491,27 +3519,28 @@ class PredictionPlot(BasePlot):
         ```
 
         """
-        check_predict_proba(models, "plot_threshold")
+        models_c = self._get_plot_models(models)
+        check_predict_proba(models_c, "plot_threshold")
 
         # Get all metric functions from the input
         if metric is None:
-            metrics = [m._score_func for m in self._metric]
+            metric_c = [m._score_func for m in self._metric]
         else:
-            metrics = []
+            metric_c = []
             for m in lst(metric):
                 if isinstance(m, str):
-                    metrics.extend(m.split("+"))
+                    metric_c.extend(m.split("+"))
                 else:
-                    metrics.append(m)
-            metrics = [get_custom_scorer(m)._score_func for m in metrics]
+                    metric_c.append(m)
+            metric_c = [get_custom_scorer(m)._score_func for m in metric_c]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         steps = np.linspace(0, 1, steps)
-        for m in models:
+        for m in models_c:
             y_true, y_pred = m._get_pred(rows, target, attr="predict_proba")
-            for met in metrics:
+            for met in metric_c:
                 fig.add_trace(
                     self._draw_line(
                         x=steps,
@@ -3524,7 +3553,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        BasePlot._fig.used_models.extend(models)
+        BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Threshold",

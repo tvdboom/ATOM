@@ -28,8 +28,8 @@ from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
 from atom.utils.types import Model, SequenceTypes
 from atom.utils.utils import (
-    ClassMap, DataConfig, Goal, Task, check_dependency, get_best_score,
-    get_custom_scorer, lst, sign, time_to_str,
+    ClassMap, DataConfig, Goal, Task, check_dependency, get_custom_scorer, lst,
+    sign, time_to_str,
 )
 
 
@@ -352,7 +352,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
                 if self._n_bootstrap[m._group]:
                     m.bootstrapping(self._n_bootstrap[m._group])
 
-                self._log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
+                self._log("-" * 49 + f"\nTime: {time_to_str(m.results['time'])}", 1)
 
                 return m
 
@@ -364,7 +364,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
                 if self.experiment:
                     mlflow.end_run()
                     if self.errors != "keep":
-                        mlflow.delete_run(m._run.info.run_id)
+                        mlflow.delete_run(m.run.info.run_id)
 
                 if self.errors == "raise":
                     raise ex
@@ -425,7 +425,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
                 names.append(model._fullname)
 
             try:
-                scores.append(get_best_score(model))
+                scores.append(model._best_score())
             except (ValueError, AttributeError):  # Fails when errors="keep"
                 scores.append(-np.inf)
 

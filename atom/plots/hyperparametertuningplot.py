@@ -25,7 +25,7 @@ from optuna.visualization._terminator_improvement import _get_improvement_info
 from optuna.visualization._utils import _is_log_scale
 from sklearn.utils._bunch import Bunch
 
-from atom.plots.base import BasePlot
+from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, Int, IntLargerEqualZero, IntLargerZero, IntTypes, Legend,

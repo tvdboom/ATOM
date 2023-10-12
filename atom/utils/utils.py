@@ -25,6 +25,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import mlflow
@@ -55,6 +56,10 @@ from atom.utils.types import (
     PandasTypes, Predictor, Scalar, Scorer, Segment, SegmentTypes, Sequence,
     SequenceTypes, Series, SeriesTypes, Target, Transformer, Verbose,
 )
+
+
+if TYPE_CHECKING:
+    from atom.baserunner import BaseRunner
 
 
 T = TypeVar("T")
@@ -161,6 +166,16 @@ class Task(Enum):
     def is_multioutput(self) -> Bool:
         """Return whether the task has more than one target column."""
         return self.value in (3, 4, 6, 8)
+
+    @property
+    def goal(self) -> Goal:
+        """Return the Goal corresponding to this task."""
+        if self.is_classification:
+            return Goal.classification
+        elif self.is_regression:
+            return Goal.regression
+        else:
+            return Goal.forecast
 
 
 @dataclass
@@ -1550,7 +1565,7 @@ def check_canvas(is_canvas: Bool, method: str):
         )
 
 
-def check_predict_proba(models: Model | Sequence, method: str):
+def check_predict_proba(models: Model | Sequence[Model], method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
     Parameters
@@ -1703,32 +1718,6 @@ def get_corpus(df: DataFrame) -> Series:
         return next(col for col in df if col.lower() == "corpus")
     except StopIteration:
         raise ValueError("The provided dataset does not contain a text corpus!")
-
-
-def get_best_score(item: Model | Series, metric: int = 0) -> Float:
-    """Returns the best score for a model.
-
-    The best score is the `score_bootstrap` or `score_test`, checked
-    in that order.
-
-    Parameters
-    ----------
-    item: model or series
-        Model or row from the results dataframe to get the score from.
-
-    metric: int, default=0
-        Index of the metric to use (for multi-metric runs).
-
-    Returns
-    -------
-    float
-        Best score.
-
-    """
-    if item.score_bootstrap:
-        return lst(item.score_bootstrap)[metric]
-    else:
-        return lst(item.score_test)[metric]
 
 
 def time_to_str(t: Scalar) -> str:
@@ -2048,7 +2037,7 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
 
     """
     if isinstance(metric, str):
-        custom_acronyms = dict(
+        custom_acronyms = CustomDict(
             ap="average_precision",
             ba="balanced_accuracy",
             auc="roc_auc",
@@ -2065,7 +2054,7 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
             gamma="neg_mean_gamma_deviance",
         )
 
-        custom_scorers = dict(
+        custom_scorers = CustomDict(
             tn=true_negatives,
             fp=false_positives,
             fn=false_negatives,
@@ -2077,13 +2066,10 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
             mcc=matthews_corrcoef,
         )
 
-        metric = metric.lower()
         if metric in get_scorer_names():
-            scorer = get_scorer(metric)
-            scorer.name = metric
+            scorer = get_scorer(metric.lower())
         elif metric in custom_acronyms:
             scorer = get_scorer(custom_acronyms[metric])
-            scorer.name = custom_acronyms[metric]
         elif metric in custom_scorers:
             scorer = make_scorer(custom_scorers[metric])
         else:
@@ -2091,6 +2077,8 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
                 f"Unknown value for the metric parameter, got {metric}. "
                 f"Choose from: {', '.join(get_scorer_names())}."
             )
+
+        scorer.name = metric.lower()
 
     elif hasattr(metric, "_score_func"):  # Scoring is a scorer
         scorer = copy(metric)
@@ -2114,65 +2102,6 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
         scorer.name = scorer._score_func.__name__
 
     return scorer
-
-
-def get_feature_importance(
-    est: Predictor,
-    attributes: Sequence[str] | None = None,
-) -> np.ndarray | None:
-    """Return the feature importance from an estimator.
-
-    Gets the feature importance from the provided attribute. For
-    meta-estimators, it gets the mean of the values of the underlying
-    estimators.
-
-    Parameters
-    ----------
-    est: Predictor
-        Instance from which to get the feature importance.
-
-    attributes: sequence or None, default=None
-        Attributes to get, in order of importance. If None, it
-        uses scores_ > coef_ > feature_importances_.
-
-    Returns
-    -------
-    np.array or None
-        Estimator's feature importances.
-
-    """
-    norm = lambda x: np.linalg.norm(x, axis=np.argmin(x.shape), ord=1)
-
-    data = None
-    if not attributes:
-        attributes = ("scores_", "coef_", "feature_importances_")
-
-    try:
-        data = getattr(est, next(x for x in attributes if hasattr(est, x)))
-    except StopIteration:
-        # Get the mean value for meta-estimators
-        if hasattr(est, "estimators_"):
-            if all(hasattr(x, "feature_importances_") for x in est.estimators_):
-                data = [fi.feature_importances_ for fi in est.estimators_]
-            elif all(hasattr(x, "coef_") for x in est.estimators_):
-                data = [norm(fi.coef_) for fi in est.estimators_]
-            else:
-                # For ensembles that mix attributes
-                raise ValueError(
-                    "Failed to calculate the feature importance for meta-estimator "
-                    f"{est.__class__.__name__}. The underlying estimators have a mix "
-                    f"of feature_importances_ and coef_ attributes."
-                )
-
-            # Trim each coef to the number of features in the 1st estimator
-            # ClassifierChain adds features to subsequent estimators
-            min_length = min(map(len, data))
-            data = np.mean([c[:min_length] for c in data], axis=0)
-
-    if data is None:
-        return data
-    else:
-        return np.abs(data.flatten())
 
 
 # Pipeline functions =============================================== >>
@@ -2659,7 +2588,7 @@ def has_attr(attr: str) -> Callable:
 
     """
 
-    def check(runner: Any) -> bool:
+    def check(runner: Any) -> Bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(runner, attr)
         return True
@@ -2677,7 +2606,7 @@ def estimator_has_attr(attr: str) -> Callable:
 
     """
 
-    def check(runner: Any) -> bool:
+    def check(runner: BaseRunner) -> Bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(runner.estimator, attr)
         return True

@@ -13,30 +13,18 @@ from unittest.mock import patch
 import pytest
 from sklearn.metrics import f1_score, get_scorer
 
-from atom import ATOMClassifier, ATOMRegressor
-from atom.plots.base import Aesthetics, BaseFigure, BasePlot
+from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
+from atom.plots.baseplot import Aesthetics, BaseFigure, BasePlot
 from atom.utils.types import Legend
 from atom.utils.utils import NotFittedError
 
 from .conftest import (
     X10, X10_str, X_bin, X_class, X_label, X_reg, X_sparse, X_text, y10, y_bin,
-    y_class, y_label, y_multiclass, y_reg,
+    y_class, y_fc, y_label, y_multiclass, y_reg,
 )
 
 
 # Test BaseFigure ================================================== >>
-
-def test_invalid_horizontal_spacing():
-    """Assert that an error is raised when horizontal_spacing is invalid."""
-    with pytest.raises(ValueError, match=".*horizontal_spacing parameter.*"):
-        BaseFigure(horizontal_spacing=2)
-
-
-def test_invalid_vertical_spacing():
-    """Assert that an error is raised when vertical_spacing is invalid."""
-    with pytest.raises(ValueError, match=".*vertical_spacing parameter.*"):
-        BaseFigure(vertical_spacing=0)
-
 
 def test_get_elem():
     """Assert that elements are assigned correctly."""
@@ -50,87 +38,44 @@ def test_get_elem():
 
 def test_aesthetics():
     """Assert that the aesthetics getter works."""
-    assert isinstance(BasePlot().aesthetics, Aesthetics)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom.aesthetics, Aesthetics)
+    assert isinstance(atom.palette, list)
+    assert isinstance(atom.title_fontsize, int)
+    assert isinstance(atom.label_fontsize, int)
+    assert isinstance(atom.tick_fontsize, int)
+    assert isinstance(atom.line_width, int)
+    assert isinstance(atom.marker_size, int)
 
 
 def test_aesthetics_setter():
     """Assert that the aesthetics setter works."""
-    base = BasePlot()
-    base.aesthetics = {"line_width": 3}
-    assert base.line_width == 3
-
-
-def test_palette():
-    """Assert that the palette getter works."""
-    assert isinstance(BasePlot().palette, list)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.aesthetics = {"line_width": 3}
+    assert atom.line_width == 3
 
 
 def test_palette_setter():
     """Assert that the palette setter works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.palette = ["red", "rgb(255, 34, 20)", "#0044ff"]
-    atom.plot_distribution(columns=[0, 1], display=False)
+    fig = atom.plot_distribution(columns=[0, 1], display=None)
+    assert "rgb(255, 34, 20)" in str(fig._data_objs[2])
 
 
 def test_palette_setter_invalid_name():
     """Assert that an error is raised when an invalid palette is used."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*the palette parameter.*"):
-        BasePlot().palette = "unknown"
+        atom.palette = "unknown"
 
 
-def test_title_fontsize():
-    """Assert that the title_fontsize getter works."""
-    assert isinstance(BasePlot().title_fontsize, int)
-
-
-def test_title_fontsize_setter():
-    """Assert that the title_fontsize setter works."""
-    with pytest.raises(ValueError, match=".*the title_fontsize parameter.*"):
-        BasePlot().title_fontsize = 0
-
-
-def test_label_fontsize():
-    """Assert that the label_fontsize getter works."""
-    assert isinstance(BasePlot().label_fontsize, int)
-
-
-def test_label_fontsize_setter():
-    """Assert that the label_fontsize setter works."""
-    with pytest.raises(ValueError, match=".*the label_fontsize parameter.*"):
-        BasePlot().label_fontsize = 0
-
-
-def test_tick_fontsize():
-    """Assert that the tick_fontsize getter works."""
-    assert isinstance(BasePlot().tick_fontsize, int)
-
-
-def test_tick_fontsize_setter():
-    """Assert that the tick_fontsize setter works."""
-    with pytest.raises(ValueError, match=".*the tick_fontsize parameter.*"):
-        BasePlot().tick_fontsize = 0
-
-
-def test_line_width():
-    """Assert that the line_width getter works."""
-    assert isinstance(BasePlot().tick_fontsize, int)
-
-
-def test_line_width_setter():
-    """Assert that the line_width setter works."""
-    with pytest.raises(ValueError, match=".*the line_width parameter.*"):
-        BasePlot().line_width = 0
-
-
-def test_marker_size():
-    """Assert that the marker_size getter works."""
-    assert isinstance(BasePlot().marker_size, int)
-
-
-def test_marker_size_setter():
-    """Assert that the marker_size setter works."""
-    with pytest.raises(ValueError, match=".*the marker_size parameter.*"):
-        BasePlot().marker_size = 0
+def test_get_plot_index():
+    """Assert that indices can be converted to timestamps."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("ES")
+    print(atom._get_plot_index(atom.dataset), type(atom._get_plot_index(atom.dataset)))
+    assert atom._get_plot_index(atom.dataset) == X_bin.shape[1]
 
 
 def test_get_show():

@@ -23,8 +23,7 @@ from nltk.collocations import (
 )
 from scipy import stats
 
-from atom.branch import Branch
-from atom.plots.base import BasePlot
+from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, RowSelector,
@@ -45,13 +44,13 @@ class DataPlot(BasePlot, ABC):
 
     """
 
+    # Abstract ===================================================== >>
+
     @property
     @abstractmethod
     def missing(self) -> list[str]: ...
 
-    @property
-    @abstractmethod
-    def branch(self) -> Branch: ...
+    # Plots ======================================================== >>
 
     @crash
     def plot_correlation(

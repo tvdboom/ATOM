@@ -52,6 +52,18 @@ in common:
 * The `filename` parameter is used to save the plot.
 * The `display` parameter determines whether to show or return the plot.
 
+!!! info
+    In some [plotting methods][prediction-plots], it's possible to plot separate
+    lines for different subsets of the rows. For example, to compare the results
+    on the train and test set. For these cases, either provide a sequence to the
+    `rows` parameter for every line you want to draw, e.g., `#!python atom.plot_roc(rows=("train", "test"))`,
+    or provide a dictionary where the keys are the names of the sets (used in the
+    legend) and the values are the corresponding selection of rows, selected using
+    any of the aforementioned approaches, e.g, `#!python atom.plot_roc(rows={"0-99": range(100), "100-199": range(100, 200})`.
+    Note that for these methods, using `#!python atom.plot_roc(rows="train+test")`,
+    only plots one line with the data from both sets. See the
+    [advanced plotting example][example-advanced-plotting].
+
 <br>
 
 ## Aesthetics
