@@ -417,15 +417,15 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
 
         maxlen = 0
         names, scores = [], []
-        for model in self._models:
+        for m in self._models:
             # Add the model name for repeated model classes
-            if len(list(filter(lambda x: x.acronym == model.acronym, self._models))) > 1:
-                names.append(f"{model._fullname} ({model.name})")
+            if len(list(filter(lambda x: x.acronym == m.acronym, self._models))) > 1:
+                names.append(f"{m.fullname} ({m.name})")
             else:
-                names.append(model._fullname)
+                names.append(m.fullname)
 
             try:
-                scores.append(model._best_score())
+                scores.append(m._best_score())
             except (ValueError, AttributeError):  # Fails when errors="keep"
                 scores.append(-np.inf)
 

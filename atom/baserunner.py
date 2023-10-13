@@ -177,7 +177,7 @@ class BaseRunner(BaseTracker):
         """
         if self._models:  # Returns None if not fitted
             return sorted(
-                self._models, key=lambda x: (x._best_score(), x.time_fit), reverse=True
+                self._models, key=lambda x: (x._best_score(), x._time_fit), reverse=True
             )
 
     @property
@@ -402,7 +402,7 @@ class BaseRunner(BaseTracker):
                 rows.append(
                     {
                         "acronym": m.acronym,
-                        "model": m._fullname,
+                        "model": m.fullname,
                         "estimator": m._est_class.__name__,
                         "module": m._est_class.__module__.split(".")[0] + m._module,
                         "needs_scaling": m.needs_scaling,
@@ -790,7 +790,7 @@ class BaseRunner(BaseTracker):
                 if self._goal not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
-                        f"{model._fullname} can not perform {self.task} tasks."
+                        f"{model.fullname} can not perform {self.task} tasks."
                     )
 
                 kwargs["final_estimator"] = model._get_est()

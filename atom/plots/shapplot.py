@@ -16,7 +16,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import shap
 from beartype import beartype
-from beartype.typing import Any
+from beartype.typing import Any, Hashable
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.types import (
@@ -128,24 +128,24 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        X, _ = m.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, m)
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(X, target)
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        show_c = self._get_show(show, models_c.branch.n_features)
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_bar")
 
-        shap.plots.bar(explanation, max_display=show, show=False)
+        shap.plots.bar(explanation, max_display=show_c, show=False)
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_shap_bar",
             filename=filename,
             display=display,
@@ -241,24 +241,24 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        X, _ = m.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, m)
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(X, target)
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        show_c = self._get_show(show, models_c.branch.n_features)
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_beeswarm")
 
-        shap.plots.beeswarm(explanation, max_display=show, show=False)
+        shap.plots.beeswarm(explanation, max_display=show_c, show=False)
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             filename=filename,
             display=display,
         )
@@ -357,11 +357,11 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        X, _ = m.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, m)
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(X, target)
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        show_c = self._get_show(show, models_c.branch.n_features)
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_decision")
@@ -369,19 +369,19 @@ class ShapPlot(BasePlot, ABC):
         shap.decision_plot(
             base_value=explanation.base_values,
             shap_values=explanation.values,
-            features=rows,
-            feature_display_range=slice(-1, -show - 1, -1),
+            features=X.columns,
+            feature_display_range=slice(-1, -show_c - 1, -1),
             auto_size_plot=False,
             show=False,
         )
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_shap_decision",
             filename=filename,
             display=display,
@@ -477,10 +477,10 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        X, _ = m.branch._get_rows(rows, return_X_y=True)
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(X, target)
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         self._get_figure(create_figure=False, backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_force")
@@ -488,13 +488,13 @@ class ShapPlot(BasePlot, ABC):
         plot = shap.force_plot(
             base_value=explanation.base_values,
             shap_values=explanation.values,
-            features=rows,
+            features=X.columns,
             show=False,
             **kwargs,
         )
 
         if kwargs.get("matplotlib"):
-            BasePlot._fig.used_models.append(m)
+            BasePlot._fig.used_models.append(models_c)
             return self._plot(
                 fig=plt.gcf(),
                 ax=plt.gca(),
@@ -611,24 +611,24 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        X, _ = m.branch._get_rows(rows, return_X_y=True)
-        show = self._get_show(show, m)
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(X, target)
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        show_c = self._get_show(show, models_c.branch.n_features)
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_heatmap")
 
-        shap.plots.heatmap(explanation, max_display=show, show=False)
+        shap.plots.heatmap(explanation, max_display=show_c, show=False)
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_shap_heatmap",
             filename=filename,
             display=display,
@@ -726,21 +726,21 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        X, _ = m.branch._get_rows(rows, return_X_y=True)
-        column = m.branch._get_columns(columns, include_target=False)[0]
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(X, target)
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        columns_c = models_c.branch._get_columns(columns, include_target=False)[0]
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         # Get explanation for a specific column
-        explanation = explanation[:, m.columns.get_loc(column)]
+        explanation = explanation[:, models_c.branch.columns.get_loc(columns_c)]
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_scatter")
 
         shap.plots.scatter(explanation, color=explanation, ax=plt.gca(), show=False)
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -757,7 +757,7 @@ class ShapPlot(BasePlot, ABC):
     def plot_shap_waterfall(
         self,
         models: ModelSelector | None = None,
-        rows: RowSelector = "test",
+        rows: Hashable = 0,
         show: Int | None = None,
         target: TargetsSelector = 1,
         *,
@@ -852,17 +852,17 @@ class ShapPlot(BasePlot, ABC):
         ```
 
         """
-        m = self._get_plot_models(models, max_one=True)[0]
-        if len(row := m.branch._get_rows(rows)) > 1:
+        models_c = self._get_plot_models(models, max_one=True)[0]
+        if len(row := models_c.branch._get_rows(rows)) > 1:
             raise ValueError(
                 f"Invalid value for the rows parameter, got {rows}. "
                 "The plot_shap_waterfall method does not support "
                 f"plotting multiple samples, got {len(row)}."
             )
 
-        show = self._get_show(show, m)
-        target = self.branch._get_target(target)
-        explanation = m._shap.get_explanation(row, target)
+        show_c = self._get_show(show, models_c.branch.n_features)
+        target_c = self.branch._get_target(target)
+        explanation = models_c._shap.get_explanation(row, target_c)
 
         # Waterfall accepts only one row
         explanation.values = explanation.values[0]
@@ -871,14 +871,14 @@ class ShapPlot(BasePlot, ABC):
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_waterfall")
 
-        shap.plots.waterfall(explanation, max_display=show, show=False)
+        shap.plots.waterfall(explanation, max_display=show_c, show=False)
 
-        BasePlot._fig.used_models.append(m)
+        BasePlot._fig.used_models.append(models_c)
         return self._plot(
             ax=plt.gca(),
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show * 50),
+            figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_shap_waterfall",
             filename=filename,
             display=display,

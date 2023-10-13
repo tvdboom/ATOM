@@ -50,14 +50,14 @@ class DummyTransformer(BaseEstimator):
 
     def transform(self, X: DataFrame) -> np.ndarray:
         if self.strategy == "equal":
-            X = X.to_numpy()
+            Xt = X.to_numpy()
         elif self.strategy == "drop":
-            X = X.drop(X.columns[1], axis=1).to_numpy()
+            Xt = X.drop(X.columns[1], axis=1).to_numpy()
         elif self.strategy == "add":
             X["new_col"] = list(range(len(X)))
-            X = X.to_numpy()
+            Xt = X.to_numpy()
 
-        return X
+        return Xt
 
 
 @pytest.fixture(autouse=True)

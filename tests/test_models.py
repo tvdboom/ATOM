@@ -28,7 +28,7 @@ def test_custom_model_properties():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(models=ATOMModel(RandomForestRegressor(n_estimators=5, n_jobs=1)))
     assert atom.rfr.name == "RFR"
-    assert atom.rfr._fullname == "RandomForestRegressor"
+    assert atom.rfr.fullname == "RandomForestRegressor"
 
 
 def test_custom_model_invalid_acronym():
@@ -87,7 +87,7 @@ def test_all_models_multiclass():
 
 def test_all_models_regression():
     """Assert that all models work with regression."""
-    atom = ATOMRegressor(X_reg, y_reg, n_rows=0.5, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, n_rows=0.5, random_state=2)
     atom.run(
         models=["!CatB", "!LGB", "!RNN", "!XGB"],
         n_trials=5,

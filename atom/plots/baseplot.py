@@ -12,7 +12,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -23,6 +23,7 @@ from mlflow.tracking import MlflowClient
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
+from atom.branch import Branch
 from atom.plots.basefigure import BaseFigure
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
@@ -33,11 +34,6 @@ from atom.utils.types import (
 from atom.utils.utils import (
     Aesthetics, Task, check_is_fitted, composed, crash, get_custom_scorer, lst,
 )
-
-
-if TYPE_CHECKING:
-    from atom.baserunner import BaseRunner
-    from atom.branch import Branch
 
 
 class BasePlot(BaseTransformer, BaseTracker, ABC):
@@ -179,15 +175,18 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
             return df.index
 
     @staticmethod
-    def _get_show(show: IntLargerZero | None, maximum: IntLargerZero) -> Int:
-        """Check and return the number of features to show.
+    def _get_show(show: IntLargerZero | None, maximum: IntLargerZero = 200) -> Int:
+        """Get the number of elements to show.
+
+        Always limit the maximum elements shown to 200 to avoid
+        a maximum figsize error.
 
         Parameters
         ----------
         show: int or None
-            Number of features to show. If None, select up to 200.
+            Number of elements to show. If None, select up to 200.
 
-        maximum: int
+        maximum: int, default=200
             Maximum number of features allowed.
 
         Returns
@@ -197,7 +196,6 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
 
         """
         if show is None or show > maximum:
-            # Limit max features shown to avoid maximum figsize error
             show_c = min(200, maximum)
         else:
             show_c = show
@@ -322,7 +320,7 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
             Models to plot.
 
         """
-        if isinstance(self, BaseRunner):
+        if hasattr(self, "_get_models"):
             if check_fitted:
                 check_is_fitted(self, attributes="_models")
 
@@ -334,8 +332,8 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
                 )
 
             return models_c
-
-        return [self]  # type: ignore
+        else:
+            return [self]  # type: ignore
 
     @overload
     def _get_figure(

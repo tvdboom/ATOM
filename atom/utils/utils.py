@@ -63,6 +63,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
+T_Sequence = TypeVar("T_Sequence", bound=Sequence)
 T_Pandas = TypeVar("T_Pandas", Series, DataFrame)
 
 
@@ -220,6 +221,7 @@ class PandasModin:
     ATOM_DATA_ENGINE, which is set in BaseTransformer.py.
 
     """
+
     def __getattr__(self, item: str) -> Any:
         if os.environ.get("ATOM_DATA_ENGINE") == "modin":
             return getattr(md, item)
@@ -243,6 +245,7 @@ class CatBMetric:
         Model's task.
 
     """
+
     def __init__(self, scorer: Scorer, task: Task):
         self.scorer = scorer
         self.task = task
@@ -332,6 +335,7 @@ class LGBMetric:
         Model's task.
 
     """
+
     def __init__(self, scorer: Scorer, task: Task):
         self.scorer = scorer
         self.task = task
@@ -529,7 +533,7 @@ class TrialsCallback:
                     mlflow.set_tags(
                         {
                             "name": self.T.name,
-                            "model": self.T._fullname,
+                            "model": self.Tfullname,
                             "branch": self.T.branch.name,
                             "trial_state": trial_info.state,
                             **self.T._ht["tags"],
@@ -891,7 +895,7 @@ class ShapExplanation:
         # Update the explanation object
         explanation.values = np.stack(self._shap_values.loc[df.index].values)
         explanation.base_values = self._explanation.base_values[0]
-        explanation.data = self.branch._all.loc[df.index].to_numpy()
+        explanation.data = self.branch._all.loc[df.index, self.branch.features].to_numpy()
 
         if self.task.is_multioutput:
             if explanation.values.shape[-1] == self.branch.y.shape[1]:
@@ -1470,7 +1474,7 @@ def variable_return(
         return X, y
 
 
-def get_segment(obj: Sequence[T], segment: Segment) -> Sequence[T]:
+def get_segment(obj: T_Sequence[T], segment: Segment) -> T_Sequence[T]:
     """Get a subset of a sequence by range or slice.
 
     Parameters
@@ -1487,7 +1491,7 @@ def get_segment(obj: Sequence[T], segment: Segment) -> Sequence[T]:
         Subset of the original sequence.
 
     """
-    if isinstance(segment, range):
+    if isinstance(segment, slice):
         return obj[segment]
     else:
         return obj[slice(segment.start, segment.stop, segment.step)]
@@ -2008,7 +2012,7 @@ def check_is_fitted(
     if not is_fitted:
         if exception:
             raise NotFittedError(
-                f"This {type(obj).__name__} instance is not fitted yet. "
+                f"This {type(obj).__name__} instance is not yet fitted. "
                 f"Call {'run' if hasattr(obj, 'run') else 'fit'} with "
                 "appropriate arguments before using this object."
             )
@@ -2100,6 +2104,8 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
     # If no name was assigned, use the name of the function
     if not hasattr(scorer, "name"):
         scorer.name = scorer._score_func.__name__
+    if not hasattr(scorer, "fullname"):
+        scorer.fullname = scorer._score_func.__name__
 
     return scorer
 

@@ -686,7 +686,7 @@ class PredictionPlot(BasePlot, ABC):
 
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
-                model = OrdinaryLeastSquares(goal=self.task.goal)
+                model = OrdinaryLeastSquares(goal=self.task.goal, branches=self._branches)
                 estimator = model._get_est().fit(bk.DataFrame(y_true), y_pred)
 
                 fig.add_trace(
@@ -795,7 +795,7 @@ class PredictionPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._get_plot_models(models)
+        models_c = self._get_plot_models(models, ensembles=False)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -914,7 +914,7 @@ class PredictionPlot(BasePlot, ABC):
 
         """
         models_c = self._get_plot_models(models)
-        show_c = self._get_show(show, models_c)
+        show_c = self._get_show(show, max(m.branch.n_features for m in models_c))
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -1380,7 +1380,7 @@ class PredictionPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._get_plot_models(models)
+        models_c = self._get_plot_models(models, ensembles=False)
         metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
@@ -1392,7 +1392,7 @@ class PredictionPlot(BasePlot, ABC):
                 x[m._group].append(m._train_idx)
                 y[m._group].append(m._best_score(met))
                 if m.bootstrap is not None:
-                    std[m._group].append(m.bootstrap.iloc[:, met].std())
+                    std[m._group].append(m.bootstrap.loc[:, met].std())
 
             for group in x:
                 fig.add_trace(
@@ -1678,7 +1678,7 @@ class PredictionPlot(BasePlot, ABC):
         fig = self._get_figure()
 
         # Colorbar is only needed when a model has feature_importance
-        if all(m.feature_importance is None for m in models_c):
+        if any(hasattr(m, "feature_importance") for m in models_c):
             xaxis, yaxis = BasePlot._fig.get_axes()
         else:
             xaxis, yaxis = BasePlot._fig.get_axes(
@@ -1732,7 +1732,8 @@ class PredictionPlot(BasePlot, ABC):
                     parshap[ds][fx] = semi_partial_correlation[1, 0]
 
             # Get the feature importance or coefficients
-            if m.feature_importance is not None:
+            color: str | pd.Series
+            if hasattr(m, "feature_importance"):
                 color = m.feature_importance.loc[fxs]
             else:
                 color = BasePlot._fig.get_elem("parshap")
@@ -2050,8 +2051,8 @@ class PredictionPlot(BasePlot, ABC):
 
                 self._plot(
                     ax=(f"xaxis{ax[0][1:]}", f"yaxis{ax[1][1:]}"),
-                    xlabel=fx[0],
-                    ylabel=(fx[1] if len(fx) > 1 else "Score") if i == 0 else None,
+                    xlabel=fxs[0],
+                    ylabel=(fxs[1] if len(fxs) > 1 else "Score") if i == 0 else None,
                 )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -2150,7 +2151,7 @@ class PredictionPlot(BasePlot, ABC):
 
         """
         models_c = self._get_plot_models(models)
-        show_c = self._get_show(show, models)
+        show_c = self._get_show(show, max(m.branch.n_features for m in models_c))
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -2332,7 +2333,7 @@ class PredictionPlot(BasePlot, ABC):
         from schemdraw.flow import Data, RoundBox, Subroutine, Wire
         from schemdraw.util import Point
 
-        models_c = self._get_plot_models(models)
+        models_c = self._get_plot_models(models, check_fitted=False)
 
         fig = self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_pipeline")
@@ -2389,7 +2390,7 @@ class PredictionPlot(BasePlot, ABC):
         x_pos.extend([x_pos[-1], x_pos[-1]])
         if any(m.scaler for m in models_c):
             x_pos[-1] = x_pos[-2] = x_pos[-3] + length + 7
-        if draw_hyperparameter_tuning and any(m.trials is not None for m in models_c):
+        if draw_hyperparameter_tuning and any(m._study is not None for m in models_c):
             x_pos[-1] = x_pos[-2] + length + 11
 
         positions = {0: d.here}  # Contains the position of every element
@@ -2440,7 +2441,7 @@ class PredictionPlot(BasePlot, ABC):
                     offset = 0
 
                 # Draw hyperparameter tuning
-                if draw_hyperparameter_tuning and model.trials is not None:
+                if draw_hyperparameter_tuning and model._study is not None:
                     add_wire(x_pos[-2], check_y((d.here[0], d.here[1] - offset)))
                     d.add(
                         Data(w=11)
@@ -2482,8 +2483,8 @@ class PredictionPlot(BasePlot, ABC):
                 d.here = (max_pos + length, y)
 
                 d.add(
-                    Data(w=max(len(model._fullname) * 0.5, 7))
-                    .label(model._fullname, color="k")
+                    Data(w=max(len(model.fullname) * 0.5, 7))
+                    .label(model.fullname, color="k")
                     .color(branch["color"])
                     .anchor("W")
                     .drop("E")
@@ -3031,7 +3032,7 @@ class PredictionPlot(BasePlot, ABC):
 
         """
 
-        def get_std(model: Model, metric: IntLargerZero) -> Scalar:
+        def get_std(model: Model, metric: str) -> Scalar:
             """Get the standard deviation of the bootstrap scores.
 
             Parameters
@@ -3039,19 +3040,19 @@ class PredictionPlot(BasePlot, ABC):
             model: Model
                  Model to get the std from.
 
-            metric: int
-                Index of the metric to get it from.
+            metric: str
+                Name of the metric to get it from.
 
             Returns
             -------
             int or float
-                Standard deviation score or 0 if not bootstrapped.
+                Standard deviation score. Zero if isn't bootstrapped.
 
             """
-            if model.bootstrap is None:
+            if model._bootstrap is None:
                 return 0
             else:
-                return model.bootstrap.iloc[:, metric].std()
+                return model.bootstrap.loc[:, metric].std()
 
         models_c = self._get_plot_models(models)
         metric_c = self._get_metric(metric)
@@ -3064,7 +3065,7 @@ class PredictionPlot(BasePlot, ABC):
                 color = BasePlot._fig.get_elem(met)
                 fig.add_trace(
                     go.Bar(
-                        x=[getattr(m, met) for m in models_c],
+                        x=[m.results[met] for m in models_c],
                         y=[m.name for m in models_c],
                         orientation="h",
                         marker=dict(
@@ -3082,8 +3083,8 @@ class PredictionPlot(BasePlot, ABC):
             else:
                 color = BasePlot._fig.get_elem()
 
-                if all(m.score_bootstrap for m in models_c):
-                    x = np.array([m.bootstrap.iloc[:, met] for m in models_c]).ravel()
+                if all(m._bootstrap is not None for m in models_c):
+                    x = np.array([m.bootstrap.loc[:, met] for m in models_c]).ravel()
                     y = np.array([[m.name] * len(m.bootstrap) for m in models_c]).ravel()
                     fig.add_trace(
                         go.Box(
@@ -3346,7 +3347,7 @@ class PredictionPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._get_plot_models(models)
+        models_c = self._get_plot_models(models, ensembles=False)
         metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
@@ -3358,7 +3359,7 @@ class PredictionPlot(BasePlot, ABC):
                 x[m._group].append(len(m.branch._data.train_idx) // m._train_idx)
                 y[m._group].append(m._best_score(met))
                 if m.bootstrap is not None:
-                    std[m._group].append(m.bootstrap.iloc[:, met].std())
+                    std[m._group].append(m.bootstrap.loc[:, met].std())
 
             for group in x:
                 fig.add_trace(

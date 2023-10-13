@@ -29,7 +29,7 @@ class CustomModel(ClassRegModel):
             from atom.models import MODELS
 
             # If no name is provided, use the name of the class
-            name = self._fullname
+            name = self.fullname
             if len(n := list(filter(str.isupper, name))) >= 2 and n not in MODELS:
                 name = "".join(n)
 
@@ -37,7 +37,7 @@ class CustomModel(ClassRegModel):
         if not name.startswith(self.acronym):
             raise ValueError(
                 f"The name ({name}) and acronym ({self.acronym}) of model "
-                f"{self._fullname} do not match. The name should start with "
+                f"{self.fullname} do not match. The name should start with "
                 f"the model's acronym."
             )
 
@@ -49,7 +49,7 @@ class CustomModel(ClassRegModel):
         super().__init__(name=name, **kwargs)
 
     @property
-    def _fullname(self) -> str:
+    def fullname(self) -> str:
         """Return the estimator's class name."""
         return self._est_class.__name__
 

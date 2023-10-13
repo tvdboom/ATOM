@@ -284,7 +284,7 @@ class BaseModel(RunnerPlot):
             return self.dataset[item]  # Get a subset of the dataset
 
     @property
-    def _fullname(self) -> str:
+    def fullname(self) -> str:
         """Return the model's class name."""
         return self.__class__.__name__
 
@@ -1010,9 +1010,9 @@ class BaseModel(RunnerPlot):
                 estimator = results[0][0]
                 score = list(np.mean(scores := [r[1] for r in results], axis=0))
 
-            if len(results) > 1:
-                # Report cv scores for termination judgment
-                report_cross_validation_scores(trial, scores)
+                if len(results) > 1:
+                    # Report cv scores for termination judgment
+                    report_cross_validation_scores(trial, scores)
 
             trial.set_user_attr("estimator", estimator)
 
@@ -1020,7 +1020,7 @@ class BaseModel(RunnerPlot):
 
         # Running hyperparameter tuning ============================ >>
 
-        self._log(f"Running hyperparameter tuning for {self._fullname}...", 1)
+        self._log(f"Running hyperparameter tuning for {self.fullname}...", 1)
 
         # Check the validity of the provided parameters
         self._check_est_params()
@@ -1041,7 +1041,7 @@ class BaseModel(RunnerPlot):
                     raise ValueError(
                         "Invalid value for the distributions parameter. "
                         f"Parameter {n} is not a predefined hyperparameter "
-                        f"of the {self._fullname} model. See the model's "
+                        f"of the {self.fullname} model. See the model's "
                         "documentation for an overview of the available "
                         "hyperparameters and their distributions."
                     )
@@ -1091,7 +1091,7 @@ class BaseModel(RunnerPlot):
         # Initialize live study plot
         if self._ht.get("plot", False) and n_jobs == 1:
             plot_callback = PlotCallback(
-                name=self._fullname,
+                name=self.fullname,
                 metric=self._metric.keys(),
                 aesthetics=self.aesthetics,
             )
@@ -1159,7 +1159,7 @@ class BaseModel(RunnerPlot):
         self.clear()  # Reset model's state
 
         if self._study is None:
-            self._log(f"Results for {self._fullname}:", 1)
+            self._log(f"Results for {self.fullname}:", 1)
         self._log(f"Fit {'-' * 45}", 1)
 
         # Assign estimator if not done already
@@ -1193,7 +1193,7 @@ class BaseModel(RunnerPlot):
                 mlflow.set_tags(
                     {
                         "name": self.name,
-                        "model": self._fullname,
+                        "model": self.fullname,
                         "branch": self.branch.name,
                         **self._ht["tags"],
                     }
@@ -1213,17 +1213,17 @@ class BaseModel(RunnerPlot):
                         for step in range(len(value)):
                             mlflow.log_metric(f"evals_{key}", value[step], step=step)
 
-                # The Rest of the metrics are tracked when calling _get_score
-                mlflow.log_metric("time_fit", self.time_fit)
+                # The rest of the metrics are tracked when calling _get_score
+                mlflow.log_metric("time_fit", self._time_fit)
 
                 mlflow.sklearn.log_model(
                     sk_model=self.estimator,
                     artifact_path=self._est_class.__name__,
                     signature=infer_signature(
                         model_input=pd.DataFrame(self.X),
-                        model_output=self.estimator.predict(self.test.iloc[0]),
+                        model_output=self.estimator.predict(self.X_test.iloc[[0]]),
                     ),
-                    input_example=pd.DataFrame(self.X.iloc[[0], :]),
+                    input_example=pd.DataFrame(self.X.iloc[[0]]),
                 )
 
                 if self.log_data:
@@ -1239,9 +1239,9 @@ class BaseModel(RunnerPlot):
                         artifact_path=f"{self._est_class.__name__}_pipeline",
                         signature=infer_signature(
                             model_input=pd.DataFrame(self.X),
-                            model_output=self.estimator.predict(self.test.iloc[0]),
+                            model_output=self.estimator.predict(self.X_test.iloc[[0]]),
                         ),
-                        input_example=pd.DataFrame(self.X.iloc[[0], :]),
+                        input_example=pd.DataFrame(self.X.iloc[[0]]),
                     )
 
     @composed(crash, method_to_log)
@@ -1303,7 +1303,7 @@ class BaseModel(RunnerPlot):
         self._log(f"Evaluation --> {'   '.join(out)}", 1)
 
         self._time_bootstrap += (dt.now() - t_init).total_seconds()
-        self._log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
+        self._log(f"Time elapsed: {time_to_str(self._time_bootstrap)}", 1)
 
     # Utility properties =========================================== >>
 
@@ -1524,7 +1524,7 @@ class BaseModel(RunnerPlot):
                 data[f"{met.name}_{ds}"] = self._get_score(met, ds)
         data["time_fit"] = self._time_fit
         if self._bootstrap is not None:
-            for met in self._metic.keys():
+            for met in self._metric.keys():
                 data[f"{met}_bootstrap"] = self.bootstrap[met].mean()
             data["time_bootstrap"] = self._time_bootstrap
         data["time"] = data.get("time_ht", 0) + self._time_fit + self._time_bootstrap
@@ -2244,7 +2244,7 @@ class BaseModel(RunnerPlot):
 
         model = mlflow.register_model(
             model_uri=f"runs:/{self.run.info.run_id}/{self._est_class.__name__}",
-            name=name or self._fullname,
+            name=name or self.fullname,
             tags=self._ht["tags"] or None,
         )
 
@@ -2274,7 +2274,7 @@ class BaseModel(RunnerPlot):
         with open(filename, "wb") as f:
             pickle.dump(self.estimator, f)
 
-        self._log(f"{self._fullname} estimator successfully saved.", 1)
+        self._log(f"{self.fullname} estimator successfully saved.", 1)
 
     @composed(crash, method_to_log)
     def serve(self, method: str = "predict", host: str = "127.0.0.1", port: Int = 8000):
@@ -2346,7 +2346,7 @@ class BaseModel(RunnerPlot):
         server = ServeModel.bind(model=self.export_pipeline(verbose=0), method=method)
         serve.run(server, host=host, port=port)
 
-        self._log(f"Serving model {self._fullname} on {host}:{port}...", 1)
+        self._log(f"Serving model {self.fullname} on {host}:{port}...", 1)
 
     @composed(crash, method_to_log)
     def transform(
@@ -2488,7 +2488,7 @@ class ClassRegModel(BaseModel):
                 X, y = X
 
         if method != "score":
-            pred = self.memory.cache(getattr(self.estimator, method))(X)
+            pred = np.array(self.memory.cache(getattr(self.estimator, method))(X))
 
             if np.array(pred).ndim < 3:
                 data = to_pandas(
@@ -2497,7 +2497,7 @@ class ClassRegModel(BaseModel):
                     name=self.target,
                     columns=assign_prediction_columns(),
                 )
-            elif self.task.startswith("multilabel"):
+            elif self.task is Task.multilabel_classification:
                 # Convert to (n_samples, n_targets)
                 data = bk.DataFrame(
                     data=np.array([d[:, 1] for d in pred]).T,
@@ -2505,11 +2505,11 @@ class ClassRegModel(BaseModel):
                     columns=assign_prediction_columns(),
                 )
             else:
-                # Convert to (n_samples * n_classes, n_targets)
+                # Convert to (n_samples * n_classes, n_targets)'
                 data = bk.DataFrame(
                     data=pred.reshape(-1, pred.shape[2]),
                     index=bk.MultiIndex.from_tuples(
-                        [(col, idx) for col in np.unique(self.y) for idx in X]
+                        [(col, idx) for col in np.unique(self.y) for idx in X.index]
                     ),
                     columns=assign_prediction_columns(),
                 )

@@ -157,18 +157,6 @@ A list of available plots can be found hereunder. Note that not all
 plots can be called from every class and that their availability can
 depend on the task at hand.
 
-### Feature selection plots
-
-:: atom.plots:FeatureSelectionPlot
-    :: methods:
-        toc_only: True
-        solo_link: True
-        exclude:
-            - canvas
-            - reset_aesthetics
-            - update_layout
-            - update_traces
-
 ### Data plots
 
 :: atom.plots:DataPlot

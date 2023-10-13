@@ -34,7 +34,6 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
-from atom.plots import FeatureSelectionPlot
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, Features, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
@@ -776,17 +775,13 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class FeatureSelector(
-    BaseEstimator,
-    TransformerMixin,
-    FeatureSelectionPlot,
-):
+class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
     """Reduce the number of features in the data.
 
     Apply feature selection or dimensionality reduction, either to
     improve the estimators' accuracy or to boost their performance on
     very high-dimensional datasets. Additionally, remove multicollinear
-    and low variance features.
+    and low-variance features.
 
     This class can be accessed from atom through the [feature_selection]
     [atomclassifier-feature_selection] method. Read more in the
@@ -810,10 +805,14 @@ class FeatureSelector(
           with sparse matrices.
 
     !!! tip
-        Use the [plot_feature_importance][] method to examine how much
-        a specific feature contributes to the final predictions. If the
-        model doesn't have a `feature_importances_` attribute, use
-        [plot_permutation_importance][] instead.
+        * Use the [plot_pca][] and [plot_components][] methods to
+          examine the results after using strategy="pca".
+        * Use the [plot_rfecv][] method to examine the results after
+          using strategy="rfecv".
+        * Use the [plot_feature_importance][] method to examine how
+          much a specific feature contributes to the final predictions.
+          If the model doesn't have a `feature_importances_` attribute,
+          use [plot_permutation_importance][] instead.
 
     Parameters
     ----------
@@ -1027,8 +1026,6 @@ class FeatureSelector(
 
         # Note that the column names changed
         print(atom.dataset)
-
-        atom.plot_pca()
         ```
 
     === "stand-alone"

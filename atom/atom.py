@@ -503,7 +503,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
 
                 self._models.append(model)
                 self._log(
-                    f" --> Adding model {model._fullname} "
+                    f" --> Adding model {model.fullname} "
                     f"({model.name}) to the pipeline...", 2
                 )
                 break  # Avoid non-linear pipelines

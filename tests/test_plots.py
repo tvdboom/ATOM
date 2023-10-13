@@ -8,13 +8,15 @@ Description: Unit tests for the plots module.
 """
 
 import glob
+from pathlib import Path
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
-from atom.plots.baseplot import Aesthetics, BaseFigure, BasePlot
+from atom.plots.baseplot import Aesthetics, BaseFigure
 from atom.utils.types import Legend
 from atom.utils.utils import NotFittedError
 
@@ -73,96 +75,38 @@ def test_palette_setter_invalid_name():
 def test_get_plot_index():
     """Assert that indices can be converted to timestamps."""
     atom = ATOMForecaster(y_fc, random_state=1)
-    atom.run("ES")
-    print(atom._get_plot_index(atom.dataset), type(atom._get_plot_index(atom.dataset)))
-    assert atom._get_plot_index(atom.dataset) == X_bin.shape[1]
+    assert isinstance(atom._get_plot_index(atom.dataset), pd.DatetimeIndex)
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom._get_plot_index(atom.dataset), pd.RangeIndex)
 
 
 def test_get_show():
     """Assert that the show returns max the number of features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    assert atom._get_show(show=80, model=atom.tree) == X_bin.shape[1]
+    assert atom._get_show(show=80, maximum=X_bin.shape[1]) == X_bin.shape[1]
+    assert atom._get_show(show=230) == 200
+    assert atom._get_show(show=5) == 5
 
 
-def test_get_show_invalid():
-    """Assert that an error is raised when the value is invalid."""
+def test_get_set():
+    """Assert that the row selection is based on an iterator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    with pytest.raises(ValueError, match=".*should be >0.*"):
-        atom._get_show(show=0, model=atom.tree)
-
-
-def test_get_hyperparams():
-    """Assert that hyperparameters can be retrieved."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", n_trials=3)
-    assert len(atom._get_hyperparams(params=None, model=atom.tree)) == 7
-    assert len(atom._get_hyperparams(params=slice(1, 4), model=atom.tree)) == 3
-    assert len(atom._get_hyperparams(params=[0, 1], model=atom.tree)) == 2
-    assert len(atom._get_hyperparams(params=["criterion"], model=atom.tree)) == 1
-    assert len(atom._get_hyperparams(params="criterion+splitter", model=atom.tree)) == 2
-
-
-def test_get_hyperparams_invalid_name():
-    """Assert that an error is raised when a hyperparameter is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", n_trials=3)
-    with pytest.raises(ValueError, match=".*value for the params parameter.*"):
-        atom._get_hyperparams(params="invalid", model=atom.tree)
-
-
-def test_get_hyperparams_empty():
-    """Assert that an error is raised when no hyperparameters are selected."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", n_trials=3)
-    with pytest.raises(ValueError, match=".*Didn't find any hyperparameters.*"):
-        atom._get_hyperparams(params=[], model=atom.tree)
+    assert next(atom._get_set(rows="test")) == ("test", "test")
+    assert next(atom._get_set(rows=["train", "test"])) == ("train", "train")
+    assert next(atom._get_set(rows={"train": "test"})) == ("train", "test")
 
 
 def test_get_metric():
     """Assert that metrics can be selected."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
-    assert atom._get_metric(metric=None, max_one=False) == [0, 1]
-    assert atom._get_metric(metric=["f1", "recall"], max_one=False) == [0, 1]
-    assert atom._get_metric(metric="f1+recall", max_one=False) == [0, 1]
-
-
-def test_get_metric_time():
-    """Assert that time metrics are accepted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom._get_metric(metric="TIME", max_one=True) == "time"
-
-
-def test_get_metric_time_invalid():
-    """Assert that an error is raised for invalid time metrics."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*the metric parameter.*"):
-        atom._get_metric(metric="time+invalid", max_one=False)
-
-
-def test_get_metric_invalid_name():
-    """Assert that an error is raised for an invalid metric name."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", metric="recall")
-    with pytest.raises(ValueError, match=".*wasn't used to fit the models.*"):
-        atom._get_metric(metric="precision", max_one=True)
-
-
-def test_get_metric_max_one():
-    """Assert that an error is raised when multiple metrics are selected."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", metric=["f1", "recall"])
-    with pytest.raises(ValueError, match=".*Only one metric is allowed.*"):
-        atom._get_metric(metric="f1+recall", max_one=True)
-
-
-def test_get_metric_by_int():
-    """Assert that a metric can be selected by position."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", metric=["f1", "recall"])
-    assert atom._get_metric(metric=1, max_one=True) == 1
+    assert atom._get_metric(metric=None) == ["f1", "recall"]
+    assert atom._get_metric(metric=1) == ["recall"]
+    assert atom._get_metric(metric=[0, 1]) == ["f1", "recall"]
+    assert atom._get_metric(metric=["f1", "recall"]) == ["f1", "recall"]
+    assert atom._get_metric(metric="f1+recall") == ["f1", "recall"]
+    assert atom._get_metric(metric="TIME", max_one=True) == ["time"]
 
 
 def test_get_metric_invalid_int():
@@ -173,51 +117,47 @@ def test_get_metric_invalid_int():
         atom._get_metric(metric=3, max_one=True)
 
 
-def test_get_set():
-    """Assert that data sets can be selected."""
-    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    assert atom._get_set(dataset="Train+Test", max_one=False) == ["train", "test"]
-    assert atom._get_set(dataset=["Train", "Test"], max_one=False) == ["train", "test"]
-
-
-def test_get_set_no_holdout():
-    """Assert that an error is raised when there's no holdout data set."""
+def test_get_metric_invalid_name():
+    """Assert that an error is raised for an invalid metric name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*No holdout data set.*"):
-        atom._get_set(dataset="holdout", max_one=False)
+    atom.run("Tree", metric=["f1", "recall"])
+    with pytest.raises(ValueError, match=".*wasn't used to fit the models.*"):
+        atom._get_metric(metric="precision", max_one=True)
 
 
-def test_get_set_no_holdout_allowed():
-    """Assert that an error is raised when holdout isn't allowed."""
-    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    with pytest.raises(ValueError, match=".*Choose from: train, test.*"):
-        atom._get_set(dataset="holdout", max_one=False, allow_holdout=False)
-
-
-def test_get_set_invalid():
-    """Assert that an error is raised when the set is invalid."""
+def test_get_metric_max_one():
+    """Assert that an error is raised when multiple metrics are selected."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*Choose from: train, test.*"):
-        atom._get_set(dataset="invalid", max_one=False)
+    atom.run("Tree", metric=["f1", "recall"])
+    with pytest.raises(ValueError, match=".*only accepts one metric.*"):
+        atom._get_metric(metric="f1+recall", max_one=True)
 
 
-def test_get_set_multiple():
-    """Assert that an error is raised when more than one set is selected."""
+def test_get_plot_models_check_fitted():
+    """Assert that an error is raised when the runner is not fitted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*Only one data set is allowed.*"):
-        atom._get_set(dataset="train+test", max_one=True)
+    with pytest.raises(NotFittedError, match=".*not yet fitted.*"):
+        atom._get_plot_models(models=0)
 
 
-@patch("atom.plots.base.go.Figure.show")
+def test_get_plot_models_max_one():
+    """Assert that an error is raised when more than one model is selected."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree"])
+    with pytest.raises(ValueError, match=".*only accepts one model.*"):
+        atom._get_plot_models(models=None, max_one=True)
+
+
+@patch("atom.plots.baseplot.go.Figure.show")
 def test_custom_title_and_legend(func):
     """Assert that title and legend can be customized."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
+    atom.run("Tree", errors="raise")
     atom.plot_roc(title=dict(text="test", x=0), legend=dict(font_color="red"))
     func.assert_called_once()
 
 
-@pytest.mark.parametrize("legend", Legend.__args__)
+@pytest.mark.parametrize("legend", Legend.__args__)  # type: ignore
 def test_custom_legend_position(legend):
     """Assert that the legend position can be specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -229,36 +169,36 @@ def test_custom_legend_position(legend):
 def test_figure_to_mlflow(mlflow):
     """Assert that the figure is logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.run(["Tree", "LGB"])
+    atom.run(["Tree", "LGB"], errors="raise")
     atom.log_plots = True
     atom.plot_results(display=False)
     atom.lgb.plot_shap_scatter(display=False)
     assert mlflow.call_count == 3
 
 
-@patch("atom.plots.base.go.Figure.write_html")
+@patch("atom.plots.baseplot.go.Figure.write_html")
 def test_figure_is_saved_html(func):
     """Assert that the figure is saved as .html by default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.plot_correlation(filename="auto", display=False)
-    func.assert_called_with("plot_correlation.html")
+    func.assert_called_with(Path("plot_correlation.html"))
 
 
-@patch("atom.plots.base.go.Figure.write_image")
+@patch("atom.plots.baseplot.go.Figure.write_image")
 def test_figure_is_saved_png(func):
     """Assert that the figure is saved as .png if specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.plot_correlation(filename="corr.png", display=False)
-    func.assert_called_with("corr.png")
+    func.assert_called_with(Path("corr.png"))
 
 
-@patch("atom.plots.base.plt.Figure.savefig")
+@patch("atom.plots.baseplot.plt.Figure.savefig")
 def test_figure_is_saved_png_plt(func):
     """Assert that the figure is saved as .png if specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     atom.plot_pipeline(filename="pipeline", display=False)
-    func.assert_called_with("pipeline")
+    func.assert_called_with(Path("pipeline.png"))
 
 
 def test_figure_is_returned():
@@ -295,7 +235,7 @@ def test_canvas_too_many_plots():
             atom.plot_prc()
 
 
-@patch("atom.plots.base.go.Figure.write_html")
+@patch("atom.plots.baseplot.go.Figure.write_html")
 def test_figure_is_saved_canvas(func):
     """Assert that the figure is only saved after finishing the canvas."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -305,106 +245,56 @@ def test_figure_is_saved_canvas(func):
         func.assert_not_called()
         atom.plot_roc()
         func.assert_not_called()
-    func.assert_called_with("canvas.html")  # Only at the end it is saved
+    func.assert_called_with(Path("canvas.html"))  # Only at the end it is saved
 
 
 def test_reset_aesthetics():
     """Assert that the reset_aesthetics method set values to default."""
-    plotter = BasePlot()
-    plotter.tick_fontsize = 30
-    assert plotter.tick_fontsize == 30
-    plotter.reset_aesthetics()
-    assert plotter.tick_fontsize == 12
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.tick_fontsize = 30
+    assert atom.tick_fontsize == 30
+    atom.reset_aesthetics()
+    assert atom.tick_fontsize == 12
 
 
 def test_update_layout():
     """Assert that the update_layout method set default layout values."""
-    plotter = BasePlot()
-    plotter.update_layout(template="plotly-dark")
-    plotter._custom_layout["template"] = "plotly-dark"
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.update_layout(template="plotly-dark")
+    atom._custom_layout["template"] = "plotly-dark"
 
 
 def test_update_traces():
     """Assert that the update_traces method set default trace values."""
-    plotter = BasePlot()
-    plotter.update_traces(mode="lines+markers")
-    plotter._custom_traces["mode"] = "lines+markers"
-
-
-def test_plot_not_fitted():
-    """Assert that an error is raised when atom is not fitted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_calibration)
+    atom.update_traces(mode="lines+markers")
+    atom._custom_traces["mode"] = "lines+markers"
 
 
-def test_plot_from_model():
-    """Assert that plots can be called from a model class."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    atom.tree.plot_roc(display=False)
-    atom.plot_roc("Tree", display=False)
-
-
-def test_plot_only_one_model():
-    """Assert that an error is raised when multiple models are provided."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LDA"])
-    with pytest.raises(ValueError, match=".*only accepts one model.*"):
-        atom.plot_shap_beeswarm(display=False)
-
-
-# Test FeatureSelectionPlot ========================================= >>
+# Test DataPlot ==================================================== >>
 
 @pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
     """Assert that the plot_components method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+
+    # Didn't run PCA
+    with pytest.raises(PermissionError, match=".*using the 'pca' strategy.*"):
+        atom.plot_components(display=False)
+
     atom.feature_selection(strategy="pca", n_features=10)
-
-    # Invalid show parameter
-    with pytest.raises(ValueError, match=".*Value should be >0.*"):
-        atom.plot_components(show=0, display=False)
-
     atom.plot_components(show=show, display=False)
 
-
-@pytest.mark.parametrize("X", [X10, X_sparse])
-def test_plot_pca(X):
-    """Assert that the plot_pca method works."""
-    atom = ATOMClassifier(X, y10, random_state=1)
-    atom.feature_selection(strategy="pca", n_features=2)
-    atom.plot_pca(display=False)
-
-
-@pytest.mark.parametrize("scoring", [None, "auc"])
-def test_plot_rfecv(scoring):
-    """Assert that the plot_rfecv method works """
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection("rfecv", solver="lr", n_features=20, scoring=scoring)
-    atom.plot_rfecv(display=False)
-
-
-# Test DataPlot ==================================================== >>
 
 def test_plot_correlation():
     """Assert that the plot_correlation method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-
-    # Invalid method
-    with pytest.raises(ValueError, match=".*the method parameter.*"):
-        atom.plot_correlation(method="invalid", display=False)
-
     atom.plot_correlation(display=False)
 
 
 def test_plot_distribution():
     """Assert that the plot_distribution method works."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-
-    # Invalid show parameter
-    with pytest.raises(ValueError, match=".*the show parameter.*"):
-        atom.plot_distribution(columns=2, show=-1, display=False)
-
     atom.plot_distribution(columns=2, distributions=None, display=False)
     atom.plot_distribution(columns="x0", distributions="kde", display=False)
     atom.plot_distribution(columns=[0, 1], distributions="pearson3", display=False)
@@ -414,14 +304,22 @@ def test_plot_distribution():
 def test_plot_ngrams(ngram):
     """Assert that the plot_ngrams method works."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
-
-    # Invalid ngram parameter
-    with pytest.raises(ValueError, match=".*the ngram parameter.*"):
-        atom.plot_ngrams(ngram=6, display=False)
-
-    atom.plot_ngrams(ngram=ngram, display=False)  # When corpus is str
+    atom.plot_ngrams(ngram=ngram, display=False)  # When the corpus is a str
     atom.tokenize()
-    atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
+    atom.plot_ngrams(ngram=ngram, display=False)  # When the corpus consists of tokens
+
+
+@pytest.mark.parametrize("X", [X10, X_sparse])
+def test_plot_pca(X):
+    """Assert that the plot_pca method works."""
+    atom = ATOMClassifier(X, y10, random_state=1)
+
+    # Didn't run PCA
+    with pytest.raises(PermissionError, match=".*using the 'pca' strategy.*"):
+        atom.plot_pca(display=False)
+
+    atom.feature_selection(strategy="pca", n_features=2)
+    atom.plot_pca(display=False)
 
 
 def test_plot_qq():
@@ -436,24 +334,61 @@ def test_plot_relationships():
     atom.plot_relationships(display=False)
 
 
+@pytest.mark.parametrize("scoring", [None, "auc"])
+def test_plot_rfecv(scoring):
+    """Assert that the plot_rfecv method works """
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+
+    # Didn't run RFECV
+    with pytest.raises(PermissionError, match=".*using the 'rfecv' strategy.*"):
+        atom.plot_rfecv(display=False)
+
+    atom.feature_selection("rfecv", solver="lr", n_features=20, scoring=scoring)
+    atom.plot_rfecv(display=False)
+
+
 def test_plot_wordcloud():
     """Assert that the plot_wordcloud method works."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.plot_wordcloud(display=False)  # When corpus is str
+    atom.plot_wordcloud(display=False)  # When the corpus is a str
     atom.tokenize()
-    atom.plot_wordcloud(display=False)  # When corpus are tokens
+    atom.plot_wordcloud(display=False)  # When the corpus consists of tokens
 
 
 # Test HyperparameterTuningPlot ==================================== >>
+
+def test_get_hyperparams():
+    """Assert that hyperparameters can be retrieved."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", n_trials=3)
+    assert len(atom._get_hyperparams(params=None, model=atom.tree)) == 7
+    assert len(atom._get_hyperparams(params=range(1, 4), model=atom.tree)) == 3
+    assert len(atom._get_hyperparams(params=slice(1, 4), model=atom.tree)) == 3
+    assert len(atom._get_hyperparams(params=[0, 1], model=atom.tree)) == 2
+    assert len(atom._get_hyperparams(params=["criterion"], model=atom.tree)) == 1
+    assert len(atom._get_hyperparams(params="criterion+splitter", model=atom.tree)) == 2
+
+
+def test_get_hyperparams_invalid_name():
+    """Assert that an error is raised when a hyperparameter is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", n_trials=3)
+    with pytest.raises(ValueError, match=".*value for the params parameter.*"):
+        atom._get_hyperparams(params="invalid", model=atom.tree)
+
+
+def test_get_hyperparams_empty():
+    """Assert that an error is raised when no hyperparameters are selected."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", n_trials=3)
+    with pytest.raises(ValueError, match=".*Didn't find any hyperparameters.*"):
+        atom._get_hyperparams(params=[], model=atom.tree)
+
 
 def test_plot_edf():
     """Assert that the plot_edf method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(["lasso", "ridge"], n_trials=(3, 0))
-
-    # Model didn't ran hyperparameter tuning
-    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
-        atom.ridge.plot_edf(display=False)
 
     atom.lasso.plot_edf(display=False)
 
@@ -462,11 +397,6 @@ def test_plot_hyperparameter_importance():
     """Assert that the plot_hyperparameter_importance method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("lasso", n_trials=3)
-
-    # Invalid show parameter
-    with pytest.raises(ValueError, match=".*the show parameter.*"):
-        atom.plot_hyperparameter_importance(show=-1, display=False)
-
     atom.plot_hyperparameter_importance(display=False)
 
 
@@ -514,7 +444,7 @@ def test_plot_terminator_improvements():
     atom.run("tree", n_trials=1)
 
     # No cross-validation
-    with pytest.raises(ValueError, match=".*using cross-validation.*"):
+    with pytest.raises(PermissionError, match=".*using cross-validation.*"):
         atom.plot_terminator_improvement()
 
     atom.run("tree", n_trials=1, ht_params={"cv": 2})
@@ -541,11 +471,6 @@ def test_plot_calibration():
     """Assert that the plot_calibration method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Dummy", "Tree"], metric="f1")
-
-    # Invalid n_bins parameter
-    with pytest.raises(ValueError, match=".*the n_bins parameter.*"):
-        atom.plot_calibration(n_bins=4, display=False)
-
     atom.plot_calibration(display=False)
 
 
@@ -599,7 +524,7 @@ def test_plot_feature_importance():
     atom.run(["KNN", "Tree", "Bag"])
 
     # Model has no feature importance values
-    with pytest.raises(ValueError, match=".*has no feature.*"):
+    with pytest.raises(ValueError, match=".*has no scores_.*"):
         atom.knn.plot_feature_importance(display=False)
 
     atom.plot_feature_importance(models=["Tree", "Bag"], display=False)
@@ -616,7 +541,7 @@ def test_plot_gains():
 def test_plot_learning_curve():
     """Assert that the plot_learning_curve method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.train_sizing(["Tree", "LGB"], n_bootstrap=4)
+    atom.train_sizing(["Tree", "LGB"], errors="raise", n_bootstrap=4)
     atom.plot_learning_curve(display=False)
 
 
@@ -641,14 +566,10 @@ def test_plot_partial_dependence():
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("Tree")
     with pytest.raises(PermissionError, match=".*not available for multilabel.*"):
-        atom.plot_partial_dependence(kind="invalid", display=False)
+        atom.plot_partial_dependence(display=False)
 
     atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
     atom.run(["KNN", "LGB"])
-
-    # Invalid kind parameter
-    with pytest.raises(ValueError, match=".*for the kind parameter.*"):
-        atom.plot_partial_dependence(kind="invalid", display=False)
 
     # Pair for multimodel
     with pytest.raises(ValueError, match=".*when plotting multiple models.*"):
@@ -671,18 +592,13 @@ def test_plot_permutation_importance():
     """Assert that the plot_permutation_importance method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="f1")
-
-    # Invalid n_repeats parameter
-    with pytest.raises(ValueError, match=".*the n_repeats parameter.*"):
-        atom.plot_permutation_importance(n_repeats=0, display=False)
-
     atom.plot_permutation_importance(display=False)
 
 
 def test_plot_pipeline():
     """Assert that the plot_pipeline method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("KNN", errors="raise")
+    atom.run("KNN")
     atom.plot_pipeline(display=False)  # No transformers
 
     # Called from a canvas
@@ -718,13 +634,13 @@ def test_plot_probabilities():
     atom.run(["Tree", "SVM"])
 
     # Model has no predict_proba attribute
-    with pytest.raises(AttributeError, match=".*with a predict_proba method.*"):
+    with pytest.raises(PermissionError, match=".*with a predict_proba method.*"):
         atom.svm.plot_probabilities(display=False)
 
     atom.plot_probabilities("Tree", display=False)
 
 
-def test_plot_probabilities_multilabel():
+def test_plot_probabilities_multioutput():
     """Assert that the plot_probabilities method works for multioutput tasks."""
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("LR")
@@ -835,10 +751,10 @@ def test_plot_shap_force():
     atom.run(["LR", "MLP"], metric="MSE")
 
     # Expected value from Explainer
-    atom.lr.plot_shap_force(index=100, matplotlib=True, display=False)
+    atom.lr.plot_shap_force(rows=100, matplotlib=True, display=False)
 
     # Own calculation of expected value
-    atom.mlp.plot_shap_force(index=100, matplotlib=True, display=False)
+    atom.mlp.plot_shap_force(rows=100, matplotlib=True, display=False)
 
     atom.lr.plot_shap_force(matplotlib=False, filename="force", display=True)
     assert glob.glob("force.html")

@@ -121,10 +121,11 @@ class Scorer(SkScorer, Protocol):
     """Protocol for ATOM's scorers.
 
     ATOM's scorers are the same objects as sklearn's scorers
-    but with an extra 'name' attribute.
+    but with an extra 'name' and 'fullname' attribute.
 
     """
     name: str
+    fullname: str
 
 
 @runtime_checkable
@@ -291,7 +292,7 @@ ParamsSelector = Union[
     Sequence[Union[IntLargerEqualZero, str]],
 ]
 TargetSelector = Union[IntLargerEqualZero, str]
-TargetsSelector = Union[TargetSelector, tuple[TargetSelector, TargetSelector]]
+TargetsSelector = Union[TargetSelector, tuple[TargetSelector, ...]]
 Kind = Literal["average", "individual", "average+individual", "individual+average"]
 Legend = Literal[
     "upper left", "lower left", "upper right", "lower right", "upper center",

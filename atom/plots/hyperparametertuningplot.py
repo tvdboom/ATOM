@@ -66,7 +66,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
             Models that ran hyperparameter tuning.
 
         """
-        if not (models_c := [m for m in models if m.trials is not None]):
+        if not (models_c := [m for m in models if m._study is not None]):
             raise PermissionError(
                 "This plot method is only available for "
                 "models that ran hyperparameter tuning."
@@ -100,7 +100,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         if params is None:
             params_c = list(model._ht["distributions"])
         elif isinstance(params, SegmentTypes):
-            params_c = list(get_segment(model._ht["distributions"], params))
+            params_c = get_segment(list(model._ht["distributions"]), params)
         else:
             params_c = []
             for param in lst(params):
@@ -245,7 +245,8 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._check_hyperparams(self._get_plot_models(models))
+        models_c = self._get_plot_models(models, ensembles=False)
+        models_c = self._check_hyperparams(models_c)
         metric_c = self._get_metric(metric)
 
         x_min = bk.concat([m.trials[metric_c] for m in models_c]).min(axis=None)
@@ -369,7 +370,8 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._check_hyperparams(self._get_plot_models(models))
+        models_c = self._get_plot_models(models, ensembles=False)
+        models_c = self._check_hyperparams(models_c)
         metric_c = self._get_metric(metric, max_one=True)[0]
         params_c = len(set([k for m in models_c for k in m._ht["distributions"]]))
         show_c = self._get_show(show, params_c)
@@ -501,10 +503,11 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
+        models_c = self._get_plot_models(models, ensembles=False, max_one=True)
+        model = self._check_hyperparams(models_c)[0]
         metric_c = self._get_metric(metric, max_one=True)[0]
 
-        if len(params_c := self._get_hyperparams(params, models_c)) < 2:
+        if len(params_c := self._get_hyperparams(params, model)) < 2:
             raise ValueError(
                 "Invalid value for the hyperparameters parameter. A minimum "
                 f"of two parameters is required, got {len(params_c)}."
@@ -528,26 +531,26 @@ class HyperparameterTuningPlot(BasePlot, ABC):
                     coloraxis=dict(
                         axes="99",
                         colorscale=PALETTE.get(
-                            BasePlot._fig.get_elem(models_c.name), "Blues"
+                            BasePlot._fig.get_elem(model.name), "Blues"
                         ),
-                        cmin=models_c.trials[metric_c].min(),
-                        cmax=models_c.trials[metric_c].max(),
+                        cmin=model.trials[metric_c].min(),
+                        cmax=model.trials[metric_c].max(),
                         showscale=False,
                     )
                 )
 
                 fig.add_trace(
                     go.Scatter(
-                        x=models_c.trials[params_c[y]],
-                        y=models_c.trials[params_c[x + 1]],
+                        x=model.trials[params_c[y]],
+                        y=model.trials[params_c[x + 1]],
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=BasePlot._fig.get_elem(models_c.name),
+                            color=BasePlot._fig.get_elem(model.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
                         customdata=list(
-                            zip(list(models_c.trials.index), models_c.trials[metric_c])
+                            zip(list(model.trials.index), model.trials[metric_c])
                         ),
                         hovertemplate=(
                             f"{params_c[y]}:%{{x}}<br>"
@@ -563,9 +566,9 @@ class HyperparameterTuningPlot(BasePlot, ABC):
 
                 fig.add_trace(
                     go.Contour(
-                        x=models_c.trials[params_c[y]],
-                        y=models_c.trials[params_c[x + 1]],
-                        z=models_c.trials[metric_c],
+                        x=model.trials[params_c[y]],
+                        y=model.trials[params_c[x + 1]],
+                        z=model.trials[metric_c],
                         contours=dict(
                             showlabels=True,
                             labelfont=dict(size=self.tick_fontsize, color="white")
@@ -578,9 +581,9 @@ class HyperparameterTuningPlot(BasePlot, ABC):
                     )
                 )
 
-                if _is_log_scale(models_c.study.trials, params_c[y]):
+                if _is_log_scale(model.study.trials, params_c[y]):
                     fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
-                if _is_log_scale(models_c.study.trials, params_c[x + 1]):
+                if _is_log_scale(model.study.trials, params_c[x + 1]):
                     fig.update_layout({f"yaxis{xaxis[1:]}_type": "log"})
 
                 if x < length - 1:
@@ -604,7 +607,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
                     ylabel=params_c[x + 1] if y == 0 else None,
                 )
 
-        BasePlot._fig.used_models.append(models_c)
+        BasePlot._fig.used_models.append(model)
         return self._plot(
             title=title,
             legend=legend,
@@ -723,13 +726,14 @@ class HyperparameterTuningPlot(BasePlot, ABC):
 
             return list(map(str, sorted(numbers))) + sorted(categorical)
 
-        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
-        params_c = self._get_hyperparams(params, models_c)
+        models_c = self._get_plot_models(models, max_one=True, ensembles=False)
+        model = self._check_hyperparams(models_c)[0]
+        params_c = self._get_hyperparams(params, model)
         metric_c = self._get_metric(metric, max_one=True)[0]
 
         dims = _get_dims_from_info(
             _get_parallel_coordinate_info(
-                study=models_c.study,
+                study=model.study,
                 params=params_c,
                 target=self._optuna_target(metric_c),
                 target_name=metric_c,
@@ -755,7 +759,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(
             coloraxis=dict(
-                colorscale=PALETTE.get(BasePlot._fig.get_elem(models_c.name), "Blues"),
+                colorscale=PALETTE.get(BasePlot._fig.get_elem(model.name), "Blues"),
                 cmin=min(dims[0]["values"]),
                 cmax=max(dims[0]["values"]),
                 title=metric_c,
@@ -776,7 +780,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
             )
         )
 
-        BasePlot._fig.used_models.append(models_c)
+        BasePlot._fig.used_models.append(model)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
@@ -876,7 +880,8 @@ class HyperparameterTuningPlot(BasePlot, ABC):
                 "available for models with multi-metric runs."
             )
 
-        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
+        models_c = self._get_plot_models(models, max_one=True, ensembles=False)
+        model = self._check_hyperparams(models_c)[0]
 
         if len(metric_c := self._get_metric(metric)) < 2:
             raise ValueError(
@@ -906,16 +911,16 @@ class HyperparameterTuningPlot(BasePlot, ABC):
 
                 fig.add_trace(
                     go.Scatter(
-                        x=models_c.trials[metric_c[y]],
-                        y=models_c.trials[metric_c[x + 1]],
+                        x=model.trials[metric_c[y]],
+                        y=model.trials[metric_c[x + 1]],
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=models_c.trials.index,
+                            color=model.trials.index,
                             colorscale="Teal",
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
-                        customdata=models_c.trials.index,
+                        customdata=model.trials.index,
                         hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -933,7 +938,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
                     ylabel=metric_c[x + 1] if y == 0 else None,
                 )
 
-        BasePlot._fig.used_models.append(models_c)
+        BasePlot._fig.used_models.append(model)
         return self._plot(
             title=title,
             legend=legend,
@@ -1031,8 +1036,9 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._check_hyperparams(self._get_plot_models(models, max_one=True))[0]
-        params_c = self._get_hyperparams(params, models_c)
+        models_c = self._get_plot_models(models, max_one=True, ensembles=False)
+        model = self._check_hyperparams(models_c)[0]
+        params_c = self._get_hyperparams(params, model)
         metric_c = self._get_metric(metric)
 
         fig = self._get_figure()
@@ -1058,23 +1064,23 @@ class HyperparameterTuningPlot(BasePlot, ABC):
 
             fig.add_trace(
                 go.Scatter(
-                    x=models_c.trials[params_c[y]],
-                    y=models_c.trials[metric_c[x]],
+                    x=model.trials[params_c[y]],
+                    y=model.trials[metric_c[x]],
                     mode="markers",
                     marker=dict(
                         size=self.marker_size,
-                        color=models_c.trials.index,
+                        color=model.trials.index,
                         colorscale="Teal",
                         line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     ),
-                    customdata=models_c.trials.index,
+                    customdata=model.trials.index,
                     hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
             )
 
-            if _is_log_scale(models_c.study.trials, params_c[y]):
+            if _is_log_scale(model.study.trials, params_c[y]):
                 fig.update_layout({f"xaxis{xaxis[1:]}_type": "log"})
 
             if x < len(metric_c) - 1:
@@ -1088,7 +1094,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
                 ylabel=metric_c[x] if y == 0 else None,
             )
 
-        BasePlot._fig.used_models.append(models_c)
+        BasePlot._fig.used_models.append(model)
         return self._plot(
             title=title,
             legend=legend,
@@ -1120,10 +1126,13 @@ class HyperparameterTuningPlot(BasePlot, ABC):
 
         !!! warning
             * The plot_terminator_improvement method is only available
-              for models that ran [hyperparameter tuning][] using
+              for models that ran hyperparameter tuning using
               cross-validation, e.g., using `ht_params={'cv': 5}`.
-            * This method can be slow. Results are cached to fasten
-              repeated calls.
+            * This method does not support
+              [multi-objective optimizations][multi-metric runs].
+            * The calculation of the improvement can be slow. Set the
+              [`memory`][atomclassifier-memory] parameter to cache the
+              results and speed up repeated calls.
 
         Parameters
         ----------
@@ -1185,18 +1194,19 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         """
         check_dependency("botorch")
 
-        models_c = self._check_hyperparams(self._get_plot_models(models))
+        models_c = self._get_plot_models(models, ensembles=False)
+        models_c = self._check_hyperparams(models_c)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
         for m in models_c:
-            if m._ht["cv"] > 1:
+            if m._ht["cv"] > 1 and len(self._metric) == 1:
                 info = self.memory.cache(_get_improvement_info)(m.study, get_error=True)
             else:
                 raise PermissionError(
                     "The plot_terminator_improvement method is only available for "
-                    "models that ran hyperparameter tuning using cross-validation, "
-                    "e.g., using ht_params={'cv': 5}."
+                    "models that ran hyperparameter tuning using cross-validation "
+                    "(e.g., using ht_params={'cv': 5}) on a single-metric optimization."
                 )
 
             fig.add_trace(
@@ -1304,7 +1314,8 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._check_hyperparams(self._get_plot_models(models))
+        models_c = self._get_plot_models(models, ensembles=False)
+        models_c = self._check_hyperparams(models_c)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -1462,7 +1473,8 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         ```
 
         """
-        models_c = self._check_hyperparams(self._get_plot_models(models))
+        models_c = self._get_plot_models(models, ensembles=False)
+        models_c = self._check_hyperparams(models_c)
         metric_c = self._get_metric(metric)
 
         fig = self._get_figure()

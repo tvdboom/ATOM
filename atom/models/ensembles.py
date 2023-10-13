@@ -110,7 +110,7 @@ class Voting(ClassRegModel):
                     raise ValueError(
                         "Invalid value for the voting parameter. If "
                         "'soft', all models in the ensemble should have "
-                        f"a predict_proba method, got {m._fullname}."
+                        f"a predict_proba method, got {m.fullname}."
                     )
 
     def _get_est(self, **params) -> Predictor:
