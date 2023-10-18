@@ -42,7 +42,7 @@ To add new models, note the following:
         ignore the engine name, i.e., use "ensemble" instead of
         "sklearn.ensemble".
 
-    _estimators: CustomDict
+    _estimators: dict
         Name of the estimators per goal.
 
     Instance attributes
@@ -54,12 +54,12 @@ To add new models, note the following:
 
     Methods
     -------
-    _get_parameters(self, x) -> CustomDict:
+    _get_parameters(self, x) -> dict:
         Return the trial's suggestions with (optionally) custom changes
         to the params. Don't implement if the parent's implementation
         is sufficient.
 
-    _trial_to_est(self, params) -> CustomDict:
+    _trial_to_est(self, params) -> dict:
         Convert trial's hyperparameters to parameters for the
         estimator. Only implement for models whose study params are
         different from those for the estimator.
@@ -68,7 +68,7 @@ To add new models, note the following:
         This method is called to fit the estimator. Implement only
         to customize the fit.
 
-    _get_distributions(self) -> CustomDict:
+    _get_distributions(self) -> dict:
         Return a list of the hyperparameter distributions for
         optimization.
 

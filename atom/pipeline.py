@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import numpy as np
 from beartype.typing import Any, Generator
-from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.pipeline import _final_estimator_has
@@ -27,6 +26,7 @@ from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
     fit_transform_one, transform_one, variable_return,
 )
+from joblib import Memory
 
 
 class Pipeline(SkPipeline):
@@ -196,14 +196,14 @@ class Pipeline(SkPipeline):
             # not validate `steps` yet.
             return None
 
-    def _can_transform(self) -> Bool:
+    def _can_transform(self) -> bool:
         """Check if the pipeline can use the transform method."""
         return (
             self._final_estimator is None or self._final_estimator == "passthrough"
             or hasattr(self._final_estimator, "transform")
         )
 
-    def _can_inverse_transform(self) -> Bool:
+    def _can_inverse_transform(self) -> bool:
         """Check if the pipeline can use the transform method."""
         return all(
             est is None or est == "passthrough" or hasattr(est, "inverse_transform")

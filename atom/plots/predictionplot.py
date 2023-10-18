@@ -21,7 +21,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from beartype import beartype
 from beartype.typing import Any, Literal
-from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -46,6 +45,7 @@ from atom.utils.utils import (
     Task, bk, check_canvas, check_dependency, check_predict_proba, crash,
     divide, get_custom_scorer, has_task, lst, rnd,
 )
+from joblib import Parallel, delayed
 
 
 @beartype
@@ -1933,8 +1933,8 @@ class PredictionPlot(BasePlot, ABC):
                         "The value must be None when plotting multiple models"
                     )
                 else:
-                    pair = m.branch._get_columns(pair, include_target=False)
-                    cols = [(c, pair[0]) for c in columns_c]
+                    pair_c = m.branch._get_columns(pair, include_target=False)
+                    cols = [(c, pair_c[0]) for c in columns_c]
             else:
                 cols = [(c,) for c in columns_c]
 
@@ -2374,7 +2374,7 @@ class PredictionPlot(BasePlot, ABC):
 
         # Create schematic drawing
         d = Drawing(unit=1, backend="matplotlib")
-        d.config(fontsize=self.tick_fontsize)
+        d.config(fontsize=float(self.tick_fontsize))
         d.add(Subroutine(w=8, s=0.7).label("Raw data"))
 
         height = 3  # Height of every block
@@ -3538,14 +3538,13 @@ class PredictionPlot(BasePlot, ABC):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        steps = np.linspace(0, 1, steps)
         for m in models_c:
             y_true, y_pred = m._get_pred(rows, target, attr="predict_proba")
             for met in metric_c:
                 fig.add_trace(
                     self._draw_line(
-                        x=steps,
-                        y=[met(y_true, y_pred >= step) for step in steps],
+                        x=(x := np.linspace(0, 1, steps)),
+                        y=[met(y_true, y_pred >= step) for step in x],
                         parent=m.name,
                         child=met.__name__,
                         legend=legend,

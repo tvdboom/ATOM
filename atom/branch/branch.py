@@ -27,7 +27,7 @@ from atom.utils.types import (
     Sequence, SeriesTypes, Target, TargetSelector, TargetsSelector,
 )
 from atom.utils.utils import (
-    CustomDict, DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
+    DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
 )
 
 
@@ -108,7 +108,7 @@ class Branch:
         self._container = data
         self._holdout = holdout
         self._pipeline = Pipeline([], memory=memory)
-        self._mapping = CustomDict()
+        self._mapping: dict[str, dict[str, Scalar]] = {}
 
         # Path to store the data
         if self.memory.location is None:
@@ -221,12 +221,11 @@ class Branch:
         if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-        obj: Pandas = to_pandas(
+        obj = to_pandas(
             data=value,
             index=side.index if side_name else None,
             name=getattr(under, "name", "target") if under_name else "target",
             columns=getattr(under, "columns", None) if under_name else None,
-            dtype=under.dtypes if under_name else None,
         )
 
         if side_name:  # Check for equal rows
@@ -277,7 +276,7 @@ class Branch:
         return self._pipeline
 
     @property
-    def mapping(self) -> CustomDict:
+    def mapping(self) -> dict[str, dict[str, Scalar]]:
         """Encoded values and their respective mapped values.
 
         The column name is the key to its mapping dictionary. Only for
@@ -431,6 +430,26 @@ class Branch:
         """
         return bk.concat([self.dataset, self.holdout])
 
+    @property
+    def _allX(self) -> DataFrame:
+        """Features for dataset + holdout.
+
+        Note that calling this property triggers the holdout set
+        calculation.
+
+        """
+        return self._all[self.features]
+
+    @property
+    def _ally(self) -> Pandas:
+        """Target column for dataset + holdout.
+
+        Note that calling this property triggers the holdout set
+        calculation.
+
+        """
+        return self._all[self.target]
+
     # Utility methods ============================================== >>
 
     @overload
@@ -533,8 +552,7 @@ class Branch:
             inc = list(indices[~indices.isin(exc)])
 
         if return_X_y:
-            X, y = self._all[self.features], self._all[self.target]
-            return X.loc[inc], y.loc[inc]
+            return self._allX.loc[inc], self._ally.loc[inc]  # type: ignore[index]
         else:
             return self._all.loc[inc]
 
@@ -635,7 +653,7 @@ class Branch:
         self,
         target: TargetsSelector,
         only_columns: Literal[False] = ...,
-    ) -> tuple[IntLargerEqualZero, IntLargerEqualZero]: ...
+    ) -> tuple[int, int]: ...
 
     @overload
     def _get_target(
@@ -648,7 +666,7 @@ class Branch:
         self,
         target: TargetsSelector,
         only_columns: Bool = False,
-    ) -> str | tuple[IntLargerEqualZero, IntLargerEqualZero]:
+    ) -> str | tuple[int, int]:
         """Get a target column and/or class in target column.
 
         Parameters
@@ -723,7 +741,7 @@ class Branch:
             """
             if isinstance(target, str):
                 try:
-                    return self.mapping[lst(self.target)[column]][target]
+                    return int(self.mapping[lst(self.target)[column]][target])
                 except (TypeError, KeyError):
                     raise ValueError(
                         f"Invalid value for the target parameter. Value {target} "

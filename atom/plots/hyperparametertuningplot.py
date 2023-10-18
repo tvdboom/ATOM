@@ -30,7 +30,7 @@ from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, Int, IntLargerEqualZero, IntLargerZero, IntTypes, Legend,
     MetricSelector, Model, ModelSelector, ModelsSelector, ParamsSelector,
-    Scalar, Segment, SegmentTypes, Sequence,
+    Scalar, SegmentTypes, Sequence,
 )
 from atom.utils.utils import (
     bk, check_dependency, crash, divide, get_segment, it, lst, rnd,
@@ -75,15 +75,12 @@ class HyperparameterTuningPlot(BasePlot, ABC):
         return models_c
 
     @staticmethod
-    def _get_hyperparams(
-        params: str | Segment | Sequence[Int | str] | None,
-        model: Model,
-    ) -> list[str]:
+    def _get_hyperparams(params: ParamsSelector | None, model: Model) -> list[str]:
         """Check and return a model's hyperparameters.
 
         Parameters
         ----------
-        params: str, range, slice, sequence or None
+        params: str, segment, sequence or None
             Hyperparameters to get. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.
@@ -448,7 +445,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_hyperparameters()`.
 
-        params: int, str, segment or sequence, default=(0, 1)
+        params: str, segment or sequence, default=(0, 1)
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one.
 
@@ -643,7 +640,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_parallel_coordinate()`.
 
-        params: int, str, segment, sequence or None, default=None
+        params: str, segment, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.
@@ -974,7 +971,7 @@ class HyperparameterTuningPlot(BasePlot, ABC):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_slice()`.
 
-        params: int, str, segment, sequence or None, default=None
+        params: str, segment, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.

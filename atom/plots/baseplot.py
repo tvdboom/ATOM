@@ -104,7 +104,7 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
         self._aesthetics.palette = value
 
     @property
-    def title_fontsize(self) -> FloatLargerZero:
+    def title_fontsize(self) -> Scalar:
         """Fontsize for the plot's title."""
         return self._aesthetics.title_fontsize
 
@@ -113,7 +113,7 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
         self._aesthetics.title_fontsize = value
 
     @property
-    def label_fontsize(self) -> FloatLargerZero:
+    def label_fontsize(self) -> Scalar:
         """Fontsize for the labels, legend and hover information."""
         return self._aesthetics.label_fontsize
 
@@ -122,7 +122,7 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
         self._aesthetics.label_fontsize = value
 
     @property
-    def tick_fontsize(self) -> FloatLargerZero:
+    def tick_fontsize(self) -> Scalar:
         """Fontsize for the ticks along the plot's axes."""
         return self._aesthetics.tick_fontsize
 
@@ -131,7 +131,7 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
         self._aesthetics.tick_fontsize = value
 
     @property
-    def line_width(self) -> FloatLargerZero:
+    def line_width(self) -> Scalar:
         """Width of the line plots."""
         return self._aesthetics.line_width
 
@@ -140,7 +140,7 @@ class BasePlot(BaseTransformer, BaseTracker, ABC):
         self._aesthetics.line_width = value
 
     @property
-    def marker_size(self) -> FloatLargerZero:
+    def marker_size(self) -> Scalar:
         """Size of the markers."""
         return self._aesthetics.marker_size
 

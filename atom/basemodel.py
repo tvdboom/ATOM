@@ -26,14 +26,15 @@ import optuna
 import pandas as pd
 import ray
 from beartype.typing import Any
-from joblib import Parallel, delayed
 from joblib.memory import Memory
+from joblib.parallel import Parallel, delayed
 from mlflow.data import from_pandas
 from mlflow.entities import Run
 from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
 from optuna.samplers import NSGAIISampler, TPESampler
+from optuna.storages import InMemoryStorage
 from optuna.study import Study
 from optuna.terminator import report_cross_validation_scores
 from optuna.trial import FrozenTrial, Trial, TrialState
@@ -61,15 +62,15 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
+    HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
     FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes,
     MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor, RowSelector,
     Scalar, Scorer, Sequence, Stages, Target, TargetSelector, Verbose,
     Warnings,
 )
 from atom.utils.utils import (
-    ClassMap, CustomDict, DataConfig, Goal, PlotCallback, ShapExplanation,
-    Task, TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
+    ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
+    TrialsCallback, adjust_verbosity, bk, check_dependency, check_empty,
     check_is_fitted, check_scaling, composed, crash, estimator_has_attr,
     fit_and_score, flt, get_cols, get_custom_scorer, has_task, it, lst, merge,
     method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
@@ -229,23 +230,23 @@ class BaseModel(RunnerPlot):
             mlflow.end_run()
 
         self._group = self._name  # sh and ts models belong to the same group
-        self._evals = CustomDict()
-        self._shap_explanation = None
+        self._evals: dict[str, list[Float]] = defaultdict(list)
+        self._shap_explanation: ShapExplanation | None = None
 
         # Parameter attributes
-        self._est_params = {}
-        self._est_params_fit = {}
+        self._est_params: dict[str, Any] = {}
+        self._est_params_fit: dict[str, Any] = {}
 
         # Hyperparameter tuning attributes
-        self._ht = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
-        self._study = None
-        self._best_trial = None
+        self._ht: HT = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
+        self._study: Study | None = None
+        self._best_trial: FrozenTrial | None = None
 
-        self._estimator = None
-        self._time_fit = 0
+        self._estimator: Predictor | None = None
+        self._time_fit = 0.0
 
-        self._bootstrap = None
-        self._time_bootstrap = 0
+        self._bootstrap: pd.DataFrame | None = None
+        self._time_bootstrap = 0.0
 
         # Skip this part if not called for the estimator
         if branches:
@@ -274,7 +275,7 @@ class BaseModel(RunnerPlot):
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
             )
 
-    def __contains__(self, item: str) -> Bool:
+    def __contains__(self, item: str) -> bool:
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Pandas:
@@ -343,7 +344,7 @@ class BaseModel(RunnerPlot):
                     f"estimator {self._est_class.__name__}."
                 )
 
-    def _get_param(self, name: str, params: CustomDict) -> Any:
+    def _get_param(self, name: str, params: dict[str, Any]) -> Any:
         """Get a parameter from est_params or the objective func.
 
         Parameters
@@ -351,7 +352,7 @@ class BaseModel(RunnerPlot):
         name: str
             Name of the parameter.
 
-        params: CustomDict
+        params: dict
             Parameters in the current trial.
 
         Returns
@@ -362,7 +363,7 @@ class BaseModel(RunnerPlot):
         """
         return self._est_params.get(name) or params.get(name)
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict[str, Any]:
         """Get the trial's hyperparameters.
 
         This method fetches the suggestions from the trial and
@@ -375,15 +376,16 @@ class BaseModel(RunnerPlot):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
-        return CustomDict(
-            {k: rnd(trial._suggest(k, v)) for k, v in self._ht["distributions"].items()}
-        )
+        return {
+            parameter: rnd(trial._suggest(parameter, value))
+            for parameter, value in self._ht["distributions"].items()
+        }
 
-    def _trial_to_est(self, params: CustomDict) -> CustomDict:
+    def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's parameters to parameters for the estimator.
 
         Some models, such as MLP, use different hyperparameters for the
@@ -396,16 +398,16 @@ class BaseModel(RunnerPlot):
 
         Parameters
         ----------
-        params: CustomDict
+        params: dict
             Trial's hyperparameters.
 
         Returns
         -------
-        CustomDict
-            Estimator's hyperparameters.
+        dict
+            Copy of the estimator's hyperparameters.
 
         """
-        return params.deepcopy()
+        return deepcopy(params)
 
     def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
@@ -491,15 +493,6 @@ class BaseModel(RunnerPlot):
 
         """
         if self.has_validation and hasattr(estimator, "partial_fit") and validation:
-            if not trial:
-                # In-training validation is skipped during hyperparameter tuning
-                self._evals = CustomDict(
-                    {
-                        f"{self._metric[0].name}_train": [],
-                        f"{self._metric[0].name}_test": [],
-                    }
-                )
-
             # Loop over first parameter in estimator
             try:
                 steps = estimator.get_params()[self.has_validation]
@@ -516,16 +509,16 @@ class BaseModel(RunnerPlot):
                         else:
                             kwargs["classes"] = [np.unique(y) for y in get_cols(self.y)]
                     else:
-                        kwargs["classes"] = np.unique(self.y)
+                        kwargs["classes"] = list(np.unique(self.y))
 
                 estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
                 if not trial:
                     # Store train and validation scores on the main metric in evals attr
-                    self._evals[0].append(
+                    self._evals[f"{self._metric[0].name}_train"].append(
                         self._score_from_est(self._metric[0], estimator, *data)
                     )
-                    self._evals[1].append(
+                    self._evals[f"{self._metric[0].name}_test"].append(
                         self._score_from_est(self._metric[0], estimator, *validation)
                     )
 
@@ -547,7 +540,7 @@ class BaseModel(RunnerPlot):
         else:
             # Add the forecasting horizon to sktime estimators
             if self.task.is_forecast:
-                if "fh" in sign(estimator.fit):
+                if "fh" in sign(estimator.fit) and hasattr(estimator, "get_tag"):
                     if estimator.get_tag("requires-fh-in-fit"):
                         est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
 
@@ -662,7 +655,7 @@ class BaseModel(RunnerPlot):
         """
         # Select method to use for predictions
         if attr == "thresh":
-            for attribute in ("decision_function", "predict_proba", "predict"):
+            for attribute in PredictionMethod.__args__:  # type: ignore[attr-defined]
                 if hasattr(self.estimator, attribute):
                     attr = attribute
                     break
@@ -686,7 +679,7 @@ class BaseModel(RunnerPlot):
         X: DataFrame,
         y: Pandas,
         **kwargs,
-    ) -> Float:
+    ) -> float:
         """Calculate the metric score from an estimator.
 
         Parameters
@@ -729,7 +722,7 @@ class BaseModel(RunnerPlot):
         y_true: Pandas,
         y_pred: Pandas,
         **kwargs,
-    ) -> Scalar:
+    ) -> float:
         """Calculate the metric score from predicted values.
 
         Since sklearn metrics don't support multiclass-multioutput
@@ -752,7 +745,7 @@ class BaseModel(RunnerPlot):
 
         Returns
         -------
-        int or float
+        float
             Calculated score.
 
         """
@@ -763,12 +756,11 @@ class BaseModel(RunnerPlot):
             y_true, y_pred, = y_true.iloc[1:], y_pred.iloc[1:]
 
         if self.task is Task.multiclass_multioutput_classification:
-            # Get mean of scores over target columns
-            return np.mean(
-                [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred], axis=0
-            )
+            # Get the mean of the scores over the target columns
+            scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
+            return float(np.mean(scores, axis=0))
         else:
-            return scorer._sign * func(y_true, y_pred)
+            return float(scorer._sign * func(y_true, y_pred))
 
     @lru_cache
     def _get_score(
@@ -863,7 +855,7 @@ class BaseModel(RunnerPlot):
 
         """
 
-        def objective(trial: Trial) -> list[Float]:
+        def objective(trial: Trial) -> list[float]:
             """Objective function for hyperparameter tuning.
 
             Parameters
@@ -882,7 +874,7 @@ class BaseModel(RunnerPlot):
                 estimator: Predictor,
                 train_idx: np.ndarray,
                 val_idx: np.ndarray,
-            ) -> tuple[Predictor, list[Float]]:
+            ) -> tuple[Predictor, list[float]]:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -951,10 +943,11 @@ class BaseModel(RunnerPlot):
             # Since the suggested values are not the exact same values used
             # in the estimator (rounded by _get_parameters), we implement
             # this hacky method to overwrite the params in storage
-            trial._cached_frozen_trial.params = params
-            frozen_trial = self.study._storage._get_trial(trial.number)
-            frozen_trial.params = params
-            self.study._storage._set_trial(trial.number, frozen_trial)
+            if isinstance(self.study._storage, InMemoryStorage):
+                trial._cached_frozen_trial.params = params
+                frozen_trial = self.study._storage._get_trial(trial.number)
+                frozen_trial.params = params
+                self.study._storage._set_trial(trial.number, frozen_trial)
 
             # Store user defined tags
             for key, value in self._ht["tags"].items():
@@ -982,7 +975,7 @@ class BaseModel(RunnerPlot):
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
-                    elif isinstance(self._ht["cv"], Int):
+                    elif isinstance(self._ht["cv"], IntTypes):
                         # We use ShuffleSplit instead of K-fold because it
                         # works with n_splits=1 and multioutput stratification
                         if cols is None:
@@ -1008,7 +1001,7 @@ class BaseModel(RunnerPlot):
                 )
 
                 estimator = results[0][0]
-                score = list(np.mean(scores := [r[1] for r in results], axis=0))
+                score = np.mean(scores := [r[1] for r in results], axis=0).tolist()
 
                 if len(results) > 1:
                     # Report cv scores for termination judgment
@@ -1075,7 +1068,10 @@ class BaseModel(RunnerPlot):
             return
 
         if not self._study or reset:
-            kw = {k: v for k, v in self._ht.items() if k in sign(create_study)}
+            kw: dict[str, Any] = {
+                k: v for k, v in self._ht.items() if k in sign(create_study)
+            }
+
             if len(self._metric) == 1:
                 kw["direction"] = "maximize"
                 kw["sampler"] = kw.pop("sampler", TPESampler(seed=self.random_state))
@@ -1103,7 +1099,7 @@ class BaseModel(RunnerPlot):
 
         self._study.optimize(
             func=objective,
-            n_trials=n_trials,
+            n_trials=int(n_trials),
             n_jobs=n_jobs,
             callbacks=callbacks,
             show_progress_bar=kw.pop("show_progress_bar", self.verbose == 1),
@@ -1399,7 +1395,7 @@ class BaseModel(RunnerPlot):
 
         """
         if self._study is not None:
-            data = defaultdict(list)
+            data: dict[str, list[Any]] = defaultdict(list)
             for t in self._study.trials:
                 data["trial"].append(t.number)
                 for p in t.params:
@@ -1411,9 +1407,10 @@ class BaseModel(RunnerPlot):
                     else:
                         data[met].append(t.values[i] if t.values else np.NaN)
                     data[f"best_{met}"] = np.nanmax(data[met])
-                data["time_trial"].append(
-                    (t.datetime_complete - t.datetime_start).total_seconds()
-                )
+                if t.datetime_complete and t.datetime_start:
+                    data["time_trial"].append(
+                        (t.datetime_complete - t.datetime_start).total_seconds()
+                    )
                 data["time_ht"].append(np.sum(data["time_trial"]))
                 data["state"].append(t.state.name)
 
@@ -1445,7 +1442,13 @@ class BaseModel(RunnerPlot):
 
     @best_trial.setter
     def best_trial(self, value: IntLargerEqualZero | None):
-        """Change the selected best trial."""
+        """Assign the study's best trial.
+
+        The hyperparameters selected in this trial are used to train
+        the estimator. This property is only available for models that
+        ran [hyperparameter tuning][].
+
+        """
         if value is None:
             self._best_trial = None  # Reset best trial selection
         elif value not in self.trials.index:
@@ -1453,7 +1456,8 @@ class BaseModel(RunnerPlot):
                 "Invalid value for the best_trial. The "
                 f"value should be a trial number, got {value}."
             )
-        self._best_trial = self.study.trials[value]
+        else:
+            self._best_trial = self.study.trials[value]
 
     @property
     def best_params(self) -> dict[str, Any]:
@@ -1471,10 +1475,13 @@ class BaseModel(RunnerPlot):
     @property
     def estimator(self) -> Predictor:
         """Estimator fitted on the training set."""
-        return self._estimator
+        if self._estimator:
+            return self._estimator
+
+        raise AttributeError("This model hasn't been fitted yet.")
 
     @property
-    def evals(self) -> CustomDict:
+    def evals(self) -> dict[str, list[Float]]:
         """Scores obtained per iteration of the training.
 
         Only the scores of the [main metric][metric] are tracked.
@@ -1485,7 +1492,7 @@ class BaseModel(RunnerPlot):
         return self._evals
 
     @property
-    def bootstrap(self) -> pd.DataFrame | None:
+    def bootstrap(self) -> pd.DataFrame:
         """Overview of the bootstrapping scores.
 
         The dataframe has shape=(n_bootstrap, metric) and shows the
@@ -1497,6 +1504,8 @@ class BaseModel(RunnerPlot):
         """
         if self._bootstrap is not None:
             return self._bootstrap
+
+        raise AttributeError("This model didn't run bootstrapping.")
 
     @property
     def results(self) -> pd.Series:
@@ -1551,12 +1560,14 @@ class BaseModel(RunnerPlot):
         if data is None and hasattr(self.estimator, "estimators_"):
             estimators = self.estimator.estimators_
             if all(hasattr(x, "feature_importances_") for x in estimators):
-                data = [fi.feature_importances_ for fi in estimators]
+                data = np.array([fi.feature_importances_ for fi in estimators])
             elif all(hasattr(x, "coef_") for x in estimators):
-                data = [
-                    np.linalg.norm(fi.coef_, axis=np.argmin(fi.coef_.shape), ord=1)
-                    for fi in estimators
-                ]
+                data = np.array(
+                    [
+                        np.linalg.norm(fi.coef_, axis=np.argmin(fi.coef_.shape), ord=1)
+                        for fi in estimators
+                    ]
+                )
             else:
                 # For ensembles that mix attributes
                 raise ValueError(
@@ -1567,8 +1578,7 @@ class BaseModel(RunnerPlot):
 
             # Trim each coef to the number of features in the 1st estimator
             # ClassifierChain adds features to subsequent estimators
-            min_length = min(map(len, data))
-            data = np.mean([c[:min_length] for c in data], axis=0)
+            data = np.mean([c[:np.min(data)] for c in data], axis=0)
 
         if data is not None:
             return pd.Series(
@@ -1735,7 +1745,7 @@ class BaseModel(RunnerPlot):
 
         """
         # Reset attributes
-        self._evals = CustomDict()
+        self._evals = defaultdict(list)
         self._shap_explanation = None
         self.app = None
         self.dashboard = None

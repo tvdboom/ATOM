@@ -9,7 +9,7 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 import modin.pandas as md
 import numpy as np
@@ -17,19 +17,21 @@ import pandas as pd
 import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import (
-    Annotated, Any, Callable, Hashable, Iterable, Iterator, Literal, Protocol,
-    TypeAlias, TypedDict, TypeVar, Union, runtime_checkable,
+    Any, Callable, Hashable, Iterable, Iterator, Literal, Protocol, TypeAlias,
+    TypedDict, TypeVar, Union, runtime_checkable,
 )
 from beartype.vale import Is
+from optuna.distributions import BaseDistribution
 
 
 if TYPE_CHECKING:
     from atom.branch import Branch
-    from atom.utils.utils import ClassMap, CustomDict, Goal, ShapExplanation
+    from atom.utils.utils import ClassMap, Goal, ShapExplanation
 
 
 # Variable types for isinstance ==================================== >>
 
+# TODO: From Python 3.11, use Self type hint to return classes
 # TODO: From Python 3.10, isinstance accepts pipe operator (change to TypeAlias)
 BoolTypes = (bool, np.bool_)
 IntTypes = (int, np.integer)
@@ -53,12 +55,21 @@ SequenceTypes = (list, tuple, np.ndarray, *IndexTypes, *SeriesTypes)
 # Classes for type hinting ========================================= >>
 
 T = TypeVar("T")
+T_cov = TypeVar("T_cov", covariant=True)
 
 
 class Engine(TypedDict, total=False):
     """Types for the `engine` parameter."""
     data: Literal["numpy", "pyarrow", "modin"]
     estimator: Literal["sklearn", "sklearnex", "cuml"]
+
+
+class HT(TypedDict, total=False):
+    """Types for the `_ht` attribute of Model."""
+    distributions: dict[str, BaseDistribution]
+    cv: Int
+    plot: Bool
+    tags: dict[str, str]
 
 
 class Style(TypedDict):
@@ -70,7 +81,7 @@ class Style(TypedDict):
 
 
 @runtime_checkable
-class Sequence(Protocol[T]):
+class Sequence(Protocol[T_cov]):
     """Type hint factory for sequences with subscripted types.
 
     Dynamically creates new `Annotated[Sequence[...], ...]` type hints,
@@ -97,22 +108,23 @@ class Sequence(Protocol[T]):
 
     """
 
-    def __iter__(self) -> Iterator[T]: ...
-    def __getitem__(self, item) -> T: ...
+    def __iter__(self) -> Iterator[T_cov]: ...
+    def __getitem__(self, item) -> T_cov: ...
     def __len__(self) -> Int: ...
 
     @classmethod
-    def __class_getitem__(cls, item: Any) -> Annotated[Sequence, Is]:
+    def __class_getitem__(cls, item: Any) -> Annotated[Any, Is]:
         return Annotated[
             cls,
             Is[lambda lst: isinstance(lst, SequenceTypes)]
-            & Is[lambda lst: all(is_bearable(i, item) for i in lst)]
+            & Is[lambda lst: all(is_bearable(i, item) for i in lst)]  # type: ignore
         ]
 
 
 @runtime_checkable
 class SkScorer(Protocol):
     """Protocol for sklearn's scorers."""
+    def __call__(self, *args, **kwargs): ...
     def _score(self, *args, **kwargs): ...
 
 
@@ -166,7 +178,7 @@ class Model(Protocol):
     @property
     def _est_class(self) -> type[Predictor]: ...
     @property
-    def evals(self) -> CustomDict: ...
+    def evals(self) -> dict[str, list]: ...
     @property
     def feature_importance(self) -> pd.Series: ...
     # @property
@@ -207,8 +219,19 @@ FloatZeroToOneInc: TypeAlias = Annotated[Float, Is[lambda x: 0 <= x <= 1]]
 FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
 # Types for X and y
-Features = Union[Iterable, Sequence[Sequence[Any]], np.ndarray, sps.spmatrix, DataFrame]
+Features = Union[
+    dict[str, Sequence[Any]],
+    Sequence[Sequence[Any]],
+    Iterable[Sequence[Any], tuple[Hashable, Sequence[Any]], dict[str, Sequence[Any]]],
+    np.ndarray,
+    sps.spmatrix,
+    DataFrame,
+]
 Target = Union[Int, str, dict[str, Any], Sequence[Any], DataFrame]
+
+# Return types for transform methods
+TReturn = Union[np.ndarray, sps.spmatrix, Series, DataFrame]
+TReturns = Union[TReturn, tuple[TReturn, TReturn]]
 
 # Selection of rows or columns by name or position
 ColumnSelector = Union[Int, str, Segment, Sequence[Union[Int, str]], DataFrame]
@@ -218,7 +241,7 @@ RowSelector = Union[Hashable, Sequence[Hashable], ColumnSelector]
 IndexSelector = Union[Bool, Int, str, Sequence[Hashable]]
 
 # Types to initialize and select models and metric
-ModelsConstructor = Union[str, Predictor, Sequence[str, Predictor], None]
+ModelsConstructor = Union[str, Predictor, Sequence[Union[str, Predictor]], None]
 ModelSelector = Union[Int, str, Model]
 ModelsSelector = Union[ModelSelector, Segment, Sequence[ModelSelector], None]
 MetricFunction = Callable[[Sequence[Scalar], Sequence[Scalar]], Scalar]
@@ -281,16 +304,11 @@ NItems = Union[
 ]
 
 # Allowed values for method selection
-PredictionMethod = Literal["predict", "predict_proba", "decision_function", "thresh"]
+PredictionMethod = Literal["decision_function", "predict_proba", "predict", "thresh"]
 
 # Plotting parameters
 PlotBackend = Literal["plotly", "matplotlib"]
-ParamsSelector = Union[
-    IntLargerEqualZero,
-    str,
-    Segment,
-    Sequence[Union[IntLargerEqualZero, str]],
-]
+ParamsSelector = Union[str, Segment, Sequence[Union[IntLargerEqualZero, str]]]
 TargetSelector = Union[IntLargerEqualZero, str]
 TargetsSelector = Union[TargetSelector, tuple[TargetSelector, ...]]
 Kind = Literal["average", "individual", "average+individual", "individual+average"]

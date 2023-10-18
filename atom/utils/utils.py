@@ -10,22 +10,20 @@ Description: Module containing utility classes.
 from __future__ import annotations
 
 import os
-import pprint
 import sys
 import warnings
 from collections import deque
-from collections.abc import MutableMapping
 from contextlib import contextmanager
-from copy import copy, deepcopy
+from copy import copy
 from dataclasses import dataclass
 from enum import Enum
-from functools import wraps
+from functools import cached_property, wraps
 from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 from unittest.mock import patch
 
 import mlflow
@@ -34,12 +32,14 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
-from beartype.typing import Any, Callable, Hashable, TypeVar
+from beartype.typing import Any, Callable, Hashable, Iterator, Literal, TypeVar
 from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from pandas._libs.missing import NAType
+from pandas._typing import Axes, Dtype, DtypeArg
 from pandas.api.types import is_numeric_dtype
 from shap import Explainer, Explanation
 from sklearn.metrics import (
@@ -54,12 +54,15 @@ from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, Estimator, Features, Float, Index,
     IndexSelector, Int, IntTypes, MetricConstructor, Model, Pandas,
     PandasTypes, Predictor, Scalar, Scorer, Segment, SegmentTypes, Sequence,
-    SequenceTypes, Series, SeriesTypes, Target, Transformer, Verbose,
+    SequenceTypes, Series, SeriesTypes, Target, Transformer, TReturn, TReturns,
+    Verbose,
 )
 
 
 if TYPE_CHECKING:
+    from atom.basemodel import BaseModel
     from atom.baserunner import BaseRunner
+    from atom.branch import Branch
 
 
 T = TypeVar("T")
@@ -99,17 +102,17 @@ class Goal(Enum):
 
         """
         if self.value == 2:
-            if y.ndim == 1:
+            if isinstance(y, SeriesTypes):
                 return Task.regression
             else:
                 return Task.multioutput_regression
         elif self.value == 3:
-            if y.ndim == 1:
+            if isinstance(y, SeriesTypes):
                 return Task.univariate_forecast
             else:
                 return Task.multivariate_forecast
 
-        if y.ndim > 1:
+        if isinstance(y, DataFrameTypes):
             if all(y[col].nunique() == 2 for col in y):
                 return Task.multilabel_classification
             else:
@@ -139,32 +142,32 @@ class Task(Enum):
         return self.name.replace("_", " ").capitalize()
 
     @property
-    def is_classification(self) -> Bool:
+    def is_classification(self) -> bool:
         """Return whether the task is a classification task."""
         return self.value in (1, 2, 3, 4)
 
     @property
-    def is_regression(self) -> Bool:
+    def is_regression(self) -> bool:
         """Return whether the task is a regression task."""
         return self.value in (5, 6)
 
     @property
-    def is_forecast(self) -> Bool:
+    def is_forecast(self) -> bool:
         """Return whether the task is a forecast task."""
         return self.value in (7, 8)
 
     @property
-    def is_binary(self) -> Bool:
+    def is_binary(self) -> bool:
         """Return whether the task is binary or multilabel."""
         return self.value in (1, 3)
 
     @property
-    def is_multiclass(self) -> Bool:
+    def is_multiclass(self) -> bool:
         """Return whether the task is multiclass or multiclass-multioutput."""
         return self.value in (2, 4)
 
     @property
-    def is_multioutput(self) -> Bool:
+    def is_multioutput(self) -> bool:
         """Return whether the task has more than one target column."""
         return self.value in (3, 4, 6, 8)
 
@@ -207,11 +210,11 @@ class DataContainer:
 class Aesthetics:
     """Keeps track of plot aesthetics."""
     palette: str | Sequence[str] | dict[str, str]  # Sequence of colors
-    title_fontsize: Int  # Fontsize for titles
-    label_fontsize: Int  # Fontsize for labels, legend and hoverinfo
-    tick_fontsize: Int  # Fontsize for ticks
-    line_width: Int  # Width of the line plots
-    marker_size: Int  # Size of the markers
+    title_fontsize: Scalar  # Fontsize for titles
+    label_fontsize: Scalar  # Fontsize for labels, legend and hoverinfo
+    tick_fontsize: Scalar  # Fontsize for ticks
+    line_width: Scalar  # Width of the line plots
+    marker_size: Scalar  # Size of the markers
 
 
 class PandasModin:
@@ -276,7 +279,12 @@ class CatBMetric:
         """Returns whether great values of metric are better."""
         return True
 
-    def evaluate(self, approxes: list, targets: list, weight: list) -> Float:
+    def evaluate(
+        self,
+        approxes: list[Float],
+        targets: list[Float],
+        weight: list[Float],
+    ) -> tuple[Float, Float]:
         """Evaluates metric value.
 
         Parameters
@@ -405,9 +413,12 @@ class Table:
 
     """
 
-    def __init__(self, headers: Sequence, spaces: Sequence, default_pos: str = "right"):
-        assert len(headers) == len(spaces)
-
+    def __init__(
+        self,
+        headers: Sequence[str | tuple[str, str]],
+        spaces: Sequence[Int],
+        default_pos: str = "right",
+    ):
         self.headers = []
         self.positions = []
         for header in headers:
@@ -513,7 +524,7 @@ class TrialsCallback:
 
     """
 
-    def __init__(self, model: Model, n_jobs: Int):
+    def __init__(self, model: BaseModel, n_jobs: Int):
         self.T = model
         self.n_jobs = n_jobs
 
@@ -533,7 +544,7 @@ class TrialsCallback:
                     mlflow.set_tags(
                         {
                             "name": self.T.name,
-                            "model": self.Tfullname,
+                            "model": self.T.fullname,
                             "branch": self.T.branch.name,
                             "trial_state": trial_info.state,
                             **self.T._ht["tags"],
@@ -557,10 +568,10 @@ class TrialsCallback:
                             sk_model=estimator,
                             artifact_path=estimator.__class__.__name__,
                             signature=infer_signature(
-                                model_input=pd.DataFrame(self.T.X),
-                                model_output=estimator.predict(self.T.X.iloc[[0], :]),
+                                model_input=pd.DataFrame(self.T.branch.X),
+                                model_output=estimator.predict(self.T.branch.X.iloc[[0]]),
                             ),
-                            input_example=pd.DataFrame(self.T.X.iloc[[0], :]),
+                            input_example=pd.DataFrame(self.T.branch.X.iloc[[0], :]),
                         )
                     else:
                         mlflow.log_params(
@@ -635,10 +646,14 @@ class PlotCallback:
     max_len = 15  # Maximum trials to show at once in the plot
 
     def __init__(self, name: str, metric: list[str], aesthetics: Aesthetics):
-        self.y1 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
-        self.y2 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
+        self.y1: dict[int, deque] = {
+            i: deque(maxlen=self.max_len) for i in range(len(metric))
+        }
+        self.y2: dict[int, deque] = {
+            i: deque(maxlen=self.max_len) for i in range(len(metric))
+        }
 
-        traces = []
+        traces: list[go.Scatter] = []
         colors = cycle(aesthetics.palette)
         for met in metric:
             color = next(colors)
@@ -779,7 +794,7 @@ class ShapExplanation:
         self,
         estimator: Predictor,
         task: Task,
-        branch: Any,
+        branch: Branch,
         random_state: Int | None = None,
     ):
         self.estimator = estimator
@@ -787,9 +802,7 @@ class ShapExplanation:
         self.branch = branch
         self.random_state = random_state
 
-        self._explainer = None
-        self._explanation = None
-        self._expected_value = None
+        self._explanation: Explainer
         self._shap_values = pd.Series(dtype="object")
         self._interaction_values = pd.Series(dtype="object")
 
@@ -803,11 +816,14 @@ class ShapExplanation:
             Name of the prediction method.
 
         """
-        for attr in ("predict_proba", "decision_function", "predict"):
-            if hasattr(self.estimator, attr):
-                return attr
+        if hasattr(self.estimator, "predict_proba"):
+            return "predict_proba"
+        elif hasattr(self.estimator, "decision_function"):
+            return "decision_function"
+        else:
+            return "predict"
 
-    @property
+    @cached_property
     def explainer(self) -> Explainer:
         """Get shap's explainer.
 
@@ -817,20 +833,17 @@ class ShapExplanation:
             Get the initialized explainer object.
 
         """
-        if self._explainer is None:
-            # Pass masker as np.array and feature names separately for modin frames
-            kwargs = dict(
-                masker=self.branch.X_train.to_numpy(),
-                feature_names=list(self.branch.features),
-                seed=self.random_state,
-            )
-            try:  # Fails when model does not fit standard explainers (e.g., ensembles)
-                self._explainer = Explainer(self.estimator, **kwargs)
-            except TypeError:
-                # If method is provided as first arg, selects always Permutation
-                self._explainer = Explainer(getattr(self.estimator, self.attr), **kwargs)
-
-        return self._explainer
+        # Pass masker as np.array and feature names separately for modin frames
+        kwargs = dict(
+            masker=self.branch.X_train.to_numpy(),
+            feature_names=list(self.branch.features),
+            seed=self.random_state,
+        )
+        try:  # Fails when model does not fit standard explainers (e.g., ensembles)
+            return Explainer(self.estimator, **kwargs)
+        except TypeError:
+            # If a method is provided as first arg, selects always Permutation
+            return Explainer(getattr(self.estimator, self.attr), **kwargs)
 
     def get_explanation(
         self,
@@ -855,9 +868,8 @@ class ShapExplanation:
 
         """
         # Get rows that still need to be calculated
-        calculate = df.loc[~df.index.isin(self._shap_values.index)]
-        if not calculate.empty:
-            kwargs = {}
+        if not (calculate := df.loc[~df.index.isin(self._shap_values.index)]).empty:
+            kwargs: dict[str, Any] = {}
 
             # Minimum of 2 * n_features + 1 evals required (default=500)
             if "max_evals" in sign(self.explainer.__call__):
@@ -874,10 +886,10 @@ class ShapExplanation:
                 # Calculate the new shap values
                 try:
                     self._explanation = self.explainer(calculate.to_numpy(), **kwargs)
-                except (ValueError, AssertionError):
+                except (ValueError, AssertionError) as ex:
                     raise ValueError(
                         "Failed to get shap's explainer for estimator "
-                        f"{self.estimator} with task {self.task}."
+                        f"{self.estimator} with task {self.task}. Exception: {ex}"
                     )
 
             # Remember shap values in the _shap_values attribute
@@ -893,9 +905,9 @@ class ShapExplanation:
         explanation = copy(self._explanation)
 
         # Update the explanation object
-        explanation.values = np.stack(self._shap_values.loc[df.index].values)
+        explanation.values = np.stack(self._shap_values.loc[df.index].tolist())
         explanation.base_values = self._explanation.base_values[0]
-        explanation.data = self.branch._all.loc[df.index, self.branch.features].to_numpy()
+        explanation.data = self.branch._allX.loc[df.index].to_numpy()
 
         if self.task.is_multioutput:
             if explanation.values.shape[-1] == self.branch.y.shape[1]:
@@ -927,10 +939,10 @@ class ClassMap:
     """
 
     @staticmethod
-    def _conv(key):
+    def _conv(key: Any) -> Any:
         return key.lower() if isinstance(key, str) else key
 
-    def _get_data(self, key):
+    def _get_data(self, key: Any) -> Any:
         if isinstance(key, IntTypes) and key not in self.keys():
             try:
                 return self.__data[key]
@@ -943,7 +955,7 @@ class ClassMap:
 
         raise KeyError(key)
 
-    def _check(self, elem):
+    def _check(self, elem: T) -> T:
         if not hasattr(elem, self.__key):
             raise ValueError(f"Element {elem} has no attribute {self.__key}.")
         else:
@@ -958,14 +970,14 @@ class ClassMap:
         """
 
         self.__key = key
-        self.__data = []
+        self.__data: list[Any] = []
         for elem in args:
             if isinstance(elem, GeneratorType):
                 self.__data.extend(self._check(e) for e in elem)
             else:
                 self.__data.append(self._check(elem))
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         if isinstance(key, SequenceTypes):
             return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
         elif isinstance(key, SegmentTypes):
@@ -975,7 +987,7 @@ class ClassMap:
         else:
             return self._get_data(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Any, value: Any):
         if isinstance(key, IntTypes):
             self.__data[key] = self._check(value)
         else:
@@ -985,51 +997,51 @@ class ClassMap:
                 assert key == getattr(value, self.__key)
                 self.append(value)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Any):
         del self.__data[self.index(self._get_data(key))]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         yield from self.__data
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__data)
 
-    def __contains__(self, key):
+    def __contains__(self, key: Any) -> bool:
         return key in self.__data or self._conv(key) in self.keys_lower()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__data.__repr__()
 
-    def __reversed__(self):
+    def __reversed__(self) -> Iterator[Any]:
         yield from reversed(list(self.__data))
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return self.__data == other
 
-    def __add__(self, other):
+    def __add__(self, other: ClassMap) -> ClassMap:
         self.__data += other
         return self
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.__data)
 
-    def keys(self) -> list:
+    def keys(self) -> list[Any]:
         return [getattr(x, self.__key) for x in self.__data]
 
-    def values(self) -> list:
+    def values(self) -> list[Any]:
         return self.__data
 
-    def keys_lower(self) -> list:
+    def keys_lower(self) -> list[Any]:
         return list(map(self._conv, self.keys()))
 
-    def append(self, value):
+    def append(self, value: T) -> T:
         self.__data.append(self._check(value))
         return value
 
-    def extend(self, value):
+    def extend(self, value: Any):
         self.__data.extend(list(map(self._check, value)))
 
-    def remove(self, value):
+    def remove(self, value: Any):
         if value in self.__data:
             self.__data.remove(value)
         else:
@@ -1038,187 +1050,11 @@ class ClassMap:
     def clear(self):
         self.__data = []
 
-    def index(self, key):
+    def index(self, key: Any) -> Any:
         if key in self.__data:
             return self.__data.index(key)
         else:
             return self.__data.index(self._get_data(key))
-
-
-class CustomDict(MutableMapping):
-    """Custom ordered dictionary.
-
-    The main differences with the Python dictionary are:
-
-    - It has ordered entries.
-    - Key requests are case-insensitive.
-    - Returns a subset of itself using getitem with a list of keys or slice.
-    - It allows getting an item from an index position.
-    - It can insert key value pairs at a specific position.
-    - Replace method to change a key or value if key exists.
-
-    """
-
-    def __init__(self, iterable_or_mapping=None, **kwargs):
-        """Creates keys and data.
-
-        Mimics a dictionary's initialization and accepts the same
-        arguments. You have to pass an ordered iterable or mapping
-        unless you want the order to be arbitrary.
-
-        """
-        self.__keys = []  # States the order
-        self.__data = {}  # Contains the values
-
-        if iterable_or_mapping is not None:
-            try:
-                iterable = iterable_or_mapping.items()
-            except AttributeError:
-                iterable = iterable_or_mapping
-
-            for key, value in iterable:
-                self.__keys.append(key)
-                self.__data[self._conv(key)] = value
-
-        for key, value in kwargs.items():
-            self.__keys.append(key)
-            self.__data[self._conv(key)] = value
-
-    def __getitem__(self, key):
-        if isinstance(key, SequenceTypes):
-            return self.__class__({self._get_key(k): self[k] for k in key})
-        elif isinstance(key, slice):
-            return self.__class__({k: self[k] for k in self.__keys[key]})
-        else:
-            return self.__data[self._conv(self._get_key(key))]
-
-    def __setitem__(self, key, value):
-        if key not in self:
-            self.__keys.append(key)
-        self.__data[self._conv(key)] = value
-
-    def __delitem__(self, key):
-        key = self._get_key(key)
-        self.__keys.remove(key)
-        del self.__data[self._conv(key)]
-
-    def __iter__(self):
-        yield from self.__keys
-
-    def __len__(self):
-        return len(self.__keys)
-
-    def __contains__(self, key):
-        return self._conv(key) in self.__data
-
-    def __repr__(self):
-        return pprint.pformat(dict(self), sort_dicts=False)
-
-    def __reversed__(self):
-        yield from reversed(list(self.keys()))
-
-    def __bool__(self):
-        return bool(self.__keys)
-
-    @staticmethod
-    def _conv(key):
-        return key.lower() if isinstance(key, str) else key
-
-    def _get_key(self, key):
-        # Get key from index
-        if isinstance(key, IntTypes) and key not in self.__keys:
-            return self.__keys[key]
-        else:
-            # Get key from name
-            for k in self.__keys:
-                if self._conv(k) == self._conv(key):
-                    return k
-
-        raise KeyError(key)
-
-    def keys(self):
-        yield from self.__keys
-
-    def items(self):
-        for key in self.__keys:
-            yield key, self.__data[self._conv(key)]
-
-    def values(self):
-        for key in self.__keys:
-            yield self.__data[self._conv(key)]
-
-    def insert(self, pos, new_key, value):
-        # If key already exists, remove old first
-        if new_key in self:
-            self.__delitem__(new_key)
-        self.__keys.insert(pos, new_key)
-        self.__data[self._conv(new_key)] = value
-
-    def get(self, key, default=None):
-        if key in self:
-            return self[key]
-        else:
-            return default
-
-    def pop(self, key, default=None):
-        if key in self:
-            value = self[key]
-            self.__delitem__(key)
-            return value
-        else:
-            return default
-
-    def popitem(self):
-        try:
-            return self.__data.pop(self._conv(self.__keys.pop()))
-        except IndexError:
-            raise KeyError(f"{self.__class__.__name__} is empty.")
-
-    def clear(self):
-        self.__keys = []
-        self.__data = {}
-
-    def update(self, iterable_or_mapping=None, **kwargs):
-        if iterable_or_mapping is not None:
-            try:
-                iterable = iterable_or_mapping.items()
-            except AttributeError:
-                iterable = iterable_or_mapping
-
-            for key, value in iterable:
-                self[key] = value
-
-        for key, value in kwargs.items():
-            self[key] = value
-
-    def setdefault(self, key, default=None):
-        if key in self:
-            return self[key]
-        else:
-            self[key] = default
-            return default
-
-    def copy(self):
-        return copy(self)
-
-    def deepcopy(self):
-        return deepcopy(self)
-
-    def index(self, key):
-        return self.__keys.index(self._get_key(key))
-
-    def reorder(self, keys):
-        self.__keys = [k for k in keys if k in self]
-        self.__data = {self._conv(k): self[k] for k in keys if k in self}
-
-    def replace_key(self, key, new_key):
-        if key in self:
-            self.insert(self.__keys.index(self._get_key(key)), new_key, self[key])
-            self.__delitem__(key)
-
-    def replace_value(self, key, value=None):
-        if key in self:
-            self[key] = value
 
 
 # Functions ======================================================== >>
@@ -1254,7 +1090,7 @@ def lst(x: Any) -> list[Any]:
         Item as list with length 1 or provided sequence as list.
 
     """
-    return list(x) if isinstance(x, (dict, CustomDict, ClassMap, *SequenceTypes)) else [x]
+    return list(x) if isinstance(x, (dict, ClassMap, *SequenceTypes)) else [x]
 
 
 def it(x: Any) -> Any:
@@ -1379,10 +1215,10 @@ def merge(*args) -> DataFrame:
         Concatenated dataframe.
 
     """
-    if len(args := [x for x in args if x is not None and not x.empty]) == 1:
-        return bk.DataFrame(args[0])
+    if len(args_c := [x for x in args if x is not None and not x.empty]) == 1:
+        return bk.DataFrame(args_c[0])
     else:
-        return bk.DataFrame(bk.concat([*args], axis=1))
+        return bk.DataFrame(bk.concat(args_c, axis=1))
 
 
 def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_Pandas:
@@ -1406,10 +1242,25 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         Data set without missing values.
 
     """
+
+    def get_nan(dtype: Dtype) -> float | NAType:
+        """Get NaN type depending on a column's type.
+
+        Parameters
+        ----------
+        dtype: Dtype
+            Type of the column.
+
+        Returns
+        -------
+        np.NaN or pd.NA
+            Missing value indicator.
+
+        """
+        return np.NaN if isinstance(dtype, np.dtype) else pd.NA
+
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
-
-    get_nan = lambda dtype: np.NaN if isinstance(dtype, np.dtype) else pd.NA
 
     if isinstance(X, SeriesTypes):
         return X.replace(
@@ -1440,7 +1291,7 @@ def get_cols(elem: Pandas) -> list[Series]:
     if isinstance(elem, SeriesTypes):
         return [elem]
     else:
-        return [elem[col] for col in elem]
+        return [elem[col] for col in elem.columns]
 
 
 def variable_return(
@@ -1474,7 +1325,7 @@ def variable_return(
         return X, y
 
 
-def get_segment(obj: T_Sequence[T], segment: Segment) -> T_Sequence[T]:
+def get_segment(obj: T_Sequence, segment: Segment) -> T_Sequence:
     """Get a subset of a sequence by range or slice.
 
     Parameters
@@ -1627,7 +1478,7 @@ def check_scaling(X: Pandas, pipeline: Any | None = None) -> bool:
     else:
         mean = df.mean(numeric_only=True).mean()
         std = df.std(numeric_only=True).mean()
-        return has_scaler or (-0.05 < mean < 0.05 and 0.85 < std < 1.15)
+        return has_scaler or bool(-0.05 < mean < 0.05 and 0.85 < std < 1.15)
 
 
 @contextmanager
@@ -1719,7 +1570,7 @@ def get_corpus(df: DataFrame) -> Series:
 
     """
     try:
-        return next(col for col in df if col.lower() == "corpus")
+        return next(col for col in df.columns if col.lower() == "corpus")
     except StopIteration:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
@@ -1752,7 +1603,7 @@ def time_to_str(t: Scalar) -> str:
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
-def n_cols(data: Features | Target | None) -> int:
+def n_cols(data: Features | Target) -> int:
     """Get the number of columns in a dataset.
 
     Parameters
@@ -1766,14 +1617,13 @@ def n_cols(data: Features | Target | None) -> int:
         Number of columns.
 
     """
-    if data is not None:
-        if (array := np.array(data, dtype="object")).ndim > 1:
-            return array.shape[1]
-        else:
-            return array.ndim  # Can be 0 when input is a dict
+    if (array := np.array(data, dtype="object")).ndim > 1:
+        return array.shape[1]
+    else:
+        return array.ndim  # Can be zero when input is a dict
 
 
-def to_pyarrow(column: Series, inverse: bool = False) -> str:
+def to_pyarrow(column: Series, inverse: bool = False) -> Dtype:
     """Get the pyarrow dtype corresponding to a series.
 
     Parameters
@@ -1793,7 +1643,7 @@ def to_pyarrow(column: Series, inverse: bool = False) -> str:
     """
     if not inverse and not column.dtype.name.endswith("[pyarrow]"):
         if column.dtype.name == "object":
-            return "string[pyarrow]"  # pyarrow doesn't support object
+            return "string[pyarrow]"  # pyarrow doesn't support 'object'
         else:
             return f"{column.dtype.name}[pyarrow]"
     elif inverse and column.dtype.name.endswith("[pyarrow]"):
@@ -1802,11 +1652,29 @@ def to_pyarrow(column: Series, inverse: bool = False) -> str:
     return column.dtype.name
 
 
+@overload
+def to_df(
+    data: Literal[None],
+    index: Axes | None = ...,
+    columns: Axes | None = ...,
+    dtype: DtypeArg | None = ...,
+) -> None: ...
+
+
+@overload
+def to_df(
+    data: Features,
+    index: Axes | None = ...,
+    columns: Axes | None = ...,
+    dtype: DtypeArg | None = ...,
+) -> DataFrame: ...
+
+
 def to_df(
     data: Features | None,
-    index: Sequence[Hashable] | None = None,
-    columns: Sequence[str] | None = None,
-    dtype: str | np.dtype | dict[str, str | np.dtype] | None = None,
+    index: Axes | None = None,
+    columns: Axes | None = None,
+    dtype: DtypeArg | None = None,
 ) -> DataFrame | None:
     """Convert a dataset to a dataframe.
 
@@ -1829,7 +1697,7 @@ def to_df(
     Returns
     -------
     dataframe or None
-        Dataset as dataframe of type given by the backend.
+        Dataset as dataframe of a type given by the backend.
 
     """
     if data is not None:
@@ -1839,27 +1707,53 @@ def to_df(
                 columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
             if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-                data = data.to_pandas()  # Convert cuML to pandas
+                # Convert cuML to pandas
+                data_c = data.to_pandas()  # type: ignore[operator]
             elif sps.issparse(data):
-                # Create dataframe from sparse matrix
-                data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+                data_c = pd.DataFrame.sparse.from_spmatrix(
+                    data=data,
+                    index=index,
+                    columns=columns,
+                )
             else:
-                data = pd.DataFrame(data, index, columns)
+                data_c = pd.DataFrame(data, index, columns)  # type: ignore
+        else:
+            data_c = data
 
             if dtype is not None:
-                data = data.astype(dtype)
+                data_c = data_c.astype(dtype)
 
         if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
-            data = data.astype({name: to_pyarrow(col) for name, col in data.items()})
+            data_c = data_c.astype({n: to_pyarrow(col) for n, col in data_c.items()})
+
+        return data_c
 
     return data
 
 
+@overload
 def to_series(
-    data: Sequence[Any] | None,
-    index: Sequence[Hashable] | None = None,
-    name: str = "target",
-    dtype: str | np.dtype | None = None,
+    data: Literal[None],
+    index: Axes | None = ...,
+    name: Hashable | None = ...,
+    dtype: Dtype | None = ...,
+) -> None: ...
+
+
+@overload
+def to_series(
+    data: Sequence[Any] | dict[str, Sequence[Any]],
+    index: Axes | None = ...,
+    name: Hashable | None = ...,
+    dtype: Dtype | None = ...,
+) -> Series: ...
+
+
+def to_series(
+    data: Sequence[Any] | dict[str, Sequence[Any]] | None,
+    index: Axes | None = None,
+    name: Hashable | None = None,
+    dtype: Dtype | None = None,
 ) -> Series | None:
     """Convert a sequence to a series.
 
@@ -1871,7 +1765,7 @@ def to_series(
     index: sequence, index or None, default=None
         Values for the index.
 
-    name: str, default="target"
+    name: str or None, default=None
         Name of the series.
 
     dtype: str, np.dtype or None, default=None
@@ -1881,42 +1775,67 @@ def to_series(
     Returns
     -------
     series or None
-        Sequence as series of type given by the backend.
+        Sequence as series of a type given by the backend.
 
     """
     if data is not None:
         if not isinstance(data, bk.Series):
             if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-                data = data.to_pandas()  # Convert cuML to pandas
+                data_c = data.to_pandas()  # Convert cuML to pandas
             else:
                 # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
-                data = pd.Series(
+                data_c = pd.Series(  # type: ignore[misc]
                     data=np.array(data, dtype="object").ravel().tolist(),
                     index=index,
                     name=getattr(data, "name", name),
-                    dtype=dtype,
+                    dtype=dtype,  # type: ignore[arg-type]
                 )
+        else:
+            data_c = data
 
         if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
-            data = data.astype(to_pyarrow(data))
+            data_c = data_c.astype(to_pyarrow(data_c))
+
+        return data_c
 
     return data
 
 
+@overload
+def to_pandas(
+    data: Literal[None],
+    index: Axes | None = ...,
+    columns: Axes | None = ...,
+    name: str | None = ...,
+    dtype: DtypeArg | None = ...,
+) -> None: ...
+
+
+@overload
+def to_pandas(
+    data: dict[str, Sequence[Any]] | Sequence[Sequence[Any]] | DataFrame,
+    index: Axes | None = ...,
+    columns: Axes | None = ...,
+    name: str | None = ...,
+    dtype: DtypeArg | None = ...,
+) -> Pandas: ...
+
+
 def to_pandas(
     data: dict[str, Sequence[Any]] | Sequence[Sequence[Any]] | DataFrame | None,
-    index: Sequence[Hashable] | None = None,
-    columns: Sequence[str] | None = None,
-    name: str = "target",
-    dtype: str | dict | np.dtype | None = None,
+    index: Axes | None = None,
+    columns: Axes | None = None,
+    name: str | None = None,
+    dtype: DtypeArg | None = None,
 ) -> Pandas | None:
     """Convert a sequence or dataset to a dataframe or series object.
 
-    If the data is 1-dimensional, convert to series, else to a dataframe.
+    If the data is one-dimensional, convert to series, else to a
+    dataframe.
 
     Parameters
     ----------
-    data: sequence, dataframe or None
+    data: dict, sequence, dataframe or None
         Data to convert. If None, return unchanged.
 
     index: sequence, index or None, default=None
@@ -1925,7 +1844,7 @@ def to_pandas(
     columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    name: str, default="target"
+    name: str or None, default=None
         Name of the series.
 
     dtype: str, dict, np.dtype or None, default=None
@@ -1935,11 +1854,11 @@ def to_pandas(
     Returns
     -------
     series, dataframe or None
-        Data as pandas object.
+        Data as a Pandas object.
 
     """
     if n_cols(data) == 1:
-        return to_series(data, index=index, name=name, dtype=dtype)
+        return to_series(data, index=index, name=name, dtype=dtype)  # type: ignore
     else:
         return to_df(data, index=index, columns=columns, dtype=dtype)
 
@@ -1948,7 +1867,7 @@ def check_is_fitted(
     obj: Any,
     exception: Bool = True,
     attributes: str | Sequence[str] | None = None,
-) -> Bool:
+) -> bool:
     """Check whether an estimator is fitted.
 
     Checks if the estimator is fitted by verifying the presence of
@@ -1977,7 +1896,7 @@ def check_is_fitted(
 
     """
 
-    def check_attr(attr: str) -> Bool:
+    def check_attr(attr: str) -> bool:
         """Return whether an attribute is False or empty.
 
         Parameters
@@ -1991,11 +1910,10 @@ def check_is_fitted(
             Whether the attribute's value is False or empty.
 
         """
-        if attr:
-            if isinstance(value := getattr(obj, attr), PandasTypes):
-                return value.empty
-            else:
-                return not value
+        if isinstance(value := getattr(obj, attr), PandasTypes):
+            return value.empty
+        else:
+            return not value
 
     is_fitted = False
     if hasattr(obj, "__sklearn_is_fitted__"):
@@ -2041,7 +1959,7 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
 
     """
     if isinstance(metric, str):
-        custom_acronyms = CustomDict(
+        custom_acronyms = dict(
             ap="average_precision",
             ba="balanced_accuracy",
             auc="roc_auc",
@@ -2058,7 +1976,7 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
             gamma="neg_mean_gamma_deviance",
         )
 
-        custom_scorers = CustomDict(
+        custom_scorers = dict(
             tn=true_negatives,
             fp=false_positives,
             fn=false_negatives,
@@ -2070,8 +1988,9 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
             mcc=matthews_corrcoef,
         )
 
+        metric = metric.lower()
         if metric in get_scorer_names():
-            scorer = get_scorer(metric.lower())
+            scorer = get_scorer(metric)
         elif metric in custom_acronyms:
             scorer = get_scorer(custom_acronyms[metric])
         elif metric in custom_scorers:
@@ -2082,7 +2001,7 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
                 f"Choose from: {', '.join(get_scorer_names())}."
             )
 
-        scorer.name = metric.lower()
+        scorer.name = metric
 
     elif hasattr(metric, "_score_func"):  # Scoring is a scorer
         scorer = copy(metric)
@@ -2113,7 +2032,7 @@ def get_custom_scorer(metric: MetricConstructor) -> Scorer:
 # Pipeline functions =============================================== >>
 
 def name_cols(
-    array: np.ndarray,
+    array: TReturn,
     original_df: DataFrame,
     col_names: list[str],
 ) -> list[str]:
@@ -2125,14 +2044,14 @@ def name_cols(
 
     Parameters
     ----------
-    array: np.array
+    array: np.ndarray, sps.matrix, series or dataframe
         Transformed dataset.
 
     original_df: dataframe
         Original dataset.
 
     col_names: list of str
-        Names of the columns used in the transformer.
+        Columns used in the transformer.
 
     Returns
     -------
@@ -2329,7 +2248,7 @@ def transform_one(
     transformer: Transformer,
     X: Features | None = None,
     y: Target | None = None,
-    method: str = "transform",
+    method: Literal["transform", "inverse_transform"] = "transform",
 ) -> tuple[DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
 
@@ -2365,12 +2284,12 @@ def transform_one(
 
     """
 
-    def prepare_df(out: Features, og: DataFrame) -> DataFrame:
+    def prepare_df(out: TReturn, og: DataFrame) -> DataFrame:
         """Convert to df and set correct column names and order.
 
         Parameters
         ----------
-        out: dataframe-like
+        out: np.ndarray, sps.matrix, series or dataframe
             Data returned by the transformation.
 
         og: dataframe
@@ -2407,9 +2326,14 @@ def transform_one(
         index=getattr(y, "index", None),
         columns=getattr(transformer, "feature_names_in_", None),
     )
-    y = to_pandas(y, index=getattr(X, "index", None))
+    y = to_pandas(
+        y,
+        index=getattr(X, "index", None),
+        columns=getattr(transformer, "target_names_in_", None),
+        name=flt(getattr(transformer, "target_names_in_", None)),
+    )
 
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     inc = getattr(transformer, "_cols", getattr(X, "columns", []))
     if "X" in (params := sign(getattr(transformer, method))):
         if X is not None and (cols := [c for c in inc if c in X]):
@@ -2430,8 +2354,10 @@ def transform_one(
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
+    out: TReturns = getattr(transformer, method)(**kwargs)
+
     # Transform can return X, y or both
-    if isinstance(out := getattr(transformer, method)(**kwargs), tuple):
+    if isinstance(out, tuple):
         X_new = prepare_df(out[0], X)
         y_new = to_pandas(
             data=out[1],
@@ -2444,9 +2370,8 @@ def transform_one(
     elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
         X_new = prepare_df(out, X)
-        y_new = y if y is None else y.set_axis(X_new.index)
-    else:
-        # Output must be y
+        y_new = y if y is None else y.set_axis(X_new.index, axis=0)
+    elif y is not None:
         y_new = to_pandas(
             data=out,
             index=y.index,
@@ -2514,7 +2439,7 @@ def fit_transform_one(
 
 # Patches ========================================================== >>
 
-def fit_and_score(*args, **kwargs) -> dict:
+def fit_and_score(*args, **kwargs) -> dict[str, Any]:
     """Wrapper for sklearn's _fit_and_score function.
 
     Wrap the function sklearn.model_selection._validation._fit_and_score
@@ -2523,7 +2448,7 @@ def fit_and_score(*args, **kwargs) -> dict:
 
     """
 
-    def wrapper(*args, **kwargs) -> dict:
+    def wrapper(*args, **kwargs) -> dict[str, Any]:
         with patch("sklearn.model_selection._validation._score", score(_score)):
             return _fit_and_score(*args, **kwargs)
 
@@ -2539,12 +2464,12 @@ def score(f: Callable) -> Callable:
     """
 
     def wrapper(*args, **kwargs) -> Float | dict[str, Float]:
-        args = list(args)  # Convert to list for item assignment
+        args_c = list(args)  # Convert to a list for item assignment
         if len(args[0]) > 1:  # Has transformers
-            args[1], args[2] = args[0][:-1].transform(args[1], args[2])
+            args_c[1], args_c[2] = args_c[0][:-1].transform(args_c[1], args_c[2])
 
         # Return f(final_estimator, X_transformed, y_transformed, ...)
-        return f(args[0][-1], *tuple(args[1:]), **kwargs)
+        return f(args_c[0][-1], *args_c[1:], **kwargs)
 
     return wrapper
 
@@ -2571,7 +2496,7 @@ def has_task(task: str | Sequence[str]) -> Callable:
 
     """
 
-    def check(runner: Any) -> Bool:
+    def check(runner: BaseRunner) -> bool:
         checks = []
         for t in lst(task):
             if t.startswith("!"):
@@ -2594,7 +2519,7 @@ def has_attr(attr: str) -> Callable:
 
     """
 
-    def check(runner: Any) -> Bool:
+    def check(runner: BaseRunner) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(runner, attr)
         return True
@@ -2612,7 +2537,7 @@ def estimator_has_attr(attr: str) -> Callable:
 
     """
 
-    def check(runner: BaseRunner) -> Bool:
+    def check(runner: BaseRunner) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(runner.estimator, attr)
         return True

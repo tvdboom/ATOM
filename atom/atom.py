@@ -287,12 +287,12 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         self._missing = list(value)
 
     @property
-    def scaled(self) -> Bool:
+    def scaled(self) -> bool:
         """Whether the feature set is scaled.
 
         A data set is considered scaled when it has mean=0 and std=1,
         or when there is a scaler in the pipeline. Binary columns (only
-        0s and 1s) are excluded from the calculation.
+        zeros and ones) are excluded from the calculation.
 
         """
         return check_scaling(self.X, pipeline=self.pipeline)
@@ -315,7 +315,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         raise AttributeError("This property is unavailable for sparse datasets.")
 
     @property
-    def n_nans(self) -> Int:
+    def n_nans(self) -> int:
         """Number of rows containing missing values.
 
         This property is unavailable for [sparse datasets][].
@@ -333,7 +333,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         return self.X.select_dtypes(include=["number"]).columns
 
     @property
-    def n_numerical(self) -> Int:
+    def n_numerical(self) -> int:
         """Number of numerical features in the dataset."""
         return len(self.numerical)
 
@@ -343,7 +343,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         return self.X.select_dtypes(include=["object", "category", "string"]).columns
 
     @property
-    def n_categorical(self) -> Int:
+    def n_categorical(self) -> int:
         """Number of categorical features in the dataset."""
         return len(self.categorical)
 
@@ -1595,10 +1595,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         )
 
         encoder = self._add_transformer(encoder, columns=columns)
-
-        # Add mapping of the encoded columns and reorder because of target col
         self.branch._mapping.update(encoder.mapping_)
-        self.branch._mapping.reorder(self.columns)
 
     @composed(crash, method_to_log)
     def impute(

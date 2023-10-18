@@ -14,7 +14,6 @@ from pathlib import Path
 from random import sample
 
 import featuretools as ft
-import joblib
 import numpy as np
 import pandas as pd
 from beartype.typing import Literal
@@ -31,6 +30,7 @@ from zoofs import (
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
+import joblib
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
@@ -41,7 +41,7 @@ from atom.utils.types import (
     SequenceTypes, SeriesTypes, Target, Verbose,
 )
 from atom.utils.utils import (
-    CustomDict, Goal, Task, check_is_fitted, check_scaling, composed, crash,
+    Goal, Task, check_is_fitted, check_scaling, composed, crash,
     get_custom_scorer, is_sparse, lst, merge, method_to_log, sign, to_df,
 )
 
@@ -1143,7 +1143,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
         self._low_variance = {}
         self._n_features = None
 
-        strategies = CustomDict(
+        strategies = dict(
             univariate="SelectKBest",
             pca="PCA",
             sfm="SelectFromModel",
@@ -1296,7 +1296,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
             return self  # Exit feature_engineering
 
         elif self.strategy.lower() == "univariate":
-            solvers_dct = CustomDict(
+            solvers_dct = dict(
                 f_classif=f_classif,
                 f_regression=f_regression,
                 mutual_info_classif=mutual_info_classif,

@@ -12,7 +12,7 @@ from __future__ import annotations
 from atom.basemodel import ClassRegModel
 from atom.pipeline import Pipeline
 from atom.utils.types import Predictor
-from atom.utils.utils import ClassMap, CustomDict, sign
+from atom.utils.utils import ClassMap, sign
 
 
 class Stacking(ClassRegModel):
@@ -36,9 +36,10 @@ class Stacking(ClassRegModel):
     supports_engines: list[str] = []
 
     _module = "atom.ensembles"
-    _estimators = CustomDict(
-        {"classification": "StackingClassifier", "regression": "StackingRegressor"}
-    )
+    _estimators = {
+        "classification": "StackingClassifier",
+        "regression": "StackingRegressor",
+    }
 
     def __init__(self, models: ClassMap, **kwargs):
         self._models = models
@@ -94,9 +95,7 @@ class Voting(ClassRegModel):
     supports_engines: list[str] = []
 
     _module = "atom.ensembles"
-    _estimators = CustomDict(
-        {"classification": "VotingClassifier", "regression": "VotingRegressor"}
-    )
+    _estimators = {"classification": "VotingClassifier", "regression": "VotingRegressor"}
 
     def __init__(self, models: ClassMap, **kwargs):
         self._models = models

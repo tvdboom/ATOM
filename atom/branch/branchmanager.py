@@ -106,7 +106,7 @@ class BranchManager:
     def __iter__(self) -> Iterator[Branch]:
         yield from self.branches
 
-    def __contains__(self, item: str) -> Bool:
+    def __contains__(self, item: str) -> bool:
         return item in self.branches
 
     def __getitem__(self, item: Int | str) -> Branch:

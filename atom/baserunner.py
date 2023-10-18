@@ -31,8 +31,8 @@ from atom.utils.types import (
     ModelSelector, ModelsSelector, Scalar, SegmentTypes, Sequence, Series,
 )
 from atom.utils.utils import (
-    ClassMap, CustomDict, Task, check_is_fitted, composed, crash, divide, flt,
-    get_segment, get_versions, has_task, lst, method_to_log,
+    ClassMap, Task, check_is_fitted, composed, crash, divide, flt, get_segment,
+    get_versions, has_task, lst, method_to_log,
 )
 
 
@@ -92,7 +92,7 @@ class BaseRunner(BaseTracker):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __contains__(self, item: str) -> Bool:
+    def __contains__(self, item: str) -> bool:
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Any:
@@ -550,7 +550,7 @@ class BaseRunner(BaseTracker):
     def get_class_weight(
         self,
         dataset: Literal["train", "test", "holdout"] = "train",
-    ) -> CustomDict:
+    ) -> dict[str, Float]:
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
@@ -573,14 +573,12 @@ class BaseRunner(BaseTracker):
         """
         y = self.classes[dataset]
         if self.task.is_multioutput:
-            weights = {
+            return {
                 t: {i: round(divide(sum(y.loc[t]), v), 3) for i, v in y.items()}
                 for t in self.target
             }
         else:
-            weights = {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
-
-        return CustomDict(weights)
+            return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
 
     @available_if(has_task("classification"))
     @composed(crash, beartype)

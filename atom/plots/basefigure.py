@@ -179,7 +179,7 @@ class BaseFigure:
         else:
             return self.style[element].setdefault(name, next(getattr(self, element)))
 
-    def showlegend(self, name: str, legend: Legend | dict | None) -> Bool:
+    def showlegend(self, name: str, legend: Legend | dict | None) -> bool:
         """Get whether the trace should be showed in the legend.
 
         If there's already a trace with the same name, it's not

@@ -856,7 +856,6 @@ def types_conversion(dtype: str) -> str:
 
     """
     types = {
-        "CustomDict": "dict",
         "Bool": "bool",
         "Int": "int",
         "Float": "float",

@@ -10,7 +10,8 @@ Description: Module containing classification and regression models.
 from __future__ import annotations
 
 import numpy as np
-from beartype.typing import cast
+from beartype.typing import Any, cast
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
@@ -22,7 +23,7 @@ from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import DataFrame, Pandas, Predictor
-from atom.utils.utils import CatBMetric, CustomDict, LGBMetric
+from atom.utils.utils import CatBMetric, LGBMetric
 
 
 class AdaBoost(ClassRegModel):
@@ -70,20 +71,21 @@ class AdaBoost(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {"classification": "AdaBoostClassifier", "regression": "AdaBoostRegressor"}
-    )
+    _estimators = {
+        "classification": "AdaBoostClassifier",
+        "regression": "AdaBoostRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             n_estimators=Int(50, 500, step=10),
             learning_rate=Float(0.01, 10, log=True),
         )
@@ -139,19 +141,19 @@ class AutomaticRelevanceDetermination(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "ARDRegression"})
+    _estimators = {"regression": "ARDRegression"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             n_iter=Int(100, 1000, step=10),
             alpha_1=Float(1e-4, 1, log=True),
             alpha_2=Float(1e-4, 1, log=True),
@@ -207,21 +209,22 @@ class Bagging(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {"classification": "BaggingClassifier", "regression": "BaggingRegressor"}
-    )
+    _estimators = {
+        "classification": "BaggingClassifier",
+        "regression": "BaggingRegressor",
+    }
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             n_estimators=Int(10, 500, step=10),
             max_samples=Float(0.5, 1.0, step=0.1),
             max_features=Float(0.5, 1.0, step=0.1),
@@ -272,19 +275,19 @@ class BayesianRidge(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "BayesianRidge"})
+    _estimators = {"regression": "BayesianRidge"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             n_iter=Int(100, 1000, step=10),
             alpha_1=Float(1e-4, 1, log=True),
             alpha_2=Float(1e-4, 1, log=True),
@@ -336,19 +339,19 @@ class BernoulliNB(ClassRegModel):
     supports_engines = ["sklearn", "cuml"]
 
     _module = "naive_bayes"
-    _estimators = CustomDict({"classification": "BernoulliNB"})
+    _estimators = {"classification": "BernoulliNB"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             alpha=Float(0.01, 10, log=True),
             fit_prior=Cat([True, False]),
         )
@@ -415,11 +418,12 @@ class CatBoost(ClassRegModel):
     supports_engines = ["catboost"]
 
     _module = "catboost"
-    _estimators = CustomDict(
-        {"classification": "CatBoostClassifier", "regression": "CatBoostRegressor"}
-    )
+    _estimators = {
+        "classification": "CatBoostClassifier",
+        "regression": "CatBoostRegressor",
+    }
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -429,7 +433,7 @@ class CatBoost(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -535,16 +539,16 @@ class CatBoost(ClassRegModel):
         return estimator
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             n_estimators=Int(20, 500, step=10),
             learning_rate=Float(0.01, 1.0, log=True),
             max_depth=Cat([None, *range(1, 17)]),
@@ -598,19 +602,19 @@ class CategoricalNB(ClassRegModel):
     supports_engines = ["sklearn", "cuml"]
 
     _module = "naive_bayes"
-    _estimators = CustomDict({"classification": "CategoricalNB"})
+    _estimators = {"classification": "CategoricalNB"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             alpha=Float(0.01, 10, log=True),
             fit_prior=Cat([True, False]),
         )
@@ -658,19 +662,19 @@ class ComplementNB(ClassRegModel):
     supports_engines = ["sklearn", "cuml"]
 
     _module = "naive_bayes"
-    _estimators = CustomDict({"classification": "ComplementNB"})
+    _estimators = {"classification": "ComplementNB"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             alpha=Float(0.01, 10, log=True),
             fit_prior=Cat([True, False]),
             norm=Cat([True, False]),
@@ -718,19 +722,17 @@ class DecisionTree(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "tree"
-    _estimators = CustomDict(
-        {
-            "classification": "DecisionTreeClassifier",
-            "regression": "DecisionTreeRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "DecisionTreeClassifier",
+        "regression": "DecisionTreeRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
@@ -739,7 +741,7 @@ class DecisionTree(ClassRegModel):
         else:
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
 
-        return CustomDict(
+        return dict(
             criterion=Cat(criterion),
             splitter=Cat(["best", "random"]),
             max_depth=Cat([None, *range(1, 17)]),
@@ -795,20 +797,18 @@ class Dummy(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "dummy"
-    _estimators = CustomDict(
-        {"classification": "DummyClassifier", "regression": "DummyRegressor"}
-    )
+    _estimators = {"classification": "DummyClassifier", "regression": "DummyRegressor"}
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict()
+        dist = dict()
         if self.task.is_classification:
             dist["strategy"] = Cat(["most_frequent", "prior", "stratified", "uniform"])
         else:
@@ -858,19 +858,19 @@ class ElasticNet(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "ElasticNet"})
+    _estimators = {"regression": "ElasticNet"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             alpha=Float(1e-3, 10, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
             selection=Cat(["cyclic", "random"]),
@@ -923,16 +923,17 @@ class ExtraTree(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "tree"
-    _estimators = CustomDict(
-        {"classification": "ExtraTreeClassifier", "regression": "ExtraTreeRegressor"}
-    )
+    _estimators = {
+        "classification": "ExtraTreeClassifier",
+        "regression": "ExtraTreeRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
@@ -941,7 +942,7 @@ class ExtraTree(ClassRegModel):
         else:
             criterion = ["squared_error", "absolute_error"]
 
-        return CustomDict(
+        return dict(
             criterion=Cat(criterion),
             splitter=Cat(["random", "best"]),
             max_depth=Cat([None, *range(1, 17)]),
@@ -996,11 +997,12 @@ class ExtraTrees(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {"classification": "ExtraTreesClassifier", "regression": "ExtraTreesRegressor"}
-    )
+    _estimators = {
+        "classification": "ExtraTreesClassifier",
+        "regression": "ExtraTreesRegressor",
+    }
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -1010,7 +1012,7 @@ class ExtraTrees(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -1021,12 +1023,12 @@ class ExtraTrees(ClassRegModel):
 
         return params
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
@@ -1035,7 +1037,7 @@ class ExtraTrees(ClassRegModel):
         else:
             criterion = ["squared_error", "absolute_error"]
 
-        return CustomDict(
+        return dict(
             n_estimators=Int(10, 500, step=10),
             criterion=Cat(criterion),
             max_depth=Cat([None, *range(1, 17)]),
@@ -1090,7 +1092,7 @@ class GaussianNB(ClassRegModel):
     supports_engines = ["sklearn", "cuml"]
 
     _module = "naive_bayes"
-    _estimators = CustomDict({"classification": "GaussianNB"})
+    _estimators = {"classification": "GaussianNB"}
 
 
 class GaussianProcess(ClassRegModel):
@@ -1149,12 +1151,10 @@ class GaussianProcess(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "gaussian_process"
-    _estimators = CustomDict(
-        {
-            "classification": "GaussianProcessClassifier",
-            "regression": "GaussianProcessRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "GaussianProcessClassifier",
+        "regression": "GaussianProcessRegressor",
+    }
 
 
 class GradientBoostingMachine(ClassRegModel):
@@ -1207,23 +1207,21 @@ class GradientBoostingMachine(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {
-            "classification": "GradientBoostingClassifier",
-            "regression": "GradientBoostingRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "GradientBoostingClassifier",
+        "regression": "GradientBoostingRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             loss=Cat(["log_loss", "exponential"]),
             learning_rate=Float(0.01, 1.0, log=True),
             n_estimators=Int(10, 500, step=10),
@@ -1287,19 +1285,19 @@ class HuberRegression(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "HuberRegressor"})
+    _estimators = {"regression": "HuberRegressor"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             epsilon=Float(1, 10, log=True),
             max_iter=Int(50, 500, step=10),
             alpha=Float(1e-4, 1, log=True),
@@ -1353,23 +1351,21 @@ class HistGradientBoosting(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {
-            "classification": "HistGradientBoostingClassifier",
-            "regression": "HistGradientBoostingRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "HistGradientBoostingClassifier",
+        "regression": "HistGradientBoostingRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             loss=Cat(["squared_error", "absolute_error", "poisson", "quantile", "gamma"]),
             quantile=Float(0, 1, step=0.1),
             learning_rate=Float(0.01, 1.0, log=True),
@@ -1431,20 +1427,21 @@ class KNearestNeighbors(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "neighbors"
-    _estimators = CustomDict(
-        {"classification": "KNeighborsClassifier", "regression": "KNeighborsRegressor"}
-    )
+    _estimators = {
+        "classification": "KNeighborsClassifier",
+        "regression": "KNeighborsRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             n_neighbors=Int(1, 100),
             weights=Cat(["uniform", "distance"]),
             algorithm=Cat(["auto", "ball_tree", "kd_tree", "brute"]),
@@ -1502,19 +1499,19 @@ class Lasso(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "Lasso"})
+    _estimators = {"regression": "Lasso"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             alpha=Float(1e-3, 10, log=True),
             selection=Cat(["cyclic", "random"]),
         )
@@ -1565,7 +1562,7 @@ class LeastAngleRegression(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "Lars"})
+    _estimators = {"regression": "Lars"}
 
 
 class LightGBM(ClassRegModel):
@@ -1620,9 +1617,7 @@ class LightGBM(ClassRegModel):
     supports_engines = ["lightgbm"]
 
     _module = "lightgbm.sklearn"
-    _estimators = CustomDict(
-        {"classification": "LGBMClassifier", "regression": "LGBMRegressor"}
-    )
+    _estimators = {"classification": "LGBMClassifier", "regression": "LGBMRegressor"}
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -1720,16 +1715,16 @@ class LightGBM(ClassRegModel):
         return estimator
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             n_estimators=Int(20, 500, step=10),
             learning_rate=Float(0.01, 1.0, log=True),
             max_depth=Int(-1, 17, step=2),
@@ -1787,9 +1782,9 @@ class LinearDiscriminantAnalysis(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "discriminant_analysis"
-    _estimators = CustomDict({"classification": "LinearDiscriminantAnalysis"})
+    _estimators = {"classification": "LinearDiscriminantAnalysis"}
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -1799,7 +1794,7 @@ class LinearDiscriminantAnalysis(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -1811,16 +1806,16 @@ class LinearDiscriminantAnalysis(ClassRegModel):
         return params
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             solver=Cat(["svd", "lsqr", "eigen"]),
             shrinkage=Cat([None, "auto", 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
         )
@@ -1870,9 +1865,9 @@ class LinearSVM(ClassRegModel):
     supports_engines = ["sklearn", "cuml"]
 
     _module = "svm"
-    _estimators = CustomDict({"classification": "LinearSVC", "regression": "LinearSVR"})
+    _estimators = {"classification": "LinearSVC", "regression": "LinearSVR"}
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -1882,7 +1877,7 @@ class LinearSVM(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -1922,16 +1917,16 @@ class LinearSVM(ClassRegModel):
         else:
             return super()._get_est(**params)
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict()
+        dist = dict()
         if self.task.is_classification:
             dist["penalty"] = Cat(["l1", "l2"])
             dist["loss"] = Cat(["hinge", "squared_hinge"])
@@ -1992,9 +1987,9 @@ class LogisticRegression(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"classification": "LogisticRegression"})
+    _estimators = {"classification": "LogisticRegression"}
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -2004,7 +1999,7 @@ class LogisticRegression(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -2022,16 +2017,16 @@ class LogisticRegression(ClassRegModel):
 
         return params
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             penalty=Cat([None, "l1", "l2", "elasticnet"]),
             C=Float(1e-3, 100, log=True),
             solver=Cat(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
@@ -2098,21 +2093,19 @@ class MultiLayerPerceptron(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "neural_network"
-    _estimators = CustomDict(
-        {"classification": "MLPClassifier", "regression": "MLPRegressor"}
-    )
+    _estimators = {"classification": "MLPClassifier", "regression": "MLPRegressor"}
 
-    def _trial_to_est(self, params: CustomDict) -> CustomDict:
+    def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
 
         Parameters
         ----------
-        params: CustomDict
+        params: dict
             Trial's hyperparameters.
 
         Returns
         -------
-        CustomDict
+        dict
             Estimator's hyperparameters.
 
         """
@@ -2128,16 +2121,16 @@ class MultiLayerPerceptron(ClassRegModel):
 
         return params
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             hidden_layer_1=Int(10, 100),
             hidden_layer_2=Int(0, 100),
             hidden_layer_3=Int(0, 10),
@@ -2199,19 +2192,19 @@ class MultinomialNB(ClassRegModel):
     supports_engines = ["sklearn", "cuml"]
 
     _module = "naive_bayes"
-    _estimators = CustomDict({"classification": "MultinomialNB"})
+    _estimators = {"classification": "MultinomialNB"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             alpha=Float(0.01, 10, log=True),
             fit_prior=Cat([True, False]),
         )
@@ -2261,7 +2254,7 @@ class OrdinaryLeastSquares(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "LinearRegression"})
+    _estimators = {"regression": "LinearRegression"}
 
 
 class OrthogonalMatchingPursuit(ClassRegModel):
@@ -2306,7 +2299,7 @@ class OrthogonalMatchingPursuit(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"regression": "OrthogonalMatchingPursuit"})
+    _estimators = {"regression": "OrthogonalMatchingPursuit"}
 
 
 class PassiveAggressive(ClassRegModel):
@@ -2353,19 +2346,17 @@ class PassiveAggressive(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict(
-        {
-            "classification": "PassiveAggressiveClassifier",
-            "regression": "PassiveAggressiveRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "PassiveAggressiveClassifier",
+        "regression": "PassiveAggressiveRegressor",
+    }
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
@@ -2374,7 +2365,7 @@ class PassiveAggressive(ClassRegModel):
         else:
             loss = ["epsilon_insensitive", "squared_epsilon_insensitive"]
 
-        return CustomDict(
+        return dict(
             C=Float(1e-3, 100, log=True),
             max_iter=Int(500, 1500, step=50),
             loss=Cat(loss),
@@ -2431,19 +2422,19 @@ class Perceptron(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"classification": "Perceptron"})
+    _estimators = {"classification": "Perceptron"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             penalty=Cat([None, "l2", "l1", "elasticnet"]),
             alpha=Float(1e-4, 10, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
@@ -2496,19 +2487,19 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "discriminant_analysis"
-    _estimators = CustomDict({"classification": "QuadraticDiscriminantAnalysis"})
+    _estimators = {"classification": "QuadraticDiscriminantAnalysis"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(reg_param=Float(0, 1.0, step=0.1))
+        return dict(reg_param=Float(0, 1.0, step=0.1))
 
 
 class RadiusNearestNeighbors(ClassRegModel):
@@ -2566,24 +2557,22 @@ class RadiusNearestNeighbors(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "neighbors"
-    _estimators = CustomDict(
-        {
-            "classification": "RadiusNeighborsClassifier",
-            "regression": "RadiusNeighborsRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "RadiusNeighborsClassifier",
+        "regression": "RadiusNeighborsRegressor",
+    }
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             radius=Float(1e-2, 100),
             weights=Cat(["uniform", "distance"]),
             algorithm=Cat(["auto", "ball_tree", "kd_tree", "brute"]),
@@ -2644,14 +2633,12 @@ class RandomForest(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {
-            "classification": "RandomForestClassifier",
-            "regression": "RandomForestRegressor",
-        }
-    )
+    _estimators = {
+        "classification": "RandomForestClassifier",
+        "regression": "RandomForestRegressor",
+    }
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -2661,7 +2648,7 @@ class RandomForest(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -2672,12 +2659,12 @@ class RandomForest(ClassRegModel):
 
         return params
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
@@ -2689,7 +2676,7 @@ class RandomForest(ClassRegModel):
             else:
                 criterion = ["squared_error", "absolute_error", "poisson"]
 
-        dist = CustomDict(
+        dist = dict(
             n_estimators=Int(10, 500, step=10),
             criterion=Cat(criterion),
             max_depth=Cat([None, *range(1, 17)]),
@@ -2760,18 +2747,18 @@ class Ridge(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
-    _estimators = CustomDict({"classification": "RidgeClassifier", "regression": "Ridge"})
+    _estimators = {"classification": "RidgeClassifier", "regression": "Ridge"}
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             alpha=Float(1e-3, 10, log=True),
             solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
         )
@@ -2830,16 +2817,14 @@ class StochasticGradientDescent(ClassRegModel):
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
-    _estimators = CustomDict(
-        {"classification": "SGDClassifier", "regression": "SGDRegressor"}
-    )
+    _estimators = {"classification": "SGDClassifier", "regression": "SGDRegressor"}
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
@@ -2855,7 +2840,7 @@ class StochasticGradientDescent(ClassRegModel):
             "squared_epsilon_insensitive",
         ]
 
-        return CustomDict(
+        return dict(
             loss=Cat(loss if self.task.is_classification else loss[-4:]),
             penalty=Cat([None, "l1", "l2", "elasticnet"]),
             alpha=Float(1e-4, 1.0, log=True),
@@ -2914,9 +2899,9 @@ class SupportVectorMachine(ClassRegModel):
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "svm"
-    _estimators = CustomDict({"classification": "SVC", "regression": "SVR"})
+    _estimators = {"classification": "SVC", "regression": "SVR"}
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -2926,7 +2911,7 @@ class SupportVectorMachine(ClassRegModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -2954,16 +2939,16 @@ class SupportVectorMachine(ClassRegModel):
         else:
             return super()._get_est(**params)
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        dist = CustomDict(
+        dist = dict(
             C=Float(1e-3, 100, log=True),
             kernel=Cat(["linear", "poly", "rbf", "sigmoid"]),
             degree=Int(2, 5),
@@ -3027,9 +3012,7 @@ class XGBoost(ClassRegModel):
     supports_engines = ["xgboost"]
 
     _module = "xgboost"
-    _estimators = CustomDict(
-        {"classification": "XGBClassifier", "regression": "XGBRegressor"}
-    )
+    _estimators = {"classification": "XGBClassifier", "regression": "XGBRegressor"}
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -3119,16 +3102,16 @@ class XGBoost(ClassRegModel):
         return estimator
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             n_estimators=Int(20, 500, step=10),
             learning_rate=Float(0.01, 1.0, log=True),
             max_depth=Int(1, 20),

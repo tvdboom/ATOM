@@ -46,7 +46,7 @@ from atom.utils.types import (
     SeriesTypes, Target, Transformer, Verbose,
 )
 from atom.utils.utils import (
-    CustomDict, bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
+    bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
     method_to_log, n_cols, replace_missing, sign, to_df, to_series,
     variable_return,
 )
@@ -252,6 +252,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     feature_names_in_: np.array
         Names of features seen during fit.
 
+    target_names_in_: np.array
+        Names of the target column seen during fit.
+
     n_features_in_: int
         Number of features seen during fit.
 
@@ -351,8 +354,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if isinstance(y, DataFrameTypes):
             raise ValueError("The Balancer class does not support multioutput tasks.")
+        else:
+            self.target_names_in_ = np.array([y.name])
 
-        strategies = CustomDict(
+        strategies = dict(
             # clustercentroids=ClusterCentroids,  # Has no sample_indices_
             condensednearestneighbour=CondensedNearestNeighbour,
             editednearestneighborus=EditedNearestNeighbours,
@@ -377,12 +382,12 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         )
 
         if isinstance(self.strategy, str):
-            if self.strategy not in strategies:
+            if self.strategy.lower() not in strategies:
                 raise ValueError(
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
                     f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = strategies[self.strategy](**self.kwargs)
+            estimator = strategies[self.strategy.lower()](**self.kwargs)
         elif not hasattr(self.strategy, "fit_resample"):
             raise TypeError(
                 "Invalid type for the strategy parameter. A "
@@ -445,7 +450,12 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
                     self._log(f" --> Adding {-diff} samples to class {key}.", 2)
 
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
+        X, y = self._prepare_input(
+            X=X,
+            y=y,
+            columns=getattr(self, "feature_names_in_", None),
+            name=getattr(self, "target_names_in_", None),
+        )
 
         if "over_sampling" in self._estimator.__module__:
             self._log(f"Oversampling with {self._estimator.__class__.__name__}...", 1)
@@ -627,7 +637,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Names of features seen during fit.
 
     target_names_in_: np.array
-        Names of target columns seen during fit.
+        Names of the target column(s) seen during fit.
 
     n_features_in_: int
         Number of features seen during fit.
@@ -805,7 +815,12 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
+        X, y = self._prepare_input(
+            X=X,
+            y=y,
+            columns=getattr(self, "feature_names_in_", None),
+            name=getattr(self, "target_names_in_", None),
+        )
 
         self._log("Cleaning the data...", 1)
 
@@ -1481,7 +1496,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._encoders = {}
         self._cat_cols = list(X.select_dtypes(exclude="number").columns)
 
-        strategies = CustomDict(
+        strategies = dict(
             backwarddifference=BackwardDifferenceEncoder,
             basen=BaseNEncoder,
             binary=BinaryEncoder,
@@ -1499,12 +1514,12 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         if isinstance(self.strategy, str):
             if self.strategy.lower().endswith("encoder"):
                 self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
-            if self.strategy not in strategies:
+            if self.strategy.lower() not in strategies:
                 raise ValueError(
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
                     f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = strategies[self.strategy]
+            estimator = strategies[self.strategy.lower()]
         elif callable(self.strategy):
             estimator = self.strategy
         else:
@@ -1638,8 +1653,6 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 self._log(f"   --> Propagating {n_nans} missing values.", 2)
 
             # Get the new encoded columns
-            # TODO: category_encoders can't handle pd.NA
-            # https://github.com/scikit-learn-contrib/category_encoders/issues/424
             new_cols = self._encoders[name].transform(X[[name]])
 
             # Drop _nan columns (since missing values are propagated)
@@ -2234,7 +2247,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._num_cols = list(X.select_dtypes(include="number"))
 
-        strategies = CustomDict(
+        strategies = dict(
             yeojohnson="PowerTransformer",
             boxcox="PowerTransformer",
             quantile="QuantileTransformer",
@@ -2564,7 +2577,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
 
         # Allocate kwargs to every estimator
-        kwargs = CustomDict()
+        kwargs = {}
         for strat in lst(self.strategy):
             kwargs[strat] = {}
             for key, value in self.kwargs.items():
@@ -2819,7 +2832,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
                 col for col in self._num_cols if ~np.isin(X[col].unique(), [0, 1]).all()
             ]
 
-        strategies = CustomDict(
+        strategies = dict(
             standard="StandardScaler",
             minmax="MinMaxScaler",
             maxabs="MaxAbsScaler",

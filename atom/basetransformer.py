@@ -40,8 +40,8 @@ from atom.utils.types import (
     Warnings,
 )
 from atom.utils.utils import (
-    DataContainer, bk, crash, get_cols, lst, merge, n_cols, pd, sign, to_df,
-    to_pandas,
+    DataContainer, bk, crash, flt, get_cols, lst, merge, n_cols, pd, sign,
+    to_df, to_pandas,
 )
 
 
@@ -320,7 +320,7 @@ class BaseTransformer:
         self._random_state = value
 
     @property
-    def _gpu(self) -> Bool:
+    def _gpu(self) -> bool:
         """Return whether the instance uses a GPU implementation."""
         return "gpu" in self.device.lower()
 
@@ -396,6 +396,7 @@ class BaseTransformer:
         X: Callable | Features | None = None,
         y: Target | None = None,
         columns: Sequence[str] | None = None,
+        name: str | Sequence[str] | None = None,
     ) -> tuple[DataFrame | None, Pandas | None]:
         """Prepare the input data.
 
@@ -408,7 +409,7 @@ class BaseTransformer:
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence,dataframe or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -420,10 +421,14 @@ class BaseTransformer:
               tasks.
             - If dataframe: Target columns for multioutput tasks.
 
-        columns: sequence or None
+        columns: sequence or None, default=None
             Names of the features corresponding to X. If X already is a
             dataframe, force feature order. If None and X is not a
             dataframe, assign default feature names.
+
+        name: str, sequence or None, default=None
+            Name of the target column(s) corresponding to y. If None and
+            y is not a pandas object, assign default target name.
 
         Returns
         -------
@@ -485,7 +490,8 @@ class BaseTransformer:
                 y = to_pandas(
                     data=deepcopy(y),
                     index=getattr(X, "index", None),
-                    columns=[f"y{i}" for i in range(n_cols(y))],
+                    name=flt(name) or "target",
+                    columns=name or [f"y{i}" for i in range(n_cols(y))],
                 )
 
             # Check X and y have the same indices

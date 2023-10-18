@@ -9,12 +9,13 @@ Description: Module containing all time series models.
 
 from __future__ import annotations
 
+from beartype.typing import Any
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import IntDistribution as Int
 from optuna.trial import Trial
 
 from atom.basemodel import ForecastModel
-from atom.utils.utils import CustomDict
 
 
 class ARIMA(ForecastModel):
@@ -80,12 +81,12 @@ class ARIMA(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.arima"
-    _estimators = CustomDict({"forecast": "ARIMA"})
+    _estimators = {"forecast": "ARIMA"}
 
     _order = ("p", "d", "q")
-    _sorder = ("Ps", "Ds", "Qs", "S")
+    _sorder = ("P", "D", "Q", "S")
 
-    def _get_parameters(self, trial: Trial) -> CustomDict:
+    def _get_parameters(self, trial: Trial) -> dict[str, BaseDistribution]:
         """Get the trial's hyperparameters.
 
         Parameters
@@ -95,7 +96,7 @@ class ARIMA(ForecastModel):
 
         Returns
         -------
-        CustomDict
+        dict
             Trial's hyperparameters.
 
         """
@@ -108,17 +109,17 @@ class ARIMA(ForecastModel):
 
         return params
 
-    def _trial_to_est(self, params: CustomDict) -> CustomDict:
+    def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
 
         Parameters
         ----------
-        params: CustomDict
+        params: dict
             Trial's hyperparameters.
 
         Returns
         -------
-        CustomDict
+        dict
             Estimator's hyperparameters.
 
         """
@@ -132,24 +133,24 @@ class ARIMA(ForecastModel):
 
         return params
 
-    def _get_distributions(self) -> CustomDict:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
         methods = ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
 
-        dist = CustomDict(
+        dist = dict(
             p=Int(0, 2),
             d=Int(0, 1),
             q=Int(0, 2),
-            Ps=Int(0, 2),
-            Ds=Int(0, 1),
-            Qs=Int(0, 2),
+            P=Int(0, 2),
+            D=Int(0, 1),
+            Q=Int(0, 2),
             S=Cat([0, 4, 6, 7, 12]),
             method=Cat(methods),
             maxiter=Int(50, 200, step=10),
@@ -221,21 +222,21 @@ class AutoARIMA(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.arima"
-    _estimators = CustomDict({"forecast": "AutoARIMA"})
+    _estimators = {"forecast": "AutoARIMA"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
         methods = ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
 
-        return CustomDict(
+        return dict(
             method=Cat(methods),
             maxiter=Int(50, 200, step=10),
             with_intercept=Cat([True, False]),
@@ -282,21 +283,21 @@ class ExponentialSmoothing(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.exp_smoothing"
-    _estimators = CustomDict({"forecast": "ExponentialSmoothing"})
+    _estimators = {"forecast": "ExponentialSmoothing"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
         methods = ["L-BFGS-B", "TNC", "SLSQP", "Powell", "trust-constr", "bh", "ls"]
 
-        return CustomDict(
+        return dict(
             trend=Cat(["add", "mul", None]),
             damped_trend=Cat([True, False]),
             seasonal=Cat(["add", "mul", None]),
@@ -349,19 +350,19 @@ class ETS(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.ets"
-    _estimators = CustomDict({"forecast": "AutoETS"})
+    _estimators = {"forecast": "AutoETS"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             error=Cat(["add", "mul"]),
             trend=Cat(["add", "mul", None]),
             damped_trend=Cat([True, False]),
@@ -416,19 +417,19 @@ class NaiveForecaster(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.naive"
-    _estimators = CustomDict({"forecast": "NaiveForecaster"})
+    _estimators = {"forecast": "NaiveForecaster"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(strategy=Cat(["last", "mean", "drift"]))
+        return dict(strategy=Cat(["last", "mean", "drift"]))
 
 
 class PolynomialTrend(ForecastModel):
@@ -471,19 +472,19 @@ class PolynomialTrend(ForecastModel):
     supports_engines = ["sktime"]
 
     _module = "sktime.forecasting.trend"
-    _estimators = CustomDict({"forecast": "PolynomialTrendForecaster"})
+    _estimators = {"forecast": "PolynomialTrendForecaster"}
 
     @staticmethod
-    def _get_distributions() -> CustomDict:
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
         -------
-        CustomDict
+        dict
             Hyperparameter distributions.
 
         """
-        return CustomDict(
+        return dict(
             degree=Int(1, 5),
             with_intercept=Cat([True, False]),
         )

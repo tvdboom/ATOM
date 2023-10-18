@@ -32,7 +32,7 @@ from atom.utils.types import (
     VectorizerStarts, Verbose,
 )
 from atom.utils.utils import (
-    CustomDict, check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
+    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
     method_to_log, to_df,
 )
 
@@ -994,7 +994,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
-        strategies = CustomDict(
+        strategies = dict(
             bow="CountVectorizer",
             tfidf="TfidfVectorizer",
             hashing="HashingVectorizer",
