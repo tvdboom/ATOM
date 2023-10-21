@@ -13,13 +13,14 @@ import traceback
 from abc import ABC
 from datetime import datetime as dt
 
+import joblib
 import mlflow
 import numpy as np
 import ray
 from beartype.typing import Any
+from joblib import Parallel, delayed
 from optuna import Study, create_study
 
-import joblib
 from atom.baserunner import BaseRunner
 from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
@@ -30,7 +31,6 @@ from atom.utils.utils import (
     ClassMap, DataConfig, Goal, Task, check_dependency, get_custom_scorer, lst,
     sign, time_to_str,
 )
-from joblib import Parallel, delayed
 
 
 class BaseTrainer(BaseRunner, RunnerPlot, ABC):
@@ -302,14 +302,6 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
                 raise ValueError(
                     f"Invalid value for the ht_params parameter. Key {key} is invalid."
                 )
-
-        # Prepare rest ============================================= >>
-
-        if self.errors not in ("raise", "skip", "keep"):
-            raise ValueError(
-                "Invalid value for the errors parameter, got "
-                f"{self.errors}. Choose from: raise, skip, keep."
-            )
 
     def _core_iteration(self):
         """Fit and evaluate all models and displays final results."""

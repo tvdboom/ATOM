@@ -395,6 +395,37 @@ class LGBMetric:
         return self.scorer.name, self.scorer._sign * score, True
 
 
+class XGBMetric:
+    """Custom evaluation metric for the XGBoost model.
+
+    Parameters
+    ----------
+    scorer: Scorer
+        Scorer to evaluate. It's always the runner's main metric.
+
+    task: str
+        Model's task.
+
+    """
+    def __init__(self, scorer: Scorer, task: Task):
+        self.scorer = scorer
+        self.task = task
+
+    @property
+    def __name__(self) -> str:
+        return self.scorer.name
+
+    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> Float:
+        if self.scorer.__class__.__name__ == "_PredictScorer":
+            if self.task.is_binary:
+                y_pred = (y_pred > 0.5).astype(int)
+            elif self.task.is_multiclass:
+                y_pred = np.argmax(y_pred, axis=1)
+
+        score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
+        return -self.scorer._sign * score  # Negative because XGBoost minimizes
+
+
 class Table:
     """Class to print nice tables per row.
 
@@ -486,7 +517,7 @@ class Table:
         """
         return self.print({k: "-" * s for k, s in zip(self.headers, self.spaces)})
 
-    def print(self, sequence: dict[str, Any]) -> str:
+    def print(self, sequence: dict[str, Any] | pd.Series) -> str:
         """Convert a sequence to a nice formatted table row.
 
         Parameters
@@ -534,7 +565,10 @@ class TrialsCallback:
             self.T._log(self._table.print_line(), 2)
 
     def __call__(self, study: Study, trial: FrozenTrial):
-        trial_info = self.T.trials.reset_index(names="trial").loc[trial.number]
+        try:  # Fails when there are no successful trials
+            trial_info = self.T.trials.reset_index(names="trial").loc[trial.number]
+        except KeyError:
+            return
 
         # Save trials to mlflow experiment as nested runs
         if self.T.experiment and self.T.log_ht:
@@ -848,7 +882,7 @@ class ShapExplanation:
     def get_explanation(
         self,
         df: DataFrame,
-        target: tuple[Int, Int],
+        target: tuple[Int, ...],
     ) -> Explanation:
         """Get an Explanation object.
 
@@ -1139,10 +1173,8 @@ def rnd(x: Any, decimals: Int = 4) -> Any:
     return round(x, decimals) if np.issubdtype(type(x), np.floating) else x
 
 
-def divide(a: Scalar, b: Scalar) -> Scalar:
+def divide(a: Scalar, b: Scalar, decimals: Int = 4) -> int | float:
     """Divide two numbers and return 0 if division by zero.
-
-    If the value is not a float, return as is.
 
     Parameters
     ----------
@@ -1152,13 +1184,16 @@ def divide(a: Scalar, b: Scalar) -> Scalar:
     b: int or float
         Denominator.
 
+    decimals: int, default=4
+        Decimal position to round to.
+
     Returns
     -------
     int or float
         Result of division or 0.
 
     """
-    return np.divide(a, b) if b != 0 else 0
+    return float(np.round(np.divide(a, b), decimals)) if b != 0 else 0
 
 
 def to_rgb(c: str) -> str:

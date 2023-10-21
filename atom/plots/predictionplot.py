@@ -21,6 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from beartype import beartype
 from beartype.typing import Any, Literal
+from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -45,7 +46,6 @@ from atom.utils.utils import (
     Task, bk, check_canvas, check_dependency, check_predict_proba, crash,
     divide, get_custom_scorer, has_task, lst, rnd,
 )
-from joblib import Parallel, delayed
 
 
 @beartype

@@ -20,13 +20,13 @@ from optuna.study import Study
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import r2_score, recall_score
+from sklearn.metrics import f1_score, r2_score, recall_score
 from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from sklearn.tree import DecisionTreeClassifier
 
 from atom import ATOMClassifier, ATOMModel, ATOMRegressor
-from atom.utils.utils import check_is_fitted, check_scaling, rnd
+from atom.utils.utils import check_is_fitted, check_scaling
 
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
@@ -162,6 +162,7 @@ def test_custom_distributions_meta_estimators():
                 "base_estimator__solver": CategoricalDistribution(["lbfgs", "newton-cg"]),
             }
         },
+        errors="raise"
     )
 
 
@@ -169,14 +170,14 @@ def test_est_params_removed_from_ht():
     """Assert that params in est_params are dropped from the optimization."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", n_trials=1, est_params={"n_estimators": 5})
-    assert "n_estimators" not in atom.lgb.trials.params[0]
+    assert "n_estimators" not in atom.lgb.trials
 
 
 def test_hyperparameter_tuning_with_no_hyperparameters():
     """Assert that the optimization is skipped when there are no hyperparameters."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(models="BNB", n_trials=10, est_params={"alpha": 1.0, "fit_prior": True})
-    assert atom.bnb.trials is None
+    assert not hasattr(atom.bnb, "trials")
 
 
 def test_multi_objective_optimization():
@@ -210,16 +211,16 @@ def test_empty_study(func):
     func.return_value = []  # No successful trials
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models="tree", n_trials=1)
-    assert atom.tree.best_trial is None
+    atom.run(models="tree", n_trials=1, errors="raise")
+    assert not hasattr(atom.tree, "study")
 
 
 def test_ht_with_pipeline():
     """Assert that the hyperparameter tuning works with a transformer pipeline."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
-    atom.run("lr", n_trials=1)
-    assert atom.lr.trials is not None
+    atom.run("lr", n_trials=1, errors='raise')
+    assert hasattr(atom.lr, "trials")
 
 
 def test_ht_with_multilabel():
@@ -273,14 +274,15 @@ def test_skip_duplicate_calls():
     """Assert that trials with the same parameters skip the calculation."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("dummy", n_trials=5)
-    assert atom.dummy.trials["score"].nunique() < len(atom.dummy.trials["score"])
+    assert atom.dummy.trials["f1"].nunique() < len(atom.dummy.trials["f1"])
 
 
 def test_trials_stored_correctly():
-    """Assert that the trials attribute has same params as trial object."""
+    """Assert that the trials attribute has the same params as the trial object."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("lr", n_trials=3)
-    assert atom.lr.trials.loc[2]["params"] == atom.lr.study.trials[2].params
+    atom.run("lr", n_trials=3, ht_params={"distributions": ["penalty", "C"]})
+    assert atom.lr.trials.at[2, "penalty"] == atom.lr.study.trials[2].params["penalty"]
+    assert atom.lr.trials.at[2, "C"] == atom.lr.study.trials[2].params["C"]
 
 
 @patch("mlflow.log_params")
@@ -338,7 +340,7 @@ def test_continued_hyperparameter_tuning():
     """Assert that the hyperparameter_tuning method can be recalled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
-    assert atom.tree.trials is None
+    assert not hasattr(atom.tree, "trials")
     atom.tree.hyperparameter_tuning(3)
     assert len(atom.tree.trials) == 3
     atom.tree.hyperparameter_tuning(3)
@@ -351,7 +353,7 @@ def test_continued_bootstrapping():
     """Assert that the bootstrapping method can be recalled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", est_params={"n_estimators": 5})
-    assert atom.lgb.bootstrap is None
+    assert not hasattr(atom.lgb, "bootstrap")
     atom.lgb.bootstrapping(3)
     assert len(atom.lgb.bootstrap) == 3
     atom.lgb.bootstrapping(3)
@@ -384,11 +386,32 @@ def test_name_property_to_mlflow(mlflow):
     mlflow.assert_called_with(atom.tree_2._run.info.run_id, "mlflow.runName", "Tree_2")
 
 
+def test_og_property():
+    """Assert that the og property returns the original Branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    assert atom.tree.og is atom.og
+
+
+def test_branch_property():
+    """Assert that the branch property returns the Branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    assert atom.tree.branch is atom.branch
+
+
+def test_run_property():
+    """Assert that the run property returns the mlflow run."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("Tree")
+    assert hasattr(atom.tree, "run")
+
+
 def test_study_property():
     """Assert that the study property returns optuna's study."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", n_trials=0)
-    assert atom.tree.study is None
+    assert not hasattr(atom.tree, "study")
     atom.run("Tree", n_trials=1)
     assert isinstance(atom.tree.study, Study)
 
@@ -397,7 +420,7 @@ def test_trials_property():
     """Assert that the trials property returns an overview of the trials."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", n_trials=0)
-    assert atom.tree.trials is None
+    assert not hasattr(atom.tree, "trials")
     atom.run("Tree", n_trials=1)
     assert isinstance(atom.tree.trials, pd.DataFrame)
 
@@ -428,24 +451,6 @@ def test_best_params_property():
     assert isinstance(atom.tree.best_params, dict)
 
 
-def test_score_ht_property():
-    """Assert that the score_ht property returns the study's best score."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", n_trials=0)
-    assert atom.tree.score_ht is None
-    atom.run("Tree", n_trials=5)
-    assert isinstance(atom.tree.score_ht, float)
-
-
-def test_time_ht_property():
-    """Assert that the time_ht property returns the study's time."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", n_trials=0)
-    assert atom.tree.time_ht is None
-    atom.run("Tree", n_trials=5)
-    assert isinstance(atom.tree.time_ht, float)
-
-
 def test_estimator_property():
     """Assert that the estimator property returns the estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -461,54 +466,13 @@ def test_evals_property():
     assert len(atom.lgb.evals) == 2
 
 
-def test_score_train_test_holdout_properties():
-    """Assert that the score_train, score_test and score_holdout properties work."""
-    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.2, random_state=1)
-    atom.run("Tree")
-    assert isinstance(atom.tree.score_train, float)
-    assert isinstance(atom.tree.score_test, float)
-    assert isinstance(atom.tree.score_holdout, float)
-
-
-def test_time_fit_property():
-    """Assert that the time_fit property works."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    assert isinstance(atom.tree.time_fit, float)
-
-
 def test_bootstrap_property():
     """Assert that the bootstrap property returns the bootstrap results."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
-    assert atom.tree.bootstrap is None
+    assert not hasattr(atom.tree, "bootstrap")
     atom.run("Tree", n_bootstrap=3)
     assert len(atom.tree.bootstrap) == 3
-
-
-def test_score_bootstrap_property():
-    """Assert that the score_bootstrap property works."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    assert atom.tree.score_bootstrap is None
-    atom.run("Tree", n_bootstrap=3)
-    assert isinstance(atom.tree.score_bootstrap, float)
-
-
-def test_time_bootstrap_property():
-    """Assert that the time_bootstrap property works."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    assert atom.tree.time_bootstrap is None
-    atom.run("Tree", n_bootstrap=3)
-    assert isinstance(atom.tree.time_bootstrap, float)
-
-
-def test_time_property():
-    """Assert that the time property returns the total time."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    assert isinstance(atom.tree.time, float)
 
 
 def test_feature_importance_property():
@@ -631,48 +595,6 @@ def test_y_holdout_property():
     pd.testing.assert_series_equal(atom.mnb.y_holdout, atom.mnb.holdout.iloc[:, -1])
 
 
-# Test prediction properties ======================================= >>
-
-@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_prediction_attributes_binary(dataset):
-    """Assert that all prediction properties work for binary tasks."""
-    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    atom.run("LR")
-    assert isinstance(getattr(atom.lr, f"predict_{dataset}"), pd.Series)
-    assert isinstance(getattr(atom.lr, f"predict_proba_{dataset}"), pd.DataFrame)
-    assert isinstance(getattr(atom.lr, f"predict_log_proba_{dataset}"), pd.DataFrame)
-    assert isinstance(getattr(atom.lr, f"decision_function_{dataset}"), pd.Series)
-    assert isinstance(getattr(atom.lr, f"score_{dataset}"), float)
-
-
-@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_prediction_attributes_multilabel(dataset):
-    """Assert that the prediction attributes change for multilabel tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, stratify=False)
-    atom.run(["LR", "RF"])
-    predict = getattr(atom.lr, f"predict_{dataset}")
-    decision_function = getattr(atom.lr, f"decision_function_{dataset}")
-    predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
-    predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
-    assert predict.shape[1] == y_label.shape[1]
-    assert decision_function.shape[1] == y_label.shape[1]
-    assert isinstance(predict_proba.index, pd.Index)
-    assert isinstance(predict_log_proba.index, pd.Index)
-
-
-@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_prediction_attributes_multioutput(dataset):
-    """Assert that the prediction attributes change for multioutput tasks."""
-    atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, stratify=False)
-    atom.run("RF")
-    predict = getattr(atom.rf, f"predict_{dataset}")
-    predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
-    predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
-    assert predict.shape[1] == y_multiclass.shape[1]
-    assert isinstance(predict_proba.index, pd.MultiIndex)
-    assert isinstance(predict_log_proba.index, pd.MultiIndex)
-
-
 # Test prediction methods ========================================== >>
 
 def test_predictions_from_index():
@@ -718,22 +640,23 @@ def test_prediction_from_multioutput():
 
 def test_score_regression():
     """Assert that the score returns r2 for regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, shuffle=False, random_state=1)
     atom.run("Tree")
     r2 = r2_score(y_reg, atom.tree.predict(X_reg))
     assert atom.tree.score(X_reg, y_reg) == r2
 
 
 def test_score_metric_is_None():
-    """Assert that the score returns accuracy for classification tasks."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    """Assert that the score method returns the default metric."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.run("Tree")
-    assert rnd(atom.tree.score(atom.X_test, atom.y_test)) == atom.tree.score_test
+    f1 = f1_score(y_bin, atom.tree.predict(X_bin))
+    assert atom.tree.score(X_bin, y_bin) == f1
 
 
 def test_score_custom_metric():
     """Assert that the score method works when sample weights are provided."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.run("Tree")
     recall = recall_score(y_bin, atom.tree.predict(X_bin))
     assert atom.tree.score(X_bin, y_bin, metric="recall") == recall
@@ -773,15 +696,6 @@ def test_calibrate_prefit():
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
-def test_calibrate_clear():
-    """Assert that the clear method is called."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    print(atom.tree.predict_log_proba_test)
-    atom.tree.calibrate()
-    assert "predict_log_proba_test" not in atom.tree.__dict__
-
-
 def test_calibrate_new_mlflow_run():
     """Assert that a new mlflow run is created."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
@@ -796,10 +710,8 @@ def test_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
     atom.plot_shap_beeswarm(display=False)
-    assert "predict_test" in atom.lr.__dict__
     assert not atom.lr._shap._shap_values.empty
     atom.clear()
-    assert "predict_test" not in atom.lr.__dict__
     assert atom.lr._shap._shap_values.empty
 
 
@@ -865,41 +777,16 @@ def test_evaluate_invalid_threshold_length():
         atom.mnb.evaluate(threshold=[0.5, 0.6])
 
 
-def test_evaluate_invalid_threshold():
-    """Assert that an error is raised when the threshold is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    with pytest.raises(ValueError, match=".*Value should lie.*"):
-        atom.mnb.evaluate(threshold=0.0)
-
-
-def test_evaluate_invalid_dataset():
-    """Assert that an error is raised when the dataset is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    with pytest.raises(ValueError, match=".*Unknown value for the dataset.*"):
-        atom.mnb.evaluate(dataset="invalid")
-
-
-def test_evaluate_no_holdout():
-    """Assert that an error is raised when there's no holdout set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    with pytest.raises(ValueError, match=".*No holdout data set.*"):
-        atom.mnb.evaluate(dataset="holdout")
-
-
-@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_evaluate_metric_None(dataset):
+def test_evaluate_metric_None():
     """Assert that the evaluate method works when metric is empty."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    scores = atom.mnb.evaluate(dataset=dataset)
+    scores = atom.mnb.evaluate()
     assert len(scores) == 9
 
     atom = ATOMClassifier(X_class, y_class, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    scores = atom.mnb.evaluate(dataset=dataset)
+    scores = atom.mnb.evaluate()
     assert len(scores) == 6
 
     atom = ATOMClassifier(
@@ -910,12 +797,12 @@ def test_evaluate_metric_None(dataset):
         random_state=1,
     )
     atom.run("MNB")
-    scores = atom.mnb.evaluate(dataset=dataset)
+    scores = atom.mnb.evaluate()
     assert len(scores) == 7
 
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("OLS")
-    scores = atom.ols.evaluate(dataset=dataset)
+    scores = atom.ols.evaluate()
     assert len(scores) == 5
 
 
@@ -972,7 +859,7 @@ def test_full_train():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB")
     atom.lgb.full_train()
-    assert atom.lgb.score_test == 1.0  # Perfect score on test
+    assert atom.lgb.score("test") == 1.0  # Perfect score on test
 
 
 def test_full_train_holdout():
@@ -980,16 +867,7 @@ def test_full_train_holdout():
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.2, random_state=1)
     atom.run("Tree")
     atom.tree.full_train(include_holdout=True)
-    assert atom.tree.score_holdout == 1.0  # Perfect score on holdout
-
-
-def test_full_train_clear():
-    """Assert that the clear method is called."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    print(atom.tree.predict_log_proba_test)
-    atom.tree.full_train()
-    assert "predict_log_proba_test" not in atom.tree.__dict__
+    assert atom.tree.score("holdout") == 1.0  # Perfect score on holdout
 
 
 def test_full_train_new_mlflow_run():
@@ -1028,11 +906,11 @@ def test_save_estimator():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     atom.mnb.save_estimator("auto")
-    assert glob.glob("MultinomialNB")
+    assert glob.glob("MultinomialNB.pkl")
 
 
 def test_serve():
-    """Assert that the serve methods deploys a reachable endpoint."""
+    """Assert that the serve method deploys a reachable endpoint."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     atom.mnb.serve()

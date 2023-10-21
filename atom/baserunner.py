@@ -16,7 +16,7 @@ from pathlib import Path
 import dill as pickle
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Literal
+from beartype.typing import Any, Hashable, Literal
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 
@@ -27,12 +27,13 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, Float, Int, IntTypes, MetricConstructor, Model,
-    ModelSelector, ModelsSelector, Scalar, SegmentTypes, Sequence, Series,
+    Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Int, IntTypes,
+    MetricConstructor, Model, ModelSelector, ModelsSelector, RowSelector,
+    SegmentTypes, Sequence, Series,
 )
 from atom.utils.utils import (
-    ClassMap, Task, check_is_fitted, composed, crash, divide, flt, get_segment,
-    get_versions, has_task, lst, method_to_log,
+    ClassMap, Task, check_is_fitted, composed, crash, divide, flt, get_cols,
+    get_segment, get_versions, has_task, lst, method_to_log,
 )
 
 
@@ -62,11 +63,11 @@ class BaseRunner(BaseTracker):
                     )
 
     def __getattr__(self, item: str) -> Any:
-        if item in self.__dict__.get("_branches"):
+        if item in self.__dict__["_branches"]:
             return self._branches[item]  # Get branch
         elif item in dir(self.branch) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
-        elif item in self.__dict__.get("_models"):
+        elif item in self.__dict__["_models"]:
             return self._models[item]  # Get model
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column from dataset
@@ -156,12 +157,16 @@ class BaseRunner(BaseTracker):
         """Name of the model(s)."""
         if isinstance(self._models, ClassMap):
             return flt(self._models.keys())
+        else:
+            return None
 
     @property
     def metric(self) -> str | list[str] | None:
         """Name of the metric(s)."""
         if isinstance(self._metric, ClassMap):
             return flt(self._metric.keys())
+        else:
+            return None
 
     @property
     def winners(self) -> list[Model] | None:
@@ -179,6 +184,8 @@ class BaseRunner(BaseTracker):
             return sorted(
                 self._models, key=lambda x: (x._best_score(), x._time_fit), reverse=True
             )
+        else:
+            return None
 
     @property
     def winner(self) -> Model | None:
@@ -192,8 +199,10 @@ class BaseRunner(BaseTracker):
         [time_fit][adaboost-time_fit].
 
         """
-        if self._models:  # Returns None if not fitted
+        if self.winners:  # Returns None if not fitted
             return self.winners[0]
+        else:
+            return None
 
     @winner.deleter
     def winner(self):
@@ -218,7 +227,7 @@ class BaseRunner(BaseTracker):
 
         """
 
-        def frac(m: Model) -> Float:
+        def frac(m: Model) -> float:
             """Return the fraction of the train set used.
 
             Parameters
@@ -288,7 +297,8 @@ class BaseRunner(BaseTracker):
             Selected models.
 
         """
-        inc, exc = [], []
+        inc: list[Model] = []
+        exc: list[Model] = []
         if models is None:
             return self._models.values()
         elif isinstance(models, SegmentTypes):
@@ -310,7 +320,7 @@ class BaseRunner(BaseTracker):
                             array = exc
                             mdl = mdl[1:]
 
-                        if mdl.lower() == "winner":
+                        if mdl.lower() == "winner" and self.winner:
                             array.append(self.winner)
                         elif matches := [
                             m for m in self._models if re.fullmatch(mdl, m.name, re.I)
@@ -340,7 +350,7 @@ class BaseRunner(BaseTracker):
             inc = [m for m in self._models if m not in exc]
 
         if not ensembles:
-            inc = list(filter(lambda m: m.acronym not in ("Stack", "Vote"), inc))
+            inc = [m for m in inc if m.acronym not in ("Stack", "Vote")]
 
         if branch and not all(m.branch is branch for m in inc):
             raise ValueError(
@@ -418,7 +428,7 @@ class BaseRunner(BaseTracker):
 
     @composed(crash, method_to_log)
     def clear(self):
-        """Reset attributes and clear memoization from all models.
+        """Reset attributes and clear cache from all models.
 
         Reset certain model attributes to their initial state, deleting
         potentially large data arrays. Use this method to free some
@@ -429,7 +439,6 @@ class BaseRunner(BaseTracker):
         - [Shap values][shap]
         - [App instance][adaboost-create_app]
         - [Dashboard instance][adaboost-create_dashboard]
-        - Memoized [metric scores][metric]
         - Calculated [holdout data sets][data-sets]
 
         """
@@ -466,8 +475,8 @@ class BaseRunner(BaseTracker):
         metric: MetricConstructor = None,
         dataset: Literal["train", "test", "holdout"] = "test",
         *,
-        threshold: Float | Sequence[Float] = 0.5,
-        sample_weight: Sequence[Scalar] | None = None,
+        threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
+        sample_weight: Sequence[FloatLargerZero] | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -549,20 +558,20 @@ class BaseRunner(BaseTracker):
     @composed(crash, beartype)
     def get_class_weight(
         self,
-        dataset: Literal["train", "test", "holdout"] = "train",
-    ) -> dict[str, Float]:
+        rows: RowSelector = "train",
+    ) -> dict[Hashable, float] | dict[str, dict[Hashable, float]]:
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
         that the sampled data set represents the target population
         as closely as possible. The returned weights are inversely
-        proportional to the class frequencies in the selected data set.
+        proportional to the class frequencies in the selected rows.
 
         Parameters
         ----------
-        dataset: str, default="train"
-            Data set from which to get the weights. Choose from:
-            "train", "test", "dataset".
+        rows: hashable, segment, sequence or dataframe, default="train"
+            [Selection of rows][row-and-column-selection] for which to
+            get the weights.
 
         Returns
         -------
@@ -571,14 +580,30 @@ class BaseRunner(BaseTracker):
             returned for [multioutput tasks][].
 
         """
-        y = self.classes[dataset]
+
+        def get_weights(col: Series) -> dict[Hashable, float]:
+            """Get the class weights for one column.
+
+            Parameters
+            ----------
+            col: series
+                Column to get the weights from.
+
+            Returns
+            -------
+            dict
+                Class weights.
+
+            """
+            counts = col.value_counts().sort_index()
+            return {n: divide(counts.iloc[0], v, 3) for n, v in counts.items()}
+
+        _, y = self.branch._get_rows(rows, return_X_y=True)
+
         if self.task.is_multioutput:
-            return {
-                t: {i: round(divide(sum(y.loc[t]), v), 3) for i, v in y.items()}
-                for t in self.target
-            }
+            return {str(col.name): get_weights(col) for col in get_cols(y)}
         else:
-            return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
+            return get_weights(y)
 
     @available_if(has_task("classification"))
     @composed(crash, beartype)
@@ -637,7 +662,7 @@ class BaseRunner(BaseTracker):
             )
 
         # Check that both instances have the same original dataset
-        if not self.og._data.equals(other.og._data):
+        if not self.og._data.data.equals(other.og._data.data):
             raise ValueError(
                 "Invalid value for the other parameter. The provided instance "
                 "was initialized using a different dataset than this one."

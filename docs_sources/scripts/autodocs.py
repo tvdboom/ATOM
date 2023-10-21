@@ -61,6 +61,7 @@ CUSTOM_URLS = dict(
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
+    ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",

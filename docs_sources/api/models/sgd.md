@@ -57,50 +57,16 @@
         from_docstring: False
         include:
             - name
+            - run
             - study
             - trials
             - best_trial
             - best_params
-            - score_ht
-            - time_ht
             - estimator
             - evals
-            - score_train
-            - score_test
-            - score_holdout
-            - time_fit
             - bootstrap
-            - score_bootstrap
-            - time_bootstrap
-            - time
-            - feature_importance
             - results
-
-<br>
-
-### Prediction attributes
-
-The [prediction attributes][] are not calculated until the attribute
-is called for the first time. This mechanism avoids having to calculate
-attributes that are never used, saving time and memory.
-
-:: table:
-    - attributes:
-        from_docstring: False
-        include:
-            - atom.basemodel:ClassRegModel.decision_function_train
-            - atom.basemodel:ClassRegModel.decision_function_test
-            - atom.basemodel:ClassRegModel.decision_function_holdout
-            - atom.basemodel:ClassRegModel.predict_train
-            - atom.basemodel:ClassRegModel.predict_test
-            - atom.basemodel:ClassRegModel.predict_holdout
-            - atom.basemodel:ClassRegModel.predict_log_proba_train
-            - atom.basemodel:ClassRegModel.predict_log_proba_test
-            - atom.basemodel:ClassRegModel.predict_log_proba_holdout
-            - atom.basemodel:ClassRegModel.predict_proba_train
-            - atom.basemodel:ClassRegModel.predict_proba_test
-            - atom.basemodel:ClassRegModel.predict_proba_holdout
-
+            - feature_importance
 
 <br><br>
 

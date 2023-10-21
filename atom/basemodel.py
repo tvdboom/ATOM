@@ -13,10 +13,10 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime as dt
-from functools import cached_property, lru_cache
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
+from typing import overload
 from unittest.mock import patch
 
 import dill as pickle
@@ -25,7 +25,8 @@ import numpy as np
 import optuna
 import pandas as pd
 import ray
-from beartype.typing import Any
+from beartype.roar import BeartypeCallHintParamViolation
+from beartype.typing import Any, Literal
 from joblib.memory import Memory
 from joblib.parallel import Parallel, delayed
 from mlflow.data import from_pandas
@@ -39,6 +40,7 @@ from optuna.study import Study
 from optuna.terminator import report_cross_validation_scores
 from optuna.trial import FrozenTrial, Trial, TrialState
 from ray import serve
+from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
@@ -63,10 +65,10 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
-    FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes,
-    MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor, RowSelector,
-    Scalar, Scorer, Sequence, Stages, Target, TargetSelector, Verbose,
-    Warnings,
+    FloatLargerZero, FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero,
+    IntTypes, MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor,
+    RowSelector, Scalar, Scorer, Sequence, Stages, Target, TargetSelector,
+    Verbose, Warnings,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -221,9 +223,7 @@ class BaseModel(RunnerPlot):
         self._config = config or DataConfig()
         self._metric = metric or ClassMap()
 
-        self.scaler = None
-        self.app = None
-        self.dashboard = None
+        self.scaler: Scaler | None = None
 
         if self.experiment:
             self._run = mlflow.start_run(run_name=self.name)
@@ -440,8 +440,9 @@ class BaseModel(RunnerPlot):
         estimator = self._inherit(self._est_class(**base_params))
         estimator.set_params(**sub_params)
 
-        if self.task is Task.multilabel_classification and not self.native_multilabel:
-            estimator = ClassifierChain(estimator)
+        if self.task is Task.multilabel_classification:
+            if not self.native_multilabel:
+                estimator = ClassifierChain(estimator)
         elif self.task.is_multioutput and not self.native_multioutput:
             if self.task.is_classification:
                 estimator = MultiOutputClassifier(estimator)
@@ -586,7 +587,7 @@ class BaseModel(RunnerPlot):
 
         """
         try:
-            if self.bootstrap is None:
+            if self._bootstrap is None:
                 out = "   ".join(
                     [
                         f"{met}: {rnd(self._best_score(met))}"
@@ -762,18 +763,14 @@ class BaseModel(RunnerPlot):
         else:
             return float(scorer._sign * func(y_true, y_pred))
 
-    @lru_cache
     def _get_score(
         self,
         scorer: Scorer,
         rows: RowSelector,
-        threshold: tuple[FloatZeroToOneExc] | None = None,
-        sample_weight: tuple | None = None,
+        threshold: Sequence[FloatZeroToOneExc] | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> Scalar:
-        """Calculate a metric score using the prediction attributes.
-
-        The method results are cached to avoid recalculation of the
-        same metrics. The cache can be cleared using the clear method.
+        """Calculate a metric score.
 
         Parameters
         ----------
@@ -785,7 +782,7 @@ class BaseModel(RunnerPlot):
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 
-        threshold: tuple or None, default=None
+        threshold: sequence or None, default=None
             Thresholds between 0 and 1 to convert predicted probabilities
             to class labels for every target column. Only used when:
 
@@ -794,7 +791,7 @@ class BaseModel(RunnerPlot):
             - The model has a `predict_proba` method.
             - The metric evaluates predicted target values.
 
-        sample_weight: tuple or None, default=None
+        sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`. Is tuple to
             allow hashing.
 
@@ -910,7 +907,7 @@ class BaseModel(RunnerPlot):
                 y_val = self.og.y_train.iloc[val_idx]
 
                 # Transform subsets if there is a pipeline
-                if len(pl := self.pipeline) > 0:
+                if len(pl := clone(self.pipeline)) > 0:
                     X_sub, y_sub = pl.fit_transform(X_sub, y_sub)
                     X_val, y_val = pl.transform(X_val, y_val)
 
@@ -962,7 +959,7 @@ class BaseModel(RunnerPlot):
             for t in trial.study.get_trials(False, states=(TrialState.COMPLETE,))[::-1]:
                 if trial.params == t.params:
                     # Get same estimator and score as previous evaluation
-                    estimator = deepcopy(t.user_attrs.get("estimator"))
+                    estimator = deepcopy(t.user_attrs["estimator"])
                     score = t.value if len(self._metric) == 1 else t.values
 
             if not check_is_fitted(estimator, exception=False):
@@ -1159,7 +1156,7 @@ class BaseModel(RunnerPlot):
         self._log(f"Fit {'-' * 45}", 1)
 
         # Assign estimator if not done already
-        if not self._estimator:
+        if self._estimator is None:
             self._check_est_params()
             self._estimator = self._get_est(**{**self._est_params, **self.best_params})
 
@@ -1475,7 +1472,7 @@ class BaseModel(RunnerPlot):
     @property
     def estimator(self) -> Predictor:
         """Estimator fitted on the training set."""
-        if self._estimator:
+        if self._estimator is not None:
             return self._estimator
 
         raise AttributeError("This model hasn't been fitted yet.")
@@ -1578,11 +1575,12 @@ class BaseModel(RunnerPlot):
 
             # Trim each coef to the number of features in the 1st estimator
             # ClassifierChain adds features to subsequent estimators
-            data = np.mean([c[:np.min(data)] for c in data], axis=0)
+            min_length = np.min([len(c) for c in data])
+            data = np.mean([c[:min_length] for c in data], axis=0)
 
         if data is not None:
             return pd.Series(
-                data=(data := np.abs(data.flatten())) / data.sum(),
+                data=(data_c := np.abs(data.flatten())) / data_c.sum(),
                 index=self.features,
                 name="feature_importance",
                 dtype=float,
@@ -1596,7 +1594,7 @@ class BaseModel(RunnerPlot):
 
     # Data Properties ============================================== >>
 
-    @cached_property
+    @property
     def pipeline(self) -> Pipeline:
         """Pipeline of transforms.
 
@@ -1606,7 +1604,7 @@ class BaseModel(RunnerPlot):
         !!! tip
             Use the [plot_pipeline][] method to visualize the pipeline.
 
-         """
+        """
         if self.scaler:
             return Pipeline(
                 steps=self.branch.pipeline.steps + [("AutomatedScaler", self.scaler)],
@@ -1641,6 +1639,8 @@ class BaseModel(RunnerPlot):
                 )
             else:
                 return holdout
+        else:
+            return None
 
     @property
     def X(self) -> DataFrame:
@@ -1676,14 +1676,18 @@ class BaseModel(RunnerPlot):
     @property
     def X_holdout(self) -> DataFrame | None:
         """Features of the holdout set."""
-        if self.branch.holdout is not None:
+        if self.holdout is not None:
             return self.holdout.iloc[:, :-self.branch._data.n_cols]
+        else:
+            return None
 
     @property
     def y_holdout(self) -> Pandas | None:
         """Target column of the holdout set."""
-        if self.branch.holdout is not None:
+        if self.holdout is not None:
             return self.holdout[self.branch.target]
+        else:
+            return None
 
     # Utility methods ============================================== >>
 
@@ -1740,18 +1744,13 @@ class BaseModel(RunnerPlot):
         - [Shap values][shap]
         - [App instance][self-create_app]
         - [Dashboard instance][self-create_dashboard]
-        - Memoized [metric scores][metric]
         - Calculated [holdout data sets][data-sets]
 
         """
-        # Reset attributes
         self._evals = defaultdict(list)
         self._shap_explanation = None
-        self.app = None
-        self.dashboard = None
-
-        # Clear caching
-        self._get_score.cache_clear()
+        self.__dict__.pop("app", None)
+        self.__dict__.pop("dashboard", None)
         self.branch.__dict__.pop("holdout", None)
 
     @composed(crash, method_to_log)
@@ -1876,7 +1875,7 @@ class BaseModel(RunnerPlot):
 
         # Explainerdashboard requires all the target classes
         if self.task.is_classification:
-            if self.task.startswith("bin"):
+            if self.task.is_binary:
                 if exp.values.shape[-1] != 2:
                     exp.base_values = [np.array(1 - exp.base_values), exp.base_values]
                     exp.values = [np.array(1 - exp.values), exp.values]
@@ -1929,8 +1928,8 @@ class BaseModel(RunnerPlot):
         """
         # Assign scoring from atom if not specified
         if kwargs.get("scoring"):
-            scoring = get_custom_scorer(kwargs.pop("scoring"))
-            scoring = {scoring.name: scoring}
+            scorer = get_custom_scorer(kwargs.pop("scoring"))
+            scoring = {scorer.name: scorer}
 
         else:
             scoring = dict(self._metric)
@@ -1969,8 +1968,8 @@ class BaseModel(RunnerPlot):
         metric: MetricConstructor = None,
         rows: RowSelector = "test",
         *,
-        threshold: Float | Sequence[Float] = 0.5,
-        sample_weight: Sequence[Scalar] | None = None,
+        threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
+        sample_weight: Sequence[FloatLargerZero] | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
@@ -2012,24 +2011,20 @@ class BaseModel(RunnerPlot):
 
         """
         if isinstance(threshold, FloatTypes):
-            threshold = [threshold] * self.branch._data.n_cols  # Length=n_targets
+            threshold_c = [threshold] * self.branch._data.n_cols  # Length=n_targets
         elif len(threshold) != self.branch._data.n_cols:
             raise ValueError(
                 "Invalid value for the threshold parameter. The length of the list "
                 f"list should be equal to the number of target columns, got len(target)"
                 f"={self.branch._data.n_cols} and len(threshold)={len(threshold)}."
             )
-
-        if any(not 0 < t < 1 for t in threshold):
-            raise ValueError(
-                "Invalid value for the threshold parameter. Value "
-                f"should lie between 0 and 1, got {threshold}."
-            )
+        else:
+            threshold_c = threshold
 
         # Predefined metrics to show
         if metric is None:
             if self.task.is_classification:
-                if self.task.startswith("bin"):
+                if self.task is Task.binary_classification:
                     metric = [
                         "accuracy",
                         "ap",
@@ -2041,7 +2036,7 @@ class BaseModel(RunnerPlot):
                         "recall",
                         "auc",
                     ]
-                elif self.task.startswith("multiclass"):
+                elif self.task.is_multiclass:
                     metric = [
                         "ba",
                         "f1_weighted",
@@ -2050,7 +2045,7 @@ class BaseModel(RunnerPlot):
                         "precision_weighted",
                         "recall_weighted",
                     ]
-                elif self.task.startswith("multilabel"):
+                elif self.task is Task.multilabel_classification:
                     metric = [
                         "accuracy",
                         "ap",
@@ -2070,15 +2065,15 @@ class BaseModel(RunnerPlot):
             scores[scorer.name] = self._get_score(
                 scorer=scorer,
                 rows=rows,
-                threshold=tuple(threshold),
-                sample_weight=None if sample_weight is None else tuple(sample_weight),
+                threshold=threshold_c,
+                sample_weight=sample_weight,
             )
 
         return scores
 
     @crash
     def export_pipeline(self) -> Pipeline:
-        """Export the internal pipeline.
+        """Export the transformer pipeline with final estimator.
 
         The returned pipeline is already fitted on the training set.
         Note that if the model used [automated feature scaling][],
@@ -2098,7 +2093,7 @@ class BaseModel(RunnerPlot):
     def full_train(self, *, include_holdout: Bool = False):
         """Train the estimator on the complete dataset.
 
-        In some cases it might be desirable to use all available data
+        In some cases, it might be desirable to use all available data
         to train a final model. Note that doing this means that the
         estimator can no longer be evaluated on the test set. The newly
         retrained estimator will replace the `estimator` attribute. If
@@ -2293,7 +2288,7 @@ class BaseModel(RunnerPlot):
         The complete pipeline is served with the model. The inference
         data must be supplied as json to the HTTP request, e.g.
         `requests.get("http://127.0.0.1:8000/", json=X.to_json())`.
-        The deployment is done on a ray cluster. The default `host`
+        The deployment is done on a [ray][] cluster. The default `host`
         and `port` parameters deploy to localhost.
 
         !!! tip
@@ -2320,7 +2315,7 @@ class BaseModel(RunnerPlot):
 
             Parameters
             ----------
-            model: Pipeline
+            pipeline: Pipeline
                 Transformers + estimator to make inference on.
 
             method: str, default="predict"
@@ -2328,32 +2323,35 @@ class BaseModel(RunnerPlot):
 
             """
 
-            def __init__(self, model: Pipeline, method: str = "predict"):
-                self.model = model
+            def __init__(self, pipeline: Pipeline, method: str = "predict"):
+                self.pipeline = pipeline
                 self.method = method
 
-            async def __call__(self, request: Request) -> str:
+            async def __call__(self, request: Request) -> np.ndarray:
                 """Inference call.
 
                 Parameters
                 ----------
                 request: Request.
-                    HTTP request. Should contain the rows to predict
-                    in a json body.
+                    HTTP request. It Should contain the rows to
+                    predict in a json body.
 
                 Returns
                 -------
-                str
-                    Model predictions as string.
+                np.ndarray
+                    Model predictions.
 
                 """
                 payload = await request.json()
-                return getattr(self.model, self.method)(pd.read_json(payload))
+                return getattr(self.pipeline, self.method)(bk.read_json(payload))
 
         if not ray.is_initialized():
             ray.init(log_to_driver=False)
 
-        server = ServeModel.bind(model=self.export_pipeline(verbose=0), method=method)
+        server = ServeModel.bind(  # type: ignore[attr-defined]
+            pipeline=self.export_pipeline(),
+            method=method,
+        )
         serve.run(server, host=host, port=port)
 
         self._log(f"Serving model {self.fullname} on {host}:{port}...", 1)
@@ -2412,6 +2410,28 @@ class BaseModel(RunnerPlot):
 
 class ClassRegModel(BaseModel):
     """Classification and regression models."""
+
+    @overload
+    def _prediction(
+        self,
+        X: RowSelector | Features,
+        y: Target | None = ...,
+        metric: MetricConstructor = ...,
+        sample_weight: Sequence[Scalar] | None = ...,
+        verbose: Int | None = ...,
+        method: Literal["score"] = ...,
+    ) -> Float: ...
+
+    @overload
+    def _prediction(
+        self,
+        X: RowSelector | Features,
+        y: Target | None = ...,
+        metric: MetricConstructor = ...,
+        sample_weight: Sequence[Scalar] | None = ...,
+        verbose: Int | None = ...,
+        method: str = ...,
+    ) -> Pandas: ...
 
     def _prediction(
         self,
@@ -2488,22 +2508,24 @@ class ClassRegModel(BaseModel):
         # Duck type getting the rows from the branch
         # If it fails, we assume the data is new
         try:
-            X, y = self.branch._get_rows(X, return_X_y=True)
+            Xt, yt = self.branch._get_rows(X, return_X_y=True)
 
             if self.scaler:
-                X = self.scaler.transform(X)
+                Xt = self.scaler.transform(Xt)
 
-        except (IndexError, ValueError):
-            if isinstance(X := self.transform(X, y, verbose=verbose), tuple):
-                X, y = X
+        except (BeartypeCallHintParamViolation, IndexError, ValueError):
+            if isinstance(out := self.transform(X, y, verbose=verbose), tuple):
+                Xt, y = out
+            else:
+                Xt = out
 
         if method != "score":
-            pred = np.array(self.memory.cache(getattr(self.estimator, method))(X))
+            pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt))
 
             if np.array(pred).ndim < 3:
                 data = to_pandas(
                     data=pred,
-                    index=X.index,
+                    index=Xt.index,
                     name=self.target,
                     columns=assign_prediction_columns(),
                 )
@@ -2511,7 +2533,7 @@ class ClassRegModel(BaseModel):
                 # Convert to (n_samples, n_targets)
                 data = bk.DataFrame(
                     data=np.array([d[:, 1] for d in pred]).T,
-                    index=X.index,
+                    index=Xt.index,
                     columns=assign_prediction_columns(),
                 )
             else:
@@ -2519,7 +2541,7 @@ class ClassRegModel(BaseModel):
                 data = bk.DataFrame(
                     data=pred.reshape(-1, pred.shape[2]),
                     index=bk.MultiIndex.from_tuples(
-                        [(col, idx) for col in np.unique(self.y) for idx in X.index]
+                        [(col, idx) for col in np.unique(self.y) for idx in Xt.index]
                     ),
                     columns=assign_prediction_columns(),
                 )
@@ -2528,11 +2550,11 @@ class ClassRegModel(BaseModel):
 
         else:
             if metric is None:
-                metric = self._metric[0]
+                metric_c = self._metric[0]
             else:
-                metric = get_custom_scorer(metric)
+                metric_c = get_custom_scorer(metric)
 
-            return metric(self.estimator, X, y, sample_weight)
+            return metric_c(self.estimator, Xt, yt, sample_weight)
 
     @available_if(estimator_has_attr("decision_function"))
     @composed(crash, method_to_log)
@@ -2755,6 +2777,24 @@ class ClassRegModel(BaseModel):
 class ForecastModel(BaseModel):
     """Forecasting models."""
 
+    @overload
+    def _prediction(
+        self,
+        metric: MetricConstructor = None,
+        verbose: Int | None = None,
+        method: Literal["score"] = ...,
+        **kwargs,
+    ) -> Float: ...
+
+    @overload
+    def _prediction(
+        self,
+        metric: MetricConstructor = None,
+        verbose: Int | None = None,
+        method: str = ...,
+        **kwargs,
+    ) -> Pandas: ...
+
     def _prediction(
         self,
         metric: MetricConstructor = None,
@@ -2800,11 +2840,11 @@ class ForecastModel(BaseModel):
             return self.memory.cache(getattr(self.estimator, method))(**kwargs)
         else:
             if metric is None:
-                metric = self._metric[0]
+                metric_c = self._metric[0]
             else:
-                metric = get_custom_scorer(metric)
+                metric_c = get_custom_scorer(metric)
 
-            return self._score_from_est(metric, self.estimator, X, y, **kwargs)
+            return self._score_from_est(metric_c, self.estimator, X, y, **kwargs)
 
     @available_if(estimator_has_attr("predict"))
     @composed(crash, method_to_log)

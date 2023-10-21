@@ -460,7 +460,10 @@ class BaseTransformer:
                     try:
                         X = X[list(columns)]  # Force feature order determined by columns
                     except KeyError:
-                        raise ValueError("Features are different than seen at fit time.")
+                        raise ValueError(
+                            f"The features are different than seen at fit time. "
+                            f"Features {set(X.columns) - set(columns)} are missing in X."
+                        )
 
         # Prepare target column
         if isinstance(y, (dict, *SequenceTypes, *DataFrameTypes)):

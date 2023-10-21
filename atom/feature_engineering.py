@@ -14,6 +14,7 @@ from pathlib import Path
 from random import sample
 
 import featuretools as ft
+import joblib
 import numpy as np
 import pandas as pd
 from beartype.typing import Literal
@@ -30,7 +31,6 @@ from zoofs import (
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
-import joblib
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
@@ -106,7 +106,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -367,7 +367,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         - **description:** Operators used to create this feature.
         - **fitness:** Fitness score.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -655,7 +655,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -999,7 +999,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
         Object used to transform the data, e.g., `fs.pca` for the pca
         strategy.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int

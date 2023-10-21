@@ -411,7 +411,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -641,7 +641,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     quadgrams_: pd.DataFrame
         Created quadgrams and their frequencies.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -884,7 +884,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Estimator instance (lowercase strategy) used to vectorize the
         corpus, e.g., `vectorizer.tfidf` for the tfidf strategy.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int

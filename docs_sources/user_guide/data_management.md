@@ -360,7 +360,7 @@ subset of the dataset. Examples are the [eda][atomclassifier-eda] and
 [distribution][atomclassifier-distribution] and [shrink][atomclassifier-shrink]
 methods for `columns`. All [data cleaning][] and [feature engineering][] methods
 use the `columns` parameter to apply the transformation only to that selection
-of columns, and all [prediction methods][predicting] use the `rows` parameter
+of columns, and all [prediction methods][predicting] use the `rows` pa[basemodel.py](..%2F..%2Fatom%2Fbasemodel.py)rameter
 to make predictions on that selection of rows.
 
 As you can see, these two parameters are very important and shared across

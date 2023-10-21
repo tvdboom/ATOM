@@ -249,10 +249,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     mapping_: dict
         Target values mapped to their respective encoded integers.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
-    target_names_in_: np.array
+    target_names_in_: np.ndarray
         Names of the target column seen during fit.
 
     n_features_in_: int
@@ -633,10 +633,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Target values mapped to their respective encoded integers. Only
         available if encode_target=True.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
-    target_names_in_: np.array
+    target_names_in_: np.ndarray
         Names of the target column(s) seen during fit.
 
     n_features_in_: int
@@ -1069,7 +1069,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -1377,7 +1377,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         the key to its mapping dictionary. Only for columns mapped to a
         single column (e.g., Ordinal, Leave-one-out, etc...).
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -1759,7 +1759,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         Note that `None`, `NaN`, `+inf` and `-inf` are always considered
         missing since they are incompatible with sklearn estimators.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -2151,7 +2151,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Object with which the data is transformed, e.g.,
         `normalizer.yeojohnson` for the default strategy.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -2446,7 +2446,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         Object used to prune the data, e.g., `pruner.iforest` for the
         isolation forest strategy. Not available for strategy="zscore".
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int
@@ -2738,7 +2738,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         Object with which the data is scaled, e.g.,
         `scaler.standard` for the default strategy.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during fit.
 
     n_features_in_: int

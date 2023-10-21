@@ -10,6 +10,7 @@ Description: Module containing classification and regression models.
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 from beartype.typing import Any, cast
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
@@ -23,7 +24,7 @@ from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import DataFrame, Pandas, Predictor
-from atom.utils.utils import CatBMetric, LGBMetric
+from atom.utils.utils import CatBMetric, LGBMetric, XGBMetric
 
 
 class AdaBoost(ClassRegModel):
@@ -440,9 +441,11 @@ class CatBoost(ClassRegModel):
         params = super()._get_parameters(trial)
 
         if self._get_param("bootstrap_type", params) == "Bernoulli":
-            params.replace_value("bagging_temperature", None)
+            if "bagging_temperature" in params:
+                params["bagging_temperature"] = None
         elif self._get_param("bootstrap_type", params) == "Bayesian":
-            params.replace_value("subsample", None)
+            if "subsample" in params:
+                params["subsample"] = None
 
         return params
 
@@ -1019,7 +1022,8 @@ class ExtraTrees(ClassRegModel):
         params = super()._get_parameters(trial)
 
         if not self._get_param("bootstrap", params):
-            params.replace_value("max_samples", None)
+            if "max_samples" in params:
+                params["max_samples"] = None
 
         return params
 
@@ -1801,7 +1805,8 @@ class LinearDiscriminantAnalysis(ClassRegModel):
         params = super()._get_parameters(trial)
 
         if self._get_param("solver", params) == "svd":
-            params.replace_value("shrinkage", None)
+            if "shrinkage" in params:
+                params["shrinkage"] = None
 
         return params
 
@@ -1886,15 +1891,19 @@ class LinearSVM(ClassRegModel):
         if self.task.is_classification:
             if self._get_param("loss", params) == "hinge":
                 # l1 regularization can't be combined with hinge
-                params.replace_value("penalty", "l2")
+                if "penalty" in params:
+                    params["penalty"] = "l2"
                 # l2 regularization can't be combined with hinge when dual=False
-                params.replace_value("dual", True)
+                if "dual" in params:
+                    params["dual"] = True
             elif self._get_param("loss", params) == "squared_hinge":
                 # l1 regularization can't be combined with squared_hinge when dual=True
                 if self._get_param("penalty", params) == "l1":
-                    params.replace_value("dual", False)
+                    if "dual" in params:
+                        params["dual"] = False
         elif self._get_param("loss", params) == "epsilon_insensitive":
-            params.replace_value("dual", True)
+            if "dual" in params:
+                params["dual"] = True
 
         return params
 
@@ -2013,7 +2022,8 @@ class LogisticRegression(ClassRegModel):
         cond_3 = penalty == "elasticnet" and solver != "saga"
 
         if cond_1 or cond_2 or cond_3:
-            params.replace_value("penalty", "l2")  # Change to default value
+            if "penalty" in params:
+                params["penalty"] = "l2"  # Change to default value
 
         return params
 
@@ -2117,7 +2127,7 @@ class MultiLayerPerceptron(ClassRegModel):
                 hidden_layer_sizes.append(value)
 
         if hidden_layer_sizes:
-            params.insert(0, "hidden_layer_sizes", tuple(hidden_layer_sizes))
+            params["hidden_layer_sizes"] = tuple(hidden_layer_sizes)
 
         return params
 
@@ -2145,7 +2155,10 @@ class MultiLayerPerceptron(ClassRegModel):
         )
 
         # Drop layers if user specifies sizes
-        return dist[3:] if "hidden_layer_sizes" in self._est_params else dist
+        if "hidden_layer_sizes" in self._est_params:
+            return {k: v for k, v in dist.items() if "hidden_layer" not in k}
+        else:
+            return dist
 
 
 class MultinomialNB(ClassRegModel):
@@ -2655,7 +2668,8 @@ class RandomForest(ClassRegModel):
         params = super()._get_parameters(trial)
 
         if not self._get_param("bootstrap", params):
-            params.replace_value("max_samples", None)
+            if "max_samples" in params:
+                params["max_samples"] = None
 
         return params
 
@@ -2692,7 +2706,7 @@ class RandomForest(ClassRegModel):
             dist.pop("criterion")
             dist.pop("ccp_alpha")
         elif self.engine.get("estimator") == "cuml":
-            dist.replace_key("criterion", "split_criterion")
+            dist["split_criterion"] = dist.pop("criterion")
             dist["max_depth"] = Int(1, 17)
             dist["max_features"] = Cat(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
             dist["max_samples"] = Float(0.5, 0.9, step=0.1)
@@ -2918,7 +2932,8 @@ class SupportVectorMachine(ClassRegModel):
         params = super()._get_parameters(trial)
 
         if self._get_param("kernel", params) == "poly":
-            params.replace_value("gamma", "scale")  # Crashes in combination with "auto"
+            if "gamma" in params:
+                params["gamma"] = "scale"  # Crashes in combination with "auto"
 
         return params
 
@@ -3014,6 +3029,33 @@ class XGBoost(ClassRegModel):
     _module = "xgboost"
     _estimators = {"classification": "XGBClassifier", "regression": "XGBRegressor"}
 
+    @property
+    def trials(self) -> pd.DataFrame:
+        """Overview of the trials' results.
+
+        This property is only available for models that ran
+        [hyperparameter tuning][]. All durations are in seconds.
+        Columns include:
+
+        - **[param_name]:** Parameter value used in this trial.
+        - **estimator:** Estimator used in this trial.
+        - **[metric_name]:** Metric score of the trial.
+        - **[best_metric_name]:** Best score so far in this study.
+        - **time_trial:** Duration of the trial.
+        - **time_ht:** Duration of the hyperparameter tuning.
+        - **state:** Trial's state (COMPLETE, PRUNED, FAIL).
+
+        """
+        trials = super().trials
+
+        # XGBoost always minimizes metric, so flip sign
+        for met in self._metric.keys():
+            trials[met] = trials.apply(
+                lambda row: -row[met] if row["state"] == "PRUNED" else row[met], axis=1
+            )
+
+        return trials
+
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
 
@@ -3023,8 +3065,12 @@ class XGBoost(ClassRegModel):
             Estimator instance.
 
         """
+        eval_metric = None
+        if getattr(self, "_metric", None):
+            eval_metric = XGBMetric(self._metric[0], task=self.task)
+
         return self._est_class(
-            eval_metric=params.pop("eval_metric", self._metric[0]._score_func),
+            eval_metric=params.pop("eval_metric", eval_metric),
             n_jobs=params.pop("n_jobs", self.n_jobs),
             device=params.pop("device", self.device),
             verbosity=params.pop("verbosity", 0),

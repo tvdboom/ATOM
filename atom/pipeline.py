@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 from beartype.typing import Any, Generator
+from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.pipeline import _final_estimator_has
@@ -26,7 +27,6 @@ from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
     fit_transform_one, transform_one, variable_return,
 )
-from joblib import Memory
 
 
 class Pipeline(SkPipeline):
@@ -95,11 +95,11 @@ class Pipeline(SkPipeline):
         attribute to access any step parameter by user given name. Keys
         are step names and values are steps parameters.
 
-    classes_: np.array of shape (n_classes,)
-        The classes labels. Only exist if the last step of the pipeline
+    classes_: np.ndarray of shape (n_classes,)
+        The class' labels. Only exist if the last step of the pipeline
         is a classifier.
 
-    feature_names_in_: np.array
+    feature_names_in_: np.ndarray
         Names of features seen during first step `fit` method.
 
     n_features_in_: int
@@ -536,7 +536,7 @@ class Pipeline(SkPipeline):
 
         Returns
         -------
-        np.array
+        np.ndarray
             Predicted classes with shape=(n_samples,).
 
         """
@@ -557,7 +557,7 @@ class Pipeline(SkPipeline):
 
         Returns
         -------
-        np.array
+        np.ndarray
             Predicted class probabilities.
 
         """
@@ -578,7 +578,7 @@ class Pipeline(SkPipeline):
 
         Returns
         -------
-        np.array
+        np.ndarray
             Predicted class log-probabilities.
 
         """
@@ -599,7 +599,7 @@ class Pipeline(SkPipeline):
 
         Returns
         -------
-        np.array
+        np.ndarray
             Predicted confidence scores.
 
         """

@@ -110,7 +110,7 @@ class Sequence(Protocol[T_cov]):
 
     def __iter__(self) -> Iterator[T_cov]: ...
     def __getitem__(self, item) -> T_cov: ...
-    def __len__(self) -> Int: ...
+    def __len__(self) -> int: ...
 
     @classmethod
     def __class_getitem__(cls, item: Any) -> Annotated[Any, Is]:
@@ -222,7 +222,9 @@ FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 Features = Union[
     dict[str, Sequence[Any]],
     Sequence[Sequence[Any]],
-    Iterable[Sequence[Any], tuple[Hashable, Sequence[Any]], dict[str, Sequence[Any]]],
+    Iterable[
+        Union[Sequence[Any], tuple[Hashable, Sequence[Any]], dict[str, Sequence[Any]]]
+    ],
     np.ndarray,
     sps.spmatrix,
     DataFrame,

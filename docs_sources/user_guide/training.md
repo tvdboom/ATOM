@@ -2,8 +2,8 @@
 ----------
 
 The training phase is where the models are fitted on the training data.
-After this, you can use the [plots][] and [prediction methods][] to
-evaluate the results. The training applies the following steps for all
+After this, you can use the [plots][] and [prediction methods][predicting]
+to evaluate the results. The training applies the following steps for all
 models:
 
 1. Use [hyperparameter tuning][] to select the optimal hyperparameters for 
