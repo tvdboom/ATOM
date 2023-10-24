@@ -124,7 +124,7 @@ def test_default_metric():
     # Multioutput can't be initialized directly from the trainer
     atom = ATOMClassifier(label_train, label_test, y=[-2, -1], random_state=1)
     atom.run("LR")
-    assert atom.metric == "average_precision"
+    assert atom.metric == "ap"
 
     trainer = DirectRegressor("OLS", random_state=1)
     trainer.run(reg_train, reg_test)
@@ -142,7 +142,7 @@ def test_metric_is_acronym():
     """Assert that using the metric acronyms work."""
     trainer = DirectClassifier("LR", metric="auc", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.metric == "roc_auc"
+    assert trainer.metric == "auc"
 
 
 @pytest.mark.parametrize("metric", ["tn", "fp", "fn", "tp", "fpr", "tpr", "tnr", "fnr"])

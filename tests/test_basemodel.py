@@ -17,6 +17,7 @@ from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler
 from optuna.study import Study
+from pandas.testing import assert_frame_equal, assert_series_equal
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
@@ -73,8 +74,8 @@ def test_getitem():
     """Assert that the models are subscriptable."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
-    pd.testing.assert_series_equal(atom.tree["alcohol"], atom["alcohol"])
-    pd.testing.assert_series_equal(atom.tree[0], atom[0])
+    assert_series_equal(atom.tree["alcohol"], atom["alcohol"])
+    assert_series_equal(atom.tree[0], atom[0])
     assert isinstance(atom.tree[["alcohol", "ash"]], pd.DataFrame)
 
 
@@ -512,7 +513,7 @@ def test_dataset_property():
     """Assert that the dataset property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_frame_equal(atom.dataset, atom.mnb.dataset)
+    assert_frame_equal(atom.dataset, atom.mnb.dataset)
     assert check_scaling(atom.lr.dataset)
 
 
@@ -520,7 +521,7 @@ def test_train_property():
     """Assert that the train property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_frame_equal(atom.train, atom.mnb.train)
+    assert_frame_equal(atom.train, atom.mnb.train)
     assert check_scaling(atom.lr.train)
 
 
@@ -528,7 +529,7 @@ def test_test_property():
     """Assert that the test property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_frame_equal(atom.test, atom.mnb.test)
+    assert_frame_equal(atom.test, atom.mnb.test)
     assert check_scaling(atom.lr.test)
 
 
@@ -545,7 +546,7 @@ def test_X_property():
     """Assert that the X property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_frame_equal(atom.X, atom.mnb.X)
+    assert_frame_equal(atom.X, atom.mnb.X)
     assert check_scaling(atom.lr.X)
 
 
@@ -553,15 +554,15 @@ def test_y_property():
     """Assert that the y property is returned unchanged."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_series_equal(atom.y, atom.mnb.y)
-    pd.testing.assert_series_equal(atom.y, atom.lr.y)
+    assert_series_equal(atom.y, atom.mnb.y)
+    assert_series_equal(atom.y, atom.lr.y)
 
 
 def test_X_train_property():
     """Assert that the X_train property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_frame_equal(atom.X_train, atom.mnb.X_train)
+    assert_frame_equal(atom.X_train, atom.mnb.X_train)
     assert check_scaling(atom.lr.X_train)
 
 
@@ -569,7 +570,7 @@ def test_X_test_property():
     """Assert that the X_test property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_frame_equal(atom.X_test, atom.mnb.X_test)
+    assert_frame_equal(atom.X_test, atom.mnb.X_test)
     assert check_scaling(atom.lr.X_test)
 
 
@@ -577,22 +578,22 @@ def test_X_holdout_property():
     """Assert that the X_holdout property is calculated."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    pd.testing.assert_frame_equal(atom.mnb.X_holdout, atom.mnb.holdout.iloc[:, :-1])
+    assert_frame_equal(atom.mnb.X_holdout, atom.mnb.holdout.iloc[:, :-1])
 
 
 def test_y_train_property():
     """Assert that the y_train property is returned unchanged."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    pd.testing.assert_series_equal(atom.y_train, atom.mnb.y_train)
-    pd.testing.assert_series_equal(atom.y_train, atom.lr.y_train)
+    assert_series_equal(atom.y_train, atom.mnb.y_train)
+    assert_series_equal(atom.y_train, atom.lr.y_train)
 
 
 def test_y_holdout_property():
     """Assert that the y_holdout property is calculated."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    pd.testing.assert_series_equal(atom.mnb.y_holdout, atom.mnb.holdout.iloc[:, -1])
+    assert_series_equal(atom.mnb.y_holdout, atom.mnb.holdout.iloc[:, -1])
 
 
 # Test prediction methods ========================================== >>
@@ -898,7 +899,7 @@ def test_inverse_transform():
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.clean()
     atom.run("LR")
-    pd.testing.assert_frame_equal(atom.lr.inverse_transform(atom.lr.X), X_bin)
+    assert_frame_equal(atom.lr.inverse_transform(atom.lr.X), X_bin)
 
 
 def test_save_estimator():

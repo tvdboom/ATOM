@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch, BranchManager
@@ -636,7 +637,7 @@ def test_add_copy_from_parent():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     atom.branch = "b2"
-    pd.testing.assert_frame_equal(atom.dataset, atom._branches["main"].dataset)
+    assert_frame_equal(atom.dataset, atom._branches["main"].dataset)
     assert atom.pipeline is not atom._branches["main"].pipeline
     assert atom.pipeline.steps[0][1] is atom._branches["main"].pipeline.steps[0][1]
     assert atom.branch._mapping is not atom._branches["main"]._mapping

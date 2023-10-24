@@ -40,10 +40,10 @@ from sklearn.impute import KNNImputer
 from atom.basetransformer import BaseTransformer
 from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DataFrameTypes,
-    DiscretizerStrats, Engine, Estimator, Features, FloatLargerZero, Int,
-    IntLargerTwo, NJobs, NormalizerStrats, NumericalStrats, Pandas,
-    PrunerStrats, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
-    SeriesTypes, Target, Transformer, Verbose,
+    DiscretizerStrats, Engine, Estimator, FloatLargerZero, Int, IntLargerTwo,
+    NJobs, NormalizerStrats, NumericalStrats, Pandas, PrunerStrats, Scalar,
+    ScalerStrats, Sequence, SequenceTypes, Series, SeriesTypes, Transformer,
+    Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -62,8 +62,8 @@ class TransformerMixin:
 
     def fit(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         **fit_params,
     ):
         """Does nothing.
@@ -109,8 +109,8 @@ class TransformerMixin:
     @composed(crash, method_to_log)
     def fit_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         **fit_params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Fit to data, then transform it.
@@ -151,8 +151,8 @@ class TransformerMixin:
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Does nothing.
 
@@ -322,7 +322,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target = -1) -> Balancer:
+    def fit(self, X: XSelector, y: YSelector = -1) -> Balancer:
         """Fit to data.
 
         Parameters
@@ -415,7 +415,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target = -1) -> tuple[DataFrame, Series]:
+    def transform(self, X: XSelector, y: YSelector = -1) -> tuple[DataFrame, Series]:
         """Balance the data.
 
         Parameters
@@ -709,7 +709,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.encode_target = encode_target
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features | None = None, y: Target | None = None) -> Cleaner:
+    def fit(self, X: XSelector | None = None, y: YSelector | None = None) -> Cleaner:
         """Fit to data.
 
         Parameters
@@ -782,8 +782,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log)
     def transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Apply the data cleaning steps to the data.
 
@@ -911,8 +911,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inversely transform the label encoding.
 
@@ -1152,7 +1152,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.labels = labels
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> Discretizer:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Discretizer:
         """Fit to data.
 
         Parameters
@@ -1264,7 +1264,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Bin the data into intervals.
 
         Parameters
@@ -1437,7 +1437,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str | Transformer = "Target",
+        strategy: str | Transformer = "YSelector",
         *,
         max_onehot: IntLargerTwo | None = 10,
         ordinal: dict[str, Sequence[Any]] | None = None,
@@ -1456,7 +1456,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> Encoder:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Encoder:
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
@@ -1616,7 +1616,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Encode the data.
 
         Parameters
@@ -1837,7 +1837,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.max_nan_cols = max_nan_cols
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> Imputer:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Imputer:
         """Fit to data.
 
         Parameters
@@ -1944,8 +1944,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log)
     def transform(
         self,
-        X: Features,
-        y: Target | None = None,
+        X: XSelector,
+        y: YSelector | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Impute the missing values.
 
@@ -2224,7 +2224,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> Normalizer:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Normalizer:
         """Fit to data.
 
         Parameters
@@ -2282,7 +2282,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -2316,7 +2316,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
     @composed(crash, method_to_log)
-    def inverse_transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def inverse_transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Apply the inverse transformation to the data.
 
         Parameters
@@ -2520,8 +2520,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log)
     def transform(
         self,
-        X: Features,
-        y: Target | None = None,
+        X: XSelector,
+        y: YSelector | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Apply the outlier strategy on the data.
 
@@ -2804,7 +2804,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> Scaler:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Scaler:
         """Fit to data.
 
         Parameters
@@ -2851,7 +2851,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Perform standardization by centering and scaling.
 
         Parameters
@@ -2885,7 +2885,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
     @composed(crash, method_to_log)
-    def inverse_transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def inverse_transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Apply the inverse transformation to the data.
 
         Parameters

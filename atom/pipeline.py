@@ -20,8 +20,8 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Features, Float, Int, Pandas, Scalar, Sequence,
-    Target, Verbose,
+    Bool, DataFrame, Estimator, Float, Int, Pandas, Scalar, Sequence, Verbose,
+    XSelector, YSelector,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
@@ -254,8 +254,8 @@ class Pipeline(SkPipeline):
 
     def _fit(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         **fit_params_steps,
     ) -> tuple[DataFrame | None, Pandas | None]:
         """Get data transformed through the pipeline.
@@ -323,8 +323,8 @@ class Pipeline(SkPipeline):
 
     def fit(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         **fit_params,
     ) -> Pipeline:
         """Fit the pipeline.
@@ -365,8 +365,8 @@ class Pipeline(SkPipeline):
     @available_if(_can_transform)
     def fit_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         **fit_params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Fit the pipeline and transform the data.
@@ -430,8 +430,8 @@ class Pipeline(SkPipeline):
     @available_if(_can_transform)
     def transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         **kwargs,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform the data.
@@ -478,8 +478,8 @@ class Pipeline(SkPipeline):
     @available_if(_can_inverse_transform)
     def inverse_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inverse transform for each step in a reverse order.
 
@@ -519,7 +519,7 @@ class Pipeline(SkPipeline):
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: Features, **predict_params) -> np.ndarray:
+    def predict(self, X: XSelector, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -547,7 +547,7 @@ class Pipeline(SkPipeline):
         return self.steps[-1][-1].predict(X, **predict_params)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X: Features) -> np.ndarray:
+    def predict_proba(self, X: XSelector) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
@@ -568,7 +568,7 @@ class Pipeline(SkPipeline):
         return self.steps[-1][-1].predict_proba(X)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X: Features) -> np.ndarray:
+    def predict_log_proba(self, X: XSelector) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
@@ -589,7 +589,7 @@ class Pipeline(SkPipeline):
         return self.steps[-1][-1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X: Features) -> np.ndarray:
+    def decision_function(self, X: XSelector) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
@@ -612,8 +612,8 @@ class Pipeline(SkPipeline):
     @available_if(_final_estimator_has("score"))
     def score(
         self,
-        X: Features,
-        y: Target,
+        X: XSelector,
+        y: YSelector,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> Float:
         """Transform, then score of the final estimator.

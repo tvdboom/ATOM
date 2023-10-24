@@ -52,13 +52,13 @@ from atom.training import (
 from atom.utils.constants import __version__
 from atom.utils.types import (
     Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DataFrame,
-    DiscretizerStrats, Engine, Estimator, Features, FeatureSelectionSolvers,
+    DiscretizerStrats, Engine, Estimator, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Sequence, Series, Target, Transformer,
-    TSIndexTypes, VectorizerStarts, Verbose, Warnings,
+    RowSelector, Scalar, ScalerStrats, Sequence, Series, Transformer,
+    TSIndexTypes, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -94,7 +94,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         self,
         arrays,
         *,
-        y: Target = -1,
+        y: YSelector = -1,
         index: IndexSelector = False,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
@@ -125,14 +125,14 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
             random_state=random_state,
         )
 
-        self.index = index
-        self.shuffle = shuffle
-        self.stratify = stratify
-        self.n_rows = n_rows
-        self.test_size = test_size
-        self.holdout_size = holdout_size
-
-        self._config = DataConfig(index, shuffle, stratify, test_size)
+        self._config = DataConfig(
+            index=index,
+            shuffle=shuffle,
+            stratify=stratify,
+            n_rows=n_rows,
+            test_size=test_size,
+            holdout_size=holdout_size,
+        )
 
         self._missing = [
             "", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"
@@ -640,8 +640,8 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
@@ -789,7 +789,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
                     [merge(X_train, y_train), merge(X_test, y_test)]
                 )
 
-                if atom.index is False:
+                if atom._config.index is False:
                     branch._container = DataContainer(
                         data=(dataset := branch._container.data.reset_index(drop=True)),
                         train_idx=dataset.index[:len(branch._container.train_idx)],
@@ -1064,8 +1064,8 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
     @composed(crash, method_to_log)
     def transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
@@ -1259,7 +1259,7 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
                 n_cols=self.branch._data.n_cols if y is None else len(get_cols(y)),
             )
 
-        if self.index is False:
+        if self._config.index is False:
             self.branch._container = DataContainer(
                 data=(data := self.dataset.reset_index(drop=True)),
                 train_idx=data.index[:len(self.branch._data.train_idx)],
@@ -1283,11 +1283,9 @@ class ATOM(BaseRunner, ATOMPlot, ABC):
         name = transformer_c.__class__.__name__
         while name in self.pipeline:
             counter += 1
-            name = f"{name}{counter}"
+            name = f"{transformer_c.__class__.__name__}{counter}"
 
-        self.branch.pipeline.steps.append(
-            (transformer_c.__class__.__name__, transformer_c)
-        )
+        self.branch.pipeline.steps.append((name, transformer_c))
 
         # Attach atom's transformer attributes to the branch
         if "atom" in transformer_c.__module__:

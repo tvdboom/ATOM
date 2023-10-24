@@ -811,12 +811,15 @@ class Dummy(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict()
+        dist = dict(
+            strategy=Cat(["most_frequent", "prior", "stratified", "uniform"]),
+            quantile=Float(0, 1.0, step=0.1),
+        )
+
         if self.task.is_classification:
-            dist["strategy"] = Cat(["most_frequent", "prior", "stratified", "uniform"])
+            dist.pop("quantile")
         else:
             dist["strategy"] = Cat(["mean", "median", "quantile"])
-            dist["quantile"] = Float(0, 1.0, step=0.1)
 
         return dist
 
@@ -1634,7 +1637,7 @@ class LightGBM(ClassRegModel):
         """
         # Custom lightgbm mapping for warnings
         # PYTHONWarnings doesn't work since they go from C/C++ code to stdout
-        warns = dict(always=2, default=1, error=0, ignore=-1)
+        warns = dict(always=2, default=1, once=0, error=0, ignore=-1)
 
         return self._est_class(
             verbose=params.pop("verbose", warns.get(self.warnings, -1)),
@@ -1921,7 +1924,7 @@ class LinearSVM(ClassRegModel):
             Estimator instance.
 
         """
-        if self.engine.get("estimator") == "cuml" and self._goal == "classification":
+        if self.engine.get("estimator") == "cuml" and self.task.is_classification:
             return self._est_class(probability=params.pop("probability", True), **params)
         else:
             return super()._get_est(**params)
@@ -1935,15 +1938,15 @@ class LinearSVM(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict()
-        if self.task.is_classification:
-            dist["penalty"] = Cat(["l1", "l2"])
-            dist["loss"] = Cat(["hinge", "squared_hinge"])
-        else:
-            dist["loss"] = Cat(["epsilon_insensitive", "squared_epsilon_insensitive"])
+        dist = dict(
+            penalty=Cat(["l1", "l2"]),
+            loss=Cat(["hinge", "squared_hinge"]),
+            C=Float(1e-3, 100, log=True),
+            dual=Cat([True, False]),
+        )
 
-        dist["C"] = Float(1e-3, 100, log=True)
-        dist["dual"] = Cat([True, False])
+        if not self.task.is_classification:
+            dist["loss"] = Cat(["epsilon_insensitive", "squared_epsilon_insensitive"])
 
         if self.engine.get("estimator") == "cuml":
             dist.pop("dual")
@@ -2777,7 +2780,7 @@ class Ridge(ClassRegModel):
             solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
         )
 
-        if self._goal == "reg":
+        if self.task.is_regression:
             if self.engine.get("estimator") == "sklearnex":
                 dist.pop("solver")  # Only supports 'auto'
             elif self.engine.get("estimator") == "cuml":
@@ -2946,7 +2949,7 @@ class SupportVectorMachine(ClassRegModel):
             Estimator instance.
 
         """
-        if self.engine.get("estimator") == "cuml" and self._goal == "classification":
+        if self.engine.get("estimator") == "cuml" and self.task.is_classification:
             return self._est_class(
                 probability=params.pop("probability", True),
                 random_state=params.pop("random_state", self.random_state),

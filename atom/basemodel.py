@@ -25,6 +25,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import ray
+from beartype import beartype
 from beartype.roar import BeartypeCallHintParamViolation
 from beartype.typing import Any, Literal
 from joblib.memory import Memory
@@ -64,11 +65,10 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, Features, Float,
-    FloatLargerZero, FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero,
-    IntTypes, MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor,
-    RowSelector, Scalar, Scorer, Sequence, Stages, Target, TargetSelector,
-    Verbose, Warnings,
+    HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, Float, FloatTypes,
+    FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes, MetricConstructor,
+    NJobs, Pandas, PredictionMethod, Predictor, RowSelector, Scalar, Scorer,
+    Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -440,17 +440,20 @@ class BaseModel(RunnerPlot):
         estimator = self._inherit(self._est_class(**base_params))
         estimator.set_params(**sub_params)
 
-        if self.task is Task.multilabel_classification:
-            if not self.native_multilabel:
-                estimator = ClassifierChain(estimator)
-        elif self.task.is_multioutput and not self.native_multioutput:
-            if self.task.is_classification:
-                estimator = MultiOutputClassifier(estimator)
-            elif self.task.is_regression:
-                estimator = MultiOutputRegressor(estimator)
-        elif hasattr(self, "_estimators") and self._goal.name not in self._estimators:
-            # Forecasting task with a regressor
-            estimator = make_reduction(estimator)
+        # Skip for models called for estimator only
+        # Don't use hasattr because of recursive search
+        if "_branch" in self.__dict__:
+            if self.task is Task.multilabel_classification:
+                if not self.native_multilabel:
+                    estimator = ClassifierChain(estimator)
+            elif self.task.is_multioutput and not self.native_multioutput:
+                if self.task.is_classification:
+                    estimator = MultiOutputClassifier(estimator)
+                elif self.task.is_regression:
+                    estimator = MultiOutputRegressor(estimator)
+            elif hasattr(self, "_estimators") and self._goal.name not in self._estimators:
+                # Forecasting task with a regressor
+                estimator = make_reduction(estimator)
 
         return self._inherit(estimator)
 
@@ -833,7 +836,7 @@ class BaseModel(RunnerPlot):
 
         return result
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def hyperparameter_tuning(self, n_trials: Int, reset: Bool = False):
         """Run the hyperparameter tuning algorithm.
 
@@ -964,10 +967,10 @@ class BaseModel(RunnerPlot):
 
             if not check_is_fitted(estimator, exception=False):
                 # Follow the same stratification strategy as atom
-                cols = self._get_stratify_columns(self.og.train, self.og.y_train)
+                cols = self._config.get_stratify_columns(self.og.train, self.og.y_train)
 
                 if isinstance(cv := self._ht["cv"], IntTypes):
-                    if self._goal == "fc":
+                    if self.task.is_forecast:
                         if cv == 1:
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
@@ -1122,7 +1125,7 @@ class BaseModel(RunnerPlot):
         self._log(f"Best evaluation --> {'   '.join(out)}", 1)
         self._log(f"Time elapsed: {time_to_str(self.trials.iat[-1, -2])}", 1)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def fit(self, X: DataFrame | None = None, y: Pandas | None = None):
         """Fit and validate the model.
 
@@ -1237,7 +1240,7 @@ class BaseModel(RunnerPlot):
                         input_example=pd.DataFrame(self.X.iloc[[0]]),
                     )
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def bootstrapping(self, n_bootstrap: Int, reset: Bool = False):
         """Apply a bootstrap algorithm.
 
@@ -1313,6 +1316,7 @@ class BaseModel(RunnerPlot):
         return self._name
 
     @name.setter
+    @beartype
     def name(self, value: str):
         """Change the model's name."""
         # Drop the acronym if provided by the user
@@ -1438,6 +1442,7 @@ class BaseModel(RunnerPlot):
         raise AttributeError("The model didn't run hyperparameter tuning.")
 
     @best_trial.setter
+    @beartype
     def best_trial(self, value: IntLargerEqualZero | None):
         """Assign the study's best trial.
 
@@ -1675,7 +1680,7 @@ class BaseModel(RunnerPlot):
 
     @property
     def X_holdout(self) -> DataFrame | None:
-        """Features of the holdout set."""
+        """XSelector of the holdout set."""
         if self.holdout is not None:
             return self.holdout.iloc[:, :-self.branch._data.n_cols]
         else:
@@ -1818,7 +1823,7 @@ class BaseModel(RunnerPlot):
         )
 
     @available_if(has_task("!multioutput"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def create_dashboard(
         self,
         rows: RowSelector = "test",
@@ -1962,14 +1967,14 @@ class BaseModel(RunnerPlot):
 
         return df
 
-    @crash
+    @composed(crash, beartype)
     def evaluate(
         self,
         metric: MetricConstructor = None,
         rows: RowSelector = "test",
         *,
         threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-        sample_weight: Sequence[FloatLargerZero] | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
@@ -1984,7 +1989,7 @@ class BaseModel(RunnerPlot):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        rows: hashable, segment, sequence or dataframe
+        rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to calculate
             metric on.
 
@@ -2019,7 +2024,7 @@ class BaseModel(RunnerPlot):
                 f"={self.branch._data.n_cols} and len(threshold)={len(threshold)}."
             )
         else:
-            threshold_c = threshold
+            threshold_c = list(threshold)
 
         # Predefined metrics to show
         if metric is None:
@@ -2089,7 +2094,7 @@ class BaseModel(RunnerPlot):
         pipeline.steps.append((self._est_class.__name__, deepcopy(self.estimator)))
         return pipeline
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def full_train(self, *, include_holdout: Bool = False):
         """Train the estimator on the complete dataset.
 
@@ -2133,7 +2138,7 @@ class BaseModel(RunnerPlot):
 
     @available_if(has_task("binary"))
     @available_if(estimator_has_attr("predict_proba"))
-    @crash
+    @composed(crash, beartype)
     def get_best_threshold(self, rows: RowSelector = "train") -> Float | list[Float]:
         """Get the threshold that maximizes the [ROC][] curve.
 
@@ -2161,11 +2166,11 @@ class BaseModel(RunnerPlot):
 
         return flt(results)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def inverse_transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
@@ -2212,7 +2217,7 @@ class BaseModel(RunnerPlot):
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
             return pipeline.inverse_transform(X, y)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def register(
         self,
         name: str | None = None,
@@ -2260,28 +2265,29 @@ class BaseModel(RunnerPlot):
             archive_existing_versions=archive_existing_versions,
         )
 
-    @composed(crash, method_to_log)
-    def save_estimator(self, filename: str = "auto"):
+    @composed(crash, method_to_log, beartype)
+    def save_estimator(self, filename: str | Path = "auto"):
         """Save the estimator to a pickle file.
 
         Parameters
         ----------
-        filename: str, default="auto"
-            Name of the file. Use "auto" for automatic naming.
+        filename: str or Path, default="auto"
+            Filename or [pathlib.Path][] of the file to save. Use
+            "auto" for automatic naming.
 
         """
-        if filename.endswith("auto"):
-            filename = filename.replace("auto", self.estimator.__class__.__name__)
+        if (path := Path(filename)).suffix != ".pkl":
+            path = path.with_suffix(".pkl")
 
-        if not filename.endswith(".pkl"):
-            filename += ".pkl"
+        if path.name == "auto.pkl":
+            path = path.with_name(f"{self.estimator.__class__.__name__}.pkl")
 
-        with open(filename, "wb") as f:
+        with open(path, "wb") as f:
             pickle.dump(self.estimator, f)
 
         self._log(f"{self.fullname} estimator successfully saved.", 1)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def serve(self, method: str = "predict", host: str = "127.0.0.1", port: Int = 8000):
         """Serve the model as rest API endpoint for inference.
 
@@ -2356,11 +2362,11 @@ class BaseModel(RunnerPlot):
 
         self._log(f"Serving model {self.fullname} on {host}:{port}...", 1)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def transform(
         self,
-        X: Features | None = None,
-        y: Target | None = None,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
@@ -2414,8 +2420,8 @@ class ClassRegModel(BaseModel):
     @overload
     def _prediction(
         self,
-        X: RowSelector | Features,
-        y: Target | None = ...,
+        X: RowSelector | XSelector,
+        y: YSelector | None = ...,
         metric: MetricConstructor = ...,
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
@@ -2425,8 +2431,8 @@ class ClassRegModel(BaseModel):
     @overload
     def _prediction(
         self,
-        X: RowSelector | Features,
-        y: Target | None = ...,
+        X: RowSelector | XSelector,
+        y: YSelector | None = ...,
         metric: MetricConstructor = ...,
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
@@ -2435,8 +2441,8 @@ class ClassRegModel(BaseModel):
 
     def _prediction(
         self,
-        X: RowSelector | Features,
-        y: Target | None = None,
+        X: RowSelector | XSelector,
+        y: YSelector | None = None,
         metric: MetricConstructor = None,
         sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
@@ -2557,10 +2563,10 @@ class ClassRegModel(BaseModel):
             return metric_c(self.estimator, Xt, yt, sample_weight)
 
     @available_if(estimator_has_attr("decision_function"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def decision_function(
         self,
-        X: RowSelector | Features,
+        X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
     ) -> Pandas:
@@ -2594,10 +2600,10 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="decision_function")
 
     @available_if(estimator_has_attr("predict"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict(
         self,
-        X: RowSelector | Features,
+        X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
     ) -> Pandas:
@@ -2630,10 +2636,10 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="predict")
 
     @available_if(estimator_has_attr("predict_log_proba"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_log_proba(
         self,
-        X: RowSelector | Features,
+        X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
     ) -> DataFrame:
@@ -2666,10 +2672,10 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
 
     @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_proba(
         self,
-        X: RowSelector | Features,
+        X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
     ) -> DataFrame:
@@ -2703,11 +2709,11 @@ class ClassRegModel(BaseModel):
         return self._prediction(X, verbose=verbose, method="predict_proba")
 
     @available_if(estimator_has_attr("score"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def score(
         self,
-        X: RowSelector | Features,
-        y: Target | None = None,
+        X: RowSelector | XSelector,
+        y: YSelector | None = None,
         *,
         metric: MetricConstructor = None,
         sample_weight: Sequence[Scalar] | None = None,
@@ -2847,11 +2853,11 @@ class ForecastModel(BaseModel):
             return self._score_from_est(metric_c, self.estimator, X, y, **kwargs)
 
     @available_if(estimator_has_attr("predict"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict(
         self,
         fh: int | range | Sequence[Any] | ForecastingHorizon,
-        X: Features | None = None,
+        X: XSelector | None = None,
         *,
         verbose: Int | None = None,
     ) -> Pandas:
@@ -2886,11 +2892,11 @@ class ForecastModel(BaseModel):
         return self._prediction(fh=fh, X=X, verbose=verbose, method="predict")
 
     @available_if(estimator_has_attr("predict_interval"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_interval(
         self,
         fh: int | range | Sequence[Any] | ForecastingHorizon,
-        X: Features | None = None,
+        X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
         verbose: Int | None = None,
@@ -2935,11 +2941,11 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("predict_proba"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_proba(
         self,
         fh: int | range | Sequence[Any] | ForecastingHorizon,
-        X: Features | None = None,
+        X: XSelector | None = None,
         *,
         marginal: Bool = True,
         verbose: Int | None = None,
@@ -2983,11 +2989,11 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("predict_quantiles"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_quantiles(
         self,
         fh: int | range | Sequence[Any] | ForecastingHorizon,
-        X: Features | None = None,
+        X: XSelector | None = None,
         *,
         alpha: Float | list[Float] = [0.05, 0.95],
         verbose: Int | None = None,
@@ -3034,11 +3040,11 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("predict_residuals"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_residuals(
         self,
         y: Sequence[Any] | DataFrame,
-        X: Features | None = None,
+        X: XSelector | None = None,
         *,
         verbose: Int | None = None,
     ) -> DataFrame:
@@ -3072,11 +3078,11 @@ class ForecastModel(BaseModel):
         return self._prediction(y=y, X=X, verbose=verbose, method="predict_residuals")
 
     @available_if(estimator_has_attr("predict_var"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def predict_var(
         self,
         fh: int | range | Sequence[Any] | ForecastingHorizon,
-        X: Features | None = None,
+        X: XSelector | None = None,
         *,
         cov: Bool = False,
         verbose: Int | None = None,
@@ -3122,7 +3128,7 @@ class ForecastModel(BaseModel):
         )
 
     @available_if(estimator_has_attr("score"))
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, beartype)
     def score(
         self,
         y: Sequence[Any] | DataFrame,

@@ -178,21 +178,9 @@ class Model(Protocol):
     @property
     def _est_class(self) -> type[Predictor]: ...
     @property
-    def evals(self) -> dict[str, list]: ...
-    @property
     def feature_importance(self) -> pd.Series: ...
-    # @property
-    # def run(self) -> Run: ...
-    # @property
-    # def study(self) -> Study: ...
-    # @property
-    # def best_trial(self) -> FrozenTrial: ...
-    # @property
-    # def trials(self) -> pd.DataFrame: ...
-
     def _get_pred(self, *args, **kwargs) -> tuple[Pandas, Pandas]: ...
     def predict(self, *args, **kwargs) -> Pandas: ...
-    def predict_interval(self, *args, **kwargs) -> DataFrame: ...
 
 
 # Variable types for type hinting ================================== >>
@@ -219,7 +207,7 @@ FloatZeroToOneInc: TypeAlias = Annotated[Float, Is[lambda x: 0 <= x <= 1]]
 FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
 # Types for X and y
-Features = Union[
+XSelector = Union[
     dict[str, Sequence[Any]],
     Sequence[Sequence[Any]],
     Iterable[
@@ -229,7 +217,8 @@ Features = Union[
     sps.spmatrix,
     DataFrame,
 ]
-Target = Union[Int, str, dict[str, Any], Sequence[Any], DataFrame]
+YTypes = Union[dict[str, Any], Sequence[Any], Series, XSelector]
+YSelector = Union[Int, str, YTypes]
 
 # Return types for transform methods
 TReturn = Union[np.ndarray, sps.spmatrix, Series, DataFrame]

@@ -9,19 +9,8 @@ Description: Module containing the BaseTracker class.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from atom.utils.types import Bool
-
-
-@dataclass
-class TrackingParams:
-    """Tracking parameters for a mlflow experiment."""
-
-    log_ht: Bool  # Track every trial of the hyperparameter tuning
-    log_plots: Bool  # Save plot artifacts
-    log_data: Bool  # Save the train and test sets
-    log_pipeline: Bool  # Save the model's pipeline
+from atom.utils.utils import TrackingParams
 
 
 class BaseTracker:
@@ -35,37 +24,37 @@ class BaseTracker:
     )
 
     @property
-    def log_ht(self) -> Bool:
+    def log_ht(self) -> bool:
         """Whether to track every trial of the hyperparameter tuning."""
         return self._tracking_params.log_ht
 
     @log_ht.setter
     def log_ht(self, value: Bool):
-        self._tracking_params.log_ht = value
+        self._tracking_params.log_ht = bool(value)
 
     @property
-    def log_plots(self) -> Bool:
+    def log_plots(self) -> bool:
         """Whether to save plots as artifacts."""
         return self._tracking_params.log_plots
 
     @log_plots.setter
     def log_plots(self, value: Bool):
-        self._tracking_params.log_plots = value
+        self._tracking_params.log_plots = bool(value)
 
     @property
-    def log_data(self) -> Bool:
+    def log_data(self) -> bool:
         """Whether to save the train and test sets."""
         return self._tracking_params.log_data
 
     @log_data.setter
     def log_data(self, value: Bool):
-        self._tracking_params.log_data = value
+        self._tracking_params.log_data = bool(value)
 
     @property
-    def log_pipeline(self) -> Bool:
+    def log_pipeline(self) -> bool:
         """Whether to save the model's pipeline."""
         return self._tracking_params.log_pipeline
 
     @log_pipeline.setter
     def log_pipeline(self, value: Bool):
-        self._tracking_params.log_pipeline = value
+        self._tracking_params.log_pipeline = bool(value)

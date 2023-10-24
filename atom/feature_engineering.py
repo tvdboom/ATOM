@@ -35,10 +35,10 @@ from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.utils.types import (
-    Backend, Bool, DataFrame, Engine, Features, FeatureSelectionSolvers,
+    Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, Int, IntLargerZero, NJobs, Operators, Sequence,
-    SequenceTypes, SeriesTypes, Target, Verbose,
+    SequenceTypes, SeriesTypes, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, composed, crash,
@@ -178,7 +178,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Extract the new features.
 
         Parameters
@@ -438,7 +438,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> FeatureGenerator:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> FeatureGenerator:
         """Fit to data.
 
         Parameters
@@ -536,7 +536,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Generate new features.
 
         Parameters
@@ -718,7 +718,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Group features.
 
         Parameters
@@ -1082,7 +1082,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> FeatureSelector:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
         The univariate, sfm (when model is not fitted), sfs, rfe and
@@ -1184,7 +1184,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
                                 for x in BaseTransformer.attrs if hasattr(self, x)
                             },
                         )
-                        solver = model._inherit(model._est_class())
+                        solver = model._get_est()
                     else:
                         raise ValueError(
                             "Invalid value for the solver parameter. Unknown "
@@ -1480,7 +1480,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Transform the data.
 
         Parameters

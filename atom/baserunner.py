@@ -9,16 +9,20 @@ Description: Module containing the BaseRunner class.
 
 from __future__ import annotations
 
+import random
 import re
+from abc import ABC
 from copy import deepcopy
 from pathlib import Path
 
 import dill as pickle
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Hashable, Literal
+from beartype.typing import Any, Hashable
+from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
+from sktime.datatypes import check_is_mtype
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
@@ -27,17 +31,19 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Int, IntTypes,
-    MetricConstructor, Model, ModelSelector, ModelsSelector, RowSelector,
-    SegmentTypes, Sequence, Series,
+    Bool, DataFrame, DataFrameTypes, FloatZeroToOneExc, Int, IntTypes,
+    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
+    RowSelector, Scalar, Segment, SegmentTypes, Sequence, SequenceTypes,
+    Series, YSelector,
 )
 from atom.utils.utils import (
-    ClassMap, Task, check_is_fitted, composed, crash, divide, flt, get_cols,
-    get_segment, get_versions, has_task, lst, method_to_log,
+    ClassMap, DataContainer, Task, bk, check_is_fitted, composed, crash,
+    divide, flt, get_cols, get_segment, get_versions, has_task, lst, merge,
+    method_to_log, n_cols,
 )
 
 
-class BaseRunner(BaseTracker):
+class BaseRunner(BaseTracker, ABC):
     """Base class for runners.
 
     Contains shared attributes and methods for atom and trainers.
@@ -265,6 +271,437 @@ class BaseRunner(BaseTracker):
 
     # Utility methods ============================================== >>
 
+    def _set_index(self, df: DataFrame, y: Pandas | None) -> DataFrame:
+        """Assign an index to the dataframe.
+
+        Parameters
+        ----------
+        df: dataframe
+            Dataset.
+
+        y: series, dataframe or None
+            Target column(s). Used to check that the provided index
+            is not one of the target columns. If None, the check is
+            skipped.
+
+        Returns
+        -------
+        dataframe
+            Dataset with updated indices.
+
+        """
+        if self._config.index is True:  # True gets caught by isinstance(int)
+            pass
+        elif self._config.index is False:
+            df = df.reset_index(drop=True)
+        elif isinstance(self._config.index, IntTypes):
+            if -df.shape[1] <= self._config.index <= df.shape[1]:
+                df = df.set_index(df.columns[int(self._config.index)], drop=True)
+            else:
+                raise IndexError(
+                    f"Invalid value for the index parameter. Value {self._config.index} "
+                    f"is out of range for a dataset with {df.shape[1]} columns."
+                )
+        elif isinstance(self._config.index, str):
+            if self._config.index in df:
+                df = df.set_index(self._config.index, drop=True)
+            else:
+                raise ValueError(
+                    "Invalid value for the index parameter. "
+                    f"Column {self._config.index} not found in the dataset."
+                )
+
+        if y is not None and df.index.name in (c.name for c in get_cols(y)):
+            raise ValueError(
+                "Invalid value for the index parameter. The index column "
+                f"can not be the same as the target column, got {df.index.name}."
+            )
+
+        if df.index.duplicated().any():
+            raise ValueError(
+                "Invalid value for the index parameter. There are duplicate indices "
+                "in the dataset. Use index=False to reset the index to RangeIndex."
+            )
+
+        return df
+
+    def _get_data(
+        self,
+        arrays: tuple,
+        y: YSelector = -1,
+    ) -> tuple[DataContainer, DataFrame | None]:
+        """Get data sets from a sequence of indexables.
+
+        Also assigns an index, (stratified) shuffles and selects a
+        subsample of rows depending on the attributes.
+
+        Parameters
+        ----------
+        arrays: tuple of indexables
+            Data set(s) provided. Should follow the API input format.
+
+        y: int, str or sequence, default=-1
+            Transformed target column.
+
+        Returns
+        -------
+        DataContainer
+            Train and test sets.
+
+        dataframe or None
+            Holdout data set. Returns None if not specified.
+
+        """
+
+        def _subsample(df: DataFrame) -> DataFrame:
+            """Select a random subset of a dataframe.
+
+            If shuffle=True, the subset is shuffled, else row order
+            is maintained. For forecasting tasks, rows are dropped
+            from the tail of the data set.
+
+            Parameters
+            ----------
+            df: dataframe
+                Dataset.
+
+            Returns
+            -------
+            dataframe
+                Subset of df.
+
+            """
+            if self._config.n_rows <= 1:
+                n_rows = int(len(df) * self._config.n_rows)
+            else:
+                n_rows = int(self._config.n_rows)
+
+            if self._config.shuffle:
+                return df.iloc[random.sample(range(len(df)), k=n_rows)]
+            elif self._goal.name == "forecast":
+                return df.iloc[-n_rows:]  # For forecasting, select from tail
+            else:
+                return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
+
+        def _no_data_sets(
+            X: DataFrame,
+            y: Pandas,
+        ) -> tuple[DataContainer, DataFrame | None]:
+            """Generate data sets from one dataset.
+
+            Additionally, assigns an index, shuffles the data, selects
+            a subsample if `n_rows` is specified and split into sets in
+            a stratified fashion.
+
+            Parameters
+            ----------
+            X: dataframe
+                Feature set with shape=(n_samples, n_features).
+
+            y: series or dataframe
+                Target column(s) corresponding to X.
+
+            Returns
+            -------
+            DataContainer
+                Train and test sets.
+
+            dataframe or None
+                Holdout data set. Returns None if not specified.
+
+            """
+            data = merge(X, y)
+
+            # Shuffle the dataset
+            if not 0 < self._config.n_rows <= len(data):
+                raise ValueError(
+                    "Invalid value for the n_rows parameter. Value should "
+                    f"lie between 0 and len(X)={len(data)}, got {self._config.n_rows}."
+                )
+            data = _subsample(data)
+
+            if isinstance(self._config.index, SequenceTypes):
+                if len(self._config.index) != len(data):
+                    raise IndexError(
+                        "Invalid value for the index parameter. Length of "
+                        f"index ({len(self._config.index)}) doesn't match "
+                        f"that of the dataset ({len(data)})."
+                    )
+                data.index = self._config.index
+
+            if len(data) < 5:
+                raise ValueError(
+                    f"The length of the dataset can't be <5, got {len(data)}. "
+                    "Make sure n_rows=1 for small datasets."
+                )
+
+            if not 0 < self._config.test_size < len(data):
+                raise ValueError(
+                    "Invalid value for the test_size parameter. Value "
+                    f"should lie between 0 and len(X), got {self._config.test_size}."
+                )
+
+            # Define test set size
+            if self._config.test_size < 1:
+                test_size = max(1, int(self._config.test_size * len(data)))
+            else:
+                test_size = self._config.test_size
+
+            try:
+                # Define holdout set size
+                if self._config.holdout_size:
+                    if self._config.holdout_size < 1:
+                        holdout_size = max(1, int(self._config.holdout_size * len(data)))
+                    else:
+                        holdout_size = self._config.holdout_size
+
+                    if not 0 <= holdout_size <= len(data) - test_size:
+                        raise ValueError(
+                            "Invalid value for the holdout_size parameter. "
+                            "Value should lie between 0 and len(X) - len(test), "
+                            f"got {self._config.holdout_size}."
+                        )
+
+                    data, holdout = train_test_split(
+                        data,
+                        test_size=holdout_size,
+                        random_state=self.random_state,
+                        shuffle=self._config.shuffle,
+                        stratify=self._config.get_stratify_columns(data, y),
+                    )
+                else:
+                    holdout = None
+
+                train, test = train_test_split(
+                    data,
+                    test_size=test_size,
+                    random_state=self.random_state,
+                    shuffle=self._config.shuffle,
+                    stratify=self._config.get_stratify_columns(data, y),
+                )
+
+                complete_set = self._set_index(bk.concat([train, test, holdout]), y)
+
+                container = DataContainer(
+                    data=(data := complete_set.iloc[:len(data)]),
+                    train_idx=data.index[:-len(test)],
+                    test_idx=data.index[-len(test):],
+                    n_cols=len(get_cols(y)),
+                )
+
+            except ValueError as ex:
+                # Clarify common error with stratification for multioutput tasks
+                if "least populated class" in str(ex) and isinstance(y, DataFrameTypes):
+                    raise ValueError(
+                        "Stratification for multioutput tasks is applied over all target "
+                        "columns, which results in a least populated class that has only "
+                        "one member. Either select only one column to stratify over, or "
+                        "set the parameter stratify=False."
+                    )
+                else:
+                    raise ex
+
+            if holdout is not None:
+                holdout = complete_set.iloc[len(data):]
+
+            return container, holdout
+
+        def _has_data_sets(
+            X_train: DataFrame,
+            y_train: Pandas,
+            X_test: DataFrame,
+            y_test: Pandas,
+            X_holdout: DataFrame | None = None,
+            y_holdout: Pandas | None = None,
+        ) -> tuple[DataContainer, DataFrame | None]:
+            """Generate data sets from provided sets.
+
+            Additionally, assigns an index, shuffles the data and
+            selects a subsample if `n_rows` is specified.
+
+            Parameters
+            ----------
+            X_train: dataframe
+                Training set.
+
+            y_train: series or dataframe
+                Target column(s) corresponding to X_train.
+
+            X_test: dataframe
+                Test set.
+
+            y_test: series or dataframe
+                Target column(s) corresponding to X_test.
+
+            X_holdout: dataframe or None
+                Holdout set. Is None if not provided by the user.
+
+            y_holdout: series, dataframe or None
+                Target column(s) corresponding to X_holdout.
+
+            Returns
+            -------
+            DataContainer
+                Train and test sets.
+
+            dataframe or None
+                Holdout data set. Returns None if not specified.
+
+            """
+            train = merge(X_train, y_train)
+            test = merge(X_test, y_test)
+            if X_holdout is None:
+                holdout = None
+            else:
+                holdout = merge(X_holdout, y_holdout)
+
+            if not train.columns.equals(test.columns):
+                raise ValueError("The train and test set do not have the same columns.")
+
+            if holdout is not None:
+                if not train.columns.equals(holdout.columns):
+                    raise ValueError(
+                        "The holdout set does not have the "
+                        "same columns as the train and test set."
+                    )
+
+            if self._config.n_rows <= 1:
+                train = _subsample(train)
+                test = _subsample(test)
+                if holdout is not None:
+                    holdout = _subsample(holdout)
+            else:
+                raise ValueError(
+                    "Invalid value for the n_rows parameter. Value must "
+                    "be <1 when the train and test sets are provided."
+                )
+
+            # If the index is a sequence, assign it before shuffling
+            if isinstance(self._config.index, SequenceTypes):
+                len_data = len(train) + len(test)
+                if holdout is not None:
+                    len_data += len(holdout)
+
+                if len(self._config.index) != len_data:
+                    raise IndexError(
+                        "Invalid value for the index parameter. Length of "
+                        f"index ({len(self._config.index)}) doesn't match "
+                        f"that of the data sets ({len_data})."
+                    )
+                train.index = self._config.index[:len(train)]
+                test.index = self._config.index[len(train):len(train) + len(test)]
+                if holdout is not None:
+                    holdout.index = self._config.index[-len(holdout):]
+
+            complete_set = self._set_index(bk.concat([train, test, holdout]), y_test)
+
+            container = DataContainer(
+                data=(data := complete_set.iloc[:len(train) + len(test)]),
+                train_idx=data.index[:len(train)],
+                test_idx=data.index[-len(test):],
+                n_cols=len(get_cols(y_train)),
+            )
+
+            if holdout is not None:
+                holdout = complete_set.iloc[len(train) + len(test):]
+
+            return container, holdout
+
+        # Process input arrays ===================================== >>
+
+        if len(arrays) == 0:
+            if self._goal.name == "forecast" and not isinstance(y, (IntTypes, str)):
+                # arrays=() and y=y for forecasting
+                sets = _no_data_sets(*self._prepare_input(y=y))
+            elif not self.branch._container:
+                raise ValueError(
+                    "The data arrays are empty! Provide the data to run the pipeline "
+                    "successfully. See the documentation for the allowed formats."
+                )
+            else:
+                return self.branch._data, self.branch._holdout
+
+        elif len(arrays) == 1:
+            # arrays=(X,) or arrays=(y,) for forecasting
+            sets = _no_data_sets(*self._prepare_input(arrays[0], y=y))
+
+        elif len(arrays) == 2:
+            if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
+                # arrays=((X_train, y_train), (X_test, y_test))
+                X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
+                X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
+                sets = _has_data_sets(X_train, y_train, X_test, y_test)
+            elif isinstance(arrays[1], (*IntTypes, str)) or n_cols(arrays[1]) == 1:
+                try:
+                    # arrays=(X, y)
+                    sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
+                except ValueError as ex:
+                    if self._goal.name == "forecast":
+                        # arrays=(train, test) for forecast
+                        X_train, y_train = self._prepare_input(y=arrays[0])
+                        X_test, y_test = self._prepare_input(y=arrays[1])
+                        sets = _has_data_sets(X_train, y_train, X_test, y_test)
+                    else:
+                        raise ex
+            else:
+                # arrays=(train, test)
+                X_train, y_train = self._prepare_input(arrays[0], y=y)
+                X_test, y_test = self._prepare_input(arrays[1], y=y)
+                sets = _has_data_sets(X_train, y_train, X_test, y_test)
+
+        elif len(arrays) == 3:
+            if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
+                # arrays=((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
+                X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
+                X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
+                X_hold, y_hold = self._prepare_input(arrays[2][0], arrays[2][1])
+                sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
+            else:
+                # arrays=(train, test, holdout)
+                X_train, y_train = self._prepare_input(arrays[0], y=y)
+                X_test, y_test = self._prepare_input(arrays[1], y=y)
+                X_hold, y_hold = self._prepare_input(arrays[2], y=y)
+                sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
+
+        elif len(arrays) == 4:
+            # arrays=(X_train, X_test, y_train, y_test)
+            X_train, y_train = self._prepare_input(arrays[0], arrays[2])
+            X_test, y_test = self._prepare_input(arrays[1], arrays[3])
+            sets = _has_data_sets(X_train, y_train, X_test, y_test)
+
+        elif len(arrays) == 6:
+            # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
+            X_train, y_train = self._prepare_input(arrays[0], arrays[3])
+            X_test, y_test = self._prepare_input(arrays[1], arrays[4])
+            X_hold, y_hold = self._prepare_input(arrays[2], arrays[5])
+            sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
+
+        else:
+            raise ValueError(
+                "Invalid data arrays. See the documentation for the allowed formats."
+            )
+
+        if self._goal.name == "forecast":
+            # For forecasting, check if index complies with sktime's standard
+            valid, msg, _ = check_is_mtype(
+                obj=pd.DataFrame(bk.concat([sets[0].data, sets[1]])),
+                mtype="pd.DataFrame",
+                return_metadata=True,
+                var_name="the dataset",
+            )
+
+            if not valid:
+                raise ValueError(msg)
+        else:
+            # Else check for duplicate indices
+            if bk.concat([sets[0].data, sets[1]]).index.duplicated().any():
+                raise ValueError(
+                    "Duplicate indices found in the dataset. "
+                    "Try initializing atom using `index=False`."
+                )
+
+        return sets
+
     def _get_models(
         self,
         models: ModelsSelector = None,
@@ -300,9 +737,9 @@ class BaseRunner(BaseTracker):
         inc: list[Model] = []
         exc: list[Model] = []
         if models is None:
-            return self._models.values()
+            inc = self._models.values()
         elif isinstance(models, SegmentTypes):
-            return get_segment(self._models, models)
+            inc = get_segment(self._models, models)
         else:
             for model in lst(models):
                 if isinstance(model, IntTypes):
@@ -310,8 +747,8 @@ class BaseRunner(BaseTracker):
                         inc.append(self._models[model])
                     except KeyError:
                         raise IndexError(
-                            f"Invalid value for the models parameter. The {model} is out "
-                            f"of range for an instance with {len(self._models)} models."
+                            f"Invalid value for the models parameter. Value {model} is "
+                            f"out of range. There are {len(self._models)} models."
                         )
                 elif isinstance(model, str):
                     for mdl in model.split("+"):
@@ -408,7 +845,7 @@ class BaseRunner(BaseTracker):
         rows = []
         for model in MODELS:
             m = model(goal=self._goal)
-            if self._goal in m._estimators:
+            if self._goal.name in m._estimators:
                 rows.append(
                     {
                         "acronym": m.acronym,
@@ -460,23 +897,19 @@ class BaseRunner(BaseTracker):
             Models to delete. If None, all models are deleted.
 
         """
-        models = self._get_models(models)
-        if not models:
-            self._log("No models to delete.", 1)
-        else:
-            self._log(f"Deleting {len(models)} models...", 1)
-            for m in models:
-                self._delete_models(m.name)
-                self._log(f" --> Model {m.name} successfully deleted.", 1)
+        self._log(f"Deleting {len(models := self._get_models(models))} models...", 1)
+        for m in models:
+            self._delete_models(m.name)
+            self._log(f" --> Model {m.name} successfully deleted.", 1)
 
     @composed(crash, beartype)
     def evaluate(
         self,
         metric: MetricConstructor = None,
-        dataset: Literal["train", "test", "holdout"] = "test",
+        rows: RowSelector = "test",
         *,
         threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-        sample_weight: Sequence[FloatLargerZero] | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -486,9 +919,9 @@ class BaseRunner(BaseTracker):
             Metric to calculate. If None, it returns an overview of
             the most common metrics per task.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
+        rows: hashable, segment, sequence or dataframe, default="test"
+            [Selection of rows][row-and-column-selection] to calculate
+            metric on.
 
         threshold: float or sequence, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
@@ -519,7 +952,7 @@ class BaseRunner(BaseTracker):
             evaluations.append(
                 m.evaluate(
                     metric=metric,
-                    dataset=dataset,
+                    rows=rows,
                     threshold=threshold,
                     sample_weight=sample_weight,
                 )
@@ -607,10 +1040,7 @@ class BaseRunner(BaseTracker):
 
     @available_if(has_task("classification"))
     @composed(crash, beartype)
-    def get_sample_weight(
-        self,
-        dataset: Literal["train", "test", "holdout"] = "train",
-    ) -> Series:
+    def get_sample_weight(self, rows: RowSelector = "train") -> Series:
         """Return sample weights for a balanced data set.
 
         The returned weights are inversely proportional to the class
@@ -619,9 +1049,9 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        dataset: str, default="train"
-            Data set from which to get the weights. Choose from:
-            "train", "test", "dataset".
+        rows: hashable, segment, sequence or dataframe, default="train"
+            [Selection of rows][row-and-column-selection] for which to
+            get the weights.
 
         Returns
         -------
@@ -629,8 +1059,9 @@ class BaseRunner(BaseTracker):
             Sequence of weights with shape=(n_samples,).
 
         """
-        weights = compute_sample_weight("balanced", y=getattr(self, dataset))
-        return pd.Series(weights, name="sample_weight").round(3)
+        _, y = self.branch._get_rows(rows, return_X_y=True)
+        weights = compute_sample_weight("balanced", y=y)
+        return bk.Series(weights, name="sample_weight").round(3)
 
     @composed(crash, method_to_log, beartype)
     def merge(self, other: BaseRunner, /, suffix: str = "2"):
@@ -651,8 +1082,8 @@ class BaseRunner(BaseTracker):
             as self.
 
         suffix: str, default="2"
-            Conflicting branches and models are merged adding `suffix`
-            to the end of their names.
+            Branches and models with conflicting names are merged adding
+            `suffix` to the end of their names.
 
         """
         if other.__class__.__name__ != self.__class__.__name__:
@@ -682,7 +1113,7 @@ class BaseRunner(BaseTracker):
             self._log(f" --> Merging branch {branch.name}.", 1)
             if branch.name in self._branches:
                 branch._name = f"{branch.name}{suffix}"
-            self._branches[branch.name] = branch
+            self._branches.branches[branch.name] = branch
 
         for model in other._models:
             self._log(f" --> Merging model {model.name}.", 1)
@@ -713,8 +1144,8 @@ class BaseRunner(BaseTracker):
         """
         if not save_data:
             data = {}
-            og = self._branches.og._container
-            self._branches._og._container = None
+            if (og := self._branches.og).name not in self._branches:
+                self._branches._og._container = None
             for branch in self._branches:
                 data[branch.name] = dict(
                     _data=deepcopy(branch._container),
@@ -727,7 +1158,7 @@ class BaseRunner(BaseTracker):
         if (path := Path(filename)).suffix != ".pkl":
             path = path.with_suffix(".pkl")
 
-        if path.name == "auto.csv":
+        if path.name == "auto.pkl":
             path = path.with_name(f"{self.__class__.__name__}.pkl")
 
         with open(path, "wb") as f:
@@ -736,7 +1167,8 @@ class BaseRunner(BaseTracker):
 
         # Restore the data to the attributes
         if not save_data:
-            self._branches._og._container = og
+            if og.name not in self._branches:
+                self._branches._og._container = og._container
             for branch in self._branches:
                 branch._container = data[branch.name]["_data"]
                 branch._holdout = data[branch.name]["_holdout"]
@@ -748,7 +1180,7 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log, beartype)
     def stacking(
         self,
-        models: range | slice | Sequence[ModelSelector] | None = None,
+        models: Segment | Sequence[ModelSelector] | None = None,
         name: str = "Stack",
         **kwargs,
     ):
@@ -760,7 +1192,7 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: range, slice, sequence or None, default=None
+        models: segment, sequence or None, default=None
             Models that feed the stacking estimator. The models must have
             been fitted on the current branch.
 
@@ -775,12 +1207,12 @@ class BaseRunner(BaseTracker):
 
         """
         check_is_fitted(self, attributes="_models")
-        m = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
+        models_c = self._get_models(models, ensembles=False, branch=self.branch)
 
-        if len(m) < 2:
+        if len(models_c) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Stacking model should "
-                f"contain at least two underlying estimators, got only {m[0]}."
+                f"contain at least two underlying estimators, got only {models_c[0]}."
             )
 
         if not name.lower().startswith("stack"):
@@ -810,7 +1242,7 @@ class BaseRunner(BaseTracker):
                 )
             else:
                 model = MODELS[kwargs["final_estimator"]](**kw_model)
-                if self._goal not in model._estimators:
+                if self._goal.name not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
                         f"{model.fullname} can not perform {self.task} tasks."
@@ -818,14 +1250,14 @@ class BaseRunner(BaseTracker):
 
                 kwargs["final_estimator"] = model._get_est()
 
-        self._models.append(Stacking(models=m, name=name, **kw_model, **kwargs))
+        self._models.append(Stacking(models=models_c, name=name, **kw_model, **kwargs))
 
         self[name].fit()
 
     @composed(crash, method_to_log, beartype)
     def voting(
         self,
-        models: range | slice | Sequence[ModelSelector] | None = None,
+        models: Segment | Sequence[ModelSelector] | None = None,
         name: str = "Vote",
         **kwargs,
     ):
@@ -837,7 +1269,7 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
-        models: range, slice, sequence or None, default=None
+        models: segment, sequence or None, default=None
             Models that feed the stacking estimator. The models must have
             been fitted on the current branch.
 
@@ -850,12 +1282,12 @@ class BaseRunner(BaseTracker):
 
         """
         check_is_fitted(self, attributes="_models")
-        m = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
+        models_c = self._get_models(models, ensembles=False, branch=self.branch)
 
-        if len(m) < 2:
+        if len(models_c) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Voting model should "
-                f"contain at least two underlying estimators, got only {m[0]}."
+                f"contain at least two underlying estimators, got only {models_c[0]}."
             )
 
         if not name.lower().startswith("vote"):
@@ -870,7 +1302,7 @@ class BaseRunner(BaseTracker):
 
         self._models.append(
             Voting(
-                models=m,
+                models=models_c,
                 name=name,
                 goal=self._goal,
                 config=self._config,

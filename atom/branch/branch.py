@@ -22,9 +22,10 @@ from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, DataFrameTypes, Features, Index, Int,
+    Bool, ColumnSelector, DataFrame, DataFrameTypes, Index, Int,
     IntLargerEqualZero, IntTypes, Pandas, RowSelector, Scalar, SegmentTypes,
-    Sequence, SeriesTypes, Target, TargetSelector, TargetsSelector,
+    Sequence, SeriesTypes, TargetSelector, TargetsSelector, XSelector,
+    YSelector,
 )
 from atom.utils.utils import (
     DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
@@ -159,7 +160,7 @@ class Branch:
     def _check_setter(
         self,
         name: str,
-        value: Sequence[Scalar | str] | Features,
+        value: Sequence[Scalar | str] | XSelector,
     ) -> Pandas:
         """Check the data set's setter property.
 
@@ -292,7 +293,7 @@ class Branch:
         return self._data.data
 
     @dataset.setter
-    def dataset(self, value: Features):
+    def dataset(self, value: XSelector):
         self._data.data = self._check_setter("dataset", value)
 
     @property
@@ -301,7 +302,7 @@ class Branch:
         return self._data.data.loc[self._data.train_idx]
 
     @train.setter
-    def train(self, value: Features):
+    def train(self, value: XSelector):
         df = self._check_setter("train", value)
         self._data.data = bk.concat([df, self.test])
         self._data.train_idx = df.index
@@ -312,7 +313,7 @@ class Branch:
         return self._data.data.loc[self._data.test_idx]
 
     @test.setter
-    def test(self, value: Features):
+    def test(self, value: XSelector):
         df = self._check_setter("test", value)
         self._data.data = bk.concat([self.train, df])
         self._data.test_idx = df.index
@@ -336,7 +337,7 @@ class Branch:
         return self._data.data[self.features]
 
     @X.setter
-    def X(self, value: Features):
+    def X(self, value: XSelector):
         df = self._check_setter("X", value)
         self._data.data = merge(df, self.y)
 
@@ -346,7 +347,7 @@ class Branch:
         return self._data.data[self.target]
 
     @y.setter
-    def y(self, value: Target):
+    def y(self, value: YSelector):
         series = self._check_setter("y", value)
         self._data.data = merge(self.X, series)
 
@@ -356,7 +357,7 @@ class Branch:
         return self.train[self.features]
 
     @X_train.setter
-    def X_train(self, value: Features):
+    def X_train(self, value: XSelector):
         df = self._check_setter("X_train", value)
         self._data.data = bk.concat([merge(df, self.y_train), self.test])
 
@@ -366,7 +367,7 @@ class Branch:
         return self.train[self.target]
 
     @y_train.setter
-    def y_train(self, value: Target):
+    def y_train(self, value: YSelector):
         series = self._check_setter("y_train", value)
         self._data.data = bk.concat([merge(self.X_train, series), self.test])
 
@@ -376,7 +377,7 @@ class Branch:
         return self.test[self.features]
 
     @X_test.setter
-    def X_test(self, value: Features):
+    def X_test(self, value: XSelector):
         df = self._check_setter("X_test", value)
         self._data.data = bk.concat([self.train, merge(df, self.y_test)])
 
@@ -386,7 +387,7 @@ class Branch:
         return self.test[self.target]
 
     @y_test.setter
-    def y_test(self, value: Target):
+    def y_test(self, value: YSelector):
         series = self._check_setter("y_test", value)
         self._data.data = bk.concat([self.train, merge(self.X_test, series)])
 
@@ -722,7 +723,7 @@ class Branch:
         def get_class(
             target: TargetSelector,
             column: IntLargerEqualZero = 0,
-        ) -> IntLargerEqualZero:
+        ) -> int:
             """Get the class in the target column.
 
             Parameters
@@ -755,7 +756,7 @@ class Branch:
                         f"There are {n_classes} classes, got {target}."
                     )
                 else:
-                    return target
+                    return int(target)
 
         if only_columns and not isinstance(target, tuple):
             return get_column(target)

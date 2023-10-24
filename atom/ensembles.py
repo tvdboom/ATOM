@@ -25,7 +25,7 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils.types import Bool, Features, Int, Predictor, Scalar, Sequence
+from atom.utils.types import Bool, Int, Predictor, Scalar, Sequence, XSelector
 from atom.utils.utils import check_is_fitted
 
 
@@ -53,7 +53,7 @@ class BaseVoting(BaseEnsemble):
 
     def fit(
         self,
-        X: Features,
+        X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> BaseVoting:
@@ -116,7 +116,7 @@ class BaseStacking(BaseEnsemble):
 
     def fit(
         self,
-        X: Features,
+        X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> BaseStacking:
@@ -255,7 +255,7 @@ class VotingClassifier(BaseVoting, VC):
 
     def fit(
         self,
-        X: Features,
+        X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> VotingClassifier:
@@ -299,7 +299,7 @@ class VotingClassifier(BaseVoting, VC):
 
         return super().fit(X, y, sample_weight)
 
-    def predict(self, X: Features) -> np.ndarray:
+    def predict(self, X: XSelector) -> np.ndarray:
         """Predict class labels for X.
 
         Parameters
@@ -372,7 +372,7 @@ class StackingClassifier(BaseStacking, SC):
 
     def fit(
         self,
-        X: Features,
+        X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> StackingClassifier:
@@ -417,7 +417,7 @@ class StackingRegressor(BaseStacking, SR):
 
     def fit(
         self,
-        X: Features,
+        X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> StackingRegressor:

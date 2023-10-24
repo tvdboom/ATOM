@@ -105,7 +105,8 @@ class ARIMA(ForecastModel):
         # If no seasonal periodicity, set seasonal components to zero
         if self._get_param("S", params) == 0:
             for p in self._sorder:
-                params.replace_value(p, 0)
+                if p in params:
+                    params[p] = 0
 
         return params
 
@@ -126,10 +127,10 @@ class ARIMA(ForecastModel):
         params = super()._trial_to_est(params)
 
         # Convert params to hyperparameters 'order' and 'seasonal_order'
-        if all(p in params for p in self._sorder):
-            params.insert(0, "seasonal_order", tuple(params.pop(p) for p in self._sorder))
         if all(p in params for p in self._order):
-            params.insert(0, "order", tuple(params.pop(p) for p in self._order))
+            params["order"] = tuple(params.pop(p) for p in self._order)
+        if all(p in params for p in self._sorder):
+            params["seasonal_order"] = tuple(params.pop(p) for p in self._sorder)
 
         return params
 

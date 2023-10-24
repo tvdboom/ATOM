@@ -51,11 +51,11 @@ from sklearn.utils import _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, DataFrame, DataFrameTypes, Estimator, Features, Float, Index,
-    IndexSelector, Int, IntTypes, MetricConstructor, Model, Pandas,
-    PandasTypes, Predictor, Scalar, Scorer, Segment, SegmentTypes, Sequence,
-    SequenceTypes, Series, SeriesTypes, Target, Transformer, TReturn, TReturns,
-    Verbose,
+    Bool, DataFrame, DataFrameTypes, Estimator, Float, Index, IndexSelector,
+    Int, IntTypes, MetricConstructor, Model, Pandas, PandasTypes, Predictor,
+    Scalar, Scorer, Segment, SegmentTypes, Sequence, SequenceTypes, Series,
+    SeriesTypes, Transformer, TReturn, TReturns, Verbose, XSelector, YSelector,
+    YTypes,
 )
 
 
@@ -183,27 +183,21 @@ class Task(Enum):
 
 
 @dataclass
-class DataConfig:
-    """Stores the data configuration.
-
-    This is a utility class to store the data configuration in one
-    attribute and pass it down to the models. The default values are
-    the one adopted by trainers.
-
-    """
-    index: IndexSelector = True
-    shuffle: Bool = True
-    stratify: IndexSelector = True
-    test_size: Scalar = 0.2
-
-
-@dataclass
 class DataContainer:
     """Stores a branch's data."""
     data: DataFrame  # Complete dataset
     train_idx: Index  # Indices in the train set
     test_idx: Index  # Indices in the test
     n_cols: Int  # Number of target columns
+
+
+@dataclass
+class TrackingParams:
+    """Tracking parameters for a mlflow experiment."""
+    log_ht: bool  # Track every trial of the hyperparameter tuning
+    log_plots: bool  # Save plot artifacts
+    log_data: bool  # Save the train and test sets
+    log_pipeline: bool  # Save the model's pipeline
 
 
 @dataclass
@@ -215,6 +209,70 @@ class Aesthetics:
     tick_fontsize: Scalar  # Fontsize for ticks
     line_width: Scalar  # Width of the line plots
     marker_size: Scalar  # Size of the markers
+
+
+@dataclass
+class DataConfig:
+    """Stores the data configuration.
+
+    This is a utility class to store the data configuration in one
+    attribute and pass it down to the models. The default values are
+    the ones adopted by trainers.
+
+    """
+    index: IndexSelector = True
+    shuffle: Bool = False
+    stratify: IndexSelector = True
+    n_rows: Scalar = 1
+    test_size: Scalar = 0.2
+    holdout_size: Scalar | None = None
+
+    def get_stratify_columns(self, df: DataFrame, y: Pandas) -> DataFrame | None:
+        """Get columns to stratify by.
+
+        Parameters
+        ----------
+        df: dataframe
+            Dataset from which to get the columns.
+
+        y: series or dataframe
+            Target column.
+
+        Returns
+        -------
+        dataframe or None
+            Dataset with subselection of columns. Returns None if
+            there's no stratification.
+
+        """
+        # Stratification is not possible when the data cannot change order
+        if self.stratify is False:
+            return None
+        elif self.shuffle is False:
+            return None
+        elif self.stratify is True:
+            return df[[c.name for c in get_cols(y)]]
+        else:
+            inc = []
+            for col in lst(self.stratify):
+                if isinstance(col, IntTypes):
+                    if -df.shape[1] <= col <= df.shape[1]:
+                        inc.append(df.columns[int(col)])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for the stratify parameter. Value {col} "
+                            f"is out of range for a dataset with {df.shape[1]} columns."
+                        )
+                elif isinstance(col, str):
+                    if col in df:
+                        inc.append(col)
+                    else:
+                        raise ValueError(
+                            "Invalid value for the stratify parameter. "
+                            f"Column {col} not found in the dataset."
+                        )
+
+            return df[inc]
 
 
 class PandasModin:
@@ -1638,7 +1696,7 @@ def time_to_str(t: Scalar) -> str:
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
-def n_cols(data: Features | Target) -> int:
+def n_cols(data: XSelector | YSelector) -> int:
     """Get the number of columns in a dataset.
 
     Parameters
@@ -1698,7 +1756,7 @@ def to_df(
 
 @overload
 def to_df(
-    data: Features,
+    data: XSelector,
     index: Axes | None = ...,
     columns: Axes | None = ...,
     dtype: DtypeArg | None = ...,
@@ -1706,7 +1764,7 @@ def to_df(
 
 
 def to_df(
-    data: Features | None,
+    data: XSelector | None,
     index: Axes | None = None,
     columns: Axes | None = None,
     dtype: DtypeArg | None = None,
@@ -1777,7 +1835,7 @@ def to_series(
 
 @overload
 def to_series(
-    data: Sequence[Any] | dict[str, Sequence[Any]],
+    data: YTypes,
     index: Axes | None = ...,
     name: Hashable | None = ...,
     dtype: Dtype | None = ...,
@@ -1785,7 +1843,7 @@ def to_series(
 
 
 def to_series(
-    data: Sequence[Any] | dict[str, Sequence[Any]] | None,
+    data: dict[str, Any] | Sequence[Any] | np.ndarray | Series | None,
     index: Axes | None = None,
     name: Hashable | None = None,
     dtype: Dtype | None = None,
@@ -1794,7 +1852,7 @@ def to_series(
 
     Parameters
     ----------
-    data: sequence or None
+    data: dict, sequence or None
         Data to convert. If None, return unchanged.
 
     index: sequence, index or None, default=None
@@ -1848,7 +1906,7 @@ def to_pandas(
 
 @overload
 def to_pandas(
-    data: dict[str, Sequence[Any]] | Sequence[Sequence[Any]] | DataFrame,
+    data: YTypes,
     index: Axes | None = ...,
     columns: Axes | None = ...,
     name: str | None = ...,
@@ -1857,7 +1915,7 @@ def to_pandas(
 
 
 def to_pandas(
-    data: dict[str, Sequence[Any]] | Sequence[Sequence[Any]] | DataFrame | None,
+    data: YTypes | None,
     index: Axes | None = None,
     columns: Axes | None = None,
     name: str | None = None,
@@ -2207,8 +2265,8 @@ def reorder_cols(
 
 def fit_one(
     estimator: Estimator,
-    X: Features | None = None,
-    y: Target | None = None,
+    X: XSelector | None = None,
+    y: YSelector | None = None,
     message: str | None = None,
     **fit_params,
 ) -> Estimator:
@@ -2281,8 +2339,8 @@ def fit_one(
 
 def transform_one(
     transformer: Transformer,
-    X: Features | None = None,
-    y: Target | None = None,
+    X: XSelector | None = None,
+    y: YSelector | None = None,
     method: Literal["transform", "inverse_transform"] = "transform",
 ) -> tuple[DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
@@ -2422,8 +2480,8 @@ def transform_one(
 
 def fit_transform_one(
     transformer: Transformer,
-    X: Features | None = None,
-    y: Target | None = None,
+    X: XSelector | None = None,
+    y: YSelector | None = None,
     message: str | None = None,
     **fit_params,
 ) -> tuple[DataFrame | None, Series | None, Transformer]:

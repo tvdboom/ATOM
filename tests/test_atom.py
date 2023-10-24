@@ -16,6 +16,7 @@ import pandas as pd
 import pytest
 from category_encoders.target_encoder import TargetEncoder
 from evalml.pipelines.components.estimators import SVMClassifier
+from pandas.testing import assert_frame_equal, assert_index_equal
 from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
@@ -324,7 +325,7 @@ def test_inverse_transform():
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.scale()
     atom.impute()  # Does nothing, but doesn't crash either
-    pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
+    assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
 def test_load_no_atom():
@@ -369,9 +370,9 @@ def test_load_transform_data_multiple_branches():
 
     atom2 = ATOMClassifier.load("atom_2", data=(X_bin, y_bin))
 
-    pd.testing.assert_frame_equal(atom2.og.X, X_bin)
+    assert_frame_equal(atom2.og.X, X_bin)
     for branch in atom._branches:
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             left=atom2._branches[branch.name]._data.data,
             right=atom._branches[branch.name]._data.data,
             check_dtype=False,
@@ -684,7 +685,7 @@ def test_add_sets_are_kept_equal():
     train_idx, test_idx = atom.train.index, atom.test.index
     atom.add(Pruner())
     assert all(idx in train_idx for idx in atom.train.index)
-    pd.testing.assert_index_equal(test_idx, atom.test.index)
+    assert_index_equal(test_idx, atom.test.index)
 
 
 def test_add_reset_index():
@@ -926,7 +927,7 @@ def test_scaling_is_passed():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.scale("minmax")
     atom.run("LGB")
-    pd.testing.assert_frame_equal(atom.dataset, atom.lgb.dataset)
+    assert_frame_equal(atom.dataset, atom.lgb.dataset)
 
 
 def test_models_are_replaced():

@@ -601,6 +601,10 @@ def test_plot_pipeline():
     atom.run("KNN")
     atom.plot_pipeline(display=False)  # No transformers
 
+    # Invalid models
+    with pytest.raises(ValueError, match=".*any model that matches.*"):
+        atom.plot_pipeline(models="invalid", display=False)
+
     # Called from a canvas
     with pytest.raises(PermissionError, match=".*called from a canvas.*"):
         with atom.canvas(2, 1, display=False):

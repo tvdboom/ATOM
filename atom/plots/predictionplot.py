@@ -37,10 +37,10 @@ from sktime.forecasting.base import ForecastingHorizon
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, ColumnSelector, Features, FloatZeroToOneExc, Int, IntLargerEqualZero,
+    Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
     MetricSelector, Model, ModelsSelector, RowSelector, Scalar, Sequence,
-    TargetSelector, TargetsSelector,
+    TargetSelector, TargetsSelector, XSelector,
 )
 from atom.utils.utils import (
     Task, bk, check_canvas, check_dependency, check_predict_proba, crash,
@@ -975,7 +975,7 @@ class PredictionPlot(BasePlot, ABC):
         self,
         models: ModelsSelector = None,
         fh: RowSelector | ForecastingHorizon = "test",
-        X: Features | None = None,
+        X: XSelector | None = None,
         target: TargetSelector = 0,
         plot_interval: Bool = True,
         *,
@@ -1611,7 +1611,7 @@ class PredictionPlot(BasePlot, ABC):
             Models to plot. If None, all models are selected.
 
         columns: int, str, segment, sequence or None, default=None
-            Features to plot. If None, it plots all features.
+            XSelector to plot. If None, it plots all features.
 
         target: int, str or tuple, default=1
             Class in the target column to target. For multioutput tasks,
@@ -1817,7 +1817,7 @@ class PredictionPlot(BasePlot, ABC):
             Models to plot. If None, all models are selected.
 
         columns: int, str, segment, sequence, dataframe, default=(0, 1, 2)
-            [Features][row-and-column-selection] to get the partial
+            [XSelector][row-and-column-selection] to get the partial
             dependence from.
 
         kind: str or sequence, default="average"
@@ -2333,7 +2333,14 @@ class PredictionPlot(BasePlot, ABC):
         from schemdraw.flow import Data, RoundBox, Subroutine, Wire
         from schemdraw.util import Point
 
-        models_c = self._get_plot_models(models, check_fitted=False)
+        # Allow selection with no models
+        try:
+            models_c = self._get_plot_models(models, check_fitted=False)
+        except ValueError as ex:
+            if "No models were selected" in str(ex):
+                models_c = []
+            else:
+                raise ex from None
 
         fig = self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_pipeline")

@@ -10,6 +10,7 @@ Description: Unit tests for pipeline.py
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 from atom import ATOMClassifier
@@ -131,4 +132,4 @@ def test_inverse_transform():
     """Assert that the pipeline uses inverse_transform normally."""
     pl = Pipeline([("scaler", StandardScaler())]).fit(X_bin)
     X = pl.inverse_transform(pl.transform(X_bin))
-    pd.testing.assert_frame_equal(X_bin, X)
+    assert_frame_equal(X_bin, X)

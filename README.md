@@ -152,7 +152,7 @@ The transformations are applied immediately after calling the method
 
 ```python
 atom.impute(strat_num="median", strat_cat="most_frequent")  
-atom.encode(strategy="Target", max_onehot=8)
+atom.encode(strategy="target", max_onehot=8)
 ```
 
 Similarly, models are [trained and evaluated](https://tvdboom.github.io/ATOM/latest/user_guide/training)

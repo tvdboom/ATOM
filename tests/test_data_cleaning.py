@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 from category_encoders.target_encoder import TargetEncoder
 from imblearn.combine import SMOTETomek
+from pandas.testing import assert_frame_equal, assert_series_equal
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
@@ -33,7 +34,7 @@ def test_fit_transform():
     """Assert that the fit_transform method works as intended."""
     X_1 = Scaler().fit_transform(X_bin)
     X_2 = Scaler().fit(X_bin).transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
+    assert_frame_equal(X_1, X_2)
 
 
 def test_fit_transform_no_fit():
@@ -45,7 +46,7 @@ def test_fit_transform_no_fit():
 def test_inverse_transform():
     """Assert that the inverse_transform returns the data unchanged."""
     encoder = Encoder().fit(X_bin)
-    pd.testing.assert_frame_equal(encoder.inverse_transform(X_bin), X_bin)
+    assert_frame_equal(encoder.inverse_transform(X_bin), X_bin)
 
 
 # Test Balancer ==================================================== >>
@@ -189,7 +190,7 @@ def test_cleaner_strip_categorical_features():
     X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
     X = Cleaner(convert_dtypes=False).fit_transform(X)
     series = pd.Series([str(i) for i in range(len(X))], name="string_col")
-    pd.testing.assert_series_equal(X["string_col"], series)
+    assert_series_equal(X["string_col"], series)
 
 
 def test_cleaner_strip_ignores_nan():
@@ -234,7 +235,7 @@ def test_cleaner_inverse_transform():
     """Assert that the inverse_transform method works."""
     cleaner = Cleaner(convert_dtypes=False).fit(y=y10_str)
     y = cleaner.inverse_transform(y=cleaner.transform(y=y10_str))
-    pd.testing.assert_series_equal(pd.Series(y10_str, name="target"), y)
+    assert_series_equal(pd.Series(y10_str, name="target"), y)
 
 
 def test_cleaner_inverse_transform_multilabel():
@@ -242,7 +243,7 @@ def test_cleaner_inverse_transform_multilabel():
     y = pd.DataFrame({"a": y10_label, "b": y10, "c": y10_label})
     cleaner = Cleaner(convert_dtypes=False).fit(y=y)
     y_new = cleaner.inverse_transform(y=cleaner.transform(y=y))
-    pd.testing.assert_frame_equal(y_new, y)
+    assert_frame_equal(y_new, y)
 
 
 def test_cleaner_target_mapping_binary():
@@ -639,7 +640,7 @@ def test_normalizer_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
     X_1 = Normalizer().fit_transform(X_bin, y_bin)
     X_2 = Normalizer().fit_transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
+    assert_frame_equal(X_1, X_2)
 
 
 def test_normalizer_kwargs():
@@ -718,7 +719,7 @@ def test_value_pruner():
 def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
     X, y = Pruner(method="minmax", max_sigma=2).transform(X10_str, y10)
-    pd.testing.assert_series_equal(X["x1"], to_df(X10_str)["x1"])
+    assert_series_equal(X["x1"], to_df(X10_str)["x1"])
 
 
 def test_drop_outlier_in_target():
@@ -791,7 +792,7 @@ def test_scaler_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
     X_1 = Scaler().fit_transform(X_bin, y_bin)
     X_2 = Scaler().fit_transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
+    assert_frame_equal(X_1, X_2)
 
 
 def test_scaler_kwargs():
@@ -811,7 +812,7 @@ def test_scaler_inverse_transform():
     scaler = Scaler().fit(X_bin)
     X_transformed = scaler.transform(X_bin)
     X_original = scaler.inverse_transform(X_transformed)
-    pd.testing.assert_frame_equal(X_bin, X_original)
+    assert_frame_equal(X_bin, X_original)
 
 
 def test_scaler_inverse_categorical_columns():

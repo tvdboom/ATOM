@@ -26,7 +26,7 @@ from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
 from sktime.forecasting.model_selection import temporal_train_test_split
 
-from atom.utils.types import DataFrame, Features, Pandas, Sequence
+from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 
@@ -77,7 +77,7 @@ def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
 
 
 def get_train_test(
-    X: Features | None,
+    X: XSelector | None,
     y: Sequence[Any] | DataFrame,
 ) -> Pandas | tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.

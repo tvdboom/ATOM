@@ -10,9 +10,8 @@ Description: Module containing all ensemble models.
 from __future__ import annotations
 
 from atom.basemodel import ClassRegModel
-from atom.pipeline import Pipeline
-from atom.utils.types import Predictor
-from atom.utils.utils import ClassMap, sign
+from atom.utils.types import Model, Predictor
+from atom.utils.utils import sign
 
 
 class Stacking(ClassRegModel):
@@ -20,7 +19,7 @@ class Stacking(ClassRegModel):
 
     Parameters
     ----------
-    models: ClassMap
+    models: list of Model
         Models from which to build the ensemble.
 
     **kwargs
@@ -41,7 +40,7 @@ class Stacking(ClassRegModel):
         "regression": "StackingRegressor",
     }
 
-    def __init__(self, models: ClassMap, **kwargs):
+    def __init__(self, models: list[Model], **kwargs):
         self._models = models
         kw_model = {k: v for k, v in kwargs.items() if k in sign(ClassRegModel.__init__)}
         super().__init__(**kw_model)
@@ -56,19 +55,11 @@ class Stacking(ClassRegModel):
             Estimator instance.
 
         """
-        estimators = []
-        for m in self._models:
-            if m.scaler:
-                name = f"pipeline_{m.name}"
-                est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
-            else:
-                name = m.name
-                est = m.estimator
-
-            estimators.append((name, est))
-
         return self._est_class(
-            estimators=estimators,
+            estimators=[
+                (m.name, m.export_pipeline() if m.scaler else m.estimator)
+                for m in self._models
+            ],
             n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
         )
@@ -79,7 +70,7 @@ class Voting(ClassRegModel):
 
     Parameters
     ----------
-    models: ClassMap
+    models: list of Model
         Models from which to build the ensemble.
 
     **kwargs
@@ -97,7 +88,7 @@ class Voting(ClassRegModel):
     _module = "atom.ensembles"
     _estimators = {"classification": "VotingClassifier", "regression": "VotingRegressor"}
 
-    def __init__(self, models: ClassMap, **kwargs):
+    def __init__(self, models: list[Model], **kwargs):
         self._models = models
         kw_model = {k: v for k, v in kwargs.items() if k in sign(ClassRegModel.__init__)}
         super().__init__(**kw_model)
@@ -121,19 +112,11 @@ class Voting(ClassRegModel):
             Estimator instance.
 
         """
-        estimators = []
-        for m in self._models:
-            if m.scaler:
-                name = f"pipeline_{m.name}"
-                est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
-            else:
-                name = m.name
-                est = m.estimator
-
-            estimators.append((name, est))
-
         return self._est_class(
-            estimators=estimators,
+            estimators=[
+                (m.name, m.export_pipeline() if m.scaler else m.estimator)
+                for m in self._models
+            ],
             n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
         )

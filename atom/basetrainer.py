@@ -164,8 +164,8 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 
-        inc: list[str] = []
-        exc: list[str] = []
+        inc = []
+        exc = []
         for model in self._models:
             if isinstance(model, str):
                 for m in model.split("+"):
@@ -358,12 +358,12 @@ class BaseTrainer(BaseRunner, RunnerPlot, ABC):
                     if self.errors != "keep":
                         mlflow.delete_run(m.run.info.run_id)
 
-                if self.errors == "raise":
-                    raise ex
+                if self.errors == "keep":
+                    return m
                 elif self.errors == "skip":
                     return None
-                elif self.errors == "keep":
-                    return m
+                else:
+                    raise ex
 
         t = dt.now()  # Measure the time the whole pipeline takes
 

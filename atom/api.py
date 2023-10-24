@@ -20,7 +20,7 @@ from sklearn.base import clone
 from atom.atom import ATOM
 from atom.utils.types import (
     Backend, Bool, Engine, IndexSelector, Int, NJobs, Predictor, Scalar,
-    Target, Verbose, Warnings,
+    Verbose, Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -347,7 +347,7 @@ class ATOMClassifier(ATOM):
     def __init__(
         self,
         *arrays,
-        y: Target = -1,
+        y: YSelector = -1,
         index: IndexSelector = False,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
@@ -579,7 +579,7 @@ class ATOMForecaster(ATOM):
     def __init__(
         self,
         *arrays,
-        y: Target = -1,
+        y: YSelector = -1,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -822,7 +822,7 @@ class ATOMRegressor(ATOM):
     def __init__(
         self,
         *arrays,
-        y: Target = -1,
+        y: YSelector = -1,
         index: IndexSelector = False,
         shuffle: Bool = True,
         n_rows: Scalar = 1,

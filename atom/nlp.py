@@ -28,8 +28,8 @@ from sklearn.base import BaseEstimator
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, DataFrame, Engine, Features, FloatLargerZero, Sequence, Target,
-    VectorizerStarts, Verbose,
+    Bool, DataFrame, Engine, FloatLargerZero, Sequence, VectorizerStarts,
+    Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
@@ -208,7 +208,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_punctuation = drop_punctuation
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -496,7 +496,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.lemmatize = lemmatize
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Normalize the text.
 
         Parameters
@@ -720,7 +720,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.quadgram_freq = quadgram_freq
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Tokenize the text.
 
         Parameters
@@ -966,7 +966,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: Features, y: Target | None = None) -> Vectorizer:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
@@ -1015,7 +1015,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: Features, y: Target | None = None) -> DataFrame:
+    def transform(self, X: XSelector, y: YSelector | None = None) -> DataFrame:
         """Vectorize the text.
 
         Parameters
