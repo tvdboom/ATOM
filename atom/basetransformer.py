@@ -20,6 +20,7 @@ from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
+from typing import overload
 
 import dagshub
 import mlflow
@@ -27,7 +28,7 @@ import numpy as np
 import ray
 import requests
 from beartype import beartype
-from beartype.typing import Callable, Hashable, TypeVar
+from beartype.typing import Hashable, Literal, TypeVar
 from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
@@ -399,8 +400,35 @@ class BaseTransformer:
             return getattr(import_module(f"sklearn.{module}"), name)
 
     @staticmethod
-    def _prepare_input(
-        X: Callable[..., XSelector] | XSelector | None = None,
+    @overload
+    def _check_input(
+        X: XSelector,
+        y: Literal[None],
+        columns: Axes,
+        name: Literal[None],
+    ) -> tuple[DataFrame, None]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: Literal[None],
+        y: YSelector,
+        columns: Literal[None],
+        name: str | Sequence[str],
+    ) -> tuple[None, Pandas]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: XSelector,
+        y: YSelector,
+        columns: Axes | None = ...,
+        name: str | Sequence[str] | None = ...,
+    ) -> tuple[DataFrame, Pandas]: ...
+
+    @staticmethod
+    def _check_input(
+        X: XSelector | None = None,
         y: YSelector | None = None,
         columns: Axes | None = None,
         name: str | Sequence[str] | None = None,
@@ -514,7 +542,7 @@ class BaseTransformer:
                 yt = to_pandas(
                     data=deepcopy(yt),
                     index=getattr(Xt, "index", None),
-                    name=flt(name) or "target",
+                    name=flt(name) if name is not None else "target",
                     columns=name if isinstance(name, SequenceTypes) else default_cols,
                 )
 

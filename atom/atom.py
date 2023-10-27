@@ -10,7 +10,7 @@ Description: Module containing the ATOM class.
 from __future__ import annotations
 
 import os
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from copy import deepcopy
 from logging import Logger
@@ -72,7 +72,7 @@ T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 
 
 @beartype
-class ATOM(BaseRunner, ATOMPlot, ABC):
+class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     """ATOM abstract base class.
 
     The ATOM class is a convenient wrapper for all data cleaning,

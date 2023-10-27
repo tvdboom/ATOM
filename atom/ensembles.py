@@ -24,6 +24,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
+from typing_extensions import Self
 
 from atom.utils.types import Bool, Int, Predictor, Scalar, Sequence, XSelector
 from atom.utils.utils import check_is_fitted
@@ -56,7 +57,7 @@ class BaseVoting(BaseEnsemble):
         X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
-    ) -> BaseVoting:
+    ) -> Self:
         """Fit the estimators in the ensemble.
 
         Largely same code as sklearn;s implementation with one major
@@ -119,11 +120,12 @@ class BaseStacking(BaseEnsemble):
         X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
-    ) -> BaseStacking:
+    ) -> Self:
         """Fit the estimators in the ensemble.
 
-        Largely same code as sklearn;s implementation with one major
-        difference: estimators that are already fitted are skipped.
+        Largely the same code as sklearn's implementation with one
+        major difference: estimators that are already fitted are
+        skipped.
 
         Parameters
         ----------
@@ -218,7 +220,8 @@ class BaseStacking(BaseEnsemble):
 class VotingClassifier(BaseVoting, VC):
     """Soft Voting/Majority Rule classifier.
 
-    Modified version of sklearn's VotingClassifier. Differences are:
+    Modified version of sklearn's VotingClassifier. The differences
+    are:
 
     - Doesn't fit estimators if they're already fitted.
     - Is considered fitted when all estimators are.
@@ -258,7 +261,7 @@ class VotingClassifier(BaseVoting, VC):
         X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
-    ) -> VotingClassifier:
+    ) -> Self:
         """Fit the estimators, skipping prefit ones.
 
         Parameters
@@ -361,7 +364,8 @@ class VotingRegressor(BaseVoting, VR):
 class StackingClassifier(BaseStacking, SC):
     """Stack of estimators with a final classifier.
 
-    Modified version of sklearn's StackingClassifier. Difference is:
+    Modified version of sklearn's StackingClassifier. The difference
+    is:
 
     - Doesn't fit estimators if they're already fitted.
 
@@ -375,7 +379,7 @@ class StackingClassifier(BaseStacking, SC):
         X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
-    ) -> StackingClassifier:
+    ) -> Self:
         """Fit the estimators, skipping prefit ones.
 
         Parameters
@@ -406,7 +410,7 @@ class StackingClassifier(BaseStacking, SC):
 class StackingRegressor(BaseStacking, SR):
     """Stack of estimators with a final regressor.
 
-    Modified version of sklearn's StackingRegressor. Difference is:
+    Modified version of sklearn's StackingRegressor. The Difference is:
 
     - Doesn't fit estimators if they're already fitted.
 
@@ -420,7 +424,7 @@ class StackingRegressor(BaseStacking, SR):
         X: XSelector,
         y: Sequence,
         sample_weight: Sequence[Scalar] | None = None,
-    ) -> StackingRegressor:
+    ) -> Self:
         """Fit the estimators, skipping prefit ones.
 
         Parameters

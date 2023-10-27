@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import random
 import re
-from abc import ABC
+from abc import ABCMeta
 from copy import deepcopy
 from pathlib import Path
 
@@ -43,7 +43,7 @@ from atom.utils.utils import (
 )
 
 
-class BaseRunner(BaseTracker, ABC):
+class BaseRunner(BaseTracker, metaclass=ABCMeta):
     """Base class for runners.
 
     Contains shared attributes and methods for atom and trainers.
@@ -103,7 +103,7 @@ class BaseRunner(BaseTracker, ABC):
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Any:
-        if self.dataset.empty:
+        if self.branch._container is None:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
@@ -612,7 +612,7 @@ class BaseRunner(BaseTracker, ABC):
         if len(arrays) == 0:
             if self._goal.name == "forecast" and not isinstance(y, (IntTypes, str)):
                 # arrays=() and y=y for forecasting
-                sets = _no_data_sets(*self._prepare_input(y=y))
+                sets = _no_data_sets(*self._check_input(y=y))
             elif not self.branch._container:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
@@ -623,57 +623,54 @@ class BaseRunner(BaseTracker, ABC):
 
         elif len(arrays) == 1:
             # arrays=(X,) or arrays=(y,) for forecasting
-            sets = _no_data_sets(*self._prepare_input(arrays[0], y=y))
+            sets = _no_data_sets(*self._check_input(arrays[0], y=y))
 
         elif len(arrays) == 2:
             if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
-                X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
-                X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
+                X_train, y_train = self._check_input(arrays[0][0], arrays[0][1])
+                X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
             elif isinstance(arrays[1], (*IntTypes, str)) or n_cols(arrays[1]) == 1:
-                try:
+                if not self._goal.name == "forecast":
                     # arrays=(X, y)
-                    sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
-                except ValueError as ex:
-                    if self._goal.name == "forecast":
-                        # arrays=(train, test) for forecast
-                        X_train, y_train = self._prepare_input(y=arrays[0])
-                        X_test, y_test = self._prepare_input(y=arrays[1])
-                        sets = _has_data_sets(X_train, y_train, X_test, y_test)
-                    else:
-                        raise ex
+                    sets = _no_data_sets(*self._check_input(arrays[0], arrays[1]))
+                else:
+                    # arrays=(train, test) for forecast
+                    X_train, y_train = self._check_input(y=arrays[0])
+                    X_test, y_test = self._check_input(y=arrays[1])
+                    sets = _has_data_sets(X_train, y_train, X_test, y_test)
             else:
                 # arrays=(train, test)
-                X_train, y_train = self._prepare_input(arrays[0], y=y)
-                X_test, y_test = self._prepare_input(arrays[1], y=y)
+                X_train, y_train = self._check_input(arrays[0], y=y)
+                X_test, y_test = self._check_input(arrays[1], y=y)
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
 
         elif len(arrays) == 3:
             if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
-                X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
-                X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
-                X_hold, y_hold = self._prepare_input(arrays[2][0], arrays[2][1])
+                X_train, y_train = self._check_input(arrays[0][0], arrays[0][1])
+                X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
+                X_hold, y_hold = self._check_input(arrays[2][0], arrays[2][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
             else:
                 # arrays=(train, test, holdout)
-                X_train, y_train = self._prepare_input(arrays[0], y=y)
-                X_test, y_test = self._prepare_input(arrays[1], y=y)
-                X_hold, y_hold = self._prepare_input(arrays[2], y=y)
+                X_train, y_train = self._check_input(arrays[0], y=y)
+                X_test, y_test = self._check_input(arrays[1], y=y)
+                X_hold, y_hold = self._check_input(arrays[2], y=y)
                 sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
 
         elif len(arrays) == 4:
             # arrays=(X_train, X_test, y_train, y_test)
-            X_train, y_train = self._prepare_input(arrays[0], arrays[2])
-            X_test, y_test = self._prepare_input(arrays[1], arrays[3])
+            X_train, y_train = self._check_input(arrays[0], arrays[2])
+            X_test, y_test = self._check_input(arrays[1], arrays[3])
             sets = _has_data_sets(X_train, y_train, X_test, y_test)
 
         elif len(arrays) == 6:
             # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
-            X_train, y_train = self._prepare_input(arrays[0], arrays[3])
-            X_test, y_test = self._prepare_input(arrays[1], arrays[4])
-            X_hold, y_hold = self._prepare_input(arrays[2], arrays[5])
+            X_train, y_train = self._check_input(arrays[0], arrays[3])
+            X_test, y_test = self._check_input(arrays[1], arrays[4])
+            X_hold, y_hold = self._check_input(arrays[2], arrays[5])
             sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
 
         else:

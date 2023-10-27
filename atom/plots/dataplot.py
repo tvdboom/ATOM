@@ -9,7 +9,7 @@ Description: Module containing the DataPlot class.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
 import numpy as np
@@ -36,7 +36,7 @@ from atom.utils.utils import (
 
 
 @beartype
-class DataPlot(BasePlot, ABC):
+class DataPlot(BasePlot, metaclass=ABCMeta):
     """Data plots.
 
     Plots used for understanding and interpretation of the dataset.

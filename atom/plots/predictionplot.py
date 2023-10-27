@@ -9,7 +9,7 @@ Description: Module containing the PredictionPlot class.
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABCMeta
 from collections import defaultdict
 from functools import reduce
 from itertools import chain
@@ -49,7 +49,7 @@ from atom.utils.utils import (
 
 
 @beartype
-class PredictionPlot(BasePlot, ABC):
+class PredictionPlot(BasePlot, metaclass=ABCMeta):
     """Prediction plots.
 
     Plots that use the model's predictions. These plots are accessible

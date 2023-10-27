@@ -99,13 +99,6 @@ def test_features_are_not_dropped():
 
 # Test FeatureGenerator ============================================ >>
 
-def test_n_features_parameter_negative():
-    """Assert that an error is raised when n_features is negative."""
-    generator = FeatureGenerator(n_features=-2)
-    with pytest.raises(ValueError, match=".*the n_features parameter.*"):
-        generator.fit(X_bin, y_bin)
-
-
 def test_operators_parameter():
     """Assert that all operators are valid."""
     generator = FeatureGenerator("gfg", n_features=None, operators=("div", "invalid"))
@@ -136,7 +129,7 @@ def test_genetic_non_improving_features():
         random_state=1,
     )
     _ = generator.fit_transform(X_reg, y_reg)
-    assert generator.genetic_features_ is None
+    assert not hasattr(generator, "genetic_features_")
 
 
 def test_attribute_genetic_features():
@@ -179,22 +172,21 @@ def test_default_feature_names():
 
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
-    grouper = FeatureGrouper({"g1": [0, 1, 2]}, operators="invalid")
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="invalid")
     with pytest.raises(ValueError, match=".*operators parameter.*"):
         grouper.transform(X_bin)
 
 
 def test_invalid_operator():
     """Assert that an error is raised when the result is not one-dimensional."""
-    grouper = FeatureGrouper({"g1": [0, 1, 2]}, operators="log")
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="log")
     with pytest.raises(ValueError, match=".*one-dimensional.*"):
         grouper.transform(X_bin)
 
 
-@pytest.mark.parametrize("groups", ["mean.+", "float", [0, 1]])
-def test_groups_are_created(groups):
+def test_groups_are_created():
     """Assert that the groups are made."""
-    grouper = FeatureGrouper({"g1": groups})
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]})
     X = grouper.transform(X_bin)
     assert "mean(g1)" in X.columns
     assert X.columns[0] != X_bin.columns[0]
@@ -202,14 +194,14 @@ def test_groups_are_created(groups):
 
 def test_custom_operators():
     """Assert that custom operators can be used."""
-    grouper = FeatureGrouper({"g1": [0, 1]}, operators="var")
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="var")
     X = grouper.transform(X_bin)
     assert "var(g1)" in X.columns
 
 
 def test_columns_are_kept():
     """Assert that group columns can be kept."""
-    grouper = FeatureGrouper({"g1": [0, 1, 2]}, drop_columns=False)
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, drop_columns=False)
     X = grouper.transform(X_bin)
     assert X.columns[0] == X_bin.columns[0]
 
@@ -250,38 +242,10 @@ def test_kwargs_but_no_strategy():
         selector.fit(X_reg, y_reg)
 
 
-def test_n_features_parameter():
-    """Assert that an error is raised when n_features is invalid."""
-    selector = FeatureSelector(strategy="sfm", solver="XGB_reg", n_features=0)
-    with pytest.raises(ValueError, match=".*the n_features parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_min_repeated_parameter():
-    """Assert that an error is raised when min_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, min_repeated=-1)
-    with pytest.raises(ValueError, match=".*the min_repeated parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_max_repeated_parameter():
-    """Assert that an error is raised when max_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, max_repeated=-1)
-    with pytest.raises(ValueError, match=".*the max_repeated parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
 def test_max_repeated_smaller_min_repeated():
     """Assert that an error is raised when min_repeated > max_repeated."""
     selector = FeatureSelector(strategy=None, min_repeated=100, max_repeated=2)
     with pytest.raises(ValueError, match=".*can't be higher.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_max_correlation_parameter():
-    """Assert that an error is raised when max_correlation is invalid."""
-    selector = FeatureSelector(strategy=None, max_correlation=-0.2)
-    with pytest.raises(ValueError, match=".*the max_correlation parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
@@ -357,14 +321,14 @@ def test_pca_strategy():
     selector = FeatureSelector(strategy="pca", n_features=0.7)
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 21
-    assert selector.pca.get_params()["svd_solver"] == "auto"
+    assert selector.pca_.get_params()["svd_solver"] == "auto"
 
 
 def test_pca_components():
     """Assert that the pca strategy creates components instead of features."""
     selector = FeatureSelector(strategy="pca", solver="arpack", n_features=5)
     X = selector.fit_transform(X_bin)
-    assert selector.pca.svd_solver == "arpack"
+    assert selector.pca_.svd_solver == "arpack"
     assert "pca0" in X.columns
 
 
@@ -372,8 +336,8 @@ def test_pca_sparse_data():
     """Assert that the pca strategy uses TruncatedSVD for sparse data."""
     selector = FeatureSelector(strategy="pca", n_features=2)
     selector.fit(X_sparse)
-    assert selector.pca.__class__.__name__ == "TruncatedSVD"
-    assert selector.pca.get_params()["algorithm"] == "randomized"
+    assert selector.pca_.__class__.__name__ == "TruncatedSVD"
+    assert selector.pca_.get_params()["algorithm"] == "randomized"
 
 
 def test_sfm_prefit_invalid_estimator():
@@ -532,7 +496,7 @@ def test_advanced_missing_y_valid():
 
 
 def test_advanced_custom_scoring():
-    """Assert that scoring can be specified by the user."""
+    """Assert that the user can specify a custom scorer."""
     selector = FeatureSelector(
         strategy="pso",
         solver="tree_class",
@@ -541,7 +505,7 @@ def test_advanced_custom_scoring():
         scoring="auc",
     )
     selector = selector.fit(X_bin, y_bin)
-    assert selector.pso.kwargs["scoring"].name == "roc_auc"
+    assert selector.pso_.kwargs["scoring"].name == "auc"
 
 
 def test_advanced_binary_classification_scoring():
@@ -553,7 +517,7 @@ def test_advanced_binary_classification_scoring():
         population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
-    assert selector.pso.kwargs["scoring"].name == "f1"
+    assert selector.pso_.kwargs["scoring"].name == "f1"
 
 
 def test_advanced_multiclass_classification_scoring():
@@ -565,7 +529,7 @@ def test_advanced_multiclass_classification_scoring():
         population_size=1,
     )
     selector = selector.fit(X_class, y_class)
-    assert selector.pso.kwargs["scoring"].name == "f1_weighted"
+    assert selector.pso_.kwargs["scoring"].name == "f1_weighted"
 
 
 def test_advanced_regression_scoring():
@@ -577,7 +541,7 @@ def test_advanced_regression_scoring():
         population_size=1,
     )
     selector = selector.fit(X_reg, y_reg)
-    assert selector.hho.kwargs["scoring"].name == "r2"
+    assert selector.hho_.kwargs["scoring"].name == "r2"
 
 
 def test_advanced_custom_objective_function():
@@ -590,4 +554,4 @@ def test_advanced_custom_objective_function():
         population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
-    assert selector.gwo.objective_function.__name__ == "<lambda>"
+    assert selector.gwo_.objective_function.__name__ == "<lambda>"

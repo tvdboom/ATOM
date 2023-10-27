@@ -1938,15 +1938,15 @@ class LinearSVM(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            penalty=Cat(["l1", "l2"]),
-            loss=Cat(["hinge", "squared_hinge"]),
-            C=Float(1e-3, 100, log=True),
-            dual=Cat([True, False]),
-        )
-
-        if not self.task.is_classification:
+        dist: dict[str, BaseDistribution] = {}
+        if self.task.is_classification:
+            dist["penalty"] = Cat(["l1", "l2"])
+            dist["loss"] = Cat(["hinge", "squared_hinge"])
+        else:
             dist["loss"] = Cat(["epsilon_insensitive", "squared_epsilon_insensitive"])
+
+        dist["C"] = Float(1e-3, 100, log=True)
+        dist["dual"] = Cat([True, False])
 
         if self.engine.get("estimator") == "cuml":
             dist.pop("dual")

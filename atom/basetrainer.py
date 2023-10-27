@@ -10,7 +10,7 @@ Description: Module containing the BaseTrainer class.
 from __future__ import annotations
 
 import traceback
-from abc import ABC
+from abc import ABCMeta
 from datetime import datetime as dt
 
 import joblib
@@ -33,7 +33,7 @@ from atom.utils.utils import (
 )
 
 
-class BaseTrainer(BaseRunner, RunnerPlot, ABC):
+class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
     """Base class for trainers.
 
     Implements methods to check the validity of the parameters,

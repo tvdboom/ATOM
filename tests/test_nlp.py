@@ -22,8 +22,16 @@ from .conftest import X_bin, X_text, y10
 
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
-    with pytest.raises(ValueError, match=".*not contain a text corpus.*"):
+    with pytest.raises(ValueError, match=".*contain a column named corpus.*"):
         TextCleaner().transform(X_bin)
+
+
+def test_corpus_is_not_of_correct_type():
+    """Assert that an error is raised when corpus has an incorrect type."""
+    X = X_bin.copy()
+    X["corpus"] = 1
+    with pytest.raises(TypeError, match=".*consist of a string or sequence.*"):
+        TextCleaner().transform(X)
 
 
 def test_decode():
@@ -40,35 +48,30 @@ def test_drop_emails():
     """Assert that email addresses are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["test@webmail.com"]])["corpus"][0] == ""
-    assert not cleaner.drops["email"].dropna().empty
 
 
 def test_drop_url():
     """Assert that URLs are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["www.test.com"]])["corpus"][0] == ""
-    assert not cleaner.drops["url"].dropna().empty
 
 
 def test_drop_html():
     """Assert that html tags are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["<table>test</table>"]])["corpus"][0] == "test"
-    assert not cleaner.drops["html"].dropna().empty
 
 
 def test_drop_emojis():
     """Assert that emojis are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([[":test_emoji:"]])["corpus"][0] == ""
-    assert not cleaner.drops["emoji"].dropna().empty
 
 
 def test_drop_numbers():
     """Assert that numbers are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["123,123.123"]])["corpus"][0] == ""
-    assert not cleaner.drops["number"].dropna().empty
 
 
 def test_drop_punctuation():
@@ -101,7 +104,7 @@ def test_bigrams():
     tokenizer = Tokenizer(bigram_freq=0.5)
     X = tokenizer.transform([["a b a b"]])
     assert X["corpus"][0] == ["a_b", "a_b"]
-    assert isinstance(tokenizer.bigrams, pd.DataFrame)
+    assert isinstance(tokenizer.bigrams_, pd.DataFrame)
 
 
 def test_trigrams():
@@ -109,7 +112,7 @@ def test_trigrams():
     tokenizer = Tokenizer(trigram_freq=0.5)
     X = tokenizer.transform([["a b c a b c"]])
     assert X["corpus"][0] == ["a_b_c", "a_b_c"]
-    assert isinstance(tokenizer.trigrams, pd.DataFrame)
+    assert isinstance(tokenizer.trigrams_, pd.DataFrame)
 
 
 def test_quadgrams():
@@ -117,7 +120,7 @@ def test_quadgrams():
     tokenizer = Tokenizer(quadgram_freq=0.5)
     X = tokenizer.transform([["a b c d a b c d"]])
     assert X["corpus"][0] == ["a_b_c_d", "a_b_c_d"]
-    assert isinstance(tokenizer.quadgrams, pd.DataFrame)
+    assert isinstance(tokenizer.quadgrams_, pd.DataFrame)
 
 
 def test_no_ngrams():
@@ -125,7 +128,7 @@ def test_no_ngrams():
     tokenizer = Tokenizer(quadgram_freq=2)
     X = tokenizer.transform([["a b c d"]])
     assert X["corpus"][0] == ["a", "b", "c", "d"]
-    assert tokenizer.quadgrams is None
+    assert not hasattr(tokenizer, "quadgrams_")
 
 
 # Test TextNormalizer ================================================== >>

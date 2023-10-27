@@ -10,7 +10,7 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 from __future__ import annotations
 
 import numpy as np
-from beartype.typing import Any, Generator
+from beartype.typing import Any, Iterator, Literal
 from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
@@ -18,9 +18,10 @@ from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
+from typing_extensions import Self
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Float, Int, Pandas, Scalar, Sequence, Verbose,
+    Bool, DataFrame, Estimator, Float, Pandas, Scalar, Sequence, Verbose,
     XSelector, YSelector,
 )
 from atom.utils.utils import (
@@ -180,7 +181,7 @@ class Pipeline(SkPipeline):
         self._mem_transform = self._memory.cache(transform_one)
 
     @property
-    def _final_estimator(self) -> str | Estimator | None:
+    def _final_estimator(self) -> Literal["passthrough"] | Estimator | None:
         """Return the last estimator in the pipeline.
 
         If the pipeline is empty, return None. If the estimator is
@@ -215,7 +216,7 @@ class Pipeline(SkPipeline):
         with_final: Bool = True,
         filter_passthrough: Bool = True,
         filter_train_only: Bool = True,
-    ) -> Generator[Int, str, Estimator]:
+    ) -> Iterator[tuple[int, str, Estimator]]:
         """Generate (idx, name, estimator) tuples from self.steps.
 
         By default, estimators that are only applied on the training
@@ -233,8 +234,8 @@ class Pipeline(SkPipeline):
             Whether to exclude estimators that should only be used for
             training (have the `_train_only` attribute).
 
-        Yields
-        ------
+        Returns
+        -------
         int
             Index position in the pipeline.
 
@@ -247,8 +248,7 @@ class Pipeline(SkPipeline):
         """
         it = super()._iter(with_final, filter_passthrough)
         if filter_train_only:
-            no_train_only = filter(lambda x: not getattr(x[-1], "_train_only", False), it)
-            return (x for x in no_train_only)
+            return (x for x in it if not getattr(x[-1], "_train_only", False))
         else:
             return it
 
@@ -286,7 +286,7 @@ class Pipeline(SkPipeline):
             Transformed target column.
 
         """
-        self.steps = list(self.steps)
+        self.steps: list[tuple[str, Estimator]] = list(self.steps)
         self._validate_steps()
 
         for (step_idx, name, transformer) in self._iter(False, False, False):
@@ -326,7 +326,7 @@ class Pipeline(SkPipeline):
         X: XSelector | None = None,
         y: YSelector | None = None,
         **fit_params,
-    ) -> Pipeline:
+    ) -> Self:
         """Fit the pipeline.
 
         Parameters
@@ -355,10 +355,11 @@ class Pipeline(SkPipeline):
         fit_params_steps = self._check_fit_params(**fit_params)
         X, y = self._fit(X, y, **fit_params_steps)
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
-            if self._final_estimator != "passthrough":
-                with adjust_verbosity(self._final_estimator, self.verbose):
+            last_step = self._final_estimator
+            if last_step is not None and last_step != "passthrough":
+                with adjust_verbosity(last_step, self.verbose):
                     fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-                    fit_one(self._final_estimator, X, y, **fit_params_last_step)
+                    fit_one(last_step, X, y, **fit_params_last_step)
 
         return self
 
@@ -418,7 +419,7 @@ class Pipeline(SkPipeline):
             last_step = clone(self._final_estimator)
 
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
-            if last_step == "passthrough":
+            if last_step is None or last_step == "passthrough":
                 return variable_return(X, y)
 
             with adjust_verbosity(last_step, self.verbose):

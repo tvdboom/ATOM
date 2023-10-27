@@ -23,13 +23,12 @@ from nltk.collocations import (
 )
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
-from sklearn.base import BaseEstimator
+from typing_extensions import Self
 
-from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, DataFrame, Engine, FloatLargerZero, Sequence, VectorizerStarts,
-    Verbose, XSelector, YSelector,
+    Bool, BoolTypes, DataFrame, Engine, FloatLargerZero, Sequence,
+    VectorizerStarts, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
@@ -37,7 +36,7 @@ from atom.utils.utils import (
 )
 
 
-class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
+class TextCleaner(TransformerMixin):
     """Applies standard text cleaning to the corpus.
 
     Transformations include normalizing characters and dropping
@@ -111,12 +110,6 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         - If None: Logging isn't used.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-    Attributes
-    ----------
-    drops_: pd.DataFrame
-        Encountered regex matches. The row indices correspond to
-        the document index from which the occurrence was dropped.
 
     See Also
     --------
@@ -250,119 +243,91 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 return elem  # Return unchanged if encoding was successful
 
-        def drop_regex(search: str) -> tuple[int, int]:
-            """Find and remove a regex expression from the text.
+        def drop_regex(regex: str):
+            """Find and remove a regex expression from the corpus.
 
             Parameters
             ----------
-            search: str
-                Regex pattern to search for.
-
-            Returns
-            -------
-            int
-                Number of occurrences.
-
-            int
-                Number of documents (rows) with occurrences.
+            regex: str
+                Regex pattern to replace.
 
             """
-            counts, docs = 0, 0
-            for i, row in X[corpus].items():
-                for j, elem in enumerate([row] if isinstance(row, str) else row):
-                    regex = getattr(self, f"regex_{search}")
-                    occurrences = re.compile(regex).findall(elem)
-                    if occurrences:
-                        docs += 1
-                        counts += len(occurrences)
-                        drops[search].loc[i] = occurrences
-                        for occ in occurrences:
-                            if row is elem:
-                                X[corpus][i] = X[corpus][i].replace(occ, "", 1)
-                            else:
-                                X[corpus][i][j] = X[corpus][i][j].replace(occ, "", 1)
+            if isinstance(Xt[corpus].iat[0], str):
+                Xt[corpus] = Xt[corpus].str.replace(regex, "", regex=True)
+            else:
+                Xt[corpus] = Xt[corpus].apply(lambda x: [re.sub(regex, "", w) for w in x])
 
-            return counts, docs
-
-        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
-        corpus = get_corpus(X)
-
-        # Create a pd.Series for every type of drop
-        drops = {}
-        for elem in ("email", "url", "html", "emoji", "number"):
-            drops[elem] = pd.Series(name=elem, dtype="object")
+        Xt, yt = self._check_input(X, y, columns=getattr(self, "feature_names_in_", None))
+        corpus = get_corpus(Xt)
 
         self._log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus].iat[0], str):
-                X[corpus] = X[corpus].apply(lambda elem: to_ascii(elem))
+            if isinstance(Xt[corpus].iat[0], str):
+                Xt[corpus] = Xt[corpus].apply(lambda x: to_ascii(x))
             else:
-                X[corpus] = X[corpus].apply(lambda elem: [to_ascii(str(w)) for w in elem])
+                Xt[corpus] = Xt[corpus].apply(lambda doc: [to_ascii(str(w)) for w in doc])
         self._log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
-            if isinstance(X[corpus].iat[0], str):
-                X[corpus] = X[corpus].str.lower()
+            self._log(" --> Converting text to lower case.", 2)
+            if isinstance(Xt[corpus].iat[0], str):
+                Xt[corpus] = Xt[corpus].str.lower()
             else:
-                X[corpus] = X[corpus].apply(lambda elem: [str(w).lower() for w in elem])
-        self._log(" --> Converting text to lower case.", 2)
+                Xt[corpus] = Xt[corpus].apply(lambda doc: [str(w).lower() for w in doc])
 
         if self.drop_email:
             if not self.regex_email:
                 self.regex_email = r"[\w.-]+@[\w-]+\.[\w.-]+"
 
-            counts, docs = drop_regex("email")
-            self._log(f" --> Dropping {counts} emails from {docs} documents.", 2)
+            self._log(" --> Dropping emails from documents.", 2)
+            drop_regex(self.regex_email)
 
         if self.drop_url:
             if not self.regex_url:
                 self.regex_url = r"https?://\S+|www\.\S+"
 
-            counts, docs = drop_regex("url")
-            self._log(f" --> Dropping {counts} URL links from {docs} documents.", 2)
+            self._log(" --> Dropping URL links from documents.", 2)
+            drop_regex(self.regex_url)
 
         if self.drop_html:
             if not self.regex_html:
                 self.regex_html = r"<.*?>"
 
-            counts, docs = drop_regex("html")
-            self._log(f" --> Dropping {counts} HTML tags from {docs} documents.", 2)
+            self._log(" --> Dropping HTML tags from documents.", 2)
+            drop_regex(self.regex_html)
 
         if self.drop_emoji:
             if not self.regex_emoji:
                 self.regex_emoji = r":[a-z_]+:"
 
-            counts, docs = drop_regex("emoji")
-            self._log(f" --> Dropping {counts} emojis from {docs} documents.", 2)
+            self._log(" --> Dropping emojis from documents.", 2)
+            drop_regex(self.regex_emoji)
 
         if self.drop_number:
             if not self.regex_number:
                 self.regex_number = r"\b\d+\b"
 
-            counts, docs = drop_regex("number")
-            self._log(f" --> Dropping {counts} numbers from {docs} documents.", 2)
+            self._log(" --> Dropping numbers from documents.", 2)
+            drop_regex(self.regex_number)
 
         if self.drop_punctuation:
-            trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus].iat[0], str):
-                func = lambda row: row.translate(trans_table)
-            else:
-                func = lambda row: [str(w).translate(trans_table) for w in row]
-            X[corpus] = X[corpus].apply(func)
             self._log(" --> Dropping punctuation from the text.", 2)
+            trans_table = str.maketrans("", "", punctuation)  # Translation table
+            if isinstance(Xt[corpus].iat[0], str):
+                func = lambda doc: doc.translate(trans_table)
+            else:
+                func = lambda doc: [str(w).translate(trans_table) for w in doc]
+            Xt[corpus] = Xt[corpus].apply(func)
 
-        # Convert all drops to one dataframe attribute
-        self.drops_ = pd.concat(drops.values(), axis=1)
+        # Drop empty tokens from every document
+        if not isinstance(Xt[corpus].iat[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda doc: [w for w in doc if w])
 
-        # Drop empty tokens from every row
-        if not isinstance(X[corpus].iat[0], str):
-            X[corpus] = X[corpus].apply(lambda row: [w for w in row if w])
-
-        return X
+        return Xt
 
 
-class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
+class TextNormalizer(TransformerMixin):
     """Normalize the corpus.
 
     Convert words to a more uniform standard. The transformations
@@ -539,50 +504,50 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             else:  # "NN", "NNS", "NNP", "NNPS"
                 return wordnet.NOUN
 
-        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
-        corpus = get_corpus(X)
+        Xt, yt = self._check_input(X, y, columns=getattr(self, "feature_names_in_", None))
+        corpus = get_corpus(Xt)
 
         self._log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus].iat[0], str):
-            X[corpus] = X[corpus].apply(lambda row: row.split())
+        if isinstance(Xt[corpus].iat[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda row: row.split())
 
-        stopwords = []
+        stopwords = set()
         if self.stopwords:
-            if self.stopwords is True:
+            if isinstance(self.stopwords, BoolTypes):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
-            stopwords = list(set(nltk.corpus.stopwords.words(self.stopwords.lower())))
+            stopwords = set(nltk.corpus.stopwords.words(self.stopwords.lower()))
 
         # Join predefined with customs stopwords
         if self.custom_stopwords is not None:
-            stopwords = set(stopwords + list(self.custom_stopwords))
+            stopwords = stopwords | set(self.custom_stopwords)
 
         if stopwords:
             self._log(" --> Dropping stopwords.", 2)
             f = lambda row: [word for word in row if word not in stopwords]
-            X[corpus] = X[corpus].apply(f)
+            Xt[corpus] = Xt[corpus].apply(f)
 
         if self.stem:
-            if self.stem is True:
+            if isinstance(self.stem, BoolTypes):
                 self.stem = "english"
 
             self._log(" --> Applying stemming.", 2)
             ss = SnowballStemmer(language=self.stem.lower())
-            X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
+            Xt[corpus] = Xt[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
             self._log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
-            X[corpus] = X[corpus].apply(f)
+            Xt[corpus] = Xt[corpus].apply(f)
 
-        return X
+        return Xt
 
 
-class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
+class Tokenizer(TransformerMixin):
     """Tokenize the corpus.
 
     Convert documents into sequences of words. Additionally,
@@ -759,21 +724,21 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             """
             sep = "<&&>"  # Separator between words in a ngram.
 
-            row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
-            row = row.replace(  # Replace ngrams separator with underscore
+            row_c = "&>" + sep.join(row) + "<&"  # Indicate words with separator
+            row_c = row_c.replace(  # Replace ngrams separator with underscore
                 "&>" + sep.join(ngram) + "<&",
                 "&>" + "_".join(ngram) + "<&",
             )
 
-            return row[2:-2].split(sep)
+            return row_c[2:-2].split(sep)
 
-        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
-        corpus = get_corpus(X)
+        Xt, yt = self._check_input(X, y, columns=getattr(self, "feature_names_in_", None))
+        corpus = get_corpus(Xt)
 
         self._log("Tokenizing the corpus...", 1)
 
-        if isinstance(X[corpus].iat[0], str):
-            X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
+        if isinstance(Xt[corpus].iat[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda row: nltk.word_tokenize(row))
 
         ngrams = {
             "bigrams": BigramCollocationFinder,
@@ -784,7 +749,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         for attr, finder in ngrams.items():
             if frequency := getattr(self, f"{attr[:-1]}_freq"):
                 # Search for all n-grams in the corpus
-                ngram_fd = finder.from_documents(X[corpus]).ngram_fd
+                ngram_fd = finder.from_documents(Xt[corpus]).ngram_fd
 
                 if frequency < 1:
                     frequency = int(frequency * len(ngram_fd))
@@ -795,7 +760,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
                     if freq >= frequency:
                         occur += 1
                         counts += freq
-                        X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
+                        Xt[corpus] = Xt[corpus].apply(replace_ngrams, args=(ngram,))
                         rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
 
                 if rows:
@@ -805,12 +770,12 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
                     self._log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
                 else:
-                    self._log(f" --> No {attr} found in the corpus.")
+                    self._log(f" --> No {attr} found in the corpus.", 2)
 
-        return X
+        return Xt
 
 
-class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
+class Vectorizer(TransformerMixin):
     """Vectorize text data.
 
     Transform the corpus into meaningful vectors of numbers. The
@@ -966,7 +931,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: XSelector, y: YSelector | None = None) -> Vectorizer:
+    def fit(self, X: XSelector, y: YSelector | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -981,18 +946,18 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        Vectorizer
+        Self
             Estimator instance.
 
         """
-        X, y = self._prepare_input(X, y)
-        self._check_feature_names(X, reset=True)
-        self._check_n_features(X, reset=True)
-        corpus = get_corpus(X)
+        Xt, yt = self._check_input(X, y)
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+        corpus = get_corpus(Xt)
 
         # Convert a sequence of tokens to space separated string
-        if not isinstance(X[corpus].iat[0], str):
-            X[corpus] = X[corpus].apply(lambda row: " ".join(row))
+        if not isinstance(Xt[corpus].iat[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda row: " ".join(row))
 
         strategies = dict(
             bow="CountVectorizer",
@@ -1007,7 +972,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._estimator = estimator(**self.kwargs)
 
         self._log("Fitting Vectorizer...", 1)
-        self._estimator.fit(X[corpus])
+        self._estimator.fit(Xt[corpus])
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)
@@ -1035,23 +1000,23 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
-        corpus = get_corpus(X)
+        Xt, yt = self._check_input(X, y, columns=self.feature_names_in_)
+        corpus = get_corpus(Xt)
 
         self._log("Vectorizing the corpus...", 1)
 
         # Convert a sequence of tokens to space-separated string
-        if not isinstance(X[corpus].iat[0], str):
-            X[corpus] = X[corpus].apply(lambda row: " ".join(row))
+        if not isinstance(Xt[corpus].iat[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda row: " ".join(row))
 
-        matrix = self._estimator.transform(X[corpus])
+        matrix = self._estimator.transform(Xt[corpus])
         if hasattr(self._estimator, "get_feature_names_out"):
             columns = [f"corpus_{w}" for w in self._estimator.get_feature_names_out()]
         else:
             # Hashing has no words to put as column names
             columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
 
-        X = X.drop(corpus, axis=1)  # Drop original corpus column
+        Xt = Xt.drop(corpus, axis=1)  # Drop original corpus column
 
         if "sklearn" not in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy
@@ -1064,11 +1029,11 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         if not self.return_sparse:
             self._log(" --> Converting the output to a full array.", 2)
             matrix = matrix.toarray()
-        elif not X.empty and not is_sparse(X):
+        elif not Xt.empty and not is_sparse(Xt):
             # Raise if there are other columns that are non-sparse
             raise ValueError(
                 "Invalid value for the return_sparse parameter. The value must "
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        return merge(X, to_df(matrix, X.index, columns))
+        return merge(Xt, to_df(matrix, Xt.index, columns))

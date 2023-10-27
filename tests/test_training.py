@@ -14,33 +14,10 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
 
-from .conftest import (
-    bin_test, bin_train, class_test, class_train, reg_test, reg_train,
-)
+from .conftest import reg_test, reg_train
 
 
 # Test trainers ============================================== >>
-
-def test_infer_task():
-    """Assert that the correct task is inferred from the data."""
-    trainer = DirectClassifier("LR")
-    trainer.run(bin_train, bin_test)
-    assert trainer.task == "binary classification"
-
-    trainer = DirectClassifier("LR")
-    trainer.run(class_train, class_test)
-    assert trainer.task == "multiclass classification"
-
-    trainer = DirectRegressor("LGB", est_params={"n_estimators": 5})
-    trainer.run(reg_train, reg_test)
-    assert trainer.task == "regression"
-
-
-def test_sh_skip_runs_below_zero():
-    """Assert that an error is raised if skip_runs < 0."""
-    sh = SuccessiveHalvingRegressor(models="OLS", skip_runs=-1)
-    pytest.raises(ValueError, sh.run, reg_train, reg_test)
-
 
 def test_sh_skip_runs_too_large():
     """Assert that an error is raised if skip_runs >= n_runs."""
@@ -85,25 +62,25 @@ def test_ts_different_train_sizes_types():
 def test_goals_trainers():
     """Assert that the goal of every Trainer class is set correctly."""
     trainer = DirectClassifier("LR")
-    assert trainer.goal == "class"
+    assert trainer._goal.name == "classification"
 
     trainer = DirectRegressor("OLS")
-    assert trainer.goal == "reg"
+    assert trainer._goal.name == "regression"
 
 
 def test_goals_successive_halving():
     """Assert that the goal of every SuccessiveHalving class is set correctly."""
-    sh = SuccessiveHalvingClassifier("LR")
-    assert sh.goal == "class"
+    trainer = SuccessiveHalvingClassifier("LR")
+    assert trainer._goal.name == "classification"
 
-    sh = SuccessiveHalvingRegressor("OLS")
-    assert sh.goal == "reg"
+    trainer = SuccessiveHalvingRegressor("OLS")
+    assert trainer._goal.name == "regression"
 
 
 def test_goals_train_sizing():
     """Assert that the goal of every TrainSizing class is set correctly."""
-    ts = TrainSizingClassifier("LR")
-    assert ts.goal == "class"
+    trainer = TrainSizingClassifier("LR")
+    assert trainer._goal.name == "classification"
 
-    ts = TrainSizingRegressor("OLS")
-    assert ts.goal == "reg"
+    trainer = TrainSizingRegressor("OLS")
+    assert trainer._goal.name == "regression"

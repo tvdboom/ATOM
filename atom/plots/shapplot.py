@@ -9,7 +9,7 @@ Description: Module containing the ShapPlot class.
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABCMeta
 from importlib.util import find_spec
 from pathlib import Path
 
@@ -27,7 +27,7 @@ from atom.utils.utils import check_canvas, crash
 
 
 @beartype
-class ShapPlot(BasePlot, ABC):
+class ShapPlot(BasePlot, metaclass=ABCMeta):
     """Shap plots.
 
     ATOM wrapper for plots made by the shap package, using Shapley

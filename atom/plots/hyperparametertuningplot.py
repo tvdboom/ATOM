@@ -9,7 +9,7 @@ Description: Module containing the HyperparameterTuningPlot class.
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABCMeta
 from datetime import datetime
 from pathlib import Path
 
@@ -37,7 +37,7 @@ from atom.utils.utils import (
 )
 
 
-class HyperparameterTuningPlot(BasePlot, ABC):
+class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
     """Hyperparameter tuning plots.
 
     Plots that help interpret the model's study and corresponding

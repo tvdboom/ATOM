@@ -109,7 +109,7 @@ class Branch:
         self._container = data
         self._holdout = holdout
         self._pipeline = Pipeline([], memory=memory)
-        self._mapping: dict[str, dict[str, Scalar]] = {}
+        self._mapping: dict[str, dict[Hashable, Scalar]] = {}
 
         # Path to store the data
         if self.memory.location is None:
@@ -131,7 +131,8 @@ class Branch:
         if data := self.load(assign=False):
             return data
 
-        raise RuntimeError("This branch has no dataset assigned.")
+        # Is AttributeError to fail __getattr__ of BaseRunner when accessing empty branch
+        raise AttributeError(f"The {self.name} branch has no dataset assigned.")
 
     @property
     def name(self) -> str:
@@ -277,7 +278,7 @@ class Branch:
         return self._pipeline
 
     @property
-    def mapping(self) -> dict[str, dict[str, Scalar]]:
+    def mapping(self) -> dict[str, dict[Hashable, Scalar]]:
         """Encoded values and their respective mapped values.
 
         The column name is the key to its mapping dictionary. Only for

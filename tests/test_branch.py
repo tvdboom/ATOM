@@ -56,7 +56,7 @@ def test_data_property():
 def test_data_property_unassigned_data():
     """Assert that an error is raised when the data is still unassigned."""
     trainer = DirectClassifier("LR")
-    with pytest.raises(RuntimeError, match=".*no dataset assigned.*"):
+    with pytest.raises(AttributeError, match=".*no dataset assigned.*"):
         print(trainer.dataset)
 
 

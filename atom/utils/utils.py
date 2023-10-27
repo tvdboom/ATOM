@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
+from beartype.door import is_bearable
 from beartype.typing import Any, Callable, Hashable, Iterator, Literal, TypeVar
 from IPython.display import display
 from matplotlib.colors import to_rgba
@@ -83,9 +84,9 @@ class NotFittedError(ValueError, AttributeError):
 
 class Goal(Enum):
     """Supported goals by ATOM."""
-    classification = 1
-    regression = 2
-    forecast = 3
+    classification = 0
+    regression = 1
+    forecast = 2
 
     def infer_task(self, y: Pandas) -> Task:
         """Infer the task corresponding to a target column.
@@ -101,12 +102,12 @@ class Goal(Enum):
             Inferred task.
 
         """
-        if self.value == 2:
+        if self.value == 1:
             if isinstance(y, SeriesTypes):
                 return Task.regression
             else:
                 return Task.multioutput_regression
-        elif self.value == 3:
+        elif self.value == 2:
             if isinstance(y, SeriesTypes):
                 return Task.univariate_forecast
             else:
@@ -129,14 +130,14 @@ class Goal(Enum):
 
 class Task(Enum):
     """Supported tasks by ATOM."""
-    binary_classification = 1
-    multiclass_classification = 2
-    multilabel_classification = 3
-    multiclass_multioutput_classification = 4
-    regression = 5
-    multioutput_regression = 6
-    univariate_forecast = 7
-    multivariate_forecast = 8
+    binary_classification = 0
+    multiclass_classification = 1
+    multilabel_classification = 2
+    multiclass_multioutput_classification = 3
+    regression = 4
+    multioutput_regression = 5
+    univariate_forecast = 6
+    multivariate_forecast = 7
 
     def __str__(self) -> str:
         return self.name.replace("_", " ").capitalize()
@@ -144,32 +145,32 @@ class Task(Enum):
     @property
     def is_classification(self) -> bool:
         """Return whether the task is a classification task."""
-        return self.value in (1, 2, 3, 4)
+        return self.value in (0, 1, 2, 3)
 
     @property
     def is_regression(self) -> bool:
         """Return whether the task is a regression task."""
-        return self.value in (5, 6)
+        return self.value in (4, 5)
 
     @property
     def is_forecast(self) -> bool:
         """Return whether the task is a forecast task."""
-        return self.value in (7, 8)
+        return self.value in (6, 7)
 
     @property
     def is_binary(self) -> bool:
         """Return whether the task is binary or multilabel."""
-        return self.value in (1, 3)
+        return self.value in (0, 2)
 
     @property
     def is_multiclass(self) -> bool:
         """Return whether the task is multiclass or multiclass-multioutput."""
-        return self.value in (2, 4)
+        return self.value in (1, 3)
 
     @property
     def is_multioutput(self) -> bool:
         """Return whether the task has more than one target column."""
-        return self.value in (3, 4, 6, 8)
+        return self.value in (2, 3, 5, 7)
 
     @property
     def goal(self) -> Goal:
@@ -1646,10 +1647,11 @@ def get_versions(models: ClassMap) -> dict[str, str]:
     return versions
 
 
-def get_corpus(df: DataFrame) -> Series:
+def get_corpus(df: DataFrame) -> str:
     """Get text column from a dataframe.
 
-    The text column should be called `corpus` (case-insensitive).
+    The text column should be called `corpus` (case-insensitive). Also
+    checks if the column consists of a string or sequence of strings.
 
     Parameters
     ----------
@@ -1658,14 +1660,21 @@ def get_corpus(df: DataFrame) -> Series:
 
     Returns
     -------
-    series
-        Column with text values.
+    str
+        Name of the corpus column.
 
     """
     try:
-        return next(col for col in df.columns if col.lower() == "corpus")
+        corpus = next(col for col in df.columns if col.lower() == "corpus")
+
+        if not is_bearable(df[corpus].iat[0], (str, Sequence[str])):
+            raise TypeError(
+                "The corpus should consist of a string or sequence of strings."
+            )
+        else:
+            return corpus
     except StopIteration:
-        raise ValueError("The provided dataset does not contain a text corpus!")
+        raise ValueError("The provided dataset does not contain a column named corpus.")
 
 
 def time_to_str(t: Scalar) -> str:

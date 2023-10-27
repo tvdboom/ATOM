@@ -54,31 +54,31 @@ def test_inverse_transform():
 def test_balance_multioutput_task():
     """Assert that an error is raised for multioutput tasks."""
     with pytest.raises(ValueError, match=".*not support multioutput.*"):
-        Balancer().transform(X_class, y_multiclass)
+        Balancer().fit_transform(X_class, y_multiclass)
 
 
 def test_balancer_strategy_unknown_str():
     """Assert that an error is raised when strategy is unknown."""
     balancer = Balancer(strategy="invalid")
     with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        balancer.transform(X_bin, y_bin)
+        balancer.fit_transform(X_bin, y_bin)
 
 
 def test_balancer_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
     balancer = Balancer(strategy=StandardScaler())
     with pytest.raises(TypeError, match=".*type for the strategy.*"):
-        balancer.transform(X_bin, y_bin)
+        balancer.fit_transform(X_bin, y_bin)
 
 
 def test_balancer_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     balancer = Balancer(strategy=SMOTETomek)
-    X, y = balancer.transform(X_bin, y_bin)
+    X, y = balancer.fit_transform(X_bin, y_bin)
     assert len(X) != len(X_bin)
 
     balancer = Balancer(strategy=SMOTETomek())
-    X, y = balancer.transform(X_bin, y_bin)
+    X, y = balancer.fit_transform(X_bin, y_bin)
     assert len(X) != len(X_bin)
 
 
@@ -86,45 +86,47 @@ def test_balancer_custom_estimator():
 def test_balancers(strategy):
     """Assert that balancer estimators work as intended."""
     balancer = Balancer(strategy=strategy, sampling_strategy="all")
-    X, y = balancer.transform(X_bin, y_bin)
+    X, y = balancer.fit_transform(X_bin, y_bin)
     assert len(X) != len(X_bin)
 
 
 def test_balancer_kwargs():
     """Assert that kwargs can be passed to the estimator."""
     balancer = Balancer(strategy="SMOTE", k_neighbors=12)
-    balancer.transform(X_class, y_class)
-    assert balancer.smote.get_params()["k_neighbors"] == 12
+    balancer.fit_transform(X_class, y_class)
+    assert balancer.smote_.get_params()["k_neighbors"] == 12
 
 
 def test_oversampling_numerical_index():
     """Assert that new samples have an increasing int index."""
-    X, y = Balancer(strategy="smote").transform(X_bin, y_bin)
+    X, y = Balancer(strategy="smote").fit_transform(X_bin, y_bin)
     assert list(X.index) == list(range(len(X)))
 
 
 def test_oversampling_string_index():
     """Assert that new samples have a new index."""
-    X, y = Balancer(strategy="smote").transform(X_idx, y_idx)
+    X, y = Balancer(strategy="smote").fit_transform(X_idx, y_idx)
     assert X.index[-1] == f"smote_{len(X) - len(X_idx)}"
 
 
 def test_undersampling_keeps_indices():
     """Assert that indices are kept after transformation."""
-    X, y = Balancer(strategy="nearmiss").transform(X_bin, y_bin)
+    X, y = Balancer(strategy="nearmiss").fit_transform(X_bin, y_bin)
     assert list(X.index) != list(range(len(X)))
 
 
 def test_combinations_numerical_index():
     """Assert that new samples have an increasing int index."""
-    X, y = Balancer(strategy="smoteenn").transform(X_bin, y_bin)
+    X, y = Balancer(strategy="smoteenn").fit_transform(X_bin, y_bin)
+    print(X_bin)
+    print(X)
     assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
     assert max(X.index) > max(X_bin.index)  # Samples were added
 
 
 def test_combinations_string_index():
     """Assert that new samples have a new index."""
-    X, y = Balancer(strategy="smotetomek").transform(X_idx, y_idx)
+    X, y = Balancer(strategy="smotetomek").fit_transform(X_idx, y_idx)
     assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
     assert len(X.index.str.startswith("smotetomek") > 0)  # Samples were added
 
@@ -132,8 +134,8 @@ def test_combinations_string_index():
 def test_balancer_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     balancer = Balancer(strategy="smote")
-    balancer.transform(X_bin, y_bin)
-    assert hasattr(balancer, "smote")
+    balancer.fit_transform(X_bin, y_bin)
+    assert hasattr(balancer, "smote_")
 
 
 # Test Cleaner ==================================================== >>
@@ -249,7 +251,7 @@ def test_cleaner_inverse_transform_multilabel():
 def test_cleaner_target_mapping_binary():
     """Assert that the mapping attribute is set for binary tasks."""
     cleaner = Cleaner().fit(y=y10_str)
-    assert cleaner.mapping == {"target": {"n": 0, "y": 1}}
+    assert cleaner.mapping_ == {"target": {"n": 0, "y": 1}}
 
 
 # Test Discretizer ================================================= >>
@@ -352,20 +354,6 @@ def test_strategy_with_encoder_at_end():
     assert encoder._encoders["x2"].__class__.__name__ == "TargetEncoder"
 
 
-def test_max_onehot_parameter():
-    """Assert that the max_onehot parameter is set correctly."""
-    encoder = Encoder(max_onehot=-2)
-    with pytest.raises(ValueError, match=".*value for the max_onehot.*"):
-        encoder.fit(X10_str, y10)
-
-
-def test_infrequent_to_value_parameter():
-    """Assert that the infrequent_to_value parameter is set correctly."""
-    encoder = Encoder(infrequent_to_value=-2)
-    with pytest.raises(ValueError, match=".*value for the infrequent_to_value.*"):
-        encoder.fit(X10_str, y10)
-
-
 @pytest.mark.parametrize("infrequent_to_value", [3, 0.3])
 def test_infrequent_to_value(infrequent_to_value):
     """Assert that the other values are created when encoding."""
@@ -384,10 +372,6 @@ def test_encoder_strategy_invalid_estimator():
 def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     encoder = Encoder(strategy=TargetEncoder, max_onehot=None)
-    X = encoder.fit_transform(X10_str, y10)
-    assert X.at[0, "x2"] != "a"
-
-    encoder = Encoder(strategy=TargetEncoder(), max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
     assert X.at[0, "x2"] != "a"
 
@@ -415,7 +399,7 @@ def test_ordinal_encoder():
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["x2"] == 0) | (X["x2"] == 1))
-    assert list(encoder.mapping) == ["x2", "x3"]
+    assert list(encoder.mapping_) == ["x2", "x3"]
 
 
 def test_ordinal_features():
@@ -449,20 +433,6 @@ def test_kwargs_parameters():
 
 # Test Imputer ===================================================== >>
 
-def test_invalid_max_nan_rows():
-    """Assert that an error is raised for invalid max_nan_rows."""
-    imputer = Imputer(max_nan_rows=-2)
-    with pytest.raises(ValueError, match=".*value for the max_nan_rows.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_invalid_max_nan_cols():
-    """Assert that an error is raised for invalid max_nan_cols."""
-    imputer = Imputer(max_nan_cols=-5)
-    with pytest.raises(ValueError, match=".*value for the max_nan_cols.*"):
-        imputer.fit(X_bin, y_bin)
-
-
 def test_imputer_check_is_fitted():
     """Assert that an error is raised if the instance is not fitted."""
     pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
@@ -473,9 +443,9 @@ def test_imputing_all_missing_values_numeric(missing):
     """Assert that all missing values are imputed in numeric columns."""
     X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]
     y = [1, 1, 0, 0]
-    imputer = Imputer(strat_num="mean")
-    imputer.missing.append(99)
-    X, y = imputer.fit_transform(X, y)
+    imputer = Imputer(strat_num="mean").fit(X, y)
+    imputer.missing_.append(99)
+    X, y = imputer.transform(X, y)
     assert X.isna().sum().sum() == 0
 
 
@@ -661,7 +631,7 @@ def test_normalizer_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     normalizer = Normalizer(strategy="quantile")
     normalizer.fit_transform(X_bin)
-    assert hasattr(normalizer, "quantile")
+    assert hasattr(normalizer, "quantile_")
 
 
 # Test Pruner ====================================================== >>
@@ -670,13 +640,6 @@ def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
     pruner = Pruner(strategy="iforest", method="minmax")
     with pytest.raises(ValueError, match=".*accepts another method.*"):
-        pruner.transform(X_bin)
-
-
-def test_invalid_max_sigma_parameter():
-    """Assert that an error is raised for an invalid max_sigma parameter."""
-    pruner = Pruner(max_sigma=0)
-    with pytest.raises(ValueError, match=".*value for the max_sigma.*"):
         pruner.transform(X_bin)
 
 
@@ -693,7 +656,7 @@ def test_kwargs_parameter_pruner():
     """Assert that the kwargs are passed to the strategy estimator."""
     pruner = Pruner(strategy="iforest", n_estimators=50)
     pruner.transform(X10)
-    assert pruner.iforest.get_params()["n_estimators"] == 50
+    assert pruner.iforest_.get_params()["n_estimators"] == 50
 
 
 def test_drop_pruner():
@@ -730,41 +693,41 @@ def test_drop_outlier_in_target():
 
 @pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan", "hdbscan"])
 def test_pruner_strategies(strategy):
-    """Assert that all estimator requiring strategies work."""
+    """Assert that all estimators requiring strategies work."""
     pruner = Pruner(strategy=strategy)
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert hasattr(pruner, strategy.lower())
+    assert hasattr(pruner, f"{strategy.lower()}_")
 
 
 def test_multiple_strategies():
-    """Assert that selecting multiple strategies work."""
+    """Assert that selecting multiple strategies works."""
     pruner = Pruner(strategy=["zscore", "lof", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert all(hasattr(pruner, attr) for attr in ("lof", "iforest"))
+    assert all(hasattr(pruner, attr) for attr in ("lof_", "iforest_"))
 
 
 def test_kwargs_one_strategy():
     """Assert that kwargs can be provided for one strategy."""
     pruner = Pruner(strategy="iforest", n_estimators=100)
     pruner.transform(X_bin, y_bin)
-    assert pruner.iforest.get_params()["n_estimators"] == 100
+    assert pruner.iforest_.get_params()["n_estimators"] == 100
 
 
 def test_kwargs_multiple_strategies():
     """Assert that kwargs can be provided for multiple strategies."""
     pruner = Pruner(["svm", "lof"], svm={"kernel": "poly"}, lof={"n_neighbors": 10})
     pruner.transform(X_bin, y_bin)
-    assert pruner.svm.get_params()["kernel"] == "poly"
-    assert pruner.lof.get_params()["n_neighbors"] == 10
+    assert pruner.svm_.get_params()["kernel"] == "poly"
+    assert pruner.lof_.get_params()["n_neighbors"] == 10
 
 
 def test_pruner_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     pruner = Pruner(strategy="iforest")
     pruner.transform(X_bin)
-    assert hasattr(pruner, "iforest")
+    assert hasattr(pruner, "iforest_")
 
 
 # Test Scaler ====================================================== >>
@@ -833,4 +796,4 @@ def test_scaler_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     scaler = Scaler(strategy="robust")
     scaler.fit_transform(X_bin)
-    assert hasattr(scaler, "robust")
+    assert hasattr(scaler, "robust_")

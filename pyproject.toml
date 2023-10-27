@@ -129,3 +129,4 @@ remove_redundant_aliases = true
 
 [tool.mypy]
 ignore_missing_imports = true
+disable_error_code = ["attr-defined"]

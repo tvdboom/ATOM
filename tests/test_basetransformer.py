@@ -209,43 +209,43 @@ def test_get_est_class_from_default():
     assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
 
 
-# Test _prepare_input ============================================== >>
+# Test _check_input ============================================== >>
 
 def test_input_is_copied():
     """Assert that the data is copied."""
-    X, y = BaseTransformer._prepare_input(X_bin, y_bin)
+    X, y = BaseTransformer._check_input(X_bin, y_bin)
     assert X is not X_bin and y is not y_bin
 
 
 def test_input_X_and_y_None():
     """Assert that an error is raised when both X and y are None."""
     with pytest.raises(ValueError, match=".*both None.*"):
-        BaseTransformer._prepare_input()
+        BaseTransformer._check_input()
 
 
 def test_X_is_callable():
     """Assert that the data provided can be a callable."""
-    X, _ = BaseTransformer._prepare_input(lambda: [[1, 2], [2, 1], [3, 1]])
+    X, _ = BaseTransformer._check_input(lambda: [[1, 2], [2, 1], [3, 1]])
     assert isinstance(X, pd.DataFrame)
 
 
 def test_to_pandas():
     """Assert that the data provided is converted to pandas objects."""
-    X, y = BaseTransformer._prepare_input(X_bin_array, y_bin_array)
+    X, y = BaseTransformer._check_input(X_bin_array, y_bin_array)
     assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
 
 
 def test_column_order_is_retained():
     """Assert that column order is kept if column names are specified."""
     X_shuffled = X_bin[sample(list(X_bin.columns), X_bin.shape[1])]
-    X, _ = BaseTransformer._prepare_input(X_shuffled, columns=X_bin.columns)
+    X, _ = BaseTransformer._check_input(X_shuffled, columns=X_bin.columns)
     assert list(X.columns) == list(X_bin.columns)
 
 
 def test_incorrect_columns():
     """Assert that an error is raised when the provided columns do not match."""
     with pytest.raises(ValueError, match=".*features are different.*"):
-        BaseTransformer._prepare_input(X_bin, columns=["1", "2"])
+        BaseTransformer._check_input(X_bin, columns=["1", "2"])
 
 
 def test_input_data_in_atom():
@@ -303,74 +303,74 @@ def test_sparse_matrices_2_tuples():
 
 def test_target_is_dict():
     """Assert that the target column is assigned correctly for a dict."""
-    _, y = BaseTransformer._prepare_input(X10, {"a": [0] * 10})
+    _, y = BaseTransformer._check_input(X10, {"a": [0] * 10})
     assert isinstance(y, pd.Series)
 
 
 def test_multioutput_str():
     """Assert that multioutput can be assigned by column name."""
-    X, y = BaseTransformer._prepare_input(X_bin, ["mean radius", "worst perimeter"])
+    X, y = BaseTransformer._check_input(X_bin, ["mean radius", "worst perimeter"])
     assert list(y.columns) == ["mean radius", "worst perimeter"]
 
 
 def test_multioutput_int():
     """Assert that multioutput can be assigned by column position."""
-    X, y = BaseTransformer._prepare_input(X_bin, [0, 2])
+    X, y = BaseTransformer._check_input(X_bin, [0, 2])
     assert list(y.columns) == ["mean radius", "mean perimeter"]
 
 
 def test_equal_length():
     """Assert that an error is raised when X and y have unequal length."""
     with pytest.raises(ValueError, match=".*number of rows.*"):
-        BaseTransformer._prepare_input(X10, [312, 22])
+        BaseTransformer._check_input(X10, [312, 22])
 
 
 def test_equal_index():
     """Assert that an error is raised when X and y don't have same indices."""
     y = pd.Series(y_bin_array, index=range(10, len(y_bin_array) + 10))
     with pytest.raises(ValueError, match=".*same indices.*"):
-        BaseTransformer._prepare_input(X_bin, y)
+        BaseTransformer._check_input(X_bin, y)
 
 
 def test_target_is_string():
     """Assert that the target column is assigned correctly for a string."""
-    _, y = BaseTransformer._prepare_input(X_bin, y="mean radius")
+    _, y = BaseTransformer._check_input(X_bin, y="mean radius")
     assert y.name == "mean radius"
 
 
 def test_target_not_in_dataset():
     """Assert that the target column given by y is in X."""
     with pytest.raises(ValueError, match=".*not found in X.*"):
-        BaseTransformer._prepare_input(X_bin, "X")
+        BaseTransformer._check_input(X_bin, "X")
 
 
 def test_X_is_None_with_str():
     """Assert that an error is raised when X is None and y is a string."""
     with pytest.raises(ValueError, match=".*can't be None when y is a str.*"):
-        BaseTransformer._prepare_input(y="test")
+        BaseTransformer._check_input(y="test")
 
 
 def test_target_is_int():
     """Assert that target column is assigned correctly for an integer."""
-    _, y = BaseTransformer._prepare_input(X_bin, y=0)
+    _, y = BaseTransformer._check_input(X_bin, y=0)
     assert y.name == "mean radius"
 
 
 def test_X_is_None_with_int():
     """Assert that an error is raised when X is None and y is an int."""
     with pytest.raises(ValueError, match=".*can't be None when y is an int.*"):
-        BaseTransformer._prepare_input(y=1)
+        BaseTransformer._check_input(y=1)
 
 
 def test_target_is_none():
     """Assert that target column stays None when empty input."""
-    _, y = BaseTransformer._prepare_input(X_bin, y=None)
+    _, y = BaseTransformer._check_input(X_bin, y=None)
     assert y is None
 
 
 def test_X_empty_df():
     """Assert that X becomes an empty dataframe when provided but in y."""
-    X, y = BaseTransformer._prepare_input(y_fc, y=-1)
+    X, y = BaseTransformer._check_input(y_fc, y=-1)
     assert X.empty and isinstance(y, pd.Series)
 
 

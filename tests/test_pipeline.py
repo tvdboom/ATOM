@@ -55,7 +55,7 @@ def test_fit(pipeline):
 
 def test_internal_attrs_are_saved(pipeline):
     """Assert that cols and train_only attrs are stored after clone."""
-    pl = pipeline(model=False, memory=True)
+    pl = pipeline(model=False)
     pl.fit(X_bin, y_bin)
     assert pl.steps[-1][1]._cols == ["mean radius"]
     assert pl.steps[-2][1]._train_only is True

@@ -8,6 +8,7 @@ Description: Unit tests for basemodel.py
 """
 
 import glob
+import sys
 from unittest.mock import patch
 
 import pandas as pd
@@ -910,6 +911,7 @@ def test_save_estimator():
     assert glob.glob("MultinomialNB.pkl")
 
 
+@pytest.mark.skipif(sys.version_info.minor == 11, reason="Ray doesn't support 3.11")
 def test_serve():
     """Assert that the serve method deploys a reachable endpoint."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

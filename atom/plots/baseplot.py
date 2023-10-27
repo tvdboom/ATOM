@@ -9,7 +9,7 @@ Description: Module containing the BasePlot class.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
 from typing import overload
@@ -36,7 +36,7 @@ from atom.utils.utils import (
 )
 
 
-class BasePlot(BaseTransformer, BaseTracker, ABC):
+class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     """Abstract base class for all plotting methods.
 
     This base class defines the properties that can be changed

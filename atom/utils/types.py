@@ -207,7 +207,7 @@ FloatZeroToOneInc: TypeAlias = Annotated[Float, Is[lambda x: 0 <= x <= 1]]
 FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
 # Types for X and y
-XSelector = Union[
+XTypes = Union[
     dict[str, Sequence[Any]],
     Sequence[Sequence[Any]],
     Iterable[
@@ -217,6 +217,7 @@ XSelector = Union[
     sps.spmatrix,
     DataFrame,
 ]
+XSelector = Union[XTypes, Callable[..., XTypes]]
 YTypes = Union[dict[str, Any], Sequence[Any], Series, XSelector]
 YSelector = Union[Int, str, YTypes]
 
