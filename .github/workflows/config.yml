@@ -49,7 +49,9 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install dependencies
-        run: pip install mypy types-requests pandas-stubs
+        run: |
+          pip install -U pip
+          pip install -U mypy types-requests pandas-stubs
       - name: Check type hints
         run: mypy atom tests
 
