@@ -36,13 +36,13 @@ packages are necessary for its correct functioning.
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.3.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.7.2)
 * **[mlflow](https://mlflow.org/)** (>=2.7.1)
-* **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.23.0)
+* **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.25.0)
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
 * **[numpy](https://numpy.org/)** (>=1.23.0)
 * **[optuna](https://optuna.org/)** (>=3.4.0)
 * **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.0.3)
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
-* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.6.1)
+* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.7.1)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.1)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
@@ -67,7 +67,7 @@ additional libraries. You can install all the optional dependencies using
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=2.0.0)
-* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.5.1)
+* **[ydata-profiling](https://github.com/ydataai/ydata-profiling)** (>=4.6.1)
 
 
 ### Development
@@ -82,7 +82,7 @@ using `pip install atom-ml[dev]`.
 * **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
 * **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
 * **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.2)
-* **[mypy](https://www.mypy-lang.org/)** (>=1.5.1)
+* **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
 
 **Testing**
 
