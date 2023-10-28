@@ -27,7 +27,7 @@ packages are necessary for its correct functioning.
 
 * **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.15.0)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.1)
-* **[dagshub](https://github.com/DagsHub/client)** (>=0.2.10)
+* **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.11.0)
@@ -83,6 +83,8 @@ using `pip install atom-ml[dev]`.
 * **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
 * **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.2)
 * **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
+* **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
+* **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)
 
 **Testing**
 
