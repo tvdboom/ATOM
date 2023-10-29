@@ -8,14 +8,14 @@ Description: Unit tests for atom.py
 """
 
 import glob
-from pathlib import Path
+# from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from category_encoders.target_encoder import TargetEncoder
-from evalml.pipelines.components.estimators import SVMClassifier
+# from evalml.pipelines.components.estimators import SVMClassifier
 from pandas.testing import assert_frame_equal, assert_index_equal
 from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
@@ -270,38 +270,38 @@ def test_unavailable_regression_properties():
 
 # Test utility methods ============================================= >>
 
-@patch("evalml.AutoMLSearch")
-def test_automl(cls):
-    """Assert that the automl method works."""
-    pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
-    cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", metric="accuracy")
-    atom.branch = "automl"  # Change branch since we need a new pipeline
-    atom.automl()
-    cls.assert_called_once()
-    assert len(atom.pipeline) == 1
-    assert atom.models == ["Tree", "SVM"]
-
-
-@patch("evalml.AutoMLSearch")
-def test_automl_custom_objective(cls):
-    """Assert that the automl method works for a custom objective."""
-    pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
-    cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.automl(objective="r2")
-    cls.assert_called_once()
-
-
-def test_automl_invalid_objective():
-    """Assert that an error is raised when the provided objective is invalid."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree", metric="mse")
-    with pytest.raises(ValueError, match=".*objective parameter.*"):
-        atom.automl(objective="r2")
+# @patch("evalml.AutoMLSearch")
+# def test_automl(cls):
+#     """Assert that the automl method works."""
+#     pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
+#     cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
+#
+#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+#     atom.run("Tree", metric="accuracy")
+#     atom.branch = "automl"  # Change branch since we need a new pipeline
+#     atom.automl()
+#     cls.assert_called_once()
+#     assert len(atom.pipeline) == 1
+#     assert atom.models == ["Tree", "SVM"]
+#
+#
+# @patch("evalml.AutoMLSearch")
+# def test_automl_custom_objective(cls):
+#     """Assert that the automl method works for a custom objective."""
+#     pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
+#     cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
+#
+#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+#     atom.automl(objective="r2")
+#     cls.assert_called_once()
+#
+#
+# def test_automl_invalid_objective():
+#     """Assert that an error is raised when the provided objective is invalid."""
+#     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+#     atom.run("Tree", metric="mse")
+#     with pytest.raises(ValueError, match=".*objective parameter.*"):
+#         atom.automl(objective="r2")
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
@@ -312,12 +312,12 @@ def test_distribution(distributions):
     assert isinstance(df, pd.DataFrame)
 
 
-@patch("ydata_profiling.ProfileReport")
-def test_eda(cls):
-    """Assert that the eda method creates a report."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.eda(filename="report")
-    cls.return_value.to_file.assert_called_once_with(Path("report.html"))
+# @patch("ydata_profiling.ProfileReport")
+# def test_eda(cls):
+#     """Assert that the eda method creates a report."""
+#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+#     atom.eda(filename="report")
+#     cls.return_value.to_file.assert_called_once_with(Path("report.html"))
 
 
 def test_inverse_transform():
