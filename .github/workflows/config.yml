@@ -101,7 +101,6 @@ jobs:
           python -m pip install -U pip setuptools
           pip install -U pytest pytest-cov
           pip install -e .[full]
-          pip install -U ydata-profiling
       - name: Run tests w/ coverage
         run: pytest --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov

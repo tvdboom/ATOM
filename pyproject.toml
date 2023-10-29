@@ -50,7 +50,7 @@ dependencies = [
 full = [
     "botorch>=0.8.5",
     "catboost>=1.2",
-#    "evalml>=0.81.1",  Clashes with category-encoders
+#    "evalml>=0.81.1",  # Clashes with category-encoders
     "explainerdashboard>=0.4.3",
     "gradio>=3.44.4",
     "lightgbm>=3.3.5",
@@ -58,7 +58,7 @@ full = [
     "schemdraw>=0.16",
     "wordcloud>=1.9.2",
     "xgboost>=2.0.0",
-#    "ydata-profiling>=4.6.1",  Clashes with dasghub about dacite
+    "ydata-profiling>=4.6.1",  # Clashes with dasghub about dacite
 ]
 
 [tool.pdm.dev-dependencies]
