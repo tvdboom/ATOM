@@ -32,7 +32,7 @@ packages are necessary for its correct functioning.
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.11.0)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
-* **[featuretools](https://www.featuretools.com/)** (>=1.27.0)
+* **[featuretools](https://www.featuretools.com/)** (>=1.28.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.3.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.7.2)
 * **[mlflow](https://mlflow.org/)** (>=2.7.1)
