@@ -25,7 +25,7 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.15.0)
+* **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.16.4)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.1)
 * **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
@@ -46,8 +46,8 @@ packages are necessary for its correct functioning.
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.1)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
-* **[shap](https://github.com/slundberg/shap/)** (>=0.42.1)
-* **[sktime](http://www.sktime.net/en/latest/)** (>=0.20.1)
+* **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)
+* **[sktime](http://www.sktime.net/en/latest/)** (>=0.24.0)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
 
@@ -61,7 +61,7 @@ additional libraries. You can install all the optional dependencies using
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.2)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.3)
 * **[evalml](https://evalml.alteryx.com/en/stable/)** (>=0.81.1)
-* **[gradio](https://github.com/gradio-app/gradio)** (>=3.19.1)
+* **[gradio](https://github.com/gradio-app/gradio)** (>=3.44.4)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.5)
 * **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
@@ -81,7 +81,7 @@ using `pip install atom-ml[dev]`.
 
 * **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
 * **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
-* **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.2)
+* **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.3)
 * **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
 * **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
 * **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)

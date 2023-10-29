@@ -20,5 +20,5 @@ repos:
     rev: v1.6.1
     hooks:
       - id: mypy
-        additional_dependencies: [pip==23.3.1, types-requests, pandas-stubs]
+        additional_dependencies: [pip==23.3.1, types-requests, pandas-stubs, beartype]
         files: ^atom/.*\.py$|tests/.*\.py$
