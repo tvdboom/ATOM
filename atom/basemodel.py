@@ -13,6 +13,7 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime as dt
+from functools import cached_property
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
@@ -53,10 +54,9 @@ from sklearn.multioutput import (
 )
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
-from sktime.forecasting.base import ForecastingHorizon
 from sktime.forecasting.compose import make_reduction
-from sktime.forecasting.model_selection import SingleWindowSplitter
 from sktime.proba.normal import Normal
+from sktime.split import SingleWindowSplitter
 from starlette.requests import Request
 
 from atom.branch import Branch, BranchManager
@@ -65,10 +65,11 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, Float, FloatTypes,
-    FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes, MetricConstructor,
-    NJobs, Pandas, PredictionMethod, Predictor, RowSelector, Scalar, Scorer,
-    Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector, YSelector,
+    HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, FHSelector, Float,
+    FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes,
+    MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor, RowSelector,
+    Scalar, Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings,
+    XSelector, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -659,13 +660,21 @@ class BaseModel(RunnerPlot):
         """
         # Select method to use for predictions
         if attr == "thresh":
-            for attribute in PredictionMethod.__args__:  # type: ignore[attr-defined]
+            for attribute in PredictionMethod.__args__:
                 if hasattr(self.estimator, attribute):
                     attr = attribute
                     break
 
-        X, y_true = self.branch._get_rows(rows, return_X_y=True)
-        y_pred = getattr(self, attr)(X.index)
+        df = self.branch._get_rows(rows)
+
+        # Filter for indices in dataset (required for sh and ts)
+        X = df.loc[df.index.isin(self.dataset.index), self.features]
+        y_true = df.loc[df.index.isin(self.dataset.index), self.target]
+
+        if self.task.is_forecast:
+            y_pred = getattr(self, attr)(X.index, X=check_empty(X))
+        else:
+            y_pred = getattr(self, attr)(X.index)
 
         if self.task.is_multioutput:
             if target is not None:
@@ -1331,7 +1340,7 @@ class BaseModel(RunnerPlot):
 
         self._log(f"Model {self.name} successfully renamed to {self._name}.", 1)
 
-    @property
+    @cached_property
     def task(self) -> Task:
         """Dataset's [task][] type."""
         return self._goal.infer_task(self.y)
@@ -1500,8 +1509,8 @@ class BaseModel(RunnerPlot):
         The dataframe has shape=(n_bootstrap, metric) and shows the
         score obtained by every bootstrapped sample for every metric.
         Using `atom.bootstrap.mean()` yields the same values as
-        [score_bootstrap][self-score_bootstrap]. This property is only
-        available for models that ran [bootstrapping][].
+        `[metric]_bootstrap`. This property is only available for
+        models that ran [bootstrapping][].
 
         """
         if self._bootstrap is not None:
@@ -1562,14 +1571,12 @@ class BaseModel(RunnerPlot):
         if data is None and hasattr(self.estimator, "estimators_"):
             estimators = self.estimator.estimators_
             if all(hasattr(x, "feature_importances_") for x in estimators):
-                data = np.array([fi.feature_importances_ for fi in estimators])
+                data_l = [fi.feature_importances_ for fi in estimators]
             elif all(hasattr(x, "coef_") for x in estimators):
-                data = np.array(
-                    [
-                        np.linalg.norm(fi.coef_, axis=np.argmin(fi.coef_.shape), ord=1)
-                        for fi in estimators
-                    ]
-                )
+                data_l = [
+                    np.linalg.norm(fi.coef_, axis=np.argmin(fi.coef_.shape), ord=1)
+                    for fi in estimators
+                ]
             else:
                 # For ensembles that mix attributes
                 raise ValueError(
@@ -1580,8 +1587,8 @@ class BaseModel(RunnerPlot):
 
             # Trim each coef to the number of features in the 1st estimator
             # ClassifierChain adds features to subsequent estimators
-            min_length = np.min([len(c) for c in data])
-            data = np.mean([c[:min_length] for c in data], axis=0)
+            min_length = np.min([len(c) for c in data_l])
+            data = np.mean([c[:min_length] for c in data_l], axis=0)
 
         if data is not None:
             return pd.Series(
@@ -2354,7 +2361,7 @@ class BaseModel(RunnerPlot):
         if not ray.is_initialized():
             ray.init(log_to_driver=False)
 
-        server = ServeModel.bind(  # type: ignore[attr-defined]
+        server = ServeModel.bind(
             pipeline=self.export_pipeline(),
             method=method,
         )
@@ -2856,7 +2863,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict(
         self,
-        fh: int | range | Sequence[Any] | ForecastingHorizon,
+        fh: FHSelector,
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
@@ -2895,7 +2902,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_interval(
         self,
-        fh: int | range | Sequence[Any] | ForecastingHorizon,
+        fh: FHSelector,
         X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
@@ -2944,7 +2951,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_proba(
         self,
-        fh: int | range | Sequence[Any] | ForecastingHorizon,
+        fh: FHSelector,
         X: XSelector | None = None,
         *,
         marginal: Bool = True,
@@ -2992,7 +2999,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_quantiles(
         self,
-        fh: int | range | Sequence[Any] | ForecastingHorizon,
+        fh: FHSelector,
         X: XSelector | None = None,
         *,
         alpha: Float | list[Float] = [0.05, 0.95],
@@ -3081,7 +3088,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_var(
         self,
-        fh: int | range | Sequence[Any] | ForecastingHorizon,
+        fh: FHSelector,
         X: XSelector | None = None,
         *,
         cov: Bool = False,
@@ -3133,7 +3140,7 @@ class ForecastModel(BaseModel):
         self,
         y: Sequence[Any] | DataFrame,
         X: DataFrame | None = None,
-        fh: int | Sequence[Any] | ForecastingHorizon | None = None,
+        fh: FHSelector | None = None,
         *,
         metric: MetricConstructor = None,
         verbose: Int | None = None,

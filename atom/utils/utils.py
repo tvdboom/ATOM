@@ -28,12 +28,15 @@ from unittest.mock import patch
 
 import mlflow
 import modin.pandas as md
+import nltk
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
 from beartype.door import is_bearable
-from beartype.typing import Any, Callable, Hashable, Iterator, Literal, TypeVar
+from beartype.typing import (
+    Any, Callable, Hashable, Iterator, Literal, Sequence, TypeVar,
+)
 from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
@@ -54,9 +57,8 @@ from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, Estimator, Float, Index, IndexSelector,
     Int, IntTypes, MetricConstructor, Model, Pandas, PandasTypes, Predictor,
-    Scalar, Scorer, Segment, SegmentTypes, Sequence, SequenceTypes, Series,
-    SeriesTypes, Transformer, TReturn, TReturns, Verbose, XSelector, YSelector,
-    YTypes,
+    Scalar, Scorer, Segment, SegmentTypes, SequenceTypes, Series, SeriesTypes,
+    Transformer, TReturn, TReturns, Verbose, XSelector, YSelector, YTypes,
 )
 
 
@@ -67,7 +69,6 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-T_Sequence = TypeVar("T_Sequence", bound=Sequence)
 T_Pandas = TypeVar("T_Pandas", Series, DataFrame)
 
 
@@ -204,7 +205,7 @@ class TrackingParams:
 @dataclass
 class Aesthetics:
     """Keeps track of plot aesthetics."""
-    palette: str | Sequence[str] | dict[str, str]  # Sequence of colors
+    palette: str | Sequence[str]  # Sequence of colors
     title_fontsize: Scalar  # Fontsize for titles
     label_fontsize: Scalar  # Fontsize for labels, legend and hoverinfo
     tick_fontsize: Scalar  # Fontsize for ticks
@@ -1419,7 +1420,7 @@ def variable_return(
         return X, y
 
 
-def get_segment(obj: T_Sequence, segment: Segment) -> T_Sequence:
+def get_segment(obj: list[T], segment: Segment) -> list[T]:
     """Get a subset of a sequence by range or slice.
 
     Parameters
@@ -1493,6 +1494,26 @@ def check_dependency(name: str):
             f"`pip install {name}` or install all of atom's optional "
             "dependencies with `pip install atom-ml[full]`."
         )
+
+
+def check_nltk_module(module: str, quiet: bool):
+    """Checks if a module for the NLTK package is avaialble.
+
+    If the module isn't available, it's downloaded.
+
+    Parameters
+    ----------
+    module: str
+        Name of the module to check.
+
+    quiet: bool
+        Whether to show logs when downloading.
+
+    """
+    try:
+        nltk.data.find(module)
+    except LookupError:
+        nltk.download(module.split("/")[-1], quiet=quiet)
 
 
 def check_canvas(is_canvas: Bool, method: str):

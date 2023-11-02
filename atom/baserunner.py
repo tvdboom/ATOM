@@ -13,12 +13,13 @@ import random
 import re
 from abc import ABCMeta
 from copy import deepcopy
+from functools import cached_property
 from pathlib import Path
 
 import dill as pickle
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Hashable
+from beartype.typing import Any, Hashable, Sequence
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
@@ -33,8 +34,8 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, FloatZeroToOneExc, Int, IntTypes,
     MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Scalar, Segment, SegmentTypes, Sequence, SequenceTypes,
-    Series, YSelector,
+    RowSelector, Scalar, Segment, SegmentTypes, SequenceTypes, Series,
+    YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Task, bk, check_is_fitted, composed, crash,
@@ -127,7 +128,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     # Utility properties =========================================== >>
 
-    @property
+    @cached_property
     def task(self) -> Task:
         """Dataset's [task][] type."""
         return self._goal.infer_task(self.y)
@@ -179,11 +180,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
-        [`score_bootstrap`][adaboost-score_bootstrap] or
-        [`score_test`][adaboost-score_test] attributes, checked in
-        that order. For [multi-metric runs][], only the main metric
-        is compared. Ties are resolved looking at the lowest
-        [time_fit][adaboost-time_fit].
+        `[main_metric]_bootstrap` or `[main_metric]_test`, checked in
+        that order. Ties are resolved looking at the lowest `time_fit`.
 
         """
         if self._models:  # Returns None if not fitted
@@ -198,11 +196,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """Best performing model.
 
         Performance is measured as the highest score on the model's
-        [`score_bootstrap`][adaboost-score_bootstrap] or
-        [`score_test`][adaboost-score_test] attributes, checked in
-        that order. For [multi-metric runs][], only the main metric
-        is compared. Ties are resolved looking at the lowest
-        [time_fit][adaboost-time_fit].
+        `[main_metric]_bootstrap` or `[main_metric]_test`, checked in
+        that order. Ties are resolved looking at the lowest `time_fit`.
 
         """
         if self.winners:  # Returns None if not fitted
@@ -220,16 +215,16 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def results(self) -> pd.DataFrame:
         """Overview of the training results.
 
-        All durations are in seconds. Columns include:
+        All durations are in seconds. Possible values include:
 
-        - **score_ht:** Score obtained by the hyperparameter tuning.
+        - **[metric]_ht:** Score obtained by the hyperparameter tuning.
         - **time_ht:** Duration of the hyperparameter tuning.
-        - **score_train:** Metric score on the train set.
-        - **score_test:** Metric score on the test set.
+        - **[metric]_train:** Metric score on the train set.
+        - **[metric]_test:** Metric score on the test set.
         - **time_fit:** Duration of the model fitting on the train set.
-        - **score_bootstrap:** Mean score on the bootstrapped samples.
+        - **[metric]_bootstrap:** Mean score on the bootstrapped samples.
         - **time_bootstrap:** Duration of the bootstrapping.
-        - **time:** Total duration of the model run.
+        - **time:** Total duration of the run.
 
         """
 
@@ -239,7 +234,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             Parameters
             ----------
             m: Model
-                Used model.
+                Model used.
 
             Returns
             -------

@@ -106,7 +106,7 @@ def test_get_metric():
     assert atom._get_metric(metric=[0, 1]) == ["f1", "recall"]
     assert atom._get_metric(metric=["f1", "recall"]) == ["f1", "recall"]
     assert atom._get_metric(metric="f1+recall") == ["f1", "recall"]
-    assert atom._get_metric(metric="TIME", max_one=True) == ["time"]
+    assert atom._get_metric(metric="time", max_one=True) == ["time"]
 
 
 def test_get_metric_invalid_int():

@@ -7,6 +7,8 @@ Description: Module containing the documentation rendering.
 
 """
 
+from __future__ import annotations
+
 import importlib
 import json
 import os
@@ -15,7 +17,7 @@ from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     ismethod, isroutine, signature,
 )
-from typing import Any, Callable, Optional
+from beartype.typing import Any, Callable, Optional
 
 import regex as re
 import yaml
@@ -39,16 +41,15 @@ CUSTOM_URLS = dict(
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
-    evalml="https://evalml.alteryx.com/en/stable/index.html",
-    automlsearch="https://evalml.alteryx.com/en/stable/autoapi/evalml/automl/index.html#evalml.automl.AutoMLSearch",
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
     skpipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
     pipelinedocs="https://scikit-learn.org/stable/modules/compose.html#pipeline",
     bunch="https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html",
-    profiling="https://github.com/ydataai/ydata-profiling",
-    profilereport="https://ydata-profiling.ydata.ai/docs/master/pages/reference/api/_autosummary/ydata_profiling.profile_report.ProfileReport.html",
+    sweetviz="https://github.com/fbdesignpro/sweetviz",
+    report="https://github.com/fbdesignpro/sweetviz/blob/master/sweetviz/dataframe_report.py#L23",
     to_csv="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html",
     # BaseModel
+    mlflowrun="https://mlflow.org/docs/latest/python_api/mlflow.entities.html#mlflow.entities.Run",
     make_reduction="https://sktime-backup.readthedocs.io/en/v0.13.0/api_reference/auto_generated/sktime.forecasting.compose.make_reduction.html",
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
     optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
@@ -61,6 +62,7 @@ CUSTOM_URLS = dict(
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
+    ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
@@ -212,7 +214,7 @@ CUSTOM_URLS = dict(
     xgbclassifier="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier",
     xgbregressor="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor",
     xgbdocs="https://xgboost.readthedocs.io/en/latest/index.html",
-    naiveforecaster="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.naive.NaiveForecaster.html",
+    naiveforecasterclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.naive.NaiveForecaster.html",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -377,20 +379,19 @@ class AutoDocs:
             Object's tags.
 
         """
-        text = ""
-        text += f"[{self.obj.acronym}](../../../user_guide/models/#predefined-models){{ .md-tag }}"
+        text = f"[{self.obj.acronym}][predefined-models]{{ .md-tag }}"
         if self.obj.needs_scaling:
-            text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
+            text += "&nbsp;&nbsp;[needs scaling][automated-feature-scaling]{ .md-tag }"
         if self.obj.accepts_sparse:
-            text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
+            text += "&nbsp;&nbsp;[accept sparse][sparse-datasets]{ .md-tag }"
         if self.obj.native_multilabel:
-            text += "[native multilabel](../../../user_guide/data_management/#multilabel){ .md-tag }"
+            text += "&nbsp;&nbsp;[native multilabel][multilabel]{ .md-tag }"
         if self.obj.native_multioutput:
-            text += "[native multioutput](../../../user_guide/data_management/#multioutput-tasks){ .md-tag }"
+            text += "&nbsp;&nbsp;[native multioutput][multioutput-tasks]{ .md-tag }"
         if self.obj.has_validation:
-            text += "[allows validation](../../../user_guide/training/#in-training-validation){ .md-tag }"
+            text += "&nbsp;&nbsp;[allows validation][in-training-validation]{ .md-tag }"
         if any(engine not in ("sklearn", "sktime") for engine in self.obj.supports_engines):
-            text += "[supports acceleration](../../../user_guide/accelerating/){ .md-tag }"
+            text += "&nbsp;&nbsp;[supports acceleration][estimator-acceleration]{ .md-tag }"
 
         return text + "<br><br>"
 
@@ -657,9 +658,7 @@ class AutoDocs:
                 Table in html format.
 
             """
-            # Create the model from the trainer
             model = self.obj(goal=trainer.goal)
-            model._task = Task(0) if trainer.goal.value == 0 else Task(1)
 
             text = ""
             for name, dist in model._get_distributions().items():
@@ -689,11 +688,11 @@ class AutoDocs:
                     for device in ("cpu", "gpu"):
                         content += f'\n{sub_indent}=== "{device}"\n'
 
-                        trainer = DummyTrainer(Goal(goal), device, engine)
+                        trainer = DummyTrainer(Goal[goal], device, engine)
                         content += f"{sub_indent + ' ' * 4}{create_table(trainer)}\n\n"
                 else:
                     trainer = DummyTrainer(
-                        goal=Goal(goal),
+                        goal=Goal[goal],
                         device="cpu" if engine == "sklearn" else "gpu",
                         engine=engine,
                     )
@@ -856,23 +855,27 @@ def types_conversion(dtype: str) -> str:
 
     """
     types = {
-        "CustomDict": "dict",
-        "Bool": "bool",
-        "Int": "int",
-        "Float": "float",
-        "Index": "index",
-        "Series": "series",
-        "Sequence": "sequence",
-        "DataFrame": "dataframe",
-        "Pandas": "series | dataframe",
-        "Branch": "[Branch][]",
-        "Pipeline": "[Pipeline][]",
+        "typing.": "",
+        "Scalar": "int | float",
+        "Pandas": "Series | DataFrame",
         "Model": "[model][models]",
+        "Run": "[Run][mlflowrun]",
         "Study": "[Study][]",
-        "Trial": "[Trial][]",
         "FrozenTrial": "[FrozenTrial][]",
-        "Normal": "[Normal][]",
-        "Memory": "[Memory][joblibmemory]",
+        "Union[int, numpy.integer]": "int",
+        "Union[float, numpy.floating]": "float",
+        "pandas.core.indexes.base.Index": "Index",
+        "pandas.core.series.Series": "Series",
+        "pandas.core.frame.DataFrame": "DataFrame",
+        "Union[int, numpy.integer, float, numpy.floating]": "int | float",
+        "Union[Series, modin.pandas.series.Series]": "Series",
+        "Union[DataFrame, modin.pandas.dataframe.DataFrame]": "DataFrame",
+        "Union[int, numpy.integer, Series, modin.pandas.series.Series]": "int | Series",
+        "Union[Series, modin.pandas.series.Series, DataFrame, modin.pandas.dataframe.DataFrame]": "Series | DataFrame",
+        "atom.branch.branch.": "",
+        "Branch": "[Branch][]",
+        "atom.pipeline.": "",
+        "Pipeline": "[Pipeline][]",
     }
 
     for k, v in types.items():

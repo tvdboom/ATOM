@@ -484,7 +484,7 @@ def test_feature_importance_property():
     assert len(atom.tree.feature_importance) == X_bin.shape[1]
 
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
-    atom.run("LDA", errors="raise")
+    atom.run("LDA")
     assert len(atom.lda.feature_importance) == X_label.shape[1]
 
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)

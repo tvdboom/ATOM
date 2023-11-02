@@ -353,7 +353,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
         atom = ATOMClassifier(X, y, random_state=1)
         atom.run("LR")
         atom.plot_shap_decision(show=10)
-        atom.plot_shap_decision(index=-1, show=10)
+        atom.plot_shap_decision(rows=-1, show=10)
         ```
 
         """
@@ -473,7 +473,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         atom = ATOMClassifier(X, y, random_state=1)
         atom.run("LR")
-        atom.plot_shap_force(index=-2, matplotlib=True, figsize=(1800, 300))
+        atom.plot_shap_force(rows=-2, matplotlib=True, figsize=(1800, 300))
         ```
 
         """
@@ -506,7 +506,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
                 display=display,
             )
         else:
-            if filename:  # Save to an html file
+            if filename:
                 if (path := Path(filename)).suffix != ".html":
                     path = path.with_suffix(".html")
                 shap.save_html(str(path), plot)
@@ -789,7 +789,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g., `atom.lr.plot_shap_waterfall()`.
 
-        rows: hashable, segment, sequence or dataframe, default="test"
+        rows: int or str, default=0
             [Selection of rows][row-and-column-selection] to plot. The
             plot_shap_waterfall method does not support plotting
             multiple samples.
@@ -853,16 +853,17 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         """
         models_c = self._get_plot_models(models, max_one=True)[0]
-        if len(row := models_c.branch._get_rows(rows)) > 1:
+        X, _ = models_c.branch._get_rows(rows, return_X_y=True)
+        if len(X) > 1:
             raise ValueError(
                 f"Invalid value for the rows parameter, got {rows}. "
                 "The plot_shap_waterfall method does not support "
-                f"plotting multiple samples, got {len(row)}."
+                f"plotting multiple samples, got {len(X)}."
             )
 
         show_c = self._get_show(show, models_c.branch.n_features)
         target_c = self.branch._get_target(target)
-        explanation = models_c._shap.get_explanation(row, target_c)
+        explanation = models_c._shap.get_explanation(X, target_c)
 
         # Waterfall accepts only one row
         explanation.values = explanation.values[0]

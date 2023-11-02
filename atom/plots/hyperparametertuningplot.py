@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
-from beartype.typing import Any, Callable
+from beartype.typing import Any, Callable, Sequence
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.trial import TrialState
 from optuna.visualization._parallel_coordinate import (
@@ -30,7 +30,7 @@ from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, Int, IntLargerEqualZero, IntLargerZero, IntTypes, Legend,
     MetricSelector, Model, ModelSelector, ModelsSelector, ParamsSelector,
-    Scalar, SegmentTypes, Sequence,
+    Scalar, SegmentTypes,
 )
 from atom.utils.utils import (
     bk, check_dependency, crash, divide, get_segment, it, lst, rnd,

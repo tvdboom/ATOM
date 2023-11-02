@@ -40,7 +40,6 @@ from atom.data_cleaning import (
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
-from atom.models import MODELS
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 from atom.plots import ATOMPlot
 from atom.training import (
@@ -57,8 +56,9 @@ from atom.utils.types import (
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Sequence, Series, Transformer,
-    TSIndexTypes, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
+    RowSelector, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
+    TargetSelector, Transformer, TSIndexTypes, VectorizerStarts, Verbose,
+    Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -417,97 +417,6 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     # Utility methods =============================================== >>
 
-    @composed(crash, method_to_log)
-    def automl(self, **kwargs):
-        """Search for an optimized pipeline in an automated fashion.
-
-        Automated machine learning (AutoML) automates the selection,
-        composition and parameterization of machine learning pipelines.
-        Automated machine learning often provides faster, more accurate
-        outputs than hand-coded algorithms. ATOM uses the [evalML][]
-        package for AutoML optimization. The resulting transformers and
-        final estimator are merged with atom's pipeline (check the
-        [`pipeline`][self-pipeline] and [`models`][self-models]
-        attributes after the method finishes running). The created
-        [AutoMLSearch][] instance can be accessed through the `evalml`
-        attribute.
-
-        !!! warning
-            AutoML algorithms aren't intended to run for only a few minutes.
-            The method may need a very long time to achieve optimal results.
-
-        Parameters
-        ----------
-        **kwargs
-            Additional keyword arguments for the AutoMLSearch instance.
-
-        """
-        check_dependency("evalml")
-        from evalml import AutoMLSearch
-
-        self._log("Searching for optimal pipeline...", 1)
-
-        # Define the objective parameter
-        if self._metric and not kwargs.get("objective"):
-            kwargs["objective"] = self._metric[0].name
-        elif kwargs.get("objective"):
-            if not self._metric:
-                self._metric = ClassMap(get_custom_scorer(kwargs["objective"]))
-            elif kwargs["objective"] != self._metric[0].name:
-                raise ValueError(
-                    "Invalid value for the objective parameter! The metric "
-                    "should be the same as the primary metric. Expected "
-                    f"{self._metric[0].name}, got {kwargs['objective']}."
-                )
-
-        self.evalml = AutoMLSearch(
-            X_train=self.X_train,
-            y_train=self.y_train,
-            X_holdout=self.X_test,
-            y_holdout=self.y_test,
-            problem_type=self.task.name.split("_")[0],  # binary, multiclass, regression
-            objective=kwargs.pop("objective") if "objective" in kwargs else "auto",
-            automl_algorithm=kwargs.pop("automl_algorithm", "iterative"),
-            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-            verbose=kwargs.pop("verbose", self.verbose > 1),
-            random_seed=kwargs.pop("random_seed", self.random_state),
-            **kwargs,
-        )
-        self.evalml.search()
-
-        self._log("\nMerging automl results with atom...", 1)
-
-        # Add transformers and model to atom
-        for est in self.evalml.best_pipeline:
-            if hasattr(est, "transform"):
-                self._add_transformer(est)
-                self._log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
-            else:
-                est_name = est._component_obj.__class__.__name__
-                for m in MODELS:
-                    if m._estimators.get(self._goal.name) == est_name:
-                        model = m(
-                            goal=self._goal,
-                            config=self._config,
-                            branches=self._branches,
-                            metric=self._metric,
-                            **{x: getattr(self, x) for x in BaseTransformer.attrs},
-                        )
-                        model._estimator = est._component_obj
-                        break
-
-                # Save metric scores on train and test set
-                for metric in self._metric:
-                    model._get_score(metric, "train")
-                    model._get_score(metric, "test")
-
-                self._models.append(model)
-                self._log(
-                    f" --> Adding model {model.fullname} "
-                    f"({model.name}) to the pipeline...", 2
-                )
-                break  # Avoid non-linear pipelines
-
     @crash
     def distribution(
         self,
@@ -592,50 +501,74 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @crash
     def eda(
         self,
-        rows: RowSelector = "dataset",
+        rows: str | Sequence[str] | dict[str, RowSelector] = "dataset",
         *,
+        target: TargetSelector = 0,
         filename: str | Path | None = None,
-        **kwargs,
     ):
         """Create an Exploratory Data Analysis report.
 
-        ATOM uses the [ydata-profiling][profiling] package for the EDA.
-        The report is rendered directly in the notebook. The created
-        [ProfileReport][] instance can be accessed through the `report`
-        attribute.
+        ATOM uses the [sweetviz][] package for EDA. The [report][] is
+        rendered directly in the notebook. It can also be accessed
+        through the `report` attribute. It can either report one
+        dataset or compare two datasets against each other.
 
         !!! warning
             This method can be slow for large datasets.
 
         Parameters
         ----------
-        rows: hashable, segment, sequence or dataframe, default="dataset"
-            [Selection of rows][row-and-column-selection] to get the
-            report from.
+        rows: str, sequence or dict, default="dataset"
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to report.
+            - If sequence: Names of two data sets to compare.
+            - If dict: Names of up to two data sets with corresponding
+              [selection of rows][row-and-column-selection] to report.
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks. Only
+            bool and numerical features can be used as target.
 
         filename: str, Path or None, default=None
             Filename or [pathlib.Path][] of the (html) file to save. If
             None, don't save anything.
 
-        **kwargs
-            Additional keyword arguments for the [ProfileReport][]
-            instance.
-
         """
-        check_dependency("ydata-profiling")
-        from ydata_profiling import ProfileReport
+        check_dependency("sweetviz")
+        import sweetviz as sv
 
         self._log("Creating EDA report...", 1)
 
-        self.report = ProfileReport(self.branch._get_rows(rows), **kwargs)
+        if isinstance(rows, str):
+            rows_c = [(self.branch._get_rows(rows), rows)]
+        elif isinstance(rows, SequenceTypes):
+            rows_c = [(self.branch._get_rows(r), r) for r in rows]
+        elif isinstance(rows, dict):
+            rows_c = [(self.branch._get_rows(v), k) for k, v in rows.items()]
+
+        if len(rows_c) == 1:
+            self.report = self.memory.cache(sv.analyze)(
+                source=rows_c[0],
+                target_feat=self.branch._get_target(target, only_columns=True),
+            )
+        elif len(rows_c) == 2:
+            self.report = self.memory.cache(sv.compare)(
+                source=rows_c[0],
+                compare=rows_c[1],
+                target_feat=self.branch._get_target(target, only_columns=True),
+            )
+        else:
+            raise ValueError(
+                "Invalid value for the rows parameter. The maximum "
+                f"number of data sets to use is 2, got {len(rows_c)}."
+            )
 
         if filename:
             if (path := Path(filename)).suffix != ".html":
                 path = path.with_suffix(".html")
-            self.report.to_file(path)
-            self._log("Report successfully saved.", 1)
 
-        self.report.to_notebook_iframe()
+        self.report.show_notebook(filepath=path if filename else None)
 
     @composed(crash, method_to_log)
     def inverse_transform(
@@ -916,9 +849,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 Object with the new data type.
 
             """
+            new_t_np = str(new_t).lower()
+
             # If already sparse array, cast directly to a new sparse type
             if isinstance(column.dtype, pd.SparseDtype):
-                return column.astype(pd.SparseDtype(new_t, column.dtype.fill_value))
+                # SparseDtype subtype must be a numpy dtype
+                return column.astype(pd.SparseDtype(new_t_np, column.dtype.fill_value))
 
             if dense2sparse and name not in lst(self.target):  # Skip target cols
                 # Select the most frequent value to fill the sparse array
@@ -927,7 +863,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 # Convert first to a sparse array, else fails for nullable pd types
                 sparse_col = pd.arrays.SparseArray(column, fill_value=fill_value)
 
-                return sparse_col.astype(pd.SparseDtype(new_t, fill_value=fill_value))
+                return sparse_col.astype(pd.SparseDtype(new_t_np, fill_value=fill_value))
             else:
                 return column.astype(new_t)
 
@@ -2004,17 +1940,17 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         if isinstance(strategy, str):
-            if strategy.lower() == "univariate" and solver is None:
+            if strategy == "univariate" and solver is None:
                 solver = "f_classif" if self.task.is_classification else "f_regression"
             elif (
-                strategy.lower() not in ("univariate", "pca")
+                strategy not in ("univariate", "pca")
                 and isinstance(solver, str)
                 and (not solver.endswith("_class") and not solver.endswith("_reg"))
             ):
                 solver += f"_{'class' if self.task.is_classification else 'reg'}"
 
             # If the run method was called before, use the main metric
-            if strategy.lower() not in ("univariate", "pca", "sfm", "rfe"):
+            if strategy not in ("univariate", "pca", "sfm", "rfe"):
                 if self._metric and "scoring" not in kwargs:
                     kwargs["scoring"] = self._metric[0]
 

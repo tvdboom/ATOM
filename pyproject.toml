@@ -50,15 +50,14 @@ dependencies = [
 full = [
     "botorch>=0.8.5",
     "catboost>=1.2",
-#    "evalml>=0.81.1",  # Clashes with category-encoders
     "explainerdashboard>=0.4.3",
     "gradio>=3.44.4",
     "lightgbm>=3.3.5",
     "pmdarima>=2.0.3",
     "schemdraw>=0.16",
+    "sweetviz>=2.2.1",
     "wordcloud>=1.9.2",
     "xgboost>=2.0.0",
-#    "ydata-profiling>=4.6.1",  # Clashes with dasghub about dacite
 ]
 
 [tool.pdm.dev-dependencies]
@@ -78,14 +77,14 @@ dev = [
     "scikeras>=0.11.0",
     "tensorflow>=2.13.0",
     # Documentation
+    "jupyter-contrib-nbextensions>=0.7.0",
     "mike>=1.1.2",  # For versioning
-    "mkdocs>=1.4.2",
+    "mkdocs>=1.5.3",
     "mkdocs-autorefs>=0.5.0",
-    "mkdocs-jupyter>=0.22.0",
-    "mkdocs-material>=9.1.21",
-    "mkdocs-material-extensions>=1.1.1",
+    "mkdocs-jupyter>=0.24.6",
+    "mkdocs-material>=9.4.7",
     "mkdocs-simple-hooks>=0.1.5",
-    "pymdown-extensions>=9.9.2",
+    "pymdown-extensions>=10.3.1",
     "pyyaml>=6.0",
 ]
 

@@ -17,7 +17,8 @@ import featuretools as ft
 import joblib
 import numpy as np
 import pandas as pd
-from beartype.typing import Hashable, Literal
+from beartype import beartype
+from beartype.typing import Hashable, Literal, Sequence
 from gplearn.genetic import SymbolicTransformer
 from scipy import stats
 from sklearn.base import is_classifier
@@ -38,8 +39,8 @@ from atom.models import MODELS
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
-    FloatZeroToOneInc, Int, IntLargerZero, NJobs, Operators, Scalar, Sequence,
-    SequenceTypes, SeriesTypes, Verbose, XSelector, YSelector,
+    FloatZeroToOneInc, Int, IntLargerZero, NJobs, Operators, Scalar,
+    SequenceTypes, Series, SeriesTypes, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, composed, crash,
@@ -47,6 +48,7 @@ from atom.utils.utils import (
 )
 
 
+@beartype
 class FeatureExtractor(TransformerMixin):
     """Extract features from datetime columns.
 
@@ -244,7 +246,7 @@ class FeatureExtractor(TransformerMixin):
                     continue
 
                 min_val: int = 0
-                max_val: Scalar | Sequence[Scalar] | None = None  # None if isn't cyclic
+                max_val: Scalar | Series | None = None  # None if isn't cyclic
                 if self.encoding_type == "cyclic":
                     if fx == "microsecond":
                         min_val, max_val = 0, 1e6 - 1
@@ -283,6 +285,7 @@ class FeatureExtractor(TransformerMixin):
         return Xt
 
 
+@beartype
 class FeatureGenerator(TransformerMixin):
     """Generate new features.
 
@@ -486,16 +489,7 @@ class FeatureGenerator(TransformerMixin):
         if not self.operators:  # None or empty list
             operators = list(all_operators)
         else:
-            operators = []
-            for operator in lst(self.operators):
-                for op in operator.split("+"):
-                    if op not in all_operators:
-                        raise ValueError(
-                            "Invalid value in the operators parameter, got "
-                            f"{op}. Choose from: {', '.join(all_operators)}."
-                        )
-                    else:
-                        operators.append(op)
+            operators = lst(self.operators)
 
         self._log("Fitting FeatureGenerator...", 1)
 
@@ -563,7 +557,7 @@ class FeatureGenerator(TransformerMixin):
 
         self._log("Generating new features...", 1)
 
-        if self.strategy.lower() == "dfs":
+        if self.strategy == "dfs":
             es = ft.EntitySet(dataframes={"X": (Xt, "index", None, None, None, True)})
             dfs = ft.calculate_feature_matrix(
                 features=self._dfs,
@@ -621,6 +615,7 @@ class FeatureGenerator(TransformerMixin):
         return Xt
 
 
+@beartype
 class FeatureGrouper(TransformerMixin):
     """Extract statistics from similar features.
 
@@ -686,9 +681,8 @@ class FeatureGrouper(TransformerMixin):
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         atom = ATOMClassifier(X, y)
-        atom.feature_grouping({"means": ["mean.+"]}, verbose=2)
+        atom.feature_grouping({"group1": "mean.*"}, verbose=2)
 
-        # Note the mean features are gone and the new std(means) feature
         print(atom.dataset)
         ```
 
@@ -699,11 +693,9 @@ class FeatureGrouper(TransformerMixin):
 
         X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        # Group all features that start with mean
-        fg = FeatureGrouper({"means": ["mean.+"]}, verbose=2)
+        fg = FeatureGrouper({"group1": ["mean texture", "mean radius"]}, verbose=2)
         X = fg.transform(X)
 
-        # Note the mean features are gone and the new std(means) feature
         print(X)
         ```
 
@@ -783,6 +775,7 @@ class FeatureGrouper(TransformerMixin):
         return Xt
 
 
+@beartype
 class FeatureSelector(TransformerMixin):
     """Reduce the number of features in the data.
 
@@ -1307,7 +1300,7 @@ class FeatureSelector(TransformerMixin):
         if self.strategy is None:
             return self  # Exit feature_engineering
 
-        elif self.strategy.lower() == "univariate":
+        elif self.strategy == "univariate":
             solvers_dct = dict(
                 f_classif=f_classif,
                 f_regression=f_regression,
@@ -1335,7 +1328,7 @@ class FeatureSelector(TransformerMixin):
             check_y()
             self._estimator = SelectKBest(solver, k=self._n_features).fit(Xt, yt)
 
-        elif self.strategy.lower() == "pca":
+        elif self.strategy == "pca":
             if not is_sparse(Xt):
                 # PCA requires the features to be scaled
                 if not check_scaling(Xt):
@@ -1367,7 +1360,7 @@ class FeatureSelector(TransformerMixin):
                 self._estimator.components_.shape[0], self._n_features
             )
 
-        elif self.strategy.lower() == "sfm":
+        elif self.strategy == "sfm":
             # If any of these attr exists, the model is already fitted
             if any(hasattr(solver, a) for a in ("coef_", "feature_importances_")):
                 prefit = kwargs.pop("prefit", True)
@@ -1396,8 +1389,8 @@ class FeatureSelector(TransformerMixin):
                 check_y()
                 self._estimator.fit(Xt, yt)
 
-        elif self.strategy.lower() in ("sfs", "rfe", "rfecv"):
-            if self.strategy.lower() == "sfs":
+        elif self.strategy in ("sfs", "rfe", "rfecv"):
+            if self.strategy == "sfs":
                 check_y()
 
                 if self.kwargs.get("scoring"):
@@ -1410,7 +1403,7 @@ class FeatureSelector(TransformerMixin):
                     **kwargs,
                 )
 
-            elif self.strategy.lower() == "rfe":
+            elif self.strategy == "rfe":
                 check_y()
 
                 self._estimator = RFE(
@@ -1419,7 +1412,7 @@ class FeatureSelector(TransformerMixin):
                     **kwargs,
                 )
 
-            elif self.strategy.lower() == "rfecv":
+            elif self.strategy == "rfecv":
                 check_y()
 
                 if self.kwargs.get("scoring"):
@@ -1488,7 +1481,7 @@ class FeatureSelector(TransformerMixin):
             )
 
         # Add the strategy estimator as attribute to the class
-        setattr(self, f"{self.strategy.lower()}_", self._estimator)
+        setattr(self, f"{self.strategy}_", self._estimator)
 
         return self
 
@@ -1544,7 +1537,7 @@ class FeatureSelector(TransformerMixin):
         if self.strategy is None:
             return Xt
 
-        elif self.strategy.lower() == "univariate":
+        elif self.strategy == "univariate":
             self._log(
                 f" --> The univariate test selected "
                 f"{self._n_features} features from the dataset.", 2
@@ -1558,7 +1551,7 @@ class FeatureSelector(TransformerMixin):
                     )
                     Xt = Xt.drop(column, axis=1)
 
-        elif self.strategy.lower() == "pca":
+        elif self.strategy == "pca":
             self._log(" --> Applying Principal Component Analysis...", 2)
 
             if self.scaler_:
@@ -1575,10 +1568,10 @@ class FeatureSelector(TransformerMixin):
             self._log(f"   --> Keeping {self.pca_._comps} components.", 2)
             self._log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
-        elif self.strategy.lower() in ("sfm", "sfs", "rfe", "rfecv"):
+        elif self.strategy in ("sfm", "sfs", "rfe", "rfecv"):
             mask = self._estimator.get_support()
             self._log(
-                f" --> {self.strategy.lower()} selected "
+                f" --> {self.strategy} selected "
                 f"{sum(mask)} features from the dataset.", 2
             )
 
@@ -1595,8 +1588,8 @@ class FeatureSelector(TransformerMixin):
 
         else:  # Advanced strategies
             self._log(
-                f" --> {self.strategy.lower()} selected "
-                f"{len(self._estimator.best_feature_list)} features from the dataset.", 2
+                f" --> {self.strategy} selected {len(self._estimator.best_feature_list)} "
+                "features from the dataset.", 2
             )
 
             for column in Xt:

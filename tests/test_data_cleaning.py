@@ -13,7 +13,6 @@ import pytest
 from category_encoders.target_encoder import TargetEncoder
 from imblearn.combine import SMOTETomek
 from pandas.testing import assert_frame_equal, assert_series_equal
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
 from atom.data_cleaning import (
@@ -364,7 +363,7 @@ def test_infrequent_to_value(infrequent_to_value):
 
 def test_encoder_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
-    encoder = Encoder(strategy=RandomForestClassifier())
+    encoder = Encoder(strategy=StandardScaler())
     with pytest.raises(TypeError, match=".*type for the strategy.*"):
         encoder.fit_transform(X10_str, y10)
 
@@ -697,7 +696,7 @@ def test_pruner_strategies(strategy):
     pruner = Pruner(strategy=strategy)
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert hasattr(pruner, f"{strategy.lower()}_")
+    assert hasattr(pruner, f"{strategy}_")
 
 
 def test_multiple_strategies():

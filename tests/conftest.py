@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from beartype.typing import Any
+from beartype.typing import Any, Sequence
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -24,9 +24,9 @@ from sklearn.datasets import (
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
-from sktime.forecasting.model_selection import temporal_train_test_split
+from sktime.split import temporal_train_test_split
 
-from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
+from atom.utils.types import DataFrame, Pandas, XSelector
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 

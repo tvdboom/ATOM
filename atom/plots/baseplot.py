@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 from beartype import beartype
-from beartype.typing import Any, Iterator, Literal
+from beartype.typing import Any, Iterator, Literal, Sequence
 from mlflow.tracking import MlflowClient
 
 from atom.basetracker import BaseTracker
@@ -29,7 +29,7 @@ from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Index, Int,
     IntLargerZero, IntTypes, Legend, MetricSelector, Model, ModelsSelector,
-    PlotBackend, RowSelector, Scalar, Sequence, SequenceTypes,
+    PlotBackend, RowSelector, Scalar, SequenceTypes,
 )
 from atom.utils.utils import (
     Aesthetics, Task, check_is_fitted, composed, crash, get_custom_scorer, lst,
@@ -267,7 +267,6 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                             f"of range for a pipeline with {len(self._metric)} metrics."
                         )
                 elif isinstance(met, str):
-                    met = met.lower()
                     for m in met.split("+"):
                         if m in ("time_ht", "time_fit", "time_bootstrap", "time"):
                             inc.append(m)
@@ -352,8 +351,8 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     @overload
     def _get_figure(
         self,
-        backend: PlotBackend = ...,
-        create_figure: Literal[False] = ...,
+        backend: PlotBackend,
+        create_figure: Literal[False],
     ) -> None: ...
 
     def _get_figure(
@@ -534,7 +533,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             path = Path(kwargs.get("plotname", ""))
 
         fig = fig or BasePlot._fig.figure
-        if BasePlot._fig.backend == "plotly":
+        if isinstance(fig, go.Figure):
             if isinstance(ax, tuple):
                 fig.update_layout(
                     {
@@ -654,7 +653,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                 elif kwargs.get("display") is None:
                     return fig
 
-        elif BasePlot._fig.backend == "matplotlib":
+        elif isinstance(fig, plt.Figure):
             if isinstance(ax, plt.Axes):
                 if title := kwargs.get("title"):
                     ax.set_title(title, fontsize=self.title_fontsize, pad=20)

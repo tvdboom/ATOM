@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from beartype import beartype
 from beartype.typing import Any, Hashable, Literal
 from category_encoders import (
     BackwardDifferenceEncoder, BaseNEncoder, BinaryEncoder, CatBoostEncoder,
@@ -53,6 +54,7 @@ from atom.utils.utils import (
 )
 
 
+@beartype
 class TransformerMixin(BaseEstimator, BaseTransformer):
     """Mixin class for all transformers in ATOM.
 
@@ -191,6 +193,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         return variable_return(X, y)
 
 
+@beartype
 class Balancer(TransformerMixin):
     """Balance the number of samples per class in the target column.
 
@@ -538,6 +541,7 @@ class Balancer(TransformerMixin):
         return Xt, yt
 
 
+@beartype
 class Cleaner(TransformerMixin):
     """Applies standard data cleaning steps on a dataset.
 
@@ -978,6 +982,7 @@ class Cleaner(TransformerMixin):
         return variable_return(Xt, yt)
 
 
+@beartype
 class Discretizer(TransformerMixin):
     """Bin continuous data into intervals.
 
@@ -1010,6 +1015,7 @@ class Discretizer(TransformerMixin):
         - If int: Number of bins to produce for all columns. Only for
           strategy!="custom".
         - If sequence:
+
             - For strategy!="custom": Number of bins per column,
               allowing for non-uniform width. The n-th value corresponds
               to the n-th column that is transformed. Note that
@@ -1017,6 +1023,7 @@ class Discretizer(TransformerMixin):
             - For strategy="custom": Bin edges with length=n_bins - 1.
               The outermost edges are always `-inf` and `+inf`, e.g.,
               bins `[1, 2]` indicate `(-inf, 1], (1, 2], (2, inf]`.
+
         - If dict: One of the aforementioned options per column, where
           the key is the column's name.
 
@@ -1170,8 +1177,30 @@ class Discretizer(TransformerMixin):
 
         """
 
-        def get_labels(labels, bins):
-            """Get labels for the specified bins."""
+        def get_labels(
+            col: str,
+            labels: Sequence[str] | dict[str, Sequence[str]],
+            bins: Sequence[Scalar],
+        ) -> tuple[str, ...]:
+            """Get labels for the specified bins.
+
+            Parameters
+            ----------
+            col: str
+                Name of the column.
+
+            labels: sequence or dict
+                Label names for the binned intervals.
+
+            bins: sequence
+                Bin edges.
+
+            Returns
+            -------
+            tuple
+                Labels for the column.
+
+            """
             if isinstance(labels, dict):
                 default = [
                     f"({np.round(bins[i], 2)}, {np.round(bins[i+1], 1)}]"
@@ -1186,14 +1215,14 @@ class Discretizer(TransformerMixin):
                     f"len(bins)={len(bins) - 1} and len(labels)={len(labels)}."
                 )
 
-            return labels
+            return tuple(labels)
 
         Xt, yt = self._check_input(X, y)
         self._check_feature_names(Xt, reset=True)
         self._check_n_features(Xt, reset=True)
 
-        self._labels = {}
-        self._discretizers = {}
+        self._discretizers: dict[str, Estimator] = {}
+        self._labels: dict[str, Sequence[str]] = {}
         self._num_cols = list(Xt.select_dtypes(include="number"))
 
         self._log("Fitting Discretizer...", 1)
@@ -1227,6 +1256,8 @@ class Discretizer(TransformerMixin):
                             "bins does not match the length of the columns, got len"
                             f"(bins)={len(bins_c)} and len(columns)={Xt.shape[1]}."
                         )
+                else:
+                    bins_x = bins_c
 
                 estimator = self._get_est_class("KBinsDiscretizer", "preprocessing")
 
@@ -1245,6 +1276,7 @@ class Discretizer(TransformerMixin):
 
                 # Save labels for transform method
                 self._labels[col] = get_labels(
+                    col=col,
                     labels=labels,
                     bins=self._discretizers[col].bin_edges_[0],
                 )
@@ -1263,7 +1295,7 @@ class Discretizer(TransformerMixin):
                 # Make of cut a transformer
                 self._discretizers[col] = estimator(
                     func=bk.cut,
-                    kw_args={"bins": bins_c, "labels": get_labels(labels, bins_c)},
+                    kw_args={"bins": bins_c, "labels": get_labels(col, labels, bins_c)},
                 ).fit(Xt[[col]])
 
         return self
@@ -1291,7 +1323,7 @@ class Discretizer(TransformerMixin):
         self._log("Binning the features...", 1)
 
         for col in self._num_cols:
-            if self.strategy.lower() == "custom":
+            if self.strategy == "custom":
                 Xt[col] = self._discretizers[col].transform(Xt[col])
             else:
                 Xt[col] = self._discretizers[col].transform(Xt[[col]])[:, 0]
@@ -1305,6 +1337,7 @@ class Discretizer(TransformerMixin):
         return Xt
 
 
+@beartype
 class Encoder(TransformerMixin):
     """Perform encoding of categorical features.
 
@@ -1404,9 +1437,9 @@ class Encoder(TransformerMixin):
         from numpy.random import randint
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(Xt))]
-        X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(Xt))]
-        X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(Xt))]
+        X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
+        X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
+        X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
 
         atom = ATOMClassifier(X, y, random_state=1)
         print(atom.X)
@@ -1424,9 +1457,9 @@ class Encoder(TransformerMixin):
         from numpy.random import randint
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-        X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(Xt))]
-        X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(Xt))]
-        X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(Xt))]
+        X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
+        X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
+        X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
         print(X)
 
         encoder = Encoder(strategy="target", max_onehot=10, verbose=2)
@@ -1681,6 +1714,7 @@ class Encoder(TransformerMixin):
         return Xt
 
 
+@beartype
 class Imputer(TransformerMixin):
     """Handle missing values in the data.
 
@@ -1916,24 +1950,24 @@ class Imputer(TransformerMixin):
             # Note missing_values=pd.NA also imputes np.NaN in SimpleImputer
             if name in self._num_cols:
                 if isinstance(self.strat_num, str):
-                    if self.strat_num.lower() == "knn":
+                    if self.strat_num == "knn":
                         self._imputers[name] = KNNImputer().fit(Xt[[name]])
 
-                    elif self.strat_num.lower() == "most_frequent":
+                    elif self.strat_num == "most_frequent":
                         self._imputers[name] = estimator(
                             missing_values=pd.NA,
                             strategy="most_frequent",
                         ).fit(Xt[[name]])
 
                     # Strategies mean or median
-                    elif self.strat_num.lower() != "drop":
+                    elif self.strat_num != "drop":
                         self._imputers[name] = estimator(
                             missing_values=pd.NA,
-                            strategy=self.strat_num.lower()
+                            strategy=self.strat_num
                         ).fit(Xt[[name]])
 
             # Column is categorical
-            elif self.strat_cat.lower() == "most_frequent":
+            elif self.strat_cat == "most_frequent":
                 self._imputers[name] = estimator(
                     missing_values=pd.NA,
                     strategy="most_frequent",
@@ -2020,7 +2054,7 @@ class Imputer(TransformerMixin):
                     )
                     Xt[name] = column.replace(np.NaN, self.strat_num)  # type: ignore
 
-                elif self.strat_num.lower() == "drop":
+                elif self.strat_num == "drop":
                     Xt = Xt.dropna(subset=[name], axis=0)
                     if yt is not None:
                         yt = yt[yt.index.isin(Xt.index)]
@@ -2029,7 +2063,7 @@ class Imputer(TransformerMixin):
                         f"values in feature {name}.", 2
                     )
 
-                elif self.strat_num.lower() == "knn":
+                elif self.strat_num == "knn":
                     self._log(
                         f" --> Imputing {nans} missing values using "
                         f"the KNN imputer in feature {name}.", 2
@@ -2040,20 +2074,20 @@ class Imputer(TransformerMixin):
                     n = np.round(self._imputers[name].statistics_[0], 2)
                     self._log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
+                        f"{self.strat_num} ({n}) in feature {name}.", 2
                     )
                     Xt[name] = self._imputers[name].transform(Xt[[name]]).flatten()
 
             # The column is categorical and contains missing values
             elif nans > 0:
-                if self.strat_cat.lower() not in ("drop", "most_frequent"):
+                if self.strat_cat not in ("drop", "most_frequent"):
                     self._log(
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_cat} in feature {name}.", 2
                     )
                     Xt[name] = column.replace(np.NaN, self.strat_cat)
 
-                elif self.strat_cat.lower() == "drop":
+                elif self.strat_cat == "drop":
                     Xt = Xt.dropna(subset=[name], axis=0)
                     if yt is not None:
                         yt = yt[yt.index.isin(Xt.index)]
@@ -2062,7 +2096,7 @@ class Imputer(TransformerMixin):
                         f"missing values in feature {name}.", 2
                     )
 
-                elif self.strat_cat.lower() == "most_frequent":
+                elif self.strat_cat == "most_frequent":
                     mode = self._imputers[name].statistics_[0]
                     self._log(
                         f" --> Imputing {nans} missing values with "
@@ -2073,6 +2107,7 @@ class Imputer(TransformerMixin):
         return variable_return(Xt, yt)
 
 
+@beartype
 class Normalizer(TransformerMixin):
     """Transform the data to follow a Normal/Gaussian distribution.
 
@@ -2253,13 +2288,13 @@ class Normalizer(TransformerMixin):
             quantile="QuantileTransformer",
         )
 
-        if self.strategy.lower() in ("yeojohnson", "boxcox"):
+        if self.strategy in ("yeojohnson", "boxcox"):
             estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
             self._estimator = estimator(
-                method=self.strategy.lower()[:3] + "-" + self.strategy.lower()[3:],
+                method=self.strategy[:3] + "-" + self.strategy[3:],
                 **self.kwargs,
             )
-        elif self.strategy.lower() == "quantile":
+        elif self.strategy == "quantile":
             kwargs = self.kwargs.copy()
             estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
             self._estimator = estimator(
@@ -2277,7 +2312,7 @@ class Normalizer(TransformerMixin):
         self._estimator.fit(Xt[self._num_cols])
 
         # Add the estimator as attribute to the instance
-        setattr(self, f"{self.strategy.lower()}_", self._estimator)
+        setattr(self, f"{self.strategy}_", self._estimator)
 
         return self
 
@@ -2350,6 +2385,7 @@ class Normalizer(TransformerMixin):
         return Xt
 
 
+@beartype
 class Pruner(TransformerMixin):
     """Prune outliers from the data.
 
@@ -2582,10 +2618,10 @@ class Pruner(TransformerMixin):
             kwargs[strat] = {}
             for key, value in self.kwargs.items():
                 # Parameters for this estimator only
-                if key.lower() == strat.lower():
+                if key == strat:
                     kwargs[strat].update(value)
                 # Parameters for all estimators
-                elif key.lower() not in map(str.lower, lst(self.strategy)):
+                elif key not in lst(self.strategy):
                     kwargs[strat].update({key: value})
 
         self._log("Pruning outliers...", 1)
@@ -2596,7 +2632,7 @@ class Pruner(TransformerMixin):
 
         outliers = []
         for strat in lst(self.strategy):
-            if strat.lower() == "zscore":
+            if strat == "zscore":
                 # stats.zscore only works with np types, therefore, convert
                 z_scores = zscore(objective.values.astype(float), nan_policy="propagate")
 
@@ -2650,7 +2686,7 @@ class Pruner(TransformerMixin):
                     )
 
                 # Add the estimator as attribute to the instance
-                setattr(self, f"{strat.lower()}_", estimator)
+                setattr(self, f"{strat}_", estimator)
 
         if outliers:
             # Select outliers from intersection of strategies
@@ -2676,6 +2712,7 @@ class Pruner(TransformerMixin):
             return Xt, yt
 
 
+@beartype
 class Scaler(TransformerMixin):
     """Scale the data.
 
@@ -2849,7 +2886,7 @@ class Scaler(TransformerMixin):
         self._estimator.fit(Xt[self._num_cols])
 
         # Add the estimator as attribute to the instance
-        setattr(self, f"{self.strategy.lower()}_", self._estimator)
+        setattr(self, f"{self.strategy}_", self._estimator)
 
         return self
 

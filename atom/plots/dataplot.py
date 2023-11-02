@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from beartype import beartype
-from beartype.typing import Any, Literal
+from beartype.typing import Any, Literal, Sequence
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
@@ -28,7 +28,7 @@ from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, RowSelector,
-    Segment, Sequence, Series,
+    Segment, Series,
 )
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, lst, replace_missing, rnd,
@@ -110,8 +110,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         See Also
         --------
-        atom.plots:FeatureSelectionPlot.plot_pca
-        atom.plots:FeatureSelectionPlot.plot_rfecv
+        atom.plots:DataPlot.plot_pca
+        atom.plots:DataPlot.plot_rfecv
 
         Examples
         --------
@@ -339,7 +339,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             column. If more than one categorical column is selected,
             all categorical columns are ignored.
 
-        distributions: str, sequence or None, default="gaussian_kde"
+        distributions: str, sequence or None, default="kde"
             Distributions to fit. Only for numerical columns.
 
             - If None: No distribution is fit.
@@ -738,8 +738,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         See Also
         --------
-        atom.plots:FeatureSelectionPlot.plot_components
-        atom.plots:FeatureSelectionPlot.plot_rfecv
+        atom.plots:DataPlot.plot_components
+        atom.plots:DataPlot.plot_rfecv
 
         Examples
         --------
@@ -1146,8 +1146,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         See Also
         --------
-        atom.plots:FeatureSelectionPlot.plot_components
-        atom.plots:FeatureSelectionPlot.plot_pca
+        atom.plots:DataPlot.plot_components
+        atom.plots:DataPlot.plot_pca
 
         Examples
         --------

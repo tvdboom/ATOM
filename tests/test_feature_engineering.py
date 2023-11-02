@@ -99,13 +99,6 @@ def test_features_are_not_dropped():
 
 # Test FeatureGenerator ============================================ >>
 
-def test_operators_parameter():
-    """Assert that all operators are valid."""
-    generator = FeatureGenerator("gfg", n_features=None, operators=("div", "invalid"))
-    with pytest.raises(ValueError, match=".*value in the operators.*"):
-        generator.fit(X_bin, y_bin)
-
-
 def test_n_features_above_maximum():
     """Assert that n_features becomes maximum if more than maximum."""
     generator = FeatureGenerator(
@@ -230,7 +223,7 @@ def test_goal_attribute():
 
 def test_solver_parameter_invalid_value():
     """Assert that an error is raised when solver is unknown."""
-    selector = FeatureSelector(strategy="RFE", solver="invalid")
+    selector = FeatureSelector(strategy="rfe", solver="invalid")
     with pytest.raises(ValueError, match=".*Unknown model.*"):
         selector.fit(X_reg, y_reg)
 
@@ -268,7 +261,7 @@ def test_remove_high_variance(min_repeated):
 
 @pytest.mark.parametrize("max_repeated", [400, 0.9])
 def test_remove_low_variance(max_repeated):
-    """Assert that low variance features are removed."""
+    """Assert that low-variance features are removed."""
     X = X_bin.copy()
     X["invalid"] = "test"  # Add column with minimum variance
     selector = FeatureSelector(min_repeated=None, max_repeated=max_repeated)
@@ -411,7 +404,7 @@ def test_sfs_strategy():
 def test_rfe_strategy():
     """Assert that the RFE strategy works as intended."""
     selector = FeatureSelector(
-        strategy="RFE",
+        strategy="rfe",
         solver=DecisionTreeClassifier(random_state=1),
         n_features=28,
         random_state=1,

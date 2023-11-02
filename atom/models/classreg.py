@@ -24,7 +24,7 @@ from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import DataFrame, Pandas, Predictor
-from atom.utils.utils import CatBMetric, LGBMetric, XGBMetric
+from atom.utils.utils import CatBMetric, Goal, LGBMetric, XGBMetric
 
 
 class AdaBoost(ClassRegModel):
@@ -91,7 +91,7 @@ class AdaBoost(ClassRegModel):
             learning_rate=Float(0.01, 10, log=True),
         )
 
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             dist["algorithm"] = Cat(["SAMME.R", "SAMME"])
         else:
             dist["loss"] = Cat(["linear", "square", "exponential"])
@@ -739,7 +739,7 @@ class DecisionTree(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
@@ -816,7 +816,7 @@ class Dummy(ClassRegModel):
             quantile=Float(0, 1.0, step=0.1),
         )
 
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             dist.pop("quantile")
         else:
             dist["strategy"] = Cat(["mean", "median", "quantile"])
@@ -943,7 +943,7 @@ class ExtraTree(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error"]
@@ -1039,7 +1039,7 @@ class ExtraTrees(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error"]
@@ -1241,9 +1241,10 @@ class GradientBoostingMachine(ClassRegModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.task.is_multiclass:
+        # Avoid 'task' when class initialized without branches
+        if "_branch" in self.__dict__ and self.task.is_multiclass:
             dist.pop("loss")  # Multiclass only supports log_loss
-        elif self.task.is_regression:
+        elif self._goal is Goal.regression:
             dist["loss"] = Cat(["squared_error", "absolute_error", "huber", "quantile"])
             dist["alpha"] = Float(0.1, 0.9, step=0.1)
 
@@ -1383,7 +1384,7 @@ class HistGradientBoosting(ClassRegModel):
             l2_regularization=Float(0, 1.0, step=0.1),
         )
 
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             dist.pop("loss")
             dist.pop("quantile")
 
@@ -1891,7 +1892,7 @@ class LinearSVM(ClassRegModel):
         """
         params = super()._get_parameters(trial)
 
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             if self._get_param("loss", params) == "hinge":
                 # l1 regularization can't be combined with hinge
                 if "penalty" in params:
@@ -1924,7 +1925,7 @@ class LinearSVM(ClassRegModel):
             Estimator instance.
 
         """
-        if self.engine.get("estimator") == "cuml" and self.task.is_classification:
+        if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
             return self._est_class(probability=params.pop("probability", True), **params)
         else:
             return super()._get_est(**params)
@@ -1939,7 +1940,7 @@ class LinearSVM(ClassRegModel):
 
         """
         dist: dict[str, BaseDistribution] = {}
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             dist["penalty"] = Cat(["l1", "l2"])
             dist["loss"] = Cat(["hinge", "squared_hinge"])
         else:
@@ -2376,7 +2377,7 @@ class PassiveAggressive(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             loss = ["hinge", "squared_hinge"]
         else:
             loss = ["epsilon_insensitive", "squared_epsilon_insensitive"]
@@ -2685,7 +2686,7 @@ class RandomForest(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             criterion = ["gini", "entropy"]
         else:
             if self.engine.get("estimator") == "cuml":
@@ -2780,7 +2781,7 @@ class Ridge(ClassRegModel):
             solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
         )
 
-        if self.task.is_regression:
+        if self._goal is Goal.regression:
             if self.engine.get("estimator") == "sklearnex":
                 dist.pop("solver")  # Only supports 'auto'
             elif self.engine.get("estimator") == "cuml":
@@ -2858,7 +2859,7 @@ class StochasticGradientDescent(ClassRegModel):
         ]
 
         return dict(
-            loss=Cat(loss if self.task.is_classification else loss[-4:]),
+            loss=Cat(loss if self._goal is Goal.classification else loss[-4:]),
             penalty=Cat([None, "l1", "l2", "elasticnet"]),
             alpha=Float(1e-4, 1.0, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
@@ -2949,7 +2950,7 @@ class SupportVectorMachine(ClassRegModel):
             Estimator instance.
 
         """
-        if self.engine.get("estimator") == "cuml" and self.task.is_classification:
+        if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
             return self._est_class(
                 probability=params.pop("probability", True),
                 random_state=params.pop("random_state", self.random_state),
@@ -2976,7 +2977,7 @@ class SupportVectorMachine(ClassRegModel):
             shrinking=Cat([True, False]),
         )
 
-        if self.task.is_classification:
+        if self._goal is Goal.classification:
             dist.pop("epsilon")
 
         if self.engine.get("estimator") == "cuml":

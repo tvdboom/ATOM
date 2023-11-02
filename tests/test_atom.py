@@ -8,14 +8,12 @@ Description: Unit tests for atom.py
 """
 
 import glob
-# from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from category_encoders.target_encoder import TargetEncoder
-# from evalml.pipelines.components.estimators import SVMClassifier
 from pandas.testing import assert_frame_equal, assert_index_equal
 from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
@@ -270,40 +268,6 @@ def test_unavailable_regression_properties():
 
 # Test utility methods ============================================= >>
 
-# @patch("evalml.AutoMLSearch")
-# def test_automl(cls):
-#     """Assert that the automl method works."""
-#     pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
-#     cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
-#
-#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-#     atom.run("Tree", metric="accuracy")
-#     atom.branch = "automl"  # Change branch since we need a new pipeline
-#     atom.automl()
-#     cls.assert_called_once()
-#     assert len(atom.pipeline) == 1
-#     assert atom.models == ["Tree", "SVM"]
-#
-#
-# @patch("evalml.AutoMLSearch")
-# def test_automl_custom_objective(cls):
-#     """Assert that the automl method works for a custom objective."""
-#     pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
-#     cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
-#
-#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-#     atom.automl(objective="r2")
-#     cls.assert_called_once()
-#
-#
-# def test_automl_invalid_objective():
-#     """Assert that an error is raised when the provided objective is invalid."""
-#     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-#     atom.run("Tree", metric="mse")
-#     with pytest.raises(ValueError, match=".*objective parameter.*"):
-#         atom.automl(objective="r2")
-
-
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
 def test_distribution(distributions):
     """Assert that the distribution method and file are created."""
@@ -312,12 +276,27 @@ def test_distribution(distributions):
     assert isinstance(df, pd.DataFrame)
 
 
-# @patch("ydata_profiling.ProfileReport")
-# def test_eda(cls):
-#     """Assert that the eda method creates a report."""
-#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-#     atom.eda(filename="report")
-#     cls.return_value.to_file.assert_called_once_with(Path("report.html"))
+@patch("sweetviz.analyze")
+def test_eda_analyze(cls):
+    """Assert that the eda method creates a report for one dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.eda(rows="test", filename="report")
+    cls.assert_called_once()
+
+
+@patch("sweetviz.compare")
+def test_eda_compare(cls):
+    """Assert that the eda method creates a report for two datasets."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.eda(rows={"train": "train", "test": "test"})
+    cls.assert_called_once()
+
+
+def test_eda_invalid_rows():
+    """Assert that an error is raised with more than two datasets."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=".*maximum number of.*"):
+        atom.eda(rows=("train", "test", "train"))
 
 
 def test_inverse_transform():
@@ -436,7 +415,7 @@ def test_shrink_sparse_arrays():
     atom = ATOMClassifier(X_sparse, y10, random_state=1)
     assert atom.dtypes[0].name == "Sparse[int64, 0]"
     atom.shrink()
-    assert atom.dtypes[0].name == "Sparse[Int8, 0]"
+    assert atom.dtypes[0].name == "Sparse[int8, 0]"
 
 
 def test_shrink_dtypes_unchanged():
@@ -452,7 +431,7 @@ def test_shrink_dense2sparse():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dtypes[0].name == "float64"
     atom.shrink(dense2sparse=True)
-    assert atom.dtypes[0].name.startswith("Sparse[Float32")
+    assert atom.dtypes[0].name.startswith("Sparse[float32")
 
 
 def test_shrink_pyarrow():

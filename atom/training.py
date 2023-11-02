@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from beartype import beartype
 from beartype.typing import Any, Literal
 from joblib.memory import Memory
 from sklearn.base import BaseEstimator
@@ -237,6 +238,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self._models = models  # Restore original models
 
 
+@beartype
 class DirectClassifier(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -471,6 +473,7 @@ class DirectClassifier(Direct):
         )
 
 
+@beartype
 class DirectForecaster(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -651,7 +654,7 @@ class DirectForecaster(Direct):
     ```pycon
     from atom.training import DirectForecaster
     from sktime.datasets import load_airline
-    from sktime.forecasting.model_selection import temporal_train_test_split
+    from sktime.split import temporal_train_test_split
 
     y = load_airline()
 
@@ -699,6 +702,7 @@ class DirectForecaster(Direct):
         )
 
 
+@beartype
 class DirectRegressor(Direct):
     """Train and evaluate the models in a direct fashion.
 
@@ -929,6 +933,7 @@ class DirectRegressor(Direct):
         )
 
 
+@beartype
 class SuccessiveHalvingClassifier(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1167,6 +1172,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         )
 
 
+@beartype
 class SuccessiveHalvingForecaster(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1349,7 +1355,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
     ```pycon
     from atom.training import SuccessiveHalvingForecaster
     from sktime.datasets import load_airline
-    from sktime.forecasting.model_selection import temporal_train_test_split
+    from sktime.split import temporal_train_test_split
 
     y = load_airline()
 
@@ -1398,6 +1404,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         )
 
 
+@beartype
 class SuccessiveHalvingRegressor(SuccessiveHalving):
     """Train and evaluate the models in a [successive halving][] fashion.
 
@@ -1632,6 +1639,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         )
 
 
+@beartype
 class TrainSizingClassifier(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -1875,6 +1883,7 @@ class TrainSizingClassifier(TrainSizing):
         )
 
 
+@beartype
 class TrainSizingForecaster(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 
@@ -2063,7 +2072,7 @@ class TrainSizingForecaster(TrainSizing):
     ```pycon
     from atom.training import TrainSizingForecaster
     from sktime.datasets import load_airline
-    from sktime.forecasting.model_selection import temporal_train_test_split
+    from sktime.split import temporal_train_test_split
 
     y = load_airline()
 
@@ -2112,6 +2121,7 @@ class TrainSizingForecaster(TrainSizing):
         )
 
 
+@beartype
 class TrainSizingRegressor(TrainSizing):
     """Train and evaluate the models in a [train sizing][] fashion.
 

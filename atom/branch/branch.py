@@ -13,10 +13,12 @@ import re
 from functools import cached_property
 from pathlib import Path
 from typing import overload
+from warnings import filterwarnings
 
 import dill as pickle
 from beartype import beartype
-from beartype.typing import Hashable, Literal
+from beartype.roar import BeartypeDecorHintPep585DeprecationWarning
+from beartype.typing import Hashable, Literal, Sequence
 from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 
@@ -24,12 +26,14 @@ from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, DataFrameTypes, Index, Int,
     IntLargerEqualZero, IntTypes, Pandas, RowSelector, Scalar, SegmentTypes,
-    Sequence, SeriesTypes, TargetSelector, TargetsSelector, XSelector,
-    YSelector,
+    SeriesTypes, TargetSelector, TargetsSelector, XSelector, YSelector,
 )
 from atom.utils.utils import (
     DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
 )
+
+
+filterwarnings("ignore", category=BeartypeDecorHintPep585DeprecationWarning)
 
 
 @beartype

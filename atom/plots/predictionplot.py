@@ -400,7 +400,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         texttemplate="%{text}<br>(%{z:.2f}%)",
                         textfont=dict(size=self.label_fontsize),
                         hovertemplate=(
-                            "<b>%{customdata}</b><br>" if self.task.is_binary else ""
+                            "%{customdata}<extra></extra>" if self.task.is_binary else ""
                             "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
                         ),
                         showlegend=False,
@@ -1071,7 +1071,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         ```
 
         """
-        models_c = self._get_plot_models(models)
+        models_c = self._get_plot_models(models, check_fitted=False)
         target_c = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
@@ -2293,7 +2293,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         atom.balance("nearmiss")
         atom.run("RF_undersample")
 
-        atom.branch = "oversample_from_master"
+        atom.branch = "oversample_from_main"
         atom.balance("smote")
         atom.run("RF_oversample")
 
@@ -2967,8 +2967,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         If all models applied bootstrap, the plot is a boxplot. If
         not, the plot is a barplot. Models are ordered based on
         their score from the top down. The score is either the
-        `score_bootstrap` or `score_test` attribute of the model,
-        selected in that order.
+        `[metric]_bootstrap` or `[metric]_test` values, selected
+        in that order.
 
         Parameters
         ----------

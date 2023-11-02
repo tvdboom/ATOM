@@ -73,11 +73,11 @@ extra:
 plugins:
     - search
     - autorefs
-#    - mkdocs-jupyter:
-#          include_requirejs: true
-#          include: ["*.ipynb"]
-#          include_source: true
-#          ignore_h1_titles: true
+    - mkdocs-jupyter:
+          include_requirejs: true
+          include: ["*.ipynb"]
+          include_source: true
+          ignore_h1_titles: true
     - mkdocs-simple-hooks:
           hooks:
               on_page_markdown: docs_sources.scripts.autodocs:render
@@ -93,19 +93,19 @@ markdown_extensions:
     - pymdownx.details  # Allows for collapsible admonition blocks
     - pymdownx.magiclink  # Allows for bare links of the form <url>
     - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
-#    - pymdownx.superfences:
-#        preserve_tabs: true
-#        custom_fences:
-#            - name: pycon
-#              class: pycon
-#              format: !!python/name:docs_sources.scripts.autorun.formatter
+    - pymdownx.superfences:
+        preserve_tabs: true
+        custom_fences:
+            - name: pycon
+              class: pycon
+              format: !!python/name:docs_sources.scripts.autorun.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true
     - pymdownx.tabbed:  # Allows the usage of content tabs
           alternate_style: true
     - pymdownx.emoji:  # Automatically inlines bundled and custom icons and emojis
-          emoji_index: !!python/name:materialx.emoji.twemoji
-          emoji_generator: !!python/name:materialx.emoji.to_svg
+          emoji_index: !!python/name:material.extensions.emoji.twemoji
+          emoji_generator: !!python/name:material.extensions.emoji.to_svg
     - pymdownx.highlight:  # Allows for highlighting of code blocks
           use_pygments: true
           pygments_lang_class: true
@@ -272,7 +272,6 @@ nav:
         - Accelerating sklearnex: examples/accelerating_sklearnex.ipynb
         - Advanced plotting: examples/advanced_plotting.ipynb
         - Automated feature scaling: examples/automated_feature_scaling.ipynb
-        - AutoML: examples/automl.ipynb
         - Binary classification: examples/binary_classification.ipynb
         - Calibration: examples/calibration.ipynb
         - Deep learning: examples/deep_learning.ipynb

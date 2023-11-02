@@ -15,18 +15,17 @@ import modin.pandas as md
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
-from beartype.door import is_bearable
 from beartype.typing import (
-    Any, Callable, Hashable, Iterable, Iterator, Literal, Protocol, TypeAlias,
-    TypedDict, TypeVar, Union, runtime_checkable,
+    Any, Callable, Hashable, Iterable, Literal, Protocol, Sequence, TypedDict,
+    TypeVar, Union, runtime_checkable,
 )
 from beartype.vale import Is
 from optuna.distributions import BaseDistribution
+from sktime.forecasting.base import ForecastingHorizon
 
 
 if TYPE_CHECKING:
-    from atom.branch import Branch
-    from atom.utils.utils import ClassMap, Goal, ShapExplanation
+    from atom.utils.utils import ClassMap, Goal
 
 
 # Variable types for isinstance ==================================== >>
@@ -81,47 +80,6 @@ class Style(TypedDict):
 
 
 @runtime_checkable
-class Sequence(Protocol[T_cov]):
-    """Type hint factory for sequences with subscripted types.
-
-    Dynamically creates new `Annotated[Sequence[...], ...]` type hints,
-    subscripted by the passed type. For subscripted types, it passes
-    when the type is of a sequence type and all items in the sequence
-    are of the subscripted type.
-
-    Parameters
-    ----------
-    T: object
-        Arbitrary child type hint with which to subscript the protocol.
-
-    Returns
-    -------
-    Annotated
-        Type hint validating that all items of this sequence satisfy
-        this child type hint.
-
-    Notes
-    -----
-    This implementation only works because beartype.Protocol doesn't
-    check the `@classmethod`. This could fail in the future if fixed.
-    See https://github.com/beartype/beartype/discussions/277#discussioncomment-7086878
-
-    """
-
-    def __iter__(self) -> Iterator[T_cov]: ...
-    def __getitem__(self, item) -> T_cov: ...
-    def __len__(self) -> int: ...
-
-    @classmethod
-    def __class_getitem__(cls, item: Any) -> Annotated[Any, Is]:
-        return Annotated[
-            cls,
-            Is[lambda lst: isinstance(lst, SequenceTypes)]
-            & Is[lambda lst: all(is_bearable(i, item) for i in lst)]  # type: ignore
-        ]
-
-
-@runtime_checkable
 class SkScorer(Protocol):
     """Protocol for sklearn's scorers."""
     def __call__(self, *args, **kwargs): ...
@@ -167,19 +125,7 @@ class Model(Protocol):
     _goal: Goal
     _metric: ClassMap
     _ht: dict[str, Any]
-    _shap: ShapExplanation
 
-    @property
-    def name(self) -> str: ...
-    @property
-    def branch(self) -> Branch: ...
-    @property
-    def estimator(self) -> Predictor: ...
-    @property
-    def _est_class(self) -> type[Predictor]: ...
-    @property
-    def feature_importance(self) -> pd.Series: ...
-    def _get_pred(self, *args, **kwargs) -> tuple[Pandas, Pandas]: ...
     def predict(self, *args, **kwargs) -> Pandas: ...
 
 
@@ -197,16 +143,16 @@ DataFrame = Union[pd.DataFrame, md.DataFrame]
 Pandas = Union[Series, DataFrame]
 
 # Numerical types
-IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
-IntLargerEqualZero: TypeAlias = Annotated[Int, Is[lambda x: x >= 0]]
-IntLargerTwo: TypeAlias = Annotated[Int, Is[lambda x: x > 2]]
-IntLargerFour: TypeAlias = Annotated[Int, Is[lambda x: x > 4]]
-FloatLargerZero: TypeAlias = Annotated[Scalar, Is[lambda x: x > 0]]
-FloatLargerEqualZero: TypeAlias = Annotated[Scalar, Is[lambda x: x >= 0]]
-FloatZeroToOneInc: TypeAlias = Annotated[Float, Is[lambda x: 0 <= x <= 1]]
-FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
+IntLargerZero = Annotated[Int, Is[lambda x: x > 0]]
+IntLargerEqualZero = Annotated[Int, Is[lambda x: x >= 0]]
+IntLargerTwo = Annotated[Int, Is[lambda x: x > 2]]
+IntLargerFour = Annotated[Int, Is[lambda x: x > 4]]
+FloatLargerZero = Annotated[Scalar, Is[lambda x: x > 0]]
+FloatLargerEqualZero = Annotated[Scalar, Is[lambda x: x >= 0]]
+FloatZeroToOneInc = Annotated[Scalar, Is[lambda x: 0 <= x <= 1]]
+FloatZeroToOneExc = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
-# Types for X and y
+# Types for X, y and fh
 XTypes = Union[
     dict[str, Sequence[Any]],
     Sequence[Sequence[Any]],
@@ -220,6 +166,7 @@ XTypes = Union[
 XSelector = Union[XTypes, Callable[..., XTypes]]
 YTypes = Union[dict[str, Any], Sequence[Any], Series, XSelector]
 YSelector = Union[Int, str, YTypes]
+FHSelector = Union[int, Sequence, Index, Series, ForecastingHorizon]
 
 # Return types for transform methods
 TReturn = Union[np.ndarray, sps.spmatrix, Series, DataFrame]
@@ -227,10 +174,10 @@ TReturns = Union[TReturn, tuple[TReturn, TReturn]]
 
 # Selection of rows or columns by name or position
 ColumnSelector = Union[Int, str, Segment, Sequence[Union[Int, str]], DataFrame]
-RowSelector = Union[Hashable, Sequence[Hashable], ColumnSelector]
+RowSelector = Union[Hashable, Sequence[Hashable], Index, Series, ColumnSelector]
 
 # Assignment of index or stratify parameter
-IndexSelector = Union[Bool, Int, str, Sequence[Hashable]]
+IndexSelector = Union[Bool, Int, str, Sequence[Hashable], Index, Series]
 
 # Types to initialize and select models and metric
 ModelsConstructor = Union[str, Predictor, Sequence[Union[str, Predictor]], None]
@@ -264,8 +211,8 @@ CategoricalStrats = Union[str, Literal["drop", "most_frequent"]]
 DiscretizerStrats = Literal["uniform", "quantile", "kmeans", "custom"]
 Bins = Union[
     IntLargerZero,
-    Sequence[IntLargerZero],
-    dict[str, Union[IntLargerZero, Sequence[IntLargerZero]]],
+    Sequence[Scalar],
+    dict[str, Union[IntLargerZero, Sequence[Scalar]]],
 ]
 NormalizerStrats = Literal["yeojohnson", "boxcox", "quantile"]
 PrunerStrats = Literal[

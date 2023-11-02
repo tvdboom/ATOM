@@ -12,6 +12,7 @@ from __future__ import annotations
 from copy import deepcopy
 
 import numpy as np
+from beartype.typing import Sequence
 from joblib import Parallel, delayed
 from sklearn.base import clone, is_classifier
 from sklearn.ensemble import StackingClassifier as SC
@@ -26,7 +27,7 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 from typing_extensions import Self
 
-from atom.utils.types import Bool, Int, Predictor, Scalar, Sequence, XSelector
+from atom.utils.types import Bool, Int, Predictor, Scalar, XSelector
 from atom.utils.utils import check_is_fitted
 
 

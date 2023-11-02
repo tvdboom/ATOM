@@ -17,6 +17,7 @@ from string import punctuation
 
 import nltk
 import pandas as pd
+from beartype import beartype
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
@@ -31,11 +32,12 @@ from atom.utils.types import (
     VectorizerStarts, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
-    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
-    method_to_log, to_df,
+    check_is_fitted, check_nltk_module, composed, crash, get_corpus, is_sparse,
+    merge, method_to_log, to_df,
 )
 
 
+@beartype
 class TextCleaner(TransformerMixin):
     """Applies standard text cleaning to the corpus.
 
@@ -167,23 +169,23 @@ class TextCleaner(TransformerMixin):
     _train_only = False
 
     def __init__(
-        self,
-        *,
-        decode: Bool = True,
-        lower_case: Bool = True,
-        drop_email: Bool = True,
-        regex_email: str | None = None,
-        drop_url: Bool = True,
-        regex_url: str | None = None,
-        drop_html: Bool = True,
-        regex_html: str | None = None,
-        drop_emoji: Bool = True,
-        regex_emoji: str | None = None,
-        drop_number: Bool = True,
-        regex_number: str | None = None,
-        drop_punctuation: Bool = True,
-        verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
+            self,
+            *,
+            decode: Bool = True,
+            lower_case: Bool = True,
+            drop_email: Bool = True,
+            regex_email: str | None = None,
+            drop_url: Bool = True,
+            regex_url: str | None = None,
+            drop_html: Bool = True,
+            regex_html: str | None = None,
+            drop_emoji: Bool = True,
+            regex_emoji: str | None = None,
+            drop_number: Bool = True,
+            regex_number: str | None = None,
+            drop_punctuation: Bool = True,
+            verbose: Verbose = 0,
+            logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -327,6 +329,7 @@ class TextCleaner(TransformerMixin):
         return Xt
 
 
+@beartype
 class TextNormalizer(TransformerMixin):
     """Normalize the corpus.
 
@@ -445,14 +448,14 @@ class TextNormalizer(TransformerMixin):
     _train_only = False
 
     def __init__(
-        self,
-        *,
-        stopwords: Bool | str = True,
-        custom_stopwords: Sequence[str] | None = None,
-        stem: Bool | str = False,
-        lemmatize: Bool = True,
-        verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
+            self,
+            *,
+            stopwords: Bool | str = True,
+            custom_stopwords: Sequence[str] | None = None,
+            stem: Bool | str = False,
+            lemmatize: Bool = True,
+            verbose: Verbose = 0,
+            logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -519,6 +522,7 @@ class TextNormalizer(TransformerMixin):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
+            check_nltk_module("corpora/stopwords", self.verbose < 2)
             stopwords = set(nltk.corpus.stopwords.words(self.stopwords.lower()))
 
         # Join predefined with customs stopwords
@@ -540,6 +544,10 @@ class TextNormalizer(TransformerMixin):
 
         if self.lemmatize:
             self._log(" --> Applying lemmatization.", 2)
+            check_nltk_module("corpora/wordnet", self.verbose < 2)
+            check_nltk_module("taggers/averaged_perceptron_tagger", self.verbose < 2)
+            check_nltk_module("corpora/omw-1.4", self.verbose < 2)
+
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
             Xt[corpus] = Xt[corpus].apply(f)
@@ -547,6 +555,7 @@ class TextNormalizer(TransformerMixin):
         return Xt
 
 
+@beartype
 class Tokenizer(TransformerMixin):
     """Tokenize the corpus.
 
@@ -671,13 +680,13 @@ class Tokenizer(TransformerMixin):
     _train_only = False
 
     def __init__(
-        self,
-        bigram_freq: FloatLargerZero | None = None,
-        trigram_freq: FloatLargerZero | None = None,
-        quadgram_freq: FloatLargerZero | None = None,
-        *,
-        verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
+            self,
+            bigram_freq: FloatLargerZero | None = None,
+            trigram_freq: FloatLargerZero | None = None,
+            quadgram_freq: FloatLargerZero | None = None,
+            *,
+            verbose: Verbose = 0,
+            logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
@@ -738,6 +747,7 @@ class Tokenizer(TransformerMixin):
         self._log("Tokenizing the corpus...", 1)
 
         if isinstance(Xt[corpus].iat[0], str):
+            check_nltk_module("tokenizers/punkt", self.verbose < 2)
             Xt[corpus] = Xt[corpus].apply(lambda row: nltk.word_tokenize(row))
 
         ngrams = {
@@ -775,6 +785,7 @@ class Tokenizer(TransformerMixin):
         return Xt
 
 
+@beartype
 class Vectorizer(TransformerMixin):
     """Vectorize text data.
 
@@ -915,15 +926,15 @@ class Vectorizer(TransformerMixin):
     _train_only = False
 
     def __init__(
-        self,
-        strategy: VectorizerStarts = "bow",
-        *,
-        return_sparse: Bool = True,
-        device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-        verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
-        **kwargs,
+            self,
+            strategy: VectorizerStarts = "bow",
+            *,
+            return_sparse: Bool = True,
+            device: str = "cpu",
+            engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+            verbose: Verbose = 0,
+            logger: str | Path | Logger | None = None,
+            **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy

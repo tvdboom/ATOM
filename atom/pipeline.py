@@ -10,7 +10,7 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 from __future__ import annotations
 
 import numpy as np
-from beartype.typing import Any, Iterator, Literal
+from beartype.typing import Any, Iterator, Literal, Sequence
 from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
@@ -21,8 +21,8 @@ from sklearn.utils.validation import check_memory
 from typing_extensions import Self
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Float, Pandas, Scalar, Sequence, Verbose,
-    XSelector, YSelector,
+    Bool, DataFrame, Estimator, Float, Pandas, Scalar, Verbose, XSelector,
+    YSelector,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
@@ -76,7 +76,7 @@ class Pipeline(SkPipeline):
         List of (name, transform) tuples (implementing `fit`/`transform`)
         that are chained in sequential order.
 
-    memory: str, Memory or None, default=None
+    memory: str, [Memory][joblibmemory] or None, default=None
         Used to cache the fitted transformers of the pipeline. Enabling
         caching triggers a clone of the transformers before fitting.
         Therefore, the transformer instance given to the pipeline cannot
@@ -91,7 +91,7 @@ class Pipeline(SkPipeline):
 
     Attributes
     ----------
-    named_steps: [sklearn.utils.Bunch][bunch]
+    named_steps: [Bunch][]
         Dictionary-like object, with the following attributes. Read-only
         attribute to access any step parameter by user given name. Keys
         are step names and values are steps parameters.

@@ -28,7 +28,7 @@ import numpy as np
 import ray
 import requests
 from beartype import beartype
-from beartype.typing import Hashable, Literal, TypeVar
+from beartype.typing import Hashable, Literal, Sequence, TypeVar
 from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
@@ -37,8 +37,8 @@ from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, BoolTypes, DataFrame, DataFrameTypes, Engine, Estimator,
-    Int, IntTypes, Pandas, Sequence, SequenceTypes, Severity, Verbose,
-    Warnings, XSelector, YSelector,
+    Int, IntTypes, Pandas, SequenceTypes, Severity, Verbose, Warnings,
+    XSelector, YSelector,
 )
 from atom.utils.utils import crash, flt, n_cols, sign, to_df, to_pandas
 

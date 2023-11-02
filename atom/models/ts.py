@@ -30,7 +30,7 @@ class ARIMA(ForecastModel):
     efficacious in cases where data shows evidence of non-stationarity.
 
     The "AR" part of ARIMA indicates that the evolving variable of
-    interest is regressed on its own lagged (i.e.,, prior observed)
+    interest is regressed on its own lagged (i.e., prior observed)
     values. The "MA" part indicates that the regression error is
     actually a linear combination of error terms whose values occurred
     contemporaneously and at various times in the past. The "I" (for
@@ -178,7 +178,7 @@ class AutoARIMA(ForecastModel):
     ARIMA model, settling on a single fitted ARIMA model. This process
     is based on the commonly-used R function.
 
-    AutoARIMA works by conducting differencing tests (i.e.,,
+    AutoARIMA works by conducting differencing tests (i.e.,
     Kwiatkowski–Phillips–Schmidt–Shin, Augmented Dickey-Fuller or
     Phillips–Perron) to determine the order of differencing, d, and
     then fitting models within defined ranges. AutoARIMA also seeks
