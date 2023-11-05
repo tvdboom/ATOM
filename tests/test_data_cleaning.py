@@ -146,7 +146,7 @@ def test_cleaner_convert_dtypes():
     assert X["object_col"].dtype == "object"
     X, y = Cleaner(convert_dtypes=True).fit_transform(X, y_bin)
     assert X["object_col"].dtype == "string"
-    assert y.dtype == "Int32"  # Nullable dtype
+    assert y.dtype.name.startswith("I")  # Nullable dtype
 
 
 def test_cleaner_drop_invalid_dtypes():

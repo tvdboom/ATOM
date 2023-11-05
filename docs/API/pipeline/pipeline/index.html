@@ -4630,9 +4630,9 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go">Train set size: 456</span>
 <span class="go">Test set size: 113</span>
 <span class="go">-------------------------------------</span>
-<span class="go">Memory: 138.97 kB</span>
+<span class="go">Memory: 138.96 kB</span>
 <span class="go">Scaled: False</span>
-<span class="go">Outlier values: 175 (1.2%)</span>
+<span class="go">Outlier values: 166 (1.2%)</span>
 
 
 
@@ -4645,20 +4645,21 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">)</span>
 
 <span class="go">Oversampling with SMOTE...</span>
+<span class="go"> --&gt; Adding 116 samples to class 0.</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;rfe&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">22</span><span class="p">)</span>
 
 <span class="go">Fitting FeatureSelector...</span>
 <span class="go">Performing feature selection ...</span>
 <span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
-<span class="go">   --&gt; Dropping feature mean smoothness (rank 8).</span>
-<span class="go">   --&gt; Dropping feature mean symmetry (rank 7).</span>
-<span class="go">   --&gt; Dropping feature texture error (rank 9).</span>
+<span class="go">   --&gt; Dropping feature mean radius (rank 2).</span>
+<span class="go">   --&gt; Dropping feature mean texture (rank 4).</span>
+<span class="go">   --&gt; Dropping feature mean smoothness (rank 9).</span>
+<span class="go">   --&gt; Dropping feature mean symmetry (rank 6).</span>
 <span class="go">   --&gt; Dropping feature smoothness error (rank 3).</span>
-<span class="go">   --&gt; Dropping feature concavity error (rank 6).</span>
-<span class="go">   --&gt; Dropping feature symmetry error (rank 4).</span>
-<span class="go">   --&gt; Dropping feature worst compactness (rank 5).</span>
-<span class="go">   --&gt; Dropping feature worst fractal dimension (rank 2).</span>
+<span class="go">   --&gt; Dropping feature concavity error (rank 7).</span>
+<span class="go">   --&gt; Dropping feature symmetry error (rank 5).</span>
+<span class="go">   --&gt; Dropping feature worst compactness (rank 8).</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
@@ -4672,17 +4673,17 @@ Number of features seen during first step <code>fit</code> method.</p>
 
 <span class="go">Results for LogisticRegression:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9895</span>
-<span class="go">Test evaluation --&gt; f1: 0.9861</span>
-<span class="go">Time elapsed: 0.032s</span>
+<span class="go">Train evaluation --&gt; f1: 0.981</span>
+<span class="go">Test evaluation --&gt; f1: 0.9929</span>
+<span class="go">Time elapsed: 0.034s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.032s</span>
+<span class="go">Time: 0.034s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.050s</span>
+<span class="go">Total time: 0.037s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9861</span>
+<span class="go">LogisticRegression --&gt; f1: 0.9929</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the pipeline and make predictions</span>
@@ -4696,9 +4697,9 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go"> 1 1 1 1 1 1 1 1 0 1 1 1 1 0 0 1 0 1 1 0 0 1 1 0 0 1 1 1 1 0 1 1 0 0 0 1 0</span>
 <span class="go"> 1 0 1 1 1 0 1 1 0 0 1 0 0 0 0 1 0 0 0 1 0 1 0 1 1 0 1 0 0 0 0 1 1 0 0 1 1</span>
 <span class="go"> 1 0 1 1 1 1 1 0 0 1 1 0 1 1 0 0 1 0 1 1 1 1 0 1 1 1 1 1 0 1 0 0 0 0 0 0 0</span>
-<span class="go"> 0 0 0 0 1 0 0 1 1 1 1 1 1 0 1 0 1 1 0 1 1 0 1 0 0 1 1 1 1 1 1 1 1 1 1 1 1</span>
+<span class="go"> 0 0 0 0 1 0 0 1 1 1 1 1 1 0 1 0 1 1 0 1 1 0 1 0 0 1 1 1 1 1 1 1 0 1 1 1 1</span>
 <span class="go"> 1 1 1 1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 1 0 1 0 1 1 1 1 0 0 0 1 1</span>
-<span class="go"> 1 1 0 1 0 1 0 1 1 1 0 1 1 1 1 1 1 1 0 0 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1 0 0</span>
+<span class="go"> 1 1 0 1 0 1 0 1 1 1 0 1 1 1 1 1 1 1 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 1 0 0</span>
 <span class="go"> 0 1 0 0 1 1 1 1 1 0 1 1 1 1 1 0 1 1 1 0 1 1 0 0 1 1 1 1 1 1 0 1 1 1 1 1 1</span>
 <span class="go"> 1 0 1 1 1 1 0 0 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 1 0 1 1 1 1 1 0 1 1</span>
 <span class="go"> 0 1 0 1 1 0 1 0 1 1 1 1 1 1 1 1 0 0 1 1 1 1 1 1 0 1 1 1 1 1 1 1 1 1 1 0 1</span>
@@ -4741,7 +4742,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-fit_predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_predict</strong>(X, y=None, **fit_params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/pipeline.py#L517>[source]</a></span></div>Transform the data, and apply <code>fit_predict</code> with the final estimator.</p>
+<p><a id='pipeline-fit_predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_predict</strong>(X, y=None, **fit_params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/pipeline.py#L517>[source]</a></span></div>Transform the data, and apply <code>fit_predict</code> with the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_predict-X '></a><strong>X : iterable</strong><br><div markdown class='param'>
 Training data. Must fulfill input requirements of first step of
@@ -4790,7 +4791,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-get_feature_names_out'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_feature_names_out</strong>(input_features=None)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/pipeline.py#L797>[source]</a></span></div>Get output feature names for transformation.</p>
+<p><a id='pipeline-get_feature_names_out'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_feature_names_out</strong>(input_features=None)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/pipeline.py#L797>[source]</a></span></div>Get output feature names for transformation.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_feature_names_out-input_features '></a><strong>input_features : array-like of str or None, default=None</strong><br><div markdown class='param'>
 Input features.</p>
@@ -4799,7 +4800,7 @@ Transformed feature names.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/pipeline.py#L184>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='pipeline-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/pipeline.py#L184>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -4884,7 +4885,7 @@ Mean accuracy or r2 of self.predict(X) with respect to y.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-score_samples'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score_samples</strong>(X)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/pipeline.py#L612>[source]</a></span></div>Transform the data, and apply <code>score_samples</code> with the final estimator.</p>
+<p><a id='pipeline-score_samples'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score_samples</strong>(X)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/pipeline.py#L612>[source]</a></span></div>Transform the data, and apply <code>score_samples</code> with the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='score_samples-X '></a><strong>X : iterable</strong><br><div markdown class='param'>
 Data to predict on. Must fulfill input requirements of first step
@@ -4894,7 +4895,7 @@ Result of calling <code>score_samples</code> on the final estimator.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-set_output'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_output</strong>(transform=None)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/pipeline.py#L161>[source]</a></span></div>Set the output container when <code>"transform"</code> and <code>"fit_transform"</code> are called.</p>
+<p><a id='pipeline-set_output'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_output</strong>(transform=None)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/pipeline.py#L161>[source]</a></span></div>Set the output container when <code>"transform"</code> and <code>"fit_transform"</code> are called.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_output-transform '></a><strong>transform : {"default", "pandas"}, default=None</strong><br><div markdown class='param'>
 Configure output of <code>transform</code> and <code>fit_transform</code>.</p>
@@ -4908,7 +4909,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**kwargs)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/pipeline.py#L203>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='pipeline-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**kwargs)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/pipeline.py#L203>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*kwargs '></a><strong>**kwargs : dict</strong><br><div markdown class='param'>
 Parameters of this estimator or parameters of estimators contained

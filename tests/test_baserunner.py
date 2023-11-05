@@ -507,7 +507,7 @@ def test_test_size_int():
 def test_error_message_impossible_stratification():
     """Assert that the correct error is shown when stratification fails."""
     with pytest.raises(ValueError, match=".*stratify=False.*"):
-        ATOMClassifier(X_label[:50], y=y_label[:50], stratify=True, random_state=1)
+        ATOMClassifier(X_label[:30], y=y_label[:30], stratify=True, random_state=1)
 
 
 def test_input_is_X_y():

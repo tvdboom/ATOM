@@ -479,6 +479,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
                 # Drop missing values for compatibility with scipy.stats
                 values = replace_missing(self.branch.dataset[col], self.missing).dropna()
+                values = values.to_numpy(dtype=float)
 
                 if distributions is not None:
                     # Get a line for each distribution
@@ -898,6 +899,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         for col in columns_c:
             # Drop missing values for compatibility with scipy.stats
             values = replace_missing(self.branch.dataset[col], self.missing).dropna()
+            values = values.to_numpy(dtype=float)
 
             for dist in lst(distributions):
                 stat = getattr(stats, dist)

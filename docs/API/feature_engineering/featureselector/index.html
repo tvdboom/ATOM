@@ -4816,24 +4816,24 @@ Number of features seen during fit.</p>
 <span class="go"> --&gt; Applying Principal Component Analysis...</span>
 <span class="go">   --&gt; Scaling features...</span>
 <span class="go">   --&gt; Keeping 12 components.</span>
-<span class="go">   --&gt; Explained variance ratio: 0.971</span>
+<span class="go">   --&gt; Explained variance ratio: 0.972</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the column names changed</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 
 <span class="go">         pca0      pca1      pca2      pca3      pca4      pca5      pca6      pca7      pca8      pca9     pca10     pca11  target</span>
-<span class="go">0    6.388818 -6.135509  1.136569 -2.794980 -1.578906 -0.657477  2.214880  0.592107  0.856135  0.454907  1.214943  0.490609       0</span>
-<span class="go">1   -3.744245 -1.769476  1.335075  0.263929 -0.395834  0.831154  0.370113  0.276183 -0.042876  0.791031  0.189826 -0.228945       1</span>
-<span class="go">2   -3.670198 -1.332659  0.831574 -4.586267 -0.790613  1.127066  0.869239 -0.240513  0.801693  1.127108 -0.102414  0.841162       1</span>
-<span class="go">3   -3.268860 -2.206438 -0.165771  1.074539  1.275312 -0.069902 -0.308604 -0.391542 -0.041005  0.512580 -0.329013  0.028818       1</span>
-<span class="go">4    4.043878 -5.222307 -0.667488 -0.963419 -0.431690 -0.523925 -0.159997  0.244277 -0.169100  0.645215  1.056946  0.112933       0</span>
+<span class="go">0   -1.883826 -1.485369  0.655896  3.869524 -0.521089 -1.365851  0.250314  0.627562 -0.183986 -0.113354 -1.128886 -0.225450       1</span>
+<span class="go">1    6.100556  3.848353 -3.399255  3.878637  1.116429  1.173972  0.529135 -0.050580  0.808760  0.075789 -0.237646  0.597283       0</span>
+<span class="go">2   -2.436585  0.567771 -0.501743 -1.078111 -0.428020 -0.353014 -0.332614  0.300342  0.435505 -0.451972  0.275948  0.061384       1</span>
+<span class="go">3   -1.477180  1.202881  1.118944  2.112756  3.498056  0.256302  0.523385  0.438434 -0.198692  0.738414 -1.076204 -0.867322       1</span>
+<span class="go">4   -3.865958  1.134441  2.058851  0.329834 -1.653440 -0.810101 -0.598580  0.155829 -0.292996  0.651204  0.294560  0.334710       1</span>
 <span class="go">..        ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...     ...</span>
-<span class="go">564  3.207871 -1.403253  0.609369  1.037260 -0.833444 -0.527585 -0.321013 -0.289486 -0.222579  0.108146  0.921369 -0.097517       0</span>
-<span class="go">565  4.138207 -4.801396  0.220084 -3.715702  0.082089 -0.823247  0.604110  1.445919  0.239763  0.042464  0.014477  0.343349       0</span>
-<span class="go">566 -3.673211 -0.655218 -0.919290  1.471525  0.266489 -0.400454  0.035517 -0.091625 -0.100194 -0.173418  0.207835  0.009237       1</span>
-<span class="go">567 -2.528787 -1.421375 -0.281642  0.303970  0.615510 -0.409973 -0.172842  0.339870  0.342985 -0.321115  0.161152  0.115979       1</span>
-<span class="go">568  4.264345 -2.218955  0.513762 -0.783337 -0.117275  1.786210 -0.017090  0.365177 -0.429773  0.567260  0.691344 -0.249186       0</span>
+<span class="go">564  7.555880 -5.287417  0.141400 -0.424649 -0.556862 -1.316757  0.169461 -0.413140 -0.473291  0.150168 -0.190836  0.773183       0</span>
+<span class="go">565  5.227040  0.843795  2.786288  1.701780 -0.275873 -1.449633 -0.164293  2.783966 -1.800533  1.584368 -1.444673 -0.541515       0</span>
+<span class="go">566  0.391949  2.304545 -2.008214  0.892656 -0.491868  1.276523  0.997035 -0.119630 -0.482781  0.498544 -0.958307 -0.187461       1</span>
+<span class="go">567  4.183735 -1.926562  1.431310 -2.753408  0.991540 -1.127515 -1.057434 -0.617634 -0.430554  0.094535  0.426624  0.622397       0</span>
+<span class="go">568  4.858768 -0.872328 -0.355251  1.095036 -0.224426  0.541532  0.196129 -0.623716 -0.561260  0.363378  1.062835 -1.397151       0</span>
 
 <span class="go">[569 rows x 13 columns]</span>
 </code></pre></div>
@@ -4934,7 +4934,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-get_metadata_routing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_metadata_routing</strong>()<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/utils/_metadata_requests.py#L1243>[source]</a></span></div>Get metadata routing of this object.</p>
+<p><a id='featureselector-get_metadata_routing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_metadata_routing</strong>()<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_metadata_requests.py#L1243>[source]</a></span></div>Get metadata routing of this object.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_metadata_routing-routing '></a><strong>routing : MetadataRequest</strong><br><div markdown class='param'>
 A :class:<code>~sklearn.utils.metadata_routing.MetadataRequest</code> encapsulating
@@ -4942,7 +4942,7 @@ routing information.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='featureselector-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -4979,7 +4979,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='featureselector-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
 Estimator parameters.</p>
@@ -4988,7 +4988,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1488>[source]</a></span></div>Transform the data.</p>
+<p><a id='featureselector-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1489>[source]</a></span></div>Transform the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

@@ -1027,7 +1027,7 @@ class Vectorizer(TransformerMixin):
             # Hashing has no words to put as column names
             columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
 
-        Xt = Xt.drop(corpus, axis=1)  # Drop original corpus column
+        Xt = Xt.drop(columns=corpus)  # Drop original corpus column
 
         if "sklearn" not in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy

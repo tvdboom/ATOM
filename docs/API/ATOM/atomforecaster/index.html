@@ -4898,31 +4898,31 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0858</span>
 <span class="go">Test evaluation --&gt; mape: -0.2305</span>
-<span class="go">Time elapsed: 0.028s</span>
+<span class="go">Time elapsed: 0.067s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.028s</span>
+<span class="go">Time: 0.067s</span>
 
 
 <span class="go">Results for ExponentialSmoothing:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0864</span>
 <span class="go">Test evaluation --&gt; mape: -0.2303</span>
-<span class="go">Time elapsed: 0.048s</span>
+<span class="go">Time elapsed: 0.160s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.048s</span>
+<span class="go">Time: 0.160s</span>
 
 
 <span class="go">Results for ETS:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0858</span>
 <span class="go">Test evaluation --&gt; mape: -0.2305</span>
-<span class="go">Time elapsed: 0.024s</span>
+<span class="go">Time elapsed: 0.043s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.024s</span>
+<span class="go">Time: 0.043s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.150s</span>
+<span class="go">Total time: 0.275s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">NaiveForecaster      --&gt; mape: -0.2305</span>
 <span class="go">ExponentialSmoothing --&gt; mape: -0.2303 !</span>
@@ -4933,9 +4933,9 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">     mape_train  mape_test  time_fit      time</span>
-<span class="go">NF      -0.0858    -0.2305  0.028026  0.028026</span>
-<span class="go">ES      -0.0864    -0.2303  0.048043  0.048043</span>
-<span class="go">ETS     -0.0858    -0.2305  0.024022  0.024022</span>
+<span class="go">NF      -0.0858    -0.2305  0.067060  0.067060</span>
+<span class="go">ES      -0.0864    -0.2303  0.160146  0.160146</span>
+<span class="go">ETS     -0.0858    -0.2305  0.043039  0.043039</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
@@ -5086,7 +5086,7 @@ of utility methods to handle the data and manage the pipeline.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-add">add</a></td><td>Add a transformer to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-apply">apply</a></td><td>Apply a function to the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-clear">clear</a></td><td>Reset attributes and clear cache from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-distribution">distribution</a></td><td>Get statistics on column distributions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-eda">eda</a></td><td>Create an Exploratory Data Analysis report.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-export_pipeline">export_pipeline</a></td><td>Export the internal pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-get_sample_weight">get_sample_weight</a></td><td>Return sample weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-load">load</a></td><td>Loads an atom instance from a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-reset">reset</a></td><td>Reset the instance to it's initial state.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-save_data">save_data</a></td><td>Save the data in the current branch to a <code>.csv</code> file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-shrink">shrink</a></td><td>Converts the columns to the smallest possible matching dtype.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-stats">stats</a></td><td>Display basic information about the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-status">status</a></td><td>Get an overview of the branches and models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomforecaster-add'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1235>[source]</a></span></div>Add a transformer to the pipeline.</p>
+<p><a id='atomforecaster-add'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1236>[source]</a></span></div>Add a transformer to the pipeline.</p>
 <p>If the transformer is not fitted, it is fitted on the complete
 training set. Afterwards, the data set is transformed and the
 estimator is added to atom's pipeline. If the estimator is
@@ -5146,7 +5146,7 @@ Additional keyword arguments for the transformer's fit method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-apply'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>apply</strong>(func, inverse_func=None, kw_args=None, inv_kw_args=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1314>[source]</a></span></div>Apply a function to the dataset.</p>
+<p><a id='atomforecaster-apply'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>apply</strong>(func, inverse_func=None, kw_args=None, inv_kw_args=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1315>[source]</a></span></div>Apply a function to the dataset.</p>
 <p>This method is useful for stateless transformations such as
 taking the log, doing custom scaling, etc...</p>
 <div class="admonition note">
@@ -5294,7 +5294,7 @@ Statistic results with multiindex levels:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-eda'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>eda</strong>(rows="dataset", target=0, filename=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L501>[source]</a></span></div>Create an Exploratory Data Analysis report.</p>
+<p><a id='atomforecaster-eda'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>eda</strong>(rows="dataset", target=0, filename=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L502>[source]</a></span></div>Create an Exploratory Data Analysis report.</p>
 <p>ATOM uses the <a href="https://github.com/fbdesignpro/sweetviz">sweetviz</a> package for EDA. The <a href="https://github.com/fbdesignpro/sweetviz/blob/master/sweetviz/dataframe_report.py#L23">report</a> is
 rendered directly in the notebook. It can also be accessed
 through the <code>report</code> attribute. It can either report one
@@ -5391,7 +5391,7 @@ Sequence of weights with shape=(n_samples,).
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L573>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='atomforecaster-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L574>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement an <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -5422,7 +5422,7 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-load'></a><div class='sign'><em>function</em> atom.atom.<strong style='color:#008AB8'>load</strong>(filename, data=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L622>[source]</a></span></div>Loads an atom instance from a pickle file.</p>
+<p><a id='atomforecaster-load'></a><div class='sign'><em>function</em> atom.atom.<strong style='color:#008AB8'>load</strong>(filename, data=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L623>[source]</a></span></div>Loads an atom instance from a pickle file.</p>
 <p>If the instance was <a class="autorefs autorefs-internal" href="#atomforecaster-save">saved</a> using <code>save_data=False</code>,
 it's possible to load new data into it and apply all data
 transformations.</p>
@@ -5502,7 +5502,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-reset'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset</strong>(hard=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L741>[source]</a></span></div>Reset the instance to it's initial state.</p>
+<p><a id='atomforecaster-reset'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset</strong>(hard=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L742>[source]</a></span></div>Reset the instance to it's initial state.</p>
 <p>Deletes all branches and models. The dataset is also reset
 to its form after initialization.</p>
 <table class="table_params">
@@ -5526,7 +5526,7 @@ method to reload the instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-save_data'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_data</strong>(filename="auto", rows="dataset", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L758>[source]</a></span></div>Save the data in the current branch to a <code>.csv</code> file.</p>
+<p><a id='atomforecaster-save_data'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_data</strong>(filename="auto", rows="dataset", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L759>[source]</a></span></div>Save the data in the current branch to a <code>.csv</code> file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_data-filename'></a><strong>filename: str or Path, default="auto"</strong><br><div markdown class='param'>
 Filename or <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">pathlib.Path</a> of the file to save. Use
@@ -5538,7 +5538,7 @@ Additional keyword arguments for pandas' <a href="https://pandas.pydata.org/docs
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-shrink'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>shrink</strong>(int2bool=False, int2uint=False, str2cat=False, dense2sparse=False, columns=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L793>[source]</a></span></div>Converts the columns to the smallest possible matching dtype.</p>
+<p><a id='atomforecaster-shrink'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>shrink</strong>(int2bool=False, int2uint=False, str2cat=False, dense2sparse=False, columns=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L794>[source]</a></span></div>Converts the columns to the smallest possible matching dtype.</p>
 <p>Examples are: float64 -&gt; float32, int64 -&gt; int8, etc... Sparse
 arrays also transform their non-fill value. Use this method for
 memory optimization before <a class="autorefs autorefs-internal" href="#atomforecaster-save_data">saving</a> the dataset.
@@ -5584,13 +5584,13 @@ parameter.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-stats'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stats</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L926>[source]</a></span></div>Display basic information about the dataset.</p>
+<p><a id='atomforecaster-stats'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stats</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L927>[source]</a></span></div>Display basic information about the dataset.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-status'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>status</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L990>[source]</a></span></div>Get an overview of the branches and models.</p>
+<p><a id='atomforecaster-status'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>status</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L991>[source]</a></span></div>Get an overview of the branches and models.</p>
 <p>This method prints the same information as the __repr__ and
 also saves it to the logger.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1000>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='atomforecaster-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1001>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be
@@ -5654,7 +5654,7 @@ help you determine suitable parameters for the data cleaning methods.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-clean">clean</a></td><td>Applies standard data cleaning steps on the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-discretize">discretize</a></td><td>Bin continuous data into intervals.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-encode">encode</a></td><td>Perform encoding of categorical features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-impute">impute</a></td><td>Handle missing values in the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-normalize">normalize</a></td><td>Transform the data to follow a Normal/Gaussian distribution.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-prune">prune</a></td><td>Prune outliers from the training set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-scale">scale</a></td><td>Scale the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomforecaster-clean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(convert_dtypes=True, drop_dtypes=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1405>[source]</a></span></div>Applies standard data cleaning steps on the dataset.</p>
+<p><a id='atomforecaster-clean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(convert_dtypes=True, drop_dtypes=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1406>[source]</a></span></div>Applies standard data cleaning steps on the dataset.</p>
 <p>Use the parameters to choose which transformations to perform.
 The available steps are:</p>
 <ul>
@@ -5668,7 +5668,7 @@ The available steps are:</p>
 </ul>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/cleaner/#cleaner">Cleaner</a> class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-discretize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>discretize</strong>(strategy="quantile", bins=5, labels=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1452>[source]</a></span></div>Bin continuous data into intervals.</p>
+<p><a id='atomforecaster-discretize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>discretize</strong>(strategy="quantile", bins=5, labels=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1453>[source]</a></span></div>Bin continuous data into intervals.</p>
 <p>For each feature, the bin edges are computed during fit
 and, together with the number of bins, they will define the
 intervals. Ignores numerical columns.</p>
@@ -5679,7 +5679,7 @@ intervals. Ignores numerical columns.</p>
 distribution and decide on the bins.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomforecaster-encode'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>encode</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="rare", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1484>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='atomforecaster-encode'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>encode</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="rare", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1485>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the
 column:</p>
 <ul>
@@ -5704,7 +5704,7 @@ method for that.</p>
 list of the categorical features in the dataset.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomforecaster-impute'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>impute</strong>(strat_num="drop", strat_cat="drop", max_nan_rows=None, max_nan_cols=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1534>[source]</a></span></div>Handle missing values in the dataset.</p>
+<p><a id='atomforecaster-impute'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>impute</strong>(strat_num="drop", strat_cat="drop", max_nan_rows=None, max_nan_cols=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1535>[source]</a></span></div>Handle missing values in the dataset.</p>
 <p>Impute or remove missing values according to the selected
 strategy. Also removes rows and columns with too many missing
 values. Use the <code>missing</code> attribute to customize what are
@@ -5716,7 +5716,7 @@ considered "missing values".</p>
 missing values per column.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomforecaster-normalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>normalize</strong>(strategy="yeojohnson", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1572>[source]</a></span></div>Transform the data to follow a Normal/Gaussian distribution.</p>
+<p><a id='atomforecaster-normalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>normalize</strong>(strategy="yeojohnson", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1573>[source]</a></span></div>Transform the data to follow a Normal/Gaussian distribution.</p>
 <p>This transformation is useful for modeling issues related
 to heteroscedasticity (non-constant variance), or other
 situations where normality is desired. Missing values are
@@ -5729,7 +5729,7 @@ categorical columns.</p>
 distribution.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomforecaster-prune'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>prune</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1597>[source]</a></span></div>Prune outliers from the training set.</p>
+<p><a id='atomforecaster-prune'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>prune</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1598>[source]</a></span></div>Prune outliers from the training set.</p>
 <p>Replace or remove outliers. The definition of outlier depends
 on the selected strategy and can greatly differ from one
 another. Ignores categorical columns.</p>
@@ -5746,7 +5746,7 @@ the test set.</p>
 number of outliers per column.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomforecaster-scale'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>scale</strong>(strategy="standard", include_binary=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1636>[source]</a></span></div>Scale the data.</p>
+<p><a id='atomforecaster-scale'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>scale</strong>(strategy="standard", include_binary=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1637>[source]</a></span></div>Scale the data.</p>
 <p>Apply one of sklearn's scalers. Categorical columns are ignored.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> class for a description of the parameters.</p>
 <div class="admonition tip">
@@ -5765,7 +5765,7 @@ transformations are applied only on the column in the dataset called
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-textclean">textclean</a></td><td>Applies standard text cleaning to the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-textnormalize">textnormalize</a></td><td>Normalize the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-tokenize">tokenize</a></td><td>Tokenize the corpus.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-vectorize">vectorize</a></td><td>Vectorize the corpus.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomforecaster-textclean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1665>[source]</a></span></div>Applies standard text cleaning to the corpus.</p>
+<p><a id='atomforecaster-textclean'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1666>[source]</a></span></div>Applies standard text cleaning to the corpus.</p>
 <p>Transformations include normalizing characters and drop
 noise from the text (emails, HTML tags, URLs, etc...). The
 transformations are applied on the column named <code>corpus</code>, in
@@ -5774,7 +5774,7 @@ column with that name, an exception is raised.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/textcleaner/#textcleaner">TextCleaner</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-textnormalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textnormalize</strong>(stopwords=True, custom_stopwords=None, stem=False, lemmatize=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1716>[source]</a></span></div>Normalize the corpus.</p>
+<p><a id='atomforecaster-textnormalize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>textnormalize</strong>(stopwords=True, custom_stopwords=None, stem=False, lemmatize=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1717>[source]</a></span></div>Normalize the corpus.</p>
 <p>Convert words to a more uniform standard. The transformations
 are applied on the column named <code>corpus</code>, in the same order the
 parameters are presented. If there is no column with that name,
@@ -5783,7 +5783,7 @@ words are separated by spaces.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/textnormalizer/#textnormalizer">TextNormalizer</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-tokenize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1749>[source]</a></span></div>Tokenize the corpus.</p>
+<p><a id='atomforecaster-tokenize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1750>[source]</a></span></div>Tokenize the corpus.</p>
 <p>Convert documents into sequences of words. Additionally,
 create n-grams (represented by words united with underscores,
 e.g., "New_York") based on their frequency in the corpus. The
@@ -5791,7 +5791,7 @@ transformations are applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/tokenizer/#tokenizer">Tokenizer</a> class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-vectorize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>vectorize</strong>(strategy="bow", return_sparse=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1778>[source]</a></span></div>Vectorize the corpus.</p>
+<p><a id='atomforecaster-vectorize'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>vectorize</strong>(strategy="bow", return_sparse=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1779>[source]</a></span></div>Vectorize the corpus.</p>
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
@@ -5812,7 +5812,7 @@ large, remove features. Read more in the <a class="autorefs autorefs-internal" h
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-feature_extraction">feature_extraction</a></td><td>Extract features from datetime columns.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-feature_generation">feature_generation</a></td><td>Generate new features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-feature_grouping">feature_grouping</a></td><td>Extract statistics from similar features.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-feature_selection">feature_selection</a></td><td>Reduce the number of features in the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomforecaster-feature_extraction'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=('day', 'month', 'year'), fmt=None, encoding_type="ordinal", drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1812>[source]</a></span></div>Extract features from datetime columns.</p>
+<p><a id='atomforecaster-feature_extraction'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=('day', 'month', 'year'), fmt=None, encoding_type="ordinal", drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1813>[source]</a></span></div>Extract features from datetime columns.</p>
 <p>Create new features extracting datetime elements (day, month,
 year, etc...) from the provided columns. Columns of dtype
 <code>datetime64</code> are used as is. Categorical columns that can be
@@ -5821,13 +5821,13 @@ values after conversion) are also used.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-feature_generation'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_generation</strong>(strategy="dfs", n_features=None, operators=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1845>[source]</a></span></div>Generate new features.</p>
+<p><a id='atomforecaster-feature_generation'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_generation</strong>(strategy="dfs", n_features=None, operators=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1846>[source]</a></span></div>Generate new features.</p>
 <p>Create new combinations of existing features to capture the
 non-linear relations between the original features.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../feature_engineering/featuregenerator/#featuregenerator">FeatureGenerator</a> class for a description of the
 parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-feature_grouping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_grouping</strong>(groups, operators=None, drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1873>[source]</a></span></div>Extract statistics from similar features.</p>
+<p><a id='atomforecaster-feature_grouping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_grouping</strong>(groups, operators=None, drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1874>[source]</a></span></div>Extract statistics from similar features.</p>
 <p>Replace groups of features with related characteristics with new
 features that summarize statistical properties of the group. The
 statistical operators are calculated over every row of the group.
@@ -5842,7 +5842,7 @@ groups easier, e.g., <code>atom.feature_grouping({"group1": "var_.+")</code>
 to select all features that start with <code>var_</code>.</p>
 </div>
 <p><br><br></p>
-<p><a id='atomforecaster-feature_selection'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_selection</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1912>[source]</a></span></div>Reduce the number of features in the data.</p>
+<p><a id='atomforecaster-feature_selection'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_selection</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1913>[source]</a></span></div>Reduce the number of features in the data.</p>
 <p>Apply feature selection or dimensionality reduction, either to
 improve the estimators' accuracy or to boost their performance
 on very high-dimensional datasets. Additionally, remove
@@ -5870,7 +5870,7 @@ more in the <a class="autorefs autorefs-internal" href="../../../user_guide/trai
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-run">run</a></td><td>Train and evaluate the models in a direct fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-successive_halving">successive_halving</a></td><td>Fit the models in a successive halving fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomforecaster-train_sizing">train_sizing</a></td><td>Train and evaluate the models in a train sizing fashion.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomforecaster-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2042>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
+<p><a id='atomforecaster-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2043>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
 <p>Contrary to <a class="autorefs autorefs-internal" href="#atomforecaster-successive_halving">successive_halving</a> and
 <a class="autorefs autorefs-internal" href="#atomforecaster-train_sizing">train_sizing</a>, the direct approach only
 iterates once over the models, using the full dataset.</p>
@@ -5887,7 +5887,7 @@ iterates once over the models, using the full dataset.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/directclassifier/#directclassifier">DirectClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/directregressor/#directregressor">DirectRegressor</a> class for a
 description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models=None, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2096>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
+<p><a id='atomforecaster-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models=None, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2097>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
 <p>The successive halving technique is a bandit-based algorithm
 that fits N models to 1/N of the data. The best half are
 selected to go to the next iteration where the process is
@@ -5910,7 +5910,7 @@ models.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/successivehalvingclassifier/#successivehalvingclassifier">SuccessiveHalvingClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/successivehalvingregressor/#successivehalvingregressor">SuccessiveHalvingRegressor</a>
 class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2158>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
+<p><a id='atomforecaster-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2159>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
 <p>When training models, there is usually a trade-off between
 model performance and computation time, that is regulated by
 the number of samples in the training set. This method can be

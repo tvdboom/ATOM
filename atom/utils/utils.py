@@ -2444,12 +2444,12 @@ def transform_one(
         else:
             return out
 
-    X = to_df(
+    Xt = to_df(
         data=X,
         index=getattr(y, "index", None),
         columns=getattr(transformer, "feature_names_in_", None),
     )
-    y = to_pandas(
+    yt = to_pandas(
         y,
         index=getattr(X, "index", None),
         columns=getattr(transformer, "target_names_in_", None),
@@ -2457,53 +2457,53 @@ def transform_one(
     )
 
     kwargs: dict[str, Any] = {}
-    inc = getattr(transformer, "_cols", getattr(X, "columns", []))
+    inc = getattr(transformer, "_cols", getattr(Xt, "columns", []))
     if "X" in (params := sign(getattr(transformer, method))):
-        if X is not None and (cols := [c for c in inc if c in X]):
-            kwargs["X"] = X[cols]
+        if Xt is not None and (cols := [c for c in inc if c in Xt]):
+            kwargs["X"] = Xt[cols]
 
         # X is required but has not been provided
         if len(kwargs) == 0:
-            if y is not None and hasattr(transformer, "_cols"):
-                kwargs["X"] = to_df(y)[inc]
+            if yt is not None and hasattr(transformer, "_cols"):
+                kwargs["X"] = to_df(yt)[inc]
             elif params["X"].default != Parameter.empty:
                 kwargs["X"] = params["X"].default  # Fill X with default
             else:
-                return X, y  # If X is needed, skip the transformer
+                return Xt, yt  # If X is needed, skip the transformer
 
     if "y" in params:
-        if y is not None:
-            kwargs["y"] = y
+        if yt is not None:
+            kwargs["y"] = yt
         elif "X" not in params:
-            return X, y  # If y is None and no X in transformer, skip the transformer
+            return Xt, yt  # If y is None and no X in transformer, skip the transformer
 
     out: TReturns = getattr(transformer, method)(**kwargs)
 
     # Transform can return X, y or both
     if isinstance(out, tuple):
-        X_new = prepare_df(out[0], X)
+        X_new = prepare_df(out[0], Xt)
         y_new = to_pandas(
             data=out[1],
-            index=X.index,
-            name=getattr(y, "name", None),
-            columns=getattr(y, "columns", None),
+            index=Xt.index,
+            name=getattr(yt, "name", None),
+            columns=getattr(yt, "columns", None),
         )
-        if isinstance(y, DataFrameTypes):
-            y_new = prepare_df(y_new, y)
-    elif "X" in params and X is not None and any(c in X for c in inc):
+        if isinstance(yt, DataFrameTypes):
+            y_new = prepare_df(y_new, yt)
+    elif "X" in params and X is not None and any(c in Xt for c in inc):
         # X in -> X out
-        X_new = prepare_df(out, X)
-        y_new = y if y is None else y.set_axis(X_new.index, axis=0)
+        X_new = prepare_df(out, Xt)
+        y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
     elif y is not None:
         y_new = to_pandas(
             data=out,
-            index=y.index,
-            name=getattr(y, "name", None),
-            columns=getattr(y, "columns", None),
+            index=yt.index,
+            name=getattr(yt, "name", None),
+            columns=getattr(yt, "columns", None),
         )
-        X_new = X if X is None else X.set_index(y_new.index)
-        if isinstance(y, DataFrameTypes):
-            y_new = prepare_df(y_new, y)
+        X_new = Xt if Xt is None else Xt.set_index(y_new.index)
+        if isinstance(yt, DataFrameTypes):
+            y_new = prepare_df(y_new, yt)
 
     return X_new, y_new
 

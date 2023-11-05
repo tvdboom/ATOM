@@ -597,6 +597,14 @@ def test_y_holdout_property():
     assert_series_equal(atom.mnb.y_holdout, atom.mnb.holdout.iloc[:, -1])
 
 
+def test_all_property():
+    """Assert that the _all property returns the dataset + holdout."""
+    atom = ATOMRegressor(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("OLS")
+    assert len(atom.ols.dataset) != len(X_bin)
+    assert len(atom.ols._all) == len(X_bin)
+
+
 # Test prediction methods ========================================== >>
 
 def test_predictions_from_index():

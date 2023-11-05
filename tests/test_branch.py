@@ -329,7 +329,7 @@ def test_setter_error_unequal_column_names():
     """Assert that an error is raised with different column names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match="the same columns"):
-        new_X = atom.train.drop(atom.train.columns[0], axis=1)
+        new_X = atom.train.drop(columns=atom.train.columns[0])
         new_X.insert(0, "new_column", 1)
         atom.train = new_X
 

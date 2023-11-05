@@ -401,7 +401,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         textfont=dict(size=self.label_fontsize),
                         hovertemplate=(
                             "%{customdata}<extra></extra>" if self.task.is_binary else ""
-                            "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
+                            "Predicted label:%{x}<br>True label:%{y}<br>Percentage:%{z}"
+                            "<extra></extra>"
                         ),
                         showlegend=False,
                         xaxis=xaxis,
@@ -722,7 +723,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     def plot_evals(
         self,
         models: ModelsSelector = None,
-        dataset: Literal["train", "test", "train+test"] = "test",
+        dataset: Literal["train", "test", "train+test", "test+train"] = "test",
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -742,8 +743,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             Models to plot. If None, all models are selected.
 
         dataset: str, default="test"
-            Data set for which to plot the evaluation curves. Choose
-            from: "train", "test", "train+test".
+            Data set for which to plot the evaluation curves. Use `+`
+            between options to select more than one. Choose from: "train",
+            "test".
 
         title: str, dict or None, default=None
             Title for the plot.

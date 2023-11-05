@@ -436,7 +436,7 @@ class AutoDocs:
         if "atom" in self.obj.__module__:
             url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
         elif "sklearn" in self.obj.__module__:
-            url = f"https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/{f}.py"
+            url = f"https://github.com/scikit-learn/scikit-learn/blob/main/{f}.py"
         else:
             url = ""
 
@@ -584,7 +584,7 @@ class AutoDocs:
                     content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             elif match := self.get_block(name):
-                # Headers start with letter, * or [ after new line
+                # Headers start with a letter, * or [ after new line
                 for header in re.findall(r"^[\[a-zA-Z*].*?$", match, re.M):
                     # Check that the default value in docstring matches the real one
                     if default := re.search("(?<=default=).+?$", header):

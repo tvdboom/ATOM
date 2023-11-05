@@ -280,7 +280,7 @@ class FeatureExtractor(TransformerMixin):
 
             # Drop the original datetime column
             if self.drop_columns:
-                Xt = Xt.drop(name, axis=1)
+                Xt = Xt.drop(columns=name)
 
         return Xt
 
@@ -770,7 +770,7 @@ class FeatureGrouper(TransformerMixin):
             self._log(f" --> Group {name} successfully created.", 2)
 
         if self.drop_columns:
-            Xt = Xt.drop(to_drop, axis=1)
+            Xt = Xt.drop(columns=to_drop)
 
         return Xt
 
@@ -1187,6 +1187,7 @@ class FeatureSelector(TransformerMixin):
                                 for x in BaseTransformer.attrs if hasattr(self, x)
                             },
                         )
+                        model.task = goal.infer_task(y)
                         solver = model._get_est()
                     else:
                         raise ValueError(
@@ -1240,7 +1241,7 @@ class FeatureSelector(TransformerMixin):
                 max_counts = column.value_counts()
                 if min_repeated > max_counts.max():
                     self._high_variance[name] = (max_counts.idxmax(), max_counts.max())
-                    Xt = Xt.drop(name, axis=1)
+                    Xt = Xt.drop(columns=name)
                     break
 
         # Remove features with too low variance
@@ -1249,7 +1250,7 @@ class FeatureSelector(TransformerMixin):
                 for category, count in column.value_counts().items():
                     if count >= max_repeated:
                         self._low_variance[name] = (category, 100. * count / len(Xt))
-                        Xt = Xt.drop(name, axis=1)
+                        Xt = Xt.drop(columns=name)
                         break
 
         # Remove features with too high correlation
@@ -1281,9 +1282,9 @@ class FeatureSelector(TransformerMixin):
             for col in list(dict.fromkeys(to_drop)):
                 corr_feature = corr[col].drop(col).index
                 corr_value = corr[col].drop(col).round(4).astype(str)
-                self.collinear = pd.concat(
+                self.collinear_ = pd.concat(
                     [
-                        self.collinear,
+                        self.collinear_,
                         pd.DataFrame(
                             {
                                 "drop": [col],
@@ -1295,7 +1296,7 @@ class FeatureSelector(TransformerMixin):
                     ignore_index=True,
                 )
 
-            Xt = Xt.drop(self.collinear["drop"].tolist(), axis=1)
+            Xt = Xt.drop(columns=self.collinear_["drop"].tolist())
 
         if self.strategy is None:
             return self  # Exit feature_engineering
@@ -1515,7 +1516,7 @@ class FeatureSelector(TransformerMixin):
                 f"Value {h_variance[0]} was the most repeated value with "
                 f"{h_variance[1]} ({h_variance[1] / len(Xt):.1f}%) occurrences.", 2
             )
-            Xt = Xt.drop(fx, axis=1)
+            Xt = Xt.drop(columns=fx)
 
         # Remove features with too low variance
         for fx, l_variance in self._low_variance.items():
@@ -1523,15 +1524,15 @@ class FeatureSelector(TransformerMixin):
                 f" --> Feature {fx} was removed due to low variance. Value "
                 f"{l_variance[0]} repeated in {l_variance[1]:.1f}% of the rows.", 2
             )
-            Xt = Xt.drop(fx, axis=1)
+            Xt = Xt.drop(columns=fx)
 
         # Remove features with too high correlation
-        for col in self.collinear["drop"]:
+        for col in self.collinear_["drop"]:
             self._log(
                 f" --> Feature {col} was removed due to "
                 "collinearity with another feature.", 2
             )
-            Xt = Xt.drop(col, axis=1)
+            Xt = Xt.drop(columns=col)
 
         # Perform selection based on strategy
         if self.strategy is None:
@@ -1549,7 +1550,7 @@ class FeatureSelector(TransformerMixin):
                         f"(score: {self.univariate_.scores_[n]:.2f}  "
                         f"p-value: {self.univariate_.pvalues_[n]:.2f}).", 2
                     )
-                    Xt = Xt.drop(column, axis=1)
+                    Xt = Xt.drop(columns=column)
 
         elif self.strategy == "pca":
             self._log(" --> Applying Principal Component Analysis...", 2)
@@ -1584,7 +1585,7 @@ class FeatureSelector(TransformerMixin):
                         )
                     else:
                         self._log(f"   --> Dropping feature {column}.", 2)
-                    Xt = Xt.drop(column, axis=1)
+                    Xt = Xt.drop(columns=column)
 
         else:  # Advanced strategies
             self._log(
@@ -1595,6 +1596,6 @@ class FeatureSelector(TransformerMixin):
             for column in Xt:
                 if column not in self._estimator.best_feature_list:
                     self._log(f"   --> Dropping feature {column}.", 2)
-                    Xt = Xt.drop(column, axis=1)
+                    Xt = Xt.drop(columns=column)
 
         return Xt

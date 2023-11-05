@@ -13,7 +13,6 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime as dt
-from functools import cached_property
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
@@ -224,6 +223,7 @@ class BaseModel(RunnerPlot):
         self._config = config or DataConfig()
         self._metric = metric or ClassMap()
 
+        self._task: Task | None = None
         self.scaler: Scaler | None = None
 
         if self.experiment:
@@ -441,20 +441,17 @@ class BaseModel(RunnerPlot):
         estimator = self._inherit(self._est_class(**base_params))
         estimator.set_params(**sub_params)
 
-        # Skip for models called for estimator only
-        # Don't use hasattr because of recursive search
-        if "_branch" in self.__dict__:
-            if self.task is Task.multilabel_classification:
-                if not self.native_multilabel:
-                    estimator = ClassifierChain(estimator)
-            elif self.task.is_multioutput and not self.native_multioutput:
-                if self.task.is_classification:
-                    estimator = MultiOutputClassifier(estimator)
-                elif self.task.is_regression:
-                    estimator = MultiOutputRegressor(estimator)
-            elif hasattr(self, "_estimators") and self._goal.name not in self._estimators:
-                # Forecasting task with a regressor
-                estimator = make_reduction(estimator)
+        if self.task is Task.multilabel_classification:
+            if not self.native_multilabel:
+                estimator = ClassifierChain(estimator)
+        elif self.task.is_multioutput and not self.native_multioutput:
+            if self.task.is_classification:
+                estimator = MultiOutputClassifier(estimator)
+            elif self.task.is_regression:
+                estimator = MultiOutputRegressor(estimator)
+        elif hasattr(self, "_estimators") and self._goal.name not in self._estimators:
+            # Forecasting task with a regressor
+            estimator = make_reduction(estimator)
 
         return self._inherit(estimator)
 
@@ -668,8 +665,8 @@ class BaseModel(RunnerPlot):
         df = self.branch._get_rows(rows)
 
         # Filter for indices in dataset (required for sh and ts)
-        X = df.loc[df.index.isin(self.dataset.index), self.features]
-        y_true = df.loc[df.index.isin(self.dataset.index), self.target]
+        X = df.loc[df.index.isin(self._all.index), self.features]
+        y_true = df.loc[df.index.isin(self._all.index), self.target]
 
         if self.task.is_forecast:
             y_pred = getattr(self, attr)(X.index, X=check_empty(X))
@@ -1340,10 +1337,23 @@ class BaseModel(RunnerPlot):
 
         self._log(f"Model {self.name} successfully renamed to {self._name}.", 1)
 
-    @cached_property
+    @property
     def task(self) -> Task:
         """Dataset's [task][] type."""
-        return self._goal.infer_task(self.y)
+        if not self._task:
+            self._task = self._goal.infer_task(self.y)
+
+        return self._task
+
+    @task.setter
+    def task(self, value: Task):
+        """Assign a task.
+
+        This `@setter` is required to assign the task for models that
+        are only used for the estimator.
+
+        """
+        self._task = value
 
     @property
     def og(self) -> Branch:
@@ -1700,6 +1710,16 @@ class BaseModel(RunnerPlot):
             return self.holdout[self.branch.target]
         else:
             return None
+
+    @property
+    def _all(self) -> DataFrame:
+        """Dataset + holdout.
+
+        Note that calling this property triggers the holdout set
+        calculation.
+
+        """
+        return bk.concat([self.dataset, self.holdout])
 
     # Utility methods ============================================== >>
 

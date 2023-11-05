@@ -26,7 +26,7 @@ ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
 * **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.16.4)
-* **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.1)
+* **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.3)
 * **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
@@ -61,7 +61,7 @@ additional libraries. You can install all the optional dependencies using
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.2)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.3)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.44.4)
-* **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.5)
+* **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=4.1.0)
 * **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.2.1)

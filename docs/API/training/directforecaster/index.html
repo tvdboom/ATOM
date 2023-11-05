@@ -4821,22 +4821,22 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0868</span>
 <span class="go">Test evaluation --&gt; mape: -0.2018</span>
-<span class="go">Time elapsed: 0.029s</span>
+<span class="go">Time elapsed: 0.023s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.029s</span>
+<span class="go">Time: 0.023s</span>
 
 
 <span class="go">Results for ETS:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0863</span>
 <span class="go">Test evaluation --&gt; mape: -0.202</span>
-<span class="go">Time elapsed: 0.030s</span>
+<span class="go">Time elapsed: 0.025s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.030s</span>
+<span class="go">Time: 0.025s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.093s</span>
+<span class="go">Total time: 0.050s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">ExponentialSmoothing --&gt; mape: -0.2018 !</span>
 <span class="go">ETS                  --&gt; mape: -0.202</span>
@@ -4846,8 +4846,8 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">     mape_train  mape_test  time_fit      time</span>
-<span class="go">ES      -0.0868    -0.2018  0.029026  0.029026</span>
-<span class="go">ETS     -0.0863    -0.2020  0.030027  0.030027</span>
+<span class="go">ES      -0.0868    -0.2018  0.022774  0.022774</span>
+<span class="go">ETS     -0.0863    -0.2020  0.025022  0.025022</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
@@ -5094,7 +5094,7 @@ returned for <a class="autorefs autorefs-internal" href="../../../user_guide/dat
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directforecaster-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='directforecaster-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -5168,7 +5168,7 @@ method to reload the instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directforecaster-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='directforecaster-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
 Estimator parameters.</p>

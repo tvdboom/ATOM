@@ -481,7 +481,7 @@ class Balancer(TransformerMixin):
             Xt.index = list(index) + list(n_idx)
             yt.index = list(index) + list(n_idx)
 
-            log_changes(y)
+            log_changes(yt)
 
         elif "under_sampling" in self._estimator.__module__:
             self._log(f"Undersampling with {self._estimator.__class__.__name__}...", 1)
@@ -492,7 +492,7 @@ class Balancer(TransformerMixin):
             samples = sorted(self._estimator.sample_indices_)
             Xt, yt = Xt.iloc[samples], yt.iloc[samples]  # type: ignore[call-overload]
 
-            log_changes(y)
+            log_changes(yt)
 
         elif "combine" in self._estimator.__module__:
             self._log(f"Balancing with {self._estimator.__class__.__name__}...", 1)
@@ -841,7 +841,7 @@ class Cleaner(TransformerMixin):
                         f" --> Dropping feature {name} for "
                         f"having a prohibited type: {dtype}.", 2
                     )
-                    Xt = Xt.drop(name, axis=1)
+                    Xt = Xt.drop(columns=name)
                     continue
 
                 elif dtype in ("object", "category", "string"):
@@ -1707,7 +1707,7 @@ class Encoder(TransformerMixin):
                     # Drop the original column
                     if name in Xt:
                         idx = Xt.columns.get_loc(name)
-                        Xt = Xt.drop(name, axis=1)
+                        Xt = Xt.drop(columns=name)
 
                     Xt.insert(idx + i, new_col, new_cols[new_col])
 
@@ -2042,7 +2042,7 @@ class Imputer(TransformerMixin):
                     f" --> Dropping feature {name}. Contains {nans} "
                     f"({nans * 100 // len(Xt)}%) missing values.", 2
                 )
-                Xt = Xt.drop(name, axis=1)
+                Xt = Xt.drop(columns=name)
                 continue
 
             # Apply only if column is numerical and contains missing values

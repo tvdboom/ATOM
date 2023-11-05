@@ -21,7 +21,7 @@ classifiers = [
 ]
 dependencies = [
     "beartype>=0.16.4",
-    "category-encoders>=2.6.1",
+    "category-encoders>=2.6.3",
     "dagshub>=0.3.8",
     "dill>=0.3.6",
     "gplearn>=0.4.2",
@@ -52,7 +52,7 @@ full = [
     "catboost>=1.2",
     "explainerdashboard>=0.4.3",
     "gradio>=3.44.4",
-    "lightgbm>=3.3.5",
+    "lightgbm>=4.1.0",
     "pmdarima>=2.0.3",
     "schemdraw>=0.16",
     "sweetviz>=2.2.1",

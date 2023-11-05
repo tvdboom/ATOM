@@ -528,7 +528,7 @@ class BaseTransformer:
                                         f"{Xt.shape[1]} columns."
                                     )
 
-                        Xt, yt = Xt.drop(targets, axis=1), Xt[targets]
+                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
 
                     except (TypeError, IndexError, KeyError):
                         raise ValueError(
@@ -555,7 +555,7 @@ class BaseTransformer:
                 if y not in Xt.columns:
                     raise ValueError(f"Column {y} not found in X!")
 
-                Xt, yt = Xt.drop(y, axis=1), Xt[y]
+                Xt, yt = Xt.drop(columns=y), Xt[y]
 
             else:
                 raise ValueError("X can't be None when y is a string.")
@@ -564,7 +564,7 @@ class BaseTransformer:
             if Xt is None:
                 raise ValueError("X can't be None when y is an int.")
 
-            Xt, yt = Xt.drop(Xt.columns[int(y)], axis=1), Xt[Xt.columns[int(y)]]
+            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
 
         return Xt, yt
 

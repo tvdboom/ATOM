@@ -224,7 +224,7 @@ ScalerStrats = Literal["standard", "minmax", "maxabs", "robust"]
 VectorizerStarts = Literal["bow", "tfidf", "hashing"]
 
 # Feature engineering parameters
-Operators = Literal["add", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
+Operators = Literal["add", "sub", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
 FeatureSelectionStrats = Literal[
     "univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "hho", "gwo", "dfo", "go"
 ]

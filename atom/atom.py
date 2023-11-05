@@ -486,6 +486,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         for col in columns_c:
             # Drop missing values from the column before fitting
             X = replace_missing(self[col], self.missing).dropna()
+            X = X.to_numpy(dtype=float)
 
             for dist in distributions_c:
                 # Get KS-statistic with fitted distribution parameters

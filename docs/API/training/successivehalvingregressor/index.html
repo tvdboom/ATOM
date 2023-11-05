@@ -4828,27 +4828,27 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for OrdinaryLeastSquares:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.6486</span>
-<span class="go">Test evaluation --&gt; r2: 0.4911</span>
-<span class="go">Time elapsed: 0.131s</span>
+<span class="go">Train evaluation --&gt; r2: 0.612</span>
+<span class="go">Test evaluation --&gt; r2: -4.308905811876722e+21</span>
+<span class="go">Time elapsed: 0.106s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.131s</span>
+<span class="go">Time: 0.106s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.9733</span>
-<span class="go">Test evaluation --&gt; r2: 0.8306</span>
-<span class="go">Time elapsed: 1.069s</span>
+<span class="go">Train evaluation --&gt; r2: 0.9713</span>
+<span class="go">Test evaluation --&gt; r2: 0.8215</span>
+<span class="go">Time elapsed: 0.975s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 1.069s</span>
+<span class="go">Time: 0.975s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 1.337s</span>
+<span class="go">Total time: 1.083s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">OrdinaryLeastSquares --&gt; r2: 0.4911 ~</span>
-<span class="go">RandomForest         --&gt; r2: 0.8306 !</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: -4.308905811876722e+21 ~</span>
+<span class="go">RandomForest         --&gt; r2: 0.8215 !</span>
 
 
 <span class="go">Run: 1 =========================== &gt;&gt;</span>
@@ -4859,35 +4859,35 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.9785</span>
-<span class="go">Test evaluation --&gt; r2: 0.848</span>
-<span class="go">Time elapsed: 1.839s</span>
+<span class="go">Train evaluation --&gt; r2: 0.9776</span>
+<span class="go">Test evaluation --&gt; r2: 0.8775</span>
+<span class="go">Time elapsed: 1.690s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 1.839s</span>
+<span class="go">Time: 1.690s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 1.883s</span>
+<span class="go">Total time: 1.691s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">RandomForest --&gt; r2: 0.848</span>
+<span class="go">RandomForest --&gt; r2: 0.8775</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
-<span class="go">            r2_train  r2_test  time_fit      time</span>
-<span class="go">frac model                                       </span>
-<span class="go">0.5  OLS2     0.6486   0.4911  0.131119  0.131119</span>
-<span class="go">     RF2      0.9733   0.8306  1.068972  1.068972</span>
-<span class="go">1.0  RF1      0.9785   0.8480  1.838682  1.838682</span>
+<span class="go">            r2_train       r2_test  time_fit      time</span>
+<span class="go">frac model                                            </span>
+<span class="go">0.5  OLS2     0.6120 -4.308906e+21  0.106096  0.106096</span>
+<span class="go">     RF2      0.9713  8.215000e-01  0.974888  0.974888</span>
+<span class="go">1.0  RF1      0.9776  8.775000e-01  1.689537  1.689537</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
 
-<span class="go">         mae          mape     mse      r2    rmse</span>
-<span class="go">OLS2 -1.5847 -7.295216e+14 -4.3033  0.4911 -2.0744</span>
-<span class="go">RF2  -0.7941 -2.391912e+14 -1.4328  0.8306 -1.1970</span>
-<span class="go">RF1  -0.6688 -1.339404e+14 -1.2854  0.8480 -1.1337</span>
+<span class="go">               mae          mape           mse            r2          rmse</span>
+<span class="go">OLS2 -1.139068e+10 -8.949140e+14 -3.503188e+22 -4.308906e+21 -1.871680e+11</span>
+<span class="go">RF2  -8.248000e-01 -4.273416e+14 -1.451200e+00  8.215000e-01 -1.204600e+00</span>
+<span class="go">RF1  -6.370000e-01 -3.227580e+14 -9.959000e-01  8.775000e-01 -9.980000e-01</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -5127,7 +5127,7 @@ returned for <a class="autorefs autorefs-internal" href="../../../user_guide/dat
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='successivehalvingregressor-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='successivehalvingregressor-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -5201,7 +5201,7 @@ method to reload the instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='successivehalvingregressor-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='successivehalvingregressor-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
 Estimator parameters.</p>

@@ -4640,6 +4640,7 @@ Number of features seen during fit.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="go">Oversampling with SMOTE...</span>
+<span class="go"> --&gt; Adding 116 samples to class 0.</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the number of rows has increased</span>
@@ -4688,6 +4689,7 @@ Number of features seen during fit.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">balancer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
 <span class="go">Oversampling with SMOTE...</span>
+<span class="go"> --&gt; Adding 145 samples to class 0.</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the number of rows has increased</span>
@@ -4700,11 +4702,11 @@ Number of features seen during fit.</p>
 <span class="go">3      11.420000     20.380000       77.580000   386.100000         0.142500          0.283900        0.241400             0.105200       0.259700  ...      26.500000        98.870000   567.700000          0.209800           0.866300         0.686900              0.257500        0.663800                 0.173000</span>
 <span class="go">4      20.290000     14.340000      135.100000  1297.000000         0.100300          0.132800        0.198000             0.104300       0.180900  ...      16.670000       152.200000  1575.000000          0.137400           0.205000         0.400000              0.162500        0.236400                 0.076780</span>
 <span class="go">..           ...           ...             ...          ...              ...               ...             ...                  ...            ...  ...            ...              ...          ...               ...                ...              ...                   ...             ...                      ...</span>
-<span class="go">709    19.360485     26.452329      130.493202  1183.077654         0.091820          0.174176        0.156528             0.103560       0.179638  ...      33.259513       174.654366  1907.359211          0.125366           0.439914         0.376510              0.189378        0.273505                 0.089747</span>
-<span class="go">710    18.489961     17.524236      121.298939  1068.006754         0.101193          0.131667        0.149067             0.091807       0.183186  ...      22.888211       146.399228  1599.990352          0.141205           0.308821         0.353342              0.166273        0.251058                 0.094432</span>
-<span class="go">711    17.105147     19.216660      110.782711   912.141455         0.092011          0.083231        0.088234             0.063621       0.195612  ...      25.063124       130.295285  1213.937132          0.121107           0.178752         0.240642              0.134568        0.323005                 0.070084</span>
-<span class="go">712    20.161334     19.947430      131.940282  1272.066019         0.083428          0.102963        0.132832             0.082805       0.199322  ...      23.609527       151.540449  1654.732574          0.109301           0.184557         0.294445              0.149722        0.321405                 0.062018</span>
-<span class="go">713    19.532746     18.213281      129.916522  1204.658532         0.110991          0.160588        0.232946             0.122775       0.201043  ...      26.653670       174.176790  2218.891810          0.146602           0.379553         0.636839              0.222350        0.362703                 0.090830</span>
+<span class="go">709    20.519365     21.329695      134.700000  1294.961054         0.091264          0.132871        0.157551             0.098857       0.198604  ...      27.459653       154.827262  1649.936490          0.113335           0.270723         0.343711              0.175077        0.308043                 0.061522</span>
+<span class="go">710    18.503832     20.682127      120.507609  1075.512682         0.097145          0.100399        0.123093             0.073130       0.176224  ...      29.726348       145.548732  1579.490024          0.147474           0.227910         0.378736              0.145462        0.305389                 0.078269</span>
+<span class="go">711    13.477744     19.776724       86.456009   570.075382         0.091320          0.070910        0.067600             0.037416       0.161844  ...      29.849039       116.745560   991.614564          0.141492           0.181971         0.289308              0.119639        0.288167                 0.076009</span>
+<span class="go">712    16.081836     22.614217      103.738849   801.732784         0.090677          0.082819        0.061388             0.046005       0.163188  ...      33.014293       125.284070  1142.826997          0.128216           0.189629         0.198782              0.114232        0.298634                 0.083897</span>
+<span class="go">713    15.816359     21.872695      102.336355   780.017756         0.091929          0.086912        0.074304             0.050554       0.167455  ...      31.014477       124.200010  1152.181870          0.131373           0.185755         0.230702              0.118532        0.290764                 0.082945</span>
 
 <span class="go">[714 rows x 30 columns]</span>
 </code></pre></div>
@@ -4765,7 +4767,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='balancer-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='balancer-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -4802,7 +4804,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='balancer-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='balancer-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
 Estimator parameters.</p>

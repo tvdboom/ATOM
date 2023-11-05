@@ -4828,40 +4828,40 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 0.992</span>
 <span class="go">Test evaluation --&gt; f1: 0.9767</span>
-<span class="go">Time elapsed: 0.051s</span>
+<span class="go">Time elapsed: 0.049s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.051s</span>
+<span class="go">Time: 0.049s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 1.0</span>
-<span class="go">Test evaluation --&gt; f1: 0.9633</span>
-<span class="go">Time elapsed: 0.266s</span>
+<span class="go">Test evaluation --&gt; f1: 0.9541</span>
+<span class="go">Time elapsed: 0.212s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.266s</span>
+<span class="go">Time: 0.212s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.386s</span>
+<span class="go">Total time: 0.267s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">LogisticRegression --&gt; f1: 0.9767 !</span>
-<span class="go">RandomForest       --&gt; f1: 0.9633</span>
+<span class="go">RandomForest       --&gt; f1: 0.9541</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">    f1_train  f1_test  time_fit      time</span>
-<span class="go">LR     0.992   0.9767  0.051046  0.051046</span>
-<span class="go">RF     1.000   0.9633  0.266207  0.266207</span>
+<span class="go">LR     0.992   0.9767  0.049044  0.049044</span>
+<span class="go">RF     1.000   0.9541  0.212193  0.212193</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
 
 <span class="go">    accuracy      ap      ba      f1  jaccard     mcc  precision  recall     auc</span>
 <span class="go">LR    0.9708  0.9976  0.9702  0.9767   0.9545  0.9374     0.9813  0.9722  0.9959</span>
-<span class="go">RF    0.9532  0.9900  0.9464  0.9633   0.9292  0.8991     0.9545  0.9722  0.9858</span>
+<span class="go">RF    0.9415  0.9806  0.9339  0.9541   0.9123  0.8738     0.9455  0.9630  0.9805</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -5101,7 +5101,7 @@ returned for <a class="autorefs autorefs-internal" href="../../../user_guide/dat
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
+<p><a id='directclassifier-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L178>[source]</a></span></div>Get parameters for this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
 If True, will return the parameters for this estimator and
@@ -5175,7 +5175,7 @@ method to reload the instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
+<p><a id='directclassifier-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/base.py#L202>[source]</a></span></div>Set the parameters of this estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
 Estimator parameters.</p>
