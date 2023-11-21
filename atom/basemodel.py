@@ -13,6 +13,7 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime as dt
+from functools import cached_property
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
@@ -26,7 +27,9 @@ import optuna
 import pandas as pd
 import ray
 from beartype import beartype
-from beartype.roar import BeartypeCallHintParamViolation
+from beartype.roar import (
+    BeartypeCallHintParamViolation, BeartypeCallHintReturnViolation,
+)
 from beartype.typing import Any, Literal
 from joblib.memory import Memory
 from joblib.parallel import Parallel, delayed
@@ -202,7 +205,7 @@ class BaseModel(RunnerPlot):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -223,7 +226,6 @@ class BaseModel(RunnerPlot):
         self._config = config or DataConfig()
         self._metric = metric or ClassMap()
 
-        self._task: Task | None = None
         self.scaler: Scaler | None = None
 
         if self.experiment:
@@ -1337,23 +1339,10 @@ class BaseModel(RunnerPlot):
 
         self._log(f"Model {self.name} successfully renamed to {self._name}.", 1)
 
-    @property
+    @cached_property
     def task(self) -> Task:
         """Dataset's [task][] type."""
-        if not self._task:
-            self._task = self._goal.infer_task(self.y)
-
-        return self._task
-
-    @task.setter
-    def task(self, value: Task):
-        """Assign a task.
-
-        This `@setter` is required to assign the task for models that
-        are only used for the estimator.
-
-        """
-        self._task = value
+        return self._goal.infer_task(self.y)
 
     @property
     def og(self) -> Branch:
@@ -2538,19 +2527,20 @@ class ClassRegModel(BaseModel):
             else:
                 return self.mapping.get(self.target, np.unique(self.y).astype(str))
 
-        # Duck type getting the rows from the branch
-        # If it fails, we assume the data is new
         try:
+            if isinstance(out := self.transform(X, y, verbose=verbose), tuple):
+                Xt, yt = out
+            else:
+                Xt, yt = out, y
+        except (
+            BeartypeCallHintParamViolation,
+            BeartypeCallHintReturnViolation,
+            ValueError,
+        ):
             Xt, yt = self.branch._get_rows(X, return_X_y=True)
 
             if self.scaler:
                 Xt = self.scaler.transform(Xt)
-
-        except (BeartypeCallHintParamViolation, IndexError, ValueError):
-            if isinstance(out := self.transform(X, y, verbose=verbose), tuple):
-                Xt, y = out
-            else:
-                Xt = out
 
         if method != "score":
             pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt))
@@ -2583,11 +2573,17 @@ class ClassRegModel(BaseModel):
 
         else:
             if metric is None:
-                metric_c = self._metric[0]
+                scorer = self._metric[0]
             else:
-                metric_c = get_custom_scorer(metric)
+                scorer = get_custom_scorer(metric)
 
-            return metric_c(self.estimator, Xt, yt, sample_weight)
+            return self._score_from_est(
+                scorer=scorer,
+                estimator=self.estimator,
+                X=Xt,
+                y=yt,
+                sample_weight=sample_weight,
+            )
 
     @available_if(estimator_has_attr("decision_function"))
     @composed(crash, method_to_log, beartype)
@@ -2867,17 +2863,17 @@ class ForecastModel(BaseModel):
 
         """
         if (X := kwargs.get("X")) is not None and (y := kwargs.get("y")) is not None:
-            X, y = self.transform(X, y, verbose=verbose)
+            Xt, yt = self.transform(X, y, verbose=verbose)
 
         if method != "score":
             return self.memory.cache(getattr(self.estimator, method))(**kwargs)
         else:
             if metric is None:
-                metric_c = self._metric[0]
+                scorer = self._metric[0]
             else:
-                metric_c = get_custom_scorer(metric)
+                scorer = get_custom_scorer(metric)
 
-            return self._score_from_est(metric_c, self.estimator, X, y, **kwargs)
+            return self._score_from_est(scorer, self.estimator, Xt, yt, **kwargs)
 
     @available_if(estimator_has_attr("predict"))
     @composed(crash, method_to_log, beartype)

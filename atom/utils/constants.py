@@ -11,6 +11,12 @@ Description: Module containing utility constants.
 # Current library version
 __version__ = "6.0.0"
 
+# Column types considered categorical
+CAT_TYPES = ["object", "category", "string"]
+
+# Default string values considered missing
+DEFAULT_MISSING = ["", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"]
+
 # Attributes shared between atom and a dataframe
 DF_ATTRS = (
     "size",

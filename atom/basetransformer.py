@@ -37,8 +37,8 @@ from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, BoolTypes, DataFrame, DataFrameTypes, Engine, Estimator,
-    Int, IntTypes, Pandas, SequenceTypes, Severity, Verbose, Warnings,
-    XSelector, YSelector,
+    Int, IntLargerEqualZero, IntTypes, Pandas, SequenceTypes, Severity,
+    Verbose, Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import crash, flt, n_cols, sign, to_df, to_pandas
 
@@ -317,12 +317,10 @@ class BaseTransformer:
 
     @random_state.setter
     @beartype
-    def random_state(self, value: int | None):
-        if value and value < 0:
-            raise ValueError(
-                "Invalid value for the random_state parameter. "
-                f"Value should be >0, got {value}."
-            )
+    def random_state(self, value: IntLargerEqualZero | None):
+        if value is not None:
+            value = int(value)
+
         random.seed(value)
         np.random.seed(value)
         self._random_state = value

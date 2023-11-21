@@ -166,8 +166,6 @@ class TextCleaner(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
             self,
             *,
@@ -445,8 +443,6 @@ class TextNormalizer(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
             self,
             *,
@@ -676,8 +672,6 @@ class Tokenizer(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
             self,
@@ -922,8 +916,6 @@ class Vectorizer(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
             self,

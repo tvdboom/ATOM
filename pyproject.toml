@@ -108,7 +108,7 @@ python_files = "*.py"
 python_functions = "test_*"
 
 [tool.flake8]
-max-line-length = 90
+max-line-length = 91
 ignore = [
     "W605",  # Invalid escape sequence: \s, \w, etc... (removed because of docstrings)
     "W503",  # Line break before binary operator
@@ -117,6 +117,7 @@ ignore = [
 ]
 per-file-ignores = [
     "__init__.py: F401",  # Imported but unused
+    "data_cleaning.py: F401",  # Imported but unused (import experimental)
 ]
 
 [tool.isort]

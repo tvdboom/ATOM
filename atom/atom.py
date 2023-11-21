@@ -17,7 +17,6 @@ from logging import Logger
 from pathlib import Path
 from platform import machine, platform, python_build, python_version
 from types import MappingProxyType
-from typing import cast
 
 import dill as pickle
 import numpy as np
@@ -48,7 +47,7 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingForecaster,
     TrainSizingRegressor,
 )
-from atom.utils.constants import __version__
+from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING, __version__
 from atom.utils.types import (
     Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DataFrame,
     DiscretizerStrats, Engine, Estimator, FeatureSelectionSolvers,
@@ -110,7 +109,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -134,9 +133,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             holdout_size=holdout_size,
         )
 
-        self._missing = [
-            "", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"
-        ]
+        self._missing = DEFAULT_MISSING
 
         self._models = ClassMap()
         self._metric = ClassMap()
@@ -275,9 +272,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         These values are used by the [clean][self-clean] and
         [impute][self-impute] methods. Default values are: None, NaN,
-        NaT, +inf, -inf, "", "?", "None", "NA", "nan", "NaN", "NaT",
-        "inf". Note that None, NaN, +inf and -inf are always considered
-        missing since they are incompatible with sklearn estimators.
+        NA, NaT, +inf, -inf, "", "?", "NA", "nan", "NaN", "NaT", "none",
+        "None", "inf", "-inf". Note that None, NaN, NA, +inf and -inf
+        are always considered missing since they are incompatible with
+        sklearn estimators.
 
         """
         return self._missing
@@ -340,7 +338,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @property
     def categorical(self) -> Index:
         """Names of the categorical features in the dataset."""
-        return self.X.select_dtypes(include=["object", "category", "string"]).columns
+        return self.X.select_dtypes(include=CAT_TYPES).columns
 
     @property
     def n_categorical(self) -> int:
@@ -1353,18 +1351,17 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Additional keyword arguments for the inverse function.
 
         """
-        est = self._get_est_class("FunctionTransformer", "preprocessing")
-        est = cast(type[Transformer], est)  # Preprocessing always returns a transformer
+        FunctionTransformer = self._get_est_class("FunctionTransformer", "preprocessing")
 
         columns = kwargs.pop("columns", None)
-        transformer = est(
+        transformer = FunctionTransformer(
             func=func,
             inverse_func=inverse_func,
             kw_args=kw_args,
             inv_kw_args=inv_kw_args,
         )
 
-        self._add_transformer(transformer, columns=columns)
+        self._add_transformer(transformer, columns=columns)  # type: ignore[type-var]
 
     # Data cleaning transformers =================================== >>
 
@@ -1535,8 +1532,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @composed(crash, method_to_log)
     def impute(
         self,
-        strat_num: NumericalStrats = "drop",
-        strat_cat: CategoricalStrats = "drop",
+        strat_num: Scalar | NumericalStrats = "drop",
+        strat_cat: str | CategoricalStrats = "drop",
         *,
         max_nan_rows: FloatLargerZero | None = None,
         max_nan_cols: FloatLargerZero | None = None,

@@ -39,8 +39,8 @@ from atom.models import MODELS
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
-    FloatZeroToOneInc, Int, IntLargerZero, NJobs, Operators, Scalar,
-    SequenceTypes, Series, SeriesTypes, Verbose, XSelector, YSelector,
+    FloatZeroToOneInc, IntLargerEqualZero, IntLargerZero, NJobs, Operators,
+    Scalar, SequenceTypes, Series, SeriesTypes, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, composed, crash,
@@ -161,8 +161,6 @@ class FeatureExtractor(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
         self,
@@ -416,8 +414,6 @@ class FeatureGenerator(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
         self,
         strategy: Literal["dfs", "gfg"] = "dfs",
@@ -427,7 +423,7 @@ class FeatureGenerator(TransformerMixin):
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -700,8 +696,6 @@ class FeatureGrouper(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
         self,
@@ -1045,8 +1039,6 @@ class FeatureSelector(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
         self,
         strategy: FeatureSelectionStrats | None = None,
@@ -1062,7 +1054,7 @@ class FeatureSelector(TransformerMixin):
         backend: Backend = "loky",
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -1430,7 +1422,6 @@ class FeatureSelector(TransformerMixin):
                     **kwargs,
                 )
 
-            # Use parallelization backend
             with joblib.parallel_backend(backend=self.backend):
                 self._estimator.fit(Xt, yt)
 

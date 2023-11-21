@@ -56,9 +56,10 @@ from sklearn.utils import _print_elapsed_time
 from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, DataFrame, DataFrameTypes, Estimator, Float, Index, IndexSelector,
-    Int, IntTypes, MetricConstructor, Model, Pandas, PandasTypes, Predictor,
-    Scalar, Scorer, Segment, SegmentTypes, SequenceTypes, Series, SeriesTypes,
-    Transformer, TReturn, TReturns, Verbose, XSelector, YSelector, YTypes,
+    Int, IntLargerEqualZero, IntTypes, MetricConstructor, Model, Pandas,
+    PandasTypes, Predictor, Scalar, Scorer, Segment, SegmentTypes,
+    SequenceTypes, Series, SeriesTypes, Transformer, TReturn, TReturns,
+    Verbose, XSelector, YSelector, YTypes,
 )
 
 
@@ -889,7 +890,7 @@ class ShapExplanation:
         estimator: Predictor,
         task: Task,
         branch: Branch,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         self.estimator = estimator
         self.task = task

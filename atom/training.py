@@ -22,7 +22,7 @@ from sklearn.base import BaseEstimator
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    Backend, Bool, Engine, FloatLargerZero, Int, IntLargerEqualZero, IntTypes,
+    Backend, Bool, Engine, FloatLargerZero, IntLargerEqualZero, IntTypes,
     MetricConstructor, ModelsConstructor, NItems, NJobs, Sequence, Verbose,
     Warnings,
 )
@@ -464,7 +464,7 @@ class DirectClassifier(Direct):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
@@ -693,7 +693,7 @@ class DirectForecaster(Direct):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
@@ -924,7 +924,7 @@ class DirectRegressor(Direct):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
@@ -1163,7 +1163,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
@@ -1395,7 +1395,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
@@ -1630,7 +1630,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
@@ -1874,7 +1874,7 @@ class TrainSizingClassifier(TrainSizing):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
@@ -2112,7 +2112,7 @@ class TrainSizingForecaster(TrainSizing):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
@@ -2352,7 +2352,7 @@ class TrainSizingRegressor(TrainSizing):
         warnings: Bool | str = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,

@@ -410,14 +410,21 @@ def test_get_columns_is_None():
     assert len(atom.branch._get_columns(columns=None, include_target=False)) == 4
 
 
-def test_get_columns_by_slice():
-    """Assert that a slice of columns is returned."""
+def test_get_columns_by_dataframe():
+    """Assert that a dataframe retrieves columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert len(atom.branch._get_columns(columns=atom.X_train)) == X_bin.shape[1]
+
+
+def test_get_columns_by_segment():
+    """Assert that a range or slice retrieves columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert len(atom.branch._get_columns(columns=slice(2, 6))) == 4
+    assert len(atom.branch._get_columns(columns=range(2, 6))) == 4
 
 
 def test_get_columns_by_int():
-    """Assert that columns can be retrieved by index."""
+    """Assert that an index can retrieve columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(IndexError, match=".*out of range for data.*"):
         atom.branch._get_columns(columns=40)
@@ -542,6 +549,8 @@ def test_load_store():
     atom.branch = "2"
     assert atom._branches["main"]._container is None  # Stored
     assert atom._branches["main"].load(assign=False) is not None  # Loaded
+    atom._branches["main"].load(assign=True)
+    assert atom._branches["main"]._container is not None
 
 
 def test_load_no_file():
@@ -586,7 +595,10 @@ def test_branchmanager_contains():
 
 def test_branchmanager_getitem():
     """Assert that the __getitem__ method returns a branch."""
-    assert BranchManager()[0].name == "main"
+    manager = BranchManager()
+    assert manager[0].name == "main"
+    with pytest.raises(IndexError, match=".*has no branch.*"):
+        print(manager["invalid"])
 
 
 def test_og():

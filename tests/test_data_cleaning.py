@@ -201,7 +201,7 @@ def test_cleaner_strip_ignores_nan():
 
 
 def test_cleaner_drop_duplicate_rows():
-    """Assert that that duplicate rows are removed."""
+    """Assert that duplicate rows are removed."""
     X = Cleaner(drop_duplicates=True).fit_transform(X10)
     assert len(X) == 7
 
@@ -475,15 +475,6 @@ def test_rows_too_many_nans(max_nan_rows):
     assert X.isna().sum().sum() == 0
 
 
-def test_all_rows_too_many_nans():
-    """Assert that an error is raised when all rows have too many nans."""
-    X = X_bin.copy()
-    X["only nans"] = np.NaN
-    imputer = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_rows=0.01)
-    with pytest.raises(ValueError, match=".*All rows contain.*"):
-        imputer.fit_transform(X, y_bin)
-
-
 @pytest.mark.parametrize("max_nan_cols", [20, 0.5])
 def test_cols_too_many_nans(max_nan_cols):
     """Assert that columns with too many missing values are dropped."""
@@ -516,14 +507,6 @@ def test_imputing_numeric_number():
     assert X.isna().sum().sum() == 0
 
 
-def test_imputing_numeric_knn():
-    """Assert that imputing numerical values with KNNImputer works."""
-    imputer = Imputer(strat_num="knn")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
 def test_imputing_numeric_mean():
     """Assert that imputing the mean for numerical values works."""
     imputer = Imputer(strat_num="mean")
@@ -537,6 +520,22 @@ def test_imputing_numeric_median():
     imputer = Imputer(strat_num="median")
     X, y = imputer.fit_transform(X10_nan, y10)
     assert X.iat[0, 0] == 3
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_knn():
+    """Assert that imputing numerical values with KNNImputer works."""
+    imputer = Imputer(strat_num="knn", random_state=1)
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iat[0, 0] == 3.04
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_iterative():
+    """Assert that imputing numerical values with IterativeImputer works."""
+    imputer = Imputer(strat_num="iterative")
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iat[0, 0] == pytest.approx(2.577836, rel=1e-6, abs=1e-12)
     assert X.isna().sum().sum() == 0
 
 

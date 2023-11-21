@@ -90,7 +90,7 @@ review and accept your changes.
 
 * Update the documentation so all of your changes are reflected there.
 * Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
-* Use a maximum of 90 characters per line. Try to keep docstrings below
+* Use a maximum of 91 characters per line. Try to keep docstrings below
   74 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.

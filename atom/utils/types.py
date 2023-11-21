@@ -206,8 +206,8 @@ Severity = Literal["debug", "info", "warning", "error", "critical"]
 Verbose = Literal[0, 1, 2]
 
 # Data cleaning parameters
-NumericalStrats = Union[Scalar, Literal["drop", "mean", "median", "knn", "most_frequent"]]
-CategoricalStrats = Union[str, Literal["drop", "most_frequent"]]
+NumericalStrats = Literal["drop", "mean", "median", "knn", "iterative", "most_frequent"]
+CategoricalStrats = Literal["drop", "most_frequent"]
 DiscretizerStrats = Literal["uniform", "quantile", "kmeans", "custom"]
 Bins = Union[
     IntLargerZero,

@@ -19,8 +19,8 @@ from sklearn.base import clone
 
 from atom.atom import ATOM
 from atom.utils.types import (
-    Backend, Bool, Engine, IndexSelector, Int, NJobs, Predictor, Scalar,
-    Verbose, Warnings, YSelector,
+    Backend, Bool, Engine, IndexSelector, IntLargerEqualZero, NJobs, Predictor,
+    Scalar, Verbose, Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -363,7 +363,7 @@ class ATOMClassifier(ATOM):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             arrays=arrays,
@@ -592,7 +592,7 @@ class ATOMForecaster(ATOM):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             arrays=arrays,
@@ -837,7 +837,7 @@ class ATOMRegressor(ATOM):
         warnings: Bool | Warnings = False,
         logger: str | Path | Logger | None = None,
         experiment: str | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             arrays=arrays,

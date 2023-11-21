@@ -36,16 +36,20 @@ from imblearn.under_sampling import (
 )
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
-from sklearn.impute import KNNImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer, KNNImputer
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
+from atom.pipeline import Pipeline
+from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DataFrameTypes,
-    DiscretizerStrats, Engine, Estimator, FloatLargerZero, Int, IntLargerTwo,
-    NJobs, NormalizerStrats, NumericalStrats, Pandas, PrunerStrats, Scalar,
-    ScalerStrats, Sequence, SequenceTypes, Series, SeriesTypes, Transformer,
-    Verbose, XSelector, YSelector,
+    DiscretizerStrats, Engine, Estimator, FloatLargerZero, IntLargerEqualZero,
+    IntLargerTwo, NJobs, NormalizerStrats, NumericalStrats, Pandas,
+    PrunerStrats, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
+    SeriesTypes, Transformer, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -313,7 +317,7 @@ class Balancer(TransformerMixin):
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -628,10 +632,11 @@ class Cleaner(TransformerMixin):
     Attributes
     ----------
     missing_: list
-        Values that are considered "missing". Default values are: "",
-        "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf".
-        Note that `None`, `NaN`, `+inf` and `-inf` are always considered
-        missing since they are incompatible with sklearn estimators.
+        Values that are considered "missing". Default values are: None,
+        NaN, NA, NaT, +inf, -inf, "", "?", "NA", "nan", "NaN", "NaT",
+        "none", "None", "inf", "-inf". Note that None, NaN, NA, +inf and
+        -inf are always considered missing since they are incompatible
+        with sklearn estimators.
 
     mapping_: dict
         Target values mapped to their respective encoded integers. Only
@@ -685,8 +690,6 @@ class Cleaner(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
         self,
@@ -748,9 +751,7 @@ class Cleaner(TransformerMixin):
         self._estimators = {}
 
         if not hasattr(self, "missing_"):
-            self.missing_ = [
-                "", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"
-            ]
+            self.missing_ = DEFAULT_MISSING
 
         self._log("Fitting Cleaner...", 1)
 
@@ -772,11 +773,14 @@ class Cleaner(TransformerMixin):
             if self.encode_target:
                 for col in get_cols(yt):
                     if isinstance(col.iloc[0], SequenceTypes):  # Multilabel
-                        est = self._get_est_class("MultiLabelBinarizer", "preprocessing")
-                        self._estimators[col.name] = est().fit(col)
+                        MultiLabelBinarizer = self._get_est_class(
+                            name="MultiLabelBinarizer",
+                            module="preprocessing",
+                        )
+                        self._estimators[col.name] = MultiLabelBinarizer().fit(col)
                     elif list(uq := np.unique(col)) != list(range(col.nunique())):
-                        est = self._get_est_class("LabelEncoder", "preprocessing")
-                        self._estimators[col.name] = est().fit(col)
+                        LabelEncoder = self._get_est_class("LabelEncoder", "preprocessing")
+                        self._estimators[col.name] = LabelEncoder().fit(col)
                         self.mapping_.update(
                             {col.name: {str(it(v)): i for i, v in enumerate(uq)}}
                         )
@@ -844,7 +848,7 @@ class Cleaner(TransformerMixin):
                     Xt = Xt.drop(columns=name)
                     continue
 
-                elif dtype in ("object", "category", "string"):
+                elif dtype in CAT_TYPES:
                     if self.strip_categorical:
                         # Strip strings from blank spaces
                         Xt[name] = column.apply(
@@ -1133,8 +1137,6 @@ class Discretizer(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
         self,
         strategy: DiscretizerStrats = "quantile",
@@ -1145,7 +1147,7 @@ class Discretizer(TransformerMixin):
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             device=device,
@@ -1259,15 +1261,15 @@ class Discretizer(TransformerMixin):
                 else:
                     bins_x = bins_c
 
-                estimator = self._get_est_class("KBinsDiscretizer", "preprocessing")
+                KBinsDiscretizer = self._get_est_class("KBinsDiscretizer", "preprocessing")
 
                 # cuML implementation has no subsample and random_state
                 kwargs: dict[str, Any] = {}
-                if "subsample" in sign(estimator):
+                if "subsample" in sign(KBinsDiscretizer):
                     kwargs["subsample"] = 200000
                     kwargs["random_state"] = self.random_state
 
-                self._discretizers[col] = estimator(
+                self._discretizers[col] = KBinsDiscretizer(
                     n_bins=bins_x,
                     encode="ordinal",
                     strategy=self.strategy,
@@ -1290,10 +1292,13 @@ class Discretizer(TransformerMixin):
                 else:
                     bins_c = [-np.inf] + list(bins_c) + [np.inf]
 
-                estimator = self._get_est_class("FunctionTransformer", "preprocessing")
+                FunctionTransformer = self._get_est_class(
+                    name="FunctionTransformer",
+                    module="preprocessing",
+                )
 
                 # Make of cut a transformer
-                self._discretizers[col] = estimator(
+                self._discretizers[col] = FunctionTransformer(
                     func=bk.cut,
                     kw_args={"bins": bins_c, "labels": get_labels(col, labels, bins_c)},
                 ).fit(Xt[[col]])
@@ -1470,8 +1475,6 @@ class Encoder(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
         self,
@@ -1736,6 +1739,7 @@ class Imputer(TransformerMixin):
         - "mean": Impute with mean of column.
         - "median": Impute with median of column.
         - "knn": Impute using a K-Nearest Neighbors approach.
+        - "iterative": Impute using a multivariate imputer.
         - "most_frequent": Impute with the most frequent value.
         - int or float: Impute with provided numerical value.
 
@@ -1753,6 +1757,13 @@ class Imputer(TransformerMixin):
     max_nan_cols: int, float or None, default=None
         Maximum number or fraction of missing values in a column
         (if more, the column is removed). If None, ignore this step.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 - value.
 
     device: str, default="cpu"
         Device on which to run the estimators. Use any string that
@@ -1789,13 +1800,19 @@ class Imputer(TransformerMixin):
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`. Only
+        used when strat_num="iterative".
+
     Attributes
     ----------
     missing_: list
-        Values that are considered "missing". Default values are: "",
-        "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf".
-        Note that `None`, `NaN`, `+inf` and `-inf` are always considered
-        missing since they are incompatible with sklearn estimators.
+        Values that are considered "missing". Default values are: None,
+        NaN, NA, NaT, +inf, -inf, "", "?", "NA", "nan", "NaN", "NaT",
+        "none", "None", "inf", "-inf". Note that None, NaN, NA, +inf and
+        -inf are always considered missing since they are incompatible
+        with sklearn estimators.
 
     feature_names_in_: np.ndarray
         Names of features seen during fit.
@@ -1854,21 +1871,28 @@ class Imputer(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
         self,
-        strat_num: NumericalStrats = "drop",
-        strat_cat: CategoricalStrats = "drop",
+        strat_num: Scalar | NumericalStrats = "drop",
+        strat_cat: str | CategoricalStrats = "drop",
         *,
         max_nan_rows: FloatLargerZero | None = None,
         max_nan_cols: FloatLargerZero | None = None,
+        n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
+        random_state: IntLargerEqualZero | None = None,
     ):
-        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
+        super().__init__(
+            n_jobs=n_jobs,
+            device=device,
+            engine=engine,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
+        )
         self.strat_num = strat_num
         self.strat_cat = strat_cat
         self.max_nan_rows = max_nan_rows
@@ -1897,35 +1921,19 @@ class Imputer(TransformerMixin):
         self._check_n_features(Xt, reset=True)
 
         if not hasattr(self, "missing_"):
-            self.missing_ = [
-                "", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"
-            ]
-
-        self._max_nan_rows: int | None = None
-        self._drop_cols: list[Hashable] = []
-        self._imputers: dict[Hashable, Transformer] = {}
-        self._num_cols = list(Xt.select_dtypes(include="number"))
-
-        # Check input Parameters
-        if self.max_nan_rows:
-            if self.max_nan_rows <= 1:
-                self._max_nan_rows = int(Xt.shape[1] * self.max_nan_rows)
-            else:
-                self._max_nan_rows = int(self.max_nan_rows)
-
-        if self.max_nan_cols:
-            if self.max_nan_cols <= 1:
-                max_nan_cols = int(Xt.shape[0] * self.max_nan_cols)
-            else:
-                max_nan_cols = int(self.max_nan_cols)
+            self.missing_ = DEFAULT_MISSING
 
         self._log("Fitting Imputer...", 1)
 
         # Unify all values to impute
         Xt = replace_missing(Xt, self.missing_)
 
-        # Drop rows with too many NaN values
-        if self._max_nan_rows is not None:
+        if self.max_nan_rows is not None:
+            if self.max_nan_rows <= 1:
+                self._max_nan_rows = int(Xt.shape[1] * self.max_nan_rows)
+            else:
+                self._max_nan_rows = int(self.max_nan_rows)
+
             Xt = Xt.dropna(axis=0, thresh=Xt.shape[1] - self._max_nan_rows)
             if Xt.empty:
                 raise ValueError(
@@ -1935,43 +1943,59 @@ class Imputer(TransformerMixin):
                     f"larger value or set the parameter to None."
                 )
 
-        # Load the imputer class from sklearn or cuml (different modules)
-        module = "preprocessing" if self.engine.get("estimator") == "cuml" else "impute"
-        estimator = self._get_est_class("SimpleImputer", module)
+        if self.max_nan_cols is not None:
+            if self.max_nan_cols <= 1:
+                max_nan_cols = int(Xt.shape[0] * self.max_nan_cols)
+            else:
+                max_nan_cols = int(self.max_nan_cols)
 
-        # Assign an imputer to each column
-        for name, column in Xt.items():
-            # Remember columns with too many missing values
-            if self.max_nan_cols and column.isna().sum() > max_nan_cols:
-                self._drop_cols.append(name)
-                continue
+            Xt = Xt.drop(columns=Xt.columns[Xt.isna().sum() > max_nan_cols])
 
-            # Column is numerical
-            # Note missing_values=pd.NA also imputes np.NaN in SimpleImputer
-            if name in self._num_cols:
-                if isinstance(self.strat_num, str):
-                    if self.strat_num == "knn":
-                        self._imputers[name] = KNNImputer().fit(Xt[[name]])
+        # Load the imputer class from sklearn or cuml (note the different modules)
+        SimpleImputer = self._get_est_class(
+            name="SimpleImputer",
+            module="preprocessing" if self.engine.get("estimator") == "cuml" else "impute",
+        )
 
-                    elif self.strat_num == "most_frequent":
-                        self._imputers[name] = estimator(
-                            missing_values=pd.NA,
-                            strategy="most_frequent",
-                        ).fit(Xt[[name]])
+        # Note missing_values=pd.NA also imputes np.NaN
+        num_imputer: Estimator | Literal["passthrough"]
+        if isinstance(self.strat_num, str):
+            if self.strat_num in ("mean", "median", "most_frequent"):
+                num_imputer = SimpleImputer(missing_values=pd.NA, strategy=self.strat_num)
+            elif self.strat_num == "knn":
+                num_imputer = KNNImputer()
+            elif self.strat_num == "iterative":
+                num_imputer = IterativeImputer(random_state=self.random_state)
+            elif self.strat_num == "drop":
+                num_imputer = "passthrough"
+        else:
+            num_imputer = SimpleImputer(
+                missing_values=pd.NA,
+                strategy="constant",
+                fill_value=self.strat_num,
+            )
 
-                    # Strategies mean or median
-                    elif self.strat_num != "drop":
-                        self._imputers[name] = estimator(
-                            missing_values=pd.NA,
-                            strategy=self.strat_num
-                        ).fit(Xt[[name]])
+        cat_imputer: Estimator | Literal["passthrough"]
+        if self.strat_cat == "most_frequent":
+            cat_imputer = SimpleImputer(missing_values=pd.NA, strategy=self.strat_cat)
+        elif self.strat_cat == "drop":
+            cat_imputer = "passthrough"
+        else:
+            cat_imputer = SimpleImputer(
+                missing_values=pd.NA,
+                strategy="constant",
+                fill_value=self.strat_cat,
+            )
 
-            # Column is categorical
-            elif self.strat_cat == "most_frequent":
-                self._imputers[name] = estimator(
-                    missing_values=pd.NA,
-                    strategy="most_frequent",
-                ).fit(Xt[[name]])
+        self._estimator = ColumnTransformer(
+            transformers=[
+                ("num_imputer", num_imputer, list(Xt.select_dtypes(include="number"))),
+                ("cat_imputer", cat_imputer, list(Xt.select_dtypes(include=CAT_TYPES))),
+            ],
+            remainder="passthrough",
+            n_jobs=self.n_jobs,
+            verbose_feature_names_out=False,
+        ).set_output(transform="pandas").fit(Xt)
 
         return self
 
@@ -2016,93 +2040,93 @@ class Imputer(TransformerMixin):
         check_is_fitted(self)
         Xt, yt = self._check_input(X, y, columns=self.feature_names_in_)
 
+        num_imputer = self._estimator.named_transformers_["num_imputer"]
+        cat_imputer = self._estimator.named_transformers_["cat_imputer"]
+
+        get_stat = lambda est, n: est.statistics_[est.feature_names_in_.tolist().index(n)]
+
         self._log("Imputing missing values...", 1)
 
         # Unify all values to impute
         Xt = replace_missing(Xt, self.missing_)
 
         # Drop rows with too many missing values
-        if self._max_nan_rows is not None:
+        if self.max_nan_rows is not None:
             length = len(Xt)
             Xt = Xt.dropna(axis=0, thresh=Xt.shape[1] - self._max_nan_rows)
             if diff := length - len(Xt):
-                if yt is not None:
-                    yt = yt[yt.index.isin(Xt.index)]  # Select only indices that remain
+                self._log(
+                    f" --> Dropping {diff} samples for containing more "
+                    f"than {self._max_nan_rows} missing values.", 2
+                )
+
+        if self.strat_num == "drop":
+            length = len(Xt)
+            Xt = Xt.dropna(subset=self._estimator.transformers_[0][2], axis=0)
+            if diff := length - len(Xt):
                 self._log(
                     f" --> Dropping {diff} samples for containing "
-                    f"more than {self._max_nan_rows} missing values.", 2
+                    f"missing values in numerical columns.", 2
                 )
 
-        for name, column in Xt.items():
-            nans = column.isna().sum()
-
-            # Drop columns with too many missing values
-            if name in self._drop_cols:
+        if self.strat_cat == "drop":
+            length = len(Xt)
+            Xt = Xt.dropna(subset=self._estimator.transformers_[1][2], axis=0)
+            if diff := length - len(Xt):
                 self._log(
-                    f" --> Dropping feature {name}. Contains {nans} "
-                    f"({nans * 100 // len(Xt)}%) missing values.", 2
+                    f" --> Dropping {diff} samples for containing "
+                    f"missing values in categorical columns.", 2
                 )
-                Xt = Xt.drop(columns=name)
-                continue
 
-            # Apply only if column is numerical and contains missing values
-            if name in self._num_cols and nans > 0:
-                if not isinstance(self.strat_num, str):
+        # Print imputation information per feature
+        for name, column in Xt.items():
+            if nans := column.isna().sum():
+                # Drop columns with too many missing values
+                if name not in self._estimator.feature_names_in_:
                     self._log(
-                        f" --> Imputing {nans} missing values with number "
-                        f"{str(self.strat_num)} in feature {name}.", 2
+                        f" --> Dropping feature {name}. Contains {nans} "
+                        f"({nans * 100 // len(Xt)}%) missing values.", 2
                     )
-                    Xt[name] = column.replace(np.NaN, self.strat_num)  # type: ignore
+                    Xt = Xt.drop(columns=name)
+                    continue
 
-                elif self.strat_num == "drop":
-                    Xt = Xt.dropna(subset=[name], axis=0)
-                    if yt is not None:
-                        yt = yt[yt.index.isin(Xt.index)]
-                    self._log(
-                        f" --> Dropping {nans} samples due to missing "
-                        f"values in feature {name}.", 2
-                    )
+                if self.strat_num != "drop" and name in num_imputer.feature_names_in_:
+                    if not isinstance(self.strat_num, str):
+                        self._log(
+                            f" --> Imputing {nans} missing values with number "
+                            f"'{str(self.strat_num)}' in feature {name}.", 2
+                        )
+                    elif self.strat_num in ("knn", "iterative"):
+                        self._log(
+                            f" --> Imputing {nans} missing values using "
+                            f"the {self.strat_num} imputer in feature {name}.", 2
+                        )
+                    elif self.strat_num != "drop":  # mean, median or most_frequent
+                        self._log(
+                            f" --> Imputing {nans} missing values with {self.strat_num} "
+                            f"({np.round(get_stat(num_imputer, name), 2)}) in feature "
+                            f"{name}.", 2
+                        )
+                elif self.strat_cat != "drop" and name in cat_imputer.feature_names_in_:
+                    if self.strat_cat == "most_frequent":
+                        self._log(
+                            f" --> Imputing {nans} missing values with most_frequent "
+                            f"({get_stat(cat_imputer, name)}) in feature {name}.", 2
+                        )
+                    elif self.strat_cat != "drop":
+                        self._log(
+                            f" --> Imputing {nans} missing values with value "
+                            f"'{self.strat_cat}' in feature {name}.", 2
+                        )
 
-                elif self.strat_num == "knn":
-                    self._log(
-                        f" --> Imputing {nans} missing values using "
-                        f"the KNN imputer in feature {name}.", 2
-                    )
-                    Xt[name] = self._imputers[name].transform(Xt[[name]]).flatten()
+        Xt = self._estimator.transform(Xt)
 
-                else:  # Strategies mean, median or most_frequent
-                    n = np.round(self._imputers[name].statistics_[0], 2)
-                    self._log(
-                        f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num} ({n}) in feature {name}.", 2
-                    )
-                    Xt[name] = self._imputers[name].transform(Xt[[name]]).flatten()
+        # Make y consistent with X
+        if yt is not None:
+            yt = yt[yt.index.isin(Xt.index)]
 
-            # The column is categorical and contains missing values
-            elif nans > 0:
-                if self.strat_cat not in ("drop", "most_frequent"):
-                    self._log(
-                        f" --> Imputing {nans} missing values with "
-                        f"{self.strat_cat} in feature {name}.", 2
-                    )
-                    Xt[name] = column.replace(np.NaN, self.strat_cat)
-
-                elif self.strat_cat == "drop":
-                    Xt = Xt.dropna(subset=[name], axis=0)
-                    if yt is not None:
-                        yt = yt[yt.index.isin(Xt.index)]
-                    self._log(
-                        f" --> Dropping {nans} samples due to "
-                        f"missing values in feature {name}.", 2
-                    )
-
-                elif self.strat_cat == "most_frequent":
-                    mode = self._imputers[name].statistics_[0]
-                    self._log(
-                        f" --> Imputing {nans} missing values with "
-                        f"most_frequent ({mode}) in feature {name}.", 2
-                    )
-                    Xt[name] = self._imputers[name].transform(Xt[[name]]).flatten()
+        # Reorder columns to original order
+        Xt = Xt[[fx for fx in self.feature_names_in_ if fx in Xt.columns]]
 
         return variable_return(Xt, yt)
 
@@ -2235,8 +2259,6 @@ class Normalizer(TransformerMixin):
 
     """
 
-    _train_only = False
-
     def __init__(
         self,
         strategy: NormalizerStrats = "yeojohnson",
@@ -2245,7 +2267,7 @@ class Normalizer(TransformerMixin):
         engine: Engine = {"data": "numpy", "estimator": "sklearn"},
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
-        random_state: Int | None = None,
+        random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -2824,8 +2846,6 @@ class Scaler(TransformerMixin):
         ```
 
     """
-
-    _train_only = False
 
     def __init__(
         self,
