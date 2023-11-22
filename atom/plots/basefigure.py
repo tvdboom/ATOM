@@ -14,11 +14,11 @@ from itertools import cycle
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-from beartype.typing import Any, Literal
+from beartype.typing import Any, Literal, Sequence
 
 from atom.utils.types import (
     Bool, FloatZeroToOneExc, Int, IntLargerZero, Legend, Model, PlotBackend,
-    Scalar, Sequence, SequenceTypes, Style,
+    Scalar, Style,
 )
 from atom.utils.utils import divide, rnd, to_rgb
 
@@ -81,7 +81,7 @@ class BaseFigure:
         if isinstance(palette, str):
             self._palette = getattr(px.colors.qualitative, palette)
             self.palette = cycle(self._palette)
-        elif isinstance(palette, SequenceTypes):
+        elif isinstance(palette, Sequence):
             # Convert color names or hex to rgb
             self._palette = list(map(to_rgb, palette))
             self.palette = cycle(self._palette)

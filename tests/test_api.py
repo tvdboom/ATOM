@@ -24,7 +24,7 @@ def test_atommodel():
     )
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(model)
+    atom.run(model, errors="raise")
     assert model is not huber  # Is cloned
     assert model.name == "huber1"
     assert model.acronym == "huber"

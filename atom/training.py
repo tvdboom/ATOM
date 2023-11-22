@@ -22,7 +22,7 @@ from sklearn.base import BaseEstimator
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    Backend, Bool, Engine, FloatLargerZero, IntLargerEqualZero, IntTypes,
+    Backend, Bool, Engine, FloatLargerZero, Int, IntLargerEqualZero,
     MetricConstructor, ModelsConstructor, NItems, NJobs, Sequence, Verbose,
     Warnings,
 )
@@ -204,7 +204,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self._log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         # Convert integer train_sizes to sequence
-        if isinstance(self.train_sizes, IntTypes):
+        if isinstance(self.train_sizes, Int):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
         models = ClassMap()

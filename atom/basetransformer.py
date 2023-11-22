@@ -36,9 +36,8 @@ from ray.util.joblib import register_ray
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
-    Backend, Bool, BoolTypes, DataFrame, DataFrameTypes, Engine, Estimator,
-    Int, IntLargerEqualZero, IntTypes, Pandas, SequenceTypes, Severity,
-    Verbose, Warnings, XSelector, YSelector,
+    Backend, Bool, DataFrame, Engine, Estimator, Int, IntLargerEqualZero,
+    Pandas, Seq1dim, Severity, Verbose, Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import crash, flt, n_cols, sign, to_df, to_pandas
 
@@ -209,7 +208,7 @@ class BaseTransformer:
     @warnings.setter
     @beartype
     def warnings(self, value: Bool | Warnings):
-        if isinstance(value, BoolTypes):
+        if isinstance(value, Bool):
             self._warnings: Warnings = "once" if value else "ignore"
         else:
             self._warnings = value
@@ -502,7 +501,7 @@ class BaseTransformer:
                         )
 
         # Prepare target column
-        if isinstance(y, (dict, *SequenceTypes, *DataFrameTypes)):
+        if isinstance(y, dict | Seq1dim | DataFrame):
             if isinstance(y, dict):
                 yt = to_df(deepcopy(y), index=getattr(Xt, "index", None))
                 if n_cols(yt) == 1:
@@ -516,7 +515,7 @@ class BaseTransformer:
                         for col in y:
                             if col in Xt.columns:
                                 targets.append(col)
-                            elif isinstance(col, IntTypes):
+                            elif isinstance(col, Int):
                                 if -Xt.shape[1] <= col < Xt.shape[1]:
                                     targets.append(Xt.columns[int(col)])
                                 else:
@@ -541,7 +540,7 @@ class BaseTransformer:
                     data=deepcopy(yt),
                     index=getattr(Xt, "index", None),
                     name=flt(name) if name is not None else "target",
-                    columns=name if isinstance(name, SequenceTypes) else default_cols,
+                    columns=name if isinstance(name, Sequence) else default_cols,
                 )
 
             # Check X and y have the same indices
@@ -558,7 +557,7 @@ class BaseTransformer:
             else:
                 raise ValueError("X can't be None when y is a string.")
 
-        elif isinstance(y, IntTypes):
+        elif isinstance(y, Int):
             if Xt is None:
                 raise ValueError("X can't be None when y is an int.")
 

@@ -16,8 +16,8 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 from beartype.typing import (
-    Any, Callable, Hashable, Iterable, Literal, Protocol, Sequence, TypedDict,
-    TypeVar, Union, runtime_checkable,
+    Any, Callable, Hashable, Iterable, Literal, Protocol, Sequence, TypeAlias,
+    TypedDict, TypeVar, runtime_checkable,
 )
 from beartype.vale import Is
 from optuna.distributions import BaseDistribution
@@ -27,29 +27,6 @@ from sktime.forecasting.base import ForecastingHorizon
 if TYPE_CHECKING:
     from atom.utils.utils import ClassMap, Goal
 
-
-# Variable types for isinstance ==================================== >>
-
-# TODO: From Python 3.11, use Self type hint to return classes
-# TODO: From Python 3.10, isinstance accepts pipe operator (change to TypeAlias)
-BoolTypes = (bool, np.bool_)
-IntTypes = (int, np.integer)
-FloatTypes = (float, np.floating)
-ScalarTypes = (*IntTypes, *FloatTypes)
-SegmentTypes = (range, slice)
-IndexTypes = (pd.Index, md.Index)
-TSIndexTypes = (
-    pd.PeriodIndex,
-    md.PeriodIndex,
-    pd.DatetimeIndex,
-    md.DatetimeIndex,
-    pd.TimedeltaIndex,
-    md.TimedeltaIndex,
-)
-SeriesTypes = (pd.Series, md.Series)
-DataFrameTypes = (pd.DataFrame, md.DataFrame)
-PandasTypes = (*SeriesTypes, *DataFrameTypes)
-SequenceTypes = (list, tuple, np.ndarray, *IndexTypes, *SeriesTypes)
 
 # Classes for type hinting ========================================= >>
 
@@ -132,129 +109,151 @@ class Model(Protocol):
 # Variable types for type hinting ================================== >>
 
 # General types
-Bool = Union[bool, np.bool_]
-Int = Union[int, np.integer]
-Float = Union[float, np.floating]
-Scalar = Union[Int, Float]
-Segment = Union[range, slice]
-Index = Union[pd.Index, md.Index]
-Series = Union[pd.Series, md.Series]
-DataFrame = Union[pd.DataFrame, md.DataFrame]
-Pandas = Union[Series, DataFrame]
+# TODO: From Python 3.11, import Self type hint from typing
+Bool: TypeAlias = bool | np.bool_
+Int: TypeAlias = int | np.integer
+Float: TypeAlias = float | np.floating
+Scalar: TypeAlias = Int | Float
+Segment: TypeAlias = range | slice
+Index: TypeAlias = pd.Index | md.Index
+TSIndex: TypeAlias = (
+    pd.PeriodIndex
+    | md.PeriodIndex
+    | pd.DatetimeIndex
+    | md.DatetimeIndex
+    | pd.TimedeltaIndex
+    | md.TimedeltaIndex
+)
+Series: TypeAlias = pd.Series | md.Series
+DataFrame: TypeAlias = pd.DataFrame | md.DataFrame
+Pandas: TypeAlias = Series | DataFrame
+Seq1dim: TypeAlias = list | tuple | np.ndarray | Index | Series
 
 # Numerical types
-IntLargerZero = Annotated[Int, Is[lambda x: x > 0]]
-IntLargerEqualZero = Annotated[Int, Is[lambda x: x >= 0]]
-IntLargerTwo = Annotated[Int, Is[lambda x: x > 2]]
-IntLargerFour = Annotated[Int, Is[lambda x: x > 4]]
-FloatLargerZero = Annotated[Scalar, Is[lambda x: x > 0]]
-FloatLargerEqualZero = Annotated[Scalar, Is[lambda x: x >= 0]]
-FloatZeroToOneInc = Annotated[Scalar, Is[lambda x: 0 <= x <= 1]]
-FloatZeroToOneExc = Annotated[Float, Is[lambda x: 0 < x < 1]]
+IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
+IntLargerEqualZero: TypeAlias = Annotated[Int, Is[lambda x: x >= 0]]
+IntLargerTwo: TypeAlias = Annotated[Int, Is[lambda x: x > 2]]
+IntLargerFour: TypeAlias = Annotated[Int, Is[lambda x: x > 4]]
+FloatLargerZero: TypeAlias = Annotated[Scalar, Is[lambda x: x > 0]]
+FloatLargerEqualZero: TypeAlias = Annotated[Scalar, Is[lambda x: x >= 0]]
+FloatZeroToOneInc: TypeAlias = Annotated[Scalar, Is[lambda x: 0 <= x <= 1]]
+FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
 # Types for X, y and fh
-XTypes = Union[
-    dict[str, Sequence[Any]],
-    Sequence[Sequence[Any]],
-    Iterable[
-        Union[Sequence[Any], tuple[Hashable, Sequence[Any]], dict[str, Sequence[Any]]]
-    ],
-    np.ndarray,
-    sps.spmatrix,
-    DataFrame,
-]
-XSelector = Union[XTypes, Callable[..., XTypes]]
-YTypes = Union[dict[str, Any], Sequence[Any], Series, XSelector]
-YSelector = Union[Int, str, YTypes]
-FHSelector = Union[int, Sequence, Index, Series, ForecastingHorizon]
+XTypes: TypeAlias = (
+    dict[str, Sequence]
+    | Sequence[Sequence]
+    | Iterable[Sequence | tuple[Hashable, Sequence] | dict[str, Sequence]]
+    | np.ndarray
+    | sps.spmatrix
+    | DataFrame
+)
+XSelector: TypeAlias = XTypes | Callable[..., XTypes]
+YTypes: TypeAlias = dict[str, Any] | Sequence | Series | XSelector
+YSelector: TypeAlias = Int | str | YTypes
+FHSelector: TypeAlias = int | Sequence | Index | Series | ForecastingHorizon
 
 # Return types for transform methods
-TReturn = Union[np.ndarray, sps.spmatrix, Series, DataFrame]
-TReturns = Union[TReturn, tuple[TReturn, TReturn]]
+TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame
+TReturns: TypeAlias = TReturn | tuple[TReturn, TReturn]
 
 # Selection of rows or columns by name or position
-ColumnSelector = Union[Int, str, Segment, Sequence[Union[Int, str]], DataFrame]
-RowSelector = Union[Hashable, Sequence[Hashable], Index, Series, ColumnSelector]
+ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | DataFrame
+RowSelector: TypeAlias = (
+    Hashable
+    | Sequence[Hashable]
+    | Index
+    | Series
+    | ColumnSelector
+)
 
 # Assignment of index or stratify parameter
-IndexSelector = Union[Bool, Int, str, Sequence[Hashable], Index, Series]
+IndexSelector: TypeAlias = Bool | Int | str | Sequence[Hashable] | Index | Series
 
 # Types to initialize and select models and metric
-ModelsConstructor = Union[str, Predictor, Sequence[Union[str, Predictor]], None]
-ModelSelector = Union[Int, str, Model]
-ModelsSelector = Union[ModelSelector, Segment, Sequence[ModelSelector], None]
-MetricFunction = Callable[[Sequence[Scalar], Sequence[Scalar]], Scalar]
-MetricConstructor = Union[
-    str,
-    MetricFunction,
-    Scorer,
-    Sequence[Union[str, MetricFunction, Scorer]],
-    None,
-]
-MetricSelector = Union[
-    IntLargerEqualZero,
-    str,
-    Sequence[Union[IntLargerEqualZero, str]],
-    None,
-]
+ModelsConstructor: TypeAlias = str | Predictor | Sequence[str | Predictor] | None
+ModelSelector: TypeAlias = Int | str | Model
+ModelsSelector: TypeAlias = ModelSelector | Segment | Sequence[ModelSelector] | None
+MetricFunction: TypeAlias = Callable[[Sequence[Scalar], Sequence[Scalar]], Scalar]
+MetricConstructor: TypeAlias = (
+    str
+    | MetricFunction
+    | Scorer
+    | Sequence[str | MetricFunction | Scorer]
+    | None
+)
+MetricSelector: TypeAlias = (
+    IntLargerEqualZero
+    | str
+    | Sequence[IntLargerEqualZero | str]
+    | None
+)
 
 # Allowed values for BaseTransformer parameter
-NJobs = Annotated[Int, Is[lambda x: x != 0]]
-Backend = Literal["loky", "multiprocessing", "threading", "ray"]
-Warnings = Literal["default", "error", "ignore", "always", "module", "once"]
-Severity = Literal["debug", "info", "warning", "error", "critical"]
-Verbose = Literal[0, 1, 2]
+NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
+Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray"]
+Warnings: TypeAlias = Literal["default", "error", "ignore", "always", "module", "once"]
+Severity: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]
+Verbose: TypeAlias = Literal[0, 1, 2]
 
 # Data cleaning parameters
-NumericalStrats = Literal["drop", "mean", "median", "knn", "iterative", "most_frequent"]
-CategoricalStrats = Literal["drop", "most_frequent"]
-DiscretizerStrats = Literal["uniform", "quantile", "kmeans", "custom"]
-Bins = Union[
-    IntLargerZero,
-    Sequence[Scalar],
-    dict[str, Union[IntLargerZero, Sequence[Scalar]]],
+NumericalStrats: TypeAlias = Literal[
+    "drop", "mean", "median", "knn", "iterative", "most_frequent"
 ]
-NormalizerStrats = Literal["yeojohnson", "boxcox", "quantile"]
-PrunerStrats = Literal[
+CategoricalStrats: TypeAlias = Literal["drop", "most_frequent"]
+DiscretizerStrats: TypeAlias = Literal["uniform", "quantile", "kmeans", "custom"]
+Bins: TypeAlias = (
+    IntLargerZero
+    | Sequence[Scalar]
+    | dict[str, IntLargerZero | Sequence[Scalar]]
+)
+NormalizerStrats: TypeAlias = Literal["yeojohnson", "boxcox", "quantile"]
+PrunerStrats: TypeAlias = Literal[
     "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"
 ]
-ScalerStrats = Literal["standard", "minmax", "maxabs", "robust"]
+ScalerStrats: TypeAlias = Literal["standard", "minmax", "maxabs", "robust"]
 
 # NLP parameters
-VectorizerStarts = Literal["bow", "tfidf", "hashing"]
+VectorizerStarts: TypeAlias = Literal["bow", "tfidf", "hashing"]
 
 # Feature engineering parameters
-Operators = Literal["add", "sub", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
-FeatureSelectionStrats = Literal[
+Operators: TypeAlias = Literal[
+    "add", "sub", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"
+]
+FeatureSelectionStrats: TypeAlias = Literal[
     "univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "hho", "gwo", "dfo", "go"
 ]
-FeatureSelectionSolvers = Union[
-    str,
-    Callable[..., tuple[Sequence[Scalar], Sequence[Scalar]]],  # e.g., f_classif
-    Estimator,
-    None,
-]
+FeatureSelectionSolvers: TypeAlias = (
+    str
+    | Callable[..., tuple[Sequence[Scalar], Sequence[Scalar]]]  # e.g., f_classif
+    | Estimator
+    | None
+)
 
 # Runner parameters
-NItems = Union[
-    IntLargerEqualZero,
-    dict[str, IntLargerEqualZero],
-    Sequence[IntLargerEqualZero],
-]
+NItems: TypeAlias = (
+    IntLargerEqualZero
+    | dict[str, IntLargerEqualZero]
+    | Sequence[IntLargerEqualZero]
+)
 
 # Allowed values for method selection
-PredictionMethod = Literal["decision_function", "predict_proba", "predict", "thresh"]
+PredictionMethod: TypeAlias = Literal[
+    "decision_function", "predict_proba", "predict", "thresh"
+]
 
 # Plotting parameters
-PlotBackend = Literal["plotly", "matplotlib"]
-ParamsSelector = Union[str, Segment, Sequence[Union[IntLargerEqualZero, str]]]
-TargetSelector = Union[IntLargerEqualZero, str]
-TargetsSelector = Union[TargetSelector, tuple[TargetSelector, ...]]
-Kind = Literal["average", "individual", "average+individual", "individual+average"]
-Legend = Literal[
+PlotBackend: TypeAlias = Literal["plotly", "matplotlib"]
+ParamsSelector: TypeAlias = str | Segment | Sequence[IntLargerEqualZero | str]
+TargetSelector: TypeAlias = IntLargerEqualZero | str
+TargetsSelector: TypeAlias = TargetSelector | tuple[TargetSelector, ...]
+Kind: TypeAlias = Literal[
+    "average", "individual", "average+individual", "individual+average"
+]
+Legend: TypeAlias = Literal[
     "upper left", "lower left", "upper right", "lower right", "upper center",
     "lower center", "center left", "center right", "center", "out",
 ]
 
 # Mlflow stages
-Stages = Literal["None", "Staging", "Production", "Archived"]
+Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]

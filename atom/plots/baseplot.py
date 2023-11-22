@@ -28,8 +28,8 @@ from atom.plots.basefigure import BaseFigure
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Index, Int,
-    IntLargerZero, IntTypes, Legend, MetricSelector, Model, ModelsSelector,
-    PlotBackend, RowSelector, Scalar, SequenceTypes,
+    IntLargerZero, Legend, MetricSelector, Model, ModelsSelector, PlotBackend,
+    RowSelector, Scalar,
 )
 from atom.utils.utils import (
     Aesthetics, Task, check_is_fitted, composed, crash, get_custom_scorer, lst,
@@ -226,7 +226,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             Selection of rows.
 
         """
-        if isinstance(rows, SequenceTypes):
+        if isinstance(rows, Sequence):
             rows_c = {row: row for row in rows}
         elif isinstance(rows, str):
             rows_c = {rows: rows}
@@ -258,7 +258,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         else:
             inc: list[str] = []
             for met in lst(metric):
-                if isinstance(met, IntTypes):
+                if isinstance(met, Int):
                     if int(met) < len(self._metric):
                         inc.append(self._metric[met].name)
                     else:
@@ -564,7 +564,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                     }
 
                     if isinstance(title, dict):
-                        title = {**default_title, **title}
+                        title = default_title | title
                     else:
                         title = {"text": title, **default_title}
 
@@ -581,7 +581,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                     font_size=self.title_fontsize,
                 )
                 if isinstance(title := kwargs.get("title"), dict):
-                    title = {**default_title, **title}
+                    title = default_title | title
                 else:
                     title = {"text": title, **default_title}
 
@@ -611,9 +611,9 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                         position = dict(x=0.99, y=0.5, xanchor="right", yanchor="middle")
                     elif legend == "center":
                         position = dict(x=0.5, y=0.5, xanchor="center", yanchor="middle")
-                    legend = {**default_legend, **position}
+                    legend = default_legend  | position
                 elif isinstance(legend, dict):
-                    legend = {**default_legend, **legend}
+                    legend = default_legend | legend
 
                 # Update layout with predefined settings
                 space1 = self.title_fontsize if title.get("text") else 10

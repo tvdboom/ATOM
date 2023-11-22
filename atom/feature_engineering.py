@@ -40,7 +40,7 @@ from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IntLargerEqualZero, IntLargerZero, NJobs, Operators,
-    Scalar, SequenceTypes, Series, SeriesTypes, Verbose, XSelector, YSelector,
+    Scalar, Series, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, composed, crash,
@@ -187,7 +187,7 @@ class FeatureExtractor(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -208,7 +208,7 @@ class FeatureExtractor(TransformerMixin):
                 col_dt = column
                 self._log(f" --> Extracting features from column {name}.", 1)
             else:
-                fmt = self.fmt[i] if isinstance(self.fmt, SequenceTypes) else self.fmt
+                fmt = self.fmt[i] if isinstance(self.fmt, Seq) else self.fmt
                 col_dt = pd.to_datetime(
                     arg=column,
                     errors="coerce",  # Converts to NaT if he can't format
@@ -236,7 +236,7 @@ class FeatureExtractor(TransformerMixin):
                     )
 
                 # Skip if the information is not present in the format
-                if not isinstance(values, SeriesTypes):
+                if not isinstance(values, Series):
                     self._log(
                         f"   --> Extracting feature {fx} failed. "
                         "Result is not a Series.dt.", 2
@@ -446,7 +446,7 @@ class FeatureGenerator(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -539,7 +539,7 @@ class FeatureGenerator(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -720,7 +720,7 @@ class FeatureGrouper(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1087,7 +1087,7 @@ class FeatureSelector(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -1486,7 +1486,7 @@ class FeatureSelector(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

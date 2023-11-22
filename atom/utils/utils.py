@@ -35,7 +35,7 @@ import plotly.graph_objects as go
 import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import (
-    Any, Callable, Hashable, Iterator, Literal, Sequence, TypeVar,
+    Any, Callable, Hashable, Iterator, Literal, Sequence, TypeVar
 )
 from IPython.display import display
 from matplotlib.colors import to_rgba
@@ -55,11 +55,10 @@ from sklearn.utils import _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, DataFrame, DataFrameTypes, Estimator, Float, Index, IndexSelector,
-    Int, IntLargerEqualZero, IntTypes, MetricConstructor, Model, Pandas,
-    PandasTypes, Predictor, Scalar, Scorer, Segment, SegmentTypes,
-    SequenceTypes, Series, SeriesTypes, Transformer, TReturn, TReturns,
-    Verbose, XSelector, YSelector, YTypes,
+    Bool, DataFrame, Estimator, Float, Index, IndexSelector, Int,
+    IntLargerEqualZero, MetricConstructor, Model, Pandas, Predictor, Scalar,
+    Scorer, Segment, Seq1dim, Series, Transformer, TReturn, TReturns, Verbose,
+    XSelector, YSelector, YTypes,
 )
 
 
@@ -105,22 +104,22 @@ class Goal(Enum):
 
         """
         if self.value == 1:
-            if isinstance(y, SeriesTypes):
+            if isinstance(y, Series):
                 return Task.regression
             else:
                 return Task.multioutput_regression
         elif self.value == 2:
-            if isinstance(y, SeriesTypes):
+            if isinstance(y, Series):
                 return Task.univariate_forecast
             else:
                 return Task.multivariate_forecast
 
-        if isinstance(y, DataFrameTypes):
-            if all(y[col].nunique() == 2 for col in y):
+        if isinstance(y, DataFrame):
+            if all(y[col].nunique() == 2 for col in y.columns):
                 return Task.multilabel_classification
             else:
                 return Task.multiclass_multioutput_classification
-        elif isinstance(y.iloc[0], SequenceTypes):
+        elif isinstance(y.iloc[0], Seq1dim):
             return Task.multilabel_classification
         elif y.nunique() == 1:
             raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
@@ -258,7 +257,7 @@ class DataConfig:
         else:
             inc = []
             for col in lst(self.stratify):
-                if isinstance(col, IntTypes):
+                if isinstance(col, Int):
                     if -df.shape[1] <= col <= df.shape[1]:
                         inc.append(df.columns[int(col)])
                     else:
@@ -1038,7 +1037,7 @@ class ClassMap:
         return key.lower() if isinstance(key, str) else key
 
     def _get_data(self, key: Any) -> Any:
-        if isinstance(key, IntTypes) and key not in self.keys():
+        if isinstance(key, Int) and key not in self.keys():
             try:
                 return self.__data[key]
             except IndexError:
@@ -1073,9 +1072,9 @@ class ClassMap:
                 self.__data.append(self._check(elem))
 
     def __getitem__(self, key: Any) -> Any:
-        if isinstance(key, SequenceTypes):
+        if isinstance(key, Seq1dim):
             return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
-        elif isinstance(key, SegmentTypes):
+        elif isinstance(key, Segment):
             return self.__class__(*get_segment(self.__data, key), key=self.__key)
         elif isinstance(key, slice):
             return self.__class__(*self.__data[key], key=self.__key)
@@ -1083,7 +1082,7 @@ class ClassMap:
             return self._get_data(key)
 
     def __setitem__(self, key: Any, value: Any):
-        if isinstance(key, IntTypes):
+        if isinstance(key, Int):
             self.__data[key] = self._check(value)
         else:
             try:
@@ -1168,7 +1167,7 @@ def flt(x: Any) -> Any:
         Object.
 
     """
-    return x[0] if isinstance(x, SequenceTypes) and len(x) == 1 else x
+    return x[0] if isinstance(x, Seq1dim) and len(x) == 1 else x
 
 
 def lst(x: Any) -> list[Any]:
@@ -1185,7 +1184,7 @@ def lst(x: Any) -> list[Any]:
         Item as list with length 1 or provided sequence as list.
 
     """
-    return list(x) if isinstance(x, (dict, ClassMap, *SequenceTypes)) else [x]
+    return list(x) if isinstance(x, dict | Seq1dim | ClassMap) else [x]
 
 
 def it(x: Any) -> Any:
@@ -1358,7 +1357,7 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
 
-    if isinstance(X, SeriesTypes):
+    if isinstance(X, Series):
         return X.replace(
             to_replace=(missing_values or []) + default_values,
             value=get_nan(X.dtype),
@@ -1384,7 +1383,7 @@ def get_cols(elem: Pandas) -> list[Series]:
         Columns in elem.
 
     """
-    if isinstance(elem, SeriesTypes):
+    if isinstance(elem, Series):
         return [elem]
     else:
         return [elem[col] for col in elem.columns]
@@ -1827,7 +1826,7 @@ def to_df(
     if data is not None:
         if not isinstance(data, bk.DataFrame):
             # Assign default column names (dict already has column names)
-            if not isinstance(data, (dict, PandasTypes)) and columns is None:
+            if not isinstance(data, dict | Pandas) and columns is None:
                 columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
             if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
@@ -2034,7 +2033,7 @@ def check_is_fitted(
             Whether the attribute's value is False or empty.
 
         """
-        if isinstance(value := getattr(obj, attr), PandasTypes):
+        if isinstance(value := getattr(obj, attr), Pandas):
             return value.empty
         else:
             return not value
@@ -2428,7 +2427,7 @@ def transform_one(
         use_cols = [c for c in inc if c in og.columns]
 
         # Convert to pandas and assign proper column names
-        if not isinstance(out, DataFrameTypes):
+        if not isinstance(out, DataFrame):
             if hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
             elif hasattr(transformer, "get_feature_names"):
@@ -2489,7 +2488,7 @@ def transform_one(
             name=getattr(yt, "name", None),
             columns=getattr(yt, "columns", None),
         )
-        if isinstance(yt, DataFrameTypes):
+        if isinstance(yt, DataFrame):
             y_new = prepare_df(y_new, yt)
     elif "X" in params and X is not None and any(c in Xt for c in inc):
         # X in -> X out
@@ -2503,7 +2502,7 @@ def transform_one(
             columns=getattr(yt, "columns", None),
         )
         X_new = Xt if Xt is None else Xt.set_index(y_new.index)
-        if isinstance(yt, DataFrameTypes):
+        if isinstance(yt, DataFrame):
             y_new = prepare_df(y_new, yt)
 
     return X_new, y_new

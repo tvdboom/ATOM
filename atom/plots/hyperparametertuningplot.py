@@ -28,9 +28,8 @@ from sklearn.utils._bunch import Bunch
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, Int, IntLargerEqualZero, IntLargerZero, IntTypes, Legend,
-    MetricSelector, Model, ModelSelector, ModelsSelector, ParamsSelector,
-    Scalar, SegmentTypes,
+    Bool, Int, IntLargerEqualZero, IntLargerZero, Legend, MetricSelector,
+    Model, ModelSelector, ModelsSelector, ParamsSelector, Scalar, Segment,
 )
 from atom.utils.utils import (
     bk, check_dependency, crash, divide, get_segment, it, lst, rnd,
@@ -96,12 +95,12 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         """
         if params is None:
             params_c = list(model._ht["distributions"])
-        elif isinstance(params, SegmentTypes):
+        elif isinstance(params, Segment):
             params_c = get_segment(list(model._ht["distributions"]), params)
         else:
             params_c = []
             for param in lst(params):
-                if isinstance(param, IntTypes):
+                if isinstance(param, Int):
                     params_c.append(list(model._ht["distributions"])[param])
                 elif isinstance(param, str):
                     for p in param.split("+"):
@@ -742,7 +741,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         for d in dims:
             if "ticktext" in d:
                 # Skip processing for logarithmic params
-                if all(isinstance(i, IntTypes) for i in d["values"]):
+                if all(isinstance(i, Int) for i in d["values"]):
                     # Order categorical values
                     mapping = [d["ticktext"][i] for i in d["values"]]
                     d["ticktext"] = sort_mixed_types(d["ticktext"])

@@ -5,7 +5,6 @@
 
 As of the moment, ATOM supports the following Python versions:
 
-* [Python 3.9](https://www.python.org/downloads/release/python-390/)
 * [Python 3.10](https://www.python.org/downloads/release/python-3100/)
 * [Python 3.11](https://www.python.org/downloads/release/python-3110/)
 

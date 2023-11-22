@@ -24,9 +24,9 @@ from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, DataFrameTypes, Index, Int,
-    IntLargerEqualZero, IntTypes, Pandas, RowSelector, Scalar, SegmentTypes,
-    SeriesTypes, TargetSelector, TargetsSelector, XSelector, YSelector,
+    Bool, ColumnSelector, DataFrame, Index, Int, IntLargerEqualZero, Pandas,
+    RowSelector, Scalar, Segment, Series, TargetSelector, TargetsSelector,
+    XSelector, YSelector,
 )
 from atom.utils.utils import (
     DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
@@ -247,7 +247,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(obj, SeriesTypes):
+            if isinstance(obj, Series):
                 if obj.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -508,15 +508,15 @@ class Branch:
 
         inc: list[Hashable] = []
         exc: list[Hashable] = []
-        if isinstance(rows, DataFrameTypes):
+        if isinstance(rows, DataFrame):
             inc.extend(rows.index)
-        elif isinstance(rows, SegmentTypes):
+        elif isinstance(rows, Segment):
             inc.extend(indices[rows])
         else:
             for row in lst(rows):
                 if row in indices:
                     inc.append(row)
-                elif isinstance(row, IntTypes):
+                elif isinstance(row, Int):
                     if -len(indices) <= row < len(indices):
                         inc.append(indices[int(row)])
                     else:
@@ -604,13 +604,13 @@ class Branch:
                 return list(df.select_dtypes(include=["number"]).columns)
             else:
                 return list(df.columns)
-        elif isinstance(columns, DataFrameTypes):
+        elif isinstance(columns, DataFrame):
             inc.extend(list(columns.columns))
-        elif isinstance(columns, SegmentTypes):
+        elif isinstance(columns, Segment):
             inc.extend(list(df.columns[columns]))
         else:
             for col in lst(columns):
-                if isinstance(col, IntTypes):
+                if isinstance(col, Int):
                     if -df.shape[1] <= col < df.shape[1]:
                         inc.append(df.columns[int(col)])
                     else:
@@ -766,7 +766,7 @@ class Branch:
         if only_columns and not isinstance(target, tuple):
             return get_column(target)
         elif isinstance(target, tuple):
-            if not isinstance(self.y, DataFrameTypes):
+            if not isinstance(self.y, DataFrame):
                 raise ValueError(
                     f"Invalid value for the target parameter, got {target}. "
                     "A tuple is only accepted for multioutput tasks."

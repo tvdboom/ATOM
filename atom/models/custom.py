@@ -7,6 +7,8 @@ Description: Module containing the CustomModel class.
 
 """
 
+from beartype.typing import Any
+
 from atom.basemodel import ClassRegModel
 from atom.utils.types import Predictor
 
@@ -58,8 +60,13 @@ class CustomModel(ClassRegModel):
         """Return the estimator's class."""
         return self._est
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -67,4 +74,4 @@ class CustomModel(ClassRegModel):
             Estimator instance.
 
         """
-        return super()._get_est(**{**self._params, **params})
+        return super()._get_est(self._params | params)

@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Hashable, Literal
+from beartype.typing import Any, Hashable, Literal, Sequence
 from category_encoders import (
     BackwardDifferenceEncoder, BaseNEncoder, BinaryEncoder, CatBoostEncoder,
     HelmertEncoder, JamesSteinEncoder, MEstimateEncoder, OneHotEncoder,
@@ -45,11 +45,10 @@ from atom.basetransformer import BaseTransformer
 from atom.pipeline import Pipeline
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.types import (
-    Bins, Bool, CategoricalStrats, DataFrame, DataFrameTypes,
-    DiscretizerStrats, Engine, Estimator, FloatLargerZero, IntLargerEqualZero,
-    IntLargerTwo, NJobs, NormalizerStrats, NumericalStrats, Pandas,
-    PrunerStrats, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
-    SeriesTypes, Transformer, Verbose, XSelector, YSelector,
+    Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
+    Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo, NJobs,
+    NormalizerStrats, NumericalStrats, Pandas, PrunerStrats, Scalar,
+    ScalerStrats, Seq1dim, Series, Transformer, Verbose, XSelector, YSelector,
 )
 from atom.utils.utils import (
     bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
@@ -83,7 +82,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -128,7 +127,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -172,7 +171,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -360,7 +359,7 @@ class Balancer(TransformerMixin):
         self._check_feature_names(Xt, reset=True)
         self._check_n_features(Xt, reset=True)
 
-        if isinstance(yt, DataFrameTypes):
+        if isinstance(yt, DataFrame):
             raise ValueError("The Balancer class does not support multioutput tasks.")
         else:
             self.target_names_in_ = np.array([yt.name])
@@ -756,13 +755,13 @@ class Cleaner(TransformerMixin):
         self._log("Fitting Cleaner...", 1)
 
         if yt is not None:
-            if isinstance(yt, SeriesTypes):
+            if isinstance(yt, Series):
                 self.target_names_in_ = np.array([yt.name])
             else:
                 self.target_names_in_ = yt.columns.values
 
             if self.drop_chars:
-                if isinstance(y, SeriesTypes):
+                if isinstance(y, Series):
                     yt.name = re.sub(self.drop_chars, "", str(yt.name))
                 else:
                     yt = yt.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
@@ -772,7 +771,7 @@ class Cleaner(TransformerMixin):
 
             if self.encode_target:
                 for col in get_cols(yt):
-                    if isinstance(col.iloc[0], SequenceTypes):  # Multilabel
+                    if isinstance(col.iloc[0], Seq1dim):  # Multilabel
                         MultiLabelBinarizer = self._get_est_class(
                             name="MultiLabelBinarizer",
                             module="preprocessing",
@@ -868,7 +867,7 @@ class Cleaner(TransformerMixin):
 
         if yt is not None:
             if self.drop_chars:
-                if isinstance(yt, SeriesTypes):
+                if isinstance(yt, Series):
                     yt.name = re.sub(self.drop_chars, "", str(yt.name))
                 else:
                     yt = yt.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
@@ -901,7 +900,7 @@ class Cleaner(TransformerMixin):
                             )
 
                         # Replace target with encoded column(s)
-                        if isinstance(yt, SeriesTypes):
+                        if isinstance(yt, Series):
                             y_trans = out
                         else:
                             y_trans = merge(y_trans, out)
@@ -966,14 +965,14 @@ class Cleaner(TransformerMixin):
                         self._log(f" --> Inversely label-encoding column {col}.", 2)
                         out = est.inverse_transform(bk.DataFrame(yt)[col])
 
-                    elif isinstance(yt, DataFrameTypes):
+                    elif isinstance(yt, DataFrame):
                         self._log(f" --> Inversely label-binarizing column {col}.", 2)
                         out = est.inverse_transform(
                             yt.loc[:, yt.columns.str.startswith(f"{col}_")].to_numpy()
                         )
 
                     # Replace encoded columns with target column
-                    if isinstance(yt, SeriesTypes):
+                    if isinstance(yt, Series):
                         y_trans = to_series(out, yt.index, col)
                     else:
                         y_trans = merge(y_trans, to_series(out, yt.index, col))
@@ -1169,7 +1168,7 @@ class Discretizer(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1249,7 +1248,7 @@ class Discretizer(TransformerMixin):
                 bins_c = self.bins
 
             if self.strategy != "custom":
-                if isinstance(bins_c, SequenceTypes):
+                if isinstance(bins_c, Sequence):
                     try:
                         bins_x = bins_c[i]  # Fetch the i-th bin for the i-th column
                     except IndexError:
@@ -1284,7 +1283,7 @@ class Discretizer(TransformerMixin):
                 )
 
             else:
-                if not isinstance(bins_c, SequenceTypes):
+                if not isinstance(bins_c, Sequence):
                     raise TypeError(
                         f"Invalid type for the bins parameter, got {bins_c}. Only "
                         "a sequence of bin edges is accepted when strategy='custom'."
@@ -1314,7 +1313,7 @@ class Discretizer(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1664,7 +1663,7 @@ class Encoder(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1907,7 +1906,7 @@ class Imputer(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2289,7 +2288,7 @@ class Normalizer(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2347,7 +2346,7 @@ class Normalizer(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2381,7 +2380,7 @@ class Normalizer(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2723,9 +2722,9 @@ class Pruner(TransformerMixin):
         else:
             # Replace the columns in X and y with the new values from objective
             Xt.update(objective)
-            if isinstance(yt, SeriesTypes) and yt.name in objective:
+            if isinstance(yt, Series) and yt.name in objective:
                 yt.update(objective[str(yt.name)])
-            elif isinstance(yt, DataFrameTypes):
+            elif isinstance(yt, DataFrame):
                 yt.update(objective)
 
         if yt is None:
@@ -2872,7 +2871,7 @@ class Scaler(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2919,7 +2918,7 @@ class Scaler(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2953,7 +2952,7 @@ class Scaler(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

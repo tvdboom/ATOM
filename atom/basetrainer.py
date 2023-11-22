@@ -26,7 +26,7 @@ from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
-from atom.utils.types import Model, SequenceTypes
+from atom.utils.types import Model, Sequence
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, Task, check_dependency, get_custom_scorer, lst,
     sign, time_to_str,
@@ -104,7 +104,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             Parameter with model names as keys.
 
         """
-        if isinstance(value, SequenceTypes):
+        if isinstance(value, Sequence):
             if len(value) != len(self._models):
                 raise ValueError(
                     f"Invalid value for the {param} parameter. The length "
@@ -296,7 +296,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                                     )
                             elif k not in self._models:
                                 self._ht_params[key][name][k] = v
-            elif key in {**sign(create_study), **sign(Study.optimize)}:
+            elif key in sign(create_study) | sign(Study.optimize):
                 self._ht_params[key] = {k: value for k in self._models.keys()}
             else:
                 raise ValueError(

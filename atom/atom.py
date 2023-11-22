@@ -22,7 +22,7 @@ import dill as pickle
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Callable, Iterator, Literal, TypeVar
+from beartype.typing import Any, Callable, Iterator, Literal, Sequence, TypeVar
 from joblib.memory import Memory
 from pandas._typing import DtypeObj
 from scipy import stats
@@ -55,9 +55,8 @@ from atom.utils.types import (
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Sequence, SequenceTypes, Series,
-    TargetSelector, Transformer, TSIndexTypes, VectorizerStarts, Verbose,
-    Warnings, XSelector, YSelector,
+    RowSelector, Scalar, ScalerStrats, Series, TargetSelector, Transformer,
+    TSIndex, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -541,7 +540,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         if isinstance(rows, str):
             rows_c = [(self.branch._get_rows(rows), rows)]
-        elif isinstance(rows, SequenceTypes):
+        elif isinstance(rows, Sequence):
             rows_c = [(self.branch._get_rows(r), r) for r in rows]
         elif isinstance(rows, dict):
             rows_c = [(self.branch._get_rows(v), k) for k, v in rows.items()]
@@ -938,7 +937,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         for set_ in ("train", "test", "holdout"):
             if (data := getattr(self, set_)) is not None:
                 self._log(f"{set_.capitalize()} set size: {len(data)}", _vb)
-                if isinstance(self.branch.train.index, TSIndexTypes):
+                if isinstance(self.branch.train.index, TSIndex):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)

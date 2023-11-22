@@ -32,10 +32,9 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, DataFrameTypes, FloatZeroToOneExc, Int, IntTypes,
-    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Scalar, Segment, SegmentTypes, SequenceTypes, Series,
-    YSelector,
+    Bool, DataFrame, FloatZeroToOneExc, Int, MetricConstructor, Model,
+    ModelSelector, ModelsSelector, Pandas, RowSelector, Scalar, Segment,
+    Series, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Task, bk, check_is_fitted, composed, crash,
@@ -53,7 +52,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     def __getstate__(self) -> dict[str, Any]:
         # Store an extra attribute with the package versions
-        return {**self.__dict__, "_versions": get_versions(self._models)}
+        return self.__dict__ | {"_versions": get_versions(self._models)}
 
     def __setstate__(self, state: dict[str, Any]):
         versions = state.pop("_versions", None)
@@ -109,7 +108,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
             )
-        elif isinstance(item, IntTypes):
+        elif isinstance(item, Int):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
             if item in self._branches:
@@ -289,7 +288,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             pass
         elif self._config.index is False:
             df = df.reset_index(drop=True)
-        elif isinstance(self._config.index, IntTypes):
+        elif isinstance(self._config.index, Int):
             if -df.shape[1] <= self._config.index <= df.shape[1]:
                 df = df.set_index(df.columns[int(self._config.index)], drop=True)
             else:
@@ -415,7 +414,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             data = _subsample(data)
 
-            if isinstance(self._config.index, SequenceTypes):
+            if isinstance(self._config.index, Sequence):
                 if len(self._config.index) != len(data):
                     raise IndexError(
                         "Invalid value for the index parameter. Length of "
@@ -486,7 +485,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             except ValueError as ex:
                 # Clarify common error with stratification for multioutput tasks
-                if "least populated class" in str(ex) and isinstance(y, DataFrameTypes):
+                if "least populated class" in str(ex) and isinstance(y, DataFrame):
                     raise ValueError(
                         "Stratification for multioutput tasks is applied over all target "
                         "columns, which results in a least populated class that has only "
@@ -572,7 +571,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self._config.index, SequenceTypes):
+            if isinstance(self._config.index, Sequence):
                 len_data = len(train) + len(test)
                 if holdout is not None:
                     len_data += len(holdout)
@@ -605,7 +604,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self._goal.name == "forecast" and not isinstance(y, (IntTypes, str)):
+            if self._goal.name == "forecast" and not isinstance(y, Int | str):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._check_input(y=y))
             elif not self.branch._container:
@@ -626,7 +625,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 X_train, y_train = self._check_input(arrays[0][0], arrays[0][1])
                 X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
-            elif isinstance(arrays[1], (*IntTypes, str)) or n_cols(arrays[1]) == 1:
+            elif isinstance(arrays[1], Int | str) or n_cols(arrays[1]) == 1:
                 if not self._goal.name == "forecast":
                     # arrays=(X, y)
                     sets = _no_data_sets(*self._check_input(arrays[0], arrays[1]))
@@ -730,11 +729,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         exc: list[Model] = []
         if models is None:
             inc = self._models.values()
-        elif isinstance(models, SegmentTypes):
+        elif isinstance(models, Segment):
             inc = get_segment(self._models, models)
         else:
             for model in lst(models):
-                if isinstance(model, IntTypes):
+                if isinstance(model, Int):
                     try:
                         inc.append(self._models[model])
                     except KeyError:

@@ -67,11 +67,10 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    HT, Backend, Bool, DataFrame, DataFrameTypes, Engine, FHSelector, Float,
-    FloatTypes, FloatZeroToOneExc, Int, IntLargerEqualZero, IntTypes,
-    MetricConstructor, NJobs, Pandas, PredictionMethod, Predictor, RowSelector,
-    Scalar, Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings,
-    XSelector, YSelector,
+    HT, Backend, Bool, DataFrame, Engine, FHSelector, Float, FloatZeroToOneExc,
+    Int, IntLargerEqualZero, MetricConstructor, NJobs, Pandas,
+    PredictionMethod, Predictor, RowSelector, Scalar, Scorer, Sequence, Stages,
+    TargetSelector, Verbose, Warnings, XSelector, YSelector,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -282,7 +281,7 @@ class BaseModel(RunnerPlot):
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Pandas:
-        if isinstance(item, IntTypes):
+        if isinstance(item, Int):
             return self.dataset[self.columns[item]]
         else:
             return self.dataset[item]  # Get a subset of the dataset
@@ -412,7 +411,7 @@ class BaseModel(RunnerPlot):
         """
         return deepcopy(params)
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the estimator instance.
 
         Use the multioutput meta-estimator if the estimator has
@@ -423,8 +422,8 @@ class BaseModel(RunnerPlot):
 
         Parameters
         ----------
-        **params
-            Unpacked hyperparameters for the estimator.
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -819,7 +818,7 @@ class BaseModel(RunnerPlot):
         else:
             if threshold and self.task.is_binary and hasattr(self, "predict_proba"):
                 y_true, y_pred = self._get_pred(rows, attr="predict_proba")
-                if isinstance(y_pred, DataFrameTypes):
+                if isinstance(y_pred, DataFrame):
                     # Update every target column with its corresponding threshold
                     for i, value in enumerate(threshold):
                         y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
@@ -962,9 +961,7 @@ class BaseModel(RunnerPlot):
                 trial.set_user_attr(key, value)
 
             # Create estimator instance with trial-specific hyperparameters
-            estimator = self._get_est(
-                **{**self._est_params, **self._trial_to_est(params)}
-            )
+            estimator = self._get_est(self._est_params | self._trial_to_est(params))
 
             # Check if the same parameters have already been evaluated
             for t in trial.study.get_trials(False, states=(TrialState.COMPLETE,))[::-1]:
@@ -977,13 +974,13 @@ class BaseModel(RunnerPlot):
                 # Follow the same stratification strategy as atom
                 cols = self._config.get_stratify_columns(self.og.train, self.og.y_train)
 
-                if isinstance(cv := self._ht["cv"], IntTypes):
+                if isinstance(cv := self._ht["cv"], Int):
                     if self.task.is_forecast:
                         if cv == 1:
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
-                    elif isinstance(self._ht["cv"], IntTypes):
+                    elif isinstance(self._ht["cv"], Int):
                         # We use ShuffleSplit instead of K-fold because it
                         # works with n_splits=1 and multioutput stratification
                         if cols is None:
@@ -1169,7 +1166,7 @@ class BaseModel(RunnerPlot):
         # Assign estimator if not done already
         if self._estimator is None:
             self._check_est_params()
-            self._estimator = self._get_est(**{**self._est_params, **self.best_params})
+            self._estimator = self._get_est(self._est_params | self.best_params)
 
         self._estimator = self._fit_estimator(
             estimator=self.estimator,
@@ -1808,7 +1805,7 @@ class BaseModel(RunnerPlot):
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
             y_pred = self.inverse_transform(y=self.predict([X], verbose=0), verbose=0)
-            if isinstance(y_pred, DataFrameTypes):
+            if isinstance(y_pred, DataFrame):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])
@@ -2031,7 +2028,7 @@ class BaseModel(RunnerPlot):
             Scores of the model.
 
         """
-        if isinstance(threshold, FloatTypes):
+        if isinstance(threshold, Float):
             threshold_c = [threshold] * self.branch._data.n_cols  # Length=n_targets
         elif len(threshold) != self.branch._data.n_cols:
             raise ValueError(

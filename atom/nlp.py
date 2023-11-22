@@ -18,6 +18,7 @@ from string import punctuation
 import nltk
 import pandas as pd
 from beartype import beartype
+from beartype.typing import Sequence
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
@@ -28,8 +29,8 @@ from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, BoolTypes, DataFrame, Engine, FloatLargerZero, Sequence,
-    VectorizerStarts, Verbose, XSelector, YSelector,
+    Bool, DataFrame, Engine, FloatLargerZero, VectorizerStarts, Verbose,
+    XSelector, YSelector,
 )
 from atom.utils.utils import (
     check_is_fitted, check_nltk_module, composed, crash, get_corpus, is_sparse,
@@ -167,23 +168,23 @@ class TextCleaner(TransformerMixin):
     """
 
     def __init__(
-            self,
-            *,
-            decode: Bool = True,
-            lower_case: Bool = True,
-            drop_email: Bool = True,
-            regex_email: str | None = None,
-            drop_url: Bool = True,
-            regex_url: str | None = None,
-            drop_html: Bool = True,
-            regex_html: str | None = None,
-            drop_emoji: Bool = True,
-            regex_emoji: str | None = None,
-            drop_number: Bool = True,
-            regex_number: str | None = None,
-            drop_punctuation: Bool = True,
-            verbose: Verbose = 0,
-            logger: str | Path | Logger | None = None,
+        self,
+        *,
+        decode: Bool = True,
+        lower_case: Bool = True,
+        drop_email: Bool = True,
+        regex_email: str | None = None,
+        drop_url: Bool = True,
+        regex_url: str | None = None,
+        drop_html: Bool = True,
+        regex_html: str | None = None,
+        drop_emoji: Bool = True,
+        regex_emoji: str | None = None,
+        drop_number: Bool = True,
+        regex_number: str | None = None,
+        drop_punctuation: Bool = True,
+        verbose: Verbose = 0,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -211,7 +212,7 @@ class TextCleaner(TransformerMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -444,14 +445,14 @@ class TextNormalizer(TransformerMixin):
     """
 
     def __init__(
-            self,
-            *,
-            stopwords: Bool | str = True,
-            custom_stopwords: Sequence[str] | None = None,
-            stem: Bool | str = False,
-            lemmatize: Bool = True,
-            verbose: Verbose = 0,
-            logger: str | Path | Logger | None = None,
+        self,
+        *,
+        stopwords: Bool | str = True,
+        custom_stopwords: Sequence[str] | None = None,
+        stem: Bool | str = False,
+        lemmatize: Bool = True,
+        verbose: Verbose = 0,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -470,7 +471,7 @@ class TextNormalizer(TransformerMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -514,7 +515,7 @@ class TextNormalizer(TransformerMixin):
 
         stopwords = set()
         if self.stopwords:
-            if isinstance(self.stopwords, BoolTypes):
+            if isinstance(self.stopwords, Bool):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
@@ -531,7 +532,7 @@ class TextNormalizer(TransformerMixin):
             Xt[corpus] = Xt[corpus].apply(f)
 
         if self.stem:
-            if isinstance(self.stem, BoolTypes):
+            if isinstance(self.stem, Bool):
                 self.stem = "english"
 
             self._log(" --> Applying stemming.", 2)
@@ -674,13 +675,13 @@ class Tokenizer(TransformerMixin):
     """
 
     def __init__(
-            self,
-            bigram_freq: FloatLargerZero | None = None,
-            trigram_freq: FloatLargerZero | None = None,
-            quadgram_freq: FloatLargerZero | None = None,
-            *,
-            verbose: Verbose = 0,
-            logger: str | Path | Logger | None = None,
+        self,
+        bigram_freq: FloatLargerZero | None = None,
+        trigram_freq: FloatLargerZero | None = None,
+        quadgram_freq: FloatLargerZero | None = None,
+        *,
+        verbose: Verbose = 0,
+        logger: str | Path | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
@@ -698,7 +699,7 @@ class Tokenizer(TransformerMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -918,15 +919,15 @@ class Vectorizer(TransformerMixin):
     """
 
     def __init__(
-            self,
-            strategy: VectorizerStarts = "bow",
-            *,
-            return_sparse: Bool = True,
-            device: str = "cpu",
-            engine: Engine = {"data": "numpy", "estimator": "sklearn"},
-            verbose: Verbose = 0,
-            logger: str | Path | Logger | None = None,
-            **kwargs,
+        self,
+        strategy: VectorizerStarts = "bow",
+        *,
+        return_sparse: Bool = True,
+        device: str = "cpu",
+        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        verbose: Verbose = 0,
+        logger: str | Path | Logger | None = None,
+        **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy
@@ -944,7 +945,7 @@ class Vectorizer(TransformerMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -993,7 +994,7 @@ class Vectorizer(TransformerMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: int, str, series-like, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

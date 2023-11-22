@@ -5,7 +5,6 @@
 
 As of the moment, ATOM supports the following Python versions:
 
-* [Python 3.9](https://www.python.org/downloads/release/python-390/)
 * [Python 3.10](https://www.python.org/downloads/release/python-3100/)
 * [Python 3.11](https://www.python.org/downloads/release/python-3110/)
 
@@ -74,7 +73,8 @@ additional libraries. You can install all the optional dependencies using
 The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
 necessary to [contribute][contributing] to the project. Install them
-using `pip install atom-ml[dev]`.
+running `pdm install --dev` (don't forget to install [pdm](https://pdm-project.org/latest/)
+with `pip install -U pdm`).
 
 **Linting**
 
