@@ -9,16 +9,18 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from collections.abc import Callable, Hashable, Iterable, Iterator
+from typing import (
+    TYPE_CHECKING, Annotated, Any, Literal, SupportsIndex, TypeAlias,
+    TypedDict, TypeVar, overload, runtime_checkable,
+)
 
 import modin.pandas as md
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
-from beartype.typing import (
-    Any, Callable, Hashable, Iterable, Literal, Protocol, Sequence, TypeAlias,
-    TypedDict, TypeVar, runtime_checkable,
-)
+from beartype.door import is_bearable
+from beartype.typing import Protocol
 from beartype.vale import Is
 from optuna.distributions import BaseDistribution
 from sktime.forecasting.base import ForecastingHorizon
@@ -30,8 +32,42 @@ if TYPE_CHECKING:
 
 # Classes for type hinting ========================================= >>
 
-T = TypeVar("T")
-T_cov = TypeVar("T_cov", covariant=True)
+_T = TypeVar("_T")
+
+
+class Sequence(Protocol[_T]):
+    """Type hint factory for sequences with subscripted types.
+
+    Dynamically creates new `Annotated[Sequence[...], ...]` type hints,
+    subscripted by the passed type. For subscripted types, it passes
+    when the type is an array-like and all items in the sequence are of
+    the subscripted type.
+
+    Parameters
+    ----------
+    _T: object
+        Arbitrary child type hint to subscript the protocol.
+
+    Notes
+    -----
+    See https://github.com/beartype/beartype/discussions/277#discussioncomment-7086878
+
+    """
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[_T]: ...
+    @overload
+    def __getitem__(self, __i: SupportsIndex, /) -> _T: ...
+    @overload
+    def __getitem__(self, __s: slice, /) -> Sequence[_T]: ...
+
+    @classmethod
+    def __class_getitem__(cls, item: Any) -> Annotated[Any, Is]:
+        return Annotated[
+            cls,
+            Is[lambda lst: isinstance(lst, sequence_t)]
+            & Is[lambda lst: all(is_bearable(i, item) for i in lst)]
+        ]
 
 
 class Engine(TypedDict, total=False):
@@ -109,7 +145,6 @@ class Model(Protocol):
 # Variable types for type hinting ================================== >>
 
 # General types
-# TODO: From Python 3.11, import Self type hint from typing
 Bool: TypeAlias = bool | np.bool_
 Int: TypeAlias = int | np.integer
 Float: TypeAlias = float | np.floating
@@ -127,11 +162,11 @@ TSIndex: TypeAlias = (
 Series: TypeAlias = pd.Series | md.Series
 DataFrame: TypeAlias = pd.DataFrame | md.DataFrame
 Pandas: TypeAlias = Series | DataFrame
-Seq1dim: TypeAlias = list | tuple | np.ndarray | Index | Series
 
 # Numerical types
 IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
 IntLargerEqualZero: TypeAlias = Annotated[Int, Is[lambda x: x >= 0]]
+IntLargerOne: TypeAlias = Annotated[Int, Is[lambda x: x > 1]]
 IntLargerTwo: TypeAlias = Annotated[Int, Is[lambda x: x > 2]]
 IntLargerFour: TypeAlias = Annotated[Int, Is[lambda x: x > 4]]
 FloatLargerZero: TypeAlias = Annotated[Scalar, Is[lambda x: x > 0]]
@@ -141,17 +176,17 @@ FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
 # Types for X, y and fh
 XTypes: TypeAlias = (
-    dict[str, Sequence]
-    | Sequence[Sequence]
-    | Iterable[Sequence | tuple[Hashable, Sequence] | dict[str, Sequence]]
+    dict[str, Sequence[Any]]
+    | Sequence[Sequence[Any]]
+    | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
     | np.ndarray
     | sps.spmatrix
     | DataFrame
 )
 XSelector: TypeAlias = XTypes | Callable[..., XTypes]
-YTypes: TypeAlias = dict[str, Any] | Sequence | Series | XSelector
+YTypes: TypeAlias = dict[str, Any] | Sequence[Any] | XSelector
 YSelector: TypeAlias = Int | str | YTypes
-FHSelector: TypeAlias = int | Sequence | Index | Series | ForecastingHorizon
+FHSelector: TypeAlias = int | Sequence[Any] | ForecastingHorizon
 
 # Return types for transform methods
 TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame
@@ -203,9 +238,9 @@ NumericalStrats: TypeAlias = Literal[
 CategoricalStrats: TypeAlias = Literal["drop", "most_frequent"]
 DiscretizerStrats: TypeAlias = Literal["uniform", "quantile", "kmeans", "custom"]
 Bins: TypeAlias = (
-    IntLargerZero
+    IntLargerOne
     | Sequence[Scalar]
-    | dict[str, IntLargerZero | Sequence[Scalar]]
+    | dict[str, IntLargerOne | Sequence[Scalar]]
 )
 NormalizerStrats: TypeAlias = Literal["yeojohnson", "boxcox", "quantile"]
 PrunerStrats: TypeAlias = Literal[
@@ -257,3 +292,19 @@ Legend: TypeAlias = Literal[
 
 # Mlflow stages
 Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]
+
+
+# Variable types for isinstance ================================== >>
+
+# Although injecting the type hints directly to isinstance works, mypy fails
+# https://github.com/python/mypy/issues/11673
+# https://github.com/python/mypy/issues/16358
+bool_t = (bool, np.bool_)
+int_t = (int, np.integer)
+float_t = (float, np.floating)
+segment_t = (slice, range)
+tsindex_t = TSIndex.__args__
+series_t = (pd.Series, md.Series)
+sequence_t = (range, list, tuple, np.ndarray, pd.Index, md.Index, pd.Series, md.Series)
+dataframe_t = (pd.DataFrame, md.DataFrame)
+pandas_t = (pd.Series, md.Series, pd.DataFrame, md.DataFrame)

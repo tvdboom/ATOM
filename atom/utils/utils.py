@@ -13,6 +13,7 @@ import os
 import sys
 import warnings
 from collections import deque
+from collections.abc import Callable, Hashable, Iterator
 from contextlib import contextmanager
 from copy import copy
 from dataclasses import dataclass
@@ -23,7 +24,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from unittest.mock import patch
 
 import mlflow
@@ -33,10 +34,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import scipy.sparse as sps
+from beartype import beartype
 from beartype.door import is_bearable
-from beartype.typing import (
-    Any, Callable, Hashable, Iterator, Literal, Sequence, TypeVar
-)
 from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
@@ -57,8 +56,9 @@ from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, DataFrame, Estimator, Float, Index, IndexSelector, Int,
     IntLargerEqualZero, MetricConstructor, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Seq1dim, Series, Transformer, TReturn, TReturns, Verbose,
-    XSelector, YSelector, YTypes,
+    Scorer, Segment, Sequence, Series, Transformer, TReturn, TReturns, Verbose,
+    XSelector, YSelector, YTypes, dataframe_t, int_t, pandas_t, segment_t,
+    sequence_t, series_t,
 )
 
 
@@ -70,6 +70,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 T_Pandas = TypeVar("T_Pandas", Series, DataFrame)
+T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 
 
 # Classes ========================================================== >>
@@ -104,22 +105,22 @@ class Goal(Enum):
 
         """
         if self.value == 1:
-            if isinstance(y, Series):
+            if isinstance(y, series_t):
                 return Task.regression
             else:
                 return Task.multioutput_regression
         elif self.value == 2:
-            if isinstance(y, Series):
+            if isinstance(y, series_t):
                 return Task.univariate_forecast
             else:
                 return Task.multivariate_forecast
 
-        if isinstance(y, DataFrame):
+        if isinstance(y, dataframe_t):
             if all(y[col].nunique() == 2 for col in y.columns):
                 return Task.multilabel_classification
             else:
                 return Task.multiclass_multioutput_classification
-        elif isinstance(y.iloc[0], Seq1dim):
+        elif isinstance(y.iloc[0], sequence_t):
             return Task.multilabel_classification
         elif y.nunique() == 1:
             raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
@@ -257,7 +258,7 @@ class DataConfig:
         else:
             inc = []
             for col in lst(self.stratify):
-                if isinstance(col, Int):
+                if isinstance(col, int_t):
                     if -df.shape[1] <= col <= df.shape[1]:
                         inc.append(df.columns[int(col)])
                     else:
@@ -1037,7 +1038,7 @@ class ClassMap:
         return key.lower() if isinstance(key, str) else key
 
     def _get_data(self, key: Any) -> Any:
-        if isinstance(key, Int) and key not in self.keys():
+        if isinstance(key, int_t) and key not in self.keys():
             try:
                 return self.__data[key]
             except IndexError:
@@ -1072,17 +1073,15 @@ class ClassMap:
                 self.__data.append(self._check(elem))
 
     def __getitem__(self, key: Any) -> Any:
-        if isinstance(key, Seq1dim):
+        if isinstance(key, sequence_t):
             return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
-        elif isinstance(key, Segment):
+        elif isinstance(key, segment_t):
             return self.__class__(*get_segment(self.__data, key), key=self.__key)
-        elif isinstance(key, slice):
-            return self.__class__(*self.__data[key], key=self.__key)
         else:
             return self._get_data(key)
 
     def __setitem__(self, key: Any, value: Any):
-        if isinstance(key, Int):
+        if isinstance(key, int_t):
             self.__data[key] = self._check(value)
         else:
             try:
@@ -1167,7 +1166,7 @@ def flt(x: Any) -> Any:
         Object.
 
     """
-    return x[0] if isinstance(x, Seq1dim) and len(x) == 1 else x
+    return x[0] if isinstance(x, sequence_t) and len(x) == 1 else x
 
 
 def lst(x: Any) -> list[Any]:
@@ -1184,7 +1183,7 @@ def lst(x: Any) -> list[Any]:
         Item as list with length 1 or provided sequence as list.
 
     """
-    return list(x) if isinstance(x, dict | Seq1dim | ClassMap) else [x]
+    return list(x) if isinstance(x, (dict, *sequence_t, ClassMap)) else [x]
 
 
 def it(x: Any) -> Any:
@@ -1357,7 +1356,7 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
 
-    if isinstance(X, Series):
+    if isinstance(X, series_t):
         return X.replace(
             to_replace=(missing_values or []) + default_values,
             value=get_nan(X.dtype),
@@ -1383,7 +1382,7 @@ def get_cols(elem: Pandas) -> list[Series]:
         Columns in elem.
 
     """
-    if isinstance(elem, Series):
+    if isinstance(elem, series_t):
         return [elem]
     else:
         return [elem[col] for col in elem.columns]
@@ -1753,7 +1752,7 @@ def to_pyarrow(column: Series, inverse: bool = False) -> Dtype:
     ----------
     column: series
         Column to get the dtype from. If it already has a pyarrow
-        dtype, return original dtype.
+        dtype, return the original dtype.
 
     inverse: bool, default=False
         Whether to convert to pyarrow or back from pyarrow.
@@ -2033,7 +2032,7 @@ def check_is_fitted(
             Whether the attribute's value is False or empty.
 
         """
-        if isinstance(value := getattr(obj, attr), Pandas):
+        if isinstance(value := getattr(obj, attr), pandas_t):
             return value.empty
         else:
             return not value
@@ -2410,6 +2409,8 @@ def transform_one(
     def prepare_df(out: TReturn, og: DataFrame) -> DataFrame:
         """Convert to df and set correct column names and order.
 
+        If ATOM's data backend="pyarrow", convert the dtypes.
+
         Parameters
         ----------
         out: np.ndarray, sps.matrix, series or dataframe
@@ -2427,7 +2428,7 @@ def transform_one(
         use_cols = [c for c in inc if c in og.columns]
 
         # Convert to pandas and assign proper column names
-        if not isinstance(out, DataFrame):
+        if not isinstance(out, dataframe_t):
             if hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
             elif hasattr(transformer, "get_feature_names"):
@@ -2435,8 +2436,10 @@ def transform_one(
                 columns = transformer.get_feature_names()
             else:
                 columns = name_cols(out, og, use_cols)
+        else:
+            columns = out.columns
 
-            out = to_df(out, index=og.index, columns=columns)
+        out = to_df(out, index=og.index, columns=columns)
 
         # Reorder columns if only a subset was used
         if len(use_cols) != og.shape[1]:
@@ -2488,7 +2491,7 @@ def transform_one(
             name=getattr(yt, "name", None),
             columns=getattr(yt, "columns", None),
         )
-        if isinstance(yt, DataFrame):
+        if isinstance(yt, dataframe_t):
             y_new = prepare_df(y_new, yt)
     elif "X" in params and X is not None and any(c in Xt for c in inc):
         # X in -> X out
@@ -2502,7 +2505,7 @@ def transform_one(
             columns=getattr(yt, "columns", None),
         )
         X_new = Xt if Xt is None else Xt.set_index(y_new.index)
-        if isinstance(yt, DataFrame):
+        if isinstance(yt, dataframe_t):
             y_new = prepare_df(y_new, yt)
 
     return X_new, y_new
@@ -2729,39 +2732,85 @@ def method_to_log(f: Callable) -> Callable:
     return wrapper
 
 
+def wrap_methods(f: Callable) -> Callable:
+    """Wrap transformer methods with shared code.
+
+    The following operations are always performed:
+
+    - Transform the input to pandas types.
+    - Check if the instance is fitted before transforming.
+    - Convert output to pyarrow dtypes if specified in config.
+
+    Parameters
+    ----------
+    f: callable
+        Function to decorate.
+
+    check_fitted: bool
+        Whether to check if the instance is fitted.
+
+    """
+
+    @wraps(f)
+    @beartype
+    def wrapper(
+        self: T_Transformer,
+        X: XSelector | None = None,
+        y: YSelector | None = None,
+        **kwargs,
+    ) -> T_Transformer | Pandas | tuple[DataFrame, Pandas]:
+        if f.__name__ == "fit":
+            Xt, yt = self._check_input(X, y)
+            self._check_feature_names(Xt, reset=True)
+            self._check_n_features(Xt, reset=True)
+            return f(self, Xt, yt, **kwargs)
+        else:
+            if "TransformerMixin" not in str(self.fit):
+                check_is_fitted(self)
+            Xt, yt = self._check_input(
+                X=X,
+                y=y,
+                columns=getattr(self, "feature_names_in_", None),
+                name=getattr(self, "target_names_in_", None),
+            )
+            return f(self, Xt, yt, **kwargs)
+
+    return wrapper
+
+
 # Custom scorers =================================================== >>
 
-def true_negatives(y_true: Sequence, y_pred: Sequence) -> Int:
+def true_negatives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[0]
 
 
-def false_positives(y_true: Sequence, y_pred: Sequence) -> Int:
+def false_positives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[1]
 
 
-def false_negatives(y_true: Sequence, y_pred: Sequence) -> Int:
+def false_negatives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[2]
 
 
-def true_positives(y_true: Sequence, y_pred: Sequence) -> Int:
+def true_positives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
     return confusion_matrix(y_true, y_pred).ravel()[3]
 
 
-def false_positive_rate(y_true: Sequence, y_pred: Sequence) -> Float:
+def false_positive_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return fp / (fp + tn)
 
 
-def true_positive_rate(y_true: Sequence, y_pred: Sequence) -> Float:
+def true_positive_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return tp / (tp + fn)
 
 
-def true_negative_rate(y_true: Sequence, y_pred: Sequence) -> Float:
+def true_negative_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return tn / (tn + fp)
 
 
-def false_negative_rate(y_true: Sequence, y_pred: Sequence) -> Float:
+def false_negative_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return fn / (fn + tp)

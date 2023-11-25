@@ -17,7 +17,8 @@ from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     ismethod, isroutine, signature,
 )
-from beartype.typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 
 import regex as re
 import yaml

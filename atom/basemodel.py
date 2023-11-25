@@ -17,7 +17,7 @@ from functools import cached_property
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
-from typing import overload
+from typing import Any, Literal, overload
 from unittest.mock import patch
 
 import dill as pickle
@@ -30,7 +30,6 @@ from beartype import beartype
 from beartype.roar import (
     BeartypeCallHintParamViolation, BeartypeCallHintReturnViolation,
 )
-from beartype.typing import Any, Literal
 from joblib.memory import Memory
 from joblib.parallel import Parallel, delayed
 from mlflow.data import from_pandas
@@ -70,7 +69,8 @@ from atom.utils.types import (
     HT, Backend, Bool, DataFrame, Engine, FHSelector, Float, FloatZeroToOneExc,
     Int, IntLargerEqualZero, MetricConstructor, NJobs, Pandas,
     PredictionMethod, Predictor, RowSelector, Scalar, Scorer, Sequence, Stages,
-    TargetSelector, Verbose, Warnings, XSelector, YSelector,
+    TargetSelector, Verbose, Warnings, XSelector, YSelector, dataframe_t,
+    float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -281,7 +281,7 @@ class BaseModel(RunnerPlot):
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Pandas:
-        if isinstance(item, Int):
+        if isinstance(item, int_t):
             return self.dataset[self.columns[item]]
         else:
             return self.dataset[item]  # Get a subset of the dataset
@@ -431,7 +431,7 @@ class BaseModel(RunnerPlot):
             Estimator instance.
 
         """
-        # Separate the parameters for the estimator from those in sub-estimators
+        # Separate the params for the estimator from those in sub-estimators
         base_params, sub_params = {}, {}
         for name, value in params.items():
             if "__" not in name:
@@ -818,7 +818,7 @@ class BaseModel(RunnerPlot):
         else:
             if threshold and self.task.is_binary and hasattr(self, "predict_proba"):
                 y_true, y_pred = self._get_pred(rows, attr="predict_proba")
-                if isinstance(y_pred, DataFrame):
+                if isinstance(y_pred, dataframe_t):
                     # Update every target column with its corresponding threshold
                     for i, value in enumerate(threshold):
                         y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
@@ -974,13 +974,13 @@ class BaseModel(RunnerPlot):
                 # Follow the same stratification strategy as atom
                 cols = self._config.get_stratify_columns(self.og.train, self.og.y_train)
 
-                if isinstance(cv := self._ht["cv"], Int):
+                if isinstance(cv := self._ht["cv"], int_t):
                     if self.task.is_forecast:
                         if cv == 1:
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
-                    elif isinstance(self._ht["cv"], Int):
+                    elif isinstance(self._ht["cv"], int_t):
                         # We use ShuffleSplit instead of K-fold because it
                         # works with n_splits=1 and multioutput stratification
                         if cols is None:
@@ -1805,7 +1805,7 @@ class BaseModel(RunnerPlot):
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
             y_pred = self.inverse_transform(y=self.predict([X], verbose=0), verbose=0)
-            if isinstance(y_pred, DataFrame):
+            if isinstance(y_pred, dataframe_t):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])
@@ -2028,7 +2028,7 @@ class BaseModel(RunnerPlot):
             Scores of the model.
 
         """
-        if isinstance(threshold, Float):
+        if isinstance(threshold, float_t):
             threshold_c = [threshold] * self.branch._data.n_cols  # Length=n_targets
         elif len(threshold) != self.branch._data.n_cols:
             raise ValueError(

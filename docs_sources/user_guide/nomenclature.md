@@ -119,20 +119,20 @@ range of values. When given as a parameter type, it includes both
 and [slice](https://docs.python.org/3/library/functions.html#slice).
 </div>
 
+<div id="sequence"><strong>sequence</strong></div>
+<div markdown style="margin: -1em 0 0 1.2em">
+A one-dimensional, indexable array of type [sequence](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range)
+(except string), [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html),
+[index][] or [series][]. This is the standard input format for a dataset's target
+column.
+</div>
+
 <div id="series"><strong>series</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 One-dimensional ndarray with axis labels of type
 [pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series)
 or its [modin](https://modin.readthedocs.io/en/stable/flow/modin/pandas/series.html)
 counterpart.
-</div>
-
-<div id="series-like"><strong>series-like</strong></div>
-<div markdown style="margin: -1em 0 0 1.2em">
-A one-dimensional, indexable array of type [sequence](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range),
-[np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html),
-[index][] or [series][]. This is the standard input format for a dataset's target
-column.
 </div>
 
 <div id="target"><strong>target</strong></div>

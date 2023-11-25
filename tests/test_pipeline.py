@@ -21,7 +21,7 @@ from .conftest import X_bin, y_bin
 
 @pytest.fixture
 def pipeline():
-    """Get a pipeline from atom with/without final estimator."""
+    """Get a pipeline from atom with/without a final estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
@@ -37,7 +37,7 @@ def pipeline():
 
 def test_getattr(pipeline):
     """Assert that attributes can be fetched from the final estimator."""
-    pl = pipeline(model=True).fit(X_bin, y_bin)
+    pl = pipeline(model=True)
     assert isinstance(pl.coef_, np.ndarray)
 
     # Final estimator has no attribute
@@ -56,7 +56,6 @@ def test_fit(pipeline):
 def test_internal_attrs_are_saved(pipeline):
     """Assert that cols and train_only attrs are stored after clone."""
     pl = pipeline(model=False)
-    pl.fit(X_bin, y_bin)
     assert pl.steps[-1][1]._cols == ["mean radius"]
     assert pl.steps[-2][1]._train_only is True
 

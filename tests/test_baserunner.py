@@ -138,7 +138,7 @@ def test_getitem_no_dataset():
 def test_getitem_int():
     """Assert that getitem works for a column index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom[0] is atom["mean radius"]
+    assert_frame_equal(atom[0], atom["mean radius"])
 
 
 def test_getitem_str_from_branch():

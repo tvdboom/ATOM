@@ -251,7 +251,7 @@ def test_error_y_is_None():
 
 @pytest.mark.parametrize("min_repeated", [2, 0.1])
 def test_remove_high_variance(min_repeated):
-    """Assert that high variance features are removed."""
+    """Assert that high-variance features are removed."""
     X = X_bin.copy()
     X["invalid"] = [f"{i}" for i in range(len(X))]  # Add column with maximum variance
     selector = FeatureSelector(min_repeated=min_repeated, max_repeated=None)

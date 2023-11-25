@@ -9,6 +9,8 @@ Description: Module containing all ensemble models.
 
 from __future__ import annotations
 
+from typing import Any
+
 from atom.basemodel import ClassRegModel
 from atom.utils.types import Model, Predictor
 from atom.utils.utils import sign
@@ -46,8 +48,13 @@ class Stacking(ClassRegModel):
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -103,8 +110,13 @@ class Voting(ClassRegModel):
                         f"a predict_proba method, got {m.fullname}."
                     )
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------

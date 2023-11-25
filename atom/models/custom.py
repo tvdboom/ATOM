@@ -7,7 +7,7 @@ Description: Module containing the CustomModel class.
 
 """
 
-from beartype.typing import Any
+from typing import Any
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import Predictor

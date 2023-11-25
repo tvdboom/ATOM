@@ -9,8 +9,10 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from typing import Any, Literal
+
 import numpy as np
-from beartype.typing import Any, Iterator, Literal, Sequence
 from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
@@ -21,8 +23,8 @@ from sklearn.utils.validation import check_memory
 from typing_extensions import Self
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Float, Pandas, Scalar, Verbose, XSelector,
-    YSelector,
+    Bool, DataFrame, Estimator, Float, Pandas, Scalar, Sequence, Verbose,
+    XSelector, YSelector,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,

@@ -10,12 +10,13 @@ Description: Module containing the HyperparameterTuningPlot class.
 from __future__ import annotations
 
 from abc import ABCMeta
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
-from beartype.typing import Any, Callable, Sequence
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.trial import TrialState
 from optuna.visualization._parallel_coordinate import (
@@ -29,7 +30,8 @@ from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, Int, IntLargerEqualZero, IntLargerZero, Legend, MetricSelector,
-    Model, ModelSelector, ModelsSelector, ParamsSelector, Scalar, Segment,
+    Model, ModelSelector, ModelsSelector, ParamsSelector, Scalar, Sequence,
+    int_t, segment_t,
 )
 from atom.utils.utils import (
     bk, check_dependency, crash, divide, get_segment, it, lst, rnd,
@@ -95,12 +97,12 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         """
         if params is None:
             params_c = list(model._ht["distributions"])
-        elif isinstance(params, Segment):
+        elif isinstance(params, segment_t):
             params_c = get_segment(list(model._ht["distributions"]), params)
         else:
             params_c = []
             for param in lst(params):
-                if isinstance(param, Int):
+                if isinstance(param, int_t):
                     params_c.append(list(model._ht["distributions"])[param])
                 elif isinstance(param, str):
                     for p in param.split("+"):
@@ -741,7 +743,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         for d in dims:
             if "ticktext" in d:
                 # Skip processing for logarithmic params
-                if all(isinstance(i, Int) for i in d["values"]):
+                if all(isinstance(i, int_t) for i in d["values"]):
                     # Order categorical values
                     mapping = [d["ticktext"][i] for i in d["values"]]
                     d["ticktext"] = sort_mixed_types(d["ticktext"])

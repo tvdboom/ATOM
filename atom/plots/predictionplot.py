@@ -14,13 +14,13 @@ from collections import defaultdict
 from functools import reduce
 from itertools import chain
 from pathlib import Path
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from beartype import beartype
-from beartype.typing import Any, Literal
 from joblib import Parallel, delayed
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
@@ -688,7 +688,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
                 model = OrdinaryLeastSquares(goal=self.task.goal, branches=self._branches)
-                estimator = model._get_est().fit(bk.DataFrame(y_true), y_pred)
+                estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
 
                 fig.add_trace(
                     self._draw_line(

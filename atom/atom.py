@@ -12,17 +12,18 @@ from __future__ import annotations
 import os
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from collections.abc import Callable, Iterator
 from copy import deepcopy
 from logging import Logger
 from pathlib import Path
 from platform import machine, platform, python_build, python_version
 from types import MappingProxyType
+from typing import Any, Literal, TypeVar
 
 import dill as pickle
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Callable, Iterator, Literal, Sequence, TypeVar
 from joblib.memory import Memory
 from pandas._typing import DtypeObj
 from scipy import stats
@@ -34,7 +35,7 @@ from atom.basetransformer import BaseTransformer
 from atom.branch import Branch, BranchManager
 from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
-    Scaler,
+    Scaler, TransformerMixin,
 )
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
@@ -55,8 +56,9 @@ from atom.utils.types import (
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Series, TargetSelector, Transformer,
-    TSIndex, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
+    RowSelector, Scalar, ScalerStrats, Sequence, Series, TargetSelector,
+    Transformer, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
+    sequence_t, tsindex_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -540,7 +542,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         if isinstance(rows, str):
             rows_c = [(self.branch._get_rows(rows), rows)]
-        elif isinstance(rows, Sequence):
+        elif isinstance(rows, sequence_t):
             rows_c = [(self.branch._get_rows(r), r) for r in rows]
         elif isinstance(rows, dict):
             rows_c = [(self.branch._get_rows(v), k) for k, v in rows.items()]
@@ -937,7 +939,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         for set_ in ("train", "test", "holdout"):
             if (data := getattr(self, set_)) is not None:
                 self._log(f"{set_.capitalize()} set size: {len(data)}", _vb)
-                if isinstance(self.branch.train.index, TSIndex):
+                if isinstance(self.branch.train.index, tsindex_t):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)
@@ -1146,6 +1148,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     "of the target column will be ignored.", 1, severity="warning"
                 )
             transformer_c._cols = inc
+
+        # Add custom cloning method to keep internal attrs
+        transformer_c.__class__.__sklearn_clone__ = TransformerMixin.__sklearn_clone__
 
         if hasattr(transformer_c, "fit"):
             if not transformer_c.__module__.startswith("atom"):

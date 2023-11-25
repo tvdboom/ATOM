@@ -10,23 +10,23 @@ Description: Module containing the Branch class.
 from __future__ import annotations
 
 import re
+from collections.abc import Hashable
 from functools import cached_property
 from pathlib import Path
-from typing import overload
+from typing import Literal, overload
 from warnings import filterwarnings
 
 import dill as pickle
 from beartype import beartype
 from beartype.roar import BeartypeDecorHintPep585DeprecationWarning
-from beartype.typing import Hashable, Literal, Sequence
 from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Index, Int, IntLargerEqualZero, Pandas,
-    RowSelector, Scalar, Segment, Series, TargetSelector, TargetsSelector,
-    XSelector, YSelector,
+    RowSelector, Scalar, Sequence, TargetSelector, TargetsSelector, XSelector,
+    YSelector, dataframe_t, int_t, segment_t, series_t,
 )
 from atom.utils.utils import (
     DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
@@ -247,7 +247,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(obj, Series):
+            if isinstance(obj, series_t):
                 if obj.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -508,15 +508,15 @@ class Branch:
 
         inc: list[Hashable] = []
         exc: list[Hashable] = []
-        if isinstance(rows, DataFrame):
+        if isinstance(rows, dataframe_t):
             inc.extend(rows.index)
-        elif isinstance(rows, Segment):
+        elif isinstance(rows, segment_t):
             inc.extend(indices[rows])
         else:
             for row in lst(rows):
                 if row in indices:
                     inc.append(row)
-                elif isinstance(row, Int):
+                elif isinstance(row, int_t):
                     if -len(indices) <= row < len(indices):
                         inc.append(indices[int(row)])
                     else:
@@ -604,13 +604,13 @@ class Branch:
                 return list(df.select_dtypes(include=["number"]).columns)
             else:
                 return list(df.columns)
-        elif isinstance(columns, DataFrame):
+        elif isinstance(columns, dataframe_t):
             inc.extend(list(columns.columns))
-        elif isinstance(columns, Segment):
+        elif isinstance(columns, segment_t):
             inc.extend(list(df.columns[columns]))
         else:
             for col in lst(columns):
-                if isinstance(col, Int):
+                if isinstance(col, int_t):
                     if -df.shape[1] <= col < df.shape[1]:
                         inc.append(df.columns[int(col)])
                     else:
@@ -766,7 +766,7 @@ class Branch:
         if only_columns and not isinstance(target, tuple):
             return get_column(target)
         elif isinstance(target, tuple):
-            if not isinstance(self.y, DataFrame):
+            if not isinstance(self.y, dataframe_t):
                 raise ValueError(
                     f"Invalid value for the target parameter, got {target}. "
                     "A tuple is only accepted for multioutput tasks."

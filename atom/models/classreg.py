@@ -9,9 +9,10 @@ Description: Module containing classification and regression models.
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
-from beartype.typing import Any, cast
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import FloatDistribution as Float
@@ -449,13 +450,13 @@ class CatBoost(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the estimator instance.
 
         Parameters
         ----------
-        **params
-            Unpacked hyperparameters for the estimator.
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -1627,8 +1628,13 @@ class LightGBM(ClassRegModel):
     _module = "lightgbm.sklearn"
     _estimators = {"classification": "LGBMClassifier", "regression": "LGBMRegressor"}
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -1911,13 +1917,13 @@ class LinearSVM(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the estimator instance.
 
         Parameters
         ----------
-        **params
-            Unpacked hyperparameters for the estimator.
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -1928,7 +1934,7 @@ class LinearSVM(ClassRegModel):
         if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
             return self._est_class(probability=params.pop("probability", True), **params)
         else:
-            return super()._get_est(**params)
+            return super()._get_est(params)
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -2941,8 +2947,13 @@ class SupportVectorMachine(ClassRegModel):
 
         return params
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
@@ -2956,7 +2967,7 @@ class SupportVectorMachine(ClassRegModel):
                 random_state=params.pop("random_state", self.random_state),
                 **params)
         else:
-            return super()._get_est(**params)
+            return super()._get_est(params)
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -3060,8 +3071,13 @@ class XGBoost(ClassRegModel):
 
         return trials
 
-    def _get_est(self, **params) -> Predictor:
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------

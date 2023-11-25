@@ -13,6 +13,7 @@ import os
 import random
 import tempfile
 import warnings
+from collections.abc import Hashable
 from copy import deepcopy
 from datetime import datetime as dt
 from importlib import import_module
@@ -20,7 +21,7 @@ from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import overload
+from typing import Literal, TypeVar, overload
 
 import dagshub
 import mlflow
@@ -28,7 +29,6 @@ import numpy as np
 import ray
 import requests
 from beartype import beartype
-from beartype.typing import Hashable, Literal, Sequence, TypeVar
 from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
@@ -37,7 +37,8 @@ from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, Estimator, Int, IntLargerEqualZero,
-    Pandas, Seq1dim, Severity, Verbose, Warnings, XSelector, YSelector,
+    Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
+    bool_t, dataframe_t, int_t, sequence_t,
 )
 from atom.utils.utils import crash, flt, n_cols, sign, to_df, to_pandas
 
@@ -208,7 +209,7 @@ class BaseTransformer:
     @warnings.setter
     @beartype
     def warnings(self, value: Bool | Warnings):
-        if isinstance(value, Bool):
+        if isinstance(value, bool_t):
             self._warnings: Warnings = "once" if value else "ignore"
         else:
             self._warnings = value
@@ -501,7 +502,7 @@ class BaseTransformer:
                         )
 
         # Prepare target column
-        if isinstance(y, dict | Seq1dim | DataFrame):
+        if isinstance(y, (dict, *sequence_t, *dataframe_t)):
             if isinstance(y, dict):
                 yt = to_df(deepcopy(y), index=getattr(Xt, "index", None))
                 if n_cols(yt) == 1:
@@ -515,7 +516,7 @@ class BaseTransformer:
                         for col in y:
                             if col in Xt.columns:
                                 targets.append(col)
-                            elif isinstance(col, Int):
+                            elif isinstance(col, int_t):
                                 if -Xt.shape[1] <= col < Xt.shape[1]:
                                     targets.append(Xt.columns[int(col)])
                                 else:
@@ -540,7 +541,7 @@ class BaseTransformer:
                     data=deepcopy(yt),
                     index=getattr(Xt, "index", None),
                     name=flt(name) if name is not None else "target",
-                    columns=name if isinstance(name, Sequence) else default_cols,
+                    columns=name if isinstance(name, sequence_t) else default_cols,
                 )
 
             # Check X and y have the same indices
@@ -557,7 +558,7 @@ class BaseTransformer:
             else:
                 raise ValueError("X can't be None when y is a string.")
 
-        elif isinstance(y, Int):
+        elif isinstance(y, int_t):
             if Xt is None:
                 raise ValueError("X can't be None when y is an int.")
 

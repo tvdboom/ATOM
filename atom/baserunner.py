@@ -12,14 +12,15 @@ from __future__ import annotations
 import random
 import re
 from abc import ABCMeta
+from collections.abc import Hashable
 from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
+from typing import Any
 
 import dill as pickle
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Hashable, Sequence
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
@@ -34,7 +35,7 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, DataFrame, FloatZeroToOneExc, Int, MetricConstructor, Model,
     ModelSelector, ModelsSelector, Pandas, RowSelector, Scalar, Segment,
-    Series, YSelector,
+    Sequence, Series, YSelector, dataframe_t, int_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Task, bk, check_is_fitted, composed, crash,
@@ -108,7 +109,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
             )
-        elif isinstance(item, Int):
+        elif isinstance(item, int_t):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
             if item in self._branches:
@@ -288,7 +289,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             pass
         elif self._config.index is False:
             df = df.reset_index(drop=True)
-        elif isinstance(self._config.index, Int):
+        elif isinstance(self._config.index, int_t):
             if -df.shape[1] <= self._config.index <= df.shape[1]:
                 df = df.set_index(df.columns[int(self._config.index)], drop=True)
             else:
@@ -414,7 +415,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             data = _subsample(data)
 
-            if isinstance(self._config.index, Sequence):
+            if isinstance(self._config.index, sequence_t):
                 if len(self._config.index) != len(data):
                     raise IndexError(
                         "Invalid value for the index parameter. Length of "
@@ -485,7 +486,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             except ValueError as ex:
                 # Clarify common error with stratification for multioutput tasks
-                if "least populated class" in str(ex) and isinstance(y, DataFrame):
+                if "least populated class" in str(ex) and isinstance(y, dataframe_t):
                     raise ValueError(
                         "Stratification for multioutput tasks is applied over all target "
                         "columns, which results in a least populated class that has only "
@@ -571,7 +572,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self._config.index, Sequence):
+            if isinstance(self._config.index, sequence_t):
                 len_data = len(train) + len(test)
                 if holdout is not None:
                     len_data += len(holdout)
@@ -604,7 +605,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self._goal.name == "forecast" and not isinstance(y, Int | str):
+            if self._goal.name == "forecast" and not isinstance(y, (*int_t, str)):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._check_input(y=y))
             elif not self.branch._container:
@@ -625,7 +626,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 X_train, y_train = self._check_input(arrays[0][0], arrays[0][1])
                 X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
-            elif isinstance(arrays[1], Int | str) or n_cols(arrays[1]) == 1:
+            elif isinstance(arrays[1], (*int_t, str)) or n_cols(arrays[1]) == 1:
                 if not self._goal.name == "forecast":
                     # arrays=(X, y)
                     sets = _no_data_sets(*self._check_input(arrays[0], arrays[1]))
@@ -729,11 +730,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         exc: list[Model] = []
         if models is None:
             inc = self._models.values()
-        elif isinstance(models, Segment):
+        elif isinstance(models, segment_t):
             inc = get_segment(self._models, models)
         else:
             for model in lst(models):
-                if isinstance(model, Int):
+                if isinstance(model, int_t):
                     try:
                         inc.append(self._models[model])
                     except KeyError:
@@ -788,7 +789,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
-    def _delete_models(self, models: str | Sequence):
+    def _delete_models(self, models: str | Model | Sequence[str | Model]):
         """Delete models.
 
         Remove models from the instance. All attributes are deleted
@@ -797,7 +798,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         Parameters
         ----------
-        models: str or sequence
+        models: str, Model or sequence
             Model(s) to delete.
 
         """
@@ -1239,7 +1240,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         f"{model.fullname} can not perform {self.task} tasks."
                     )
 
-                kwargs["final_estimator"] = model._get_est()
+                kwargs["final_estimator"] = model._get_est({})
 
         self._models.append(Stacking(models=models_c, name=name, **kw_model, **kwargs))
 

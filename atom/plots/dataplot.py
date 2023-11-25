@@ -11,12 +11,12 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from beartype import beartype
-from beartype.typing import Any, Literal, Sequence
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
@@ -28,7 +28,7 @@ from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, RowSelector,
-    Segment, Series,
+    Segment, Sequence, Series,
 )
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, lst, replace_missing, rnd,

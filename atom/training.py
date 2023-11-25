@@ -12,19 +12,19 @@ from __future__ import annotations
 from copy import copy
 from logging import Logger
 from pathlib import Path
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.typing import Any, Literal
 from joblib.memory import Memory
 from sklearn.base import BaseEstimator
 
 from atom.basetrainer import BaseTrainer
 from atom.utils.types import (
-    Backend, Bool, Engine, FloatLargerZero, Int, IntLargerEqualZero,
+    Backend, Bool, Engine, FloatLargerZero, IntLargerEqualZero,
     MetricConstructor, ModelsConstructor, NItems, NJobs, Sequence, Verbose,
-    Warnings,
+    Warnings, int_t,
 )
 from atom.utils.utils import (
     ClassMap, Goal, composed, crash, lst, method_to_log,
@@ -204,7 +204,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self._log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         # Convert integer train_sizes to sequence
-        if isinstance(self.train_sizes, Int):
+        if isinstance(self.train_sizes, int_t):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
         models = ClassMap()

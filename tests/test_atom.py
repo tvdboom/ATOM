@@ -603,8 +603,9 @@ def test_returned_column_already_exists():
 
 def test_add_sparse_matrices():
     """Assert that transformers that return sp.matrix are accepted."""
+    ohe = OneHotEncoder(handle_unknown="ignore").set_output(transform="default")
     atom = ATOMClassifier(X10_str, y10, shuffle=False, random_state=1)
-    atom.add(OneHotEncoder(handle_unknown="ignore"), columns=2)
+    atom.add(ohe, columns=2)
     assert atom.shape == (10, 8)  # Creates 4 extra columns
 
 
@@ -638,6 +639,14 @@ def test_raise_length_mismatch():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(IndexError, match=".*does not match length.*"):
         atom.prune(columns=[2, 4])
+
+
+def test_add_pyarrow_columns():
+    """Assert that columns keep the pyarrow dtype."""
+    atom = ATOMClassifier(X_bin, y_bin, engine={"data": "pyarrow"}, random_state=1)
+    assert isinstance(atom.dtypes[0], pd.ArrowDtype)
+    atom.scale()
+    assert isinstance(atom.dtypes[0], pd.ArrowDtype)
 
 
 def test_add_derivative_columns_keep_position():

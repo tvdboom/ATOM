@@ -10,13 +10,14 @@ Description: Module containing the ShapPlot class.
 from __future__ import annotations
 
 from abc import ABCMeta
+from collections.abc import Hashable
 from importlib.util import find_spec
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import shap
 from beartype import beartype
-from beartype.typing import Any, Hashable
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.types import (

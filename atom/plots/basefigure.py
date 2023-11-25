@@ -10,15 +10,15 @@ Description: Module containing the BaseFigure class.
 from __future__ import annotations
 
 from itertools import cycle
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-from beartype.typing import Any, Literal, Sequence
 
 from atom.utils.types import (
     Bool, FloatZeroToOneExc, Int, IntLargerZero, Legend, Model, PlotBackend,
-    Scalar, Style,
+    Scalar, Sequence, Style, sequence_t,
 )
 from atom.utils.utils import divide, rnd, to_rgb
 
@@ -81,7 +81,7 @@ class BaseFigure:
         if isinstance(palette, str):
             self._palette = getattr(px.colors.qualitative, palette)
             self.palette = cycle(self._palette)
-        elif isinstance(palette, Sequence):
+        elif isinstance(palette, sequence_t):
             # Convert color names or hex to rgb
             self._palette = list(map(to_rgb, palette))
             self.palette = cycle(self._palette)

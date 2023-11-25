@@ -10,15 +10,15 @@ Description: Module containing the BasePlot class.
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import overload
+from typing import Any, Literal, overload
 
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 from beartype import beartype
-from beartype.typing import Any, Iterator, Literal, Sequence
 from mlflow.tracking import MlflowClient
 
 from atom.basetracker import BaseTracker
@@ -29,7 +29,7 @@ from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Index, Int,
     IntLargerZero, Legend, MetricSelector, Model, ModelsSelector, PlotBackend,
-    RowSelector, Scalar,
+    RowSelector, Scalar, Sequence, int_t, sequence_t,
 )
 from atom.utils.utils import (
     Aesthetics, Task, check_is_fitted, composed, crash, get_custom_scorer, lst,
@@ -226,7 +226,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             Selection of rows.
 
         """
-        if isinstance(rows, Sequence):
+        if isinstance(rows, sequence_t):
             rows_c = {row: row for row in rows}
         elif isinstance(rows, str):
             rows_c = {rows: rows}
@@ -258,7 +258,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         else:
             inc: list[str] = []
             for met in lst(metric):
-                if isinstance(met, Int):
+                if isinstance(met, int_t):
                     if int(met) < len(self._metric):
                         inc.append(self._metric[met].name)
                     else:
@@ -611,7 +611,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                         position = dict(x=0.99, y=0.5, xanchor="right", yanchor="middle")
                     elif legend == "center":
                         position = dict(x=0.5, y=0.5, xanchor="center", yanchor="middle")
-                    legend = default_legend  | position
+                    legend = default_legend | position
                 elif isinstance(legend, dict):
                     legend = default_legend | legend
 

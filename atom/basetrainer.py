@@ -12,12 +12,12 @@ from __future__ import annotations
 import traceback
 from abc import ABCMeta
 from datetime import datetime as dt
+from typing import Any
 
 import joblib
 import mlflow
 import numpy as np
 import ray
-from beartype.typing import Any
 from joblib import Parallel, delayed
 from optuna import Study, create_study
 
@@ -26,7 +26,7 @@ from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
-from atom.utils.types import Model, Sequence
+from atom.utils.types import Model, sequence_t
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, Task, check_dependency, get_custom_scorer, lst,
     sign, time_to_str,
@@ -104,7 +104,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             Parameter with model names as keys.
 
         """
-        if isinstance(value, Sequence):
+        if isinstance(value, sequence_t):
             if len(value) != len(self._models):
                 raise ValueError(
                     f"Invalid value for the {param} parameter. The length "

@@ -13,6 +13,7 @@ import pytest
 from category_encoders.target_encoder import TargetEncoder
 from imblearn.combine import SMOTETomek
 from pandas.testing import assert_frame_equal, assert_series_equal
+from sklearn.base import clone
 from sklearn.preprocessing import StandardScaler
 
 from atom.data_cleaning import (
@@ -29,17 +30,23 @@ from .conftest import (
 
 # Test TransformerMixin ============================================ >>
 
+def test_clone():
+    """Assert that cloning the transformer keeps internal attributes."""
+    pruner = Pruner().fit(X_bin)
+    pruner._cols = [0]
+    assert hasattr(clone(pruner), "_cols")
+
+
+def test_transform_check_is_fitted():
+    """Assert that an error is raised when not fitted."""
+    pytest.raises(NotFittedError, Scaler().transform, X_bin)
+
+
 def test_fit_transform():
     """Assert that the fit_transform method works as intended."""
     X_1 = Scaler().fit_transform(X_bin)
     X_2 = Scaler().fit(X_bin).transform(X_bin)
     assert_frame_equal(X_1, X_2)
-
-
-def test_fit_transform_no_fit():
-    """Assert that the fit_transform method works when no fit method."""
-    X, y = Balancer().fit_transform(X_bin, y_bin)
-    assert len(X) > len(X_bin)
 
 
 def test_inverse_transform():
@@ -117,8 +124,6 @@ def test_undersampling_keeps_indices():
 def test_combinations_numerical_index():
     """Assert that new samples have an increasing int index."""
     X, y = Balancer(strategy="smoteenn").fit_transform(X_bin, y_bin)
-    print(X_bin)
-    print(X)
     assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
     assert max(X.index) > max(X_bin.index)  # Samples were added
 
@@ -255,11 +260,12 @@ def test_cleaner_target_mapping_binary():
 
 # Test Discretizer ================================================= >>
 
-def test_invalid_bins_missing_column():
-    """Assert that an error is raised when a column is missing."""
-    discretizer = Discretizer(strategy="uniform", bins={"invalid": 5})
-    with pytest.raises(ValueError, match=".*not found in the dictionary.*"):
-        discretizer.fit(X_bin)
+def test_missing_columns_in_dict_are_ignored():
+    """Assert that only columns in the dict are transformed."""
+    discretizer = Discretizer(strategy="uniform", bins={"mean radius": 5})
+    X = discretizer.fit_transform(X_bin)
+    assert X["mean radius"].dtype.kind == "O"
+    assert X["mean texture"].dtype.kind == "f"
 
 
 def test_invalid_bins_custom_strategy():
@@ -375,11 +381,6 @@ def test_encoder_custom_estimator():
     assert X.at[0, "x2"] != "a"
 
 
-def test_encoder_check_is_fitted():
-    """Assert that an error is raised if the instance is not fitted."""
-    pytest.raises(NotFittedError, Encoder().transform, X_bin, y_bin)
-
-
 def test_missing_values_are_propagated():
     """Assert that missing values are propagated."""
     encoder = Encoder(max_onehot=None)
@@ -431,11 +432,6 @@ def test_kwargs_parameters():
 
 
 # Test Imputer ===================================================== >>
-
-def test_imputer_check_is_fitted():
-    """Assert that an error is raised if the instance is not fitted."""
-    pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
-
 
 @pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
 def test_imputing_all_missing_values_numeric(missing):
@@ -572,11 +568,6 @@ def test_imputing_non_numeric_most_frequent():
 
 
 # Test Normalizer ======================================================= >>
-
-def test_normalizer_check_is_fitted():
-    """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Normalizer().transform, X_bin)
-
 
 @pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_normalizer_all_strategies(strategy):
@@ -729,11 +720,6 @@ def test_pruner_attach_attribute():
 
 
 # Test Scaler ====================================================== >>
-
-def test_scaler_check_is_fitted():
-    """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Scaler().transform, X_bin)
-
 
 @pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
 def test_scaler_all_strategies(strategy):

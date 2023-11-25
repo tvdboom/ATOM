@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from logging import Logger
 from pathlib import Path
+from typing import TypeVar
 
 from beartype import beartype
-from beartype.typing import TypeVar
 from joblib.memory import Memory
 from sklearn.base import clone
 

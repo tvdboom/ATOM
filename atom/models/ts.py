@@ -9,7 +9,8 @@ Description: Module containing all time series models.
 
 from __future__ import annotations
 
-from beartype.typing import Any
+from typing import Any
+
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import IntDistribution as Int

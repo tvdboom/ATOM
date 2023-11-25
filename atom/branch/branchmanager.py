@@ -10,10 +10,10 @@ Description: Module containing the BranchManager class.
 from __future__ import annotations
 
 import shutil
+from collections.abc import Iterator
 from copy import copy, deepcopy
 
 from beartype import beartype
-from beartype.typing import Iterator
 from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 

@@ -161,12 +161,6 @@ def test_experiment_dagshub(dagshub, request, token, _):
     assert "dagshub" not in mlflow.get_tracking_uri()
 
 
-def test_random_state_negative_int():
-    """Assert that an error is raised for a negative random_state."""
-    with pytest.raises(ValueError, match=".*random_state parameter.*"):
-        BaseTransformer(random_state=-1)
-
-
 def test_device_id_no_value():
     """Assert that the device id can be left empty."""
     base = BaseTransformer(device="gpu")
