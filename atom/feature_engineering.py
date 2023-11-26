@@ -45,15 +45,15 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     Goal, Task, check_scaling, composed, crash, get_custom_scorer, is_sparse,
-    lst, merge, method_to_log, sign, to_df,
+    lst, merge, method_to_log, sign,
 )
 
 
 @beartype
 class FeatureExtractor(TransformerMixin):
-    """EXract features from datetime columns.
+    """Extract features from datetime columns.
 
-    Create new features eXracting datetime elements (day, month,
+    Create new features extracting datetime elements (day, month,
     year, etc...) from the provided columns. Columns of dtype
     `datetime64` are used as is. Categorical columns that can be
     successfully converted to a datetime format (less than 30% NaT
@@ -61,7 +61,7 @@ class FeatureExtractor(TransformerMixin):
 
     This class can be accessed from atom through the [feature_extraction]
     [atomclassifier-feature_extraction] method. Read more in the
-    [user guide][eXracting-datetime-features].
+    [user guide][extracting-datetime-features].
 
     !!! warning
         Decision trees based algorithms build their split rules
@@ -146,7 +146,7 @@ class FeatureExtractor(TransformerMixin):
     === "stand-alone"
         ```pycon
         import pandas as pd
-        from atom.feature_engineering import FeatureEXractor
+        from atom.feature_engineering import FeatureExtractor
         from sklearn.datasets import load_breast_cancer
 
         X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
@@ -154,7 +154,7 @@ class FeatureExtractor(TransformerMixin):
         # Add a datetime column
         X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
 
-        fe = FeatureEXractor(features=["day"], fmt="%Y-%m-%d", verbose=2)
+        fe = FeatureExtractor(features=["day"], fmt="%Y-%m-%d", verbose=2)
         X = fe.transform(X)
 
         # Note the date_day column
@@ -181,7 +181,7 @@ class FeatureExtractor(TransformerMixin):
 
     @composed(crash, method_to_log)
     def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
-        """EXract the new features.
+        """Extract the new features.
 
         Parameters
         ----------
@@ -197,13 +197,13 @@ class FeatureExtractor(TransformerMixin):
             Transformed feature set.
 
         """
-        self._log("EXracting datetime features...", 1)
+        self._log("Extracting datetime features...", 1)
 
         i = 0
         for name, column in X.select_dtypes(exclude="number").items():
             if column.dtype.name == "datetime64[ns]":
                 col_dt = column
-                self._log(f" --> EXracting features from column {name}.", 1)
+                self._log(f" --> Extracting features from column {name}.", 1)
             else:
                 col_dt = pd.to_datetime(
                     arg=column,
@@ -218,10 +218,10 @@ class FeatureExtractor(TransformerMixin):
                 else:
                     i += 1
                     self._log(
-                        f" --> EXracting features from categorical column {name}.", 1
+                        f" --> Extracting features from categorical column {name}.", 1
                     )
 
-            # EXract features from the datetime column
+            # Extract features from the datetime column
             for fx in map(str.lower, lst(self.features)):
                 if hasattr(col_dt.dt, fx.lower()):
                     values = getattr(col_dt.dt, fx)
@@ -234,7 +234,7 @@ class FeatureExtractor(TransformerMixin):
                 # Skip if the information is not present in the format
                 if not isinstance(values, series_t):
                     self._log(
-                        f"   --> EXracting feature {fx} failed. "
+                        f"   --> Extracting feature {fx} failed. "
                         "Result is not a Series.dt.", 2
                     )
                     continue
@@ -373,7 +373,7 @@ class FeatureGenerator(TransformerMixin):
 
     See Also
     --------
-    atom.feature_engineering:FeatureEXractor
+    atom.feature_engineering:FeatureExtractor
     atom.feature_engineering:FeatureGrouper
     atom.feature_engineering:FeatureSelector
 
@@ -390,7 +390,7 @@ class FeatureGenerator(TransformerMixin):
         atom = ATOMClassifier(X, y)
         atom.feature_generation(strategy="dfs", n_features=5, verbose=2)
 
-        # Note the teXure error / worst symmetry column
+        # Note the texture error / worst symmetry column
         print(atom.dataset)
         ```
 
@@ -602,7 +602,7 @@ class FeatureGenerator(TransformerMixin):
 
 @beartype
 class FeatureGrouper(TransformerMixin):
-    """EXract statistics from similar features.
+    """Extract statistics from similar features.
 
     Replace groups of features with related characteristics with new
     features that summarize statistical properties of the group. The
@@ -651,7 +651,7 @@ class FeatureGrouper(TransformerMixin):
 
     See Also
     --------
-    atom.feature_engineering:FeatureEXractor
+    atom.feature_engineering:FeatureExtractor
     atom.feature_engineering:FeatureGenerator
     atom.feature_engineering:FeatureSelector
 
@@ -678,7 +678,7 @@ class FeatureGrouper(TransformerMixin):
 
         X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        fg = FeatureGrouper({"group1": ["mean teXure", "mean radius"]}, verbose=2)
+        fg = FeatureGrouper({"group1": ["mean texture", "mean radius"]}, verbose=2)
         X = fg.transform(X)
 
         print(X)
@@ -965,7 +965,7 @@ class FeatureSelector(TransformerMixin):
         number generator is the `RandomState` used by `np.random`.
 
     **kwargs
-        Any eXra keyword argument for the strategy estimator. See the
+        Any extra keyword argument for the strategy estimator. See the
         corresponding documentation for the available options.
 
     Attributes
@@ -989,7 +989,7 @@ class FeatureSelector(TransformerMixin):
 
     See Also
     --------
-    atom.feature_engineering:FeatureEXractor
+    atom.feature_engineering:FeatureExtractor
     atom.feature_engineering:FeatureGenerator
     atom.feature_engineering:FeatureGrouper
 
@@ -1329,9 +1329,8 @@ class FeatureSelector(TransformerMixin):
                 **{solver_param: solver},
                 random_state=self.random_state,
                 **self.kwargs,
-            )
+            ).fit(X)
 
-            self._estimator.fit(X)
             self._estimator._comps = min(
                 self._estimator.components_.shape[0], self._n_features
             )
@@ -1530,11 +1529,7 @@ class FeatureSelector(TransformerMixin):
                 self._log("   --> Scaling features...", 2)
                 X = self.scaler_.transform(X)
 
-            X = to_df(
-                data=self.pca_.transform(X)[:, :self.pca_._comps],
-                index=X.index,
-                columns=[f"pca{str(i)}" for i in range(self.pca_._comps)],
-            )
+            X = self.pca_.transform(X).iloc[:, :self.pca_._comps]
 
             var = np.array(self.pca_.explained_variance_ratio_[:self._n_features])
             self._log(f"   --> Keeping {self.pca_._comps} components.", 2)

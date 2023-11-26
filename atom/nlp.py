@@ -968,6 +968,10 @@ class Vectorizer(TransformerMixin):
         )
         self._estimator = estimator(**self.kwargs)
 
+        if hasattr(self._estimator, "set_output"):
+            # transform="pandas" fails for sparse output
+            self._estimator.set_output(transform="default")
+
         self._log("Fitting Vectorizer...", 1)
         self._estimator.fit(X[corpus])
 

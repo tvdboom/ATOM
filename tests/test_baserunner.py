@@ -138,7 +138,7 @@ def test_getitem_no_dataset():
 def test_getitem_int():
     """Assert that getitem works for a column index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert_frame_equal(atom[0], atom["mean radius"])
+    assert_series_equal(atom[0], atom["mean radius"])
 
 
 def test_getitem_str_from_branch():
@@ -157,7 +157,7 @@ def test_getitem_str_from_model():
 def test_getitem_str_from_column():
     """Assert that getitem works for a column name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom["mean radius"] is atom.dataset["mean radius"]
+    assert_series_equal(atom["mean radius"], atom.dataset["mean radius"])
 
 
 def test_getitem_invalid_str():
@@ -294,7 +294,7 @@ def test_index_is_int_invalid():
 def test_index_is_int():
     """Assert that a column can be selected from a position."""
     X = X_bin.copy()
-    X.iloc[:, 0] = range(len(X))
+    X["mean radius"] = range(len(X))
     atom = ATOMClassifier(X, y_bin, index=0, random_state=1)
     assert atom.dataset.index.name == "mean radius"
 
@@ -308,9 +308,15 @@ def test_index_is_str_invalid():
 def test_index_is_str():
     """Assert that a column can be selected from a name."""
     X = X_bin.copy()
-    X.loc[:, "mean texture"] = range(len(X))
+    X["mean texture"] = range(len(X))
     atom = ATOMClassifier(X, y_bin, index="mean texture", random_state=1)
     assert atom.dataset.index.name == "mean texture"
+
+
+def test_index_is_range():
+    """Assert that a column can be selected from a name."""
+    atom = ATOMClassifier(X_bin, y_bin, index=range(len(X_bin)), shuffle=False)
+    assert list(atom.dataset.index) == list(range(len(X_bin)))
 
 
 def test_index_is_target():

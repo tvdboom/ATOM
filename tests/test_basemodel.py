@@ -906,7 +906,6 @@ def test_get_best_threshold_multilabel():
 def test_inverse_transform():
     """Assert that the inverse_transform method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
-    atom.clean()
     atom.run("LR")
     assert_frame_equal(atom.lr.inverse_transform(atom.lr.X), X_bin)
 

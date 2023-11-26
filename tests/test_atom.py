@@ -613,12 +613,8 @@ def test_add_keep_column_names():
     """Assert that the column names are kept after transforming."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
 
-    # Transformer has method get_feature_names
-    atom.add(TargetEncoder(return_df=False))
-    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
-
     # Transformer has method get_feature_names_out
-    atom.add(StandardScaler())
+    atom.add(TargetEncoder(return_df=False))
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer keeps rows equal
@@ -629,7 +625,7 @@ def test_add_keep_column_names():
     atom.add(DummyTransformer(strategy="drop"))
     assert atom.features.tolist() == ["x0", "x2", "x3"]
 
-    # Transformer adds rows
+    # Transformer adds a new column
     atom.add(DummyTransformer(strategy="add"), columns="!x2")
     assert atom.features.tolist() == ["x0", "x2", "x3", "x4"]
 
@@ -651,9 +647,9 @@ def test_add_pyarrow_columns():
 
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, shuffle=False, random_state=1)
     atom.encode(columns="x2")
-    assert list(atom.columns[2:5]) == ["x2_a", "x2_b", "x2_d"]
+    assert list(atom.columns[2:5]) == ["x2_b", "x2_a", "x2_c"]
 
 
 def test_multioutput_y_return():

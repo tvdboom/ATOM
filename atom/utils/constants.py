@@ -12,7 +12,7 @@ Description: Module containing utility constants.
 __version__ = "6.0.0"
 
 # Column types considered categorical
-CAT_TYPES = ["object", "category", "string"]
+CAT_TYPES = ["object", "category", "string", "boolean"]
 
 # Default string values considered missing
 DEFAULT_MISSING = ["", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"]

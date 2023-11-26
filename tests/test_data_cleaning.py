@@ -356,7 +356,7 @@ def test_strategy_with_encoder_at_end():
     """Assert that the strategy works with Encoder at the end of the string."""
     encoder = Encoder(strategy="TargetEncoder", max_onehot=None)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["x2"].__class__.__name__ == "TargetEncoder"
+    assert isinstance(encoder._estimator.named_transformers_["rest"], TargetEncoder)
 
 
 @pytest.mark.parametrize("infrequent_to_value", [3, 0.3])
@@ -428,7 +428,7 @@ def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
     encoder = Encoder(strategy="Target", max_onehot=None, smoothing=20)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["x2"].get_params()["smoothing"] == 20
+    assert encoder._estimator.named_transformers_["rest"].get_params()["smoothing"] == 20
 
 
 # Test Imputer ===================================================== >>

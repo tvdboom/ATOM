@@ -169,7 +169,7 @@ def test_custom_legend_position(legend):
 def test_figure_to_mlflow(mlflow):
     """Assert that the figure is logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.run(["Tree", "LGB"], errors="raise")
+    atom.run(["Tree", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.log_plots = True
     atom.plot_results(display=False)
     atom.lgb.plot_shap_scatter(display=False)

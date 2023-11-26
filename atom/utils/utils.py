@@ -2213,6 +2213,51 @@ def name_cols(
     return temp_cols
 
 
+def get_col_order(
+    df: DataFrame,
+    og_columns: list[str],
+    col_names: list[str],
+) -> list[str]:
+    """Determine column order for a dataframe.
+
+    The column order is determined by the order in the original
+    dataset. Derivative columns are placed in the position of their
+    progenitor.
+
+    Parameters
+    ----------
+    df: dataframe
+        New dataframe.
+
+    og_columns: list of str
+        Column order of the original dataframe.
+
+    col_names: list of str
+        Names of the columns used in the transformer.
+
+    Returns
+    -------
+    list of str
+        New column order.
+
+    """
+    columns: list[str] = []
+    for col in og_columns:
+        if col in df or col not in col_names:
+            columns.append(col)
+
+        # Add all derivative columns: columns that originate from another
+        # and start with its progenitor name, e.g., one-hot encoded columns
+        columns.extend(
+            [c for c in df.columns if c.startswith(f"{col}_") and c not in og_columns]
+        )
+
+    # Add remaining new columns (non-derivatives)
+    columns.extend([col for col in df.columns if col not in columns])
+
+    return columns
+
+
 def reorder_cols(
     transformer: Transformer,
     df: DataFrame,
@@ -2264,20 +2309,7 @@ def reorder_cols(
             "the columns."
         )
 
-    # Define new column order
-    columns = []
-    for col in original_df:
-        if col in df or col not in col_names:
-            columns.append(col)
-
-        # Add all derivative columns: columns that originate from another
-        # and start with its progenitor name, e.g., one-hot encoded columns
-        columns.extend(
-            [c for c in df.columns if c.startswith(f"{col}_") and c not in original_df]
-        )
-
-    # Add remaining new columns (non-derivatives)
-    columns.extend([col for col in df if col not in columns])
+    columns = get_col_order(df, original_df.columns.tolist(), col_names)
 
     # Merge the new and old datasets keeping the newest columns
     new_df = df.merge(
@@ -2287,7 +2319,7 @@ def reorder_cols(
         right_index=True,
         suffixes=("", "__drop__"),
     )
-    new_df = new_df.drop(new_df.filter(regex="__drop__$").columns, axis=1)
+    new_df = new_df.drop(columns=new_df.filter(regex="__drop__$").columns)
 
     return new_df[columns]
 
@@ -2431,9 +2463,6 @@ def transform_one(
         if not isinstance(out, dataframe_t):
             if hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
-            elif hasattr(transformer, "get_feature_names"):
-                # Some estimators have legacy method, e.g., cuml, category-encoders...
-                columns = transformer.get_feature_names()
             else:
                 columns = name_cols(out, og, use_cols)
         else:

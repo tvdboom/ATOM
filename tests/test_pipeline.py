@@ -23,8 +23,7 @@ from .conftest import X_bin, y_bin
 def pipeline():
     """Get a pipeline from atom with/without a final estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.impute()
+    atom.encode()
     atom.prune()
     atom.add(StandardScaler(), columns=0)
     atom.run("LR")

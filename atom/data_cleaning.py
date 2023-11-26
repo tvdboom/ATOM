@@ -37,6 +37,7 @@ from imblearn.under_sampling import (
 )
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, _clone_parametrized
+from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer, KNNImputer
 from typing_extensions import Self
@@ -52,8 +53,8 @@ from atom.utils.types import (
     dataframe_t, sequence_t, series_t,
 )
 from atom.utils.utils import (
-    bk, check_is_fitted, composed, crash, get_cols, it, lst, merge,
-    method_to_log, n_cols, replace_missing, sign, to_df, to_series,
+    bk, check_is_fitted, composed, crash, get_col_order, get_cols, it, lst,
+    merge, method_to_log, n_cols, replace_missing, sign, to_df, to_series,
     variable_return, wrap_methods,
 )
 
@@ -1375,6 +1376,13 @@ class Encoder(TransformerMixin):
         Value with which to replace rare classes. This parameter is
         ignored if `infrequent_to_value=None`.
 
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 - value.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1394,8 +1402,7 @@ class Encoder(TransformerMixin):
     ----------
     mapping_: dict of dicts
         Encoded values and their respective mapping. The column name is
-        the key to its mapping dictionary. Only for columns mapped to a
-        single column (e.g., Ordinal, Leave-one-out, etc...).
+        the key to its mapping dictionary. Only for ordinal encoding.
 
     feature_names_in_: np.ndarray
         Names of features seen during fit.
@@ -1461,11 +1468,12 @@ class Encoder(TransformerMixin):
         ordinal: dict[str, Sequence[Any]] | None = None,
         infrequent_to_value: FloatLargerZero | None = None,
         value: str = "infrequent",
+        n_jobs: NJobs = 1,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(n_jobs=n_jobs, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.max_onehot = max_onehot
         self.ordinal = ordinal
@@ -1504,11 +1512,9 @@ class Encoder(TransformerMixin):
             Estimator instance.
 
         """
-        self.mapping_: dict[str, dict[Hashable, Scalar]] = defaultdict(dict)
-        self._to_value = defaultdict(list)
+        self.mapping_ = {}
+        self._to_value = {}
         self._categories = {}
-        self._encoders = {}
-        self._cat_cols = list(X.select_dtypes(exclude="number").columns)
 
         strategies = dict(
             backwarddifference=BackwardDifferenceEncoder,
@@ -1555,13 +1561,14 @@ class Encoder(TransformerMixin):
 
         self._log("Fitting Encoder...", 1)
 
-        for name, column in X[self._cat_cols].items():
+        encoders: dict[str, list[str]] = defaultdict(list)
+
+        for name, column in X.select_dtypes(include=CAT_TYPES).items():
             # Replace infrequent classes with the string in `value`
             if self.infrequent_to_value:
-                for category, count in column.value_counts().items():
-                    if count <= infrequent_to_value:
-                        self._to_value[name].append(category)
-                        X[name] = column.replace(category, self.value)  # type: ignore
+                values = column.value_counts()
+                self._to_value[name] = values[values <= infrequent_to_value].index.tolist()
+                X[name] = column.replace(self._to_value[name], self.value)
 
             # Get the unique categories before fitting
             self._categories[name] = column.dropna().sort_values().unique().tolist()
@@ -1584,47 +1591,43 @@ class Encoder(TransformerMixin):
                 mapping.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
                 self.mapping_[str(name)] = mapping
 
-                self._encoders[name] = OrdinalEncoder(
-                    mapping=[{"col": name, "mapping": mapping}],
-                    cols=[name],  # Specify to not skip bool columns
-                    handle_missing="return_nan",
-                    handle_unknown="value",
-                ).fit(X[[name]])
-
+                encoders["ordinal"].append(str(name))
             elif 2 < len(self._categories[name]) <= max_onehot:
-                self._encoders[name] = OneHotEncoder(
-                    cols=[name],  # Specify to not skip numerical columns
-                    use_cat_names=True,
-                    handle_missing="return_nan",
-                    handle_unknown="value",
-                ).fit(X[[name]])
-
+                encoders["onehot"].append(str(name))
             else:
-                args = [X[[name]]]
-                if "y" in sign(estimator.fit):
-                    args.append(bk.DataFrame(y).iloc[:, 0])
+                encoders["rest"].append(str(name))
 
-                self._encoders[name] = estimator(
-                    cols=[name],
-                    handle_missing="return_nan",
-                    handle_unknown="value",
-                    **self.kwargs,
-                ).fit(*args)
+        ordinal_enc = OrdinalEncoder(
+            mapping=[{"col": c, "mapping": self.mapping_[c]} for c in encoders["ordinal"]],
+            cols=encoders["ordinal"],
+            handle_missing="return_nan",
+            handle_unknown="value",
+        )
 
-                # Create encoding of unique values for mapping
-                data = self._encoders[name].transform(
-                    bk.Series(
-                        data=self._categories[name],
-                        index=self._categories[name],
-                        name=name,
-                        dtype="object",
-                    )
-                )
+        onehot_enc = OneHotEncoder(
+            cols=encoders["onehot"],
+            use_cat_names=True,
+            handle_missing="return_nan",
+            handle_unknown="value",
+        )
 
-                # Only mapping 1 - 1 column
-                if data.shape[1] == 1:
-                    for idx, value in data[name].items():
-                        self.mapping_[str(name)][idx] = value
+        rest_enc = estimator(
+            cols=encoders["rest"],
+            handle_missing="return_nan",
+            handle_unknown="value",
+            **self.kwargs,
+        )
+
+        self._estimator = ColumnTransformer(
+            transformers=[
+                ("ordinal", ordinal_enc, encoders["ordinal"]),
+                ("onehot", onehot_enc, encoders["onehot"]),
+                ("rest", rest_enc, encoders["rest"]),
+            ],
+            remainder="passthrough",
+            n_jobs=self.n_jobs,
+            verbose_feature_names_out=False,
+        ).fit(X, y)
 
         return self
 
@@ -1648,43 +1651,36 @@ class Encoder(TransformerMixin):
         """
         self._log("Encoding categorical columns...", 1)
 
-        for name, column in X[self._cat_cols].items():
-            # Convert infrequent classes to value
-            if self._to_value[name]:
-                X[name] = column.replace(self._to_value[name], self.value)
+        # Convert infrequent classes to value
+        X = X.replace(self._to_value, self.value)
+
+        for name, categories in self._categories.items():
+            if name in self._estimator.transformers_[0][2]:
+                estimator = self._estimator.transformers_[0][1]
+            elif name in self._estimator.transformers_[1][2]:
+                estimator = self._estimator.transformers_[1][1]
+            else:
+                estimator = self._estimator.transformers_[2][1]
 
             self._log(
-                f" --> {self._encoders[name].__class__.__name__[:-7]}-encoding "
-                f"feature {name}. Contains {column.nunique()} classes.", 2
+                f" --> {estimator.__class__.__name__[:-7]}-encoding feature "
+                f"{name}. Contains {X[name].nunique()} classes.", 2
             )
 
-            # Count the propagated missingX[[name]] values
-            if n_nans := column.isna().sum():
+            # Count the propagated missing values
+            if n_nans := X[name].isna().sum():
                 self._log(f"   --> Propagating {n_nans} missing values.", 2)
 
-            # Get the new encoded columns
-            new_cols = self._encoders[name].transform(X[[name]])
-
-            # Drop _nan columns (since missing values are propagated)
-            new_cols = new_cols.loc[:, ~new_cols.columns.str.endswith("_nan")]
-
             # Check for unknown classes
-            if uc := len(column.dropna()[~column.isin(self._categories[name])]):
+            if uc := len(X[name].dropna()[~X[name].isin(categories)]):
                 self._log(f"   --> Handling {uc} unknown classes.", 2)
 
-            # Insert the new columns at old location
-            for i, new_col in enumerate(sorted(new_cols)):
-                if new_col in X:
-                    X[new_col] = new_cols[new_col].values  # Replace existing column
-                else:
-                    # Drop the original column
-                    if name in X:
-                        idx = X.columns.get_loc(name)
-                        X = X.drop(columns=name)
+        Xt = self._estimator.transform(X)
 
-                    X.insert(idx + i, new_col, new_cols[new_col])
+        # Drop _nan columns (since missing values are propagated)
+        Xt = Xt.loc[:, ~Xt.columns.str.endswith("_nan")]
 
-        return X
+        return Xt[get_col_order(Xt, X.columns.tolist(), self._estimator.feature_names_in_)]
 
 
 @beartype
@@ -2318,7 +2314,7 @@ class Normalizer(TransformerMixin):
         self._log("Normalizing features...", 1)
         Xt = self._estimator.transform(X[self._estimator.feature_names_in_])
 
-        X.update(Xt)  # Reorder columns to original order
+        X.update(Xt)
 
         return X[self.feature_names_in_]
 
@@ -2862,7 +2858,7 @@ class Scaler(TransformerMixin):
         self._log("Scaling features...", 1)
         Xt = self._estimator.transform(X[self._estimator.feature_names_in_])
 
-        X.update(Xt)  # Reorder columns to original order
+        X.update(Xt)
 
         return X
 
