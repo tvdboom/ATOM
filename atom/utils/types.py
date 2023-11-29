@@ -194,16 +194,10 @@ TReturns: TypeAlias = TReturn | tuple[TReturn, TReturn]
 
 # Selection of rows or columns by name or position
 ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | DataFrame
-RowSelector: TypeAlias = (
-    Hashable
-    | Sequence[Hashable]
-    | Index
-    | Series
-    | ColumnSelector
-)
+RowSelector: TypeAlias = Hashable | Sequence[Hashable] | ColumnSelector
 
 # Assignment of index or stratify parameter
-IndexSelector: TypeAlias = Bool | Int | str | Sequence[Hashable] | Index | Series
+IndexSelector: TypeAlias = Bool | Int | str | Sequence[Hashable]
 
 # Types to initialize and select models and metric
 ModelsConstructor: TypeAlias = str | Predictor | Sequence[str | Predictor] | None
@@ -273,8 +267,12 @@ NItems: TypeAlias = (
 )
 
 # Allowed values for method selection
-PredictionMethod: TypeAlias = Literal[
-    "decision_function", "predict_proba", "predict", "thresh"
+PredictionMethods: TypeAlias = Literal[
+    "decision_function", "predict", "predict_log_proba", "predict_proba", "score"
+]
+PredictionMethodsTS: TypeAlias = Literal[
+    "predict", "predict_interval", "predict_proba", "predict_quantiles",
+    "predict_residuals", "predict_var", "score"
 ]
 
 # Plotting parameters
@@ -303,8 +301,9 @@ bool_t = (bool, np.bool_)
 int_t = (int, np.integer)
 float_t = (float, np.floating)
 segment_t = (slice, range)
+index_t = (pd.Index, md.Index)
 tsindex_t = TSIndex.__args__
 series_t = (pd.Series, md.Series)
-sequence_t = (range, list, tuple, np.ndarray, pd.Index, md.Index, pd.Series, md.Series)
+sequence_t = (range, list, tuple, np.ndarray, *index_t, *series_t)
 dataframe_t = (pd.DataFrame, md.DataFrame)
-pandas_t = (pd.Series, md.Series, pd.DataFrame, md.DataFrame)
+pandas_t = (*series_t, *dataframe_t)

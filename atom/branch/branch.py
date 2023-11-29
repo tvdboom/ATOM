@@ -26,7 +26,7 @@ from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Index, Int, IntLargerEqualZero, Pandas,
     RowSelector, Scalar, Sequence, TargetSelector, TargetsSelector, XSelector,
-    YSelector, dataframe_t, int_t, segment_t, series_t,
+    YSelector, dataframe_t, index_t, int_t, segment_t, series_t,
 )
 from atom.utils.utils import (
     DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
@@ -436,26 +436,6 @@ class Branch:
         """
         return bk.concat([self.dataset, self.holdout])
 
-    @property
-    def _allX(self) -> DataFrame:
-        """Features for dataset + holdout.
-
-        Note that calling this property triggers the holdout set
-        calculation.
-
-        """
-        return self._all[self.features]
-
-    @property
-    def _ally(self) -> Pandas:
-        """Target column for dataset + holdout.
-
-        Note that calling this property triggers the holdout set
-        calculation.
-
-        """
-        return self._all[self.target]
-
     # Utility methods ============================================== >>
 
     @overload
@@ -504,30 +484,32 @@ class Branch:
             Subset of target column. Only returned if return_X_y=True.
 
         """
-        indices = self._all.index
+        _all = self._all  # Avoid multiple calls -> could be costly
 
         inc: list[Hashable] = []
         exc: list[Hashable] = []
         if isinstance(rows, dataframe_t):
             inc.extend(rows.index)
+        elif isinstance(rows, index_t):
+            inc.extend(rows)
         elif isinstance(rows, segment_t):
-            inc.extend(indices[rows])
+            inc.extend(_all.index[rows])
         else:
             for row in lst(rows):
-                if row in indices:
+                if row in _all.index:
                     inc.append(row)
                 elif isinstance(row, int_t):
-                    if -len(indices) <= row < len(indices):
-                        inc.append(indices[int(row)])
+                    if -len(_all.index) <= row < len(_all.index):
+                        inc.append(_all.index[int(row)])
                     else:
                         raise IndexError(
                             f"Invalid value for the rows parameter. Value {rows} "
-                            f"is out of range for data with {len(indices)} rows."
+                            f"is out of range for data with {len(_all)} rows."
                         )
                 elif isinstance(row, str):
                     for r in row.split("+"):
                         array = inc
-                        if r.startswith("!") and r not in indices:
+                        if r.startswith("!") and r not in _all.index:
                             array = exc
                             r = r[1:]
 
@@ -540,8 +522,8 @@ class Branch:
                                     "Invalid value for the rows parameter. No holdout "
                                     "data set was declared when initializing atom."
                                 ) from None
-                        elif (matches := indices.str.fullmatch(r)).sum() > 0:
-                            array.extend(indices[matches])
+                        elif (matches := _all.index.str.fullmatch(r)).sum() > 0:
+                            array.extend(_all.index[matches])
 
         if len(inc) + len(exc) == 0:
             raise ValueError(
@@ -555,10 +537,10 @@ class Branch:
             )
         elif exc:
             # If rows were excluded with `!`, select all but those
-            inc = list(indices[~indices.isin(exc)])
+            inc = list(_all.index[~_all.index.isin(exc)])
 
         if return_X_y:
-            return self._allX.loc[inc], self._ally.loc[inc]  # type: ignore[index]
+            return _all.loc[inc, self.features], _all.loc[inc, self.target]  # type: ignore
         else:
             return self._all.loc[inc]
 

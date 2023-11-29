@@ -349,6 +349,12 @@ def test_get_rows_is_dataframe():
     assert len(atom.branch._get_rows(rows=atom.test)) == len(atom.test)
 
 
+def test_get_rows_is_index():
+    """Assert that an Index object returns the rows directly."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    assert len(atom.branch._get_rows(rows=atom.test.index)) == len(atom.test)
+
+
 def test_get_rows_is_range():
     """Assert that a range of rows is returned."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)

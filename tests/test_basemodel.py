@@ -164,7 +164,6 @@ def test_custom_distributions_meta_estimators():
                 "base_estimator__solver": CategoricalDistribution(["lbfgs", "newton-cg"]),
             }
         },
-        errors="raise"
     )
 
 
@@ -192,7 +191,7 @@ def test_multi_objective_optimization():
 def test_hyperparameter_tuning_with_plot():
     """Assert that you can plot the hyperparameter tuning as it runs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, ht_params={"plot": True})
+    atom.run(["LDA", "lSVM", "SVM"], n_trials=10, errors="raise", ht_params={"plot": True})
 
 
 def test_xgb_optimizes_score():
@@ -717,12 +716,19 @@ def test_calibrate_new_mlflow_run():
 
 def test_clear():
     """Assert that the clear method resets the model's attributes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("SGD", est_params={"max_iter": 5})
     atom.plot_shap_beeswarm(display=False)
-    assert not atom.lr._shap._shap_values.empty
+    atom.evaluate(rows="holdout")
+    assert atom.sgd._evals
+    assert atom.sgd._memoizer.memory
+    assert not atom.sgd._shap._shap_values.empty
+    assert "holdout" in atom.sgd.branch.__dict__
     atom.clear()
-    assert atom.lr._shap._shap_values.empty
+    assert not atom.sgd._evals
+    assert not atom.sgd._memoizer.memory
+    assert atom.sgd._shap._shap_values.empty
+    assert "holdout" not in atom.sgd.branch.__dict__
 
 
 @patch("gradio.Interface")

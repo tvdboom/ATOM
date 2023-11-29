@@ -9,6 +9,7 @@ Description: Module containing utility classes.
 
 from __future__ import annotations
 
+import functools
 import os
 import sys
 import warnings
@@ -173,16 +174,6 @@ class Task(Enum):
     def is_multioutput(self) -> bool:
         """Return whether the task has more than one target column."""
         return self.value in (2, 3, 5, 7)
-
-    @property
-    def goal(self) -> Goal:
-        """Return the Goal corresponding to this task."""
-        if self.is_classification:
-            return Goal.classification
-        elif self.is_regression:
-            return Goal.regression
-        else:
-            return Goal.forecast
 
 
 @dataclass
@@ -947,6 +938,8 @@ class ShapExplanation:
     ) -> Explanation:
         """Get an Explanation object.
 
+        Shap values are memoized to not repeat calculations on same rows.
+
         Parameters
         ----------
         df: dataframe
@@ -988,12 +981,12 @@ class ShapExplanation:
                     )
 
             # Remember shap values in the _shap_values attribute
-            values = pd.Series(
-                data=list(self._explanation.values),
-                index=calculate.index,
-                dtype="object",
+            self._shap_values = pd.concat(
+                [
+                    self._shap_values,
+                    bk.Series(list(self._explanation.values), index=calculate.index),
+                ]
             )
-            self._shap_values = pd.concat([self._shap_values, values])
 
         # Don't use attribute to not save plot-specific changes
         # Shallow copy to not copy the data in the branch
@@ -1002,7 +995,6 @@ class ShapExplanation:
         # Update the explanation object
         explanation.values = np.stack(self._shap_values.loc[df.index].tolist())
         explanation.base_values = self._explanation.base_values[0]
-        explanation.data = self.branch._allX.loc[df.index].to_numpy()
 
         if self.task.is_multioutput:
             if explanation.values.shape[-1] == self.branch.y.shape[1]:
@@ -2631,6 +2623,29 @@ def score(f: Callable) -> Callable:
 
 # Decorators ======================================================= >>
 
+def cache(f: Callable) -> Callable:
+    """Cache method utility.
+
+    This decorator checks if `functools.cache` works (fails when args
+    are not hashable), and else returns the result without caching.
+
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs) -> Any:
+        try:
+            return memoize(*args, **kwargs)
+        except TypeError:
+            return f(*args, **kwargs)
+
+    memoize = functools.cache(f)
+
+    # Add a function to clear the cache
+    wrapper.clear_cache = memoize.cache_clear
+
+    return wrapper
+
+
 def has_task(task: str | Sequence[str]) -> Callable:
     """Checks that the instance has a specific task.
 
@@ -2643,11 +2658,6 @@ def has_task(task: str | Sequence[str]) -> Callable:
         Tasks to check. Choose from: classification, regression,
         forecast, binary, multioutput. Add the character `!` before
         a task to not allow that task instead.
-
-    Returns
-    -------
-    func
-        Function to check.
 
     """
 

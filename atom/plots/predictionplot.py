@@ -687,7 +687,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
-                model = OrdinaryLeastSquares(goal=self.task.goal, branches=self._branches)
+                model = OrdinaryLeastSquares(goal=self._goal)
                 estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
 
                 fig.add_trace(
