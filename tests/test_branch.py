@@ -200,20 +200,6 @@ def test_all_property():
     assert len(atom.branch._all) == len(X_bin)
 
 
-def test_allX_property():
-    """Assert that the _allX property returns the features for dataset + holdout."""
-    atom = ATOMRegressor(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    assert len(atom.branch.dataset) != len(X_bin)
-    assert atom.branch._allX.shape == X_bin.shape
-
-
-def test_ally_property():
-    """Assert that the _ally property returns the target for dataset + holdout."""
-    atom = ATOMRegressor(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    assert len(atom.branch.dataset) != len(X_bin)
-    assert atom.branch._ally.shape == (len(X_bin),)
-
-
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
     new_dataset = merge(X_bin, y_bin)

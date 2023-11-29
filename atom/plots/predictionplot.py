@@ -273,7 +273,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, segment or sequence, default="test"
             [Selection of rows][row-and-column-selection] on which to
             calculate the confusion matrix.
 
@@ -2678,7 +2678,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        rows: hashable, range, slice or sequence, default="test"
+        rows: hashable, segment or sequence, default="test"
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 

@@ -64,7 +64,7 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     HT, Backend, Bool, DataFrame, Engine, FHSelector, Float, FloatZeroToOneExc,
-    Int, IntLargerEqualZero, MetricConstructor, NJobs, Pandas,
+    Int, IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
     PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
     Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector,
     YSelector, dataframe_t, float_t, int_t,
@@ -2431,7 +2431,7 @@ class ClassRegModel(BaseModel):
         self,
         X: RowSelector | XSelector,
         y: YSelector | None = ...,
-        metric: MetricConstructor = ...,
+        metric: str | MetricFunction | Scorer | None = ...,
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: Literal["score"] = ...,
@@ -2442,7 +2442,7 @@ class ClassRegModel(BaseModel):
         self,
         X: RowSelector | XSelector,
         y: YSelector | None = ...,
-        metric: MetricConstructor = ...,
+        metric: str | MetricFunction | Scorer | None = ...,
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: PredictionMethods = ...,
@@ -2452,7 +2452,7 @@ class ClassRegModel(BaseModel):
         self,
         X: RowSelector | XSelector,
         y: YSelector | None = None,
-        metric: MetricConstructor = None,
+        metric: str | MetricFunction | Scorer | None = None,
         sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
         method: PredictionMethods = "predict",
@@ -2465,7 +2465,7 @@ class ClassRegModel(BaseModel):
 
         Parameters
         ----------
-        X: hashable, range, slice, sequence or dataframe-like
+        X: hashable, segment, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] or feature
             set with shape=(n_samples, n_features) to make predictions
             on.
@@ -2619,7 +2619,7 @@ class ClassRegModel(BaseModel):
 
         Parameters
         ----------
-        X: hashable, range, slice, sequence or dataframe-like
+        X: hashable, segment, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] or feature
             set with shape=(n_samples, n_features) to make predictions
             on.
@@ -2656,7 +2656,7 @@ class ClassRegModel(BaseModel):
 
         Parameters
         ----------
-        X: hashable, range, slice, sequence or dataframe-like
+        X: hashable, segment, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] or feature
             set with shape=(n_samples, n_features) to make predictions
             on.
@@ -2692,7 +2692,7 @@ class ClassRegModel(BaseModel):
 
         Parameters
         ----------
-        X: hashable, range, slice, sequence or dataframe-like
+        X: hashable, segment, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] or feature
             set with shape=(n_samples, n_features) to make predictions
             on.
@@ -2728,7 +2728,7 @@ class ClassRegModel(BaseModel):
 
         Parameters
         ----------
-        X: hashable, range, slice, sequence or dataframe-like
+        X: hashable, segment, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] or feature
             set with shape=(n_samples, n_features) to make predictions
             on.
@@ -2754,7 +2754,7 @@ class ClassRegModel(BaseModel):
         X: RowSelector | XSelector,
         y: YSelector | None = None,
         *,
-        metric: MetricConstructor = None,
+        metric: str | MetricFunction | Scorer | None = None,
         sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
     ) -> Float:
@@ -2773,7 +2773,7 @@ class ClassRegModel(BaseModel):
 
         Parameters
         ----------
-        X: hashable, range, slice, sequence or dataframe-like
+        X: hashable, segment, sequence or dataframe-like
             [Selection of rows][row-and-column-selection] or feature
             set with shape=(n_samples, n_features) to make predictions
             on.
@@ -2825,9 +2825,9 @@ class ForecastModel(BaseModel):
     @overload
     def _prediction(
         self,
-        y: YSelector | None = None,
-        X: RowSelector | XSelector | None = None,
-        metric: MetricConstructor = None,
+        y: RowSelector | YSelector | None = None,
+        X: XSelector | None = None,
+        metric: str | MetricFunction | Scorer | None = None,
         verbose: Int | None = None,
         method: Literal["score"] = ...,
         **kwargs,
@@ -2836,9 +2836,9 @@ class ForecastModel(BaseModel):
     @overload
     def _prediction(
         self,
-        y: YSelector | None = None,
-        X: RowSelector | XSelector | None = None,
-        metric: MetricConstructor = None,
+        y: RowSelector | YSelector | None = None,
+        X: XSelector | None = None,
+        metric: str | MetricFunction | Scorer | None = None,
         verbose: Int | None = None,
         method: PredictionMethodsTS = ...,
         **kwargs,
@@ -2846,9 +2846,9 @@ class ForecastModel(BaseModel):
 
     def _prediction(
         self,
-        y: YSelector | None = None,
-        X: RowSelector | XSelector | None = None,
-        metric: MetricConstructor = None,
+        y: RowSelector | YSelector | None = None,
+        X: XSelector | None = None,
+        metric: str | MetricFunction | Scorer | None = None,
         verbose: Int | None = None,
         method: PredictionMethodsTS = "predict",
         **kwargs,
@@ -2861,11 +2861,11 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        y: sequence or dataframe-like
+        y: int, str, dict, sequence, dataframe or None, default=None
             Ground truth observations.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,
@@ -2890,10 +2890,13 @@ class ForecastModel(BaseModel):
             called.
 
         """
-        Xt, yt = self.transform(X, y, verbose=verbose)
+        Xt, yt = X, y  # self.transform(X, y, verbose=verbose)  TODO: Fix pipeline ts
 
         if method != "score":
-            return self.memory.cache(getattr(self.estimator, method))(**kwargs)
+            if "y" in sign(func := getattr(self.estimator, method)):
+                return self.memory.cache(func)(y=yt, X=Xt, **kwargs)
+            else:
+                return self.memory.cache(func)(X=Xt, **kwargs)
         else:
             if metric is None:
                 scorer = self._metric[0]
@@ -2925,8 +2928,8 @@ class ForecastModel(BaseModel):
             The forecasting horizon encoding the time stamps to
             forecast at.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If None,
@@ -2965,8 +2968,8 @@ class ForecastModel(BaseModel):
             The forecasting horizon encoding the time stamps to
             forecast at.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         coverage: float or sequence, default=0.9
             Nominal coverage(s) of predictive interval(s).
@@ -3014,8 +3017,8 @@ class ForecastModel(BaseModel):
             The forecasting horizon encoding the time stamps to
             forecast at.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         marginal: bool, default=True
             Whether returned distribution is marginal by time index.
@@ -3062,8 +3065,8 @@ class ForecastModel(BaseModel):
             The forecasting horizon encoding the time stamps to
             forecast at.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         alpha: float or list of float, default=[0.05, 0.95]
             A probability or list of, at which quantile forecasts are
@@ -3093,7 +3096,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_residuals(
         self,
-        y: Sequence[Any] | DataFrame,
+        y: RowSelector | YSelector,
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
@@ -3108,11 +3111,11 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        y: sequence or dataframe-like
-            Ground truth observations to compute residuals to.
+        y: int, str, dict, sequence or dataframe
+            Ground truth observations.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `y`.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If None,
@@ -3131,7 +3134,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_var(
         self,
-        fh: FHSelector,
+        fh: RowSelector | FHSelector,
         X: XSelector | None = None,
         *,
         cov: Bool = False,
@@ -3151,11 +3154,11 @@ class ForecastModel(BaseModel):
             The forecasting horizon encoding the time stamps to
             forecast at.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         cov: bool, default=False
-            Whether to computes covariance matrix forecast or marginal
+            Whether to compute covariance matrix forecast or marginal
             variance forecasts.
 
         verbose: int or None, default=None
@@ -3181,11 +3184,11 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def score(
         self,
-        y: Sequence[Any] | DataFrame,
-        X: DataFrame | None = None,
+        y: RowSelector | YSelector,
+        X: XSelector | None = None,
         fh: FHSelector | None = None,
         *,
-        metric: MetricConstructor = None,
+        metric: str | MetricFunction | Scorer | None = None,
         verbose: Int | None = None,
     ) -> Float:
         """Get a metric score on new data.
@@ -3203,11 +3206,11 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        y: sequence or dataframe-like
+        y: int, str, dict, sequence or dataframe
             Ground truth observations.
 
-        X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh.
+        X: hashable, segment, sequence, dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
 
         fh: int, sequence or [ForecastingHorizon][] or None, default=None
             The forecasting horizon encoding the time stamps to

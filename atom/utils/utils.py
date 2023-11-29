@@ -56,7 +56,7 @@ from sklearn.utils import _print_elapsed_time
 from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, DataFrame, Estimator, Float, Index, IndexSelector, Int,
-    IntLargerEqualZero, MetricConstructor, Model, Pandas, Predictor, Scalar,
+    IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
     Scorer, Segment, Sequence, Series, Transformer, TReturn, TReturns, Verbose,
     XSelector, YSelector, YTypes, dataframe_t, int_t, pandas_t, segment_t,
     sequence_t, series_t,
@@ -2054,7 +2054,7 @@ def check_is_fitted(
     return True
 
 
-def get_custom_scorer(metric: MetricConstructor) -> Scorer:
+def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -2779,14 +2779,6 @@ def wrap_methods(f: Callable) -> Callable:
     - Transform the input to pandas types.
     - Check if the instance is fitted before transforming.
     - Convert output to pyarrow dtypes if specified in config.
-
-    Parameters
-    ----------
-    f: callable
-        Function to decorate.
-
-    check_fitted: bool
-        Whether to check if the instance is fitted.
 
     """
 

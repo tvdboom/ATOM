@@ -549,7 +549,7 @@ def test_input_is_train_test_with_parameter_y():
 
 def test_input_is_train_test_for_forecast():
     """Assert that input train, test works for forecast tasks."""
-    trainer = DirectForecaster("ES", random_state=1)
+    trainer = DirectForecaster("ES", errors="raise", random_state=1)
     trainer.run(fc_train, fc_test)
     assert_series_equal(trainer.y, pd.concat([fc_train, fc_test]))
 

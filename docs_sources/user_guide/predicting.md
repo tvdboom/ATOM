@@ -41,8 +41,8 @@ For forecast tasks:
 
 !!! warning
     The `score` method return atom's metric score, not the metric returned
-    by sklearn's score method for estimators. Use the method's `metric`
-    parameter to calculate a different metric.
+    by sklearn/sktime's score method for estimators. Use the method's
+    `metric` parameter to calculate a different metric.
 
 !!! note
     * The output of ATOM's methods are pandas objects, not numpy arrays.

@@ -548,12 +548,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             rows_c = [(self.branch._get_rows(v), k) for k, v in rows.items()]
 
         if len(rows_c) == 1:
-            self.report = self.memory.cache(sv.analyze)(
+            self.report = sv.analyze(
                 source=rows_c[0],
                 target_feat=self.branch._get_target(target, only_columns=True),
             )
         elif len(rows_c) == 2:
-            self.report = self.memory.cache(sv.compare)(
+            self.report = sv.compare(
                 source=rows_c[0],
                 compare=rows_c[1],
                 target_feat=self.branch._get_target(target, only_columns=True),
@@ -1222,7 +1222,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         name = transformer_c.__class__.__name__
         while name in self.pipeline:
             counter += 1
-            name = f"{transformer_c.__class__.__name__}{counter}"
+            name = f"{transformer_c.__class__.__name__.lower()}-{counter}"
 
         self.branch.pipeline.steps.append((name, transformer_c))
 

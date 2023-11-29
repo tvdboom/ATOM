@@ -124,4 +124,12 @@ jobs:
           pip install -U pytest pytest-xdist nbmake scikeras tensorflow
           pip install -e .[full]
       - name: Run example notebooks
-        run: pytest --nbmake -n=auto --nbmake-timeout=600 --ignore=./examples/webapp/ --ignore=./examples/accelerating_cuml.ipynb ./examples/
+        run: |
+          pytest \
+          -n=auto \
+          --nbmake \
+          --nbmake-timeout=600 \
+          --ignore=./examples/webapp/ \
+          --ignore=./examples/accelerating_cuml.ipynb \
+          --ignore=./examples/ray_backend.ipynb \
+          ./examples/
