@@ -4544,7 +4544,7 @@
 
 <h1 id="pipeline">Pipeline</h1>
 <hr />
-<p><a id='Pipeline'></a><div class='sign'><em>class</em> atom.pipeline.<strong style='color:#008AB8'>Pipeline</strong>(steps, memory=None, verbose=0)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L33>[source]</a></span></div>Pipeline of transforms with a final estimator.</p>
+<p><a id='Pipeline'></a><div class='sign'><em>class</em> atom.pipeline.<strong style='color:#008AB8'>Pipeline</strong>(steps, memory=None, verbose=0)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L35>[source]</a></span></div>Pipeline of transforms with a final estimator.</p>
 <p>Sequentially apply a list of transforms and a final estimator.
 Intermediate steps of the pipeline must be transformsers, that
 is, they must implement <code>fit</code> and <code>transform</code> methods. The final
@@ -4630,9 +4630,9 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go">Train set size: 456</span>
 <span class="go">Test set size: 113</span>
 <span class="go">-------------------------------------</span>
-<span class="go">Memory: 138.96 kB</span>
+<span class="go">Memory: 138.97 kB</span>
 <span class="go">Scaled: False</span>
-<span class="go">Outlier values: 166 (1.2%)</span>
+<span class="go">Outlier values: 165 (1.2%)</span>
 
 
 
@@ -4652,14 +4652,14 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go">Fitting FeatureSelector...</span>
 <span class="go">Performing feature selection ...</span>
 <span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
-<span class="go">   --&gt; Dropping feature mean radius (rank 2).</span>
-<span class="go">   --&gt; Dropping feature mean texture (rank 4).</span>
-<span class="go">   --&gt; Dropping feature mean smoothness (rank 9).</span>
-<span class="go">   --&gt; Dropping feature mean symmetry (rank 6).</span>
-<span class="go">   --&gt; Dropping feature smoothness error (rank 3).</span>
-<span class="go">   --&gt; Dropping feature concavity error (rank 7).</span>
-<span class="go">   --&gt; Dropping feature symmetry error (rank 5).</span>
+<span class="go">   --&gt; Dropping feature mean texture (rank 2).</span>
+<span class="go">   --&gt; Dropping feature mean smoothness (rank 3).</span>
+<span class="go">   --&gt; Dropping feature mean symmetry (rank 9).</span>
+<span class="go">   --&gt; Dropping feature texture error (rank 7).</span>
+<span class="go">   --&gt; Dropping feature smoothness error (rank 4).</span>
+<span class="go">   --&gt; Dropping feature concavity error (rank 5).</span>
 <span class="go">   --&gt; Dropping feature worst compactness (rank 8).</span>
+<span class="go">   --&gt; Dropping feature worst fractal dimension (rank 6).</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
@@ -4673,17 +4673,17 @@ Number of features seen during first step <code>fit</code> method.</p>
 
 <span class="go">Results for LogisticRegression:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.981</span>
-<span class="go">Test evaluation --&gt; f1: 0.9929</span>
-<span class="go">Time elapsed: 0.034s</span>
+<span class="go">Train evaluation --&gt; f1: 0.9913</span>
+<span class="go">Test evaluation --&gt; f1: 0.9787</span>
+<span class="go">Time elapsed: 0.030s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.034s</span>
+<span class="go">Time: 0.030s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.037s</span>
+<span class="go">Total time: 0.033s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9929</span>
+<span class="go">LogisticRegression --&gt; f1: 0.9787</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the pipeline and make predictions</span>
@@ -4694,17 +4694,17 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go"> 1 0 0 1 0 0 0 0 0 1 0 1 1 1 1 1 0 0 1 0 0 1 1 1 1 0 1 0 0 1 1 1 1 0 1 0 1</span>
 <span class="go"> 1 0 1 0 0 1 1 1 0 0 1 0 0 0 1 1 1 0 1 1 0 0 1 1 1 0 0 1 1 1 1 0 1 1 0 1 1</span>
 <span class="go"> 1 1 1 1 1 1 0 0 0 1 0 0 1 1 1 0 0 1 0 1 0 0 1 0 1 1 1 0 1 1 0 1 1 1 1 0 1</span>
-<span class="go"> 1 1 1 1 1 1 1 1 0 1 1 1 1 0 0 1 0 1 1 0 0 1 1 0 0 1 1 1 1 0 1 1 0 0 0 1 0</span>
+<span class="go"> 1 1 1 1 1 1 1 1 0 0 1 1 1 0 0 1 0 1 1 0 0 1 1 0 0 1 1 1 1 0 1 1 0 0 0 1 0</span>
 <span class="go"> 1 0 1 1 1 0 1 1 0 0 1 0 0 0 0 1 0 0 0 1 0 1 0 1 1 0 1 0 0 0 0 1 1 0 0 1 1</span>
 <span class="go"> 1 0 1 1 1 1 1 0 0 1 1 0 1 1 0 0 1 0 1 1 1 1 0 1 1 1 1 1 0 1 0 0 0 0 0 0 0</span>
-<span class="go"> 0 0 0 0 1 0 0 1 1 1 1 1 1 0 1 0 1 1 0 1 1 0 1 0 0 1 1 1 1 1 1 1 0 1 1 1 1</span>
+<span class="go"> 0 0 0 0 0 0 0 1 1 1 1 1 1 0 1 0 1 1 0 1 1 0 1 0 0 1 1 1 1 1 1 1 1 1 1 1 1</span>
 <span class="go"> 1 1 1 1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 1 0 1 0 1 1 1 1 0 0 0 1 1</span>
-<span class="go"> 1 1 0 1 0 1 0 1 1 1 0 1 1 1 1 1 1 1 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 1 0 0</span>
+<span class="go"> 1 1 0 1 0 1 0 1 1 1 0 1 1 1 1 1 1 1 0 0 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1 0 0</span>
 <span class="go"> 0 1 0 0 1 1 1 1 1 0 1 1 1 1 1 0 1 1 1 0 1 1 0 0 1 1 1 1 1 1 0 1 1 1 1 1 1</span>
 <span class="go"> 1 0 1 1 1 1 0 0 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 1 0 1 1 1 1 1 0 1 1</span>
 <span class="go"> 0 1 0 1 1 0 1 0 1 1 1 1 1 1 1 1 0 0 1 1 1 1 1 1 0 1 1 1 1 1 1 1 1 1 1 0 1</span>
 <span class="go"> 1 1 1 1 1 1 0 1 0 1 1 0 1 1 1 1 1 0 0 1 0 1 0 1 1 1 1 1 0 1 1 0 1 0 1 0 0</span>
-<span class="go"> 1 1 1 0 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 1 1 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1</span>
+<span class="go"> 1 1 1 0 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</span>
 <span class="go"> 1 1 1 1 1 1 1 0 0 0 0 0 0 1]</span>
 </code></pre></div>
 <p><br></p>
@@ -4713,7 +4713,7 @@ Number of features seen during first step <code>fit</code> method.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#pipeline-decision_function">decision_function</a></td><td>Transform, then decision_function of the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-fit">fit</a></td><td>Fit the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-fit_predict">fit_predict</a></td><td>Transform the data, and apply <code>fit_predict</code> with the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-fit_transform">fit_transform</a></td><td>Fit the pipeline and transform the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-get_feature_names_out">get_feature_names_out</a></td><td>Get output feature names for transformation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-inverse_transform">inverse_transform</a></td><td>Inverse transform for each step in a reverse order.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-predict">predict</a></td><td>Transform, then predict of the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-predict_log_proba">predict_log_proba</a></td><td>Transform, then predict_log_proba of the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-predict_proba">predict_proba</a></td><td>Transform, then predict_proba of the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-score">score</a></td><td>Transform, then score of the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-score_samples">score_samples</a></td><td>Transform the data, and apply <code>score_samples</code> with the final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-set_output">set_output</a></td><td>Set the output container when <code>"transform"</code> and <code>"fit_transform"</code> are called.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#pipeline-transform">transform</a></td><td>Transform the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='pipeline-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L592>[source]</a></span></div>Transform, then decision_function of the final estimator.</p>
+<p><a id='pipeline-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L597>[source]</a></span></div>Transform, then decision_function of the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='decision_function-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -4722,7 +4722,7 @@ Predicted confidence scores.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L324>[source]</a></span></div>Fit the pipeline.</p>
+<p><a id='pipeline-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L329>[source]</a></span></div>Fit the pipeline.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
@@ -4759,7 +4759,7 @@ Result of calling <code>fit_predict</code> on the final estimator.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L366>[source]</a></span></div>Fit the pipeline and transform the data.</p>
+<p><a id='pipeline-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L371>[source]</a></span></div>Fit the pipeline and transform the data.</p>
 <p>Call <code>fit</code> followed by <code>transform</code> on each transformer in the
 pipeline. The transformed data are finally passed to the final
 estimator that calls the <code>transform</code> method. Only valid if the
@@ -4810,7 +4810,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L479>[source]</a></span></div>Inverse transform for each step in a reverse order.</p>
+<p><a id='pipeline-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L484>[source]</a></span></div>Inverse transform for each step in a reverse order.</p>
 <p>All estimators in the pipeline must implement the
 <code>inverse_transform</code> method.</p>
 <table class="table_params">
@@ -4835,7 +4835,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, **predict_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L522>[source]</a></span></div>Transform, then predict of the final estimator.</p>
+<p><a id='pipeline-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, **predict_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L527>[source]</a></span></div>Transform, then predict of the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -4850,7 +4850,7 @@ Predicted classes with shape=(n_samples,).
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L571>[source]</a></span></div>Transform, then predict_log_proba of the final estimator.</p>
+<p><a id='pipeline-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L576>[source]</a></span></div>Transform, then predict_log_proba of the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict_log_proba-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -4859,7 +4859,7 @@ Predicted class log-probabilities.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L550>[source]</a></span></div>Transform, then predict_proba of the final estimator.</p>
+<p><a id='pipeline-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L555>[source]</a></span></div>Transform, then predict_proba of the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict_proba-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -4868,7 +4868,7 @@ Predicted class probabilities.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L613>[source]</a></span></div>Transform, then score of the final estimator.</p>
+<p><a id='pipeline-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L618>[source]</a></span></div>Transform, then score of the final estimator.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='score-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -4920,7 +4920,7 @@ Pipeline class instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pipeline-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L431>[source]</a></span></div>Transform the data.</p>
+<p><a id='pipeline-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L436>[source]</a></span></div>Transform the data.</p>
 <p>Call <code>transform</code> on each transformer in the pipeline. The
 transformed data are finally passed to the final estimator
 that calls the <code>transform</code> method. Only valid if the final

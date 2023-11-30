@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BaseRunner class.
 
@@ -52,10 +52,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     """
 
     def __getstate__(self) -> dict[str, Any]:
-        # Store an extra attribute with the package versions
+        """Require to store an extra attribute with the package versions."""
         return self.__dict__ | {"_versions": get_versions(self._models)}
 
     def __setstate__(self, state: dict[str, Any]):
+        """Check if the loaded versions match with those installed."""
         versions = state.pop("_versions", None)
         self.__dict__.update(state)
 
@@ -70,6 +71,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     )
 
     def __getattr__(self, item: str) -> Any:
+        """Get branch, attr from branch, model, column or attr from dataset."""
         if item in self.__dict__["_branches"]:
             return self._branches[item]  # Get branch
         elif item in dir(self.branch) and not item.startswith("_"):
@@ -86,24 +88,29 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             )
 
     def __setattr__(self, item: str, value: Any):
+        """Set attr to branch when it's a property of Branch."""
         if isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
 
     def __delattr__(self, item: str):
+        """Delete model."""
         if item in self._models:
             self.delete(item)
         else:
             super().__delattr__(item)
 
     def __len__(self) -> int:
+        """Return length of dataset."""
         return len(self.dataset)
 
     def __contains__(self, item: str) -> bool:
+        """Whether the item is a column in the dataset."""
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Any:
+        """Get a branch, model or column from the dataset."""
         if self.branch._container is None:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the ATOM's custom sklearn-like pipeline.
 
@@ -144,22 +144,25 @@ class Pipeline(SkPipeline):
         super().__init__(steps, memory=memory, verbose=verbose)
 
     def __bool__(self):
+        """Whether the pipeline has at least one estimator."""
         return len(self.steps) > 0
 
     def __contains__(self, item: str | Any):
+        """Whether the name or estimator is in the pipeline."""
         if isinstance(item, str):
             return item in self.named_steps
         else:
             return item in self.named_steps.values()
 
     def __getattr__(self, item: str):
+        """Get the attribute from the final estimator."""
         try:
             return getattr(self._final_estimator, item)
         except (AttributeError, IndexError):
             raise AttributeError(f"'Pipeline' object has no attribute '{item}'.")
 
     def __sklearn_is_fitted__(self):
-        """Indicate whether the pipeline has been fitted."""
+        """Whether the pipeline has been fitted."""
         try:
             # check if the last step of the pipeline is fitted
             # we only check the last step since if the last step is fit, it

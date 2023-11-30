@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BasePlot class.
 
@@ -9,7 +9,7 @@ Description: Module containing the BasePlot class.
 
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -23,7 +23,6 @@ from mlflow.tracking import MlflowClient
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
-from atom.branch import Branch
 from atom.plots.basefigure import BaseFigure
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
@@ -32,7 +31,7 @@ from atom.utils.types import (
     RowSelector, Scalar, Sequence, int_t, sequence_t,
 )
 from atom.utils.utils import (
-    Aesthetics, Task, check_is_fitted, composed, crash, get_custom_scorer, lst,
+    Aesthetics, check_is_fitted, composed, crash, get_custom_scorer, lst,
 )
 
 
@@ -55,16 +54,6 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         line_width=2,
         marker_size=8,
     )
-
-    # Abstract ===================================================== >>
-
-    @property
-    @abstractmethod
-    def task(self) -> Task: ...
-
-    @property
-    @abstractmethod
-    def branch(self) -> Branch: ...
 
     # Properties =================================================== >>
 

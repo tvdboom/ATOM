@@ -4544,7 +4544,7 @@
 
 <h1 id="discretizer">Discretizer</h1>
 <hr />
-<p><a id='Discretizer'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Discretizer</strong>(strategy="quantile", bins=5, labels=None, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, verbose=0, logger=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L985>[source]</a></span></div>Bin continuous data into intervals.</p>
+<p><a id='Discretizer'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Discretizer</strong>(strategy="quantile", bins=5, labels=None, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, verbose=0, logger=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L980>[source]</a></span></div>Bin continuous data into intervals.</p>
 <p>For each feature, the bin edges are computed during fit and,
 together with the number of bins, they define the intervals.
 Ignores categorical columns.</p>
@@ -4572,10 +4572,9 @@ Bin number or bin edges in which to split every column.</p>
 <li>
 <p>If sequence:</p>
 <ul>
-<li>For strategy!="custom": Number of bins per column,
-  allowing for non-uniform width. The n-th value corresponds
-  to the n-th column that is transformed. Note that
-  categorical columns are automatically ignored.</li>
+<li>For strategy!="custom": Number of bins per column. The
+  n-th value corresponds to the n-th column that is
+  transformed. Categorical columns are ignored.</li>
 <li>For strategy="custom": Bin edges with length=n_bins - 1.
   The outermost edges are always <code>-inf</code> and <code>+inf</code>, e.g.,
   bins <code>[1, 2]</code> indicate <code>(-inf, 1], (1, 2], (2, inf]</code>.</li>
@@ -4583,7 +4582,8 @@ Bin number or bin edges in which to split every column.</p>
 </li>
 <li>
 <p>If dict: One of the aforementioned options per column, where
-  the key is the column's name.</p>
+  the key is the column's name. Columns that are not in the
+  dictionary are not transformed.</p>
 </li>
 </ul>
 <p></div><a id='discretizer-labels'></a><strong>labels: sequence, dict or None, default=None</strong><br><div markdown class='param'>
@@ -4591,7 +4591,8 @@ Label names with which to replace the binned intervals.</p>
 <ul>
 <li>If None: Use default labels of the form <code>(min_edge, max_edge]</code>.</li>
 <li>If sequence: Labels to use for all columns.</li>
-<li>If dict: Labels per column, where the key is the column's name.</li>
+<li>If dict: Labels per column, where the key is the column's name.
+  Columns that are not in the dictionary use the default labels.</li>
 </ul>
 <p></div><a id='discretizer-device'></a><strong>device: str, default="cpu"</strong><br><div markdown class='param'>
 Device on which to run the estimators. Use any string that
@@ -4728,13 +4729,13 @@ Number of features seen during fit.</p>
 <span class="go">Name: mean radius, Length: 569, dtype: float64</span>
 
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">disc</span> <span class="o">=</span> <span class="n">Discretizer</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">discretizer</span> <span class="o">=</span> <span class="n">Discretizer</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mean radius&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">]},</span>
 <span class="gp">... </span>    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">],</span>
 <span class="gp">... </span>    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">disc</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">[[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">]])[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">discretizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
 <span class="go">Fitting Discretizer...</span>
 <span class="go">Binning the features...</span>
@@ -4763,26 +4764,26 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#discretizer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-transform">transform</a></td><td>Bin the data into intervals.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#discretizer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-inverse_transform">inverse_transform</a></td><td>Do nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-transform">transform</a></td><td>Bin the data into intervals.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='discretizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1161>[source]</a></span></div>Fit to data.</p>
+<p><a id='discretizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1154>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='fit-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='fit-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='fit-Self'></a><strong>Self</strong><br><div markdown class='param'>
 Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='discretizer-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L112>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='discretizer-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L135>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4814,14 +4815,14 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='discretizer-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L154>[source]</a></span></div>Does nothing.</p>
+<p><a id='discretizer-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L177>[source]</a></span></div>Do nothing.</p>
 <p>Returns the input unchanged. Implemented for continuity of the
 API.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='inverse_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4835,9 +4836,9 @@ Target column corresponding to X.</p>
   n_targets) for multioutput tasks.</li>
 </ul>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
-Transformed feature set. Only returned if provided.</p>
+Feature set. Only returned if provided.</p>
 <p></div><a id='inverse_transform-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
-Transformed target column. Only returned if provided.
+Target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4850,12 +4851,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='discretizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1303>[source]</a></span></div>Bin the data into intervals.</p>
+<p><a id='discretizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1286>[source]</a></span></div>Bin the data into intervals.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
 Transformed feature set.
 </div></td></tr></p>

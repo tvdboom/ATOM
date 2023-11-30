@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BaseFigure class.
 

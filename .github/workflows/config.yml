@@ -39,6 +39,20 @@ jobs:
       - name: Apply linting
         run: flake8 --show-source --statistics atom tests
 
+  pydocstyle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pydocstyle
+      - name: Apply docstring check
+        run: pydocstyle atom tests
+
   mypy:
     runs-on: ubuntu-latest
     steps:

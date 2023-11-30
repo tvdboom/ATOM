@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Unit tests for baserunner.py
 
@@ -824,7 +824,7 @@ def test_export_pipeline_same_transformer():
     atom.clean()
     atom.clean()
     pl = atom.export_pipeline()
-    assert list(pl.named_steps) == ["Cleaner", "Cleaner2", "Cleaner3"]
+    assert list(pl.named_steps) == ["cleaner", "cleaner-2", "cleaner-3"]
 
 
 def test_export_pipeline_with_model():

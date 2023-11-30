@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the ATOM class.
 
@@ -181,6 +181,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self._log("", 1)
 
     def __repr__(self) -> str:
+        """Print an overview of branches, models, and metrics."""
         out = f"{self.__class__.__name__}"
         out += "\n --> Branches:"
         if len(branches := self._branches.branches) == 1:
@@ -194,6 +195,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         return out
 
     def __iter__(self) -> Iterator[Transformer]:
+        """Iterate over transformers in the pipeline."""
         yield from self.pipeline.named_steps.values()
 
     # Utility properties =========================================== >>
@@ -621,7 +623,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     @classmethod
     def load(cls, filename: str | Path, data: tuple[Any, ...] | None = None) -> ATOM:
-        """Loads an atom instance from a pickle file.
+        """Load an atom instance from a pickle file.
 
         If the instance was [saved][self-save] using `save_data=False`,
         it's possible to load new data into it and apply all data
@@ -800,7 +802,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         dense2sparse: Bool = False,
         columns: ColumnSelector | None = None,
     ):
-        """Converts the columns to the smallest possible matching dtype.
+        """Convert the columns to the smallest possible matching dtype.
 
         Examples are: float64 -> float32, int64 -> int8, etc... Sparse
         arrays also transform their non-fill value. Use this method for
@@ -820,8 +822,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         str2cat: bool, default=False
             Whether to convert `string` to `category`. Only if the
-            number of categories would be less than 30% of the length
-            of the column.
+            number of categories is less than 30% of the column's length.
 
         dense2sparse: bool, default=False
             Whether to convert all features to sparse format. The value
@@ -989,7 +990,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     @composed(crash, method_to_log)
     def status(self):
-        """Get an overview of the branches and models.
+        r"""Get an overview of the branches and models.
 
         This method prints the same information as the \__repr__ and
         also saves it to the logger.
@@ -1219,7 +1220,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         # Check if there already exists an estimator with that
         # name. If so, add a counter at the end of the name
         counter = 1
-        name = transformer_c.__class__.__name__
+        name = transformer_c.__class__.__name__.lower()
         while name in self.pipeline:
             counter += 1
             name = f"{transformer_c.__class__.__name__.lower()}-{counter}"
@@ -1417,7 +1418,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         encode_target: Bool = True,
         **kwargs,
     ):
-        """Applies standard data cleaning steps on the dataset.
+        """Apply standard data cleaning steps on the dataset.
 
         Use the parameters to choose which transformations to perform.
         The available steps are:
@@ -1683,7 +1684,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         drop_punctuation: Bool = True,
         **kwargs,
     ):
-        """Applies standard text cleaning to the corpus.
+        """Apply standard text cleaning to the corpus.
 
         Transformations include normalizing characters and drop
         noise from the text (emails, HTML tags, URLs, etc...). The
@@ -1971,7 +1972,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     # Training methods ============================================= >>
 
-    def _check(self, metric: MetricConstructor) -> MetricConstructor:
+    def _check_metric(self, metric: MetricConstructor) -> MetricConstructor:
         """Check whether the provided metric is valid.
 
         If there was a previous run, check that the provided metric
@@ -2084,7 +2085,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self._run(
             trainer[self._goal.name](
                 models=models,
-                metric=self._check(metric),
+                metric=self._check_metric(metric),
                 est_params=est_params,
                 n_trials=n_trials,
                 ht_params=ht_params,
@@ -2145,7 +2146,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self._run(
             trainer[self._goal.name](
                 models=models,
-                metric=self._check(metric),
+                metric=self._check_metric(metric),
                 skip_runs=skip_runs,
                 est_params=est_params,
                 n_trials=n_trials,
@@ -2175,7 +2176,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """Train and evaluate the models in a train sizing fashion.
 
         When training models, there is usually a trade-off between
-        model performance and computation time, that is regulated by
+        model performance and computation time; that is regulated by
         the number of samples in the training set. This method can be
         used to create insights in this trade-off, and help determine
         the optimal size of the training set. The models are fitted
@@ -2205,7 +2206,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self._run(
             trainer[self._goal.name](
                 models=models,
-                metric=self._check(metric),
+                metric=self._check_metric(metric),
                 train_sizes=train_sizes,
                 est_params=est_params,
                 n_trials=n_trials,

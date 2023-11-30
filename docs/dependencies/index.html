@@ -4595,7 +4595,6 @@
 <h2 id="python-os">Python &amp; OS</h2>
 <p>As of the moment, ATOM supports the following Python versions:</p>
 <ul>
-<li><a href="https://www.python.org/downloads/release/python-390/">Python 3.9</a></li>
 <li><a href="https://www.python.org/downloads/release/python-3100/">Python 3.10</a></li>
 <li><a href="https://www.python.org/downloads/release/python-3110/">Python 3.11</a></li>
 </ul>
@@ -4618,6 +4617,7 @@ packages are necessary for its correct functioning.</p>
 <li><strong><a href="https://gplearn.readthedocs.io/en/stable/index.html">gplearn</a></strong> (&gt;=0.4.2)</li>
 <li><strong><a href="https://imbalanced-learn.readthedocs.io/en/stable/api.html">imbalanced-learn</a></strong> (&gt;=0.11.0)</li>
 <li><strong><a href="https://ipython.readthedocs.io/en/stable/">ipython</a></strong> (&gt;=8.11.0)</li>
+<li><strong><a href="https://pypi.org/project/ipywidgets/">ipywidgets</a></strong> (&gt;=8.1.1)</li>
 <li><strong><a href="https://www.featuretools.com/">featuretools</a></strong> (&gt;=1.28.0)</li>
 <li><strong><a href="https://joblib.readthedocs.io/en/latest/">joblib</a></strong> (&gt;=1.3.1)</li>
 <li><strong><a href="https://matplotlib.org/">matplotlib</a></strong> (&gt;=3.7.2)</li>
@@ -4648,7 +4648,7 @@ additional libraries. You can install all the optional dependencies using
 <li><strong><a href="https://lightgbm.readthedocs.io/en/latest/">lightgbm</a></strong> (&gt;=4.1.0)</li>
 <li><strong><a href="http://alkaline-ml.com/pmdarima/">pmdarima</a></strong> (&gt;=2.0.3)</li>
 <li><strong><a href="https://schemdraw.readthedocs.io/en/latest/index.html">schemdraw</a></strong> (&gt;=0.16)</li>
-<li><strong><a href="https://github.com/fbdesignpro/sweetviz">sweetviz</a></strong> (&gt;=2.2.1)</li>
+<li><strong><a href="https://github.com/fbdesignpro/sweetviz">sweetviz</a></strong> (&gt;=2.3.1)</li>
 <li><strong><a href="http://amueller.github.io/word_cloud/">wordcloud</a></strong> (&gt;=1.9.2)</li>
 <li><strong><a href="https://xgboost.readthedocs.io/en/latest/">xgboost</a></strong> (&gt;=2.0.0)</li>
 </ul>
@@ -4656,12 +4656,14 @@ additional libraries. You can install all the optional dependencies using
 <p>The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
 necessary to <a class="autorefs autorefs-internal" href="../contributing/#contributing">contribute</a> to the project. Install them
-using <code>pip install atom-ml[dev]</code>.</p>
+running <code>pdm install --dev</code> (don't forget to install <a href="https://pdm-project.org/latest/">pdm</a>
+with <code>pip install -U pdm</code>).</p>
 <p><strong>Linting</strong></p>
 <ul>
 <li><strong><a href="https://pycqa.github.io/isort/">isort</a></strong> (&gt;=5.12.0)</li>
 <li><strong><a href="https://github.com/pycqa/flake8">flake8</a></strong> (&gt;=6.0.0)</li>
 <li><strong><a href="https://github.com/john-hen/Flake8-pyproject">flake8-pyproject</a></strong> (&gt;=1.2.3)</li>
+<li><strong><a href="https://www.pydocstyle.org/en/stable/">pydocstyle</a></strong> (&gt;=6.3.0)</li>
 <li><strong><a href="https://www.mypy-lang.org/">mypy</a></strong> (&gt;=1.6.1)</li>
 <li><strong><a href="https://pypi.org/project/pandas-stubs/">pandas_stubs</a></strong> (&gt;=2.1.1.230928)</li>
 <li><strong><a href="https://github.com/python/typeshed">types-requests</a></strong> (&gt;=2.31.0.10)</li>

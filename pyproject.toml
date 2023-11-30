@@ -66,6 +66,7 @@ dev = [
     "isort>=5.12.0",
     "flake8>=6.0.0",
     "flake8-pyproject>=1.2.3",  # To configure flake8 with pyproject.toml
+    "pydocstyle>=6.3.0",
     "mypy>=1.6.1",
     "pandas_stubs>=2.1.1.230928",
     "types-requests>=2.31.0.10",
@@ -128,6 +129,10 @@ lines_after_imports = 2
 include_trailing_comma = true
 ignore_comments = true
 remove_redundant_aliases = true
+
+[tool.pydocstyle]
+convention = "numpy"
+match = "(?!test_|types).*.py"  # Skip files named test_* and types.py
 
 [tool.mypy]
 ignore_missing_imports = true

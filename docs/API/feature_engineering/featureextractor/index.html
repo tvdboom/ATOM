@@ -4544,7 +4544,7 @@
 
 <h1 id="featureextractor">FeatureExtractor</h1>
 <hr />
-<p><a id='FeatureExtractor'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureExtractor</strong>(features=('day', 'month', 'year'), fmt=None, encoding_type="ordinal", drop_columns=True, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L51>[source]</a></span></div>Extract features from datetime columns.</p>
+<p><a id='FeatureExtractor'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureExtractor</strong>(features=('day', 'month', 'year'), fmt=None, encoding_type="ordinal", drop_columns=True, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L52>[source]</a></span></div>Extract features from datetime columns.</p>
 <p>Create new features extracting datetime elements (day, month,
 year, etc...) from the provided columns. Columns of dtype
 <code>datetime64</code> are used as is. Categorical columns that can be
@@ -4635,17 +4635,17 @@ Number of features seen during fit.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 
 <span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  mean concavity  mean concave points  mean symmetry  ...  worst area  worst smoothness  worst compactness  worst concavity  worst concave points  worst symmetry  worst fractal dimension  date_day  target</span>
-<span class="go">0         18.940         21.31          123.60     1130.0          0.09009           0.10290         0.10800              0.07951         0.1582  ...      1866.0            0.1193            0.23360           0.2687               0.17890          0.2551                  0.06589        12       0</span>
-<span class="go">1         17.990         20.66          117.80      991.7          0.10360           0.13040         0.12010              0.08824         0.1992  ...      1349.0            0.1482            0.37350           0.3301               0.19740          0.3060                  0.08503        13       0</span>
-<span class="go">2         10.660         15.15           67.49      349.6          0.08792           0.04302         0.00000              0.00000         0.1928  ...       408.3            0.1076            0.06791           0.0000               0.00000          0.2710                  0.06164        24       1</span>
-<span class="go">3         12.750         16.70           82.51      493.8          0.11250           0.11170         0.03880              0.02995         0.2120  ...       624.1            0.1475            0.19790           0.1423               0.08045          0.3071                  0.08557         4       1</span>
-<span class="go">4         20.580         22.14          134.70     1290.0          0.09090           0.13480         0.16400              0.09561         0.1765  ...      1656.0            0.1178            0.29200           0.3861               0.19200          0.2909                  0.05865        30       0</span>
+<span class="go">0         12.770         22.47           81.72      506.3          0.09055           0.05761         0.04711              0.02704         0.1585  ...       653.6            0.1419             0.1523           0.2177               0.09331          0.2829                  0.08067        16       0</span>
+<span class="go">1         27.420         26.27          186.90     2501.0          0.10840           0.19880         0.36350              0.16890         0.2061  ...      4254.0            0.1357             0.4256           0.6833               0.26250          0.2641                  0.07427         7       0</span>
+<span class="go">2         15.850         23.95          103.70      782.7          0.08401           0.10020         0.09938              0.05364         0.1847  ...       876.5            0.1131             0.1924           0.2322               0.11190          0.2809                  0.06287        14       0</span>
+<span class="go">3         14.190         23.81           92.87      610.7          0.09463           0.13060         0.11150              0.06462         0.2235  ...       811.3            0.1559             0.4059           0.3744               0.17720          0.4724                  0.10260         3       0</span>
+<span class="go">4          8.950         15.76           58.74      245.2          0.09462           0.12430         0.09263              0.02308         0.1305  ...       270.0            0.1179             0.1879           0.1544               0.03846          0.1652                  0.07722        27       1</span>
 <span class="go">..           ...           ...             ...        ...              ...               ...             ...                  ...            ...  ...         ...               ...                ...              ...                   ...             ...                      ...       ...     ...</span>
-<span class="go">564       17.140         16.40          116.00      912.7          0.11860           0.22760         0.22290              0.14010         0.3040  ...      1461.0            0.1545            0.39490           0.3853               0.25500          0.4066                  0.10590        26       0</span>
-<span class="go">565       12.400         17.68           81.47      467.8          0.10540           0.13160         0.07741              0.02799         0.1811  ...       515.8            0.1450            0.26290           0.2403               0.07370          0.2556                  0.09359         8       1</span>
-<span class="go">566        9.268         12.87           61.49      248.7          0.16340           0.22390         0.09730              0.05252         0.2378  ...       300.2            0.1902            0.34410           0.2099               0.10250          0.3038                  0.12520        20       1</span>
-<span class="go">567       15.100         16.39           99.58      674.5          0.11500           0.18070         0.11380              0.08534         0.2001  ...       762.6            0.1386            0.28830           0.1960               0.14230          0.2590                  0.07779         9       1</span>
-<span class="go">568       19.190         15.94          126.30     1157.0          0.08694           0.11850         0.11930              0.09667         0.1741  ...      1495.0            0.1124            0.20160           0.2264               0.17770          0.2443                  0.06251        11       0</span>
+<span class="go">564       10.800         21.98           68.79      359.9          0.08801           0.05743         0.03614              0.01404         0.2016  ...       489.5            0.1303             0.1696           0.1927               0.07485          0.2965                  0.07662         4       1</span>
+<span class="go">565       11.930         10.91           76.14      442.7          0.08872           0.05242         0.02606              0.01796         0.1601  ...       589.5            0.1374             0.1575           0.1514               0.06876          0.2460                  0.07262         6       1</span>
+<span class="go">566       24.630         21.60          165.50     1841.0          0.10300           0.21060         0.23100              0.14710         0.1991  ...      2642.0            0.1342             0.4188           0.4658               0.24750          0.3157                  0.09671         6       0</span>
+<span class="go">567        6.981         13.43           43.79      143.5          0.11700           0.07568         0.00000              0.00000         0.1930  ...       185.2            0.1584             0.1202           0.0000               0.00000          0.2932                  0.09382        12       1</span>
+<span class="go">568       15.050         19.07           97.26      701.9          0.09215           0.08597         0.07486              0.04335         0.1561  ...       967.0            0.1246             0.2101           0.2866               0.11200          0.2282                  0.06954        30       0</span>
 
 <span class="go">[569 rows x 32 columns]</span>
 </code></pre></div>
@@ -4692,16 +4692,16 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-fit">fit</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-transform">transform</a></td><td>Extract the new features.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-fit">fit</a></td><td>Do nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-inverse_transform">inverse_transform</a></td><td>Do nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureextractor-transform">transform</a></td><td>Extract the new features.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='featureextractor-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L66>[source]</a></span></div>Does nothing.</p>
+<p><a id='featureextractor-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L93>[source]</a></span></div>Do nothing.</p>
 <p>Implemented for continuity of the API.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4721,12 +4721,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureextractor-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L112>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='featureextractor-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L135>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4758,14 +4758,14 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureextractor-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L154>[source]</a></span></div>Does nothing.</p>
+<p><a id='featureextractor-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L177>[source]</a></span></div>Do nothing.</p>
 <p>Returns the input unchanged. Implemented for continuity of the
 API.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='inverse_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4779,9 +4779,9 @@ Target column corresponding to X.</p>
   n_targets) for multioutput tasks.</li>
 </ul>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
-Transformed feature set. Only returned if provided.</p>
+Feature set. Only returned if provided.</p>
 <p></div><a id='inverse_transform-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
-Transformed target column. Only returned if provided.
+Target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4794,12 +4794,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureextractor-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L183>[source]</a></span></div>Extract the new features.</p>
+<p><a id='featureextractor-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L181>[source]</a></span></div>Extract the new features.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
 Transformed feature set.
 </div></td></tr></p>

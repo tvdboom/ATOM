@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the feature engineering transformers.
 
@@ -124,7 +124,6 @@ class FeatureExtractor(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         import pandas as pd
@@ -189,7 +188,7 @@ class FeatureExtractor(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -281,7 +280,7 @@ class FeatureExtractor(TransformerMixin):
 
 @beartype
 class FeatureGenerator(TransformerMixin):
-    """Generate new features.
+    r"""Generate new features.
 
     Create new combinations of existing features to capture the
     non-linear relations between the original features.
@@ -379,7 +378,6 @@ class FeatureGenerator(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -532,7 +530,7 @@ class FeatureGenerator(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -657,7 +655,6 @@ class FeatureGrouper(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -710,7 +707,7 @@ class FeatureGrouper(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -995,7 +992,6 @@ class FeatureSelector(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -1469,7 +1465,7 @@ class FeatureSelector(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------

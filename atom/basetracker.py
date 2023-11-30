@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BaseTracker class.
 
@@ -14,6 +14,7 @@ from atom.utils.utils import TrackingParams
 
 
 class BaseTracker:
+    """Defines attributes for mlflow tracking."""
 
     # Tracking parameters for mlflow
     _tracking_params = TrackingParams(

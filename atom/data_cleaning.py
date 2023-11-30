@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the data cleaning transformers.
 
@@ -74,13 +74,14 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     """
 
     def __init_subclass__(cls, **kwargs):
+        """Wrap transformer methods to apply data and fit check."""
         super().__init_subclass__(**kwargs)
 
         for k in ("fit", "transform", "inverse_transform"):
             setattr(cls, k, wrap_methods(getattr(cls, k)))
 
     def __sklearn_clone__(self):
-        """Custom implementation to attach internal attributes."""
+        """Wrap cloning method to attach internal attributes."""
         cloned = _clone_parametrized(self)
 
         for attr in ("_cols", "_train_only"):
@@ -95,7 +96,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         y: Pandas | None = None,
         **fit_params,
     ) -> Self:
-        """Does nothing.
+        """Do nothing.
 
         Implemented for continuity of the API.
 
@@ -179,7 +180,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         X: DataFrame | None = None,
         y: Pandas | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
-        """Does nothing.
+        """Do nothing.
 
         Returns the input unchanged. Implemented for continuity of the
         API.
@@ -292,7 +293,6 @@ class Balancer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -665,7 +665,6 @@ class Cleaner(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -925,7 +924,7 @@ class Cleaner(TransformerMixin):
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
             Target column corresponding to X.
@@ -1087,7 +1086,6 @@ class Discretizer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -1163,7 +1161,7 @@ class Discretizer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -1295,7 +1293,7 @@ class Discretizer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -1418,7 +1416,6 @@ class Encoder(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -1641,7 +1638,7 @@ class Encoder(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -1794,7 +1791,6 @@ class Imputer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         import numpy as np
@@ -1874,7 +1870,7 @@ class Imputer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -2185,7 +2181,6 @@ class Normalizer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -2251,7 +2246,7 @@ class Normalizer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -2303,7 +2298,7 @@ class Normalizer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -2328,7 +2323,7 @@ class Normalizer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -2456,7 +2451,6 @@ class Pruner(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -2747,7 +2741,6 @@ class Scaler(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -2806,7 +2799,7 @@ class Scaler(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -2847,7 +2840,7 @@ class Scaler(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -2872,7 +2865,7 @@ class Scaler(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------

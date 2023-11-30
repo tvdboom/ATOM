@@ -4544,7 +4544,7 @@
 
 <h1 id="featureselector">FeatureSelector</h1>
 <hr />
-<p><a id='FeatureSelector'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureSelector</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, n_jobs=1, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, backend="loky", verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L778>[source]</a></span></div>Reduce the number of features in the data.</p>
+<p><a id='FeatureSelector'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureSelector</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, n_jobs=1, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, backend="loky", verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L756>[source]</a></span></div>Reduce the number of features in the data.</p>
 <p>Apply feature selection or dimensionality reduction, either to
 improve the estimators' accuracy or to boost their performance on
 very high-dimensional datasets. Additionally, remove multicollinear
@@ -4816,24 +4816,24 @@ Number of features seen during fit.</p>
 <span class="go"> --&gt; Applying Principal Component Analysis...</span>
 <span class="go">   --&gt; Scaling features...</span>
 <span class="go">   --&gt; Keeping 12 components.</span>
-<span class="go">   --&gt; Explained variance ratio: 0.972</span>
+<span class="go">   --&gt; Explained variance ratio: 0.971</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the column names changed</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 
 <span class="go">         pca0      pca1      pca2      pca3      pca4      pca5      pca6      pca7      pca8      pca9     pca10     pca11  target</span>
-<span class="go">0   -1.883826 -1.485369  0.655896  3.869524 -0.521089 -1.365851  0.250314  0.627562 -0.183986 -0.113354 -1.128886 -0.225450       1</span>
-<span class="go">1    6.100556  3.848353 -3.399255  3.878637  1.116429  1.173972  0.529135 -0.050580  0.808760  0.075789 -0.237646  0.597283       0</span>
-<span class="go">2   -2.436585  0.567771 -0.501743 -1.078111 -0.428020 -0.353014 -0.332614  0.300342  0.435505 -0.451972  0.275948  0.061384       1</span>
-<span class="go">3   -1.477180  1.202881  1.118944  2.112756  3.498056  0.256302  0.523385  0.438434 -0.198692  0.738414 -1.076204 -0.867322       1</span>
-<span class="go">4   -3.865958  1.134441  2.058851  0.329834 -1.653440 -0.810101 -0.598580  0.155829 -0.292996  0.651204  0.294560  0.334710       1</span>
+<span class="go">0    1.933532  2.215152  1.268851 -1.776239  0.069615 -0.043647  0.281363  0.122942 -0.911086 -0.223754 -0.086316 -0.929486       1</span>
+<span class="go">1    1.203025  6.706587  4.445104  0.087116  3.044271 -1.130720  0.820790 -0.593311 -1.004105  0.945411 -0.199241  0.948766       1</span>
+<span class="go">2    4.506063 -1.419715 -1.216228  1.189962  0.227850  0.788522 -0.829805  0.521853 -0.381054  0.676945  0.004564  0.066630       0</span>
+<span class="go">3   -2.179059  0.496110 -0.870279 -0.151235 -0.715354  0.983901 -0.232186  0.449653  0.350218  0.644448  0.280308 -0.544707       1</span>
+<span class="go">4    0.708048  0.859536 -2.683579  0.295765  0.712158 -1.105250 -0.226270 -0.264257  0.494656 -0.643629 -0.152528 -0.008835       0</span>
 <span class="go">..        ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...     ...</span>
-<span class="go">564  7.555880 -5.287417  0.141400 -0.424649 -0.556862 -1.316757  0.169461 -0.413140 -0.473291  0.150168 -0.190836  0.773183       0</span>
-<span class="go">565  5.227040  0.843795  2.786288  1.701780 -0.275873 -1.449633 -0.164293  2.783966 -1.800533  1.584368 -1.444673 -0.541515       0</span>
-<span class="go">566  0.391949  2.304545 -2.008214  0.892656 -0.491868  1.276523  0.997035 -0.119630 -0.482781  0.498544 -0.958307 -0.187461       1</span>
-<span class="go">567  4.183735 -1.926562  1.431310 -2.753408  0.991540 -1.127515 -1.057434 -0.617634 -0.430554  0.094535  0.426624  0.622397       0</span>
-<span class="go">568  4.858768 -0.872328 -0.355251  1.095036 -0.224426  0.541532  0.196129 -0.623716 -0.561260  0.363378  1.062835 -1.397151       0</span>
+<span class="go">564 -2.477152 -1.482251 -0.389774 -0.333742  0.627651 -0.475717 -0.048757 -0.337669  0.382336  0.132000  0.204445  0.118625       1</span>
+<span class="go">565 -0.400165  0.078366 -2.082886 -1.024593  0.623709 -1.003931  0.571384  0.248557 -0.489957 -0.397008 -0.132552 -0.162104       0</span>
+<span class="go">566 -2.956303 -0.111232 -0.770455  0.035805  0.308638  0.311849  0.119611 -0.994997  0.495694 -0.130586  0.214798  0.358027       1</span>
+<span class="go">567 -5.409548 -0.784989  1.540835  2.205277  0.249963  1.552586  1.837439 -0.796343  0.508352  0.011600 -0.066693 -0.006518       1</span>
+<span class="go">568 -3.648393 -1.340745  0.503077  4.546174 -0.221396  1.229170  0.687803  0.711380  0.527799  0.139843 -0.958308  0.834252       1</span>
 
 <span class="go">[569 rows x 13 columns]</span>
 </code></pre></div>
@@ -4879,17 +4879,17 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#featureselector-fit">fit</a></td><td>Fit the feature selector to the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-get_metadata_routing">get_metadata_routing</a></td><td>Get metadata routing of this object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-transform">transform</a></td><td>Transform the data.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#featureselector-fit">fit</a></td><td>Fit the feature selector to the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-get_metadata_routing">get_metadata_routing</a></td><td>Get metadata routing of this object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-inverse_transform">inverse_transform</a></td><td>Do nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featureselector-transform">transform</a></td><td>Transform the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='featureselector-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1085>[source]</a></span></div>Fit the feature selector to the data.</p>
+<p><a id='featureselector-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1060>[source]</a></span></div>Fit the feature selector to the data.</p>
 <p>The univariate, sfm (when model is not fitted), sfs, rfe and
 rfecv strategies need a target column. Leaving it None raises
 an exception.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='fit-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4907,12 +4907,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L112>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='featureselector-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L135>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4952,14 +4952,14 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L154>[source]</a></span></div>Does nothing.</p>
+<p><a id='featureselector-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L177>[source]</a></span></div>Do nothing.</p>
 <p>Returns the input unchanged. Implemented for continuity of the
 API.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='inverse_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4973,9 +4973,9 @@ Target column corresponding to X.</p>
   n_targets) for multioutput tasks.</li>
 </ul>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
-Transformed feature set. Only returned if provided.</p>
+Feature set. Only returned if provided.</p>
 <p></div><a id='inverse_transform-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
-Transformed target column. Only returned if provided.
+Target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4988,12 +4988,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featureselector-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1489>[source]</a></span></div>Transform the data.</p>
+<p><a id='featureselector-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1458>[source]</a></span></div>Transform the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
 Transformed feature set.
 </div></td></tr></p>

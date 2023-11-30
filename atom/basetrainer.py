@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BaseTrainer class.
 
@@ -307,7 +307,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
         """Fit and evaluate all models and displays final results."""
 
         def execute_model(m: Model) -> Model | None:
-            """Executes a single model.
+            """Execute a single model.
 
             Runs hyperparameter tuning, training and bootstrap for one
             model. Function needed for parallelization.

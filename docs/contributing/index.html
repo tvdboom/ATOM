@@ -4652,9 +4652,8 @@ Do you have a question? Before you do, please read the following guidelines.</p>
 <h2 id="submission-context">Submission context</h2>
 <h3 id="question-or-problem">Question or problem?</h3>
 <p>For quick questions, there's no need to open an issue. Check first if the
-question isn't already answered in the <a class="autorefs autorefs-internal" href="../faq/#frequently-asked-questions">FAQ</a>
-section. If not, reach us through the <a href="https://github.com/tvdboom/ATOM/discussions">discussions</a> page or on the
-<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">slack</a> channel.</p>
+question isn't already answered in the FAQ section. If not, reach us
+through the <a href="https://github.com/tvdboom/ATOM/discussions">discussions</a> page or on the <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">slack</a> channel.</p>
 <h3 id="report-a-bug">Report a bug?</h3>
 <p>If you found a bug in the source code, you can help by submitting an issue
 to the <a href="https://github.com/tvdboom/ATOM/issues">issue tracker</a> in the GitHub
@@ -4703,7 +4702,7 @@ major contributions, and especially make sure to send all code changes to the
 <h2 id="submission-guidelines">Submission guidelines</h2>
 <h3 id="submitting-an-issue">Submitting an issue</h3>
 <p>Before you submit an issue, please search the <a href="https://github.com/tvdboom/ATOM/issues">issue tracker</a>,
-maybe an issue for your problem already exists and the discussion
+maybe an issue for your problem already exists, and the discussion
 might inform you of workarounds readily available.</p>
 <p>We want to fix all the issues as soon as possible, but before fixing a
 bug we need to reproduce and confirm it. In order to reproduce bugs we
@@ -4711,12 +4710,12 @@ will systematically ask you to provide a minimal reproduction scenario
 using the custom issue template.</p>
 <h3 id="submitting-a-pull-request">Submitting a pull request</h3>
 <p>Before you submit a pull request, please work through this checklist to
-make sure that you have done everything necessary so we can efficiently
-review and accept your changes.</p>
+make sure that you have done the necessary so we can efficiently review
+and accept your changes.</p>
 <ul>
 <li>Update the documentation so all of your changes are reflected there.</li>
 <li>Adhere to <a href="https://peps.python.org/pep-0008/">PEP 8</a> standards.</li>
-<li>Use a maximum of 90 characters per line. Try to keep docstrings below
+<li>Use a maximum of 91 characters per line. Try to keep docstrings below
   74 characters.</li>
 <li>Update the project unit tests to test your code changes as thoroughly
   as possible.</li>
@@ -4724,19 +4723,20 @@ review and accept your changes.</p>
   comments explaining your rationale behind non-obvious coding practices.</li>
 <li>Run <a href="https://pycqa.github.io/isort/">isort</a>: <code>isort atom tests</code>.</li>
 <li>Run <a href="https://github.com/pycqa/flake8">flake8</a>: <code>flake8 --show-source --statistics atom tests</code>.</li>
+<li>Run <a href="https://www.pydocstyle.org/en/stable/">pydocstyle</a>: <code>pydocstyle atom tests</code>.</li>
 <li>Run <a href="https://www.mypy-lang.org/">mypy</a>: <code>mypy atom tests</code>.</li>
 </ul>
 <p>If your contribution requires a new library dependency:</p>
 <ul>
 <li>Double-check that the new dependency is easy to install via pip and Anaconda.</li>
-<li>The library should support Python 3.9 and higher.</li>
+<li>The library should support Python 3.10 and 3.11.</li>
 <li>Make sure the code works with the latest version of the library.</li>
 <li>Update the dependencies in the documentation.</li>
 <li>Add the library with the minimum required version to <code>pyproject.toml</code>.</li>
 </ul>
 <p>After submitting your pull request, GitHub will automatically run the tests
 on your changes and make sure that the updated code builds successfully.
-The checks run on Python 3.9, 3.10 and 3.11, on Ubuntu and Windows. We also
+The checks run on Python 3.10 and 3.11, on Ubuntu and Windows. We also
 use services that automatically check code style and test coverage.</p>
 
 

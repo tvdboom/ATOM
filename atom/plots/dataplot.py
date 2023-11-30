@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the DataPlot class.
 
@@ -9,7 +9,7 @@ Description: Module containing the DataPlot class.
 
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from pathlib import Path
 from typing import Any, Literal
 
@@ -44,14 +44,6 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     be used for model training only, not for data manipulation.
 
     """
-
-    # Abstract ===================================================== >>
-
-    @property
-    @abstractmethod
-    def missing(self) -> list[str]: ...
-
-    # Plots ======================================================== >>
 
     @crash
     def plot_components(
@@ -214,7 +206,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(800, 700)
             Figure's size in pixels, format as (x, y).
@@ -718,7 +710,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -965,7 +957,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 900)
             Figure's size in pixels, format as (x, y).
@@ -1290,7 +1282,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).

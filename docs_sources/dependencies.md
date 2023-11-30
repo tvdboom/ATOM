@@ -82,6 +82,7 @@ with `pip install -U pdm`).
 * **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
 * **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
 * **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.3)
+* **[pydocstyle](https://www.pydocstyle.org/en/stable/)** (>=6.3.0)
 * **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
 * **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
 * **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the ShapPlot class.
 
@@ -89,7 +89,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -202,7 +202,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -317,7 +317,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -435,7 +435,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=(900, 300)
             Figure's size in pixels, format as (x, y).
@@ -572,7 +572,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -688,7 +688,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -813,7 +813,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it

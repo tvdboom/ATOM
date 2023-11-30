@@ -73,7 +73,7 @@ major contributions, and especially make sure to send all code changes to the
 ### Submitting an issue
 
 Before you submit an issue, please search the [issue tracker](https://github.com/tvdboom/ATOM/issues),
-maybe an issue for your problem already exists and the discussion
+maybe an issue for your problem already exists, and the discussion
 might inform you of workarounds readily available.
 
 We want to fix all the issues as soon as possible, but before fixing a
@@ -85,8 +85,8 @@ using the custom issue template.
 ### Submitting a pull request
 
 Before you submit a pull request, please work through this checklist to
-make sure that you have done everything necessary so we can efficiently
-review and accept your changes.
+make sure that you have done the necessary so we can efficiently review
+and accept your changes.
 
 * Update the documentation so all of your changes are reflected there.
 * Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
@@ -98,6 +98,7 @@ review and accept your changes.
   comments explaining your rationale behind non-obvious coding practices.
 * Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
 * Run [flake8](https://github.com/pycqa/flake8): `flake8 --show-source --statistics atom tests`.
+* Run [pydocstyle](https://www.pydocstyle.org/en/stable/): `pydocstyle atom tests`.
 * Run [mypy](https://www.mypy-lang.org/): `mypy atom tests`.
 
 If your contribution requires a new library dependency:

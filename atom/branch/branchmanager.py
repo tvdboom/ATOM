@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BranchManager class.
 
@@ -98,18 +98,23 @@ class BranchManager:
         self._og: Branch | None = None
 
     def __repr__(self) -> str:
+        """Print containing branches."""
         return f"BranchManager([{', '.join(self.branches.keys())}], og={self.og.name})"
 
     def __len__(self) -> Int:
+        """Get the number of branches in the manager."""
         return len(self.branches)
 
     def __iter__(self) -> Iterator[Branch]:
+        """Iterate over the branches."""
         yield from self.branches
 
     def __contains__(self, item: str) -> bool:
+        """Whether item is one of the containing branches."""
         return item in self.branches
 
     def __getitem__(self, item: Int | str) -> Branch:
+        """Get a branch."""
         try:
             return self.branches[item]
         except KeyError:

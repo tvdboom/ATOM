@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the NLP transformers.
 
@@ -39,7 +39,7 @@ from atom.utils.utils import (
 
 @beartype
 class TextCleaner(TransformerMixin):
-    """Applies standard text cleaning to the corpus.
+    r"""Applies standard text cleaning to the corpus.
 
     Transformations include normalizing characters and dropping
     noise from the text (emails, HTML tags, URLs, etc...). The
@@ -121,7 +121,6 @@ class TextCleaner(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         import numpy as np
@@ -212,7 +211,7 @@ class TextCleaner(TransformerMixin):
             containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -390,7 +389,6 @@ class TextNormalizer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -470,7 +468,7 @@ class TextNormalizer(TransformerMixin):
             containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -623,7 +621,6 @@ class Tokenizer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -697,7 +694,7 @@ class Tokenizer(TransformerMixin):
             containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -866,7 +863,6 @@ class Vectorizer(TransformerMixin):
 
     Examples
     --------
-
     === "atom"
         ```pycon
         from atom import ATOMClassifier
@@ -942,7 +938,7 @@ class Vectorizer(TransformerMixin):
             containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -992,7 +988,7 @@ class Vectorizer(TransformerMixin):
             containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         Returns
         -------

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Global fixtures and variables for the tests.
 
@@ -49,6 +49,19 @@ class DummyTransformer(BaseEstimator):
         self.strategy = strategy
 
     def transform(self, X: DataFrame) -> np.ndarray:
+        """Transform the data.
+
+        Parameters
+        ----------
+        X: dataframe
+            Feature set.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed feature set.
+
+        """
         if self.strategy == "equal":
             Xt = X.to_numpy()
         elif self.strategy == "drop":
@@ -62,7 +75,7 @@ class DummyTransformer(BaseEstimator):
 
 @pytest.fixture(autouse=True)
 def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
-    """Changes the directory of the test to a temporary dir.
+    """Change the directory of the test to a temporary dir.
 
     Parameters
     ----------

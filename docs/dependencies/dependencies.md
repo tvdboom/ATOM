@@ -31,6 +31,7 @@ packages are necessary for its correct functioning.
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.11.0)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
+* **[ipywidgets](https://pypi.org/project/ipywidgets/)** (>=8.1.1)
 * **[featuretools](https://www.featuretools.com/)** (>=1.28.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.3.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.7.2)
@@ -63,7 +64,7 @@ additional libraries. You can install all the optional dependencies using
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=4.1.0)
 * **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
-* **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.2.1)
+* **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.3.1)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=2.0.0)
 
@@ -73,13 +74,15 @@ additional libraries. You can install all the optional dependencies using
 The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
 necessary to [contribute][contributing] to the project. Install them
-using `pip install atom-ml[dev]`.
+running `pdm install --dev` (don't forget to install [pdm](https://pdm-project.org/latest/)
+with `pip install -U pdm`).
 
 **Linting**
 
 * **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
 * **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
 * **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.3)
+* **[pydocstyle](https://www.pydocstyle.org/en/stable/)** (>=6.3.0)
 * **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
 * **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
 * **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)

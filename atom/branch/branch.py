@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the Branch class.
 
@@ -122,6 +122,7 @@ class Branch:
             self._location = Path(self.memory.location).joinpath("joblib", "atom")
 
     def __repr__(self) -> str:
+        """Print branch name."""
         return f"Branch({self.name})"
 
     @property

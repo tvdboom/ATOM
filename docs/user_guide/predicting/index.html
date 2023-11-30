@@ -4494,19 +4494,23 @@ in sklearn's and sktime's API.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The <code>score</code> method return atom's metric score, not the metric returned
-by sklearn's score method for estimators. Use the method's <code>metric</code>
-parameter to calculate a different metric.</p>
+by sklearn/sktime's score method for estimators. Use the method's
+<code>metric</code> parameter to calculate a different metric.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <ul>
 <li>The output of ATOM's methods are pandas objects, not numpy arrays.</li>
 <li>The <code>predict_proba</code> method of some meta-estimators for <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>
-(such as <a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html">MultioutputClassifier</a>) return 3 dimensions, namely, a list of
-arrays with shape=(n_samples, n_classes). One array per target column. Since
-ATOM's prediction methods return pandas objects, such 3-dimensional arrays
-are converted to a multiindex pd.DataFrame, where the first level of the row
-indices are the target columns, and the second level are the classes.</li>
+  (such as <a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html">MultioutputClassifier</a>) return 3 dimensions, namely, a list of
+  arrays with shape=(n_samples, n_classes). One array per target column. Since
+  ATOM's prediction methods return pandas objects, such 3-dimensional arrays
+  are converted to a multiindex pd.DataFrame, where the first level of the row
+  indices are the target columns, and the second level are the classes.</li>
+<li>The prediction results are cached after the first call to avoid consequent
+  expensive calculations. This mechanism can increase the size of the instance
+  for large datasets. Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method to free the
+  memory.</li>
 </ul>
 </div>
 <p>It's also possible to get the prediction for a specific row or rows in

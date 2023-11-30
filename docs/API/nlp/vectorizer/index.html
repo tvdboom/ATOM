@@ -4544,7 +4544,7 @@
 
 <h1 id="vectorizer">Vectorizer</h1>
 <hr />
-<p><a id='Vectorizer'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>Vectorizer</strong>(strategy="bow", return_sparse=True, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L788>[source]</a></span></div>Vectorize text data.</p>
+<p><a id='Vectorizer'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>Vectorizer</strong>(strategy="bow", return_sparse=True, device="cpu", engine={'data': 'numpy', 'estimator': 'sklearn'}, verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L776>[source]</a></span></div>Vectorize text data.</p>
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
@@ -4714,28 +4714,28 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-transform">transform</a></td><td>Vectorize the text.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-inverse_transform">inverse_transform</a></td><td>Do nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-transform">transform</a></td><td>Vectorize the text.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='vectorizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L944>[source]</a></span></div>Fit to data.</p>
+<p><a id='vectorizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L929>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If X is
 not a dataframe, it should be composed of a single feature
 containing the text documents.</p>
-<p></div><a id='fit-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='fit-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='fit-Self'></a><strong>Self</strong><br><div markdown class='param'>
 Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='vectorizer-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L112>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='vectorizer-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L135>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4767,14 +4767,14 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='vectorizer-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L154>[source]</a></span></div>Does nothing.</p>
+<p><a id='vectorizer-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L177>[source]</a></span></div>Do nothing.</p>
 <p>Returns the input unchanged. Implemented for continuity of the
 API.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='inverse_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4788,9 +4788,9 @@ Target column corresponding to X.</p>
   n_targets) for multioutput tasks.</li>
 </ul>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
-Transformed feature set. Only returned if provided.</p>
+Feature set. Only returned if provided.</p>
 <p></div><a id='inverse_transform-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
-Transformed target column. Only returned if provided.
+Target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4803,14 +4803,14 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='vectorizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L993>[source]</a></span></div>Vectorize the text.</p>
+<p><a id='vectorizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L979>[source]</a></span></div>Vectorize the text.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If X is
 not a dataframe, it should be composed of a single feature
 containing the text documents.</p>
-<p></div><a id='transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
 Transformed corpus.
 </div></td></tr></p>

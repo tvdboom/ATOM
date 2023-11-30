@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing utility classes.
 
@@ -87,6 +87,7 @@ class NotFittedError(ValueError, AttributeError):
 
 class Goal(Enum):
     """Supported goals by ATOM."""
+
     classification = 0
     regression = 1
     forecast = 2
@@ -133,6 +134,7 @@ class Goal(Enum):
 
 class Task(Enum):
     """Supported tasks by ATOM."""
+
     binary_classification = 0
     multiclass_classification = 1
     multilabel_classification = 2
@@ -143,6 +145,7 @@ class Task(Enum):
     multivariate_forecast = 7
 
     def __str__(self) -> str:
+        """Print the task capitalized."""
         return self.name.replace("_", " ").capitalize()
 
     @property
@@ -179,6 +182,7 @@ class Task(Enum):
 @dataclass
 class DataContainer:
     """Stores a branch's data."""
+
     data: DataFrame  # Complete dataset
     train_idx: Index  # Indices in the train set
     test_idx: Index  # Indices in the test
@@ -188,6 +192,7 @@ class DataContainer:
 @dataclass
 class TrackingParams:
     """Tracking parameters for a mlflow experiment."""
+
     log_ht: bool  # Track every trial of the hyperparameter tuning
     log_plots: bool  # Save plot artifacts
     log_data: bool  # Save the train and test sets
@@ -197,6 +202,7 @@ class TrackingParams:
 @dataclass
 class Aesthetics:
     """Keeps track of plot aesthetics."""
+
     palette: str | Sequence[str]  # Sequence of colors
     title_fontsize: Scalar  # Fontsize for titles
     label_fontsize: Scalar  # Fontsize for labels, legend and hoverinfo
@@ -214,6 +220,7 @@ class DataConfig:
     the ones adopted by trainers.
 
     """
+
     index: IndexSelector = True
     shuffle: Bool = False
     stratify: IndexSelector = True
@@ -278,6 +285,7 @@ class PandasModin:
     """
 
     def __getattr__(self, item: str) -> Any:
+        """Return the backend engine."""
         if os.environ.get("ATOM_DATA_ENGINE") == "modin":
             return getattr(md, item)
         else:
@@ -306,7 +314,7 @@ class CatBMetric:
         self.task = task
 
     def get_final_error(self, error: Float, weight: Float) -> Float:
-        """Returns final value of metric based on error and weight.
+        """Return final value of metric based on error and weight.
 
         Can't be a `staticmethod` because of CatBoost's implementation.
 
@@ -328,7 +336,7 @@ class CatBMetric:
 
     @staticmethod
     def is_max_optimal() -> bool:
-        """Returns whether great values of metric are better."""
+        """Return whether great values of metric are better."""
         return True
 
     def evaluate(
@@ -337,7 +345,7 @@ class CatBMetric:
         targets: list[Float],
         weight: list[Float],
     ) -> tuple[Float, Float]:
-        """Evaluates metric value.
+        """Evaluate metric value.
 
         Parameters
         ----------
@@ -406,7 +414,7 @@ class LGBMetric:
         y_pred: np.ndarray,
         weight: np.ndarray,
     ) -> tuple[str, Float, bool]:
-        """Evaluates metric value.
+        """Evaluate metric value.
 
         Parameters
         ----------
@@ -459,15 +467,33 @@ class XGBMetric:
         Model's task.
 
     """
+
     def __init__(self, scorer: Scorer, task: Task):
         self.scorer = scorer
         self.task = task
 
     @property
     def __name__(self) -> str:
+        """Return the scorer's name."""
         return self.scorer.name
 
     def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> Float:
+        """Calculate the score.
+
+        Parameters
+        ----------
+        y_true: np.array
+            Vectors of approx labels.
+
+        y_pred: np.array
+            Vectors of true labels.
+
+        Returns
+        -------
+        float
+            Metric score.
+
+        """
         if self.scorer.__class__.__name__ == "_PredictScorer":
             if self.task.is_binary:
                 y_pred = (y_pred > 0.5).astype(int)
@@ -617,6 +643,7 @@ class TrialsCallback:
             self.T._log(self._table.print_line(), 2)
 
     def __call__(self, study: Study, trial: FrozenTrial):
+        """Print trial info and store in mlflow experiment."""
         try:  # Fails when there are no successful trials
             trial_info = self.T.trials.reset_index(names="trial").loc[trial.number]
         except KeyError:
@@ -826,7 +853,7 @@ class PlotCallback:
         display(self.figure)
 
     def __call__(self, study: Study, trial: FrozenTrial):
-        """Calculates new values for lines and plots them.
+        """Calculate new values for lines and plots them.
 
         Parameters
         ----------
@@ -1055,7 +1082,6 @@ class ClassMap:
         to specify the attribute to use as key.
 
         """
-
         self.__key = key
         self.__data: list[Any] = []
         for elem in args:
@@ -1065,6 +1091,7 @@ class ClassMap:
                 self.__data.append(self._check(elem))
 
     def __getitem__(self, key: Any) -> Any:
+        """Get a value or subset of the mapping."""
         if isinstance(key, sequence_t):
             return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
         elif isinstance(key, segment_t):
@@ -1073,6 +1100,7 @@ class ClassMap:
             return self._get_data(key)
 
     def __setitem__(self, key: Any, value: Any):
+        """Add a new item to the mapping."""
         if isinstance(key, int_t):
             self.__data[key] = self._check(value)
         else:
@@ -1083,59 +1111,76 @@ class ClassMap:
                 self.append(value)
 
     def __delitem__(self, key: Any):
+        """Delete an item."""
         del self.__data[self.index(self._get_data(key))]
 
     def __iter__(self) -> Iterator[Any]:
+        """Iterate over the values."""
         yield from self.__data
 
     def __len__(self) -> int:
+        """Length of the mapping."""
         return len(self.__data)
 
     def __contains__(self, key: Any) -> bool:
+        """Whether the key or value exists."""
         return key in self.__data or self._conv(key) in self.keys_lower()
 
     def __repr__(self) -> str:
+        """Print the mapping representation."""
         return self.__data.__repr__()
 
     def __reversed__(self) -> Iterator[Any]:
+        """Reverse order of the mapping."""
         yield from reversed(list(self.__data))
 
     def __eq__(self, other: Any) -> bool:
+        """Compare equality of the instances."""
         return self.__data == other
 
     def __add__(self, other: ClassMap) -> ClassMap:
+        """Merge two mappings."""
         self.__data += other
         return self
 
     def __bool__(self) -> bool:
+        """Whether the mapping has values."""
         return bool(self.__data)
 
     def keys(self) -> list[Any]:
+        """Return the mapping keys."""
         return [getattr(x, self.__key) for x in self.__data]
 
     def values(self) -> list[Any]:
+        """Return the mapping values."""
         return self.__data
 
     def keys_lower(self) -> list[Any]:
+        """Return the map keys in lower-case."""
         return list(map(self._conv, self.keys()))
 
     def append(self, value: T) -> T:
+        """Add an item to the mapping."""
         self.__data.append(self._check(value))
         return value
 
     def extend(self, value: Any):
+        """Extend the mapping with another sequence."""
         self.__data.extend(list(map(self._check, value)))
 
     def remove(self, value: Any):
+        """Remove an item."""
         if value in self.__data:
             self.__data.remove(value)
         else:
             self.__data.remove(self._get_data(value))
 
     def clear(self):
+        """Clear the content."""
         self.__data = []
 
     def index(self, key: Any) -> Any:
+        """Return the key's index."""
         if key in self.__data:
             return self.__data.index(key)
         else:
@@ -1488,7 +1533,7 @@ def check_dependency(name: str):
 
 
 def check_nltk_module(module: str, quiet: bool):
-    """Checks if a module for the NLTK package is avaialble.
+    """Check if a module for the NLTK package is avaialble.
 
     If the module isn't available, it's downloaded.
 
@@ -2587,7 +2632,7 @@ def fit_transform_one(
 # Patches ========================================================== >>
 
 def fit_and_score(*args, **kwargs) -> dict[str, Any]:
-    """Wrapper for sklearn's _fit_and_score function.
+    """Wrap sklearn's _fit_and_score function.
 
     Wrap the function sklearn.model_selection._validation._fit_and_score
     to, in turn, path sklearn's _score function to accept pipelines that
@@ -2647,7 +2692,7 @@ def cache(f: Callable) -> Callable:
 
 
 def has_task(task: str | Sequence[str]) -> Callable:
-    """Checks that the instance has a specific task.
+    """Check that the instance has a specific task.
 
     If the check returns False, the decorated function becomes
     unavailable for the instance.
@@ -2812,36 +2857,44 @@ def wrap_methods(f: Callable) -> Callable:
 # Custom scorers =================================================== >>
 
 def true_negatives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
+    """Outcome where the model correctly predicts the negative class."""
     return confusion_matrix(y_true, y_pred).ravel()[0]
 
 
 def false_positives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
+    """Outcome where the model wrongly predicts the negative class."""
     return confusion_matrix(y_true, y_pred).ravel()[1]
 
 
 def false_negatives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
+    """Outcome where the model wrongly predicts the negative class."""
     return confusion_matrix(y_true, y_pred).ravel()[2]
 
 
 def true_positives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
+    """Outcome where the model correctly predicts the positive class."""
     return confusion_matrix(y_true, y_pred).ravel()[3]
 
 
 def false_positive_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
+    """Probability that an actual negative tests positive."""
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return fp / (fp + tn)
 
 
 def true_positive_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
+    """Probability that an actual positive tests positive (sensitivity)."""
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return tp / (tp + fn)
 
 
 def true_negative_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
+    """Probability that an actual negative tests negative (specificity)."""
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return tn / (tn + fp)
 
 
 def false_negative_rate(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Float:
+    """Probability that an actual positive tests negative."""
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return fn / (fn + tp)

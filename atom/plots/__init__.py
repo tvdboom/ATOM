@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module for plots.
 
@@ -23,9 +23,7 @@ class ATOMPlot(
     metaclass=ABCMeta,
 ):
     """Plot classes inherited by main ATOM classes."""
-    pass
 
 
 class RunnerPlot(HyperparameterTuningPlot, PredictionPlot, ShapPlot, metaclass=ABCMeta):
     """Plot classes inherited by the runners and callable from models."""
-    pass

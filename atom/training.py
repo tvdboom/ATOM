@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the training classes.
 
@@ -240,7 +240,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
 
 @beartype
 class DirectClassifier(Direct):
-    """Train and evaluate the models in a direct fashion.
+    r"""Train and evaluate the models in a direct fashion.
 
     The following steps are applied to every model:
 
@@ -475,7 +475,7 @@ class DirectClassifier(Direct):
 
 @beartype
 class DirectForecaster(Direct):
-    """Train and evaluate the models in a direct fashion.
+    r"""Train and evaluate the models in a direct fashion.
 
     The following steps are applied to every model:
 
@@ -704,7 +704,7 @@ class DirectForecaster(Direct):
 
 @beartype
 class DirectRegressor(Direct):
-    """Train and evaluate the models in a direct fashion.
+    r"""Train and evaluate the models in a direct fashion.
 
     The following steps are applied to every model:
 
@@ -935,7 +935,7 @@ class DirectRegressor(Direct):
 
 @beartype
 class SuccessiveHalvingClassifier(SuccessiveHalving):
-    """Train and evaluate the models in a [successive halving][] fashion.
+    r"""Train and evaluate the models in a [successive halving][] fashion.
 
     The following steps are applied to every model (per iteration):
 
@@ -1174,7 +1174,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
 @beartype
 class SuccessiveHalvingForecaster(SuccessiveHalving):
-    """Train and evaluate the models in a [successive halving][] fashion.
+    r"""Train and evaluate the models in a [successive halving][] fashion.
 
     The following steps are applied to every model (per iteration):
 
@@ -1406,7 +1406,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
 @beartype
 class SuccessiveHalvingRegressor(SuccessiveHalving):
-    """Train and evaluate the models in a [successive halving][] fashion.
+    r"""Train and evaluate the models in a [successive halving][] fashion.
 
     The following steps are applied to every model (per iteration):
 
@@ -1641,7 +1641,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
 @beartype
 class TrainSizingClassifier(TrainSizing):
-    """Train and evaluate the models in a [train sizing][] fashion.
+    r"""Train and evaluate the models in a [train sizing][] fashion.
 
     The following steps are applied to every model (per iteration):
 
@@ -1885,7 +1885,7 @@ class TrainSizingClassifier(TrainSizing):
 
 @beartype
 class TrainSizingForecaster(TrainSizing):
-    """Train and evaluate the models in a [train sizing][] fashion.
+    r"""Train and evaluate the models in a [train sizing][] fashion.
 
     The following steps are applied to every model (per iteration):
 
@@ -2123,7 +2123,7 @@ class TrainSizingForecaster(TrainSizing):
 
 @beartype
 class TrainSizingRegressor(TrainSizing):
-    """Train and evaluate the models in a [train sizing][] fashion.
+    r"""Train and evaluate the models in a [train sizing][] fashion.
 
     The following steps are applied to every model (per iteration):
 

@@ -41,17 +41,21 @@ For forecast tasks:
 
 !!! warning
     The `score` method return atom's metric score, not the metric returned
-    by sklearn's score method for estimators. Use the method's `metric`
-    parameter to calculate a different metric.
+    by sklearn/sktime's score method for estimators. Use the method's
+    `metric` parameter to calculate a different metric.
 
 !!! note
     * The output of ATOM's methods are pandas objects, not numpy arrays.
     * The `predict_proba` method of some meta-estimators for [multioutput tasks][]
-    (such as [MultioutputClassifier][]) return 3 dimensions, namely, a list of
-    arrays with shape=(n_samples, n_classes). One array per target column. Since
-    ATOM's prediction methods return pandas objects, such 3-dimensional arrays
-    are converted to a multiindex pd.DataFrame, where the first level of the row
-    indices are the target columns, and the second level are the classes.
+      (such as [MultioutputClassifier][]) return 3 dimensions, namely, a list of
+      arrays with shape=(n_samples, n_classes). One array per target column. Since
+      ATOM's prediction methods return pandas objects, such 3-dimensional arrays
+      are converted to a multiindex pd.DataFrame, where the first level of the row
+      indices are the target columns, and the second level are the classes.
+    * The prediction results are cached after the first call to avoid consequent
+      expensive calculations. This mechanism can increase the size of the instance
+      for large datasets. Use the [clear][atomclassifier-clear] method to free the
+      memory.
 
 
 It's also possible to get the prediction for a specific row or rows in

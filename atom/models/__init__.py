@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module for models.
 
@@ -11,66 +11,66 @@ To add new models, note the following:
 2. Models are ordered alphabetically.
 3. Models have the following structure:
 
-    Class attributes
-    ----------------
-    acronym: str
-        Acronym of the model's name.
+Class attributes
+----------------
+acronym: str
+    Acronym of the model's name.
 
-    needs_scaling: bool
-        Whether the model needs scaled features.
+needs_scaling: bool
+    Whether the model needs scaled features.
 
-    accepts_sparse: bool
-        Whether the model has native support for sparse matrices.
+accepts_sparse: bool
+    Whether the model has native support for sparse matrices.
 
-    native_multilabel: bool
-        Whether the model has native support for multilabel tasks.
+native_multilabel: bool
+    Whether the model has native support for multilabel tasks.
 
-    native_multioutput: bool
-        Whether the model has native support for multioutput tasks.
+native_multioutput: bool
+    Whether the model has native support for multioutput tasks.
 
-    has_validation: str or None
-        Whether the model allows in-training validation. If str,
-        name of the estimator's parameter that states the number
-        of iterations. If None, no support for in-training
-        validation.
+has_validation: str or None
+    Whether the model allows in-training validation. If str,
+    name of the estimator's parameter that states the number
+    of iterations. If None, no support for in-training
+    validation.
 
-    supports_engines: list
-        Engines that can be used to run this model.
+supports_engines: list
+    Engines that can be used to run this model.
 
-    _module: str
-        Module from which to load the class. If one of engines,
-        ignore the engine name, i.e., use "ensemble" instead of
-        "sklearn.ensemble".
+_module: str
+    Module from which to load the class. If one of engines,
+    ignore the engine name, i.e., use "ensemble" instead of
+    "sklearn.ensemble".
 
-    _estimators: dict
-        Name of the estimators per goal.
+_estimators: dict
+    Name of the estimators per goal.
 
-    Instance attributes
-    -------------------
-    name: str
-        Name of the model. Defaults to the same as the acronym
-        but can be different if the same model is called multiple
-        times. The name is assigned in the basemodel.py module.
+Instance attributes
+-------------------
+name: str
+    Name of the model. Defaults to the same as the acronym
+    but can be different if the same model is called multiple
+    times. The name is assigned in the basemodel.py module.
 
-    Methods
-    -------
-    _get_parameters(self, x) -> dict:
-        Return the trial's suggestions with (optionally) custom changes
-        to the params. Don't implement if the parent's implementation
-        is sufficient.
+Methods
+-------
+_get_parameters(self, x) -> dict:
+    Return the trial's suggestions with (optionally) custom changes
+    to the params. Don't implement if the parent's implementation
+    is sufficient.
 
-    _trial_to_est(self, params) -> dict:
-        Convert trial's hyperparameters to parameters for the
-        estimator. Only implement for models whose study params are
-        different from those for the estimator.
+_trial_to_est(self, params) -> dict:
+    Convert trial's hyperparameters to parameters for the
+    estimator. Only implement for models whose study params are
+    different from those for the estimator.
 
-    _fit_estimator(self, estimator, data, est_params_fit, validation, trial):
-        This method is called to fit the estimator. Implement only
-        to customize the fit.
+_fit_estimator(self, estimator, data, est_params_fit, validation, trial):
+    This method is called to fit the estimator. Implement only
+    to customize the fit.
 
-    _get_distributions(self) -> dict:
-        Return a list of the hyperparameter distributions for
-        optimization.
+_get_distributions(self) -> dict:
+    Return a list of the hyperparameter distributions for
+    optimization.
 
 """
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the HyperparameterTuningPlot class.
 
@@ -461,7 +461,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -657,7 +657,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -828,7 +828,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -990,7 +990,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             - If dict, [title configuration][parameters].
 
         legend: str, dict or None, default=None
-            Does nothing. Implemented for continuity of the API.
+            Do nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it

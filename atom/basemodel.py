@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing the BaseModel class.
 
@@ -257,12 +257,11 @@ class BaseModel(RunnerPlot):
                 self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
+        """Display class name."""
         return f"{self.__class__.__name__}()"
 
-    def __setstate__(self, state: dict[str, Any]):
-        self.__dict__.update(state)
-
     def __getattr__(self, item: str) -> Any:
+        """Get attributes from branch or data."""
         if "_branch" in self.__dict__:
             if item in dir(self.branch) and not item.startswith("_"):
                 return getattr(self.branch, item)  # Get attr from branch
@@ -276,9 +275,11 @@ class BaseModel(RunnerPlot):
         )
 
     def __contains__(self, item: str) -> bool:
+        """Whether the item is a column in the dataset."""
         return item in self.dataset
 
     def __getitem__(self, item: Int | str | list) -> Pandas:
+        """Get a subset from the dataset."""
         if isinstance(item, int_t):
             return self.dataset[self.columns[item]]
         else:
@@ -555,7 +556,7 @@ class BaseModel(RunnerPlot):
         return estimator
 
     def _best_score(self, metric: str | None = None) -> Scalar:
-        """Returns the best score for the model.
+        """Return the best score for the model.
 
         The best score is the bootstrap or test score, checked in
         that order.
@@ -578,7 +579,7 @@ class BaseModel(RunnerPlot):
             return self.results[f"{metric or self._metric[0].name}_bootstrap"]
 
     def _final_output(self) -> str:
-        """Returns the model's final output as a string.
+        """Return the model's final output as a string.
 
         If [bootstrapping][] was used, use the format: mean +- std.
 
@@ -1677,7 +1678,7 @@ class BaseModel(RunnerPlot):
 
     @property
     def X_holdout(self) -> DataFrame | None:
-        """XSelector of the holdout set."""
+        """Features of the holdout set."""
         if self.holdout is not None:
             return self.holdout.iloc[:, :-self.branch._data.n_cols]
         else:

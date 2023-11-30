@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modeling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
+
 Author: Mavs
 Description: Module containing utilities for typing analysis.
 
@@ -63,6 +63,7 @@ class Sequence(Protocol[_T]):
 
     @classmethod
     def __class_getitem__(cls, item: Any) -> Annotated[Any, Is]:
+        """Get the sequence annotation for type and content."""
         return Annotated[
             cls,
             Is[lambda lst: isinstance(lst, sequence_t)]
@@ -72,12 +73,14 @@ class Sequence(Protocol[_T]):
 
 class Engine(TypedDict, total=False):
     """Types for the `engine` parameter."""
+
     data: Literal["numpy", "pyarrow", "modin"]
     estimator: Literal["sklearn", "sklearnex", "cuml"]
 
 
 class HT(TypedDict, total=False):
     """Types for the `_ht` attribute of Model."""
+
     distributions: dict[str, BaseDistribution]
     cv: Int
     plot: Bool
@@ -86,6 +89,7 @@ class HT(TypedDict, total=False):
 
 class Style(TypedDict):
     """Types for the plotting styles."""
+
     palette: dict[str, str]
     marker: dict[str, str]
     dash: dict[str, str]
@@ -95,6 +99,7 @@ class Style(TypedDict):
 @runtime_checkable
 class SkScorer(Protocol):
     """Protocol for sklearn's scorers."""
+
     def __call__(self, *args, **kwargs): ...
     def _score(self, *args, **kwargs): ...
 
@@ -107,6 +112,7 @@ class Scorer(SkScorer, Protocol):
     but with an extra 'name' and 'fullname' attribute.
 
     """
+
     name: str
     fullname: str
 
@@ -114,6 +120,7 @@ class Scorer(SkScorer, Protocol):
 @runtime_checkable
 class Estimator(Protocol):
     """Protocol for sklearn-like estimators."""
+
     def __init__(self, *args, **kwargs): ...
     def get_params(self, *args, **kwargs): ...
     def set_params(self, *args, **kwargs): ...
@@ -122,12 +129,14 @@ class Estimator(Protocol):
 @runtime_checkable
 class Transformer(Estimator, Protocol):
     """Protocol for sklearn-like transformers."""
+
     def transform(self, *args, **kwargs): ...
 
 
 @runtime_checkable
 class Predictor(Estimator, Protocol):
     """Protocol for sklearn-like predictors."""
+
     def fit(self, *args, **kwargs): ...
     def predict(self, *args, **kwargs): ...
 
@@ -135,6 +144,7 @@ class Predictor(Estimator, Protocol):
 @runtime_checkable
 class Model(Protocol):
     """Protocol for all models."""
+
     _goal: Goal
     _metric: ClassMap
     _ht: dict[str, Any]

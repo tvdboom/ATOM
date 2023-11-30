@@ -4544,7 +4544,7 @@
 
 <h1 id="featuregenerator">FeatureGenerator</h1>
 <hr />
-<p><a id='FeatureGenerator'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureGenerator</strong>(strategy="dfs", n_features=None, operators=None, n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L288>[source]</a></span></div>Generate new features.</p>
+<p><a id='FeatureGenerator'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureGenerator</strong>(strategy="dfs", n_features=None, operators=None, n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L281>[source]</a></span></div>Generate new features.</p>
 <p>Create new combinations of existing features to capture the
 non-linear relations between the original features.</p>
 <p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-feature_generation">feature_generation</a> method. Read more in the
@@ -4655,18 +4655,18 @@ Number of features seen during fit.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the texture error / worst symmetry column</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 
-<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  ...  SINE(texture error)  compactness error / texture error  concave points error / worst fractal dimension  fractal dimension error * worst compactness  mean fractal dimension * worst fractal dimension  target</span>
-<span class="go">0         15.780         17.89          103.60      781.0          0.09710           0.12920  ...             0.833217                           0.041233                                        0.122328                                     0.002324                                          0.006374       0</span>
-<span class="go">1         13.370         16.39           86.10      553.5          0.07115           0.07325  ...             0.908633                           0.028684                                        0.136078                                     0.001032                                          0.004442       1</span>
-<span class="go">2         14.740         25.42           94.70      668.6          0.08275           0.07214  ...             0.982789                           0.008462                                        0.182432                                     0.000361                                          0.003951       1</span>
-<span class="go">3         14.970         19.76           95.50      690.2          0.08421           0.05352  ...             0.874789                           0.007496                                        0.105703                                     0.000152                                          0.003204       1</span>
-<span class="go">4         12.750         16.70           82.51      493.8          0.11250           0.11170  ...             0.843088                           0.015563                                        0.107503                                     0.000718                                          0.005667       1</span>
-<span class="go">..           ...           ...             ...        ...              ...               ...  ...                  ...                                ...                                             ...                                          ...                                               ...     ...</span>
-<span class="go">564       12.450         15.70           82.57      477.1          0.12780           0.17000  ...             0.777198                           0.037576                                        0.091399                                     0.002668                                          0.009471       0</span>
-<span class="go">565        9.738         11.97           61.24      288.5          0.09250           0.04102  ...             0.475911                           0.011403                                        0.000000                                     0.000232                                          0.005235       1</span>
-<span class="go">566       10.900         12.96           68.69      366.8          0.07515           0.03718  ...             0.689936                           0.008056                                        0.046532                                     0.000221                                          0.004413       1</span>
-<span class="go">567       14.110         12.88           90.03      616.5          0.09309           0.05306  ...             0.882429                           0.010472                                        0.093562                                     0.000275                                          0.004037       1</span>
-<span class="go">568       23.510         24.27          155.10     1747.0          0.10690           0.12830  ...             0.798320                           0.021320                                        0.168131                                     0.000835                                          0.004261       0</span>
+<span class="go">     mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  ...  mean concave points * smoothness error  mean concavity + worst radius  mean radius / smoothness error  worst concave points * worst radius  worst radius / concave points error  target</span>
+<span class="go">0         13.280         13.72           85.79      541.8          0.08363           0.08575  ...                                0.000122                       14.29077                     3109.342074                             1.306235                          1681.624941       1</span>
+<span class="go">1         15.460         11.89          102.50      736.9          0.12570           0.15550  ...                                0.000592                       18.99320                     2866.679028                             3.432933                          1423.484848       0</span>
+<span class="go">2         13.110         15.56           87.21      530.2          0.13980           0.17650  ...                                0.000688                       16.51710                     1830.494275                             3.239166                          1175.072046       0</span>
+<span class="go">3          9.847         15.68           63.00      293.2          0.09492           0.08419  ...                                0.000211                       11.26330                     1127.691251                             0.733747                          1652.698133       1</span>
+<span class="go">4         14.870         20.21           96.12      680.9          0.09587           0.08345  ...                                0.000268                       16.07824                     2746.075716                             1.628217                          1353.338969       1</span>
+<span class="go">..           ...           ...             ...        ...              ...               ...  ...                                     ...                            ...                             ...                                  ...                                  ...     ...</span>
+<span class="go">564       14.470         24.99           95.81      656.4          0.08837           0.12300  ...                                0.000278                       16.32090                     2027.178481                             1.954510                          1395.869191       1</span>
+<span class="go">565       19.690         21.25          130.00     1203.0          0.10960           0.15990  ...                                0.000787                       23.76740                     3201.626016                             5.727510                          1145.286686       0</span>
+<span class="go">566       19.270         26.47          127.90     1162.0          0.09401           0.17190  ...                                0.000381                       24.31570                     3842.472582                             4.310775                          2504.407342       0</span>
+<span class="go">567       11.760         18.14           75.00      431.1          0.09968           0.05914  ...                                0.000197                       13.38685                     2101.501072                             0.956576                           932.960894       0</span>
+<span class="go">568       14.580         13.66           94.29      658.8          0.09832           0.08918  ...                                0.000215                       16.84222                     2943.670503                             1.539574                          1938.020352       1</span>
 
 <span class="go">[569 rows x 36 columns]</span>
 </code></pre></div>
@@ -4688,19 +4688,19 @@ Number of features seen during fit.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the radius error * worst smoothness column</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-<span class="go">       mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  ...  worst fractal dimension  concave points error * mean texture  mean fractal dimension + worst texture  smoothness error - worst texture  worst compactness - worst concavity  worst compactness / radius error</span>
-<span class="go">index                                                                                           ...                                                                                                                                                                                                               </span>
-<span class="go">0            17.99         10.38          122.80     1001.0          0.11840           0.27760  ...                  0.11890                             0.164731                                17.40871                        -17.323601                             -0.04630                          0.607854</span>
-<span class="go">1            20.57         17.77          132.90     1326.0          0.08474           0.07864  ...                  0.08902                             0.238118                                23.46667                        -23.404775                             -0.05500                          0.343330</span>
-<span class="go">2            19.69         21.25          130.00     1203.0          0.10960           0.15990  ...                  0.08758                             0.437325                                25.58999                        -25.523850                             -0.02590                          0.569340</span>
-<span class="go">3            11.42         20.38           77.58      386.1          0.14250           0.28390  ...                  0.17300                             0.380495                                26.59744                        -26.490890                              0.17940                          1.747982</span>
-<span class="go">4            20.29         14.34          135.10     1297.0          0.10030           0.13280  ...                  0.07678                             0.270309                                16.72883                        -16.658510                             -0.19500                          0.270734</span>
-<span class="go">...            ...           ...             ...        ...              ...               ...  ...                      ...                                  ...                                     ...                               ...                                  ...                               ...</span>
-<span class="go">564          21.56         22.39          142.00     1479.0          0.11100           0.11590  ...                  0.07115                             0.549451                                26.45623                        -26.389700                             -0.19940                          0.179677</span>
-<span class="go">565          20.13         28.25          131.20     1261.0          0.09780           0.10340  ...                  0.06637                             0.474035                                38.30533                        -38.244231                             -0.12930                          0.251078</span>
-<span class="go">566          16.60         28.08          108.30      858.1          0.08455           0.10230  ...                  0.07820                             0.437206                                34.17648                        -34.114097                             -0.03090                          0.677914</span>
-<span class="go">567          20.60         29.33          140.10     1265.0          0.11780           0.27700  ...                  0.12400                             0.488051                                39.49016                        -39.413478                             -0.07060                          1.195730</span>
-<span class="go">568           7.76         24.54           47.92      181.0          0.05263           0.04362  ...                  0.07039                             0.000000                                30.42884                        -30.362811                              0.06444                          0.167073</span>
+<span class="go">       mean radius  mean texture  mean perimeter  mean area  mean smoothness  mean compactness  ...  worst fractal dimension  mean area - perimeter error  mean texture * worst fractal dimension  symmetry error / concave points error  texture error * worst area  worst radius / compactness error</span>
+<span class="go">index                                                                                           ...                                                                                                                                                                                                   </span>
+<span class="go">0            17.99         10.38          122.80     1001.0          0.11840           0.27760  ...                  0.11890                      992.411                                1.234182                               1.892250                   1827.8007                        517.536705</span>
+<span class="go">1            20.57         17.77          132.90     1326.0          0.08474           0.07864  ...                  0.08902                     1322.602                                1.581885                               1.036567                   1435.5084                       1910.550459</span>
+<span class="go">2            19.69         21.25          130.00     1203.0          0.10960           0.15990  ...                  0.08758                     1198.415                                1.861075                               1.093294                   1344.8121                        588.367449</span>
+<span class="go">3            11.42         20.38           77.58      386.1          0.14250           0.28390  ...                  0.17300                      382.655                                3.525740                               3.193894                    656.2612                        199.919549</span>
+<span class="go">4            20.29         14.34          135.10     1297.0          0.10030           0.13280  ...                  0.07678                     1291.562                                1.101025                               0.931565                   1230.5475                        915.887850</span>
+<span class="go">...            ...           ...             ...        ...              ...               ...  ...                      ...                          ...                                     ...                                    ...                         ...                               ...</span>
+<span class="go">564          21.56         22.39          142.00     1479.0          0.11100           0.11590  ...                  0.07115                     1471.327                                1.593049                               0.453953                   2545.9120                        880.318229</span>
+<span class="go">565          20.13         28.25          131.20     1261.0          0.09780           0.10340  ...                  0.06637                     1255.797                                1.874953                               1.131108                   4263.4530                        977.713578</span>
+<span class="go">566          16.60         28.08          108.30      858.1          0.08455           0.10230  ...                  0.07820                      854.675                                2.195856                               0.846500                   1208.3000                        508.710801</span>
+<span class="go">567          20.60         29.33          140.10     1265.0          0.11780           0.27700  ...                  0.12400                     1259.228                                3.636920                               1.396635                   2904.4950                        417.992855</span>
+<span class="go">568           7.76         24.54           47.92      181.0          0.05263           0.04362  ...                  0.07039                      178.452                                1.727371                                    inf                    383.5608                       2029.184549</span>
 
 <span class="go">[569 rows x 35 columns]</span>
 </code></pre></div>
@@ -4710,14 +4710,14 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-transform">transform</a></td><td>Generate new features.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-inverse_transform">inverse_transform</a></td><td>Do nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-transform">transform</a></td><td>Generate new features.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='featuregenerator-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L444>[source]</a></span></div>Fit to data.</p>
+<p><a id='featuregenerator-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L434>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='fit-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4735,12 +4735,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregenerator-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L112>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='featuregenerator-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L135>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4772,14 +4772,14 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregenerator-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L154>[source]</a></span></div>Does nothing.</p>
+<p><a id='featuregenerator-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L177>[source]</a></span></div>Do nothing.</p>
 <p>Returns the input unchanged. Implemented for continuity of the
 API.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='inverse_transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
@@ -4793,9 +4793,9 @@ Target column corresponding to X.</p>
   n_targets) for multioutput tasks.</li>
 </ul>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
-Transformed feature set. Only returned if provided.</p>
+Feature set. Only returned if provided.</p>
 <p></div><a id='inverse_transform-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
-Transformed target column. Only returned if provided.
+Target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -4808,12 +4808,12 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregenerator-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L537>[source]</a></span></div>Generate new features.</p>
+<p><a id='featuregenerator-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L523>[source]</a></span></div>Generate new features.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
-<p></div><a id='transform-y'></a><strong>y: int, str, series-like, dataframe-like or None, default=None</strong><br><div markdown class='param'>
-Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Do nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
 Transformed feature set.
 </div></td></tr></p>
