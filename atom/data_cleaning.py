@@ -38,12 +38,11 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, _clone_parametrized
 from sklearn.compose import ColumnTransformer
-from sklearn.experimental import enable_iterative_imputer
+from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
-from atom.pipeline import Pipeline
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
@@ -53,8 +52,8 @@ from atom.utils.types import (
     dataframe_t, sequence_t, series_t,
 )
 from atom.utils.utils import (
-    bk, check_is_fitted, composed, crash, get_col_order, get_cols, it, lst,
-    merge, method_to_log, n_cols, replace_missing, sign, to_df, to_series,
+    bk, composed, crash, get_col_order, get_cols, it, lst, merge,
+    method_to_log, n_cols, replace_missing, sign, to_df, to_series,
     variable_return, wrap_methods,
 )
 

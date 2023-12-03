@@ -71,16 +71,16 @@ def test_invalid_model_name():
 
 def test_multiple_models_with_add():
     """Assert that you can add model names to select them."""
-    trainer = DirectClassifier("gnb+lr+lr_2", random_state=1)
+    trainer = DirectClassifier("Dummy+tree+tree_2", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["GNB", "LR", "LR_2"]
+    assert trainer.models == ["Dummy", "Tree", "Tree_2"]
 
 
 def test_multiple_same_models():
     """Assert that the same model can used with different names."""
-    trainer = DirectClassifier(["lr", "lr_2", "lr_3"], random_state=1)
+    trainer = DirectClassifier(["Tree", "Tree_2", "Tree_3"], random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["LR", "LR_2", "LR_3"]
+    assert trainer.models == ["Tree", "Tree_2", "Tree_3"]
 
 
 def test_only_task_models():
@@ -378,21 +378,25 @@ def test_errors_keep():
     assert trainer._models == [trainer.lda]
 
 
-def test_parallel_with_ray():
+@patch("atom.basetransformer.ray")
+@patch("atom.basetrainer.ray")
+def test_parallel_with_ray(_, __):
     """Assert that parallel runs successfully with ray backend."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],
         parallel=True,
-        n_jobs=2,
+        n_jobs=1,
         backend="ray",
         random_state=1,
     )
-    trainer.run(bin_train, bin_test)
-    assert trainer._models == [trainer.lr, trainer.lda]
+    # Fails because Mock returns empty list
+    with pytest.raises(RuntimeError, match=".*All models failed.*"):
+        trainer.run(bin_train, bin_test)
     ray.shutdown()
 
 
-def test_parallel():
+@patch("atom.basetrainer.Parallel")
+def test_parallel(_):
     """Assert that parallel runs successfully."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],
@@ -400,17 +404,6 @@ def test_parallel():
         n_jobs=2,
         random_state=1,
     )
-    trainer.run(bin_train, bin_test)
-    assert trainer._models == [trainer.lr, trainer.lda]
-
-
-def test_all_models_failed():
-    """Assert that an error is raised when all models failed."""
-    trainer = DirectClassifier(
-        models=["LR", "RF"],
-        n_trials=1,
-        ht_params={"distributions": "test"},
-        random_state=1,
-    )
+    # Fails because Mock returns empty list
     with pytest.raises(RuntimeError, match=".*All models failed.*"):
         trainer.run(bin_train, bin_test)

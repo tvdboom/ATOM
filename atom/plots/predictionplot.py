@@ -1699,21 +1699,16 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             for ds in ("train", "test"):
                 # Calculating shap values is computationally expensive,
                 # therefore, select a random subsample for large data sets
-                if len(data := getattr(m, ds)) > 500:
+                if len(data := getattr(m, f"X_{ds}")) > 500:
                     data = data.sample(500, random_state=self.random_state)
 
-                # Replace data with the calculated shap values
-                explanation = m._shap.get_explanation(data[m.branch.features], target_c)
-                data[m.branch.features] = explanation.values
+                explanation = m._shap.get_explanation(data, target_c)
+                shap = bk.DataFrame(explanation.values, columns=m.branch.features)
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
-                    # All other features are covariates
-                    covariates = [f for f in data.columns[:-1] if f != fx]
-                    cols = [fx, data.columns[-1], *covariates]
-
-                    # Compute covariance
-                    V = data[cols].cov()
+                    # Compute covariance (other variables are covariates)
+                    V = shap[[c for c in shap if c != fx]].cov()
 
                     # Inverse covariance matrix
                     Vi = np.linalg.pinv(V, hermitian=True)

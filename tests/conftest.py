@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -87,6 +88,13 @@ def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
 
     """
     monkeypatch.chdir(tmp_path)
+
+
+@pytest.fixture(autouse=True)
+def mock_mlflow_log_model():
+    """Mock mlflow's log_model function."""
+    with patch("mlflow.sklearn.log_model"):
+        yield
 
 
 def get_train_test(

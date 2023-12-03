@@ -1008,7 +1008,7 @@ class ShapExplanation:
                     )
 
             # Remember shap values in the _shap_values attribute
-            self._shap_values = pd.concat(
+            self._shap_values = bk.concat(
                 [
                     self._shap_values,
                     bk.Series(list(self._explanation.values), index=calculate.index),

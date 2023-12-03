@@ -8,7 +8,7 @@ Description: Unit tests for the models module.
 """
 
 from platform import machine
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -130,9 +130,9 @@ def test_models_sklearnex_regression():
 
 @patch.dict(
     "sys.modules", {
-        "cuml": MagicMock(spec=["__spec__"]),
-        "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
-        "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
+        "cuml": Mock(spec=["__spec__"]),
+        "cuml.common.device_selection": Mock(spec=["set_global_device_type"]),
+        "cuml.internals.memory_utils": Mock(spec=["set_global_output_type"]),
     }
 )
 def test_models_cuml_classification():
@@ -159,9 +159,9 @@ def test_models_cuml_classification():
 
 @patch.dict(
     "sys.modules", {
-        "cuml": MagicMock(spec=["__spec__"]),
-        "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
-        "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
+        "cuml": Mock(spec=["__spec__"]),
+        "cuml.common.device_selection": Mock(spec=["set_global_device_type"]),
+        "cuml.internals.memory_utils": Mock(spec=["set_global_output_type"]),
     }
 )
 def test_models_cuml_regression():

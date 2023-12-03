@@ -8,7 +8,7 @@ Description: Unit tests for the utils module.
 """
 
 from datetime import timedelta
-from unittest.mock import MagicMock
+from unittest.mock import Mock
 
 import pandas as pd
 import pytest
@@ -52,8 +52,8 @@ def test_time_to_string():
 
 def test_to_pandas_with_cuml():
     """Assert that cuML objects use the to_pandas method."""
-    to_df(MagicMock(spec=["to_pandas"]), columns=[0, 1])
-    to_series(MagicMock(spec=["to_pandas"]))
+    to_df(Mock(spec=["to_pandas"]), columns=[0, 1])
+    to_series(Mock(spec=["to_pandas"]))
 
 
 def test_check_is_fitted_with_pandas():

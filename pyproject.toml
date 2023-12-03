@@ -118,7 +118,6 @@ ignore = [
 ]
 per-file-ignores = [
     "__init__.py: F401",  # Imported but unused
-    "data_cleaning.py: F401",  # Imported but unused (import experimental)
 ]
 
 [tool.isort]

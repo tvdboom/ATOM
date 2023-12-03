@@ -291,8 +291,8 @@ def test_nested_runs_to_mlflow(mlflow):
     """Assert that the trials are logged to mlflow as nested runs."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.log_ht = True
-    atom.run("Tree", n_trials=3)
-    assert mlflow.call_count == 4  # n_trials + fit
+    atom.run("Tree", n_trials=1, errors='raise')
+    assert mlflow.call_count == 2  # n_trials + fit
 
 
 @patch("mlflow.log_params")

@@ -9,10 +9,13 @@ Description: Unit tests for the plots module.
 
 import glob
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+import numpy as np
 import pandas as pd
 import pytest
+from optuna.visualization._terminator_improvement import _ImprovementInfo
+from shap.plots._force import AdditiveForceVisualizer
 from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
@@ -337,13 +340,13 @@ def test_plot_relationships():
 @pytest.mark.parametrize("scoring", [None, "auc"])
 def test_plot_rfecv(scoring):
     """Assert that the plot_rfecv method works """
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.1, random_state=1)
 
     # Didn't run RFECV
     with pytest.raises(PermissionError, match=".*using the 'rfecv' strategy.*"):
         atom.plot_rfecv(display=False)
 
-    atom.feature_selection("rfecv", solver="lr", n_features=20, scoring=scoring)
+    atom.feature_selection("rfecv", solver="tree", n_features=20, scoring=scoring)
     atom.plot_rfecv(display=False)
 
 
@@ -356,6 +359,14 @@ def test_plot_wordcloud():
 
 
 # Test HyperparameterTuningPlot ==================================== >>
+
+def test_check_hyperparams():
+    """Assert that an error is raised when models didn't run HT."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    with pytest.raises(PermissionError, match=".*models that ran hyperparameter.*"):
+        atom._check_hyperparams([atom.tree])
+
 
 def test_get_hyperparams():
     """Assert that hyperparameters can be retrieved."""
@@ -396,8 +407,8 @@ def test_plot_edf():
 def test_plot_hyperparameter_importance():
     """Assert that the plot_hyperparameter_importance method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("lasso", n_trials=3)
-    atom.plot_hyperparameter_importance(display=False)
+    atom.run("lasso", metric=["mse", "r2"], n_trials=3)
+    atom.plot_hyperparameter_importance(metric=1, display=False)
 
 
 def test_plot_hyperparameters():
@@ -438,8 +449,11 @@ def test_plot_slice():
     atom.plot_slice(display=False)
 
 
-def test_plot_terminator_improvements():
+@patch("atom.plots.hyperparametertuningplot._get_improvement_info")
+def test_plot_terminator_improvements(improvement):
     """Assert that the plot_terminator_improvement method works."""
+    improvement.return_value = _ImprovementInfo([], [], [])
+
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("tree", n_trials=1)
 
@@ -478,12 +492,12 @@ def test_plot_confusion_matrix():
     """Assert that the plot_confusion_matrix method works."""
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["RF", "LGB"])
+    atom.run(["RF", "LGB"], est_params={"n_estimators": 5})
     atom.plot_confusion_matrix(threshold=0.2, display=False)
 
     # For multiclass classification tasks
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(["RF", "LGB"])
+    atom.run(["RF", "LGB"], est_params={"n_estimators": 5})
 
     # Not available for multiclass
     with pytest.raises(NotImplementedError, match=".*not support the comparison.*"):
@@ -495,7 +509,7 @@ def test_plot_confusion_matrix():
 def test_plot_det():
     """Assert that the plot_det method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LGB", "SVM"])
+    atom.run(["LGB", "SVM"], est_params={"LGB": {"n_estimators": 5}})
     atom.plot_det(display=False)
 
 
@@ -509,7 +523,14 @@ def test_plot_errors():
 def test_plot_evals():
     """Assert that the plot_evals method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB", "MLP"], metric="f1")
+    atom.run(
+        models=["LR", "LGB", "MLP"],
+        metric="f1",
+        est_params={
+            "LGB": {"n_estimators": 5},
+            "MLP": {"hidden_layer_sizes": (5,), "max_iter": 5},
+        },
+    )
 
     # No in-training validation
     with pytest.raises(ValueError, match=".*no in-training validation.*"):
@@ -541,7 +562,7 @@ def test_plot_gains():
 def test_plot_learning_curve():
     """Assert that the plot_learning_curve method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.train_sizing(["Tree", "LGB"], errors="raise", n_bootstrap=4)
+    atom.train_sizing(["Dummy", "Tree"], n_bootstrap=4)
     atom.plot_learning_curve(display=False)
 
 
@@ -556,12 +577,14 @@ def test_plot_parshap():
     """Assert that the plot_parshap method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance("smote")  # To get samples over 500
-    atom.run(["GNB", "LR"])
+    atom.run(["Dummy", "Tree"])
     atom.plot_parshap(display=False)  # With colorbar
-    atom.gnb.plot_parshap(display=False)  # Without colorbar
+    atom.dummy.plot_parshap(display=False)  # Without colorbar
 
 
-def test_plot_partial_dependence():
+@patch("atom.plots.predictionplot.Parallel")
+@patch("atom.plots.predictionplot.partial_dependence")
+def test_plot_partial_dependence(_, __):
     """Assert that the plot_partial_dependence method works."""
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("Tree")
@@ -569,7 +592,7 @@ def test_plot_partial_dependence():
         atom.plot_partial_dependence(display=False)
 
     atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
-    atom.run(["KNN", "LGB"])
+    atom.run(["KNN", "LGB"], est_params={"LGB": {"n_estimators": 5}})
 
     # Pair for multimodel
     with pytest.raises(ValueError, match=".*when plotting multiple models.*"):
@@ -588,8 +611,11 @@ def test_plot_partial_dependence():
     atom.tree.plot_partial_dependence(columns=[0, 1], pair=2, display=False)
 
 
-def test_plot_permutation_importance():
+@patch("atom.plots.predictionplot.permutation_importance")
+def test_plot_permutation_importance(importances):
     """Assert that the plot_permutation_importance method works."""
+    importances.return_value = {"importances": np.array(range(len(X_bin)))}
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="f1")
     atom.plot_permutation_importance(display=False)
@@ -691,7 +717,11 @@ def test_plot_roc():
 def test_plot_successive_halving():
     """Assert that the plot_successive_halving method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["Tree", "Bag", "RF", "LGB"], n_bootstrap=4)
+    atom.successive_halving(
+        models=["Bag", "RF", "LGB"],
+        est_params={"n_estimators": 5},
+        n_bootstrap=3,
+    )
     atom.plot_successive_halving(display=False)
 
 
@@ -737,8 +767,8 @@ def test_plot_shap_bar():
 
 def test_plot_shap_beeswarm():
     """Assert that the plot_shap_beeswarm method works."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run("LR", metric="f1_macro")
+    atom = ATOMClassifier(X_class, y_class, n_rows=0.1, random_state=1)
+    atom.run("GNB", metric="f1_macro")
     atom.plot_shap_beeswarm(display=False)
 
 
@@ -749,10 +779,18 @@ def test_plot_shap_decision():
     atom.lr.plot_shap_decision(display=False)
 
 
-def test_plot_shap_force():
+@patch("shap.force_plot")
+def test_plot_shap_force(plot):
     """Assert that the plot_shap_force method works."""
+    plot.return_value = Mock(spec=AdditiveForceVisualizer)
+    plot.return_value.html.return_value = ""
+
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(["LR", "MLP"], metric="MSE")
+    atom.run(
+        models=["LR", "MLP"],
+        metric="MSE",
+        est_params={"MLP": {"hidden_layer_sizes": (5,), "max_iter": 5}},
+    )
 
     # Expected value from Explainer
     atom.lr.plot_shap_force(rows=100, matplotlib=True, display=False)
