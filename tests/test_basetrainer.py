@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -7,7 +5,7 @@ Description: Unit tests for basetrainer.py
 
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import mlflow
 import pytest
@@ -28,6 +26,7 @@ from .conftest import (
 
 
 # Test _prepare_parameters =========================================== >>
+
 
 def test_model_is_predefined():
     """Assert that predefined models are accepted."""
@@ -317,6 +316,7 @@ def test_ht_params_invalid_key():
 
 # Test _core_iteration ============================================= >>
 
+
 def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
     trainer = DirectClassifier(
@@ -378,9 +378,9 @@ def test_errors_keep():
     assert trainer._models == [trainer.lda]
 
 
-@patch("atom.basetransformer.ray")
-@patch("atom.basetrainer.ray")
-def test_parallel_with_ray(_, __):
+@patch("atom.basetransformer.ray", MagicMock())
+@patch("atom.basetrainer.ray", MagicMock())
+def test_parallel_with_ray():
     """Assert that parallel runs successfully with ray backend."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],
@@ -395,8 +395,8 @@ def test_parallel_with_ray(_, __):
     ray.shutdown()
 
 
-@patch("atom.basetrainer.Parallel")
-def test_parallel(_):
+@patch("atom.basetrainer.Parallel", MagicMock())
+def test_parallel():
     """Assert that parallel runs successfully."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],

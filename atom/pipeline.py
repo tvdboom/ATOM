@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -159,7 +157,7 @@ class Pipeline(SkPipeline):
         try:
             return getattr(self._final_estimator, item)
         except (AttributeError, IndexError):
-            raise AttributeError(f"'Pipeline' object has no attribute '{item}'.")
+            raise AttributeError(f"'Pipeline' object has no attribute '{item}'.") from None
 
     def __sklearn_is_fitted__(self):
         """Whether the pipeline has been fitted."""
@@ -205,7 +203,8 @@ class Pipeline(SkPipeline):
     def _can_transform(self) -> bool:
         """Check if the pipeline can use the transform method."""
         return (
-            self._final_estimator is None or self._final_estimator == "passthrough"
+            self._final_estimator is None
+            or self._final_estimator == "passthrough"
             or hasattr(self._final_estimator, "transform")
         )
 
@@ -218,6 +217,7 @@ class Pipeline(SkPipeline):
 
     def _iter(
         self,
+        *,
         with_final: Bool = True,
         filter_passthrough: Bool = True,
         filter_train_only: Bool = True,
@@ -251,7 +251,7 @@ class Pipeline(SkPipeline):
             Transformer or predictor instance.
 
         """
-        it = super()._iter(with_final, filter_passthrough)
+        it = super()._iter(with_final=with_final, filter_passthrough=filter_passthrough)
         if filter_train_only:
             return (x for x in it if not getattr(x[-1], "_train_only", False))
         else:
@@ -294,9 +294,11 @@ class Pipeline(SkPipeline):
         self.steps: list[tuple[str, Estimator]] = list(self.steps)
         self._validate_steps()
 
-        for (step_idx, name, transformer) in self._iter(False, False, False):
+        for step, name, transformer in self._iter(
+            with_final=False, filter_passthrough=False, filter_train_only=False
+        ):
             if transformer is None or transformer == "passthrough":
-                with _print_elapsed_time("Pipeline", self._log_message(step_idx)):
+                with _print_elapsed_time("Pipeline", self._log_message(step)):
                     continue
 
             # Don't clone when caching is disabled to preserve backward compatibility
@@ -316,13 +318,13 @@ class Pipeline(SkPipeline):
                     transformer=cloned,
                     X=X,
                     y=y,
-                    message=self._log_message(step_idx),
+                    message=self._log_message(step),
                     **fit_params_steps.get(name, {}),
                 )
 
             # Replace the estimator of the step with the fitted
             # estimator (necessary when loading from cache)
-            self.steps[step_idx] = (name, fitted_transformer)
+            self.steps[step] = (name, fitted_transformer)
 
         return X, y
 
@@ -546,7 +548,7 @@ class Pipeline(SkPipeline):
             Predicted classes with shape=(n_samples,).
 
         """
-        for _, name, transformer in self._iter(with_final=False):
+        for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 

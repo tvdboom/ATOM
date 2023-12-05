@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -41,7 +39,7 @@ class BaseEnsemble:
         # Uses 'drop' as placeholder for dropped estimators
         est_iter = iter(self.estimators_)
         for name, est in self.estimators:
-            if est == "drop" or check_is_fitted(est, False):
+            if est == "drop" or check_is_fitted(est, exception=False):
                 self.named_estimators_[name] = est
             else:
                 self.named_estimators_[name] = next(est_iter)
@@ -96,14 +94,14 @@ class BaseVoting(BaseEnsemble):
                 message=self._log_message(names[idx], idx + 1, len(all_estimators)),
             )
             for idx, clf in enumerate(all_estimators)
-            if clf != "drop" and not check_is_fitted(clf, False)
+            if clf != "drop" and not check_is_fitted(clf, exception=False)
         )
 
         self.estimators_ = []
         estimators = iter(estimators)
         for est in self.estimators:
             if est[1] != "drop":
-                if check_is_fitted(est[1], False):
+                if check_is_fitted(est[1], exception=False):
                     self.estimators_.append(est[1])
                 else:
                     self.estimators_.append(next(estimators))
@@ -156,14 +154,14 @@ class BaseStacking(BaseEnsemble):
         estimators = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_single_estimator)(clone(clf), X, y, sample_weight)
             for idx, clf in enumerate(all_estimators)
-            if clf != "drop" and not check_is_fitted(clf, False)
+            if clf != "drop" and not check_is_fitted(clf, exception=False)
         )
 
         self.estimators_ = []
         estimators = iter(estimators)
         for est in self.estimators:
             if est[1] != "drop":
-                if check_is_fitted(est[1], False):
+                if check_is_fitted(est[1], exception=False):
                     self.estimators_.append(est[1])
                 else:
                     self.estimators_.append(next(estimators))
@@ -182,11 +180,9 @@ class BaseStacking(BaseEnsemble):
 
         self.stack_method_ = [
             self._method_name(name, est, meth)
-            for name, est, meth in zip(names, all_estimators, stack_method)
+            for name, est, meth in zip(names, all_estimators, stack_method, strict=True)
         ]
-        fit_params = (
-            {"sample_weight": sample_weight} if sample_weight is not None else None
-        )
+        fit_params = {"sample_weight": sample_weight} if sample_weight is not None else None
 
         predictions = Parallel(n_jobs=self.n_jobs)(
             delayed(cross_val_predict)(
@@ -199,21 +195,20 @@ class BaseStacking(BaseEnsemble):
                 fit_params=fit_params,
                 verbose=self.verbose,
             )
-            for est, meth in zip(all_estimators, self.stack_method_)
+            for est, meth in zip(all_estimators, self.stack_method_, strict=True)
             if est != "drop"
         )
 
         # Only not None or not 'drop' estimators will be used in transform.
         # Remove the None from the method as well.
         self.stack_method_ = [
-            meth for (meth, est) in zip(self.stack_method_, all_estimators)
+            meth
+            for (meth, est) in zip(self.stack_method_, all_estimators, strict=True)
             if est != "drop"
         ]
 
         X_meta = self._concatenate_predictions(X, predictions)
-        _fit_single_estimator(
-            self.final_estimator_, X_meta, y, sample_weight=sample_weight
-        )
+        _fit_single_estimator(self.final_estimator_, X_meta, y, sample_weight=sample_weight)
 
         return self
 
@@ -253,8 +248,10 @@ class VotingClassifier(BaseVoting, VC):
         )
 
         # If all estimators are prefit, create fitted attrs
-        if all(e[1] == "drop" or check_is_fitted(e[1], False) for e in self.estimators):
-            self.estimators_ = [e[1] for e in self.estimators if e[1] != "drop"]
+        if all(
+            est[1] == "drop" or check_is_fitted(est[1], exception=False) for est in self.estimators
+        ):
+            self.estimators_ = [est[1] for est in self.estimators if est[1] != "drop"]
             self._get_fitted_attrs()
 
     def fit(
@@ -291,9 +288,7 @@ class VotingClassifier(BaseVoting, VC):
             )
 
         if self.voting not in ("soft", "hard"):
-            raise ValueError(
-                f"Voting must be 'soft' or 'hard', got (voting={self.voting})."
-            )
+            raise ValueError(f"Voting must be 'soft' or 'hard', got (voting={self.voting}).")
 
         if self.weights is not None and len(self.weights) != len(self.estimators):
             raise ValueError(
@@ -357,7 +352,9 @@ class VotingRegressor(BaseVoting, VR):
         )
 
         # If all estimators are prefit, create fitted attrs
-        if all(e[1] == "drop" or check_is_fitted(e[1], False) for e in self.estimators):
+        if all(
+            est[1] == "drop" or check_is_fitted(est[1], exception=False) for est in self.estimators
+        ):
             self.estimators_ = [est[1] for est in self.estimators if est[1] != "drop"]
             self._get_fitted_attrs()
 

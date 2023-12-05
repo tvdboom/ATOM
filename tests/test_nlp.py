@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -19,6 +17,7 @@ from .conftest import X_bin, X_text, y10
 
 
 # Test TextCleaner ================================================= >>
+
 
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
@@ -93,6 +92,7 @@ def test_drop_empty_tokens():
 
 # Test Tokenizer =================================================== >>
 
+
 def test_tokenization():
     """Assert that the corpus is tokenized."""
     X = Tokenizer().transform([["A test"]])
@@ -133,6 +133,7 @@ def test_no_ngrams():
 
 # Test TextNormalizer ================================================== >>
 
+
 def test_normalizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
     assert TextNormalizer().transform([["b c"]])["corpus"][0] == ["b", "c"]
@@ -164,6 +165,7 @@ def test_lemmatization():
 
 # Test Vectorizer ================================================== >>
 
+
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
     assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
@@ -185,12 +187,13 @@ def test_hashing():
 
 
 @patch.dict(
-    "sys.modules", {
+    "sys.modules",
+    {
         "cuml": MagicMock(spec=["__spec__"]),
         "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
         "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
         "cuml.feature_extraction.text": MagicMock(),
-    }
+    },
 )
 def test_gpu():
     """Assert that the gpu implementation calls the get method of matrix."""

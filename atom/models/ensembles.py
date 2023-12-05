@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,7 +7,7 @@ Description: Module containing all ensemble models.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import Model, Predictor
@@ -34,10 +32,10 @@ class Stacking(ClassRegModel):
     has_validation = None
     native_multilabel = False
     native_multioutput = False
-    supports_engines: list[str] = []
+    supports_engines = ()
 
     _module = "atom.ensembles"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "StackingClassifier",
         "regression": "StackingRegressor",
     }
@@ -64,8 +62,7 @@ class Stacking(ClassRegModel):
         """
         return self._est_class(
             estimators=[
-                (m.name, m.export_pipeline() if m.scaler else m.estimator)
-                for m in self._models
+                (m.name, m.export_pipeline() if m.scaler else m.estimator) for m in self._models
             ],
             n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
@@ -90,10 +87,13 @@ class Voting(ClassRegModel):
     has_validation = None
     native_multilabel = False
     native_multioutput = False
-    supports_engines: list[str] = []
+    supports_engines = ()
 
     _module = "atom.ensembles"
-    _estimators = {"classification": "VotingClassifier", "regression": "VotingRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "VotingClassifier",
+        "regression": "VotingRegressor",
+    }
 
     def __init__(self, models: list[Model], **kwargs):
         self._models = models
@@ -126,8 +126,7 @@ class Voting(ClassRegModel):
         """
         return self._est_class(
             estimators=[
-                (m.name, m.export_pipeline() if m.scaler else m.estimator)
-                for m in self._models
+                (m.name, m.export_pipeline() if m.scaler else m.estimator) for m in self._models
             ],
             n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,

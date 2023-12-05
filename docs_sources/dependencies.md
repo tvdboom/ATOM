@@ -43,6 +43,7 @@ packages are necessary for its correct functioning.
 * **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.1.2)
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.7.1)
+* **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.1)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
@@ -74,17 +75,17 @@ additional libraries. You can install all the optional dependencies using
 The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
 necessary to [contribute][contributing] to the project. Install them
-running `pdm install --dev` (don't forget to install [pdm](https://pdm-project.org/latest/)
-with `pip install -U pdm`).
+running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/latest/) with
+`pip install -U pdm`).
 
 **Linting**
 
 * **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
-* **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
-* **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.3)
-* **[pydocstyle](https://www.pydocstyle.org/en/stable/)** (>=6.3.0)
 * **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
 * **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
+* **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
+* **[pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks)** (>=4.5.0)
+* **[ruff](https://docs.astral.sh/ruff/)** (>=0.1.7)
 * **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)
 
 **Testing**
@@ -92,6 +93,7 @@ with `pip install -U pdm`).
 * **[nbmake](https://github.com/treebeardtech/nbmake)** (>=1.4.1)
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.2.1)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.0.0)
+* **[pytest-mock](https://github.com/pytest-dev/pytest-mock/)** (>=3.12.0)
 * **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.2.0)
 * **[scikeras](https://github.com/adriangb/scikeras)** (>=0.11.0)
 * **[tensorflow](https://www.tensorflow.org/learn)** (>=2.13.0)

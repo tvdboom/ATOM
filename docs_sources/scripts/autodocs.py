@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -11,11 +9,17 @@ from __future__ import annotations
 
 import importlib
 import json
-import os
 from dataclasses import dataclass
 from inspect import (
-    Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
-    ismethod, isroutine, signature,
+    Parameter,
+    getdoc,
+    getmembers,
+    getsourcelines,
+    isclass,
+    isfunction,
+    ismethod,
+    isroutine,
+    signature,
 )
 from typing import Any, Optional
 from collections.abc import Callable
@@ -24,7 +28,7 @@ import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
 
-from atom.utils.utils import Goal, Task
+from atom.utils.utils import Goal
 
 
 # Variables ======================================================== >>
@@ -245,6 +249,7 @@ CUSTOM_URLS = dict(
 
 # Classes ========================================================== >>
 
+
 @dataclass
 class DummyTrainer:
     """Dummy trainer class to call model instances."""
@@ -304,7 +309,7 @@ class AutoDocs:
         r"\Z",
     )
 
-    def __init__(self, obj: Callable, method: Optional[Callable] = None):
+    def __init__(self, obj: Callable, method: Callable | None = None):
         if method:
             self.obj = getattr(obj, method)
             self.method = method
@@ -419,9 +424,9 @@ class AutoDocs:
         for k, v in params.items():
             if k not in ("cls", "self") and not k.startswith("_"):
                 if v.default == Parameter.empty:
-                    if '**' in str(v):
+                    if "**" in str(v):
                         sign.append(f"**{k}")  # Add ** to kwargs
-                    elif '*' in str(v):
+                    elif "*" in str(v):
                         sign.append(f"*{k}")  # Add * to args
                     else:
                         sign.append(k)
@@ -433,7 +438,7 @@ class AutoDocs:
 
         sign = f"({', '.join(sign)})"
 
-        f = self.obj.__module__.replace('.', '/')  # Module and filename sep by /
+        f = self.obj.__module__.replace(".", "/")  # Module and filename sep by /
         if "atom" in self.obj.__module__:
             url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
         elif "sklearn" in self.obj.__module__:
@@ -442,7 +447,7 @@ class AutoDocs:
             url = ""
 
         anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
-        module = self.obj.__module__ + '.' if obj != "method" else ""
+        module = self.obj.__module__ + "." if obj != "method" else ""
         obj = f"<em>{obj}</em>"
         name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
         if url:
@@ -479,7 +484,7 @@ class AutoDocs:
 
         """
         pattern = f".*?(?={'|'.join(self.blocks)})"
-        match = re.match(pattern, self.doc[len(self.get_summary()):], re.S)
+        match = re.match(pattern, self.doc[len(self.get_summary()) :], re.S)
         return match.group() if match else ""
 
     def get_see_also(self) -> str:
@@ -555,7 +560,8 @@ class AutoDocs:
                 attrs = include
             else:
                 attrs = [
-                    m for m, _ in getmembers(self.obj, lambda x: not isroutine(x))
+                    m
+                    for m, _ in getmembers(self.obj, lambda x: not isroutine(x))
                     if not m.startswith("_")
                     and not any(re.fullmatch(p, m) for p in config.get("exclude", []))
                 ]
@@ -610,7 +616,7 @@ class AutoDocs:
                             pass
 
                     # Get the body corresponding to the header
-                    pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
+                    pattern = f"(?<={re.escape(header)}\n).*?(?=\n\\w|\n\\*|\n\\[|\\Z)"
                     body = re.search(pattern, match, re.S | re.M).group()
 
                     header = header.replace("*", r"\*")  # Use literal * for args/kwargs
@@ -731,7 +737,8 @@ class AutoDocs:
             methods = include
         else:
             methods = [
-                m for m, _ in getmembers(self.obj, predicate=predicate)
+                m
+                for m, _ in getmembers(self.obj, predicate=predicate)
                 if not m.startswith("_") and not any(re.fullmatch(p, m) for p in exclude)
             ]
 
@@ -768,6 +775,7 @@ class AutoDocs:
 
 # Functions ======================================================== >>
 
+
 def render(markdown: str, **kwargs) -> str:
     """Render the markdown page.
 
@@ -792,14 +800,14 @@ def render(markdown: str, **kwargs) -> str:
 
     """
     autodocs = None
-    while match := re.search("(:: )(\w.*?)(?=::|\n\n|\Z)", markdown, re.S):
+    while match := re.search("(:: )(\\w.*?)(?=::|\n\n|\\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))
 
         # Commands should always be dicts with the configuration as a list in values
         if isinstance(command, str):
             if ":" in command:
                 autodocs = AutoDocs.get_obj(command)
-                markdown = markdown[:match.start()] + markdown[match.end():]
+                markdown = markdown[: match.start()] + markdown[match.end() :]
                 continue
             else:
                 command = {command: None}  # Has no options specified
@@ -833,7 +841,7 @@ def render(markdown: str, **kwargs) -> str:
         else:
             text = ""
 
-        markdown = markdown[:match.start()] + text + markdown[match.end():]
+        markdown = markdown[: match.start()] + text + markdown[match.end() :]
 
         # Change the custom autorefs now to use [self-...][]
         markdown = custom_autorefs(markdown, autodocs)
@@ -930,7 +938,7 @@ def clean_search(config: MkDocsConfig):
         Object containing the search index.
 
     """
-    with open(f"{config.data['site_dir']}/search/search_index.json", 'r') as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json") as f:
         search = json.load(f)
 
     for elem in search["docs"]:
@@ -938,9 +946,11 @@ def clean_search(config: MkDocsConfig):
         elem["text"] = re.sub(r"window\.PLOTLYENV.*?\)\s*?}\s*?", "", elem["text"], flags=re.S)
 
         # Remove mkdocs-jupyter css
-        elem["text"] = re.sub(r"\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
+        elem["text"] = re.sub(
+            r"\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S
+        )
 
-    with open(f"{config.data['site_dir']}/search/search_index.json", 'w') as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json", "w") as f:
         json.dump(search, f)
 
 
@@ -981,7 +991,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
             text = match.group()
             if not link:
                 # Only adapt when has form [anchor][]
-                link = anchor.replace(' ', '-').replace('.', '').lower()
+                link = anchor.replace(" ", "-").replace(".", "").lower()
                 text = f"[{anchor}][{link}]"
             if link in CUSTOM_URLS:
                 # Replace keyword with custom url
@@ -990,7 +1000,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
                 link = link.replace("self", autodocs.obj.__name__.lower())
                 text = f"[{anchor}][{link}]"
 
-            result += markdown[start:match.start()] + text
+            result += markdown[start : match.start()] + text
             start = match.end()
 
     return result + markdown[start:]

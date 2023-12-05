@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -69,7 +67,7 @@ class BaseTransformer:
 
     """
 
-    attrs = [
+    attrs = (
         "n_jobs",
         "device",
         "engine",
@@ -80,7 +78,7 @@ class BaseTransformer:
         "logger",
         "experiment",
         "random_state",
-    ]
+    )
 
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
@@ -122,7 +120,10 @@ class BaseTransformer:
 
     @engine.setter
     @beartype
-    def engine(self, value: Engine):
+    def engine(self, value: Engine | None):
+        if value is None:
+            value = {"data": "numpy", "estimator": "sklearn"}
+
         if value.get("data") == "modin" and not ray.is_initialized():
             ray.init(
                 runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_Pandas__": "1"}},
@@ -141,6 +142,7 @@ class BaseTransformer:
                 )
             else:
                 import sklearnex
+
                 sklearnex.set_config(self.device.lower() if self._gpu else "auto")
         elif value.get("estimator") == "cuml":
             if not find_spec("cuml"):
@@ -150,10 +152,12 @@ class BaseTransformer:
                 )
             else:
                 from cuml.common.device_selection import set_global_device_type
+
                 set_global_device_type("gpu" if self._gpu else "cpu")
 
                 # See https://github.com/rapidsai/cuml/issues/5564
                 from cuml.internals.memory_utils import set_global_output_type
+
                 set_global_output_type("numpy")
 
         self._engine = value
@@ -272,7 +276,7 @@ class BaseTransformer:
                 fh.setFormatter(Formatter("%(asctime)s - %(levelname)s: %(message)s"))
 
                 # Redirect loggers to file handler
-                for name in [logger.name] + external_loggers:
+                for name in [logger.name, *external_loggers]:
                     getLogger(name).addHandler(fh)
 
         self._logger = logger
@@ -298,6 +302,7 @@ class BaseTransformer:
                 username = requests.get(
                     url="https://dagshub.com/api/v1/user",
                     auth=HTTPBearerAuth(token),
+                    timeout=5,
                 ).json()["username"]
 
                 if f"{username}/{value}" not in os.getenv("MLFLOW_TRACKING_URI", ""):
@@ -322,7 +327,7 @@ class BaseTransformer:
             value = int(value)
 
         random.seed(value)
-        np.random.seed(value)
+        np.random.seed(value)  # noqa: NPY002
         self._random_state = value
 
     @property
@@ -343,7 +348,7 @@ class BaseTransformer:
                     f"Invalid value for the device parameter. GPU device {value[-1]} "
                     "isn't understood. Use a single integer to denote a specific "
                     "device. Note that ATOM doesn't support multi-GPU training."
-                )
+                ) from None
 
     # Methods ====================================================== >>
 
@@ -404,7 +409,8 @@ class BaseTransformer:
         y: Literal[None],
         columns: Axes,
         name: Literal[None],
-    ) -> tuple[DataFrame, None]: ...
+    ) -> tuple[DataFrame, None]:
+        ...
 
     @staticmethod
     @overload
@@ -413,7 +419,8 @@ class BaseTransformer:
         y: YSelector,
         columns: Literal[None],
         name: str | Sequence[str],
-    ) -> tuple[None, Pandas]: ...
+    ) -> tuple[None, Pandas]:
+        ...
 
     @staticmethod
     @overload
@@ -422,7 +429,8 @@ class BaseTransformer:
         y: YSelector,
         columns: Axes | None = ...,
         name: str | Sequence[str] | None = ...,
-    ) -> tuple[DataFrame, Pandas]: ...
+    ) -> tuple[DataFrame, Pandas]:
+        ...
 
     @staticmethod
     def _check_input(
@@ -499,7 +507,7 @@ class BaseTransformer:
                         raise ValueError(
                             f"The features are different than seen at fit time. "
                             f"Features {set(Xt.columns) - set(columns)} are missing in X."
-                        )
+                        ) from None
 
         # Prepare target column
         if isinstance(y, (dict, *sequence_t, *dataframe_t)):
@@ -532,7 +540,7 @@ class BaseTransformer:
                         raise ValueError(
                             "X and y don't have the same number of rows,"
                             f" got len(X)={len(Xt)} and len(y)={len(y)}."
-                        )
+                        ) from None
                 else:
                     yt = y
 
@@ -586,9 +594,9 @@ class BaseTransformer:
         if severity in ("error", "critical"):
             raise UserWarning(msg)
         elif severity == "warning":
-            warnings.warn(msg, category=UserWarning)
+            warnings.warn(msg, category=UserWarning, stacklevel=2)
         elif severity == "info" and self.verbose >= level:
-            print(msg)
+            print(msg)  # noqa: T201
 
         if self.logger:
             for text in str(msg).split("\n"):

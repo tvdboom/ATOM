@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -330,7 +328,7 @@ class Branch:
         if self._holdout is not None:
             return merge(
                 *self.pipeline.transform(
-                    X=self._holdout.iloc[:, :-self._data.n_cols],
+                    X=self._holdout.iloc[:, : -self._data.n_cols],
                     y=self._holdout[self.target],
                 )
             )
@@ -415,7 +413,7 @@ class Branch:
     @property
     def features(self) -> Index:
         """Name of the features."""
-        return self.columns[:-self._data.n_cols]
+        return self.columns[: -self._data.n_cols]
 
     @property
     def n_features(self) -> Int:
@@ -425,7 +423,7 @@ class Branch:
     @property
     def target(self) -> str | list[str]:
         """Name of the target column(s)."""
-        return flt(list(self.columns[-self._data.n_cols:]))
+        return flt(list(self.columns[-self._data.n_cols :]))
 
     @property
     def _all(self) -> DataFrame:
@@ -443,19 +441,24 @@ class Branch:
     def _get_rows(
         self,
         rows: RowSelector,
+        *,
         return_X_y: Literal[False] = ...,
-    ) -> DataFrame: ...
+    ) -> DataFrame:
+        ...
 
     @overload
     def _get_rows(
         self,
         rows: RowSelector,
+        *,
         return_X_y: Literal[True],
-    ) -> tuple[DataFrame, Pandas]: ...
+    ) -> tuple[DataFrame, Pandas]:
+        ...
 
     def _get_rows(
         self,
         rows: RowSelector,
+        *,
         return_X_y: Bool = False,
     ) -> DataFrame | tuple[DataFrame, Pandas]:
         """Get a subset of the rows.
@@ -541,13 +544,14 @@ class Branch:
             inc = list(_all.index[~_all.index.isin(exc)])
 
         if return_X_y:
-            return _all.loc[inc, self.features], _all.loc[inc, self.target]  # type: ignore
+            return _all.loc[inc, self.features], _all.loc[inc, self.target]  # type: ignore[index]
         else:
             return self._all.loc[inc]
 
     def _get_columns(
         self,
         columns: ColumnSelector | None = None,
+        *,
         include_target: Bool = True,
         only_numerical: Bool = False,
     ) -> list[str]:
@@ -641,19 +645,24 @@ class Branch:
     def _get_target(
         self,
         target: TargetsSelector,
+        *,
         only_columns: Literal[False] = ...,
-    ) -> tuple[int, int]: ...
+    ) -> tuple[int, int]:
+        ...
 
     @overload
     def _get_target(
         self,
         target: TargetsSelector,
+        *,
         only_columns: Literal[True],
-    ) -> str: ...
+    ) -> str:
+        ...
 
     def _get_target(
         self,
         target: TargetsSelector,
+        *,
         only_columns: Bool = False,
     ) -> str | tuple[int, int]:
         """Get a target column and/or class in target column.
@@ -735,7 +744,7 @@ class Branch:
                     raise ValueError(
                         f"Invalid value for the target parameter. Value {target} "
                         "not found in the mapping of the target column."
-                    )
+                    ) from None
             else:
                 n_classes = get_cols(self.y)[column].nunique(dropna=False)
                 if not 0 <= target < n_classes:
@@ -767,7 +776,7 @@ class Branch:
         else:
             return 0, get_class(target)
 
-    def load(self, assign: Bool = True) -> DataContainer | None:
+    def load(self, *, assign: Bool = True) -> DataContainer | None:
         """Load the branch's data from memory.
 
         This method is used to restore the data of inactive branches.
@@ -788,7 +797,7 @@ class Branch:
                 with open(self._location.joinpath(f"{self}.pkl"), "rb") as file:
                     data = pickle.load(file)
             except FileNotFoundError:
-                raise FileNotFoundError(f"Branch {self.name} has no data stored.")
+                raise FileNotFoundError(f"Branch {self.name} has no data stored.") from None
 
             if assign:
                 self._container = data
@@ -797,7 +806,7 @@ class Branch:
 
         return self._container
 
-    def store(self, assign: Bool = True):
+    def store(self, *, assign: Bool = True):
         """Store the branch's data as a pickle in memory.
 
         After storage, the data is deleted, and the branch is no longer
@@ -819,7 +828,9 @@ class Branch:
                 with open(self._location.joinpath(f"{self}.pkl"), "wb") as file:
                     pickle.dump(self._container, file)
             except FileNotFoundError:
-                raise FileNotFoundError(f"The {self._location} directory does not exist.")
+                raise FileNotFoundError(
+                    f"The {self._location} directory does not exist."
+                ) from None
 
             if assign:
                 self._container = None

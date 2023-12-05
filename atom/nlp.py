@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -251,7 +249,7 @@ class TextCleaner(TransformerMixin):
                 Regex pattern to replace.
 
             """
-            if isinstance(X[corpus].iat[0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].str.replace(regex, "", regex=True)
             else:
                 X[corpus] = X[corpus].apply(lambda x: [re.sub(regex, "", w) for w in x])
@@ -261,7 +259,7 @@ class TextCleaner(TransformerMixin):
         self._log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus].iat[0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].apply(lambda x: to_ascii(x))
             else:
                 X[corpus] = X[corpus].apply(lambda doc: [to_ascii(str(w)) for w in doc])
@@ -269,7 +267,7 @@ class TextCleaner(TransformerMixin):
 
         if self.lower_case:
             self._log(" --> Converting text to lower case.", 2)
-            if isinstance(X[corpus].iat[0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
                 X[corpus] = X[corpus].apply(lambda doc: [str(w).lower() for w in doc])
@@ -312,14 +310,14 @@ class TextCleaner(TransformerMixin):
         if self.drop_punctuation:
             self._log(" --> Dropping punctuation from the text.", 2)
             trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus].iat[0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 func = lambda doc: doc.translate(trans_table)
             else:
                 func = lambda doc: [str(w).translate(trans_table) for w in doc]
             X[corpus] = X[corpus].apply(func)
 
         # Drop empty tokens from every document
-        if not isinstance(X[corpus].iat[0], str):
+        if not isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda doc: [w for w in doc if w])
 
         return X
@@ -505,7 +503,7 @@ class TextNormalizer(TransformerMixin):
         self._log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus].iat[0], str):
+        if isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: row.split())
 
         stopwords = set()
@@ -514,7 +512,7 @@ class TextNormalizer(TransformerMixin):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
-            check_nltk_module("corpora/stopwords", self.verbose < 2)
+            check_nltk_module("corpora/stopwords", quiet=self.verbose < 2)
             stopwords = set(nltk.corpus.stopwords.words(self.stopwords.lower()))
 
         # Join predefined with customs stopwords
@@ -536,9 +534,9 @@ class TextNormalizer(TransformerMixin):
 
         if self.lemmatize:
             self._log(" --> Applying lemmatization.", 2)
-            check_nltk_module("corpora/wordnet", self.verbose < 2)
-            check_nltk_module("taggers/averaged_perceptron_tagger", self.verbose < 2)
-            check_nltk_module("corpora/omw-1.4", self.verbose < 2)
+            check_nltk_module("corpora/wordnet", quiet=self.verbose < 2)
+            check_nltk_module("taggers/averaged_perceptron_tagger", quiet=self.verbose < 2)
+            check_nltk_module("corpora/omw-1.4", quiet=self.verbose < 2)
 
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
@@ -734,8 +732,8 @@ class Tokenizer(TransformerMixin):
 
         self._log("Tokenizing the corpus...", 1)
 
-        if isinstance(X[corpus].iat[0], str):
-            check_nltk_module("tokenizers/punkt", self.verbose < 2)
+        if isinstance(X[corpus].iloc[0], str):
+            check_nltk_module("tokenizers/punkt", quiet=self.verbose < 2)
             X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
 
         ngrams = {
@@ -916,7 +914,7 @@ class Vectorizer(TransformerMixin):
         *,
         return_sparse: Bool = True,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         **kwargs,
@@ -949,14 +947,14 @@ class Vectorizer(TransformerMixin):
         corpus = get_corpus(X)
 
         # Convert a sequence of tokens to space separated string
-        if not isinstance(X[corpus].iat[0], str):
+        if not isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
-        strategies = dict(
-            bow="CountVectorizer",
-            tfidf="TfidfVectorizer",
-            hashing="HashingVectorizer",
-        )
+        strategies = {
+            "bow": "CountVectorizer",
+            "tfidf": "TfidfVectorizer",
+            "hashing": "HashingVectorizer",
+        }
 
         estimator = self._get_est_class(
             name=strategies[self.strategy],
@@ -1001,7 +999,7 @@ class Vectorizer(TransformerMixin):
         self._log("Vectorizing the corpus...", 1)
 
         # Convert a sequence of tokens to space-separated string
-        if not isinstance(X[corpus].iat[0], str):
+        if not isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -30,6 +28,7 @@ from .conftest import (
 
 # Test TransformerMixin ============================================ >>
 
+
 def test_clone():
     """Assert that cloning the transformer keeps internal attributes."""
     pruner = Pruner().fit(X_bin)
@@ -56,6 +55,7 @@ def test_inverse_transform():
 
 
 # Test Balancer ==================================================== >>
+
 
 def test_balance_multioutput_task():
     """Assert that an error is raised for multioutput tasks."""
@@ -144,6 +144,7 @@ def test_balancer_attach_attribute():
 
 # Test Cleaner ==================================================== >>
 
+
 def test_cleaner_convert_dtypes():
     """Assert that column dtypes are converted."""
     X = X_bin.copy()
@@ -176,15 +177,15 @@ def test_cleaner_drop_invalid_column_list_types():
 def test_cleaner_remove_characters_from_column_names():
     """Assert that specified chars are removed from column names."""
     X, y = X_bin.copy(), y_bin.copy()
-    X.columns = ["test##"] + list(X.columns[1:])
+    X.columns = ["test##", *X.columns[1:]]
     y.name = "::test"
     X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
     assert X.columns[0] == "test"
     assert y.name == "test"
 
     X, y = X_class.copy(), y_multiclass.copy()
-    X.columns = ["test##"] + list(X.columns[1:])
-    y.columns = ["::test"] + list(y.columns[1:])
+    X.columns = ["test##", *X.columns[1:]]
+    y.columns = ["::test", *y.columns[1:]]
     X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
     assert X.columns[0] == "test"
     assert y.columns[0] == "test"
@@ -234,7 +235,7 @@ def test_cleaner_multiclass_multioutput():
     y = pd.DataFrame({"a": y10_str, "b": y10, "c": y10_str})
     y_transformed = Cleaner().fit_transform(y=y)
     assert list(y_transformed.columns) == ["a", "b", "c"]
-    assert all(v in [0, 1] for v in y_transformed.values.ravel())
+    assert all(v in (0, 1) for v in y_transformed.to_numpy().ravel())
 
 
 def test_cleaner_inverse_transform():
@@ -259,6 +260,7 @@ def test_cleaner_target_mapping_binary():
 
 
 # Test Discretizer ================================================= >>
+
 
 def test_missing_columns_in_dict_are_ignored():
     """Assert that only columns in the dict are transformed."""
@@ -345,6 +347,7 @@ def test_labels_custom_strategy():
 
 # Test Encoder ===================================================== >>
 
+
 def test_strategy_parameter_encoder():
     """Assert that the strategy parameter is set correctly."""
     encoder = Encoder(strategy="invalid")
@@ -378,20 +381,20 @@ def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     encoder = Encoder(strategy=TargetEncoder, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.at[0, "x2"] != "a"
+    assert X.loc[0, "x2"] != "a"
 
 
 def test_missing_values_are_propagated():
     """Assert that missing values are propagated."""
     encoder = Encoder(max_onehot=None)
-    assert np.isnan(encoder.fit_transform(X10_sn, y10).iat[0, 2])
+    assert np.isnan(encoder.fit_transform(X10_sn, y10).iloc[0, 2])
 
 
 def test_unknown_classes_are_imputed():
     """Assert that unknown classes are imputed."""
     encoder = Encoder()
     encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).iat[0, 0] == -1.0
+    assert encoder.transform(["c"]).iloc[0, 0] == -1.0
 
 
 def test_ordinal_encoder():
@@ -406,7 +409,8 @@ def test_ordinal_features():
     """Assert that ordinal features are encoded."""
     encoder = Encoder(max_onehot=None, ordinal={"x2": ["b", "a", "c"]})
     X = encoder.fit_transform(X10_str2, y10)
-    assert X.iat[0, 2] == 1 and X.iat[2, 2] == 0
+    assert X.iloc[0, 2] == 1
+    assert X.iloc[2, 2] == 0
 
 
 def test_one_hot_encoder():
@@ -433,6 +437,7 @@ def test_kwargs_parameters():
 
 # Test Imputer ===================================================== >>
 
+
 @pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
 def test_imputing_all_missing_values_numeric(missing):
     """Assert that all missing values are imputed in numeric columns."""
@@ -455,12 +460,12 @@ def test_imputing_all_missing_values_categorical(missing):
 
 
 @pytest.mark.parametrize("max_nan_rows", [5, 0.5])
-def test_rows_too_many_nans(max_nan_rows):
+def test_rows_too_many_nans(max_nan_rows, random):
     """Assert that rows with too many missing values are dropped."""
     X = X_bin.copy()
-    for i in range(5):  # Add 5 rows with all NaN values
+    for _ in range(5):  # Add 5 rows with all NaN values
         X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
-    y = [np.random.randint(2) for _ in range(len(X))]
+    y = [random.integers(2) for _ in range(len(X))]
     imputer = Imputer(
         strat_num="mean",
         strat_cat="most_frequent",
@@ -499,7 +504,7 @@ def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
     imputer = Imputer(strat_num=3.2)
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3.2
+    assert X.iloc[0, 0] == 3.2
     assert X.isna().sum().sum() == 0
 
 
@@ -507,7 +512,7 @@ def test_imputing_numeric_mean():
     """Assert that imputing the mean for numerical values works."""
     imputer = Imputer(strat_num="mean")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
+    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
     assert X.isna().sum().sum() == 0
 
 
@@ -515,7 +520,7 @@ def test_imputing_numeric_median():
     """Assert that imputing the median for numerical values works."""
     imputer = Imputer(strat_num="median")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3
+    assert X.iloc[0, 0] == 3
     assert X.isna().sum().sum() == 0
 
 
@@ -523,7 +528,7 @@ def test_imputing_numeric_knn():
     """Assert that imputing numerical values with KNNImputer works."""
     imputer = Imputer(strat_num="knn", random_state=1)
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3.04
+    assert X.iloc[0, 0] == 3.04
     assert X.isna().sum().sum() == 0
 
 
@@ -531,7 +536,7 @@ def test_imputing_numeric_iterative():
     """Assert that imputing numerical values with IterativeImputer works."""
     imputer = Imputer(strat_num="iterative")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == pytest.approx(2.577836, rel=1e-6, abs=1e-12)
+    assert X.iloc[0, 0] == pytest.approx(2.577836, rel=1e-6, abs=1e-12)
     assert X.isna().sum().sum() == 0
 
 
@@ -539,7 +544,7 @@ def test_imputing_numeric_most_frequent():
     """Assert that imputing the most_frequent for numerical values works."""
     imputer = Imputer(strat_num="most_frequent")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3
+    assert X.iloc[0, 0] == 3
     assert X.isna().sum().sum() == 0
 
 
@@ -547,7 +552,7 @@ def test_imputing_non_numeric_string():
     """Assert that imputing a string for non-numerical values works."""
     imputer = Imputer(strat_cat="missing")
     X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iat[0, 2] == "missing"
+    assert X.iloc[0, 2] == "missing"
     assert X.isna().sum().sum() == 0
 
 
@@ -563,11 +568,12 @@ def test_imputing_non_numeric_most_frequent():
     """Assert that the most_frequent strategy for non-numerical works."""
     imputer = Imputer(strat_cat="most_frequent")
     X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iat[0, 2] == "d"
+    assert X.iloc[0, 2] == "d"
     assert X.isna().sum().sum() == 0
 
 
 # Test Normalizer ======================================================= >>
+
 
 @pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_normalizer_all_strategies(strategy):
@@ -613,7 +619,7 @@ def test_normalizer_ignores_categorical_columns():
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Normalizer().fit_transform(X)
-    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+    assert list(X[X.columns[1]]) == ["a" for _ in range(len(X))]
 
 
 def test_normalizer_attach_attribute():
@@ -624,6 +630,7 @@ def test_normalizer_attach_attribute():
 
 
 # Test Pruner ====================================================== >>
+
 
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
@@ -657,15 +664,15 @@ def test_drop_pruner():
 def test_minmax_pruner():
     """Assert that the method works as intended when strategy="minmax"."""
     X = Pruner(method="minmax", max_sigma=2).transform(X10)
-    assert X.iat[3, 0] == 0.23  # Max of column
-    assert X.iat[5, 1] == 2  # Min of column
+    assert X.iloc[3, 0] == 0.23  # Max of column
+    assert X.iloc[5, 1] == 2  # Min of column
 
 
 def test_value_pruner():
     """Assert that the method works as intended when strategy=value."""
     X = Pruner(method=-99, max_sigma=2).transform(X10)
-    assert X.iat[3, 0] == -99
-    assert X.iat[5, 1] == -99
+    assert X.iloc[3, 0] == -99
+    assert X.iloc[5, 1] == -99
 
 
 def test_categorical_cols_are_ignored():
@@ -721,6 +728,7 @@ def test_pruner_attach_attribute():
 
 # Test Scaler ====================================================== >>
 
+
 @pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
 def test_scaler_all_strategies(strategy):
     """Assert that all strategies work as intended."""
@@ -745,7 +753,8 @@ def test_scaler_y_is_ignored():
 def test_scaler_kwargs():
     """Assert that kwargs can be passed to the estimator."""
     X = Scaler(strategy="minmax", feature_range=(1, 2)).fit_transform(X_bin)
-    assert min(X.iloc[:, 0]) >= 1 and max(X.iloc[:, 0]) <= 2
+    assert min(X.iloc[:, 0]) >= 1
+    assert max(X.iloc[:, 0]) <= 2
 
 
 def test_scaler_return_scaled_dataset():
@@ -773,7 +782,7 @@ def test_scaler_ignores_categorical_columns():
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Scaler().fit_transform(X)
-    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+    assert list(X[X.columns[1]]) == ["a" for _ in range(len(X))]
 
 
 def test_scaler_attach_attribute():

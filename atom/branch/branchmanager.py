@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -120,7 +118,7 @@ class BranchManager:
         except KeyError:
             raise IndexError(
                 f"This {self.__class__.__name__} instance has no branch {item}."
-            )
+            ) from None
 
     @property
     def og(self) -> Branch:
@@ -168,18 +166,18 @@ class BranchManager:
             # Transfer data from memory to avoid having
             # the datasets in memory twice at one time
             parent.store()
-            setattr(branch, "_container", parent.load(assign=False))
+            branch._container = parent.load(assign=False)
         else:
             # Copy the dataset in-memory
-            setattr(branch, "_container", deepcopy(parent._container))
+            branch._container = deepcopy(parent._container)
 
         # Deepcopy the pipeline but use the same estimators
-        setattr(branch, "_pipeline", deepcopy(getattr(parent, "_pipeline")))
+        branch._pipeline = deepcopy(parent._pipeline)
         for i, step in enumerate(parent._pipeline.steps):
             branch.pipeline.steps[i] = step
 
         # Copy mapping and assign other vars
-        setattr(branch, "_mapping", copy(getattr(parent, "_mapping")))
+        branch._mapping = copy(parent._mapping)
         for attr in vars(parent):
             if not hasattr(branch, attr):  # If not already assigned...
                 setattr(branch, attr, getattr(parent, attr))
@@ -229,7 +227,7 @@ class BranchManager:
         self.current._container = data
         self.current._holdout = holdout
 
-    def reset(self, hard: Bool = False):
+    def reset(self, *, hard: Bool = False):
         """Reset this instance to its initial state.
 
         The initial state of the BranchManager contains a single branch

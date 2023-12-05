@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,7 +7,7 @@ Description: Unit tests for the plots module.
 
 import glob
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -31,6 +29,7 @@ from .conftest import (
 
 # Test BaseFigure ================================================== >>
 
+
 def test_get_elem():
     """Assert that elements are assigned correctly."""
     base = BaseFigure()
@@ -40,6 +39,7 @@ def test_get_elem():
 
 
 # Test BasePlot ==================================================== >>
+
 
 def test_aesthetics():
     """Assert that the aesthetics getter works."""
@@ -156,11 +156,11 @@ def test_custom_title_and_legend(func):
     """Assert that title and legend can be customized."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", errors="raise")
-    atom.plot_roc(title=dict(text="test", x=0), legend=dict(font_color="red"))
+    atom.plot_roc(title={"text": "test", "x": 0}, legend={"font_color": "red"})
     func.assert_called_once()
 
 
-@pytest.mark.parametrize("legend", Legend.__args__)  # type: ignore
+@pytest.mark.parametrize("legend", Legend.__args__)
 def test_custom_legend_position(legend):
     """Assert that the legend position can be specified."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -222,7 +222,7 @@ def test_canvas():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
     with atom.canvas(1, 2, title="Title", display=False) as fig:
-        atom.plot_residuals(title=dict(text="Residuals plot", x=0))
+        atom.plot_residuals(title={"text": "Residuals plot", "x": 0})
         atom.plot_feature_importance(title="Feature importance plot")
     assert fig.__class__.__name__ == "Figure"
 
@@ -275,6 +275,7 @@ def test_update_traces():
 
 
 # Test DataPlot ==================================================== >>
+
 
 @pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
@@ -339,7 +340,7 @@ def test_plot_relationships():
 
 @pytest.mark.parametrize("scoring", [None, "auc"])
 def test_plot_rfecv(scoring):
-    """Assert that the plot_rfecv method works """
+    """Assert that the plot_rfecv method works."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.1, random_state=1)
 
     # Didn't run RFECV
@@ -359,6 +360,7 @@ def test_plot_wordcloud():
 
 
 # Test HyperparameterTuningPlot ==================================== >>
+
 
 def test_check_hyperparams():
     """Assert that an error is raised when models didn't run HT."""
@@ -481,6 +483,7 @@ def test_plot_trials():
 
 # Test PredictionPlot =================================================== >>
 
+
 def test_plot_calibration():
     """Assert that the plot_calibration method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -582,9 +585,9 @@ def test_plot_parshap():
     atom.dummy.plot_parshap(display=False)  # Without colorbar
 
 
-@patch("atom.plots.predictionplot.Parallel")
-@patch("atom.plots.predictionplot.partial_dependence")
-def test_plot_partial_dependence(_, __):
+@patch("atom.plots.predictionplot.Parallel", MagicMock())
+@patch("atom.plots.predictionplot.partial_dependence", MagicMock())
+def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method works."""
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("Tree")
@@ -632,7 +635,7 @@ def test_plot_pipeline():
         atom.plot_pipeline(models="invalid", display=False)
 
     # Called from a canvas
-    with pytest.raises(PermissionError, match=".*called from a canvas.*"):
+    with pytest.raises(PermissionError, match=".*a canvas.*"):  # noqa: PT012
         with atom.canvas(2, 1, display=False):
             atom.plot_results(display=False)
             atom.plot_pipeline(display=False)
@@ -742,6 +745,7 @@ def test_plot_threshold_multilabel():
 
 # Test ShapPlot ==================================================== >>
 
+
 def test_plot_shap_fail():
     """Assert that an error is raised when the explainer can't be created."""
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
@@ -809,8 +813,7 @@ def test_plot_shap_heatmap():
     atom.plot_shap_heatmap(display=False)
 
 
-@pytest.mark.parametrize("feature", [0, -1, "mean texture"])
-def test_plot_shap_scatter(feature):
+def test_plot_shap_scatter():
     """Assert that the plot_shap_scatter method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")

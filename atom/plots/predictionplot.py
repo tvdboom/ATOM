@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -22,6 +20,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from beartype import beartype
 from joblib import Parallel, delayed
+from numpy.random import default_rng
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from scipy import stats
 from scipy.stats.mstats import mquantiles
@@ -198,11 +197,11 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 fig.add_trace(
                     go.Histogram(
                         x=y_pred,
-                        xbins=dict(start=0, end=1, size=1. / n_bins),
-                        marker=dict(
-                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                        ),
+                        xbins={"start": 0, "end": 1, "size": 1.0 / n_bins},
+                        marker={
+                            "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                        },
                         name=m.name,
                         legendgroup=m.name,
                         showlegend=False,
@@ -355,13 +354,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         if len(models_c) == 1:
             xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(0, 0.87),
-                coloraxis=dict(
-                    colorscale="Blues",
-                    cmin=0,
-                    cmax=100,
-                    title="Percentage of samples",
-                    font_size=self.label_fontsize,
-                ),
+                coloraxis={
+                    "colorscale": "Blues",
+                    "cmin": 0,
+                    "cmax": 100,
+                    "title": "Percentage of samples",
+                    "font_size": self.label_fontsize,
+                },
             )
         else:
             xaxis, yaxis = BasePlot._fig.get_axes()
@@ -373,17 +372,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             cm = confusion_matrix(y_true, y_pred)
             if len(models_c) == 1:  # Create matrix heatmap
-                xaxis, yaxis = BasePlot._fig.get_axes(
-                    x=(0, 0.87),
-                    coloraxis=dict(
-                        colorscale="Blues",
-                        cmin=0,
-                        cmax=100,
-                        title="Percentage of samples",
-                        font_size=self.label_fontsize,
-                    ),
-                )
-
                 # Get mapping from branch or use unique values
                 ticks = m.branch.mapping.get(
                     target_c, np.unique(m.branch.dataset[target_c]).astype(str)
@@ -393,14 +381,16 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     go.Heatmap(
                         x=ticks,
                         y=ticks,
-                        z=100. * cm / cm.sum(axis=1)[:, np.newaxis],
+                        z=100.0 * cm / cm.sum(axis=1)[:, np.newaxis],
                         coloraxis=f"coloraxis{xaxis[1:]}",
                         text=cm,
                         customdata=labels,
                         texttemplate="%{text}<br>(%{z:.2f}%)",
-                        textfont=dict(size=self.label_fontsize),
+                        textfont={"size": self.label_fontsize},
                         hovertemplate=(
-                            "%{customdata}<extra></extra>" if self.task.is_binary else ""
+                            "%{customdata}<extra></extra>"
+                            if self.task.is_binary
+                            else ""
                             "Predicted label:%{x}<br>True label:%{y}<br>Percentage:%{z}"
                             "<extra></extra>"
                         ),
@@ -425,10 +415,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         x=cm.ravel(),
                         y=labels.ravel(),
                         orientation="h",
-                        marker=dict(
-                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                        ),
+                        marker={
+                            "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                        },
                         hovertemplate="%{x}<extra></extra>",
                         name=m.name,
                         legendgroup=m.name,
@@ -687,6 +677,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
+
                 model = OrdinaryLeastSquares(goal=self._goal)
                 estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
 
@@ -928,17 +919,17 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     "Invalid value for the models parameter. Estimator "
                     f"{m._est_class.__name__} has no scores_, feature_importances_ "
                     "nor coef_ attribute."
-                )
+                ) from None
 
             fig.add_trace(
                 go.Bar(
                     x=fi,
                     y=fi.index,
                     orientation="h",
-                    marker=dict(
-                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                    ),
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                    },
                     hovertemplate="%{x}<extra></extra>",
                     name=m.name,
                     legendgroup=m.name,
@@ -950,13 +941,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         fig.update_layout(
             {
-                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"},
                 "bargroupgap": 0.05,
             }
         )
 
         # Unique number of features over all branches
-        n_fxs = len(set([fx for m in models_c for fx in m.branch.features]))
+        n_fxs = len({fx for m in models_c for fx in m.branch.features})
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
@@ -979,8 +970,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         fh: RowSelector | ForecastingHorizon = "test",
         X: XSelector | None = None,
         target: TargetSelector = 0,
-        plot_interval: Bool = True,
         *,
+        plot_interval: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
@@ -1086,11 +1077,11 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     x=self._get_plot_index(getattr(self, ds)),
                     y=getattr(self, ds)[target_c],
                     mode="lines+markers",
-                    line=dict(
-                        width=2,
-                        color="black",
-                        dash=BasePlot._fig.get_elem(ds, "dash"),
-                    ),
+                    line={
+                        "width": 2,
+                        "color": "black",
+                        "dash": BasePlot._fig.get_elem(ds, "dash"),
+                    },
                     opacity=0.6,
                     name=ds,
                     showlegend=False if models else BasePlot._fig.showlegend(ds, legend),
@@ -1102,11 +1093,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         # Draw predictions
         for m in models_c:
             # TODO: Fix the way we get fh
-            # if isinstance(fh, str):
-            #     # Get fh and corresponding X from data set
-            #     datasets = self._get_set(fh, max_one=False)
-            #     fh = bk.concat([getattr(m, ds) for ds in datasets]).index
-            #     X = m.X.loc[fh]
+            if isinstance(fh, str):
+                pass
 
             y_pred = m.predict(fh, X)
             if self.task.is_multioutput:
@@ -1142,7 +1130,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             x=self._get_plot_index(y_pred),
                             y=y.iloc[:, 1],
                             mode="lines",
-                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            line={"width": 1, "color": BasePlot._fig.get_elem(m.name)},
                             hovertemplate=f"%{{y}}<extra>{m.name} - upper bound</extra>",
                             legendgroup=m.name,
                             showlegend=False,
@@ -1153,7 +1141,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             x=self._get_plot_index(y_pred),
                             y=y.iloc[:, 0],
                             mode="lines",
-                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            line={"width": 1, "color": BasePlot._fig.get_elem(m.name)},
                             fill="tonexty",
                             fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
                             hovertemplate=f"%{{y}}<extra>{m.name} - lower bound</extra>",
@@ -1161,7 +1149,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             showlegend=False,
                             xaxis=xaxis,
                             yaxis=yaxis,
-                        )
+                        ),
                     ]
                 )
 
@@ -1403,7 +1391,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         y=y[group],
                         mode="lines+markers",
                         marker_symbol="circle",
-                        error_y=dict(type="data", array=std[group], visible=True),
+                        error_y={"type": "data", "array": std[group], "visible": True},
                         parent=group,
                         child=self._metric[met].name,
                         legend=legend,
@@ -1421,7 +1409,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                 x=x[group],
                                 y=np.add(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                line={"width": 1, "color": BasePlot._fig.get_elem(group)},
                                 hovertemplate="%{y}<extra>upper bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -1432,7 +1420,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                 x=x[group],
                                 y=np.subtract(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                line={"width": 1, "color": BasePlot._fig.get_elem(group)},
                                 fill="tonexty",
                                 fillcolor=fillcolor,
                                 hovertemplate="%{y}<extra>lower bound</extra>",
@@ -1685,11 +1673,11 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         else:
             xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(0, 0.87),
-                coloraxis=dict(
-                    colorscale="Reds",
-                    title="Normalized feature importance",
-                    font_size=self.label_fontsize,
-                )
+                coloraxis={
+                    "colorscale": "Reds",
+                    "title": "Normalized feature importance",
+                    "font_size": self.label_fontsize,
+                },
             )
 
         for m in models_c:
@@ -1722,7 +1710,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     # Semi-partial correlation matrix
                     with np.errstate(divide="ignore"):
                         V_sqrt = np.sqrt(np.diag(V))[..., None]
-                        Vi_sqrt = np.sqrt(np.abs(diag - Vi ** 2 / diag[..., None])).T
+                        Vi_sqrt = np.sqrt(np.abs(diag - Vi**2 / diag[..., None])).T
                         semi_partial_correlation = partial_corr / V_sqrt / Vi_sqrt
 
                     # X covariates are removed
@@ -1740,12 +1728,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     x=parshap["train"],
                     y=parshap["test"],
                     mode="markers+text",
-                    marker=dict(
-                        color=color,
-                        size=self.marker_size,
-                        coloraxis=f"coloraxis{xaxis[1:]}",
-                        line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                    ),
+                    marker={
+                        "color": color,
+                        "size": self.marker_size,
+                        "coloraxis": f"coloraxis{xaxis[1:]}",
+                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    },
                     text=m.branch.features,
                     textposition="top center",
                     customdata=(data := None if isinstance(color, str) else list(color)),
@@ -1937,7 +1925,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             # Create new axes
             if not axes:
-                for i, col in enumerate(cols):
+                for i in range(len(cols)):
                     # Calculate the distance between subplots
                     offset = divide(0.025, len(cols) - 1)
 
@@ -1957,7 +1945,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     X=m.branch.X_test,
                     features=col,
                     kind="both" if "individual" in kind else "average",
-                ) for col in cols
+                )
+                for col in cols
             )
 
             # Compute deciles for ticks (only if line plots)
@@ -1968,7 +1957,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         X_col = _safe_indexing(m.branch.X_test, fx, axis=1)
                         deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
-            for i, (ax, fxs, pred) in enumerate(zip(axes, cols, predictions)):
+            for i, (ax, fxs, pred) in enumerate(zip(axes, cols, predictions)):  # noqa: B905
                 # Draw line or contour plot
                 if len(pred["values"]) == 1:
                     # For both average and individual: draw ticks on the horizontal axis
@@ -1981,7 +1970,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             y0=0,
                             y1=0.05,
                             yref=f"{axes[0][1]} domain",
-                            line=dict(width=1, color=BasePlot._fig.get_elem(m.name)),
+                            line={"width": 1, "color": BasePlot._fig.get_elem(m.name)},
                             opacity=0.6,
                             layer="below",
                         )
@@ -1993,7 +1982,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                 x=pred["values"][0],
                                 y=pred["average"][target_c].ravel(),
                                 mode="lines",
-                                line=dict(width=2, color=color),
+                                line={"width": 2, "color": color},
                                 name=m.name,
                                 legendgroup=m.name,
                                 showlegend=BasePlot._fig.showlegend(m.name, legend),
@@ -2005,7 +1994,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     # Draw all individual (per sample) lines (ICE)
                     if "individual" in kind:
                         # Select up to 50 random samples to plot
-                        idx = np.random.choice(
+                        idx = default_rng().choice(
                             list(range(len(pred["individual"][target_c]))),
                             size=min(len(pred["individual"][target_c]), 50),
                             replace=False,
@@ -2016,7 +2005,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                     x=pred["values"][0],
                                     y=sample,
                                     mode="lines",
-                                    line=dict(width=0.5, color=color),
+                                    line={"width": 0.5, "color": color},
                                     name=m.name,
                                     legendgroup=m.name,
                                     showlegend=BasePlot._fig.showlegend(m.name, legend),
@@ -2032,10 +2021,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             x=pred["values"][0],
                             y=pred["values"][1],
                             z=pred["average"][target_c],
-                            contours=dict(
-                                showlabels=True,
-                                labelfont=dict(size=self.tick_fontsize, color="white")
-                            ),
+                            contours={
+                                "showlabels": True,
+                                "labelfont": {
+                                    "size": self.tick_fontsize,
+                                    "color": "white",
+                                },
+                            },
                             hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                             hoverongaps=False,
                             colorscale=colorscale,
@@ -2182,13 +2174,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         fig.update_layout(
             {
-                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"},
                 "boxmode": "group",
             }
         )
 
         # Unique number of features over all branches
-        n_fxs = len(set([fx for m in models_c for fx in m.branch.features]))
+        n_fxs = len({fx for m in models_c for fx in m.branch.features})
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
@@ -2207,9 +2199,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     def plot_pipeline(
         self,
         models: ModelsSelector = None,
+        *,
         draw_hyperparameter_tuning: bool = True,
         color_branches: bool | None = None,
-        *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
         figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
@@ -2437,10 +2429,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 if model.scaler:
                     add_wire(x_pos[-3], check_y((d.here[0], d.here[1] - offset)))
                     d.add(
-                        RoundBox(w=7)
-                        .label("Scaler", color="k")
-                        .color(branch["color"])
-                        .drop("E")
+                        RoundBox(w=7).label("Scaler", color="k").color(branch["color"]).drop("E")
                     )
                     offset = 0
 
@@ -2761,17 +2750,20 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         x=(x := np.linspace(0, 1, 100)),
                         y=stats.gaussian_kde(hist)(x),
                         mode="lines",
-                        line=dict(
-                            width=2,
-                            color=BasePlot._fig.get_elem(m.name),
-                            dash=BasePlot._fig.get_elem(str(v), "dash"),
-                        ),
+                        line={
+                            "width": 2,
+                            "color": BasePlot._fig.get_elem(m.name),
+                            "dash": BasePlot._fig.get_elem(str(v), "dash"),
+                        },
                         fill="tonexty",
                         fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
-                        fillpattern=dict(shape=BasePlot._fig.get_elem(str(v), "shape")),
+                        fillpattern={"shape": BasePlot._fig.get_elem(str(v), "shape")},
                         name=f"{col}={v}",
                         legendgroup=m.name,
-                        legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
+                        legendgrouptitle={
+                            "text": m.name,
+                            "font_size": self.label_fontsize,
+                        },
                         showlegend=BasePlot._fig.showlegend(f"{m.name}-{v}", legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -2911,10 +2903,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     go.Histogram(
                         y=res,
                         bingroup="residuals",
-                        marker=dict(
-                            color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                        ),
+                        marker={
+                            "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                        },
                         name=m.name,
                         legendgroup=m.name,
                         showlegend=False,
@@ -3072,10 +3064,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         x=[m.results[met] for m in models_c],
                         y=[m.name for m in models_c],
                         orientation="h",
-                        marker=dict(
-                            color=f"rgba({color[4:-1]}, 0.2)",
-                            line=dict(width=2, color=color),
-                        ),
+                        marker={
+                            "color": f"rgba({color[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": color},
+                        },
                         hovertemplate=f"%{{x}}<extra>{met}</extra>",
                         name=met,
                         legendgroup=met,
@@ -3109,15 +3101,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         go.Bar(
                             x=[m._best_score(met) for m in models_c],
                             y=[m.name for m in models_c],
-                            error_x=dict(
-                                type="data",
-                                array=[get_std(m, met) for m in models_c],
-                            ),
+                            error_x={
+                                "type": "data",
+                                "array": [get_std(m, met) for m in models_c],
+                            },
                             orientation="h",
-                            marker=dict(
-                                color=f"rgba({color[4:-1]}, 0.2)",
-                                line=dict(width=2, color=color),
-                            ),
+                            marker={
+                                "color": f"rgba({color[4:-1]}, 0.2)",
+                                "line": {"width": 2, "color": color},
+                            },
                             hovertemplate="%{x}<extra></extra>",
                             name=met,
                             legendgroup=met,
@@ -3129,7 +3121,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         fig.update_layout(
             {
-                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"},
                 "bargroupgap": 0.05,
                 "boxmode": "group",
             }
@@ -3372,7 +3364,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         y=y[group],
                         mode="lines+markers",
                         marker_symbol="circle",
-                        error_y=dict(type="data", array=std[group], visible=True),
+                        error_y={"type": "data", "array": std[group], "visible": True},
                         parent=group,
                         child=self._metric[met].name,
                         legend=legend,
@@ -3390,7 +3382,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                 x=x[group],
                                 y=np.add(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                line={"width": 1, "color": BasePlot._fig.get_elem(group)},
                                 hovertemplate="%{y}<extra>upper bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -3401,7 +3393,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                 x=x[group],
                                 y=np.subtract(y[group], std[group]),
                                 mode="lines",
-                                line=dict(width=1, color=BasePlot._fig.get_elem(group)),
+                                line={"width": 1, "color": BasePlot._fig.get_elem(group)},
                                 fill="tonexty",
                                 fillcolor=fillcolor,
                                 hovertemplate="%{y}<extra>lower bound</extra>",
@@ -3413,7 +3405,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         ]
                     )
 
-        fig.update_layout({f"xaxis{yaxis[1:]}": dict(dtick=1, autorange="reversed")})
+        fig.update_layout({f"xaxis{yaxis[1:]}": {"dtick": 1, "autorange": "reversed"}})
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(

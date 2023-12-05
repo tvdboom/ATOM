@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -19,6 +17,7 @@ from .conftest import reg_test, reg_train
 
 # Test trainers ============================================== >>
 
+
 def test_sh_skip_runs_too_large():
     """Assert that an error is raised if skip_runs >= n_runs."""
     sh = SuccessiveHalvingRegressor(models=["OLS", "BR"], skip_runs=2)
@@ -37,7 +36,7 @@ def test_models_are_restored():
         random_state=1,
     )
     sh.run(reg_train, reg_test)
-    assert "Tree" not in sh._models  # Original model is deleted
+    assert "Tree" not in sh._models  # The original model is deleted
     assert all(m in sh.models for m in ("Tree4", "AdaB2", "LGB1"))
 
 
@@ -58,6 +57,7 @@ def test_ts_different_train_sizes_types():
 
 
 # Test goals ======================================================= >>
+
 
 def test_goals_trainers():
     """Assert that the goal of every Trainer class is set correctly."""

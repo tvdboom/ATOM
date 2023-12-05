@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,7 +7,7 @@ Description: Unit tests for baserunner.py
 
 import glob
 import sys
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -31,6 +29,7 @@ from .conftest import (
 
 
 # Test magic methods =============================================== >>
+
 
 def test_getstate_and_setstate():
     """Assert that versions are checked and a warning raised."""
@@ -85,11 +84,11 @@ def test_getattr_invalid():
 def test_setattr_to_branch():
     """Assert that branch properties can be set."""
     new_dataset = merge(X_bin, y_bin)
-    new_dataset.iat[0, 3] = 4  # Change one value
+    new_dataset.iloc[0, 3] = 4  # Change one value
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.dataset = new_dataset
-    assert atom.dataset.iat[0, 3] == 4  # Check the value is changed
+    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
 
 
 def test_setattr_normal():
@@ -174,6 +173,7 @@ def test_getitem_list():
 
 
 # Test utility properties ========================================== >>
+
 
 def test_branch_property():
     """Assert that the branch property returns the current branch."""
@@ -273,6 +273,7 @@ def test_results_property_train_sizing():
 
 # Test _set_index ================================================== >>
 
+
 def test_index_is_true():
     """Assert that the indices are left as is when index=True."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, shuffle=False, random_state=1)
@@ -360,6 +361,7 @@ def test_duplicate_indices():
 
 # Test _get_stratify_columns======================================== >>
 
+
 @pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
@@ -390,6 +392,7 @@ def test_stratify_invalid_column_str():
 
 
 # Test _get_data =================================================== >>
+
 
 def test_input_is_y_without_arrays():
     """Assert that input y through parameter works."""
@@ -687,6 +690,7 @@ def test_invalid_index_forecast():
 
 # Test utility methods ============================================= >>
 
+
 def test_get_models_is_None():
     """Assert that all models are returned by default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -804,7 +808,8 @@ def test_delete_default():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
     atom.delete()  # All models
-    assert not (atom.models or atom.metric)
+    assert not atom.models
+    assert not atom.metric
     assert atom.results.empty
 
 
@@ -941,9 +946,9 @@ def test_file_is_saved():
     assert glob.glob("ATOMClassifier.pkl")
 
 
-@patch("atom.baserunner.pickle")
-def test_save_data_false(cls):
-    """Assert that the dataset is restored after saving with save_data=False"""
+@patch("atom.baserunner.pickle", MagicMock())
+def test_save_data_false():
+    """Assert that the dataset is restored after saving with save_data=False."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.save(filename="atom", save_data=False)
     assert atom.dataset is not None  # Dataset is restored after saving
@@ -1001,7 +1006,8 @@ def test_stacking_different_name():
     atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(name="stack_1")
     atom.stacking(name="_2")
-    assert hasattr(atom, "Stack_1") and hasattr(atom, "Stack_2")
+    assert hasattr(atom, "Stack_1")
+    assert hasattr(atom, "Stack_2")
 
 
 def test_stacking_unknown_predefined_final_estimator():

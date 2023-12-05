@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -54,12 +52,19 @@ class Sequence(Protocol[_T]):
 
     """
 
-    def __len__(self) -> int: ...
-    def __iter__(self) -> Iterator[_T]: ...
+    def __len__(self) -> int:
+        ...
+
+    def __iter__(self) -> Iterator[_T]:
+        ...
+
     @overload
-    def __getitem__(self, __i: SupportsIndex, /) -> _T: ...
+    def __getitem__(self, __i: SupportsIndex, /) -> _T:
+        ...
+
     @overload
-    def __getitem__(self, __s: slice, /) -> Sequence[_T]: ...
+    def __getitem__(self, __s: slice, /) -> Sequence[_T]:
+        ...
 
     @classmethod
     def __class_getitem__(cls, item: Any) -> Annotated[Any, Is]:
@@ -67,7 +72,7 @@ class Sequence(Protocol[_T]):
         return Annotated[
             cls,
             Is[lambda lst: isinstance(lst, sequence_t)]
-            & Is[lambda lst: all(is_bearable(i, item) for i in lst)]
+            & Is[lambda lst: all(is_bearable(i, item) for i in lst)],
         ]
 
 
@@ -100,8 +105,11 @@ class Style(TypedDict):
 class SkScorer(Protocol):
     """Protocol for sklearn's scorers."""
 
-    def __call__(self, *args, **kwargs): ...
-    def _score(self, *args, **kwargs): ...
+    def __call__(self, *args, **kwargs):
+        ...
+
+    def _score(self, *args, **kwargs):
+        ...
 
 
 @runtime_checkable
@@ -121,24 +129,33 @@ class Scorer(SkScorer, Protocol):
 class Estimator(Protocol):
     """Protocol for sklearn-like estimators."""
 
-    def __init__(self, *args, **kwargs): ...
-    def get_params(self, *args, **kwargs): ...
-    def set_params(self, *args, **kwargs): ...
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def get_params(self, *args, **kwargs):
+        ...
+
+    def set_params(self, *args, **kwargs):
+        ...
 
 
 @runtime_checkable
 class Transformer(Estimator, Protocol):
     """Protocol for sklearn-like transformers."""
 
-    def transform(self, *args, **kwargs): ...
+    def transform(self, *args, **kwargs):
+        ...
 
 
 @runtime_checkable
 class Predictor(Estimator, Protocol):
     """Protocol for sklearn-like predictors."""
 
-    def fit(self, *args, **kwargs): ...
-    def predict(self, *args, **kwargs): ...
+    def fit(self, *args, **kwargs):
+        ...
+
+    def predict(self, *args, **kwargs):
+        ...
 
 
 @runtime_checkable
@@ -149,7 +166,8 @@ class Model(Protocol):
     _metric: ClassMap
     _ht: dict[str, Any]
 
-    def predict(self, *args, **kwargs) -> Pandas: ...
+    def predict(self, *args, **kwargs) -> Pandas:
+        ...
 
 
 # Variable types for type hinting ================================== >>
@@ -215,18 +233,9 @@ ModelSelector: TypeAlias = Int | str | Model
 ModelsSelector: TypeAlias = ModelSelector | Segment | Sequence[ModelSelector] | None
 MetricFunction: TypeAlias = Callable[[Sequence[Scalar], Sequence[Scalar]], Scalar]
 MetricConstructor: TypeAlias = (
-    str
-    | MetricFunction
-    | Scorer
-    | Sequence[str | MetricFunction | Scorer]
-    | None
+    str | MetricFunction | Scorer | Sequence[str | MetricFunction | Scorer] | None
 )
-MetricSelector: TypeAlias = (
-    IntLargerEqualZero
-    | str
-    | Sequence[IntLargerEqualZero | str]
-    | None
-)
+MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZero | str] | None
 
 # Allowed values for BaseTransformer parameter
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
@@ -236,16 +245,10 @@ Severity: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]
 Verbose: TypeAlias = Literal[0, 1, 2]
 
 # Data cleaning parameters
-NumericalStrats: TypeAlias = Literal[
-    "drop", "mean", "median", "knn", "iterative", "most_frequent"
-]
+NumericalStrats: TypeAlias = Literal["drop", "mean", "median", "knn", "iterative", "most_frequent"]
 CategoricalStrats: TypeAlias = Literal["drop", "most_frequent"]
 DiscretizerStrats: TypeAlias = Literal["uniform", "quantile", "kmeans", "custom"]
-Bins: TypeAlias = (
-    IntLargerOne
-    | Sequence[Scalar]
-    | dict[str, IntLargerOne | Sequence[Scalar]]
-)
+Bins: TypeAlias = IntLargerOne | Sequence[Scalar] | dict[str, IntLargerOne | Sequence[Scalar]]
 NormalizerStrats: TypeAlias = Literal["yeojohnson", "boxcox", "quantile"]
 PrunerStrats: TypeAlias = Literal[
     "zscore", "iforest", "ee", "lof", "svm", "dbscan", "hdbscan", "optics"
@@ -271,9 +274,7 @@ FeatureSelectionSolvers: TypeAlias = (
 
 # Runner parameters
 NItems: TypeAlias = (
-    IntLargerEqualZero
-    | dict[str, IntLargerEqualZero]
-    | Sequence[IntLargerEqualZero]
+    IntLargerEqualZero | dict[str, IntLargerEqualZero] | Sequence[IntLargerEqualZero]
 )
 
 # Allowed values for method selection
@@ -281,8 +282,13 @@ PredictionMethods: TypeAlias = Literal[
     "decision_function", "predict", "predict_log_proba", "predict_proba", "score"
 ]
 PredictionMethodsTS: TypeAlias = Literal[
-    "predict", "predict_interval", "predict_proba", "predict_quantiles",
-    "predict_residuals", "predict_var", "score"
+    "predict",
+    "predict_interval",
+    "predict_proba",
+    "predict_quantiles",
+    "predict_residuals",
+    "predict_var",
+    "score",
 ]
 
 # Plotting parameters
@@ -290,12 +296,18 @@ PlotBackend: TypeAlias = Literal["plotly", "matplotlib"]
 ParamsSelector: TypeAlias = str | Segment | Sequence[IntLargerEqualZero | str]
 TargetSelector: TypeAlias = IntLargerEqualZero | str
 TargetsSelector: TypeAlias = TargetSelector | tuple[TargetSelector, ...]
-Kind: TypeAlias = Literal[
-    "average", "individual", "average+individual", "individual+average"
-]
+Kind: TypeAlias = Literal["average", "individual", "average+individual", "individual+average"]
 Legend: TypeAlias = Literal[
-    "upper left", "lower left", "upper right", "lower right", "upper center",
-    "lower center", "center left", "center right", "center", "out",
+    "upper left",
+    "lower left",
+    "upper right",
+    "lower right",
+    "upper center",
+    "lower center",
+    "center left",
+    "center right",
+    "center",
+    "out",
 ]
 
 # Mlflow stages

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -67,7 +65,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     self._log(
                         f"The loaded instance used the {key} package with version "
                         f"{versions[key]} while the version in this environment is "
-                        f"{value}.", 1, severity="warning"
+                        f"{value}.",
+                        1,
+                        severity="warning",
                     )
 
     def __getattr__(self, item: str) -> Any:
@@ -83,9 +83,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         elif item in DF_ATTRS:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{item}'."
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'.")
 
     def __setattr__(self, item: str, value: Any):
         """Set attr to branch when it's a property of Branch."""
@@ -192,9 +190,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         """
         if self._models:  # Returns None if not fitted
-            return sorted(
-                self._models, key=lambda x: (x._best_score(), x._time_fit), reverse=True
-            )
+            return sorted(self._models, key=lambda x: (x._best_score(), x._time_fit), reverse=True)
         else:
             return None
 
@@ -485,9 +481,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 complete_set = self._set_index(bk.concat([train, test, holdout]), y)
 
                 container = DataContainer(
-                    data=(data := complete_set.iloc[:len(data)]),
-                    train_idx=data.index[:-len(test)],
-                    test_idx=data.index[-len(test):],
+                    data=(data := complete_set.iloc[: len(data)]),
+                    train_idx=data.index[: -len(test)],
+                    test_idx=data.index[-len(test) :],
                     n_cols=len(get_cols(y)),
                 )
 
@@ -499,12 +495,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         "columns, which results in a least populated class that has only "
                         "one member. Either select only one column to stratify over, or "
                         "set the parameter stratify=False."
-                    )
+                    ) from ex
                 else:
                     raise ex
 
             if holdout is not None:
-                holdout = complete_set.iloc[len(data):]
+                holdout = complete_set.iloc[len(data) :]
 
             return container, holdout
 
@@ -590,22 +586,22 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         f"index ({len(self._config.index)}) doesn't match "
                         f"that of the data sets ({len_data})."
                     )
-                train.index = self._config.index[:len(train)]
-                test.index = self._config.index[len(train):len(train) + len(test)]
+                train.index = self._config.index[: len(train)]
+                test.index = self._config.index[len(train) : len(train) + len(test)]
                 if holdout is not None:
-                    holdout.index = self._config.index[-len(holdout):]
+                    holdout.index = self._config.index[-len(holdout) :]
 
             complete_set = self._set_index(bk.concat([train, test, holdout]), y_test)
 
             container = DataContainer(
-                data=(data := complete_set.iloc[:len(train) + len(test)]),
-                train_idx=data.index[:len(train)],
-                test_idx=data.index[-len(test):],
+                data=(data := complete_set.iloc[: len(train) + len(test)]),
+                train_idx=data.index[: len(train)],
+                test_idx=data.index[-len(test) :],
                 n_cols=len(get_cols(y_train)),
             )
 
             if holdout is not None:
-                holdout = complete_set.iloc[len(train) + len(test):]
+                holdout = complete_set.iloc[len(train) + len(test) :]
 
             return container, holdout
 
@@ -624,61 +620,59 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 return self.branch._data, self.branch._holdout
 
         elif len(arrays) == 1:
-            # arrays=(X,) or arrays=(y,) for forecasting
+            # X or y for forecasting
             sets = _no_data_sets(*self._check_input(arrays[0], y=y))
 
         elif len(arrays) == 2:
             if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
-                # arrays=((X_train, y_train), (X_test, y_test))
+                # (X_train, y_train), (X_test, y_test)
                 X_train, y_train = self._check_input(arrays[0][0], arrays[0][1])
                 X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
             elif isinstance(arrays[1], (*int_t, str)) or n_cols(arrays[1]) == 1:
                 if not self._goal.name == "forecast":
-                    # arrays=(X, y)
+                    # X, y
                     sets = _no_data_sets(*self._check_input(arrays[0], arrays[1]))
                 else:
-                    # arrays=(train, test) for forecast
+                    # train, test for forecast
                     X_train, y_train = self._check_input(y=arrays[0])
                     X_test, y_test = self._check_input(y=arrays[1])
                     sets = _has_data_sets(X_train, y_train, X_test, y_test)
             else:
-                # arrays=(train, test)
+                # train, test
                 X_train, y_train = self._check_input(arrays[0], y=y)
                 X_test, y_test = self._check_input(arrays[1], y=y)
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
 
         elif len(arrays) == 3:
             if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
-                # arrays=((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
+                # (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
                 X_train, y_train = self._check_input(arrays[0][0], arrays[0][1])
                 X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
                 X_hold, y_hold = self._check_input(arrays[2][0], arrays[2][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
             else:
-                # arrays=(train, test, holdout)
+                # train, test, holdout
                 X_train, y_train = self._check_input(arrays[0], y=y)
                 X_test, y_test = self._check_input(arrays[1], y=y)
                 X_hold, y_hold = self._check_input(arrays[2], y=y)
                 sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
 
         elif len(arrays) == 4:
-            # arrays=(X_train, X_test, y_train, y_test)
+            # X_train, X_test, y_train, y_test
             X_train, y_train = self._check_input(arrays[0], arrays[2])
             X_test, y_test = self._check_input(arrays[1], arrays[3])
             sets = _has_data_sets(X_train, y_train, X_test, y_test)
 
         elif len(arrays) == 6:
-            # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
+            # X_train, X_test, X_holdout, y_train, y_test, y_holdout
             X_train, y_train = self._check_input(arrays[0], arrays[3])
             X_test, y_test = self._check_input(arrays[1], arrays[4])
             X_hold, y_hold = self._check_input(arrays[2], arrays[5])
             sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
 
         else:
-            raise ValueError(
-                "Invalid data arrays. See the documentation for the allowed formats."
-            )
+            raise ValueError("Invalid data arrays. See the documentation for the allowed formats.")
 
         if self._goal.name == "forecast":
             # For forecasting, check if index complies with sktime's standard
@@ -704,6 +698,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def _get_models(
         self,
         models: ModelsSelector = None,
+        *,
         ensembles: Bool = True,
         branch: Branch | None = None,
     ) -> list[Model]:
@@ -748,7 +743,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         raise IndexError(
                             f"Invalid value for the models parameter. Value {model} is "
                             f"out of range. There are {len(self._models)} models."
-                        )
+                        ) from None
                 elif isinstance(model, str):
                     for mdl in model.split("+"):
                         array = inc
@@ -856,7 +851,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         "native_multilabel": m.native_multilabel,
                         "native_multioutput": m.native_multioutput,
                         "has_validation": bool(m.has_validation),
-                        "supports_engines": ", ". join(m.supports_engines),
+                        "supports_engines": ", ".join(m.supports_engines),
                     }
                 )
 
@@ -946,18 +941,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         check_is_fitted(self, attributes="_models")
 
-        evaluations = []
-        for m in self._models:
-            evaluations.append(
-                m.evaluate(
-                    metric=metric,
-                    rows=rows,
-                    threshold=threshold,
-                    sample_weight=sample_weight,
-                )
-            )
-
-        return pd.DataFrame(evaluations)
+        return pd.DataFrame(
+            [
+                m.evaluate(metric, rows, threshold=threshold, sample_weight=sample_weight)
+                for m in self._models
+            ]
+        )
 
     @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
@@ -1146,11 +1135,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             if (og := self._branches.og).name not in self._branches:
                 self._branches._og._container = None
             for branch in self._branches:
-                data[branch.name] = dict(
-                    _data=deepcopy(branch._container),
-                    _holdout=deepcopy(branch._holdout),
-                    holdout=branch.__dict__.pop("holdout", None)  # Clear cached holdout
-                )
+                data[branch.name] = {
+                    "_data": deepcopy(branch._container),
+                    "_holdout": deepcopy(branch._holdout),
+                    "holdout": branch.__dict__.pop("holdout", None),  # Clear cached holdout
+                }
                 branch._container = None
                 branch._holdout = None
 

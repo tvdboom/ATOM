@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -116,21 +114,22 @@ class BaseModel(RunnerPlot):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "sklearnex"
             - "cuml"
 
@@ -192,9 +191,10 @@ class BaseModel(RunnerPlot):
         config: DataConfig | None = None,
         branches: BranchManager | None = None,
         metric: ClassMap | None = None,
+        *,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -270,9 +270,7 @@ class BaseModel(RunnerPlot):
             elif item in DF_ATTRS:
                 return getattr(self.branch.dataset, item)  # Get attr from dataset
 
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{item}'."
-        )
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'.")
 
     def __contains__(self, item: str) -> bool:
         """Whether the item is a column in the dataset."""
@@ -539,7 +537,7 @@ class BaseModel(RunnerPlot):
                             trial.params[self.has_validation] = f"{step}/{steps}"
 
                         trial.set_user_attr("estimator", estimator)
-                        raise TrialPruned()
+                        raise TrialPruned
 
         else:
             # Add the forecasting horizon to sktime estimators
@@ -592,10 +590,7 @@ class BaseModel(RunnerPlot):
         try:
             if self._bootstrap is None:
                 out = "   ".join(
-                    [
-                        f"{met}: {rnd(self._best_score(met))}"
-                        for met in self._metric.keys()
-                    ]
+                    [f"{met}: {rnd(self._best_score(met))}" for met in self._metric.keys()]
                 )
             else:
                 out = "   ".join(
@@ -762,7 +757,10 @@ class BaseModel(RunnerPlot):
 
         # Forecasting models can have first prediction NaN
         if self.task.is_forecast and all(x.isna()[0] for x in get_cols(y_pred)):
-            y_true, y_pred, = y_true.iloc[1:], y_pred.iloc[1:]
+            (
+                y_true,
+                y_pred,
+            ) = y_true.iloc[1:], y_pred.iloc[1:]
 
         if self.task is Task.multiclass_multioutput_classification:
             # Get the mean of the scores over the target columns
@@ -842,7 +840,7 @@ class BaseModel(RunnerPlot):
         return result
 
     @composed(crash, method_to_log, beartype)
-    def hyperparameter_tuning(self, n_trials: Int, reset: Bool = False):
+    def hyperparameter_tuning(self, n_trials: Int, *, reset: Bool = False):
         """Run the hyperparameter tuning algorithm.
 
         Search for the best combination of hyperparameters. The function
@@ -962,7 +960,8 @@ class BaseModel(RunnerPlot):
             estimator = self._get_est(self._est_params | self._trial_to_est(params))
 
             # Check if the same parameters have already been evaluated
-            for t in trial.study.get_trials(False, states=(TrialState.COMPLETE,))[::-1]:
+            past_t = trial.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+            for t in past_t[::-1]:
                 if trial.params == t.params:
                     # Get same estimator and score as previous evaluation
                     estimator = deepcopy(t.user_attrs["estimator"])
@@ -1049,20 +1048,15 @@ class BaseModel(RunnerPlot):
                 )
             elif exc:
                 # If distributions were excluded with `!`, select all but those
-                self._ht["distributions"] = {
-                    k: v for k, v in dist.items() if k not in exc
-                }
+                self._ht["distributions"] = {k: v for k, v in dist.items() if k not in exc}
             elif inc:
-                self._ht["distributions"] = {
-                    k: v for k, v in dist.items() if k in inc
-                }
+                self._ht["distributions"] = {k: v for k, v in dist.items() if k in inc}
         else:
             self._ht["distributions"] = dist
 
         # Drop hyperparameter if already defined in est_params
         self._ht["distributions"] = {
-            k: v for k, v in self._ht["distributions"].items()
-            if k not in self._est_params
+            k: v for k, v in self._ht["distributions"].items() if k not in self._est_params
         }
 
         # If no hyperparameters to optimize, skip ht
@@ -1071,9 +1065,7 @@ class BaseModel(RunnerPlot):
             return
 
         if not self._study or reset:
-            kw: dict[str, Any] = {
-                k: v for k, v in self._ht.items() if k in sign(create_study)
-            }
+            kw: dict[str, Any] = {k: v for k, v in self._ht.items() if k in sign(create_study)}
 
             if len(self._metric) == 1:
                 kw["direction"] = "maximize"
@@ -1097,7 +1089,7 @@ class BaseModel(RunnerPlot):
         else:
             plot_callback = None
 
-        callbacks = kw.pop("callbacks", []) + [TrialsCallback(self, n_jobs)]
+        callbacks = [*kw.pop("callbacks", []), TrialsCallback(self, n_jobs)]
         callbacks += [plot_callback] if plot_callback else []
 
         self._study.optimize(
@@ -1113,7 +1105,9 @@ class BaseModel(RunnerPlot):
             self._study = None
             self._log(
                 "The study didn't complete any trial successfully. "
-                "Skipping hyperparameter tuning.", 1, severity="warning"
+                "Skipping hyperparameter tuning.",
+                1,
+                severity="warning",
             )
             return
 
@@ -1197,10 +1191,7 @@ class BaseModel(RunnerPlot):
 
                 # Mlflow only accepts params with char length <250
                 mlflow.log_params(
-                    {
-                        k: v for k, v in self.estimator.get_params().items()
-                        if len(str(v)) <= 250
-                    }
+                    {k: v for k, v in self.estimator.get_params().items() if len(str(v)) <= 250}
                 )
 
                 # Save evals for models with in-training validation
@@ -1241,7 +1232,7 @@ class BaseModel(RunnerPlot):
                     )
 
     @composed(crash, method_to_log, beartype)
-    def bootstrapping(self, n_bootstrap: Int, reset: Bool = False):
+    def bootstrapping(self, n_bootstrap: Int, *, reset: Bool = False):
         """Apply a bootstrap algorithm.
 
         Take bootstrapped samples from the training set and test them
@@ -1292,8 +1283,7 @@ class BaseModel(RunnerPlot):
 
         self._log(f"Bootstrap {'-' * 39}", 1)
         out = [
-            f"{m.name}: {rnd(self.bootstrap.mean()[i])}"
-            f" \u00B1 {rnd(self.bootstrap.std()[i])}"
+            f"{m.name}: {rnd(self.bootstrap.mean()[i])} \u00B1 {rnd(self.bootstrap.std()[i])}"
             for i, m in enumerate(self._metric)
         ]
         self._log(f"Evaluation --> {'   '.join(out)}", 1)
@@ -1321,7 +1311,7 @@ class BaseModel(RunnerPlot):
         """Change the model's name."""
         # Drop the acronym if provided by the user
         if re.match(f"{self.acronym}_", value, re.I):
-            value = value[len(self.acronym) + 1:]
+            value = value[len(self.acronym) + 1 :]
 
         # Add the acronym in front (with right capitalization)
         self._name = f"{self.acronym}{f'_{value}' if value else ''}"
@@ -1529,7 +1519,7 @@ class BaseModel(RunnerPlot):
         if self._study is not None:
             for met in self._metric.keys():
                 data[f"{met}_ht"] = self.trials.loc[self.best_trial.number, met]
-            data["time_ht"] = self.trials.iat[-1, -2]
+            data["time_ht"] = self.trials.iloc[-1, -2]
         for met in self._metric:
             for ds in ("train", "test"):
                 data[f"{met.name}_{ds}"] = self._get_score(met, ds)
@@ -1610,7 +1600,7 @@ class BaseModel(RunnerPlot):
         """
         if self.scaler:
             return Pipeline(
-                steps=self.branch.pipeline.steps + [("AutomatedScaler", self.scaler)],
+                steps=[*self.branch.pipeline.steps, ("AutomatedScaler", self.scaler)],
                 memory=self.memory,
             )
         else:
@@ -1637,8 +1627,8 @@ class BaseModel(RunnerPlot):
         if (holdout := self.branch.holdout) is not None:
             if self.scaler:
                 return merge(
-                    self.scaler.transform(holdout.iloc[:, :-self.branch._data.n_cols]),
-                    holdout.iloc[:, -self.branch._data.n_cols:],
+                    self.scaler.transform(holdout.iloc[:, : -self.branch._data.n_cols]),
+                    holdout.iloc[:, -self.branch._data.n_cols :],
                 )
             else:
                 return holdout
@@ -1659,14 +1649,14 @@ class BaseModel(RunnerPlot):
     def X_train(self) -> DataFrame:
         """Features of the training set."""
         if self.scaler:
-            return self.scaler.transform(self.branch.X_train[-self._train_idx:])
+            return self.scaler.transform(self.branch.X_train[-self._train_idx :])
         else:
-            return self.branch.X_train[-self._train_idx:]
+            return self.branch.X_train[-self._train_idx :]
 
     @property
     def y_train(self) -> Pandas:
         """Target column of the training set."""
-        return self.branch.y_train[-self._train_idx:]
+        return self.branch.y_train[-self._train_idx :]
 
     @property
     def X_test(self) -> DataFrame:
@@ -1680,7 +1670,7 @@ class BaseModel(RunnerPlot):
     def X_holdout(self) -> DataFrame | None:
         """Features of the holdout set."""
         if self.holdout is not None:
-            return self.holdout.iloc[:, :-self.branch._data.n_cols]
+            return self.holdout.iloc[:, : -self.branch._data.n_cols]
         else:
             return None
 
@@ -1828,9 +1818,7 @@ class BaseModel(RunnerPlot):
             **{k: v for k, v in kwargs.items() if k in sign(Interface)},
         )
 
-        self.app.launch(
-            **{k: v for k, v in kwargs.items() if k in sign(Interface.launch)}
-        )
+        self.app.launch(**{k: v for k, v in kwargs.items() if k in sign(Interface.launch)})
 
     @available_if(has_task("!multioutput"))
     @composed(crash, method_to_log, beartype)
@@ -1898,7 +1886,7 @@ class BaseModel(RunnerPlot):
                 # Explainer expects a list of np.array with shap values for each class
                 exp.values = list(np.moveaxis(exp.values, -1, 0))
 
-        params = dict(permutation_metric=self._metric, n_jobs=self.n_jobs)
+        params = {"permutation_metric": self._metric, "n_jobs": self.n_jobs}
         if self.task.is_classification:
             explainer = ClassifierExplainer(self.estimator, X, y, **params)
         else:
@@ -2232,6 +2220,7 @@ class BaseModel(RunnerPlot):
         self,
         name: str | None = None,
         stage: Stages = "None",
+        *,
         archive_existing_versions: Bool = False,
     ):
         """Register the model in [mlflow's model registry][registry].
@@ -2436,7 +2425,8 @@ class ClassRegModel(BaseModel):
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: Literal["score"] = ...,
-    ) -> Float: ...
+    ) -> Float:
+        ...
 
     @overload
     def _prediction(
@@ -2447,7 +2437,8 @@ class ClassRegModel(BaseModel):
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: PredictionMethods = ...,
-    ) -> Pandas: ...
+    ) -> Pandas:
+        ...
 
     def _prediction(
         self,
@@ -2556,7 +2547,7 @@ class ClassRegModel(BaseModel):
 
                 if self.scaler:
                     Xt = self.scaler.transform(Xt)
-        except Exception:
+        except Exception:  # noqa: BLE001
             Xt, yt = get_transform_X_y(X, y)
 
         if method != "score":
@@ -2832,7 +2823,8 @@ class ForecastModel(BaseModel):
         verbose: Int | None = None,
         method: Literal["score"] = ...,
         **kwargs,
-    ) -> Float: ...
+    ) -> Float:
+        ...
 
     @overload
     def _prediction(
@@ -2843,7 +2835,8 @@ class ForecastModel(BaseModel):
         verbose: Int | None = None,
         method: PredictionMethodsTS = ...,
         **kwargs,
-    ) -> Pandas: ...
+    ) -> Pandas:
+        ...
 
     def _prediction(
         self,
@@ -3049,7 +3042,7 @@ class ForecastModel(BaseModel):
         fh: FHSelector,
         X: XSelector | None = None,
         *,
-        alpha: Float | list[Float] = [0.05, 0.95],
+        alpha: Float | Sequence[Float] = (0.05, 0.95),
         verbose: Int | None = None,
     ) -> DataFrame:
         """Get probabilistic forecasts on new data or existing rows.
@@ -3069,7 +3062,7 @@ class ForecastModel(BaseModel):
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
 
-        alpha: float or list of float, default=[0.05, 0.95]
+        alpha: float or sequence, default=(0.05, 0.95)
             A probability or list of, at which quantile forecasts are
             computed.
 

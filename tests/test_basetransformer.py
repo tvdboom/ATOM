@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -34,6 +32,7 @@ from .conftest import (
 
 
 # Test properties ================================================== >>
+
 
 def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
@@ -123,7 +122,7 @@ def test_warnings_parameter_str():
 @pytest.mark.parametrize("logger", [None, "auto", Path("test"), Logger("test")])
 def test_logger_creator(logger):
     """Assert that the logger is created correctly."""
-    base = BaseTransformer(logger="auto")
+    base = BaseTransformer(logger=logger)
     assert isinstance(base.logger, Logger | None)
 
 
@@ -143,14 +142,13 @@ def test_experiment_creation(mlflow):
     mlflow.assert_called_once()
 
 
-@patch("mlflow.set_experiment")
 @patch("dagshub.auth.get_token")
 @patch("requests.get")
 @patch("dagshub.init")
-def test_experiment_dagshub(dagshub, request, token, _):
+def test_experiment_dagshub(dagshub, request, token):
     """Assert that the experiment can be stored in dagshub."""
     token.return_value = "token"
-    request.return_value.text = dict(username="user1")
+    request.return_value.text = {"username": "user1"}
 
     BaseTransformer(experiment="dagshub:test")
     dagshub.assert_called_once()
@@ -181,6 +179,7 @@ def test_device_id_invalid():
 
 # Test _inherit ==================================================== >>
 
+
 def test_inherit():
     """Assert that the inherit method passes the parameters correctly."""
     base = BaseTransformer(random_state=2)
@@ -189,6 +188,7 @@ def test_inherit():
 
 
 # Test _get_est_class ============================================== >>
+
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_get_est_class_from_engine():
@@ -205,10 +205,12 @@ def test_get_est_class_from_default():
 
 # Test _check_input ============================================== >>
 
+
 def test_input_is_copied():
     """Assert that the data is copied."""
     X, y = BaseTransformer._check_input(X_bin, y_bin)
-    assert X is not X_bin and y is not y_bin
+    assert X is not X_bin
+    assert y is not y_bin
 
 
 def test_input_X_and_y_None():
@@ -226,7 +228,8 @@ def test_X_is_callable():
 def test_to_pandas():
     """Assert that the data provided is converted to pandas objects."""
     X, y = BaseTransformer._check_input(X_bin_array, y_bin_array)
-    assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
+    assert isinstance(X, pd.DataFrame)
+    assert isinstance(y, pd.Series)
 
 
 def test_column_order_is_retained():
@@ -254,7 +257,7 @@ def test_input_data_in_training():
     train = bin_train.copy()
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(train, bin_test)
-    train.iat[3, 2] = 99  # Change an item of the original variable
+    train.iloc[3, 2] = 99  # Change an item of the original variable
     assert 99 not in trainer.dataset  # Is unchanged in the pipeline
 
 
@@ -365,10 +368,12 @@ def test_target_is_none():
 def test_X_empty_df():
     """Assert that X becomes an empty dataframe when provided but in y."""
     X, y = BaseTransformer._check_input(y_fc, y=-1)
-    assert X.empty and isinstance(y, pd.Series)
+    assert X.empty
+    assert isinstance(y, pd.Series)
 
 
 # Test log ========================================================= >>
+
 
 def test_log_severity_error():
     """Assert that an error is raised when the severity is error."""

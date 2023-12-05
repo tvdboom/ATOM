@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -45,9 +43,25 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
     """
 
     def __init__(
-            self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, errors, n_jobs, device, engine, backend, memory, verbose,
-            warnings, logger, experiment, random_state,
+        self,
+        models,
+        metric,
+        est_params,
+        n_trials,
+        ht_params,
+        n_bootstrap,
+        parallel,
+        errors,
+        n_jobs,
+        device,
+        engine,
+        backend,
+        memory,
+        verbose,
+        warnings,
+        logger,
+        experiment,
+        random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -111,7 +125,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                     "should be equal to the number of models, got len"
                     f"(models)={len(self._models)} and len({param})={len(value)}."
                 )
-            return {k: v for k, v in zip(lst(self.models), value)}
+            return dict(zip(lst(self.models), value, strict=True))
         elif not isinstance(value, dict):
             return {k: value for k in lst(self.models)}
 
@@ -185,11 +199,14 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                                 f"Invalid value for the models parameter, got {m}. "
                                 "Note that tags must be separated by an underscore. "
                                 f"Available model are:\n"
-                                "\n".join([
-                                    f" --> {m.__name__} ({m.acronym})"
-                                    for m in MODELS if self._goal.name in m._estimators
-                                ])
-                            )
+                                "\n".join(
+                                    [
+                                        f" --> {m.__name__} ({m.acronym})"
+                                        for m in MODELS
+                                        if self._goal.name in m._estimators
+                                    ]
+                                )
+                            ) from None
 
                         # Check if libraries for non-sklearn models are available
                         dependencies = {
@@ -204,10 +221,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                         # Check if the model supports the task
                         if self._goal.name not in cls._estimators:
                             # Forecast task can use regression models
-                            if (
-                                self._goal.name == "forecast"
-                                and "regression" in cls._estimators
-                            ):
+                            if self._goal.name == "forecast" and "regression" in cls._estimators:
                                 kwargs["goal"] = Goal.Regression
                             else:
                                 raise ValueError(
@@ -239,7 +253,8 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             self._models = ClassMap(*inc)
         else:
             self._models = ClassMap(
-                model(**kwargs) for model in MODELS
+                model(**kwargs)
+                for model in MODELS
                 if self._goal.name in model._estimators and model.acronym not in exc
             )
 
@@ -348,7 +363,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
 
                 return m
 
-            except Exception as ex:
+            except Exception as ex:  # noqa: BLE001
                 self._log(f"\nException encountered while running the {m.name} model.", 1)
                 self._log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
                 self._log(f"{ex.__class__.__name__}: {ex}", 1)

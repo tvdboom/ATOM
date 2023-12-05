@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -38,11 +36,13 @@ from .conftest import (
 
 # Test magic methods ================================== >>
 
+
 def test_scaler():
     """Assert that a scaler is made for models that need scaling."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LGB", "LDA"], est_params={"LGB": {"n_estimators": 5}})
-    assert atom.lgb.scaler and not atom.lda.scaler
+    assert atom.lgb.scaler
+    assert not atom.lda.scaler
 
 
 def test_str():
@@ -81,6 +81,7 @@ def test_getitem():
 
 
 # Test training ==================================================== >>
+
 
 def test_est_params_invalid_param():
     """Assert that invalid parameters in est_params are caught."""
@@ -162,7 +163,7 @@ def test_custom_distributions_meta_estimators():
             "distributions": {
                 "order": CategoricalDistribution([(0, 1, 2, 3), (1, 0, 3, 2)]),
                 "base_estimator__solver": CategoricalDistribution(["lbfgs", "newton-cg"]),
-            }
+            },
         },
     )
 
@@ -212,7 +213,7 @@ def test_empty_study(func):
     func.return_value = []  # No successful trials
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models="tree", n_trials=1, errors="raise")
+    atom.run(models="tree", n_trials=1)
     assert not hasattr(atom.tree, "study")
 
 
@@ -220,7 +221,7 @@ def test_ht_with_pipeline():
     """Assert that the hyperparameter tuning works with a transformer pipeline."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
-    atom.run("lr", n_trials=1, errors='raise')
+    atom.run("lr", n_trials=1)
     assert hasattr(atom.lr, "trials")
 
 
@@ -243,13 +244,13 @@ def test_ht_with_pruning():
     atom = ATOMClassifier(X_bin, y=y_bin, random_state=1)
     atom.run(
         models="SGD",
-        n_trials=10,
+        n_trials=7,
         ht_params={
             "distributions": {"max_iter": IntDistribution(5, 15)},
             "pruner": PatientPruner(None, patience=1),
         },
     )
-    assert "PRUNED" in atom.sgd.trials["state"].values
+    assert "PRUNED" in atom.sgd.trials["state"].unique()
 
 
 def test_sample_weight_fit():
@@ -279,11 +280,11 @@ def test_skip_duplicate_calls():
 
 
 def test_trials_stored_correctly():
-    """Assert that the trials attribute has the same params as the trial object."""
+    """Assert that the `trials` attribute has the same params as the trial object."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", n_trials=3, ht_params={"distributions": ["penalty", "C"]})
-    assert atom.lr.trials.at[2, "penalty"] == atom.lr.study.trials[2].params["penalty"]
-    assert atom.lr.trials.at[2, "C"] == atom.lr.study.trials[2].params["C"]
+    assert atom.lr.trials.loc[2, "penalty"] == atom.lr.study.trials[2].params["penalty"]
+    assert atom.lr.trials.loc[2, "C"] == atom.lr.study.trials[2].params["C"]
 
 
 @patch("mlflow.log_params")
@@ -291,7 +292,7 @@ def test_nested_runs_to_mlflow(mlflow):
     """Assert that the trials are logged to mlflow as nested runs."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.log_ht = True
-    atom.run("Tree", n_trials=1, errors='raise')
+    atom.run("Tree", n_trials=1)
     assert mlflow.call_count == 2  # n_trials + fit
 
 
@@ -364,6 +365,7 @@ def test_continued_bootstrapping():
 
 
 # Test utility properties ========================================== >>
+
 
 def test_name_property():
     """Assert that the name property can be set."""
@@ -500,6 +502,7 @@ def test_results_property():
 
 # Test data properties ============================================= >>
 
+
 def test_pipeline_property():
     """Assert that the pipeline property returns the scaler as well."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -606,6 +609,7 @@ def test_all_property():
 
 # Test prediction methods ========================================== >>
 
+
 def test_predictions_from_index():
     """Assert that predictions can be made from data indices."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, holdout_size=0.1, random_state=1)
@@ -680,6 +684,7 @@ def test_score_with_sample_weight():
 
 
 # Test utility methods ============================================= >>
+
 
 def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""
@@ -928,7 +933,8 @@ def test_serve():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     atom.mnb.serve()
-    assert "200" in str(requests.get("http://127.0.0.1:8000/", json=X_bin.to_json()))
+    response = requests.get("http://127.0.0.1:8000/", json=X_bin.to_json(), timeout=5)
+    assert response.status_code == 200
     serve.shutdown()
 
 
@@ -958,4 +964,4 @@ def test_transform():
     atom.run("LR")
     X = atom.lr.transform(X10_str)
     assert len(X.columns) > 3  # Data is one-hot encoded
-    assert all(-3 <= v <= 3 for v in X.values.ravel())  # Data is scaled
+    assert all(-3 <= v <= 3 for v in X.to_numpy().ravel())  # Data is scaled

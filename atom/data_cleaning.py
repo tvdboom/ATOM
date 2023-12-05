@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -378,29 +376,29 @@ class Balancer(TransformerMixin):
         else:
             self.target_names_in_ = np.array([y.name])
 
-        strategies = dict(
-            # clustercentroids=ClusterCentroids,  # Has no sample_indices_
-            condensednearestneighbour=CondensedNearestNeighbour,
-            editednearestneighborus=EditedNearestNeighbours,
-            repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
-            allknn=AllKNN,
-            instancehardnessthreshold=InstanceHardnessThreshold,
-            nearmiss=NearMiss,
-            neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
-            onesidedselection=OneSidedSelection,
-            randomundersampler=RandomUnderSampler,
-            tomeklinks=TomekLinks,
-            randomoversampler=RandomOverSampler,
-            smote=SMOTE,
-            smotenc=SMOTENC,
-            smoten=SMOTEN,
-            adasyn=ADASYN,
-            borderlinesmote=BorderlineSMOTE,
-            kmeanssmote=KMeansSMOTE,
-            svmsmote=SVMSMOTE,
-            smoteenn=SMOTEENN,
-            smotetomek=SMOTETomek,
-        )
+        strategies = {
+            # clustercentroids=ClusterCentroids,  #  noqa: ERA001 (has no sample_indices_)
+            "condensednearestneighbour": CondensedNearestNeighbour,
+            "editednearestneighborus": EditedNearestNeighbours,
+            "repeatededitednearestneighbours": RepeatedEditedNearestNeighbours,
+            "allknn": AllKNN,
+            "instancehardnessthreshold": InstanceHardnessThreshold,
+            "nearmiss": NearMiss,
+            "neighbourhoodcleaningrule": NeighbourhoodCleaningRule,
+            "onesidedselection": OneSidedSelection,
+            "randomundersampler": RandomUnderSampler,
+            "tomeklinks": TomekLinks,
+            "randomoversampler": RandomOverSampler,
+            "smote": SMOTE,
+            "smotenc": SMOTENC,
+            "smoten": SMOTEN,
+            "adasyn": ADASYN,
+            "borderlinesmote": BorderlineSMOTE,
+            "kmeanssmote": KMeansSMOTE,
+            "svmsmote": SVMSMOTE,
+            "smoteenn": SMOTEENN,
+            "smotetomek": SMOTETomek,
+        }
 
         if isinstance(self.strategy, str):
             if self.strategy.lower() not in strategies:
@@ -529,9 +527,9 @@ class Balancer(TransformerMixin):
                 ]
 
             # Select the new samples and assign the new indices
-            X_new = X_new.iloc[-len(X_new) + len(o_samples):]
+            X_new = X_new.iloc[-len(X_new) + len(o_samples) :]
             X_new.index = n_idx
-            y_new = y_new.iloc[-len(y_new) + len(o_samples):]
+            y_new = y_new.iloc[-len(y_new) + len(o_samples) :]
             y_new.index = n_idx
 
             # First, output the samples created
@@ -706,7 +704,7 @@ class Cleaner(TransformerMixin):
         drop_missing_target: Bool = True,
         encode_target: Bool = True,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
     ):
@@ -781,9 +779,7 @@ class Cleaner(TransformerMixin):
                     elif list(uq := np.unique(col)) != list(range(col.nunique())):
                         LabelEncoder = self._get_est_class("LabelEncoder", "preprocessing")
                         self._estimators[col.name] = LabelEncoder().fit(col)
-                        self.mapping_.update(
-                            {col.name: {str(it(v)): i for i, v in enumerate(uq)}}
-                        )
+                        self.mapping_.update({col.name: {str(it(v)): i for i, v in enumerate(uq)}})
 
         return self
 
@@ -834,8 +830,8 @@ class Cleaner(TransformerMixin):
                 # Drop features with an invalid data type
                 if dtype in lst(self.drop_dtypes):
                     self._log(
-                        f" --> Dropping feature {name} for "
-                        f"having a prohibited type: {dtype}.", 2
+                        f" --> Dropping feature {name} for having a prohibited type: {dtype}.",
+                        2,
                     )
                     X = X.drop(columns=name)
                     continue
@@ -1134,7 +1130,7 @@ class Discretizer(TransformerMixin):
         bins: Bins = 5,
         labels: Sequence[str] | dict[str, Sequence[str]] | None = None,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
@@ -1235,7 +1231,7 @@ class Discretizer(TransformerMixin):
                             "Invalid value for the bins parameter. The length of the "
                             "bins does not match the length of the columns, got len"
                             f"(bins)={len(bins_c)} and len(columns)={Xt.shape[1]}."
-                        )
+                        ) from None
                 else:
                     bins_x = bins_c
 
@@ -1267,7 +1263,7 @@ class Discretizer(TransformerMixin):
                         "a sequence of bin edges is accepted when strategy='custom'."
                     )
                 else:
-                    bins_c = [-np.inf] + list(bins_c) + [np.inf]
+                    bins_c = [-np.inf, *bins_c, np.inf]
 
                 FunctionTransformer = self._get_est_class(
                     name="FunctionTransformer",
@@ -1512,20 +1508,20 @@ class Encoder(TransformerMixin):
         self._to_value = {}
         self._categories = {}
 
-        strategies = dict(
-            backwarddifference=BackwardDifferenceEncoder,
-            basen=BaseNEncoder,
-            binary=BinaryEncoder,
-            catboost=CatBoostEncoder,
-            helmert=HelmertEncoder,
-            jamesstein=JamesSteinEncoder,
-            mestimate=MEstimateEncoder,
-            ordinal=OrdinalEncoder,
-            polynomial=PolynomialEncoder,
-            sum=SumEncoder,
-            target=TargetEncoder,
-            woe=WOEEncoder,
-        )
+        strategies = {
+            "backwarddifference": BackwardDifferenceEncoder,
+            "basen": BaseNEncoder,
+            "binary": BinaryEncoder,
+            "catboost": CatBoostEncoder,
+            "helmert": HelmertEncoder,
+            "jamesstein": JamesSteinEncoder,
+            "mestimate": MEstimateEncoder,
+            "ordinal": OrdinalEncoder,
+            "polynomial": PolynomialEncoder,
+            "sum": SumEncoder,
+            "target": TargetEncoder,
+            "woe": WOEEncoder,
+        }
 
         if isinstance(self.strategy, str):
             if self.strategy.lower().endswith("encoder"):
@@ -1578,8 +1574,9 @@ class Encoder(TransformerMixin):
                     self._log(
                         f" --> The number of classes passed to feature {name} in the "
                         f"ordinal parameter ({len(ordinal_c)}) don't match the number "
-                        f"of classes in the data ({column.nunique(dropna=True)}).", 1,
-                        severity="warning"
+                        f"of classes in the data ({column.nunique(dropna=True)}).",
+                        1,
+                        severity="warning",
                     )
 
                 # Create custom mapping from 0 to N - 1
@@ -1660,7 +1657,8 @@ class Encoder(TransformerMixin):
 
             self._log(
                 f" --> {estimator.__class__.__name__[:-7]}-encoding feature "
-                f"{name}. Contains {X[name].nunique()} classes.", 2
+                f"{name}. Contains {X[name].nunique()} classes.",
+                2,
             )
 
             # Count the propagated missing values
@@ -1801,7 +1799,7 @@ class Imputer(TransformerMixin):
 
         # Add some random missing values to the data
         for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600)):
-            X.iat[i, j] = np.NaN
+            X.iloc[i, j] = np.NaN
 
         atom = ATOMClassifier(X, y, random_state=1)
         print(atom.nans)
@@ -1841,7 +1839,7 @@ class Imputer(TransformerMixin):
         max_nan_cols: FloatLargerZero | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
@@ -2013,7 +2011,8 @@ class Imputer(TransformerMixin):
             if diff := length - len(X):
                 self._log(
                     f" --> Dropping {diff} samples for containing more "
-                    f"than {self._max_nan_rows} missing values.", 2
+                    f"than {self._max_nan_rows} missing values.",
+                    2,
                 )
 
         if self.strat_num == "drop":
@@ -2022,7 +2021,8 @@ class Imputer(TransformerMixin):
             if diff := length - len(X):
                 self._log(
                     f" --> Dropping {diff} samples for containing "
-                    f"missing values in numerical columns.", 2
+                    f"missing values in numerical columns.",
+                    2,
                 )
 
         if self.strat_cat == "drop":
@@ -2031,7 +2031,8 @@ class Imputer(TransformerMixin):
             if diff := length - len(X):
                 self._log(
                     f" --> Dropping {diff} samples for containing "
-                    f"missing values in categorical columns.", 2
+                    f"missing values in categorical columns.",
+                    2,
                 )
 
         # Print imputation information per feature
@@ -2041,7 +2042,8 @@ class Imputer(TransformerMixin):
                 if name not in self._estimator.feature_names_in_:
                     self._log(
                         f" --> Dropping feature {name}. Contains {nans} "
-                        f"({nans * 100 // len(X)}%) missing values.", 2
+                        f"({nans * 100 // len(X)}%) missing values.",
+                        2,
                     )
                     X = X.drop(columns=name)
                     continue
@@ -2049,30 +2051,35 @@ class Imputer(TransformerMixin):
                 if self.strat_num != "drop" and name in num_imputer.feature_names_in_:
                     if not isinstance(self.strat_num, str):
                         self._log(
-                            f" --> Imputing {nans} missing values with number "
-                            f"'{str(self.strat_num)}' in feature {name}.", 2
+                            f" --> Imputing {nans} missing values with "
+                            f"number '{self.strat_num}' in feature {name}.",
+                            2,
                         )
                     elif self.strat_num in ("knn", "iterative"):
                         self._log(
                             f" --> Imputing {nans} missing values using "
-                            f"the {self.strat_num} imputer in feature {name}.", 2
+                            f"the {self.strat_num} imputer in feature {name}.",
+                            2,
                         )
                     elif self.strat_num != "drop":  # mean, median or most_frequent
                         self._log(
                             f" --> Imputing {nans} missing values with {self.strat_num} "
                             f"({np.round(get_stat(num_imputer, name), 2)}) in feature "
-                            f"{name}.", 2
+                            f"{name}.",
+                            2,
                         )
                 elif self.strat_cat != "drop" and name in cat_imputer.feature_names_in_:
                     if self.strat_cat == "most_frequent":
                         self._log(
                             f" --> Imputing {nans} missing values with most_frequent "
-                            f"({get_stat(cat_imputer, name)}) in feature {name}.", 2
+                            f"({get_stat(cat_imputer, name)}) in feature {name}.",
+                            2,
                         )
                     elif self.strat_cat != "drop":
                         self._log(
                             f" --> Imputing {nans} missing values with value "
-                            f"'{self.strat_cat}' in feature {name}.", 2
+                            f"'{self.strat_cat}' in feature {name}.",
+                            2,
                         )
 
         X = self._estimator.transform(X)
@@ -2219,7 +2226,7 @@ class Normalizer(TransformerMixin):
         strategy: NormalizerStrats = "yeojohnson",
         *,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
@@ -2253,11 +2260,11 @@ class Normalizer(TransformerMixin):
             Estimator instance.
 
         """
-        strategies = dict(
-            yeojohnson="PowerTransformer",
-            boxcox="PowerTransformer",
-            quantile="QuantileTransformer",
-        )
+        strategies = {
+            "yeojohnson": "PowerTransformer",
+            "boxcox": "PowerTransformer",
+            "quantile": "QuantileTransformer",
+        }
 
         if self.strategy in ("yeojohnson", "boxcox"):
             estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
@@ -2395,21 +2402,22 @@ class Pruner(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "sklearnex"
             - "cuml"
 
@@ -2494,7 +2502,7 @@ class Pruner(TransformerMixin):
         max_sigma: FloatLargerZero = 3,
         include_target: Bool = False,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         **kwargs,
@@ -2541,18 +2549,18 @@ class Pruner(TransformerMixin):
 
         """
         # Estimators with their modules
-        strategies = dict(
-            iforest=["IsolationForest", "ensemble"],
-            ee=["EllipticEnvelope", "covariance"],
-            lof=["LocalOutlierFactor", "neighbors"],
-            svm=["OneClassSVM", "svm"],
-            dbscan=["DBSCAN", "cluster"],
-            hdbscan=["HDBSCAN", "cluster"],
-            optics=["OPTICS", "cluster"],
-        )
+        strategies = {
+            "iforest": ["IsolationForest", "ensemble"],
+            "ee": ["EllipticEnvelope", "covariance"],
+            "lof": ["LocalOutlierFactor", "neighbors"],
+            "svm": ["OneClassSVM", "svm"],
+            "dbscan": ["DBSCAN", "cluster"],
+            "hdbscan": ["HDBSCAN", "cluster"],
+            "optics": ["OPTICS", "cluster"],
+        }
 
         for strat in lst(self.strategy):
-            if strat not in ["zscore"] + list(strategies):
+            if strat not in ["zscore", *strategies]:
                 raise ValueError(
                     "Invalid value for the strategy parameter. "
                     f"Choose from: zscore, {', '.join(strategies)}."
@@ -2591,8 +2599,8 @@ class Pruner(TransformerMixin):
                     cond = np.abs(z_scores) > self.max_sigma
                     objective = objective.mask(cond, self.method)
                     self._log(
-                        f" --> Replacing {cond.sum()} outlier "
-                        f"values with {self.method}.", 2
+                        f" --> Replacing {cond.sum()} outlier values with {self.method}.",
+                        2,
                     )
 
                 elif self.method.lower() == "minmax":
@@ -2614,7 +2622,8 @@ class Pruner(TransformerMixin):
 
                     self._log(
                         f" --> Replacing {counts} outlier values "
-                        "with the min or max of the column.", 2
+                        "with the min or max of the column.",
+                        2,
                     )
 
                 elif self.method.lower() == "drop":
@@ -2623,7 +2632,8 @@ class Pruner(TransformerMixin):
                     if len(lst(self.strategy)) > 1:
                         self._log(
                             f" --> The zscore strategy detected "
-                            f"{len(mask) - sum(mask)} outliers.", 2
+                            f"{len(mask) - sum(mask)} outliers.",
+                            2,
                         )
 
             else:
@@ -2633,7 +2643,8 @@ class Pruner(TransformerMixin):
                 if len(lst(self.strategy)) > 1:
                     self._log(
                         f" --> The {estimator.__class__.__name__} "
-                        f"detected {len(mask) - sum(mask)} outliers.", 2
+                        f"detected {len(mask) - sum(mask)} outliers.",
+                        2,
                     )
 
                 # Add the estimator as attribute to the instance
@@ -2641,7 +2652,7 @@ class Pruner(TransformerMixin):
 
         if outliers:
             # Select outliers from intersection of strategies
-            mask = [any([i for i in strats]) for strats in zip(*outliers)]
+            mask = [any(strats) for strats in zip(*outliers, strict=True)]
             self._log(f" --> Dropping {len(mask) - sum(mask)} outliers.", 2)
 
             # Keep only the non-outliers from the data
@@ -2775,10 +2786,10 @@ class Scaler(TransformerMixin):
     def __init__(
         self,
         strategy: ScalerStrats = "standard",
-        include_binary: Bool = False,
         *,
+        include_binary: Bool = False,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         **kwargs,
@@ -2811,12 +2822,12 @@ class Scaler(TransformerMixin):
         if not self.include_binary:
             num_cols = [c for c in num_cols if ~np.isin(X[c].unique(), [0, 1]).all()]
 
-        strategies = dict(
-            standard="StandardScaler",
-            minmax="MinMaxScaler",
-            maxabs="MaxAbsScaler",
-            robust="RobustScaler",
-        )
+        strategies = {
+            "standard": "StandardScaler",
+            "minmax": "MinMaxScaler",
+            "maxabs": "MaxAbsScaler",
+            "robust": "RobustScaler",
+        }
 
         estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
         self._estimator = estimator(**self.kwargs)

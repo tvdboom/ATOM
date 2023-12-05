@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -10,7 +8,7 @@ Description: Module containing the BaseFigure class.
 from __future__ import annotations
 
 from itertools import cycle
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -59,14 +57,15 @@ class BaseFigure:
 
     """
 
-    _marker = ["circle", "x", "diamond", "pentagon", "star", "hexagon"]
-    _dash = ["solid", "dashdot", "dash", "dot", "longdash", "longdashdot"]
-    _shape = ["", "/", "x", "\\", "-", "|", "+", "."]
+    _marker: ClassVar[list[str]] = ["circle", "x", "diamond", "pentagon", "star"]
+    _dash: ClassVar[list[str]] = ["solid", "dashdot", "dash", "dot", "longdash"]
+    _shape: ClassVar[list[str]] = ["", "/", "x", "\\", "-", "|", "+", "."]
 
     def __init__(
         self,
         rows: IntLargerZero = 1,
         cols: IntLargerZero = 1,
+        *,
         horizontal_spacing: FloatZeroToOneExc = 0.05,
         vertical_spacing: FloatZeroToOneExc = 0.07,
         palette: str | Sequence[str] = "Prism",
@@ -98,7 +97,7 @@ class BaseFigure:
                 self.figure, _ = plt.subplots()
 
         self.groups: list[str] = []
-        self.style: Style = dict(palette={}, marker={}, dash={}, shape={})
+        self.style: Style = {"palette": {}, "marker": {}, "dash": {}, "shape": {}}
         self.marker = cycle(self._marker)
         self.dash = cycle(self._dash)
         self.shape = cycle(self._shape)
@@ -257,23 +256,25 @@ class BaseFigure:
         # Update the figure with the new axes
         self.figure.update_layout(
             {
-                f"xaxis{self.axes}": dict(
-                    domain=(x_pos, rnd(x_pos + ax_size)), anchor=f"y{self.axes}"
-                ),
-                f"yaxis{self.axes}": dict(
-                    domain=(y_pos, rnd(y_pos + ay_size)), anchor=f"x{self.axes}"
-                ),
+                f"xaxis{self.axes}": {
+                    "domain": (x_pos, rnd(x_pos + ax_size)),
+                    "anchor": f"y{self.axes}",
+                },
+                f"yaxis{self.axes}": {
+                    "domain": (y_pos, rnd(y_pos + ay_size)),
+                    "anchor": f"x{self.axes}",
+                },
             }
         )
 
         # Place a colorbar right of the axes
         if coloraxis:
             if title := coloraxis.pop("title", None):
-                coloraxis["colorbar_title"] = dict(
-                    text=title,
-                    side="right",
-                    font_size=coloraxis.pop("font_size"),
-                )
+                coloraxis["colorbar_title"] = {
+                    "text": title,
+                    "side": "right",
+                    "font_size": coloraxis.pop("font_size"),
+                }
 
             coloraxis["colorbar_x"] = rnd(x_pos + ax_size) + ax_size / 40
             coloraxis["colorbar_xanchor"] = "left"
@@ -281,9 +282,7 @@ class BaseFigure:
             coloraxis["colorbar_yanchor"] = "middle"
             coloraxis["colorbar_len"] = ay_size * 0.9
             coloraxis["colorbar_thickness"] = ax_size * 30  # Default width in pixels
-            self.figure.update_layout(
-                {f"coloraxis{coloraxis.pop('axes', self.axes)}": coloraxis}
-            )
+            self.figure.update_layout({f"coloraxis{coloraxis.pop('axes', self.axes)}": coloraxis})
 
         xaxis = f"x{self.axes if self.axes > 1 else ''}"
         yaxis = f"y{self.axes if self.axes > 1 else ''}"

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,7 +7,7 @@ Description: Module containing classification and regression models.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import numpy as np
 import pandas as pd
@@ -70,10 +68,10 @@ class AdaBoost(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "ensemble"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "AdaBoostClassifier",
         "regression": "AdaBoostRegressor",
     }
@@ -87,10 +85,10 @@ class AdaBoost(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            n_estimators=Int(50, 500, step=10),
-            learning_rate=Float(0.01, 10, log=True),
-        )
+        dist = {
+            "n_estimators": Int(50, 500, step=10),
+            "learning_rate": Float(0.01, 10, log=True),
+        }
 
         if self._goal is Goal.classification:
             dist["algorithm"] = Cat(["SAMME.R", "SAMME"])
@@ -140,10 +138,10 @@ class AutomaticRelevanceDetermination(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"regression": "ARDRegression"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "ARDRegression"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -155,13 +153,13 @@ class AutomaticRelevanceDetermination(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            n_iter=Int(100, 1000, step=10),
-            alpha_1=Float(1e-4, 1, log=True),
-            alpha_2=Float(1e-4, 1, log=True),
-            lambda_1=Float(1e-4, 1, log=True),
-            lambda_2=Float(1e-4, 1, log=True),
-        )
+        return {
+            "n_iter": Int(100, 1000, step=10),
+            "alpha_1": Float(1e-4, 1, log=True),
+            "alpha_2": Float(1e-4, 1, log=True),
+            "lambda_1": Float(1e-4, 1, log=True),
+            "lambda_2": Float(1e-4, 1, log=True),
+        }
 
 
 class Bagging(ClassRegModel):
@@ -208,10 +206,10 @@ class Bagging(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "ensemble"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "BaggingClassifier",
         "regression": "BaggingRegressor",
     }
@@ -226,13 +224,13 @@ class Bagging(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            n_estimators=Int(10, 500, step=10),
-            max_samples=Float(0.5, 1.0, step=0.1),
-            max_features=Float(0.5, 1.0, step=0.1),
-            bootstrap=Cat([True, False]),
-            bootstrap_features=Cat([True, False]),
-        )
+        return {
+            "n_estimators": Int(10, 500, step=10),
+            "max_samples": Float(0.5, 1.0, step=0.1),
+            "max_features": Float(0.5, 1.0, step=0.1),
+            "bootstrap": Cat([True, False]),
+            "bootstrap_features": Cat([True, False]),
+        }
 
 
 class BayesianRidge(ClassRegModel):
@@ -274,10 +272,10 @@ class BayesianRidge(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"regression": "BayesianRidge"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "BayesianRidge"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -289,13 +287,13 @@ class BayesianRidge(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            n_iter=Int(100, 1000, step=10),
-            alpha_1=Float(1e-4, 1, log=True),
-            alpha_2=Float(1e-4, 1, log=True),
-            lambda_1=Float(1e-4, 1, log=True),
-            lambda_2=Float(1e-4, 1, log=True),
-        )
+        return {
+            "n_iter": Int(100, 1000, step=10),
+            "alpha_1": Float(1e-4, 1, log=True),
+            "alpha_2": Float(1e-4, 1, log=True),
+            "lambda_1": Float(1e-4, 1, log=True),
+            "lambda_2": Float(1e-4, 1, log=True),
+        }
 
 
 class BernoulliNB(ClassRegModel):
@@ -338,10 +336,10 @@ class BernoulliNB(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
-    _estimators = {"classification": "BernoulliNB"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "BernoulliNB"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -353,10 +351,10 @@ class BernoulliNB(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            alpha=Float(0.01, 10, log=True),
-            fit_prior=Cat([True, False]),
-        )
+        return {
+            "alpha": Float(0.01, 10, log=True),
+            "fit_prior": Cat([True, False]),
+        }
 
 
 class CatBoost(ClassRegModel):
@@ -417,10 +415,10 @@ class CatBoost(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = "n_estimators"
-    supports_engines = ["catboost"]
+    supports_engines = ("catboost",)
 
     _module = "catboost"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "CatBoostClassifier",
         "regression": "CatBoostRegressor",
     }
@@ -533,7 +531,7 @@ class CatBoost(ClassRegModel):
 
             if trial and len(self._metric) == 1 and cb._pruned:
                 # Add the pruned step to the output
-                step = len(self.evals[f'{m}_train'])
+                step = len(self.evals[f"{m}_train"])
                 steps = estimator.get_params()[self.has_validation]
                 trial.params[self.has_validation] = f"{step}/{steps}"
 
@@ -552,16 +550,16 @@ class CatBoost(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            n_estimators=Int(20, 500, step=10),
-            learning_rate=Float(0.01, 1.0, log=True),
-            max_depth=Cat([None, *range(1, 17)]),
-            min_child_samples=Int(1, 30),
-            bootstrap_type=Cat(["Bayesian", "Bernoulli"]),
-            bagging_temperature=Float(0, 10),
-            subsample=Float(0.5, 1.0, step=0.1),
-            reg_lambda=Float(0.001, 100, log=True),
-        )
+        return {
+            "n_estimators": Int(20, 500, step=10),
+            "learning_rate": Float(0.01, 1.0, log=True),
+            "max_depth": Cat([None, *range(1, 17)]),
+            "min_child_samples": Int(1, 30),
+            "bootstrap_type": Cat(["Bayesian", "Bernoulli"]),
+            "bagging_temperature": Float(0, 10),
+            "subsample": Float(0.5, 1.0, step=0.1),
+            "reg_lambda": Float(0.001, 100, log=True),
+        }
 
 
 class CategoricalNB(ClassRegModel):
@@ -588,8 +586,9 @@ class CategoricalNB(ClassRegModel):
     from atom import ATOMClassifier
     import numpy as np
 
-    X = np.random.randint(5, size=(100, 100))
-    y = np.random.randint(2, size=100)
+    rng = np.random.default_rng()
+    X = rng.integers(5, size=(100, 100))
+    y = rng.integers(2, size=100)
 
     atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="CatNB", metric="f1", verbose=2)
@@ -603,10 +602,10 @@ class CategoricalNB(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
-    _estimators = {"classification": "CategoricalNB"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "CategoricalNB"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -618,10 +617,10 @@ class CategoricalNB(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            alpha=Float(0.01, 10, log=True),
-            fit_prior=Cat([True, False]),
-        )
+        return {
+            "alpha": Float(0.01, 10, log=True),
+            "fit_prior": Cat([True, False]),
+        }
 
 
 class ComplementNB(ClassRegModel):
@@ -663,10 +662,10 @@ class ComplementNB(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
-    _estimators = {"classification": "ComplementNB"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "ComplementNB"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -678,11 +677,11 @@ class ComplementNB(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            alpha=Float(0.01, 10, log=True),
-            fit_prior=Cat([True, False]),
-            norm=Cat([True, False]),
-        )
+        return {
+            "alpha": Float(0.01, 10, log=True),
+            "fit_prior": Cat([True, False]),
+            "norm": Cat([True, False]),
+        }
 
 
 class DecisionTree(ClassRegModel):
@@ -723,10 +722,10 @@ class DecisionTree(ClassRegModel):
     native_multilabel = True
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "tree"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "DecisionTreeClassifier",
         "regression": "DecisionTreeRegressor",
     }
@@ -745,15 +744,15 @@ class DecisionTree(ClassRegModel):
         else:
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
 
-        return dict(
-            criterion=Cat(criterion),
-            splitter=Cat(["best", "random"]),
-            max_depth=Cat([None, *range(1, 17)]),
-            min_samples_split=Int(2, 20),
-            min_samples_leaf=Int(1, 20),
-            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            ccp_alpha=Float(0, 0.035, step=0.005),
-        )
+        return {
+            "criterion": Cat(criterion),
+            "splitter": Cat(["best", "random"]),
+            "max_depth": Cat([None, *range(1, 17)]),
+            "min_samples_split": Int(2, 20),
+            "min_samples_leaf": Int(1, 20),
+            "max_features": Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "ccp_alpha": Float(0, 0.035, step=0.005),
+        }
 
 
 class Dummy(ClassRegModel):
@@ -798,10 +797,13 @@ class Dummy(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "dummy"
-    _estimators = {"classification": "DummyClassifier", "regression": "DummyRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "DummyClassifier",
+        "regression": "DummyRegressor",
+    }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -812,10 +814,10 @@ class Dummy(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            strategy=Cat(["most_frequent", "prior", "stratified", "uniform"]),
-            quantile=Float(0, 1.0, step=0.1),
-        )
+        dist = {
+            "strategy": Cat(["most_frequent", "prior", "stratified", "uniform"]),
+            "quantile": Float(0, 1.0, step=0.1),
+        }
 
         if self._goal is Goal.classification:
             dist.pop("quantile")
@@ -862,10 +864,10 @@ class ElasticNet(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
-    _estimators = {"regression": "ElasticNet"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "ElasticNet"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -877,11 +879,11 @@ class ElasticNet(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            alpha=Float(1e-3, 10, log=True),
-            l1_ratio=Float(0.1, 0.9, step=0.1),
-            selection=Cat(["cyclic", "random"]),
-        )
+        return {
+            "alpha": Float(1e-3, 10, log=True),
+            "l1_ratio": Float(0.1, 0.9, step=0.1),
+            "selection": Cat(["cyclic", "random"]),
+        }
 
 
 class ExtraTree(ClassRegModel):
@@ -927,10 +929,10 @@ class ExtraTree(ClassRegModel):
     native_multilabel = True
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "tree"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "ExtraTreeClassifier",
         "regression": "ExtraTreeRegressor",
     }
@@ -949,15 +951,15 @@ class ExtraTree(ClassRegModel):
         else:
             criterion = ["squared_error", "absolute_error"]
 
-        return dict(
-            criterion=Cat(criterion),
-            splitter=Cat(["random", "best"]),
-            max_depth=Cat([None, *range(1, 17)]),
-            min_samples_split=Int(2, 20),
-            min_samples_leaf=Int(1, 20),
-            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            ccp_alpha=Float(0, 0.035, step=0.005),
-        )
+        return {
+            "criterion": Cat(criterion),
+            "splitter": Cat(["random", "best"]),
+            "max_depth": Cat([None, *range(1, 17)]),
+            "min_samples_split": Int(2, 20),
+            "min_samples_leaf": Int(1, 20),
+            "max_features": Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "ccp_alpha": Float(0, 0.035, step=0.005),
+        }
 
 
 class ExtraTrees(ClassRegModel):
@@ -1001,10 +1003,10 @@ class ExtraTrees(ClassRegModel):
     native_multilabel = True
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "ensemble"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "ExtraTreesClassifier",
         "regression": "ExtraTreesRegressor",
     }
@@ -1045,17 +1047,17 @@ class ExtraTrees(ClassRegModel):
         else:
             criterion = ["squared_error", "absolute_error"]
 
-        return dict(
-            n_estimators=Int(10, 500, step=10),
-            criterion=Cat(criterion),
-            max_depth=Cat([None, *range(1, 17)]),
-            min_samples_split=Int(2, 20),
-            min_samples_leaf=Int(1, 20),
-            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            bootstrap=Cat([True, False]),
-            max_samples=Cat([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
-            ccp_alpha=Float(0, 0.035, step=0.005),
-        )
+        return {
+            "n_estimators": Int(10, 500, step=10),
+            "criterion": Cat(criterion),
+            "max_depth": Cat([None, *range(1, 17)]),
+            "min_samples_split": Int(2, 20),
+            "min_samples_leaf": Int(1, 20),
+            "max_features": Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "bootstrap": Cat([True, False]),
+            "max_samples": Cat([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "ccp_alpha": Float(0, 0.035, step=0.005),
+        }
 
 
 class GaussianNB(ClassRegModel):
@@ -1097,10 +1099,10 @@ class GaussianNB(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
-    _estimators = {"classification": "GaussianNB"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "GaussianNB"}
 
 
 class GaussianProcess(ClassRegModel):
@@ -1156,10 +1158,10 @@ class GaussianProcess(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "gaussian_process"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "GaussianProcessClassifier",
         "regression": "GaussianProcessRegressor",
     }
@@ -1212,10 +1214,10 @@ class GradientBoostingMachine(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "ensemble"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "GradientBoostingClassifier",
         "regression": "GradientBoostingRegressor",
     }
@@ -1229,18 +1231,18 @@ class GradientBoostingMachine(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            loss=Cat(["log_loss", "exponential"]),
-            learning_rate=Float(0.01, 1.0, log=True),
-            n_estimators=Int(10, 500, step=10),
-            subsample=Float(0.5, 1.0, step=0.1),
-            criterion=Cat(["friedman_mse", "squared_error"]),
-            min_samples_split=Int(2, 20),
-            min_samples_leaf=Int(1, 20),
-            max_depth=Int(1, 21),
-            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            ccp_alpha=Float(0, 0.035, step=0.005),
-        )
+        dist = {
+            "loss": Cat(["log_loss", "exponential"]),
+            "learning_rate": Float(0.01, 1.0, log=True),
+            "n_estimators": Int(10, 500, step=10),
+            "subsample": Float(0.5, 1.0, step=0.1),
+            "criterion": Cat(["friedman_mse", "squared_error"]),
+            "min_samples_split": Int(2, 20),
+            "min_samples_leaf": Int(1, 20),
+            "max_depth": Int(1, 21),
+            "max_features": Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "ccp_alpha": Float(0, 0.035, step=0.005),
+        }
 
         # Avoid 'task' when class initialized without branches
         if "_branch" in self.__dict__ and self.task.is_multiclass:
@@ -1291,10 +1293,10 @@ class HuberRegression(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"regression": "HuberRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "HuberRegressor"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1306,11 +1308,11 @@ class HuberRegression(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            epsilon=Float(1, 10, log=True),
-            max_iter=Int(50, 500, step=10),
-            alpha=Float(1e-4, 1, log=True),
-        )
+        return {
+            "epsilon": Float(1, 10, log=True),
+            "max_iter": Int(50, 500, step=10),
+            "alpha": Float(1e-4, 1, log=True),
+        }
 
 
 class HistGradientBoosting(ClassRegModel):
@@ -1357,10 +1359,10 @@ class HistGradientBoosting(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "ensemble"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "HistGradientBoostingClassifier",
         "regression": "HistGradientBoostingRegressor",
     }
@@ -1374,16 +1376,16 @@ class HistGradientBoosting(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            loss=Cat(["squared_error", "absolute_error", "poisson", "quantile", "gamma"]),
-            quantile=Float(0, 1, step=0.1),
-            learning_rate=Float(0.01, 1.0, log=True),
-            max_iter=Int(10, 500, step=10),
-            max_leaf_nodes=Int(10, 50),
-            max_depth=Cat([None, *range(1, 17)]),
-            min_samples_leaf=Int(10, 30),
-            l2_regularization=Float(0, 1.0, step=0.1),
-        )
+        dist = {
+            "loss": Cat(["squared_error", "absolute_error", "poisson", "quantile", "gamma"]),
+            "quantile": Float(0, 1, step=0.1),
+            "learning_rate": Float(0.01, 1.0, log=True),
+            "max_iter": Int(10, 500, step=10),
+            "max_leaf_nodes": Int(10, 50),
+            "max_depth": Cat([None, *range(1, 17)]),
+            "min_samples_leaf": Int(10, 30),
+            "l2_regularization": Float(0, 1.0, step=0.1),
+        }
 
         if self._goal is Goal.classification:
             dist.pop("loss")
@@ -1433,10 +1435,10 @@ class KNearestNeighbors(ClassRegModel):
     native_multilabel = True
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "neighbors"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "KNeighborsClassifier",
         "regression": "KNeighborsRegressor",
     }
@@ -1450,13 +1452,13 @@ class KNearestNeighbors(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            n_neighbors=Int(1, 100),
-            weights=Cat(["uniform", "distance"]),
-            algorithm=Cat(["auto", "ball_tree", "kd_tree", "brute"]),
-            leaf_size=Int(20, 40),
-            p=Int(1, 2),
-        )
+        dist = {
+            "n_neighbors": Int(1, 100),
+            "weights": Cat(["uniform", "distance"]),
+            "algorithm": Cat(["auto", "ball_tree", "kd_tree", "brute"]),
+            "leaf_size": Int(20, 40),
+            "p": Int(1, 2),
+        }
 
         if self._gpu:
             dist.pop("algorithm")  # Only 'brute' is supported
@@ -1505,10 +1507,10 @@ class Lasso(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
-    _estimators = {"regression": "Lasso"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "Lasso"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1520,10 +1522,10 @@ class Lasso(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            alpha=Float(1e-3, 10, log=True),
-            selection=Cat(["cyclic", "random"]),
-        )
+        return {
+            "alpha": Float(1e-3, 10, log=True),
+            "selection": Cat(["cyclic", "random"]),
+        }
 
 
 class LeastAngleRegression(ClassRegModel):
@@ -1568,10 +1570,10 @@ class LeastAngleRegression(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"regression": "Lars"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "Lars"}
 
 
 class LightGBM(ClassRegModel):
@@ -1623,10 +1625,13 @@ class LightGBM(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = "n_estimators"
-    supports_engines = ["lightgbm"]
+    supports_engines = ("lightgbm",)
 
     _module = "lightgbm.sklearn"
-    _estimators = {"classification": "LGBMClassifier", "regression": "LGBMRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "LGBMClassifier",
+        "regression": "LGBMRegressor",
+    }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -1644,7 +1649,7 @@ class LightGBM(ClassRegModel):
         """
         # Custom lightgbm mapping for warnings
         # PYTHONWarnings doesn't work since they go from C/C++ code to stdout
-        warns = dict(always=2, default=1, once=0, error=0, ignore=-1)
+        warns = {"always": 2, "default": 1, "once": 0, "error": 0, "ignore": -1}
 
         return self._est_class(
             verbose=params.pop("verbose", warns.get(self.warnings, -1)),
@@ -1694,7 +1699,7 @@ class LightGBM(ClassRegModel):
         m = self._metric[0].name
         params = est_params_fit.copy()
 
-        callbacks = params.pop("callbacks", []) + [log_evaluation(-1)]
+        callbacks = [*params.pop("callbacks", []), log_evaluation(-1)]
         if trial and len(self._metric) == 1:
             callbacks.append(LightGBMPruningCallback(trial, m, "valid_1"))
 
@@ -1738,18 +1743,18 @@ class LightGBM(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            n_estimators=Int(20, 500, step=10),
-            learning_rate=Float(0.01, 1.0, log=True),
-            max_depth=Int(-1, 17, step=2),
-            num_leaves=Int(20, 40),
-            min_child_weight=Float(1e-4, 100, log=True),
-            min_child_samples=Int(1, 30),
-            subsample=Float(0.5, 1.0, step=0.1),
-            colsample_bytree=Float(0.4, 1.0, step=0.1),
-            reg_alpha=Float(1e-4, 100, log=True),
-            reg_lambda=Float(1e-4, 100, log=True),
-        )
+        return {
+            "n_estimators": Int(20, 500, step=10),
+            "learning_rate": Float(0.01, 1.0, log=True),
+            "max_depth": Int(-1, 17, step=2),
+            "num_leaves": Int(20, 40),
+            "min_child_weight": Float(1e-4, 100, log=True),
+            "min_child_samples": Int(1, 30),
+            "subsample": Float(0.5, 1.0, step=0.1),
+            "colsample_bytree": Float(0.4, 1.0, step=0.1),
+            "reg_alpha": Float(1e-4, 100, log=True),
+            "reg_lambda": Float(1e-4, 100, log=True),
+        }
 
 
 class LinearDiscriminantAnalysis(ClassRegModel):
@@ -1757,7 +1762,7 @@ class LinearDiscriminantAnalysis(ClassRegModel):
 
     Linear Discriminant Analysis is a classifier with a linear
     decision boundary, generated by fitting class conditional densities
-    to the data and using Bayes’ rule. The model fits a Gaussian
+    to the data and using Bayes' rule. The model fits a Gaussian
     density to each class, assuming that all classes share the same
     covariance matrix.
 
@@ -1793,10 +1798,10 @@ class LinearDiscriminantAnalysis(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "discriminant_analysis"
-    _estimators = {"classification": "LinearDiscriminantAnalysis"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "LinearDiscriminantAnalysis"}
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -1830,10 +1835,10 @@ class LinearDiscriminantAnalysis(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            solver=Cat(["svd", "lsqr", "eigen"]),
-            shrinkage=Cat([None, "auto", 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
-        )
+        return {
+            "solver": Cat(["svd", "lsqr", "eigen"]),
+            "shrinkage": Cat([None, "auto", 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+        }
 
 
 class LinearSVM(ClassRegModel):
@@ -1877,10 +1882,13 @@ class LinearSVM(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ("sklearn", "cuml")
 
     _module = "svm"
-    _estimators = {"classification": "LinearSVC", "regression": "LinearSVR"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "LinearSVC",
+        "regression": "LinearSVR",
+    }
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -2003,10 +2011,10 @@ class LogisticRegression(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
-    _estimators = {"classification": "LogisticRegression"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "LogisticRegression"}
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -2046,13 +2054,13 @@ class LogisticRegression(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            penalty=Cat([None, "l1", "l2", "elasticnet"]),
-            C=Float(1e-3, 100, log=True),
-            solver=Cat(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
-            max_iter=Int(100, 1000, step=10),
-            l1_ratio=Float(0, 1.0, step=0.1),
-        )
+        dist = {
+            "penalty": Cat([None, "l1", "l2", "elasticnet"]),
+            "C": Float(1e-3, 100, log=True),
+            "solver": Cat(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
+            "max_iter": Int(100, 1000, step=10),
+            "l1_ratio": Float(0, 1.0, step=0.1),
+        }
 
         if self._gpu:
             if self.engine.get("estimator") == "cuml":
@@ -2110,10 +2118,13 @@ class MultiLayerPerceptron(ClassRegModel):
     native_multilabel = True
     native_multioutput = False
     has_validation = "max_iter"
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "neural_network"
-    _estimators = {"classification": "MLPClassifier", "regression": "MLPRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "MLPClassifier",
+        "regression": "MLPRegressor",
+    }
 
     def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
@@ -2131,10 +2142,11 @@ class MultiLayerPerceptron(ClassRegModel):
         """
         params = super()._trial_to_est(params)
 
-        hidden_layer_sizes = []
-        for param in [p for p in sorted(params) if p.startswith("hidden_layer")]:
-            if value := params.pop(param):  # Neurons should be more than zero
-                hidden_layer_sizes.append(value)
+        hidden_layer_sizes = [
+            value
+            for param in [p for p in sorted(params) if p.startswith("hidden_layer")]
+            if (value := params.pop(param))  # Neurons should be more than zero
+        ]
 
         if hidden_layer_sizes:
             params["hidden_layer_sizes"] = tuple(hidden_layer_sizes)
@@ -2150,19 +2162,19 @@ class MultiLayerPerceptron(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            hidden_layer_1=Int(10, 100),
-            hidden_layer_2=Int(0, 100),
-            hidden_layer_3=Int(0, 10),
-            activation=Cat(["identity", "logistic", "tanh", "relu"]),
-            solver=Cat(["lbfgs", "sgd", "adam"]),
-            alpha=Float(1e-4, 0.1, log=True),
-            batch_size=Cat(["auto", 8, 16, 32, 64, 128, 256]),
-            learning_rate=Cat(["constant", "invscaling", "adaptive"]),
-            learning_rate_init=Float(1e-3, 0.1, log=True),
-            power_t=Float(0.1, 0.9, step=0.1),
-            max_iter=Int(50, 500, step=10),
-        )
+        dist = {
+            "hidden_layer_1": Int(10, 100),
+            "hidden_layer_2": Int(0, 100),
+            "hidden_layer_3": Int(0, 10),
+            "activation": Cat(["identity", "logistic", "tanh", "relu"]),
+            "solver": Cat(["lbfgs", "sgd", "adam"]),
+            "alpha": Float(1e-4, 0.1, log=True),
+            "batch_size": Cat(["auto", 8, 16, 32, 64, 128, 256]),
+            "learning_rate": Cat(["constant", "invscaling", "adaptive"]),
+            "learning_rate_init": Float(1e-3, 0.1, log=True),
+            "power_t": Float(0.1, 0.9, step=0.1),
+            "max_iter": Int(50, 500, step=10),
+        }
 
         # Drop layers if user specifies sizes
         if "hidden_layer_sizes" in self._est_params:
@@ -2212,10 +2224,10 @@ class MultinomialNB(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
-    _estimators = {"classification": "MultinomialNB"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "MultinomialNB"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -2227,10 +2239,10 @@ class MultinomialNB(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            alpha=Float(0.01, 10, log=True),
-            fit_prior=Cat([True, False]),
-        )
+        return {
+            "alpha": Float(0.01, 10, log=True),
+            "fit_prior": Cat([True, False]),
+        }
 
 
 class OrdinaryLeastSquares(ClassRegModel):
@@ -2274,10 +2286,10 @@ class OrdinaryLeastSquares(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
-    _estimators = {"regression": "LinearRegression"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "LinearRegression"}
 
 
 class OrthogonalMatchingPursuit(ClassRegModel):
@@ -2319,10 +2331,10 @@ class OrthogonalMatchingPursuit(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"regression": "OrthogonalMatchingPursuit"}
+    _estimators: ClassVar[dict[str, str]] = {"regression": "OrthogonalMatchingPursuit"}
 
 
 class PassiveAggressive(ClassRegModel):
@@ -2366,10 +2378,10 @@ class PassiveAggressive(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = "max_iter"
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "PassiveAggressiveClassifier",
         "regression": "PassiveAggressiveRegressor",
     }
@@ -2388,12 +2400,12 @@ class PassiveAggressive(ClassRegModel):
         else:
             loss = ["epsilon_insensitive", "squared_epsilon_insensitive"]
 
-        return dict(
-            C=Float(1e-3, 100, log=True),
-            max_iter=Int(500, 1500, step=50),
-            loss=Cat(loss),
-            average=Cat([True, False]),
-        )
+        return {
+            "C": Float(1e-3, 100, log=True),
+            "max_iter": Int(500, 1500, step=50),
+            "loss": Cat(loss),
+            "average": Cat([True, False]),
+        }
 
 
 class Perceptron(ClassRegModel):
@@ -2442,10 +2454,10 @@ class Perceptron(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = "max_iter"
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"classification": "Perceptron"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "Perceptron"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -2457,13 +2469,13 @@ class Perceptron(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            penalty=Cat([None, "l2", "l1", "elasticnet"]),
-            alpha=Float(1e-4, 10, log=True),
-            l1_ratio=Float(0.1, 0.9, step=0.1),
-            max_iter=Int(500, 1500, step=50),
-            eta0=Float(1e-2, 10, log=True),
-        )
+        return {
+            "penalty": Cat([None, "l2", "l1", "elasticnet"]),
+            "alpha": Float(1e-4, 10, log=True),
+            "l1_ratio": Float(0.1, 0.9, step=0.1),
+            "max_iter": Int(500, 1500, step=50),
+            "eta0": Float(1e-2, 10, log=True),
+        }
 
 
 class QuadraticDiscriminantAnalysis(ClassRegModel):
@@ -2471,7 +2483,7 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
 
     Quadratic Discriminant Analysis is a classifier with a quadratic
     decision boundary, generated by fitting class conditional densities
-    to the data and using Bayes’ rule. The model fits a Gaussian
+    to the data and using Bayes' rule. The model fits a Gaussian
     density to each class, assuming that all classes share the same
     covariance matrix.
 
@@ -2507,10 +2519,10 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "discriminant_analysis"
-    _estimators = {"classification": "QuadraticDiscriminantAnalysis"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "QuadraticDiscriminantAnalysis"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -2522,7 +2534,7 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(reg_param=Float(0, 1.0, step=0.1))
+        return {"reg_param": Float(0, 1.0, step=0.1)}
 
 
 class RadiusNearestNeighbors(ClassRegModel):
@@ -2577,10 +2589,10 @@ class RadiusNearestNeighbors(ClassRegModel):
     native_multilabel = True
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "neighbors"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "RadiusNeighborsClassifier",
         "regression": "RadiusNeighborsRegressor",
     }
@@ -2595,13 +2607,13 @@ class RadiusNearestNeighbors(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            radius=Float(1e-2, 100),
-            weights=Cat(["uniform", "distance"]),
-            algorithm=Cat(["auto", "ball_tree", "kd_tree", "brute"]),
-            leaf_size=Int(20, 40),
-            p=Int(1, 2),
-        )
+        return {
+            "radius": Float(1e-2, 100),
+            "weights": Cat(["uniform", "distance"]),
+            "algorithm": Cat(["auto", "ball_tree", "kd_tree", "brute"]),
+            "leaf_size": Int(20, 40),
+            "p": Int(1, 2),
+        }
 
 
 class RandomForest(ClassRegModel):
@@ -2653,10 +2665,10 @@ class RandomForest(ClassRegModel):
     native_multilabel = True
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "ensemble"
-    _estimators = {
+    _estimators: ClassVar[dict[str, str]] = {
         "classification": "RandomForestClassifier",
         "regression": "RandomForestRegressor",
     }
@@ -2700,17 +2712,17 @@ class RandomForest(ClassRegModel):
             else:
                 criterion = ["squared_error", "absolute_error", "poisson"]
 
-        dist = dict(
-            n_estimators=Int(10, 500, step=10),
-            criterion=Cat(criterion),
-            max_depth=Cat([None, *range(1, 17)]),
-            min_samples_split=Int(2, 20),
-            min_samples_leaf=Int(1, 20),
-            max_features=Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
-            bootstrap=Cat([True, False]),
-            max_samples=Cat([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
-            ccp_alpha=Float(0, 0.035, step=0.005),
-        )
+        dist = {
+            "n_estimators": Int(10, 500, step=10),
+            "criterion": Cat(criterion),
+            "max_depth": Cat([None, *range(1, 17)]),
+            "min_samples_split": Int(2, 20),
+            "min_samples_leaf": Int(1, 20),
+            "max_features": Cat([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "bootstrap": Cat([True, False]),
+            "max_samples": Cat([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
+            "ccp_alpha": Float(0, 0.035, step=0.005),
+        }
 
         if self.engine.get("estimator") == "sklearnex":
             dist.pop("criterion")
@@ -2768,10 +2780,13 @@ class Ridge(ClassRegModel):
     native_multilabel = True
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
-    _estimators = {"classification": "RidgeClassifier", "regression": "Ridge"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "RidgeClassifier",
+        "regression": "Ridge",
+    }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -2782,10 +2797,10 @@ class Ridge(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            alpha=Float(1e-3, 10, log=True),
-            solver=Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
-        )
+        dist = {
+            "alpha": Float(1e-3, 10, log=True),
+            "solver": Cat(["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]),
+        }
 
         if self._goal is Goal.regression:
             if self.engine.get("estimator") == "sklearnex":
@@ -2838,10 +2853,13 @@ class StochasticGradientDescent(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = "max_iter"
-    supports_engines = ["sklearn"]
+    supports_engines = ("sklearn",)
 
     _module = "linear_model"
-    _estimators = {"classification": "SGDClassifier", "regression": "SGDRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "SGDClassifier",
+        "regression": "SGDRegressor",
+    }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -2864,18 +2882,18 @@ class StochasticGradientDescent(ClassRegModel):
             "squared_epsilon_insensitive",
         ]
 
-        return dict(
-            loss=Cat(loss if self._goal is Goal.classification else loss[-4:]),
-            penalty=Cat([None, "l1", "l2", "elasticnet"]),
-            alpha=Float(1e-4, 1.0, log=True),
-            l1_ratio=Float(0.1, 0.9, step=0.1),
-            max_iter=Int(500, 1500, step=50),
-            epsilon=Float(1e-4, 1.0, log=True),
-            learning_rate=Cat(["constant", "invscaling", "optimal", "adaptive"]),
-            eta0=Float(1e-2, 10, log=True),
-            power_t=Float(0.1, 0.9, step=0.1),
-            average=Cat([True, False]),
-        )
+        return {
+            "loss": Cat(loss if self._goal is Goal.classification else loss[-4:]),
+            "penalty": Cat([None, "l1", "l2", "elasticnet"]),
+            "alpha": Float(1e-4, 1.0, log=True),
+            "l1_ratio": Float(0.1, 0.9, step=0.1),
+            "max_iter": Int(500, 1500, step=50),
+            "epsilon": Float(1e-4, 1.0, log=True),
+            "learning_rate": Cat(["constant", "invscaling", "optimal", "adaptive"]),
+            "eta0": Float(1e-2, 10, log=True),
+            "power_t": Float(0.1, 0.9, step=0.1),
+            "average": Cat([True, False]),
+        }
 
 
 class SupportVectorMachine(ClassRegModel):
@@ -2920,10 +2938,10 @@ class SupportVectorMachine(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
+    supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "svm"
-    _estimators = {"classification": "SVC", "regression": "SVR"}
+    _estimators: ClassVar[dict[str, str]] = {"classification": "SVC", "regression": "SVR"}
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -2965,7 +2983,8 @@ class SupportVectorMachine(ClassRegModel):
             return self._est_class(
                 probability=params.pop("probability", True),
                 random_state=params.pop("random_state", self.random_state),
-                **params)
+                **params,
+            )
         else:
             return super()._get_est(params)
 
@@ -2978,15 +2997,15 @@ class SupportVectorMachine(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        dist = dict(
-            C=Float(1e-3, 100, log=True),
-            kernel=Cat(["linear", "poly", "rbf", "sigmoid"]),
-            degree=Int(2, 5),
-            gamma=Cat(["scale", "auto"]),
-            coef0=Float(-1.0, 1.0),
-            epsilon=Float(1e-3, 100, log=True),
-            shrinking=Cat([True, False]),
-        )
+        dist = {
+            "C": Float(1e-3, 100, log=True),
+            "kernel": Cat(["linear", "poly", "rbf", "sigmoid"]),
+            "degree": Int(2, 5),
+            "gamma": Cat(["scale", "auto"]),
+            "coef0": Float(-1.0, 1.0),
+            "epsilon": Float(1e-3, 100, log=True),
+            "shrinking": Cat([True, False]),
+        }
 
         if self._goal is Goal.classification:
             dist.pop("epsilon")
@@ -3039,10 +3058,13 @@ class XGBoost(ClassRegModel):
     native_multilabel = False
     native_multioutput = False
     has_validation = "n_estimators"
-    supports_engines = ["xgboost"]
+    supports_engines = ("xgboost",)
 
     _module = "xgboost"
-    _estimators = {"classification": "XGBClassifier", "regression": "XGBRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "XGBClassifier",
+        "regression": "XGBRegressor",
+    }
 
     @property
     def trials(self) -> pd.DataFrame:
@@ -3177,14 +3199,14 @@ class XGBoost(ClassRegModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            n_estimators=Int(20, 500, step=10),
-            learning_rate=Float(0.01, 1.0, log=True),
-            max_depth=Int(1, 20),
-            gamma=Float(0, 1.0),
-            min_child_weight=Int(1, 10),
-            subsample=Float(0.5, 1.0, step=0.1),
-            colsample_bytree=Float(0.4, 1.0, step=0.1),
-            reg_alpha=Float(1e-4, 100, log=True),
-            reg_lambda=Float(1e-4, 100, log=True),
-        )
+        return {
+            "n_estimators": Int(20, 500, step=10),
+            "learning_rate": Float(0.01, 1.0, log=True),
+            "max_depth": Int(1, 20),
+            "gamma": Float(0, 1.0),
+            "min_child_weight": Int(1, 10),
+            "subsample": Float(0.5, 1.0, step=0.1),
+            "colsample_bytree": Float(0.4, 1.0, step=0.1),
+            "reg_alpha": Float(1e-4, 100, log=True),
+            "reg_lambda": Float(1e-4, 100, log=True),
+        }

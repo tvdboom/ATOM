@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -771,7 +769,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
         """Plot SHAP's waterfall plot.
 
         The SHAP value of a feature represents the impact of the
-        evidence provided by that feature on the model’s output. The
+        evidence provided by that feature on the model's output. The
         waterfall plot is designed to visually display how the SHAP
         values (evidence) of each feature move the model output from
         our prior expectation under the background data distribution,

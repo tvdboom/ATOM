@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -13,7 +11,7 @@ from abc import ABCMeta
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Literal, overload
+from typing import Any, ClassVar, Literal, overload
 
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -44,8 +42,8 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     """
 
     _fig = BaseFigure()
-    _custom_layout: dict[str, Any] = {}
-    _custom_traces: dict[str, Any] = {}
+    _custom_layout: ClassVar[dict[str, Any]] = {}
+    _custom_traces: ClassVar[dict[str, Any]] = {}
     _aesthetics = Aesthetics(
         palette=list(PALETTE),
         title_fontsize=24,
@@ -193,7 +191,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
     @staticmethod
     def _get_set(
-        rows: str | Sequence[str] | dict[str, RowSelector]
+        rows: str | Sequence[str] | dict[str, RowSelector],
     ) -> Iterator[tuple[str, RowSelector]]:
         """Get the row selection.
 
@@ -224,7 +222,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
         yield from rows_c.items()
 
-    def _get_metric(self, metric: MetricSelector, max_one: Bool = False) -> list[str]:
+    def _get_metric(self, metric: MetricSelector, *, max_one: Bool = False) -> list[str]:
         """Check and return the provided metric index.
 
         Parameters
@@ -278,6 +276,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     def _get_plot_models(
         self,
         models: ModelsSelector,
+        *,
         max_one: Bool = False,
         ensembles: Bool = True,
         check_fitted: Bool = True,
@@ -321,32 +320,39 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
             return models_c
         else:
-            return [self]  # type: ignore
+            return [self]  # type: ignore[list-item]
 
     @overload
     def _get_figure(
         self,
         backend: Literal["plotly"] = ...,
+        *,
         create_figure: Literal[True] = ...,
-    ) -> go.Figure: ...
+    ) -> go.Figure:
+        ...
 
     @overload
     def _get_figure(
         self,
         backend: Literal["matplotlib"],
+        *,
         create_figure: Literal[True] = ...,
-    ) -> plt.Figure: ...
+    ) -> plt.Figure:
+        ...
 
     @overload
     def _get_figure(
         self,
         backend: PlotBackend,
+        *,
         create_figure: Literal[False],
-    ) -> None: ...
+    ) -> None:
+        ...
 
     def _get_figure(
         self,
         backend: PlotBackend = "plotly",
+        *,
         create_figure: Bool = True,
     ) -> go.Figure | plt.Figure | None:
         """Return an existing figure if in canvas, else a new figure.
@@ -415,26 +421,26 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
         """
         return go.Scatter(
-            line=dict(
-                width=self.line_width,
-                color=BasePlot._fig.get_elem(parent),
-                dash=BasePlot._fig.get_elem(child, "dash"),
-            ),
-            marker=dict(
-                symbol=BasePlot._fig.get_elem(child, "marker"),
-                size=self.marker_size,
-                color=BasePlot._fig.get_elem(parent),
-                line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-            ),
+            line={
+                "width": self.line_width,
+                "color": BasePlot._fig.get_elem(parent),
+                "dash": BasePlot._fig.get_elem(child, "dash"),
+            },
+            marker={
+                "symbol": BasePlot._fig.get_elem(child, "marker"),
+                "size": self.marker_size,
+                "color": BasePlot._fig.get_elem(parent),
+                "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+            },
             hovertemplate=kwargs.pop(
                 "hovertemplate",
-                f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>"
+                f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>",
             ),
             name=kwargs.pop("name", child or parent),
             legendgroup=kwargs.pop("legendgroup", parent),
             legendgrouptitle=kwargs.pop(
                 "legendgrouptitle",
-                dict(text=parent, font_size=self.label_fontsize) if child else None,
+                {"text": parent, "font_size": self.label_fontsize} if child else None,
             ),
             showlegend=BasePlot._fig.showlegend(f"{parent}-{child}", legend),
             **kwargs,
@@ -469,7 +475,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             y1=1 if y == "diagonal" else y,
             xref=f"{xaxis} domain",
             yref=f"{yaxis} domain" if y == "diagonal" else yaxis,
-            line=dict(width=1, color="black", dash="dash"),
+            line={"width": 1, "color": "black", "dash": "dash"},
             opacity=0.6,
             layer="below",
         )
@@ -526,12 +532,14 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             if isinstance(ax, tuple):
                 fig.update_layout(
                     {
-                        f"{ax[0]}_title": dict(
-                            text=kwargs.get("xlabel"), font_size=self.label_fontsize
-                        ),
-                        f"{ax[1]}_title": dict(
-                            text=kwargs.get("ylabel"), font_size=self.label_fontsize
-                        ),
+                        f"{ax[0]}_title": {
+                            "text": kwargs.get("xlabel"),
+                            "font_size": self.label_fontsize,
+                        },
+                        f"{ax[1]}_title": {
+                            "text": kwargs.get("ylabel"),
+                            "font_size": self.label_fontsize,
+                        },
                         f"{ax[0]}_range": kwargs.get("xlim"),
                         f"{ax[1]}_range": kwargs.get("ylim"),
                         f"{ax[0]}_automargin": True,
@@ -557,50 +565,52 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                     else:
                         title = {"text": title, **default_title}
 
-                    fig.update_layout(dict(annotations=fig.layout.annotations + (title,)))
+                    fig.update_layout({"annotations": (*fig.layout.annotations, title)})
 
             if not BasePlot._fig.is_canvas and kwargs.get("plotname"):
-                default_title = dict(
-                    x=0.5,
-                    y=1,
-                    pad=dict(t=15, b=15),
-                    xanchor="center",
-                    yanchor="top",
-                    xref="paper",
-                    font_size=self.title_fontsize,
-                )
+                default_title = {
+                    "x": 0.5,
+                    "y": 1,
+                    "pad": {"t": 15, "b": 15},
+                    "xanchor": "center",
+                    "yanchor": "top",
+                    "xref": "paper",
+                    "font_size": self.title_fontsize,
+                }
                 if isinstance(title := kwargs.get("title"), dict):
                     title = default_title | title
                 else:
                     title = {"text": title, **default_title}
 
-                default_legend = dict(
-                    traceorder="grouped",
-                    groupclick=kwargs.get("groupclick", "toggleitem"),
-                    font_size=self.label_fontsize,
-                    bgcolor="rgba(255, 255, 255, 0.5)",
-                )
+                default_legend = {
+                    "traceorder": "grouped",
+                    "groupclick": kwargs.get("groupclick", "toggleitem"),
+                    "font_size": self.label_fontsize,
+                    "bgcolor": "rgba(255, 255, 255, 0.5)",
+                }
                 if isinstance(legend := kwargs.get("legend"), str):
                     position = {}
                     if legend == "upper left":
-                        position = dict(x=0.01, y=0.99, xanchor="left", yanchor="top")
+                        position = {"x": 0.01, "y": 0.99, "xanchor": "left", "yanchor": "top"}
                     elif legend == "lower left":
-                        position = dict(x=0.01, y=0.01, xanchor="left", yanchor="bottom")
+                        position = {"x": 0.01, "y": 0.01, "xanchor": "left", "yanchor": "bottom"}
                     elif legend == "upper right":
-                        position = dict(x=0.99, y=0.99, xanchor="right", yanchor="top")
+                        position = {"x": 0.99, "y": 0.99, "xanchor": "right", "yanchor": "top"}
                     elif legend == "lower right":
-                        position = dict(x=0.99, y=0.01, xanchor="right", yanchor="bottom")
+                        position = {"x": 0.99, "y": 0.01, "xanchor": "right", "yanchor": "bottom"}
                     elif legend == "upper center":
-                        position = dict(x=0.5, y=0.99, xanchor="center", yanchor="top")
+                        position = {"x": 0.5, "y": 0.99, "xanchor": "center", "yanchor": "top"}
                     elif legend == "lower center":
-                        position = dict(x=0.5, y=0.01, xanchor="center", yanchor="bottom")
+                        position = {"x": 0.5, "y": 0.01, "xanchor": "center", "yanchor": "bottom"}
                     elif legend == "center left":
-                        position = dict(x=0.01, y=0.5, xanchor="left", yanchor="middle")
+                        position = {"x": 0.01, "y": 0.5, "xanchor": "left", "yanchor": "middle"}
                     elif legend == "center right":
-                        position = dict(x=0.99, y=0.5, xanchor="right", yanchor="middle")
+                        position = {"x": 0.99, "y": 0.5, "xanchor": "right", "yanchor": "middle"}
                     elif legend == "center":
-                        position = dict(x=0.5, y=0.5, xanchor="center", yanchor="middle")
+                        position = {"x": 0.5, "y": 0.5, "xanchor": "center", "yanchor": "middle"}
+
                     legend = default_legend | position
+
                 elif isinstance(legend, dict):
                     legend = default_legend | legend
 
@@ -611,9 +621,9 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                     title=title,
                     legend=legend,
                     showlegend=bool(kwargs.get("legend")),
-                    hoverlabel=dict(font_size=self.label_fontsize),
+                    hoverlabel={"font_size": self.label_fontsize},
                     font_size=self.tick_fontsize,
-                    margin=dict(l=50, b=50, r=0, t=25 + space1 + space2, pad=0),
+                    margin={"l": 50, "b": 50, "r": 0, "t": 25 + space1 + space2, "pad": 0},
                     width=kwargs["figsize"][0],
                     height=kwargs["figsize"][1],
                 )

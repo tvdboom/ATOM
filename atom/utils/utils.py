@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -76,6 +74,7 @@ T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 
 # Classes ========================================================== >>
 
+
 class NotFittedError(ValueError, AttributeError):
     """Exception called when the instance is not yet fitted.
 
@@ -124,7 +123,7 @@ class Goal(Enum):
                 return Task.multiclass_multioutput_classification
         elif isinstance(y.iloc[0], sequence_t):
             return Task.multilabel_classification
-        elif y.nunique() == 1:
+        elif y.nunique() == 1:  # noqa: PD101
             raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
         elif y.nunique() == 2:
             return Task.binary_classification
@@ -473,7 +472,7 @@ class XGBMetric:
         self.task = task
 
     @property
-    def __name__(self) -> str:
+    def __name__(self) -> str:  # noqa: A003
         """Return the scorer's name."""
         return self.scorer.name
 
@@ -510,35 +509,17 @@ class Table:
     Parameters
     ----------
     headers: sequence
-        Name of each column in the table. If an element is a tuple,
-        the second element should be the position of the text in the
-        cell (left or right).
+        Name of each column in the table.
 
     spaces: sequence
         Width of each column. Should have the same length as `headers`.
 
-    default_pos: str, default="right"
-        Default position of the text in the cell.
-
     """
 
-    def __init__(
-        self,
-        headers: Sequence[str | tuple[str, str]],
-        spaces: Sequence[Int],
-        default_pos: str = "right",
-    ):
-        self.headers = []
-        self.positions = []
-        for header in headers:
-            if isinstance(header, tuple):
-                self.headers.append(header[0])
-                self.positions.append(header[1])
-            else:
-                self.headers.append(header)
-                self.positions.append(default_pos)
-
+    def __init__(self, headers: Sequence[str], spaces: Sequence[Int]):
+        self.headers = headers
         self.spaces = spaces
+        self.positions = ["left"] + (len(headers) - 1) * ["right"]
 
     @staticmethod
     def to_cell(text: Scalar | str, position: str, space: Int) -> str:
@@ -550,7 +531,7 @@ class Table:
             Value to add to the cell.
 
         position: str
-            Position of text in cell. Choose from: right, left.
+            Position of the text in cell. Choose from: right, left.
 
         space: int
             Maximum char length in the cell.
@@ -563,7 +544,7 @@ class Table:
         """
         text = str(text)
         if len(text) > space:
-            text = text[:space - 2] + ".."
+            text = text[: space - 2] + ".."
 
         if position == "right":
             return text.rjust(space)
@@ -579,7 +560,7 @@ class Table:
             New row with column names.
 
         """
-        return self.print({k: k for k in self.headers})
+        return self.pprint({k: k for k in self.headers})
 
     def print_line(self) -> str:
         """Print a line with dashes.
@@ -593,9 +574,9 @@ class Table:
             New row with dashes.
 
         """
-        return self.print({k: "-" * s for k, s in zip(self.headers, self.spaces)})
+        return self.pprint({k: "-" * s for k, s in zip(self.headers, self.spaces, strict=True)})
 
-    def print(self, sequence: dict[str, Any] | pd.Series) -> str:
+    def pprint(self, sequence: dict[str, Any] | pd.Series) -> str:
         """Convert a sequence to a nice formatted table row.
 
         Parameters
@@ -610,8 +591,8 @@ class Table:
 
         """
         out = []
-        for header, pos, space in zip(self.headers, self.positions, self.spaces):
-            out.append(self.to_cell(rnd(sequence.get(header, "---")), pos, space))
+        for h, p, s in zip(self.headers, self.positions, self.spaces, strict=True):
+            out.append(self.to_cell(rnd(sequence.get(h, "---")), p, s))
 
         return "| " + " | ".join(out) + " |"
 
@@ -671,10 +652,7 @@ class TrialsCallback:
                     if estimator := trial_info["estimator"]:
                         # Mlflow only accepts params with char length <=250
                         mlflow.log_params(
-                            {
-                                k: v for k, v in estimator.get_params().items()
-                                if len(str(v)) <= 250
-                            }
+                            {k: v for k, v in estimator.get_params().items() if len(str(v)) <= 250}
                         )
 
                         mlflow.sklearn.log_model(
@@ -688,17 +666,14 @@ class TrialsCallback:
                         )
                     else:
                         mlflow.log_params(
-                            {
-                                k: v for k, v in trial.params.items()
-                                if len(str(v)) <= 250
-                            }
+                            {k: v for k, v in trial.params.items() if len(str(v)) <= 250}
                         )
 
         if self.n_jobs == 1:
             # Print overview of trials
             trial_info["time_trial"] = time_to_str(trial_info["time_trial"])
             trial_info["time_ht"] = time_to_str(trial_info["time_ht"])
-            self.T._log(self._table.print(trial_info), 2)
+            self.T._log(self._table.pprint(trial_info), 2)
 
     def create_table(self) -> Table:
         """Create the trial table.
@@ -709,7 +684,7 @@ class TrialsCallback:
             Object to display the trial overview.
 
         """
-        headers = [("trial", "left")] + list(self.T._ht["distributions"])
+        headers = ["trial", *self.T._ht["distributions"]]
         for m in self.T._metric:
             headers.extend([m.name, "best_" + m.name])
         headers.extend(["time_trial", "time_ht", "state"])
@@ -727,13 +702,10 @@ class TrialsCallback:
             spaces.append(max(7, len(name), options))
 
         spaces.extend(
-            [
-                max(7, len(column))
-                for column in headers[1 + len(self.T._ht["distributions"]):-1]
-            ]
+            [max(7, len(column)) for column in headers[1 + len(self.T._ht["distributions"]) : -1]]
         )
 
-        return Table(headers, spaces + [8])
+        return Table(headers, [*spaces, 8])
 
 
 class PlotCallback:
@@ -759,12 +731,8 @@ class PlotCallback:
     max_len = 15  # Maximum trials to show at once in the plot
 
     def __init__(self, name: str, metric: list[str], aesthetics: Aesthetics):
-        self.y1: dict[int, deque] = {
-            i: deque(maxlen=self.max_len) for i in range(len(metric))
-        }
-        self.y2: dict[int, deque] = {
-            i: deque(maxlen=self.max_len) for i in range(len(metric))
-        }
+        self.y1: dict[int, deque] = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
+        self.y2: dict[int, deque] = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
 
         traces: list[go.Scatter] = []
         colors = cycle(aesthetics.palette)
@@ -774,13 +742,13 @@ class PlotCallback:
                 [
                     go.Scatter(
                         mode="lines+markers",
-                        line=dict(width=aesthetics.line_width, color=color),
-                        marker=dict(
-                            symbol="circle",
-                            size=aesthetics.marker_size,
-                            line=dict(width=1, color="white"),
-                            opacity=1,
-                        ),
+                        line={"width": aesthetics.line_width, "color": color},
+                        marker={
+                            "symbol": "circle",
+                            "size": aesthetics.marker_size,
+                            "line": {"width": 1, "color": "white"},
+                            "opacity": 1,
+                        },
                         name=met,
                         legendgroup=met,
                         xaxis="x2",
@@ -788,66 +756,72 @@ class PlotCallback:
                     ),
                     go.Scatter(
                         mode="lines+markers",
-                        line=dict(width=aesthetics.line_width, color=color),
-                        marker=dict(
-                            line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                            symbol="circle",
-                            size=aesthetics.marker_size,
-                            opacity=1,
-                        ),
+                        line={"width": aesthetics.line_width, "color": color},
+                        marker={
+                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                            "symbol": "circle",
+                            "size": aesthetics.marker_size,
+                            "opacity": 1,
+                        },
                         name=met,
                         legendgroup=met,
                         showlegend=False,
                         xaxis="x2",
                         yaxis="y2",
-                    )
+                    ),
                 ]
             )
 
         self.figure = go.FigureWidget(
             data=traces,
-            layout=dict(
-                xaxis1=dict(domain=(0, 1), anchor="y1", showticklabels=False),
-                yaxis1=dict(
-                    domain=(0.31, 1.0),
-                    title=dict(text="Score", font_size=aesthetics.label_fontsize),
-                    anchor="x1",
-                ),
-                xaxis2=dict(
-                    domain=(0, 1),
-                    title=dict(text="Trial", font_size=aesthetics.label_fontsize),
-                    anchor="y2",
-                ),
-                yaxis2=dict(
-                    domain=(0, 0.29),
-                    title=dict(text="d", font_size=aesthetics.label_fontsize),
-                    anchor="x2",
-                ),
-                title=dict(
-                    text=f"Hyperparameter tuning for {name}",
-                    x=0.5,
-                    y=1,
-                    pad=dict(t=15, b=15),
-                    xanchor="center",
-                    yanchor="top",
-                    xref="paper",
-                    font_size=aesthetics.title_fontsize,
-                ),
-                legend=dict(
-                    x=0.99,
-                    y=0.99,
-                    xanchor="right",
-                    yanchor="top",
-                    font_size=aesthetics.label_fontsize,
-                    bgcolor="rgba(255, 255, 255, 0.5)",
-                ),
-                hovermode="x unified",
-                hoverlabel=dict(font_size=aesthetics.label_fontsize),
-                font_size=aesthetics.tick_fontsize,
-                margin=dict(l=0, b=0, r=0, t=25 + aesthetics.title_fontsize, pad=0),
-                width=900,
-                height=800,
-            )
+            layout={
+                "xaxis1": {"domain": (0, 1), "anchor": "y1", "showticklabels": False},
+                "yaxis1": {
+                    "domain": (0.31, 1.0),
+                    "title": {"text": "Score", "font_size": aesthetics.label_fontsize},
+                    "anchor": "x1",
+                },
+                "xaxis2": {
+                    "domain": (0, 1),
+                    "title": {"text": "Trial", "font_size": aesthetics.label_fontsize},
+                    "anchor": "y2",
+                },
+                "yaxis2": {
+                    "domain": (0, 0.29),
+                    "title": {"text": "d", "font_size": aesthetics.label_fontsize},
+                    "anchor": "x2",
+                },
+                "title": {
+                    "text": f"Hyperparameter tuning for {name}",
+                    "x": 0.5,
+                    "y": 1,
+                    "pad": {"t": 15, "b": 15},
+                    "xanchor": "center",
+                    "yanchor": "top",
+                    "xref": "paper",
+                    "font_size": aesthetics.title_fontsize,
+                },
+                "legend": {
+                    "x": 0.99,
+                    "y": 0.99,
+                    "xanchor": "right",
+                    "yanchor": "top",
+                    "font_size": aesthetics.label_fontsize,
+                    "bgcolor": "rgba(255, 255, 255, 0.5)",
+                },
+                "hovermode": "x unified",
+                "hoverlabel": {"font_size": aesthetics.label_fontsize},
+                "font_size": aesthetics.tick_fontsize,
+                "margin": {
+                    "l": 0,
+                    "b": 0,
+                    "r": 0,
+                    "t": 25 + aesthetics.title_fontsize,
+                    "pad": 0,
+                },
+                "width": 900,
+                "height": 800,
+            },
         )
 
         display(self.figure)
@@ -874,9 +848,9 @@ class PlotCallback:
                 self.y2[i].append(None)
 
             # Update trace data
-            self.figure.data[i * 2].x = list(x[:len(self.y1[i])])
+            self.figure.data[i * 2].x = list(x[: len(self.y1[i])])
             self.figure.data[i * 2].y = list(self.y1[i])
-            self.figure.data[i * 2 + 1].x = list(x[:len(self.y1[i])])
+            self.figure.data[i * 2 + 1].x = list(x[: len(self.y1[i])])
             self.figure.data[i * 2 + 1].y = list(self.y2[i])
 
 
@@ -947,11 +921,11 @@ class ShapExplanation:
 
         """
         # Pass masker as np.array and feature names separately for modin frames
-        kwargs = dict(
-            masker=self.branch.X_train.to_numpy(),
-            feature_names=list(self.branch.features),
-            seed=self.random_state,
-        )
+        kwargs = {
+            "masker": self.branch.X_train.to_numpy(),
+            "feature_names": list(self.branch.features),
+            "seed": self.random_state,
+        }
         try:  # Fails when model does not fit standard explainers (e.g., ensembles)
             return Explainer(self.estimator, **kwargs)
         except TypeError:
@@ -1005,7 +979,7 @@ class ShapExplanation:
                     raise ValueError(
                         "Failed to get shap's explainer for estimator "
                         f"{self.estimator} with task {self.task}. Exception: {ex}"
-                    )
+                    ) from None
 
             # Remember shap values in the _shap_values attribute
             self._shap_values = bk.concat(
@@ -1061,7 +1035,7 @@ class ClassMap:
             try:
                 return self.__data[key]
             except IndexError:
-                raise KeyError(key)
+                raise KeyError(key) from None
         else:
             for data in self.__data:
                 if self._conv(getattr(data, self.__key)) == self._conv(key):
@@ -1107,7 +1081,6 @@ class ClassMap:
             try:
                 self.__data = [e if self[key] == e else value for e in self.__data]
             except KeyError:
-                assert key == getattr(value, self.__key)
                 self.append(value)
 
     def __delitem__(self, key: Any):
@@ -1134,7 +1107,7 @@ class ClassMap:
         """Reverse order of the mapping."""
         yield from reversed(list(self.__data))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare equality of the instances."""
         return self.__data == other
 
@@ -1188,6 +1161,7 @@ class ClassMap:
 
 
 # Functions ======================================================== >>
+
 
 def flt(x: Any) -> Any:
     """Return item from sequence with just that item.
@@ -1532,7 +1506,7 @@ def check_dependency(name: str):
         )
 
 
-def check_nltk_module(module: str, quiet: bool):
+def check_nltk_module(module: str, *, quiet: bool):
     """Check if a module for the NLTK package is avaialble.
 
     If the module isn't available, it's downloaded.
@@ -1724,14 +1698,12 @@ def get_corpus(df: DataFrame) -> str:
     try:
         corpus = next(col for col in df.columns if col.lower() == "corpus")
 
-        if not is_bearable(df[corpus].iat[0], (str, Sequence[str])):
-            raise TypeError(
-                "The corpus should consist of a string or sequence of strings."
-            )
+        if not is_bearable(df[corpus].iloc[0], (str, Sequence[str])):
+            raise TypeError("The corpus should consist of a string or sequence of strings.")
         else:
             return corpus
-    except StopIteration:
-        raise ValueError("The provided dataset does not contain a column named corpus.")
+    except StopIteration as ex:
+        raise ValueError("The provided dataset does not contain a column named corpus.") from ex
 
 
 def time_to_str(t: Scalar) -> str:
@@ -1782,7 +1754,7 @@ def n_cols(data: XSelector | YSelector) -> int:
         return array.ndim  # Can be zero when input is a dict
 
 
-def to_pyarrow(column: Series, inverse: bool = False) -> Dtype:
+def to_pyarrow(column: Series, *, inverse: bool = False) -> Dtype:
     """Get the pyarrow dtype corresponding to a series.
 
     Parameters
@@ -1817,7 +1789,8 @@ def to_df(
     index: Axes | None = ...,
     columns: Axes | None = ...,
     dtype: DtypeArg | None = ...,
-) -> None: ...
+) -> None:
+    ...
 
 
 @overload
@@ -1826,7 +1799,8 @@ def to_df(
     index: Axes | None = ...,
     columns: Axes | None = ...,
     dtype: DtypeArg | None = ...,
-) -> DataFrame: ...
+) -> DataFrame:
+    ...
 
 
 def to_df(
@@ -1863,7 +1837,7 @@ def to_df(
         if not isinstance(data, bk.DataFrame):
             # Assign default column names (dict already has column names)
             if not isinstance(data, dict | Pandas) and columns is None:
-                columns = [f"x{str(i)}" for i in range(n_cols(data))]
+                columns = [f"x{i}" for i in range(n_cols(data))]
 
             if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
                 # Convert cuML to pandas
@@ -1875,7 +1849,7 @@ def to_df(
                     columns=columns,
                 )
             else:
-                data_c = pd.DataFrame(data, index, columns)  # type: ignore
+                data_c = pd.DataFrame(data, index, columns)  # type: ignore[arg-type, misc]
         else:
             data_c = data
 
@@ -1896,7 +1870,8 @@ def to_series(
     index: Axes | None = ...,
     name: Hashable | None = ...,
     dtype: Dtype | None = ...,
-) -> None: ...
+) -> None:
+    ...
 
 
 @overload
@@ -1905,7 +1880,8 @@ def to_series(
     index: Axes | None = ...,
     name: Hashable | None = ...,
     dtype: Dtype | None = ...,
-) -> Series: ...
+) -> Series:
+    ...
 
 
 def to_series(
@@ -1967,7 +1943,8 @@ def to_pandas(
     columns: Axes | None = ...,
     name: str | None = ...,
     dtype: DtypeArg | None = ...,
-) -> None: ...
+) -> None:
+    ...
 
 
 @overload
@@ -1977,7 +1954,8 @@ def to_pandas(
     columns: Axes | None = ...,
     name: str | None = ...,
     dtype: DtypeArg | None = ...,
-) -> Pandas: ...
+) -> Pandas:
+    ...
 
 
 def to_pandas(
@@ -2017,13 +1995,14 @@ def to_pandas(
 
     """
     if n_cols(data) == 1:
-        return to_series(data, index=index, name=name, dtype=dtype)  # type: ignore
+        return to_series(data, index=index, name=name, dtype=dtype)  # type: ignore[misc, arg-type]
     else:
         return to_df(data, index=index, columns=columns, dtype=dtype)
 
 
 def check_is_fitted(
     obj: Any,
+    *,
     exception: Bool = True,
     attributes: str | Sequence[str] | None = None,
 ) -> bool:
@@ -2118,34 +2097,34 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
 
     """
     if isinstance(metric, str):
-        custom_acronyms = dict(
-            ap="average_precision",
-            ba="balanced_accuracy",
-            auc="roc_auc",
-            logloss="neg_log_loss",
-            ev="explained_variance",
-            me="max_error",
-            mae="neg_mean_absolute_error",
-            mse="neg_mean_squared_error",
-            rmse="neg_root_mean_squared_error",
-            msle="neg_mean_squared_log_error",
-            mape="neg_mean_absolute_percentage_error",
-            medae="neg_median_absolute_error",
-            poisson="neg_mean_poisson_deviance",
-            gamma="neg_mean_gamma_deviance",
-        )
+        custom_acronyms = {
+            "ap": "average_precision",
+            "ba": "balanced_accuracy",
+            "auc": "roc_auc",
+            "logloss": "neg_log_loss",
+            "ev": "explained_variance",
+            "me": "max_error",
+            "mae": "neg_mean_absolute_error",
+            "mse": "neg_mean_squared_error",
+            "rmse": "neg_root_mean_squared_error",
+            "msle": "neg_mean_squared_log_error",
+            "mape": "neg_mean_absolute_percentage_error",
+            "medae": "neg_median_absolute_error",
+            "poisson": "neg_mean_poisson_deviance",
+            "gamma": "neg_mean_gamma_deviance",
+        }
 
-        custom_scorers = dict(
-            tn=true_negatives,
-            fp=false_positives,
-            fn=false_negatives,
-            tp=true_positives,
-            fpr=false_positive_rate,
-            tpr=true_positive_rate,
-            tnr=true_negative_rate,
-            fnr=false_negative_rate,
-            mcc=matthews_corrcoef,
-        )
+        custom_scorers = {
+            "tn": true_negatives,
+            "fp": false_positives,
+            "fn": false_negatives,
+            "tp": true_positives,
+            "fpr": false_positive_rate,
+            "tpr": true_positive_rate,
+            "tnr": true_negative_rate,
+            "fnr": false_negative_rate,
+            "mcc": matthews_corrcoef,
+        }
 
         metric = metric.lower()
         if metric in get_scorer_names():
@@ -2190,6 +2169,7 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
 
 # Pipeline functions =============================================== >>
 
+
 def name_cols(
     array: TReturn,
     original_df: DataFrame,
@@ -2230,12 +2210,13 @@ def name_cols(
             lambda c: np.array_equal(
                 a1=c,
                 a2=col,
-                equal_nan=is_numeric_dtype(c) and np.issubdtype(col.dtype, np.number)),
+                equal_nan=is_numeric_dtype(c) and np.issubdtype(col.dtype, np.number),
+            ),
         )
 
-        if any(mask) and mask[mask].index.values[0] not in temp_cols:
+        if any(mask) and mask[mask].index[0] not in temp_cols:
             # If the column is equal, use the existing name
-            temp_cols.append(mask[mask].index.values[0])
+            temp_cols.append(mask[mask].index[0])
         else:
             # If the column is new, use a default name
             counter = 0
@@ -2285,9 +2266,7 @@ def get_col_order(
 
         # Add all derivative columns: columns that originate from another
         # and start with its progenitor name, e.g., one-hot encoded columns
-        columns.extend(
-            [c for c in df.columns if c.startswith(f"{col}_") and c not in og_columns]
-        )
+        columns.extend([c for c in df.columns if c.startswith(f"{col}_") and c not in og_columns])
 
     # Add remaining new columns (non-derivatives)
     columns.extend([col for col in df.columns if col not in columns])
@@ -2338,13 +2317,13 @@ def reorder_cols(
     # Force new indices on old dataset for merge
     try:
         original_df.index = df.index
-    except ValueError:  # Length mismatch
+    except ValueError as ex:  # Length mismatch
         raise IndexError(
             f"Length of values ({len(df)}) does not match length of "
             f"index ({len(original_df)}). This usually happens when "
             "transformations that drop rows aren't applied on all "
             "the columns."
-        )
+        ) from ex
 
     columns = get_col_order(df, original_df.columns.tolist(), col_names)
 
@@ -2631,6 +2610,7 @@ def fit_transform_one(
 
 # Patches ========================================================== >>
 
+
 def fit_and_score(*args, **kwargs) -> dict[str, Any]:
     """Wrap sklearn's _fit_and_score function.
 
@@ -2667,6 +2647,7 @@ def score(f: Callable) -> Callable:
 
 
 # Decorators ======================================================= >>
+
 
 def cache(f: Callable) -> Callable:
     """Cache method utility.
@@ -2775,7 +2756,7 @@ def composed(*decs) -> Callable:
 
 def crash(
     f: Callable,
-    cache: dict[str, Exception | None] = {"last_exception": None},
+    cache: dict[str, Exception | None] = {"last_exception": None},  # noqa: B006
 ) -> Callable:
     """Save program crashes to log file.
 
@@ -2855,6 +2836,7 @@ def wrap_methods(f: Callable) -> Callable:
 
 
 # Custom scorers =================================================== >>
+
 
 def true_negatives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
     """Outcome where the model correctly predicts the negative class."""

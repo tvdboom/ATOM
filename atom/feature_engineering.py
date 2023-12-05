@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -212,13 +210,11 @@ class FeatureExtractor(TransformerMixin):
                 )
 
                 # If >30% values are NaT, the conversion was unsuccessful
-                if 100. * col_dt.isna().sum() / len(X) >= 30:
+                if 100.0 * col_dt.isna().sum() / len(X) >= 30:
                     continue  # Skip this column
                 else:
                     i += 1
-                    self._log(
-                        f" --> Extracting features from categorical column {name}.", 1
-                    )
+                    self._log(f" --> Extracting features from categorical column {name}.", 1)
 
             # Extract features from the datetime column
             for fx in map(str.lower, lst(self.features)):
@@ -233,8 +229,7 @@ class FeatureExtractor(TransformerMixin):
                 # Skip if the information is not present in the format
                 if not isinstance(values, series_t):
                     self._log(
-                        f"   --> Extracting feature {fx} failed. "
-                        "Result is not a Series.dt.", 2
+                        f"   --> Extracting feature {fx} failed. Result is not a Series.dt.", 2
                     )
                     continue
 
@@ -459,18 +454,18 @@ class FeatureGenerator(TransformerMixin):
             Estimator instance.
 
         """
-        all_operators = dict(
-            add="add_numeric",
-            sub="subtract_numeric",
-            mul="multiply_numeric",
-            div="divide_numeric",
-            abs="absolute",
-            sqrt="square_root",
-            log="natural_logarithm",
-            sin="sine",
-            cos="cosine",
-            tan="tangent",
-        )
+        all_operators = {
+            "add": "add_numeric",
+            "sub": "subtract_numeric",
+            "mul": "multiply_numeric",
+            "div": "divide_numeric",
+            "abs": "absolute",
+            "sqrt": "square_root",
+            "log": "natural_logarithm",
+            "sin": "sine",
+            "cos": "cosine",
+            "tan": "tangent",
+        }
 
         if not self.operators:  # None or empty list
             operators = list(all_operators)
@@ -492,7 +487,7 @@ class FeatureGenerator(TransformerMixin):
             )
 
             # Select the new features (dfs also returns originals)
-            self._dfs = self._dfs[X.shape[1] - 1:]
+            self._dfs = self._dfs[X.shape[1] - 1 :]
 
             # Get a random selection of features
             if self.n_features and self.n_features < len(self._dfs):
@@ -558,16 +553,15 @@ class FeatureGenerator(TransformerMixin):
             df = pd.DataFrame(
                 data=[
                     ["", str(fx), fx.fitness_]
-                    for i, fx in enumerate(self.gfg_) if str(fx) not in X.columns
+                    for i, fx in enumerate(self.gfg_)
+                    if str(fx) not in X.columns
                 ],
                 columns=["name", "description", "fitness"],
             )
 
             # Check if any new features remain
             if len(df) == 0:
-                self._log(
-                    " --> The genetic algorithm didn't find any improving features.", 2
-                )
+                self._log(" --> The genetic algorithm didn't find any improving features.", 2)
                 return X
 
             # Select the n_features with the highest fitness
@@ -578,7 +572,9 @@ class FeatureGenerator(TransformerMixin):
             if len(df) != self.n_features:
                 self._log(
                     f" --> Dropping {(self.n_features or len(self.gfg_)) - len(df)} "
-                    "features due to repetition.", 2)
+                    "features due to repetition.",
+                    2,
+                )
 
             for i, array in enumerate(self.gfg_.transform(X)[:, df.index].T):
                 # If the column is new, use a default name
@@ -587,7 +583,7 @@ class FeatureGenerator(TransformerMixin):
                     name = f"x{X.shape[1] + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
-                        df.iat[i, 0] = name
+                        df.iloc[i, 0] = name
                         break
                     else:
                         counter += 1
@@ -734,7 +730,7 @@ class FeatureGrouper(TransformerMixin):
                         raise ValueError(
                             "Invalid value for the operators parameter. Value "
                             f"{operator} is not an attribute of numpy nor scipy.stats."
-                        )
+                        ) from None
 
                 try:
                     X[f"{operator}({name})"] = result
@@ -742,7 +738,7 @@ class FeatureGrouper(TransformerMixin):
                     raise ValueError(
                         "Invalid value for the operators parameter. Value "
                         f"{operator} doesn't return a one-dimensional array."
-                    )
+                    ) from None
 
             to_drop.extend(group)
             self._log(f" --> Group {name} successfully created.", 2)
@@ -917,21 +913,22 @@ class FeatureSelector(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "sklearnex"
             - "cuml"
 
@@ -1033,7 +1030,7 @@ class FeatureSelector(TransformerMixin):
         max_correlation: FloatZeroToOneInc | None = 1.0,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         backend: Backend = "loky",
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
@@ -1115,19 +1112,19 @@ class FeatureSelector(TransformerMixin):
         self._low_variance: dict[Hashable, tuple[Hashable, float]] = {}
         self._n_features = None
 
-        strategies = dict(
-            univariate="SelectKBest",
-            pca="PCA",
-            sfm="SelectFromModel",
-            sfs="SequentialFeatureSelector",
-            rfe="RFE",
-            rfecv="RFECV",
-            pso=ParticleSwarmOptimization,
-            hho=HarrisHawkOptimization,
-            gwo=GreyWolfOptimization,
-            dfo=DragonFlyOptimization,
-            go=GeneticOptimization,
-        )
+        strategies = {
+            "univariate": "SelectKBest",
+            "pca": "PCA",
+            "sfm": "SelectFromModel",
+            "sfs": "SequentialFeatureSelector",
+            "rfe": "RFE",
+            "rfecv": "RFECV",
+            "pso": ParticleSwarmOptimization,
+            "hho": HarrisHawkOptimization,
+            "gwo": GreyWolfOptimization,
+            "dfo": DragonFlyOptimization,
+            "go": GeneticOptimization,
+        }
 
         if isinstance(self.strategy, str):
             if self.strategy not in ("univariate", "pca"):
@@ -1155,7 +1152,8 @@ class FeatureSelector(TransformerMixin):
                             goal=goal,
                             **{
                                 x: getattr(self, x)
-                                for x in BaseTransformer.attrs if hasattr(self, x)
+                                for x in BaseTransformer.attrs
+                                if hasattr(self, x)
                             },
                         )
                         model.task = goal.infer_task(y)
@@ -1169,7 +1167,7 @@ class FeatureSelector(TransformerMixin):
                     solver = self.solver
 
         elif self.kwargs:
-            kw = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
+            kw = ", ".join([f"{k}={v}" for k, v in self.kwargs.items()])
             raise ValueError(
                 f"Keyword arguments ({kw}) are specified for "
                 "the strategy estimator but no strategy is selected."
@@ -1220,7 +1218,7 @@ class FeatureSelector(TransformerMixin):
             for name, column in X.select_dtypes(exclude="number").items():
                 for category, count in column.value_counts().items():
                     if count >= max_repeated:
-                        self._low_variance[name] = (category, 100. * count / len(X))
+                        self._low_variance[name] = (category, 100.0 * count / len(X))
                         X = X.drop(columns=name)
                         break
 
@@ -1262,7 +1260,7 @@ class FeatureSelector(TransformerMixin):
                                 "corr_feature": [", ".join(corr_feature)],
                                 "corr_value": [", ".join(corr_value)],
                             }
-                        )
+                        ),
                     ],
                     ignore_index=True,
                 )
@@ -1273,13 +1271,13 @@ class FeatureSelector(TransformerMixin):
             return self  # Exit feature_engineering
 
         elif self.strategy == "univariate":
-            solvers_dct = dict(
-                f_classif=f_classif,
-                f_regression=f_regression,
-                mutual_info_classif=mutual_info_classif,
-                mutual_info_regression=mutual_info_regression,
-                chi2=chi2,
-            )
+            solvers_dct = {
+                "f_classif": f_classif,
+                "f_regression": f_regression,
+                "mutual_info_classif": mutual_info_classif,
+                "mutual_info_regression": mutual_info_regression,
+                "chi2": chi2,
+            }
 
             if not self.solver:
                 raise ValueError(
@@ -1327,9 +1325,7 @@ class FeatureSelector(TransformerMixin):
                 **self.kwargs,
             ).fit(X)
 
-            self._estimator._comps = min(
-                self._estimator.components_.shape[0], self._n_features
-            )
+            self._estimator._comps = min(self._estimator.components_.shape[0], self._n_features)
 
         elif self.strategy == "sfm":
             # If any of these attr exists, the model is already fitted
@@ -1480,7 +1476,8 @@ class FeatureSelector(TransformerMixin):
             self._log(
                 f" --> Feature {fx} was removed due to high variance. "
                 f"Value {h_variance[0]} was the most repeated value with "
-                f"{h_variance[1]} ({h_variance[1] / len(X):.1f}%) occurrences.", 2
+                f"{h_variance[1]} ({h_variance[1] / len(X):.1f}%) occurrences.",
+                2,
             )
             X = X.drop(columns=fx)
 
@@ -1488,7 +1485,8 @@ class FeatureSelector(TransformerMixin):
         for fx, l_variance in self._low_variance.items():
             self._log(
                 f" --> Feature {fx} was removed due to low variance. Value "
-                f"{l_variance[0]} repeated in {l_variance[1]:.1f}% of the rows.", 2
+                f"{l_variance[0]} repeated in {l_variance[1]:.1f}% of the rows.",
+                2,
             )
             X = X.drop(columns=fx)
 
@@ -1507,14 +1505,16 @@ class FeatureSelector(TransformerMixin):
         elif self.strategy == "univariate":
             self._log(
                 f" --> The univariate test selected "
-                f"{self._n_features} features from the dataset.", 2
+                f"{self._n_features} features from the dataset.",
+                2,
             )
             for n, column in enumerate(X):
                 if not self.univariate_.get_support()[n]:
                     self._log(
                         f"   --> Dropping feature {column} "
                         f"(score: {self.univariate_.scores_[n]:.2f}  "
-                        f"p-value: {self.univariate_.pvalues_[n]:.2f}).", 2
+                        f"p-value: {self.univariate_.pvalues_[n]:.2f}).",
+                        2,
                     )
                     X = X.drop(columns=column)
 
@@ -1525,17 +1525,17 @@ class FeatureSelector(TransformerMixin):
                 self._log("   --> Scaling features...", 2)
                 X = self.scaler_.transform(X)
 
-            X = self.pca_.transform(X).iloc[:, :self.pca_._comps]
+            X = self.pca_.transform(X).iloc[:, : self.pca_._comps]
 
-            var = np.array(self.pca_.explained_variance_ratio_[:self._n_features])
+            var = np.array(self.pca_.explained_variance_ratio_[: self._n_features])
             self._log(f"   --> Keeping {self.pca_._comps} components.", 2)
             self._log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy in ("sfm", "sfs", "rfe", "rfecv"):
             mask = self._estimator.get_support()
             self._log(
-                f" --> {self.strategy} selected "
-                f"{sum(mask)} features from the dataset.", 2
+                f" --> {self.strategy} selected {sum(mask)} features from the dataset.",
+                2,
             )
 
             for n, column in enumerate(X):
@@ -1543,7 +1543,8 @@ class FeatureSelector(TransformerMixin):
                     if hasattr(self._estimator, "ranking_"):
                         self._log(
                             f"   --> Dropping feature {column} "
-                            f"(rank {self._estimator.ranking_[n]}).", 2
+                            f"(rank {self._estimator.ranking_[n]}).",
+                            2,
                         )
                     else:
                         self._log(f"   --> Dropping feature {column}.", 2)
@@ -1552,7 +1553,8 @@ class FeatureSelector(TransformerMixin):
         else:  # Advanced strategies
             self._log(
                 f" --> {self.strategy} selected {len(self._estimator.best_feature_list)} "
-                "features from the dataset.", 2
+                "features from the dataset.",
+                2,
             )
 
             for column in X:

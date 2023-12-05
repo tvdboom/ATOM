@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -244,21 +242,22 @@ class ATOMClassifier(ATOM):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "sklearnex"
             - "cuml"
 
@@ -356,7 +355,7 @@ class ATOMClassifier(ATOM):
         holdout_size: Scalar | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -480,21 +479,22 @@ class ATOMForecaster(ATOM):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "sklearnex"
             - "cuml"
 
@@ -585,7 +585,7 @@ class ATOMForecaster(ATOM):
         holdout_size: Scalar | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -719,21 +719,22 @@ class ATOMRegressor(ATOM):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "sklearnex"
             - "cuml"
 
@@ -830,7 +831,7 @@ class ATOMRegressor(ATOM):
         holdout_size: Scalar | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,

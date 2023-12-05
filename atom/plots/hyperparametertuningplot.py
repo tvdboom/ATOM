@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -69,8 +67,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         """
         if not (models_c := [m for m in models if m._study is not None]):
             raise PermissionError(
-                "This plot method is only available for "
-                "models that ran hyperparameter tuning."
+                "This plot method is only available for models that ran hyperparameter tuning."
             )
 
         return models_c
@@ -371,7 +368,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         models_c = self._get_plot_models(models, ensembles=False)
         models_c = self._check_hyperparams(models_c)
         metric_c = self._get_metric(metric, max_one=True)[0]
-        params_c = len(set([k for m in models_c for k in m._ht["distributions"]]))
+        params_c = len({k for m in models_c for k in m._ht["distributions"]})
         show_c = self._get_show(show, params_c)
 
         fig = self._get_figure()
@@ -385,10 +382,10 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                     x=np.array(list(importances.values())) / sum(importances.values()),
                     y=list(importances),
                     orientation="h",
-                    marker=dict(
-                        color=f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=BasePlot._fig.get_elem(m.name)),
-                    ),
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                    },
                     hovertemplate="%{x}<extra></extra>",
                     name=m.name,
                     legendgroup=m.name,
@@ -400,7 +397,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         fig.update_layout(
             {
-                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"},
                 "bargroupgap": 0.05,
             }
         )
@@ -526,15 +523,13 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                 xaxis, yaxis = BasePlot._fig.get_axes(
                     x=(x_pos, rnd(x_pos + size)),
                     y=(y_pos, rnd(y_pos + size)),
-                    coloraxis=dict(
-                        axes="99",
-                        colorscale=PALETTE.get(
-                            BasePlot._fig.get_elem(model.name), "Blues"
-                        ),
-                        cmin=model.trials[metric_c].min(),
-                        cmax=model.trials[metric_c].max(),
-                        showscale=False,
-                    )
+                    coloraxis={
+                        "axes": "99",
+                        "colorscale": PALETTE.get(BasePlot._fig.get_elem(model.name), "Blues"),
+                        "cmin": model.trials[metric_c].min(),
+                        "cmax": model.trials[metric_c].max(),
+                        "showscale": False,
+                    },
                 )
 
                 fig.add_trace(
@@ -542,13 +537,13 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                         x=model.trials[params_c[y]],
                         y=model.trials[params_c[x + 1]],
                         mode="markers",
-                        marker=dict(
-                            size=self.marker_size,
-                            color=BasePlot._fig.get_elem(model.name),
-                            line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                        ),
+                        marker={
+                            "size": self.marker_size,
+                            "color": BasePlot._fig.get_elem(model.name),
+                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                        },
                         customdata=list(
-                            zip(list(model.trials.index), model.trials[metric_c])
+                            zip(model.trials.index, model.trials[metric_c], strict=True)
                         ),
                         hovertemplate=(
                             f"{params_c[y]}:%{{x}}<br>"
@@ -567,10 +562,10 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                         x=model.trials[params_c[y]],
                         y=model.trials[params_c[x + 1]],
                         z=model.trials[metric_c],
-                        contours=dict(
-                            showlabels=True,
-                            labelfont=dict(size=self.tick_fontsize, color="white")
-                        ),
+                        contours={
+                            "showlabels": True,
+                            "labelfont": {"size": self.tick_fontsize, "color": "white"},
+                        },
                         coloraxis="coloraxis99",
                         hoverinfo="skip",
                         showlegend=False,
@@ -719,7 +714,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             for elem in values:
                 try:
                     numbers.append(it(float(elem)))
-                except (TypeError, ValueError):
+                except (TypeError, ValueError):  # noqa: PERF203
                     categorical.append(str(elem))
 
             return list(map(str, sorted(numbers))) + sorted(categorical)
@@ -739,7 +734,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         )
 
         # Clean and sort dimensions for nicer view
-        dims = [dims[0]] + sorted(dims[1:], key=lambda x: params_c.index(x["label"]))
+        dims = [dims[0], *sorted(dims[1:], key=lambda x: params_c.index(x["label"]))]
         for d in dims:
             if "ticktext" in d:
                 # Skip processing for logarithmic params
@@ -756,25 +751,25 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(
-            coloraxis=dict(
-                colorscale=PALETTE.get(BasePlot._fig.get_elem(model.name), "Blues"),
-                cmin=min(dims[0]["values"]),
-                cmax=max(dims[0]["values"]),
-                title=metric_c,
-                font_size=self.label_fontsize,
-            )
+            coloraxis={
+                "colorscale": PALETTE.get(BasePlot._fig.get_elem(model.name), "Blues"),
+                "cmin": min(dims[0]["values"]),
+                "cmax": max(dims[0]["values"]),
+                "title": metric_c,
+                "font_size": self.label_fontsize,
+            }
         )
 
         fig.add_trace(
             go.Parcoords(
                 dimensions=dims,
-                line=dict(
-                    color=dims[0]["values"],
-                    coloraxis=f"coloraxis{xaxis[1:]}",
-                ),
-                unselected=dict(line=dict(color="gray", opacity=0.5)),
+                line={
+                    "color": dims[0]["values"],
+                    "coloraxis": f"coloraxis{xaxis[1:]}",
+                },
+                unselected={"line": {"color": "gray", "opacity": 0.5}},
                 labelside="bottom",
-                labelfont=dict(size=self.label_fontsize),
+                labelfont={"size": self.label_fontsize},
             )
         )
 
@@ -912,12 +907,12 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                         x=model.trials[metric_c[y]],
                         y=model.trials[metric_c[x + 1]],
                         mode="markers",
-                        marker=dict(
-                            size=self.marker_size,
-                            color=model.trials.index,
-                            colorscale="Teal",
-                            line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                        ),
+                        marker={
+                            "size": self.marker_size,
+                            "color": model.trials.index,
+                            "colorscale": "Teal",
+                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                        },
                         customdata=model.trials.index,
                         hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                         xaxis=xaxis,
@@ -1065,12 +1060,12 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                     x=model.trials[params_c[y]],
                     y=model.trials[metric_c[x]],
                     mode="markers",
-                    marker=dict(
-                        size=self.marker_size,
-                        color=model.trials.index,
-                        colorscale="Teal",
-                        line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                    ),
+                    marker={
+                        "size": self.marker_size,
+                        "color": model.trials.index,
+                        "colorscale": "Teal",
+                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    },
                     customdata=model.trials.index,
                     hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                     xaxis=xaxis,
@@ -1211,7 +1206,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=m.trials.index,
                     y=info.improvements,
-                    error_y=dict(type="data", array=info.errors),
+                    error_y={"type": "data", "array": info.errors},
                     mode="markers+lines",
                     parent=m.name,
                     legend=legend,
@@ -1333,7 +1328,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                 date_start = trial.datetime_start or date_complete
 
                 # Create nice representation of scores and params for hover
-                s = [f'{m}: {trial.values[i]}' for i, m in enumerate(self._metric.keys())]
+                s = [f"{m}: {trial.values[i]}" for i, m in enumerate(self._metric.keys())]
                 p = [f" --> {k}: {v}" for k, v in trial.params.items()]
 
                 info.append(
@@ -1346,7 +1341,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                             f"Trial: {trial.number}<br>"
                             f"{'<br>'.join(s)}"
                             f"Parameters:<br>{'<br>'.join(p)}"
-                        )
+                        ),
                     )
                 )
 
@@ -1362,10 +1357,10 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                             textposition="none",
                             hovertemplate=f"%{{text}}<extra>{m.name}</extra>",
                             orientation="h",
-                            marker=dict(
-                                color=f"rgba({_cm[state.name][4:-1]}, 0.2)",
-                                line=dict(width=2, color=_cm[state.name]),
-                            ),
+                            marker={
+                                "color": f"rgba({_cm[state.name][4:-1]}, 0.2)",
+                                "line": {"width": 2, "color": _cm[state.name]},
+                            },
                             showlegend=BasePlot._fig.showlegend(_cm[state.name], legend),
                             xaxis=xaxis,
                             yaxis=yaxis,

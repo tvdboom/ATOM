@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,7 +7,7 @@ Description: Module containing all time series models.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
@@ -79,10 +77,10 @@ class ARIMA(ForecastModel):
     native_multilabel = False
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sktime"]
+    supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.arima"
-    _estimators = {"forecast": "ARIMA"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "ARIMA"}
 
     _order = ("p", "d", "q")
     _sorder = ("P", "D", "Q", "S")
@@ -146,18 +144,18 @@ class ARIMA(ForecastModel):
         """
         methods = ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
 
-        dist = dict(
-            p=Int(0, 2),
-            d=Int(0, 1),
-            q=Int(0, 2),
-            P=Int(0, 2),
-            D=Int(0, 1),
-            Q=Int(0, 2),
-            S=Cat([0, 4, 6, 7, 12]),
-            method=Cat(methods),
-            maxiter=Int(50, 200, step=10),
-            with_intercept=Cat([True, False]),
-        )
+        dist = {
+            "p": Int(0, 2),
+            "d": Int(0, 1),
+            "q": Int(0, 2),
+            "P": Int(0, 2),
+            "D": Int(0, 1),
+            "Q": Int(0, 2),
+            "S": Cat([0, 4, 6, 7, 12]),
+            "method": Cat(methods),
+            "maxiter": Int(50, 200, step=10),
+            "with_intercept": Cat([True, False]),
+        }
 
         # Drop order and seasonal_order params if specified by user
         if "order" in self._est_params:
@@ -180,8 +178,8 @@ class AutoARIMA(ForecastModel):
     is based on the commonly-used R function.
 
     AutoARIMA works by conducting differencing tests (i.e.,
-    Kwiatkowski–Phillips–Schmidt–Shin, Augmented Dickey-Fuller or
-    Phillips–Perron) to determine the order of differencing, d, and
+    Kwiatkowski-Phillips-Schmidt-Shin, Augmented Dickey-Fuller or
+    Phillips-Perron) to determine the order of differencing, d, and
     then fitting models within defined ranges. AutoARIMA also seeks
     to identify the optimal P and Q hyperparameters after conducting
     the Canova-Hansen to determine the optimal order of seasonal
@@ -221,10 +219,10 @@ class AutoARIMA(ForecastModel):
     native_multilabel = False
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sktime"]
+    supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.arima"
-    _estimators = {"forecast": "AutoARIMA"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "AutoARIMA"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -238,11 +236,11 @@ class AutoARIMA(ForecastModel):
         """
         methods = ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
 
-        return dict(
-            method=Cat(methods),
-            maxiter=Int(50, 200, step=10),
-            with_intercept=Cat([True, False]),
-        )
+        return {
+            "method": Cat(methods),
+            "maxiter": Int(50, 200, step=10),
+            "with_intercept": Cat([True, False]),
+        }
 
 
 class ExponentialSmoothing(ForecastModel):
@@ -282,10 +280,10 @@ class ExponentialSmoothing(ForecastModel):
     native_multilabel = False
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sktime"]
+    supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.exp_smoothing"
-    _estimators = {"forecast": "ExponentialSmoothing"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "ExponentialSmoothing"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -299,15 +297,15 @@ class ExponentialSmoothing(ForecastModel):
         """
         methods = ["L-BFGS-B", "TNC", "SLSQP", "Powell", "trust-constr", "bh", "ls"]
 
-        return dict(
-            trend=Cat(["add", "mul", None]),
-            damped_trend=Cat([True, False]),
-            seasonal=Cat(["add", "mul", None]),
-            sp=Cat([4, 6, 7, 12, None]),
-            use_boxcox=Cat([True, False]),
-            initialization_method=Cat(["estimated", "heuristic"]),
-            method=Cat(methods),
-        )
+        return {
+            "trend": Cat(["add", "mul", None]),
+            "damped_trend": Cat([True, False]),
+            "seasonal": Cat(["add", "mul", None]),
+            "sp": Cat([4, 6, 7, 12, None]),
+            "use_boxcox": Cat([True, False]),
+            "initialization_method": Cat(["estimated", "heuristic"]),
+            "method": Cat(methods),
+        }
 
 
 class ETS(ForecastModel):
@@ -349,10 +347,10 @@ class ETS(ForecastModel):
     native_multilabel = False
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sktime"]
+    supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.ets"
-    _estimators = {"forecast": "AutoETS"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "AutoETS"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -364,17 +362,17 @@ class ETS(ForecastModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            error=Cat(["add", "mul"]),
-            trend=Cat(["add", "mul", None]),
-            damped_trend=Cat([True, False]),
-            seasonal=Cat(["add", "mul", None]),
-            sp=Cat([1, 4, 6, 7, 12]),
-            initialization_method=Cat(["estimated", "heuristic"]),
-            maxiter=Int(500, 2000, step=100),
-            auto=Cat([True, False]),
-            information_criterion=Cat(["aic", "bic", "aicc"]),
-        )
+        return {
+            "error": Cat(["add", "mul"]),
+            "trend": Cat(["add", "mul", None]),
+            "damped_trend": Cat([True, False]),
+            "seasonal": Cat(["add", "mul", None]),
+            "sp": Cat([1, 4, 6, 7, 12]),
+            "initialization_method": Cat(["estimated", "heuristic"]),
+            "maxiter": Int(500, 2000, step=100),
+            "auto": Cat([True, False]),
+            "information_criterion": Cat(["aic", "bic", "aicc"]),
+        }
 
 
 class NaiveForecaster(ForecastModel):
@@ -416,10 +414,10 @@ class NaiveForecaster(ForecastModel):
     native_multilabel = False
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sktime"]
+    supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.naive"
-    _estimators = {"forecast": "NaiveForecaster"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "NaiveForecaster"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -431,7 +429,7 @@ class NaiveForecaster(ForecastModel):
             Hyperparameter distributions.
 
         """
-        return dict(strategy=Cat(["last", "mean", "drift"]))
+        return {"strategy": Cat(["last", "mean", "drift"])}
 
 
 class PolynomialTrend(ForecastModel):
@@ -471,10 +469,10 @@ class PolynomialTrend(ForecastModel):
     native_multilabel = False
     native_multioutput = True
     has_validation = None
-    supports_engines = ["sktime"]
+    supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.trend"
-    _estimators = {"forecast": "PolynomialTrendForecaster"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "PolynomialTrendForecaster"}
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -486,7 +484,7 @@ class PolynomialTrend(ForecastModel):
             Hyperparameter distributions.
 
         """
-        return dict(
-            degree=Int(1, 5),
-            with_intercept=Cat([True, False]),
-        )
+        return {
+            "degree": Int(1, 5),
+            "with_intercept": Cat([True, False]),
+        }

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,14 +7,11 @@ Description: Global fixtures and variables for the tests.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -27,8 +22,15 @@ from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
 from sktime.split import temporal_train_test_split
 
-from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
+
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from _pytest.monkeypatch import MonkeyPatch
+
+    from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
 
 
 class DummyTransformer(BaseEstimator):
@@ -75,8 +77,10 @@ class DummyTransformer(BaseEstimator):
 
 
 @pytest.fixture(autouse=True)
-def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
+def _change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
     """Change the directory of the test to a temporary dir.
+
+    Avoid saving test files to the working directory.
 
     Parameters
     ----------
@@ -91,10 +95,20 @@ def change_current_dir(tmp_path: Path, monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture(autouse=True)
-def mock_mlflow_log_model():
-    """Mock mlflow's log_model function."""
-    with patch("mlflow.sklearn.log_model"):
-        yield
+def _mock_mlflow_log_model(mocker):
+    """Mock mlflow's log_model function.
+
+    This is by far mlflow's slowest method. Mocking it reduces the
+    average test time by several seconds.
+
+    """
+    mocker.patch("mlflow.sklearn.log_model")
+
+
+@pytest.fixture()
+def random():
+    """Return numpy's default random number generator."""
+    return np.random.default_rng()
 
 
 def get_train_test(
@@ -147,7 +161,7 @@ X_sparse = pd.DataFrame(
         "feature 1": pd.arrays.SparseArray([1, 0, 0, 0, 0, 0, 1, 0, 1, 0]),
         "feature 2": pd.arrays.SparseArray([1, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
         "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
-    }
+    },
 )
 
 # Text data

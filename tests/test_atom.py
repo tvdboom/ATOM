@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -8,7 +6,7 @@ Description: Unit tests for atom.py
 """
 
 import glob
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -40,6 +38,7 @@ from .conftest import (
 
 
 # Test __init__ ==================================================== >>
+
 
 def test_task_assignment():
     """Assert that the correct task is assigned."""
@@ -82,6 +81,7 @@ def test_backend_with_n_jobs_1():
 
 # Test magic methods =============================================== >>
 
+
 def test_repr():
     """Assert that the __repr__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -96,10 +96,11 @@ def test_iter():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
-    assert [item for item in atom][1] == atom.pipeline[1]
+    assert list(atom) == list(atom.pipeline.named_steps.values())
 
 
 # Test utility properties =========================================== >>
+
 
 def test_branch():
     """Assert that we can get the current branch."""
@@ -268,12 +269,13 @@ def test_unavailable_regression_properties():
 
 # Test utility methods ============================================= >>
 
+
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
 def test_distribution(distributions):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    df = atom.distribution(distributions=distributions, columns=(0, 1))
-    assert isinstance(df, pd.DataFrame)
+    dist = atom.distribution(distributions=distributions, columns=(0, 1))
+    assert isinstance(dist, pd.DataFrame)
 
 
 @patch("sweetviz.analyze")
@@ -366,7 +368,8 @@ def test_reset():
     atom.encode()
     atom.run("LR", errors="raise")
     atom.reset(hard=True)
-    assert not atom.models and len(atom._branches) == 1
+    assert not atom.models
+    assert len(atom._branches) == 1
     assert atom["x2"].dtype.name == "object"  # Is reset back to str
 
 
@@ -483,6 +486,7 @@ def test_transform_not_train_only():
 
 # Test base transformers =========================================== >>
 
+
 def test_add_after_model():
     """Assert that an error is raised when adding after training a model."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
@@ -518,11 +522,13 @@ def test_add_train_only():
     """Assert that atom accepts transformers for the train set only."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.add(StandardScaler(), train_only=True)
-    assert check_scaling(atom.X_train) and not check_scaling(atom.X_test)
+    assert check_scaling(atom.X_train)
+    assert not check_scaling(atom.X_test)
 
     len_train, len_test = len(atom.train), len(atom.test)
     atom.add(Pruner(), train_only=True)
-    assert len(atom.train) != len_train and len(atom.test) == len_test
+    assert len(atom.train) != len_train
+    assert len(atom.test) == len_test
 
 
 def test_add_complete_dataset():
@@ -692,7 +698,7 @@ def test_add_pipeline():
         steps=[
             ("scaler", StandardScaler()),
             ("sfm", SelectFromModel(RandomForestClassifier())),
-        ]
+        ],
     )
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.add(pipeline)
@@ -714,10 +720,11 @@ def test_apply():
     """Assert that a function can be applied to the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.apply(np.exp, columns=0)
-    assert atom.iat[0, 0] == np.exp(X_bin.iat[0, 0])
+    assert atom.iloc[0, 0] == np.exp(X_bin.iloc[0, 0])
 
 
 # Test data cleaning transformers =================================== >>
+
 
 def test_balance_wrong_task():
     """Assert that an error is raised for regression and multioutput tasks."""
@@ -782,7 +789,8 @@ def test_prune():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     len_train, len_test = len(atom.train), len(atom.test)
     atom.prune(strategy="lof")
-    assert len(atom.train) != len_train and len(atom.test) == len_test
+    assert len(atom.train) != len_train
+    assert len(atom.test) == len_test
 
 
 def test_scale():
@@ -793,6 +801,7 @@ def test_scale():
 
 
 # Test nlp transformers ============================================ >>
+
 
 def test_textclean():
     """Assert that the textclean method cleans the corpus."""
@@ -824,6 +833,7 @@ def test_vectorize():
 
 
 # Test feature engineering transformers ============================ >>
+
 
 def test_feature_extraction():
     """Assert that the feature_extraction method creates datetime features."""
@@ -872,8 +882,8 @@ def test_default_solver_from_task():
     assert atom.pipeline[0].rfe_.estimator_.__class__.__name__ == "DecisionTreeRegressor"
 
 
-@patch("atom.feature_engineering.SequentialFeatureSelector")
-def test_default_scoring(cls):
+@patch("atom.feature_engineering.SequentialFeatureSelector", MagicMock())
+def test_default_scoring():
     """Assert that the scoring is atom's metric when exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
@@ -883,6 +893,7 @@ def test_default_scoring(cls):
 
 
 # Test training methods ============================================ >>
+
 
 def test_non_numerical_target_column():
     """Assert that an error is raised when the target column is categorical."""

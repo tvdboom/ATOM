@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -19,7 +17,7 @@ from atom.pipeline import Pipeline
 from .conftest import X_bin, y_bin
 
 
-@pytest.fixture
+@pytest.fixture()
 def pipeline():
     """Get a pipeline from atom with/without a final estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

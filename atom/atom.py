@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -88,7 +86,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def _goal(self) -> Goal: ...
+    def _goal(self) -> Goal:
+        ...
 
     def __init__(
         self,
@@ -103,7 +102,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         holdout_size: Scalar | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = {"data": "numpy", "estimator": "sklearn"},
+        engine: Engine | None = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -152,7 +151,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         elif self.backend != "loky":
             self._log(
                 "Leaving n_jobs=1 ignores all parallelization. Set n_jobs>1 to make use "
-                f"of the {self.backend} parallelization backend.", 1, severity="warning"
+                f"of the {self.backend} parallelization backend.",
+                1,
+                severity="warning",
             )
         if "cpu" not in self.device.lower():
             self._log(f"Device: {self.device}", 1)
@@ -265,8 +266,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self._branches.branches.remove(current)
         self._branches.current = self._branches[0].name
         self._log(
-            f"Branch {current} successfully deleted. "
-            f"Switched to branch {self.branch.name}.", 1
+            f"Branch {current} successfully deleted. Switched to branch {self.branch.name}.",
+            1,
         )
 
     @property
@@ -357,7 +358,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         if not is_sparse(self.X):
             data = self.branch.train.select_dtypes(include=["number"])
-            z_scores = (np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3)
+            z_scores = np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3
             z_scores = pd.Series(z_scores.sum(axis=0), index=data.columns)
             return z_scores[z_scores > 0]
 
@@ -372,7 +373,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         if not is_sparse(self.X):
             data = self.branch.train.select_dtypes(include=["number"])
-            z_scores = (np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3)
+            z_scores = np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3
             return z_scores.any(axis=1).sum()
 
         raise AttributeError("This property is unavailable for sparse datasets.")
@@ -495,8 +496,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 stat = stats.kstest(X, dist, args=param)
 
                 # Add as column to the dataframe
-                df.at[(dist, "score"), col] = round(stat[0], 4)
-                df.at[(dist, "p_value"), col] = round(stat[1], 4)
+                df.loc[(dist, "score"), col] = round(stat[0], 4)
+                df.loc[(dist, "p_value"), col] = round(stat[1], 4)
 
         return df
 
@@ -687,7 +688,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         # Reassign the transformer attributes (warnings random_state, etc...)
         BaseTransformer.__init__(
-            atom, **{x: getattr(atom, x) for x in BaseTransformer.attrs},
+            atom,
+            **{x: getattr(atom, x) for x in BaseTransformer.attrs},
         )
 
         if data is not None:
@@ -727,8 +729,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 if atom._config.index is False:
                     branch._container = DataContainer(
                         data=(dataset := branch._container.data.reset_index(drop=True)),
-                        train_idx=dataset.index[:len(branch._container.train_idx)],
-                        test_idx=dataset.index[-len(branch._container.test_idx):],
+                        train_idx=dataset.index[: len(branch._container.train_idx)],
+                        test_idx=dataset.index[-len(branch._container.test_idx) :],
                         n_cols=branch._container.n_cols,
                     )
 
@@ -741,7 +743,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         return atom
 
     @composed(crash, method_to_log)
-    def reset(self, hard: Bool = False):
+    def reset(self, *, hard: Bool = False):
         """Reset the instance to it's initial state.
 
         Deletes all branches and models. The dataset is also reset
@@ -970,7 +972,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 duplicates = None
                 self._log(
                     "Unable to calculate the number of duplicate "
-                    "rows because a column is unhashable.", 3
+                    "rows because a column is unhashable.",
+                    3,
                 )
 
             if not self.X.empty:
@@ -1082,6 +1085,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     def _add_transformer(
         self,
         transformer: T_Transformer,
+        *,
         columns: ColumnSelector | None = None,
         train_only: Bool = False,
         **fit_params,
@@ -1146,7 +1150,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     "Features and target columns passed to transformer "
                     f"{transformer_c.__class__.__name__}. Either select features or "
                     "the target column, not both at the same time. The transformation "
-                    "of the target column will be ignored.", 1, severity="warning"
+                    "of the target column will be ignored.",
+                    1,
+                    severity="warning",
                 )
             transformer_c._cols = inc
 
@@ -1202,8 +1208,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         if self._config.index is False:
             self.branch._container = DataContainer(
                 data=(data := self.dataset.reset_index(drop=True)),
-                train_idx=data.index[:len(self.branch._data.train_idx)],
-                test_idx=data.index[-len(self.branch._data.test_idx):],
+                train_idx=data.index[: len(self.branch._data.train_idx)],
+                test_idx=data.index[-len(self.branch._data.test_idx) :],
                 n_cols=self.branch._data.n_cols,
             )
             if self.branch._holdout is not None:
@@ -1307,13 +1313,22 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         if isinstance(transformer, SkPipeline):
             # Recursively add all transformers to the pipeline
-            for name, est in transformer.named_steps.items():
+            for est in transformer.named_steps.values():
                 self._log(f"Adding {est.__class__.__name__} to the pipeline...", 1)
-                self._add_transformer(est, columns, train_only, **fit_params)
+                self._add_transformer(
+                    transformer=est,
+                    columns=columns,
+                    train_only=train_only,
+                    **fit_params,
+                )
         else:
-            self._log(
-                f"Adding {transformer.__class__.__name__} to the pipeline...", 1)
-            self._add_transformer(transformer, columns, train_only, **fit_params)
+            self._log(f"Adding {transformer.__class__.__name__} to the pipeline...", 1)
+            self._add_transformer(
+                transformer=transformer,
+                columns=columns,
+                train_only=train_only,
+                **fit_params,
+            )
 
     @composed(crash, method_to_log)
     def apply(
@@ -1640,6 +1655,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     def scale(
         self,
         strategy: ScalerStrats = "standard",
+        *,
         include_binary: Bool = False,
         **kwargs,
     ):
@@ -2036,7 +2052,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 self._delete_models(model.name)
                 self._log(
                     f"Consecutive runs of model {model.name}. "
-                    "The former model has been overwritten.", 1
+                    "The former model has been overwritten.",
+                    1,
                 )
 
         self._models.extend(trainer._models)

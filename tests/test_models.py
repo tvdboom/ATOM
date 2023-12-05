@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -10,7 +8,6 @@ Description: Unit tests for the models module.
 from platform import machine
 from unittest.mock import Mock, patch
 
-import numpy as np
 import pandas as pd
 import pytest
 from optuna.distributions import IntDistribution
@@ -129,11 +126,12 @@ def test_models_sklearnex_regression():
 
 
 @patch.dict(
-    "sys.modules", {
+    "sys.modules",
+    {
         "cuml": Mock(spec=["__spec__"]),
         "cuml.common.device_selection": Mock(spec=["set_global_device_type"]),
         "cuml.internals.memory_utils": Mock(spec=["set_global_output_type"]),
-    }
+    },
 )
 def test_models_cuml_classification():
     """Assert that all classification models can be called with cuml."""
@@ -158,11 +156,12 @@ def test_models_cuml_classification():
 
 
 @patch.dict(
-    "sys.modules", {
+    "sys.modules",
+    {
         "cuml": Mock(spec=["__spec__"]),
         "cuml.common.device_selection": Mock(spec=["set_global_device_type"]),
         "cuml.internals.memory_utils": Mock(spec=["set_global_output_type"]),
-    }
+    },
 )
 def test_models_cuml_regression():
     """Assert that all regression models can be called with cuml."""
@@ -184,10 +183,10 @@ def test_models_cuml_regression():
     )
 
 
-def test_CatNB():
+def test_CatNB(random):
     """Assert that the CatNB model works. Needs special dataset."""
-    X = np.random.randint(2, size=(150, 10))
-    y = np.random.randint(2, size=150)
+    X = random.integers(2, size=(150, 10))
+    y = random.integers(2, size=150)
 
     atom = ATOMClassifier(X, y, random_state=1)
     assert atom.scaled  # Check scaling is True for all binary columns
@@ -213,7 +212,7 @@ def test_pruning_non_sklearn(model):
         est_params={"n_estimators": 10, "max_depth": 2},
         ht_params={"pruner": PatientPruner(None, patience=1)},
     )
-    assert "PRUNED" in atom.winner.trials["state"].values
+    assert "PRUNED" in atom.winner.trials["state"].unique()
 
 
 @pytest.mark.parametrize("model", ["CatB", "LGB", "XGB"])
@@ -257,13 +256,14 @@ def test_MLP_custom_n_layers():
                 "hidden_layer_2": IntDistribution(0, 4),
                 "hidden_layer_3": IntDistribution(0, 4),
                 "hidden_layer_4": IntDistribution(0, 4),
-            }
+            },
         },
     )
     assert "hidden_layer_1" in atom.mlp.trials
 
 
 # Test ensembles =================================================== >>
+
 
 def test_ensemble_failed_feature_importance():
     """Assert that the Stacking model works."""

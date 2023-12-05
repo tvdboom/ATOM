@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -47,14 +45,14 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
     @crash
     def plot_components(
-            self,
-            show: IntLargerZero | None = None,
-            *,
-            title: str | dict[str, Any] | None = None,
-            legend: Legend | dict[str, Any] | None = "lower right",
-            figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
-            filename: str | Path | None = None,
-            display: Bool | None = True,
+        self,
+        show: IntLargerZero | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the explained variance ratio per component.
 
@@ -141,12 +139,12 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         fig.add_trace(
             go.Bar(
                 x=variance,
-                y=[f"pca{str(i)}" for i in range(len(variance))],
+                y=[f"pca{i}" for i in range(len(variance))],
                 orientation="h",
-                marker=dict(
-                    color=[f"rgba({color[4:-1]}, {o})" for o in opacity],
-                    line=dict(width=2, color=color),
-                ),
+                marker={
+                    "color": [f"rgba({color[4:-1]}, {o})" for o in opacity],
+                    "line": {"width": 2, "color": color},
+                },
                 hovertemplate="%{x}<extra></extra>",
                 name=f"Variance retained: {variance[:self.pca_._comps].sum():.3f}",
                 legendgroup="components",
@@ -156,7 +154,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             )
         )
 
-        fig.update_layout({f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending")})
+        fig.update_layout({f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"}})
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -257,13 +255,13 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(
             x=(0, 0.87),
-            coloraxis=dict(
-                colorscale="rdbu_r",
-                cmin=-1,
-                cmax=1,
-                title=f"{method} correlation",
-                font_size=self.label_fontsize,
-            ),
+            coloraxis={
+                "colorscale": "rdbu_r",
+                "cmin": -1,
+                "cmax": 1,
+                "title": f"{method} correlation",
+                "font_size": self.label_fontsize,
+            },
         )
 
         fig.add_trace(
@@ -419,10 +417,10 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                     x=series,
                     y=series.index,
                     orientation="h",
-                    marker=dict(
-                        color=f"rgba({color[4:-1]}, 0.2)",
-                        line=dict(width=2, color=color),
-                    ),
+                    marker={
+                        "color": f"rgba({color[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": color},
+                    },
                     hovertemplate="%{x}<extra></extra>",
                     name=f"{columns_c[0]}: {len(series)} classes",
                     showlegend=BasePlot._fig.showlegend("dist", legend),
@@ -449,14 +447,14 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                     go.Histogram(
                         x=self.branch.dataset[col],
                         histnorm="probability density",
-                        marker=dict(
-                            color=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
-                            line=dict(width=2, color=BasePlot._fig.get_elem(col)),
-                        ),
+                        marker={
+                            "color": f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(col)},
+                        },
                         nbinsx=40,
                         name="dist",
                         legendgroup=col,
-                        legendgrouptitle=dict(text=col, font_size=self.label_fontsize),
+                        legendgrouptitle={"text": col, "font_size": self.label_fontsize},
                         showlegend=BasePlot._fig.showlegend(f"{col}-dist", legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -494,7 +492,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                             )
                         )
 
-            fig.update_layout(dict(barmode="overlay"))
+            fig.update_layout({"barmode": "overlay"})
 
             return self._plot(
                 ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -621,7 +619,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 Corpus of tokens.
 
             """
-            if isinstance(column.iat[0], str):
+            if isinstance(column.iloc[0], str):
                 return column.apply(lambda row: row.split())
             else:
                 return column
@@ -654,13 +652,13 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         fig.add_trace(
             go.Bar(
-                x=(data := series[-self._get_show(show, len(series)):]),
+                x=(data := series[-self._get_show(show, len(series)) :]),
                 y=data.index,
                 orientation="h",
-                marker=dict(
-                    color=f"rgba({BasePlot._fig.get_elem(ngram_c)[4:-1]}, 0.2)",
-                    line=dict(width=2, color=BasePlot._fig.get_elem(ngram_c)),
-                ),
+                marker={
+                    "color": f"rgba({BasePlot._fig.get_elem(ngram_c)[4:-1]}, 0.2)",
+                    "line": {"width": 2, "color": BasePlot._fig.get_elem(ngram_c)},
+                },
                 hovertemplate="%{x}<extra></extra>",
                 name=f"Total {ngram_c}: {len(series)}",
                 legendgroup=ngram_c,
@@ -683,13 +681,13 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
     @crash
     def plot_pca(
-            self,
-            *,
-            title: str | dict[str, Any] | None = None,
-            legend: Legend | dict[str, Any] | None = None,
-            figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
-            filename: str | Path | None = None,
-            display: Bool | None = True,
+        self,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = None,
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the explained variance ratio vs number of components.
 
@@ -768,13 +766,13 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 x=tuple(range(1, self.pca_.n_features_in_ + 1)),
                 y=np.cumsum(self.pca_.explained_variance_ratio_),
                 mode="lines+markers",
-                line=dict(width=self.line_width, color=BasePlot._fig.get_elem("pca")),
-                marker=dict(
-                    symbol=symbols,
-                    size=sizes,
-                    line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                    opacity=1,
-                ),
+                line={"width": self.line_width, "color": BasePlot._fig.get_elem("pca")},
+                marker={
+                    "symbol": symbols,
+                    "size": sizes,
+                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    "opacity": 1,
+                },
                 hovertemplate="%{y}<extra></extra>",
                 showlegend=False,
                 xaxis=xaxis,
@@ -1020,22 +1018,22 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             xaxis, yaxis = BasePlot._fig.get_axes(
                 x=(x_pos, rnd(x_pos + size)),
                 y=(y_pos, rnd(y_pos + size)),
-                coloraxis=dict(
-                    colorscale=PALETTE.get(color, "Blues"),
-                    cmin=0,
-                    cmax=len(self.branch.dataset),
-                    showscale=False,
-                )
+                coloraxis={
+                    "colorscale": PALETTE.get(color, "Blues"),
+                    "cmin": 0,
+                    "cmax": len(self.branch.dataset),
+                    "showscale": False,
+                },
             )
 
             if x == y:
                 fig.add_trace(
                     go.Histogram(
                         x=self.branch.dataset[columns_c[x]],
-                        marker=dict(
-                            color=f"rgba({color[4:-1]}, 0.2)",
-                            line=dict(width=2, color=color),
-                        ),
+                        marker={
+                            "color": f"rgba({color[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": color},
+                        },
                         name=columns_c[x],
                         showlegend=False,
                         xaxis=xaxis,
@@ -1048,7 +1046,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                         x=sample(columns_c[y]),
                         y=sample(columns_c[x]),
                         mode="markers",
-                        marker=dict(color=color),
+                        marker={"color": color},
                         hovertemplate="(%{x}, %{y})<extra></extra>",
                         showlegend=False,
                         xaxis=xaxis,
@@ -1188,13 +1186,13 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 x=list(x),
                 y=mean,
                 mode="lines+markers",
-                line=dict(width=self.line_width, color=BasePlot._fig.get_elem("rfecv")),
-                marker=dict(
-                    symbol=symbols,
-                    size=sizes,
-                    line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
-                    opacity=1,
-                ),
+                line={"width": self.line_width, "color": BasePlot._fig.get_elem("rfecv")},
+                marker={
+                    "symbol": symbols,
+                    "size": sizes,
+                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    "opacity": 1,
+                },
                 name=ylabel,
                 legendgroup="rfecv",
                 showlegend=BasePlot._fig.showlegend("rfecv", legend),
@@ -1210,7 +1208,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                     x=tuple(x),
                     y=mean + std,
                     mode="lines",
-                    line=dict(width=1, color=BasePlot._fig.get_elem("rfecv")),
+                    line={"width": 1, "color": BasePlot._fig.get_elem("rfecv")},
                     hovertemplate="%{y}<extra>upper bound</extra>",
                     legendgroup="rfecv",
                     showlegend=False,
@@ -1221,7 +1219,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                     x=tuple(x),
                     y=mean - std,
                     mode="lines",
-                    line=dict(width=1, color=BasePlot._fig.get_elem("rfecv")),
+                    line={"width": 1, "color": BasePlot._fig.get_elem("rfecv")},
                     fill="tonexty",
                     fillcolor=f"rgba{BasePlot._fig.get_elem('rfecv')[3:-1]}, 0.2)",
                     hovertemplate="%{y}<extra>lower bound</extra>",
@@ -1334,7 +1332,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         def get_text(column):
             """Get the complete corpus as one long string."""
-            if isinstance(column.iat[0], str):
+            if isinstance(column.iloc[0], str):
                 return " ".join(column)
             else:
                 return " ".join([" ".join(row) for row in column])

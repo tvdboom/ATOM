@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -26,6 +24,7 @@ from .conftest import (
 
 
 # Test Branch ====================================================== >>
+
 
 def test_init_empty_pipeline():
     """Assert that an empty branch has an empty pipeline."""
@@ -166,7 +165,7 @@ def test_shape_property():
 def test_columns_property():
     """Assert that the columns property returns the columns of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert list(atom.branch.columns) == list(X_bin.columns) + [y_bin.name]
+    assert list(atom.branch.columns) == [*X_bin.columns, y_bin.name]
 
 
 def test_n_columns_property():
@@ -203,11 +202,11 @@ def test_all_property():
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
     new_dataset = merge(X_bin, y_bin)
-    new_dataset.iat[0, 3] = 4  # Change one value
+    new_dataset.iloc[0, 3] = 4  # Change one value
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.dataset = new_dataset
-    assert atom.dataset.iat[0, 3] == 4  # Check the value is changed
+    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
 
 
 def test_train_setter():
@@ -234,8 +233,8 @@ def test_X_setter():
 def test_y_setter():
     """Assert that the y setter changes the target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y[0] == 0  # First value is 1 in original
-    atom.y = [1] + list(y_bin.values[1:])
+    assert atom.y[0] == 0  # The first value is 1 in original
+    atom.y = [1, *y_bin.values[1:]]
     assert atom.y[0] == 1  # First value changed to 0
 
 
@@ -243,9 +242,9 @@ def test_X_train_setter():
     """Assert that the X_train setter changes the training feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_train = atom.X_train
-    new_X_train.iat[0, 0] = 999
+    new_X_train.iloc[0, 0] = 999
     atom.X_train = new_X_train.to_numpy()  # To numpy to test dtypes are maintained
-    assert atom.X_train.iat[0, 0] == 999
+    assert atom.X_train.iloc[0, 0] == 999
     assert list(atom.X_train.dtypes) == list(atom.X_test.dtypes)
 
 
@@ -253,25 +252,25 @@ def test_X_test_setter():
     """Assert that the X_test setter changes the test feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_test = atom.X_test
-    new_X_test.iat[0, 0] = 999
+    new_X_test.iloc[0, 0] = 999
     atom.X_test = new_X_test
-    assert atom.X_test.iat[0, 0] == 999
+    assert atom.X_test.iloc[0, 0] == 999
 
 
 def test_y_train_setter():
     """Assert that the y_train setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_train.iat[0] == 0  # First value is 1 in original
-    atom.y_train = [1] + list(atom.y_train.values[1:])
-    assert atom.y_train.iat[0] == 1  # First value changed to 0
+    assert atom.y_train.iloc[0] == 0  # The first value is 1 in original
+    atom.y_train = [1, *atom.y_train[1:]]
+    assert atom.y_train.iloc[0] == 1  # First value changed to 0
 
 
 def test_y_test_setter():
     """Assert that the y_test setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_test.iat[0] == 1  # First value is 0 in original
-    atom.y_test = [0] + list(atom.y_test[1:])
-    assert atom.y_test.iat[0] == 0  # First value changed to 1
+    assert atom.y_test.iloc[0] == 1  # The first value is 0 in original
+    atom.y_test = [0, *atom.y_test[1:]]
+    assert atom.y_test.iloc[0] == 0  # First value changed to 1
 
 
 def test_data_properties_to_df():
@@ -305,27 +304,27 @@ def test_setter_error_unequal_index():
 def test_setter_error_unequal_columns():
     """Assert that an error is raised when the setter has unequal columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    new_X = atom.train
+    new_X.insert(0, "new_column", 1)
     with pytest.raises(ValueError, match="number of columns"):
-        new_X = atom.train
-        new_X.insert(0, "new_column", 1)
         atom.train = new_X
 
 
 def test_setter_error_unequal_column_names():
     """Assert that an error is raised with different column names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    new_X = atom.train.drop(columns=atom.train.columns[0])
+    new_X.insert(0, "new_column", 1)
     with pytest.raises(ValueError, match="the same columns"):
-        new_X = atom.train.drop(columns=atom.train.columns[0])
-        new_X.insert(0, "new_column", 1)
         atom.train = new_X
 
 
 def test_setter_error_unequal_target_names():
     """Assert that an error is raised with different target names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    new_y_train = atom.y_train
+    new_y_train.name = "different_name"
     with pytest.raises(ValueError, match="the same name"):
-        new_y_train = atom.y_train
-        new_y_train.name = "different_name"
         atom.y_train = new_y_train
 
 
@@ -565,6 +564,7 @@ def test_load_no_dir():
 
 # Test BranchManager =============================================== >>
 
+
 def test_branchmanager_repr():
     """Assert that the __repr__ method returns the branches."""
     assert str(BranchManager()) == "BranchManager([main], og=main)"
@@ -577,7 +577,7 @@ def test_branchmanager_len():
 
 def test_branchmanager_iter():
     """Assert that the __iter__ method iterates over the branches."""
-    assert str(list(b for b in BranchManager())[0]) == "Branch(main)"
+    assert str(next(iter(BranchManager()))) == "Branch(main)"
 
 
 def test_branchmanager_contains():

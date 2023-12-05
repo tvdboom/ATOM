@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -23,6 +21,7 @@ from .conftest import (
 
 
 # Test FeatureExtractor ============================================ >>
+
 
 def test_invalid_features():
     """Assert that an error is raised when features are invalid."""
@@ -72,16 +71,19 @@ def test_order_features():
     assert X.columns.get_loc("x2_year") == 4
 
 
-@pytest.mark.parametrize("fxs", [
-    ("microsecond", "%f"),
-    ("second", "%S"),
-    ("hour", "%H"),
-    ("weekday", "%d/%m/%Y"),
-    ("day", "%d/%m/%Y"),
-    ("dayofyear", "%d/%m/%Y"),
-    ("month", "%d/%m/%Y"),
-    ("quarter", "%d/%m/%Y"),
-])
+@pytest.mark.parametrize(
+    "fxs",
+    [
+        ("microsecond", "%f"),
+        ("second", "%S"),
+        ("hour", "%H"),
+        ("weekday", "%d/%m/%Y"),
+        ("day", "%d/%m/%Y"),
+        ("dayofyear", "%d/%m/%Y"),
+        ("month", "%d/%m/%Y"),
+        ("quarter", "%d/%m/%Y"),
+    ],
+)
 def test_all_cyclic_features(fxs):
     """Assert that all cyclic columns create two features."""
     extractor = FeatureExtractor(features=fxs[0], fmt=fxs[1], encoding_type="cyclic")
@@ -98,6 +100,7 @@ def test_features_are_not_dropped():
 
 
 # Test FeatureGenerator ============================================ >>
+
 
 def test_n_features_above_maximum():
     """Assert that n_features becomes maximum if more than maximum."""
@@ -158,10 +161,12 @@ def test_default_feature_names():
         random_state=1,
     )
     X = generator.fit_transform(X, y_bin)
-    assert "x30" not in X and "x32" in X
+    assert "x32" in X
+    assert "x30" not in X
 
 
 # Test FeatureGrouper ============================================= >>
+
 
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
@@ -200,6 +205,7 @@ def test_columns_are_kept():
 
 
 # Test FeatureSelector ============================================= >>
+
 
 def test_solver_parameter_empty():
     """Assert that an error is raised when solver is None."""
@@ -276,7 +282,8 @@ def test_remove_collinear_without_y():
     X["invalid"] = list(range(len(X)))
     selector = FeatureSelector(max_correlation=1)
     X = selector.fit_transform(X)
-    assert "valid" in X and "invalid" not in X
+    assert "valid" in X
+    assert "invalid" not in X
     assert hasattr(selector, "collinear")
 
 
@@ -542,7 +549,7 @@ def test_advanced_custom_objective_function():
     selector = FeatureSelector(
         strategy="gwo",
         solver="tree_class",
-        objective_function=lambda *args: 1,
+        objective_function=lambda *args: 1,  # noqa: ARG005
         n_iteration=1,
         population_size=1,
     )
