@@ -25,7 +25,6 @@ from .conftest import (
 
 # Test Branch ====================================================== >>
 
-
 def test_init_empty_pipeline():
     """Assert that an empty branch has an empty pipeline."""
     branch = Branch(name="main")
@@ -563,7 +562,6 @@ def test_load_no_dir():
 
 
 # Test BranchManager =============================================== >>
-
 
 def test_branchmanager_repr():
     """Assert that the __repr__ method returns the branches."""

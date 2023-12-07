@@ -2249,10 +2249,10 @@ class OrdinaryLeastSquares(ClassRegModel):
     """Linear Regression.
 
     Ordinary Least Squares is just linear regression without any
-    regularization. It fits a linear model with coefficients `w=(w1,
-     ..., wp)` to minimize the residual sum of squares between the
-    observed targets in the dataset, and the targets predicted by the
-    linear approximation.
+    regularization. It fits a linear model with coefficients
+    `w=(w1,  ..., wp)` to minimize the residual sum of squares between
+    the observed targets in the dataset, and the targets predicted by
+    the linear approximation.
 
     Corresponding estimators are:
 

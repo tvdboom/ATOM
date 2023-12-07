@@ -20,7 +20,7 @@ from atom.basemodel import ForecastModel
 class ARIMA(ForecastModel):
     """Autoregressive Integrated Moving Average Model.
 
-    Seasonal ARIMA models and exogeneous input is supported, hence this
+    Seasonal ARIMA models and exogenous input is supported, hence this
     estimator is capable of fitting SARIMA, ARIMAX, and SARIMAX.
 
     An ARIMA model, is a generalization of an autoregressive moving

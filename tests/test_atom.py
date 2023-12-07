@@ -39,7 +39,6 @@ from .conftest import (
 
 # Test __init__ ==================================================== >>
 
-
 def test_task_assignment():
     """Assert that the correct task is assigned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -81,7 +80,6 @@ def test_backend_with_n_jobs_1():
 
 # Test magic methods =============================================== >>
 
-
 def test_repr():
     """Assert that the __repr__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -100,7 +98,6 @@ def test_iter():
 
 
 # Test utility properties =========================================== >>
-
 
 def test_branch():
     """Assert that we can get the current branch."""
@@ -268,7 +265,6 @@ def test_unavailable_regression_properties():
 
 
 # Test utility methods ============================================= >>
-
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
 def test_distribution(distributions):
@@ -486,7 +482,6 @@ def test_transform_not_train_only():
 
 # Test base transformers =========================================== >>
 
-
 def test_add_after_model():
     """Assert that an error is raised when adding after training a model."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
@@ -607,6 +602,16 @@ def test_returned_column_already_exists():
         atom.apply(func_test, columns="!mean texture")
 
 
+def test_ignore_columns():
+    """Assert that columns can be ignored from transformations."""
+    atom = ATOMRegressor(X_reg, y_reg, ignore="age", random_state=1)
+    atom.scale()
+    atom.run("OLS", errors="raise")
+    assert "age" in atom
+    assert "age" not in atom.pipeline.named_steps["scaler"].feature_names_in_
+    assert "age" not in atom.ols.estimator.feature_names_in_
+
+
 def test_add_sparse_matrices():
     """Assert that transformers that return sp.matrix are accepted."""
     ohe = OneHotEncoder(handle_unknown="ignore").set_output(transform="default")
@@ -725,7 +730,6 @@ def test_apply():
 
 # Test data cleaning transformers =================================== >>
 
-
 def test_balance_wrong_task():
     """Assert that an error is raised for regression and multioutput tasks."""
     # For regression tasks
@@ -802,7 +806,6 @@ def test_scale():
 
 # Test nlp transformers ============================================ >>
 
-
 def test_textclean():
     """Assert that the textclean method cleans the corpus."""
     atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
@@ -833,7 +836,6 @@ def test_vectorize():
 
 
 # Test feature engineering transformers ============================ >>
-
 
 def test_feature_extraction():
     """Assert that the feature_extraction method creates datetime features."""
@@ -893,7 +895,6 @@ def test_default_scoring():
 
 
 # Test training methods ============================================ >>
-
 
 def test_non_numerical_target_column():
     """Assert that an error is raised when the target column is categorical."""

@@ -101,7 +101,6 @@ def test_features_are_not_dropped():
 
 # Test FeatureGenerator ============================================ >>
 
-
 def test_n_features_above_maximum():
     """Assert that n_features becomes maximum if more than maximum."""
     generator = FeatureGenerator(
@@ -167,7 +166,6 @@ def test_default_feature_names():
 
 # Test FeatureGrouper ============================================= >>
 
-
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
     grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="invalid")
@@ -205,7 +203,6 @@ def test_columns_are_kept():
 
 
 # Test FeatureSelector ============================================= >>
-
 
 def test_solver_parameter_empty():
     """Assert that an error is raised when solver is None."""

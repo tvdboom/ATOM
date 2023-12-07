@@ -775,7 +775,6 @@ class AutoDocs:
 
 # Functions ======================================================== >>
 
-
 def render(markdown: str, **kwargs) -> str:
     """Render the markdown page.
 

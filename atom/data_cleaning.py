@@ -2286,8 +2286,16 @@ class Normalizer(TransformerMixin):
                 f"Choose from: {', '.join(strategies)}."
             )
 
+        num_cols = X.select_dtypes(include="number")
+
+        if num_cols.empty:
+            raise ValueError(
+                "The Normalizer class encountered no columns during fit. "
+                "Make sure X contains numerical columns."
+            )
+
         self._log("Fitting Normalizer...", 1)
-        self._estimator.fit(X.select_dtypes(include="number"))
+        self._estimator.fit(num_cols)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)
@@ -2817,11 +2825,6 @@ class Scaler(TransformerMixin):
             Estimator instance.
 
         """
-        num_cols = list(X.select_dtypes(include="number"))
-
-        if not self.include_binary:
-            num_cols = [c for c in num_cols if ~np.isin(X[c].unique(), [0, 1]).all()]
-
         strategies = {
             "standard": "StandardScaler",
             "minmax": "MinMaxScaler",
@@ -2829,11 +2832,23 @@ class Scaler(TransformerMixin):
             "robust": "RobustScaler",
         }
 
+        num_cols = X.select_dtypes(include="number")
+
+        if not self.include_binary:
+            num_cols = X[[n for n, c in num_cols.items() if ~np.isin(c.unique(), [0, 1]).all()]]
+
+        if num_cols.empty:
+            raise ValueError(
+                "The Scaler class encountered no columns during fit. Make "
+                "sure X contains numerical columns or check if there are "
+                "non-binary columns when include_binary=False."
+            )
+
         estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
         self._estimator = estimator(**self.kwargs)
 
         self._log("Fitting Scaler...", 1)
-        self._estimator.fit(X[num_cols])
+        self._estimator.fit(num_cols)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)

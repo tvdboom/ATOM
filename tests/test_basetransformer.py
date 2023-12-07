@@ -33,7 +33,6 @@ from .conftest import (
 
 # Test properties ================================================== >>
 
-
 def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
     base = BaseTransformer(n_jobs=1000)
@@ -179,7 +178,6 @@ def test_device_id_invalid():
 
 # Test _inherit ==================================================== >>
 
-
 def test_inherit():
     """Assert that the inherit method passes the parameters correctly."""
     base = BaseTransformer(random_state=2)
@@ -188,7 +186,6 @@ def test_inherit():
 
 
 # Test _get_est_class ============================================== >>
-
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_get_est_class_from_engine():
@@ -204,7 +201,6 @@ def test_get_est_class_from_default():
 
 
 # Test _check_input ============================================== >>
-
 
 def test_input_is_copied():
     """Assert that the data is copied."""
@@ -373,7 +369,6 @@ def test_X_empty_df():
 
 
 # Test log ========================================================= >>
-
 
 def test_log_severity_error():
     """Assert that an error is raised when the severity is error."""

@@ -221,6 +221,7 @@ class DataConfig:
     """
 
     index: IndexSelector = True
+    ignore: tuple[str, ...] = ()
     shuffle: Bool = False
     stratify: IndexSelector = True
     n_rows: Scalar = 1
@@ -690,7 +691,7 @@ class TrialsCallback:
         headers.extend(["time_trial", "time_ht", "state"])
 
         # Define the width op every column in the table
-        spaces = [len(str(headers[0][0]))]
+        spaces = [len(headers[0])]
         for name, dist in self.T._ht["distributions"].items():
             # If the distribution is categorical, take the mean of the widths
             # Else take the max of seven (minimum width) and the width of the name
@@ -702,7 +703,7 @@ class TrialsCallback:
             spaces.append(max(7, len(name), options))
 
         spaces.extend(
-            [max(7, len(column)) for column in headers[1 + len(self.T._ht["distributions"]) : -1]]
+            [max(7, len(column)) for column in headers[1 + len(self.T._ht["distributions"]): -1]]
         )
 
         return Table(headers, [*spaces, 8])
@@ -1161,7 +1162,6 @@ class ClassMap:
 
 
 # Functions ======================================================== >>
-
 
 def flt(x: Any) -> Any:
     """Return item from sequence with just that item.
@@ -1789,8 +1789,7 @@ def to_df(
     index: Axes | None = ...,
     columns: Axes | None = ...,
     dtype: DtypeArg | None = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1799,8 +1798,7 @@ def to_df(
     index: Axes | None = ...,
     columns: Axes | None = ...,
     dtype: DtypeArg | None = ...,
-) -> DataFrame:
-    ...
+) -> DataFrame: ...
 
 
 def to_df(
@@ -1870,8 +1868,7 @@ def to_series(
     index: Axes | None = ...,
     name: Hashable | None = ...,
     dtype: Dtype | None = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1880,8 +1877,7 @@ def to_series(
     index: Axes | None = ...,
     name: Hashable | None = ...,
     dtype: Dtype | None = ...,
-) -> Series:
-    ...
+) -> Series: ...
 
 
 def to_series(
@@ -1943,8 +1939,7 @@ def to_pandas(
     columns: Axes | None = ...,
     name: str | None = ...,
     dtype: DtypeArg | None = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1954,8 +1949,7 @@ def to_pandas(
     columns: Axes | None = ...,
     name: str | None = ...,
     dtype: DtypeArg | None = ...,
-) -> Pandas:
-    ...
+) -> Pandas: ...
 
 
 def to_pandas(
@@ -2169,7 +2163,6 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
 
 # Pipeline functions =============================================== >>
 
-
 def name_cols(
     array: TReturn,
     original_df: DataFrame,
@@ -2380,21 +2373,21 @@ def fit_one(
         Fitted estimator.
 
     """
-    X = to_df(X, index=getattr(y, "index", None))
-    y = to_pandas(y, index=getattr(X, "index", None))
+    Xt = to_df(X, index=getattr(y, "index", None))
+    yt = to_pandas(y, index=getattr(Xt, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
             kwargs = {}
-            inc = getattr(estimator, "_cols", getattr(X, "columns", []))
+            inc = getattr(estimator, "_cols", getattr(Xt, "columns", []))
             if "X" in (params := sign(estimator.fit)):
-                if X is not None and (cols := [c for c in inc if c in X]):
-                    kwargs["X"] = X[cols]
+                if Xt is not None and (cols := [c for c in inc if c in Xt]):
+                    kwargs["X"] = Xt[cols]
 
                 # X is required but has not been provided
                 if len(kwargs) == 0:
-                    if y is not None and hasattr(estimator, "_cols"):
-                        kwargs["X"] = to_df(y)[inc]
+                    if yt is not None and hasattr(estimator, "_cols"):
+                        kwargs["X"] = to_df(yt)[inc]
                     elif params["X"].default != Parameter.empty:
                         kwargs["X"] = params["X"].default  # Fill X with default
                     else:
@@ -2404,8 +2397,8 @@ def fit_one(
                             "X is required but has not been provided."
                         )
 
-            if "y" in params and y is not None:
-                kwargs["y"] = y
+            if "y" in params and yt is not None:
+                kwargs["y"] = yt
 
             # Keep custom attrs since some transformers reset during fit
             with keep_attrs(estimator):
@@ -2499,7 +2492,7 @@ def transform_one(
     )
     yt = to_pandas(
         y,
-        index=getattr(X, "index", None),
+        index=getattr(Xt, "index", None),
         columns=getattr(transformer, "target_names_in_", None),
         name=flt(getattr(transformer, "target_names_in_", None)),
     )
@@ -2610,7 +2603,6 @@ def fit_transform_one(
 
 # Patches ========================================================== >>
 
-
 def fit_and_score(*args, **kwargs) -> dict[str, Any]:
     """Wrap sklearn's _fit_and_score function.
 
@@ -2647,7 +2639,6 @@ def score(f: Callable) -> Callable:
 
 
 # Decorators ======================================================= >>
-
 
 def cache(f: Callable) -> Callable:
     """Cache method utility.
@@ -2836,7 +2827,6 @@ def wrap_methods(f: Callable) -> Callable:
 
 
 # Custom scorers =================================================== >>
-
 
 def true_negatives(y_true: Sequence[Int], y_pred: Sequence[Int]) -> Int:
     """Outcome where the model correctly predicts the negative class."""

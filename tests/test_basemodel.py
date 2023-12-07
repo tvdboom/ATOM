@@ -36,7 +36,6 @@ from .conftest import (
 
 # Test magic methods ================================== >>
 
-
 def test_scaler():
     """Assert that a scaler is made for models that need scaling."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -81,7 +80,6 @@ def test_getitem():
 
 
 # Test training ==================================================== >>
-
 
 def test_est_params_invalid_param():
     """Assert that invalid parameters in est_params are caught."""
@@ -354,7 +352,7 @@ def test_continued_hyperparameter_tuning():
 def test_continued_bootstrapping():
     """Assert that the bootstrapping method can be recalled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", est_params={"n_estimators": 5})
+    atom.run("LGB", est_params={"n_estimators": 5}, errors="raise")
     assert not hasattr(atom.lgb, "bootstrap")
     atom.lgb.bootstrapping(3)
     assert len(atom.lgb.bootstrap) == 3
@@ -365,7 +363,6 @@ def test_continued_bootstrapping():
 
 
 # Test utility properties ========================================== >>
-
 
 def test_name_property():
     """Assert that the name property can be set."""
@@ -502,7 +499,6 @@ def test_results_property():
 
 # Test data properties ============================================= >>
 
-
 def test_pipeline_property():
     """Assert that the pipeline property returns the scaler as well."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -599,6 +595,41 @@ def test_y_holdout_property():
     assert_series_equal(atom.mnb.y_holdout, atom.mnb.holdout.iloc[:, -1])
 
 
+def test_shape_property():
+    """Assert that the shape property returns the shape of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, ignore=(0, 1), random_state=1)
+    atom.run("MNB")
+    assert atom.mnb.shape == (len(X_bin), X_bin.shape[1] - 1)
+
+
+def test_columns_property():
+    """Assert that the columns property returns the columns of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, ignore=(0, 1), random_state=1)
+    atom.run("MNB", errors="raise")
+    assert len(atom.mnb.columns) == len(atom.columns) - 2
+
+
+def test_n_columns_property():
+    """Assert that the n_columns property returns the number of columns."""
+    atom = ATOMClassifier(X_bin, y_bin, ignore=(0, 1), random_state=1)
+    atom.run("MNB")
+    assert atom.mnb.n_columns == atom.n_columns - 2
+
+
+def test_features_property():
+    """Assert that the features property returns the features of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, ignore=(0, 1), random_state=1)
+    atom.run("MNB")
+    assert len(atom.mnb.features) == len(atom.features) - 2
+
+
+def test_n_features_property():
+    """Assert that the n_features property returns the number of features."""
+    atom = ATOMClassifier(X_bin, y_bin, ignore=(0, 1), random_state=1)
+    atom.run("MNB")
+    assert atom.mnb.n_features == atom.n_features - 2
+
+
 def test_all_property():
     """Assert that the _all property returns the dataset + holdout."""
     atom = ATOMRegressor(X_bin, y_bin, holdout_size=0.1, random_state=1)
@@ -608,7 +639,6 @@ def test_all_property():
 
 
 # Test prediction methods ========================================== >>
-
 
 def test_predictions_from_index():
     """Assert that predictions can be made from data indices."""
@@ -651,6 +681,15 @@ def test_prediction_from_multioutput():
     assert isinstance(atom.lr.predict_proba(X_class).index, pd.MultiIndex)
 
 
+def test_prediction_inverse_transform():
+    """Assert that the predict method can return the inversely transformed data."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.scale(columns=-1)
+    atom.run("Tree")
+    assert check_scaling(atom.tree.predict(X_reg, inverse=False))
+    assert not check_scaling(atom.tree.predict(X_reg, inverse=True))
+
+
 def test_score_regression():
     """Assert that the score returns r2 for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, shuffle=False, random_state=1)
@@ -684,7 +723,6 @@ def test_score_with_sample_weight():
 
 
 # Test utility methods ============================================= >>
-
 
 def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""

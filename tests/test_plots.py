@@ -29,7 +29,6 @@ from .conftest import (
 
 # Test BaseFigure ================================================== >>
 
-
 def test_get_elem():
     """Assert that elements are assigned correctly."""
     base = BaseFigure()
@@ -39,7 +38,6 @@ def test_get_elem():
 
 
 # Test BasePlot ==================================================== >>
-
 
 def test_aesthetics():
     """Assert that the aesthetics getter works."""
@@ -276,7 +274,6 @@ def test_update_traces():
 
 # Test DataPlot ==================================================== >>
 
-
 @pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
     """Assert that the plot_components method works."""
@@ -360,7 +357,6 @@ def test_plot_wordcloud():
 
 
 # Test HyperparameterTuningPlot ==================================== >>
-
 
 def test_check_hyperparams():
     """Assert that an error is raised when models didn't run HT."""
@@ -482,7 +478,6 @@ def test_plot_trials():
 
 
 # Test PredictionPlot =================================================== >>
-
 
 def test_plot_calibration():
     """Assert that the plot_calibration method works."""
@@ -744,7 +739,6 @@ def test_plot_threshold_multilabel():
 
 
 # Test ShapPlot ==================================================== >>
-
 
 def test_plot_shap_fail():
     """Assert that an error is raised when the explainer can't be created."""

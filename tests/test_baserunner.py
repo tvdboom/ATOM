@@ -30,7 +30,6 @@ from .conftest import (
 
 # Test magic methods =============================================== >>
 
-
 def test_getstate_and_setstate():
     """Assert that versions are checked and a warning raised."""
     atom = ATOMClassifier(X_bin, y_bin, warnings=True)
@@ -174,7 +173,6 @@ def test_getitem_list():
 
 # Test utility properties ========================================== >>
 
-
 def test_branch_property():
     """Assert that the branch property returns the current branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -273,7 +271,6 @@ def test_results_property_train_sizing():
 
 # Test _set_index ================================================== >>
 
-
 def test_index_is_true():
     """Assert that the indices are left as is when index=True."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, shuffle=False, random_state=1)
@@ -361,7 +358,6 @@ def test_duplicate_indices():
 
 # Test _get_stratify_columns======================================== >>
 
-
 @pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
@@ -392,7 +388,6 @@ def test_stratify_invalid_column_str():
 
 
 # Test _get_data =================================================== >>
-
 
 def test_input_is_y_without_arrays():
     """Assert that input y through parameter works."""
@@ -689,7 +684,6 @@ def test_invalid_index_forecast():
 
 
 # Test utility methods ============================================= >>
-
 
 def test_get_models_is_None():
     """Assert that all models are returned by default."""

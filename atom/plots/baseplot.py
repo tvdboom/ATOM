@@ -328,8 +328,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         backend: Literal["plotly"] = ...,
         *,
         create_figure: Literal[True] = ...,
-    ) -> go.Figure:
-        ...
+    ) -> go.Figure: ...
 
     @overload
     def _get_figure(
@@ -337,8 +336,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         backend: Literal["matplotlib"],
         *,
         create_figure: Literal[True] = ...,
-    ) -> plt.Figure:
-        ...
+    ) -> plt.Figure: ...
 
     @overload
     def _get_figure(
@@ -346,8 +344,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         backend: PlotBackend,
         *,
         create_figure: Literal[False],
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def _get_figure(
         self,

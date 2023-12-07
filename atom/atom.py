@@ -86,8 +86,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def _goal(self) -> Goal:
-        ...
+    def _goal(self) -> Goal: ...
 
     def __init__(
         self,
@@ -95,6 +94,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         y: YSelector = -1,
         index: IndexSelector = False,
+        ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
         n_rows: Scalar = 1,
@@ -133,16 +133,17 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             holdout_size=holdout_size,
         )
 
-        self._missing = DEFAULT_MISSING
-
-        self._models = ClassMap()
-        self._metric = ClassMap()
-
         self._log("<< ================== ATOM ================== >>", 1)
 
         # Initialize the branch system and fill with data
         self._branches = BranchManager(memory=self.memory)
         self._branches.fill(*self._get_data(arrays, y=y))
+
+        self.ignore = ignore  # type: ignore[assignment]
+        self.missing = DEFAULT_MISSING
+
+        self._models = ClassMap()
+        self._metric = ClassMap()
 
         self._log("\nConfiguration ==================== >>", 1)
         self._log(f"Algorithm task: {self.task}.", 1)
@@ -266,9 +267,26 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self._branches.branches.remove(current)
         self._branches.current = self._branches[0].name
         self._log(
-            f"Branch {current} successfully deleted. Switched to branch {self.branch.name}.",
-            1,
+            f"Branch {current} successfully deleted. "
+            f"Switched to branch {self.branch.name}.", 1,
         )
+
+    @property
+    def ignore(self) -> tuple[str, ...]:
+        """Names of the ignored columns.
+
+        These columns aren't used in the transformer pipeline nor
+        for model training.
+
+        """
+        return self._config.ignore
+
+    @ignore.setter
+    def ignore(self, value: ColumnSelector | None):
+        if value is not None:
+            self._config.ignore = tuple(self.branch._get_columns(value, include_target=False))
+        else:
+            self._config.ignore = ()
 
     @property
     def missing(self) -> list[Any]:
@@ -1138,23 +1156,27 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         # Add BaseTransformer params to the estimator if left to default
         transformer_c = self._inherit(transformer_c)
 
-        # Transformers remember the train_only and cols parameters
         if not hasattr(transformer_c, "_train_only"):
             transformer_c._train_only = train_only
+
         if columns is not None:
-            inc = self.branch._get_columns(columns)
-            fxs_in_inc = any(c in self.features for c in inc)
-            target_in_inc = any(c in lst(self.target) for c in inc)
-            if fxs_in_inc and target_in_inc:
+            cols = self.branch._get_columns(columns)
+        else:
+            cols = list(self.branch.features)
+
+        # Columns in self.ignore are not transformed
+        if self.ignore:
+            cols = [c for c in cols if c not in self.ignore]
+
+        if cols != list(self.branch.features):
+            if any(c in self.features for c in cols) and any(c in lst(self.target) for c in cols):
                 self._log(
                     "Features and target columns passed to transformer "
                     f"{transformer_c.__class__.__name__}. Either select features or "
                     "the target column, not both at the same time. The transformation "
-                    "of the target column will be ignored.",
-                    1,
-                    severity="warning",
+                    "of the target column is ignored.", 1, severity="warning",
                 )
-            transformer_c._cols = inc
+            transformer_c._cols = cols
 
         # Add custom cloning method to keep internal attrs
         transformer_c.__class__.__sklearn_clone__ = TransformerMixin.__sklearn_clone__
@@ -2052,8 +2074,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 self._delete_models(model.name)
                 self._log(
                     f"Consecutive runs of model {model.name}. "
-                    "The former model has been overwritten.",
-                    1,
+                    "The former model has been overwritten.", 1,
                 )
 
         self._models.extend(trainer._models)

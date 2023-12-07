@@ -264,7 +264,6 @@ def test_MLP_custom_n_layers():
 
 # Test ensembles =================================================== >>
 
-
 def test_ensemble_failed_feature_importance():
     """Assert that the Stacking model works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -328,7 +328,7 @@ class Branch:
         if self._holdout is not None:
             return merge(
                 *self.pipeline.transform(
-                    X=self._holdout.iloc[:, : -self._data.n_cols],
+                    X=self._holdout[self.features],
                     y=self._holdout[self.target],
                 )
             )
@@ -413,7 +413,7 @@ class Branch:
     @property
     def features(self) -> Index:
         """Name of the features."""
-        return self.columns[: -self._data.n_cols]
+        return self.columns[:-self._data.n_cols]
 
     @property
     def n_features(self) -> Int:
@@ -423,7 +423,7 @@ class Branch:
     @property
     def target(self) -> str | list[str]:
         """Name of the target column(s)."""
-        return flt(list(self.columns[-self._data.n_cols :]))
+        return flt(list(self.columns[-self._data.n_cols:]))
 
     @property
     def _all(self) -> DataFrame:
@@ -443,8 +443,7 @@ class Branch:
         rows: RowSelector,
         *,
         return_X_y: Literal[False] = ...,
-    ) -> DataFrame:
-        ...
+    ) -> DataFrame: ...
 
     @overload
     def _get_rows(
@@ -452,8 +451,7 @@ class Branch:
         rows: RowSelector,
         *,
         return_X_y: Literal[True],
-    ) -> tuple[DataFrame, Pandas]:
-        ...
+    ) -> tuple[DataFrame, Pandas]: ...
 
     def _get_rows(
         self,
@@ -647,8 +645,7 @@ class Branch:
         target: TargetsSelector,
         *,
         only_columns: Literal[False] = ...,
-    ) -> tuple[int, int]:
-        ...
+    ) -> tuple[int, int]: ...
 
     @overload
     def _get_target(
@@ -656,8 +653,7 @@ class Branch:
         target: TargetsSelector,
         *,
         only_columns: Literal[True],
-    ) -> str:
-        ...
+    ) -> str: ...
 
     def _get_target(
         self,

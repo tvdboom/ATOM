@@ -28,7 +28,6 @@ from .conftest import (
 
 # Test TransformerMixin ============================================ >>
 
-
 def test_clone():
     """Assert that cloning the transformer keeps internal attributes."""
     pruner = Pruner().fit(X_bin)
@@ -55,7 +54,6 @@ def test_inverse_transform():
 
 
 # Test Balancer ==================================================== >>
-
 
 def test_balance_multioutput_task():
     """Assert that an error is raised for multioutput tasks."""
@@ -143,7 +141,6 @@ def test_balancer_attach_attribute():
 
 
 # Test Cleaner ==================================================== >>
-
 
 def test_cleaner_convert_dtypes():
     """Assert that column dtypes are converted."""
@@ -261,7 +258,6 @@ def test_cleaner_target_mapping_binary():
 
 # Test Discretizer ================================================= >>
 
-
 def test_missing_columns_in_dict_are_ignored():
     """Assert that only columns in the dict are transformed."""
     discretizer = Discretizer(strategy="uniform", bins={"mean radius": 5})
@@ -346,7 +342,6 @@ def test_labels_custom_strategy():
 
 
 # Test Encoder ===================================================== >>
-
 
 def test_strategy_parameter_encoder():
     """Assert that the strategy parameter is set correctly."""
@@ -436,7 +431,6 @@ def test_kwargs_parameters():
 
 
 # Test Imputer ===================================================== >>
-
 
 @pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
 def test_imputing_all_missing_values_numeric(missing):
@@ -574,12 +568,17 @@ def test_imputing_non_numeric_most_frequent():
 
 # Test Normalizer ======================================================= >>
 
-
 @pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_normalizer_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     normalizer = Normalizer(strategy=strategy)
     normalizer.fit_transform(X10)
+
+
+def test_normalizer_no_columns():
+    """Assert that an error is raised when there are no numerical columns."""
+    with pytest.raises(ValueError, match=".*no columns during fit.*"):
+        Normalizer().fit([["a", "b", "a", "a"]])
 
 
 def test_normalizer_categorical_columns():
@@ -599,13 +598,6 @@ def test_normalizer_inverse_categorical_columns():
     """Assert that categorical columns are ignored."""
     X = Normalizer().fit(X10_str).inverse_transform(X10_str)
     assert X["x2"].dtype.kind == "O"
-
-
-def test_normalizer_y_is_ignored():
-    """Assert that the y parameter is ignored if provided."""
-    X_1 = Normalizer().fit_transform(X_bin, y_bin)
-    X_2 = Normalizer().fit_transform(X_bin)
-    assert_frame_equal(X_1, X_2)
 
 
 def test_normalizer_kwargs():
@@ -630,7 +622,6 @@ def test_normalizer_attach_attribute():
 
 
 # Test Pruner ====================================================== >>
-
 
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
@@ -728,7 +719,6 @@ def test_pruner_attach_attribute():
 
 # Test Scaler ====================================================== >>
 
-
 @pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
 def test_scaler_all_strategies(strategy):
     """Assert that all strategies work as intended."""
@@ -736,18 +726,17 @@ def test_scaler_all_strategies(strategy):
     scaler.fit_transform(X_bin)
 
 
+def test_scaler_no_columns():
+    """Assert that an error is raised when there are no numerical columns."""
+    with pytest.raises(ValueError, match=".*no columns during fit.*"):
+        Scaler(include_binary=False).fit([[0, 1, 0, 1, 1, 1, 1]])
+
+
 def test_scaler_categorical_and_binary_columns():
     """Assert that categorical and binary columns are ignored."""
     X = Scaler().fit_transform(X10_str)
     assert np.isin(X["x0"].unique(), [0, 1]).all()
     assert X["x2"].dtype.kind == "O"
-
-
-def test_scaler_y_is_ignored():
-    """Assert that the y parameter is ignored if provided."""
-    X_1 = Scaler().fit_transform(X_bin, y_bin)
-    X_2 = Scaler().fit_transform(X_bin)
-    assert_frame_equal(X_1, X_2)
 
 
 def test_scaler_kwargs():

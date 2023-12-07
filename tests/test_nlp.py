@@ -18,7 +18,6 @@ from .conftest import X_bin, X_text, y10
 
 # Test TextCleaner ================================================= >>
 
-
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
     with pytest.raises(ValueError, match=".*contain a column named corpus.*"):
@@ -92,7 +91,6 @@ def test_drop_empty_tokens():
 
 # Test Tokenizer =================================================== >>
 
-
 def test_tokenization():
     """Assert that the corpus is tokenized."""
     X = Tokenizer().transform([["A test"]])
@@ -133,7 +131,6 @@ def test_no_ngrams():
 
 # Test TextNormalizer ================================================== >>
 
-
 def test_normalizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
     assert TextNormalizer().transform([["b c"]])["corpus"][0] == ["b", "c"]
@@ -164,7 +161,6 @@ def test_lemmatization():
 
 
 # Test Vectorizer ================================================== >>
-
 
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""

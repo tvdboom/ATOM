@@ -43,25 +43,9 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
     """
 
     def __init__(
-        self,
-        models,
-        metric,
-        est_params,
-        n_trials,
-        ht_params,
-        n_bootstrap,
-        parallel,
-        errors,
-        n_jobs,
-        device,
-        engine,
-        backend,
-        memory,
-        verbose,
-        warnings,
-        logger,
-        experiment,
-        random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
+        parallel, errors, n_jobs, device, engine, backend, memory, verbose,
+        warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,

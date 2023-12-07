@@ -27,7 +27,6 @@ from .conftest import (
 
 # Test _prepare_parameters =========================================== >>
 
-
 def test_model_is_predefined():
     """Assert that predefined models are accepted."""
     trainer = DirectClassifier("LR", random_state=1)
@@ -315,7 +314,6 @@ def test_ht_params_invalid_key():
 
 
 # Test _core_iteration ============================================= >>
-
 
 def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""

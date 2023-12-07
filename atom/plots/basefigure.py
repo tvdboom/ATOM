@@ -8,7 +8,7 @@ Description: Module containing the BaseFigure class.
 from __future__ import annotations
 
 from itertools import cycle
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -57,9 +57,9 @@ class BaseFigure:
 
     """
 
-    _marker: ClassVar[list[str]] = ["circle", "x", "diamond", "pentagon", "star"]
-    _dash: ClassVar[list[str]] = ["solid", "dashdot", "dash", "dot", "longdash"]
-    _shape: ClassVar[list[str]] = ["", "/", "x", "\\", "-", "|", "+", "."]
+    _marker = ("circle", "x", "diamond", "pentagon", "star", "hexagon")
+    _dash = ("solid", "dashdot", "dash", "dot", "longdash", "longdashdot")
+    _shape = ("", "/", "x", "\\", "-", "|", "+", ".")
 
     def __init__(
         self,

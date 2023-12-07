@@ -62,10 +62,10 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     HT, Backend, Bool, DataFrame, Engine, FHSelector, Float, FloatZeroToOneExc,
-    Int, IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
-    PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
-    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector,
-    YSelector, dataframe_t, float_t, int_t,
+    Index, Int, IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs,
+    Pandas, PredictionMethods, PredictionMethodsTS, Predictor, RowSelector,
+    Scalar, Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings,
+    XSelector, YSelector, dataframe_t, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -279,7 +279,7 @@ class BaseModel(RunnerPlot):
     def __getitem__(self, item: Int | str | list) -> Pandas:
         """Get a subset from the dataset."""
         if isinstance(item, int_t):
-            return self.dataset[self.columns[item]]
+            return self.dataset[self.columns[int(item)]]
         else:
             return self.dataset[item]  # Get a subset of the dataset
 
@@ -659,13 +659,13 @@ class BaseModel(RunnerPlot):
         df = self.branch._get_rows(rows)
 
         # Filter for indices in dataset (required for sh and ts)
-        X = df.loc[df.index.isin(self._all.index), self.features]
-        y_true = df.loc[df.index.isin(self._all.index), self.target]
+        X = df.iloc[df.index.isin(self._all.index), :self.n_features]
+        y_true = df.iloc[df.index.isin(self._all.index), self.n_features:]
 
         if self.task.is_forecast:
-            y_pred = getattr(self, attr)(X.index, X=check_empty(X))
+            y_pred = self._prediction(X.index, X=check_empty(X), verbose=0, method=attr)
         else:
-            y_pred = getattr(self, attr)(X.index)
+            y_pred = self._prediction(X.index, verbose=0, method=attr)
 
         if self.task.is_multioutput:
             if target is not None:
@@ -1626,10 +1626,7 @@ class BaseModel(RunnerPlot):
         """Holdout set."""
         if (holdout := self.branch.holdout) is not None:
             if self.scaler:
-                return merge(
-                    self.scaler.transform(holdout.iloc[:, : -self.branch._data.n_cols]),
-                    holdout.iloc[:, -self.branch._data.n_cols :],
-                )
+                return merge(self.scaler.transform(holdout[self.features]), holdout[self.target])
             else:
                 return holdout
         else:
@@ -1648,29 +1645,31 @@ class BaseModel(RunnerPlot):
     @property
     def X_train(self) -> DataFrame:
         """Features of the training set."""
+        features = self.branch.features.isin(self._config.ignore)
         if self.scaler:
-            return self.scaler.transform(self.branch.X_train[-self._train_idx :])
+            return self.scaler.transform(self.branch.X_train.iloc[-self._train_idx:, ~features])
         else:
-            return self.branch.X_train[-self._train_idx :]
+            return self.branch.X_train.iloc[-self._train_idx:, ~features]
 
     @property
     def y_train(self) -> Pandas:
         """Target column of the training set."""
-        return self.branch.y_train[-self._train_idx :]
+        return self.branch.y_train[-self._train_idx:]
 
     @property
     def X_test(self) -> DataFrame:
         """Features of the test set."""
+        features = self.branch.features.isin(self._config.ignore)
         if self.scaler:
-            return self.scaler.transform(self.branch.X_test)
+            return self.scaler.transform(self.branch.X_test.iloc[:, ~features])
         else:
-            return self.branch.X_test
+            return self.branch.X_test.iloc[:, ~features]
 
     @property
     def X_holdout(self) -> DataFrame | None:
         """Features of the holdout set."""
         if self.holdout is not None:
-            return self.holdout.iloc[:, : -self.branch._data.n_cols]
+            return self.holdout[self.features]
         else:
             return None
 
@@ -1681,6 +1680,31 @@ class BaseModel(RunnerPlot):
             return self.holdout[self.branch.target]
         else:
             return None
+
+    @property
+    def shape(self) -> tuple[Int, Int]:
+        """Shape of the dataset (n_rows, n_columns)."""
+        return self.dataset.shape
+
+    @property
+    def columns(self) -> Index:
+        """Name of all the columns."""
+        return self.dataset.columns
+
+    @property
+    def n_columns(self) -> Int:
+        """Number of columns."""
+        return len(self.columns)
+
+    @property
+    def features(self) -> Index:
+        """Name of the features."""
+        return self.columns[:-self.branch._data.n_cols]
+
+    @property
+    def n_features(self) -> Int:
+        """Number of features."""
+        return len(self.features)
 
     @property
     def _all(self) -> DataFrame:
@@ -2152,7 +2176,7 @@ class BaseModel(RunnerPlot):
         Returns
         -------
         float or list
-            Best threshold or list of thresholds for multilabel tasks.
+            The best threshold or list of thresholds for multilabel tasks.
 
         """
         results = []
@@ -2425,8 +2449,7 @@ class ClassRegModel(BaseModel):
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: Literal["score"] = ...,
-    ) -> Float:
-        ...
+    ) -> Float: ...
 
     @overload
     def _prediction(
@@ -2437,8 +2460,7 @@ class ClassRegModel(BaseModel):
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: PredictionMethods = ...,
-    ) -> Pandas:
-        ...
+    ) -> Pandas: ...
 
     def _prediction(
         self,
@@ -2551,7 +2573,7 @@ class ClassRegModel(BaseModel):
             Xt, yt = get_transform_X_y(X, y)
 
         if method != "score":
-            pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt))
+            pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt[self.features]))
 
             if pred.ndim < 3:
                 data = to_pandas(
@@ -2636,6 +2658,7 @@ class ClassRegModel(BaseModel):
         self,
         X: RowSelector | XSelector,
         *,
+        inverse: Bool = True,
         verbose: Int | None = None,
     ) -> Pandas:
         """Get predictions on new data or existing rows.
@@ -2653,6 +2676,12 @@ class ClassRegModel(BaseModel):
             set with shape=(n_samples, n_features) to make predictions
             on.
 
+        inverse: bool, default=True
+            Whether to inversely transform the output through the
+            pipeline. This doesn't affect the predictions if there are
+            no transformers in the pipeline or if the transformers have
+            no `inverse_transform` method or don't apply to `y`.
+
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If None,
             it uses the pipeline's verbosity.
@@ -2664,7 +2693,12 @@ class ClassRegModel(BaseModel):
             n_targets) for [multioutput tasks][].
 
         """
-        return self._prediction(X, verbose=verbose, method="predict")
+        pred = self._prediction(X, verbose=verbose, method="predict")
+
+        if inverse:
+            return self.inverse_transform(y=pred)
+        else:
+            return pred
 
     @available_if(estimator_has_attr("predict_log_proba"))
     @composed(crash, method_to_log, beartype)
@@ -2823,8 +2857,7 @@ class ForecastModel(BaseModel):
         verbose: Int | None = None,
         method: Literal["score"] = ...,
         **kwargs,
-    ) -> Float:
-        ...
+    ) -> Float: ...
 
     @overload
     def _prediction(
@@ -2835,8 +2868,7 @@ class ForecastModel(BaseModel):
         verbose: Int | None = None,
         method: PredictionMethodsTS = ...,
         **kwargs,
-    ) -> Pandas:
-        ...
+    ) -> Pandas: ...
 
     def _prediction(
         self,

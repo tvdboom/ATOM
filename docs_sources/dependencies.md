@@ -84,7 +84,6 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 * **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
 * **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
 * **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
-* **[pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks)** (>=4.5.0)
 * **[ruff](https://docs.astral.sh/ruff/)** (>=0.1.7)
 * **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)
 

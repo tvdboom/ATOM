@@ -60,7 +60,6 @@ def regressors():
 
 # Stacking ========================================================= >>
 
-
 def test_stacking_classifier(classifiers):
     """Assert that stacking classifiers work."""
     stack = StackingClassifier(estimators=classifiers, cv=KFold())
@@ -82,7 +81,6 @@ def test_stacking_regressor(regressors):
 
 
 # Voting =========================================================== >>
-
 
 def test_voting_initialized_fitted(classifiers):
     """Assert that the model can be fit at initialization."""

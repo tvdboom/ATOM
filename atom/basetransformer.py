@@ -409,8 +409,7 @@ class BaseTransformer:
         y: Literal[None],
         columns: Axes,
         name: Literal[None],
-    ) -> tuple[DataFrame, None]:
-        ...
+    ) -> tuple[DataFrame, None]: ...
 
     @staticmethod
     @overload
@@ -419,8 +418,7 @@ class BaseTransformer:
         y: YSelector,
         columns: Literal[None],
         name: str | Sequence[str],
-    ) -> tuple[None, Pandas]:
-        ...
+    ) -> tuple[None, Pandas]: ...
 
     @staticmethod
     @overload
@@ -429,8 +427,7 @@ class BaseTransformer:
         y: YSelector,
         columns: Axes | None = ...,
         name: str | Sequence[str] | None = ...,
-    ) -> tuple[DataFrame, Pandas]:
-        ...
+    ) -> tuple[DataFrame, Pandas]: ...
 
     @staticmethod
     def _check_input(

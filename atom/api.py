@@ -17,8 +17,8 @@ from sklearn.base import clone
 
 from atom.atom import ATOM
 from atom.utils.types import (
-    Backend, Bool, Engine, IndexSelector, IntLargerEqualZero, NJobs, Predictor,
-    Scalar, Verbose, Warnings, YSelector,
+    Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
+    NJobs, Predictor, Scalar, Verbose, Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -187,6 +187,10 @@ class ATOMClassifier(ATOM):
         - If str: Name of the column to use as index.
         - If sequence: Array with shape=(n_samples,) to use as index.
 
+    ignore: int, str, sequence or None, default=None
+        Features in X to ignore during data transformations and model
+        training. The features are still used in the remaining methods.
+
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
@@ -218,8 +222,8 @@ class ATOMClassifier(ATOM):
         This parameter is ignored if `shuffle=False` or if the test
         set is provided through `arrays`.
 
-        For [multioutput tasks][], stratification is applied to the
-        joint target columns.
+        For [multioutput tasks][], stratification applies to the joint
+        target columns.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
@@ -348,6 +352,7 @@ class ATOMClassifier(ATOM):
         *arrays,
         y: YSelector = -1,
         index: IndexSelector = False,
+        ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
         n_rows: Scalar = 1,
@@ -368,6 +373,7 @@ class ATOMClassifier(ATOM):
             arrays=arrays,
             y=y,
             index=index,
+            ignore=ignore,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=shuffle,
@@ -403,7 +409,7 @@ class ATOMForecaster(ATOM):
     Parameters
     ----------
     *arrays: sequence of indexables
-        Dataset containing exogeneous features and time series. Allowed
+        Dataset containing exogenous features and time series. Allowed
         formats are:
 
         - X
@@ -417,7 +423,7 @@ class ATOMForecaster(ATOM):
         - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
         **X, train, test: dataframe-like**<br>
-        Exogeneous feature set corresponding to y, with shape=(n_samples,
+        Exogenous feature set corresponding to y, with shape=(n_samples,
         n_features).
 
         **y: int, str or sequence**<br>
@@ -441,6 +447,11 @@ class ATOMForecaster(ATOM):
 
         This parameter is ignored if the time series is provided
         through `arrays`.
+
+    ignore: int, str, sequence or None, default=None
+        Exogenous features in X to ignore during data transformations
+        and model training. The features are still used in the remaining
+        methods.
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -580,6 +591,7 @@ class ATOMForecaster(ATOM):
         self,
         *arrays,
         y: YSelector = -1,
+        ignore: ColumnSelector | None = None,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -598,6 +610,7 @@ class ATOMForecaster(ATOM):
             arrays=arrays,
             y=y,
             index=True,
+            ignore=ignore,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=False,
@@ -677,6 +690,10 @@ class ATOMRegressor(ATOM):
         - If int: Position of the column to use as index.
         - If str: Name of the column to use as index.
         - If sequence: Array with shape=(n_samples,) to use as index.
+
+    ignore: int, str, sequence or None, default=None
+        Features in X to ignore during data transformations and model
+        training. The features are still used in the remaining methods.
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -825,6 +842,7 @@ class ATOMRegressor(ATOM):
         *arrays,
         y: YSelector = -1,
         index: IndexSelector = False,
+        ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
@@ -844,6 +862,7 @@ class ATOMRegressor(ATOM):
             arrays=arrays,
             y=y,
             index=index,
+            ignore=ignore,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=shuffle,

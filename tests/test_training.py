@@ -17,7 +17,6 @@ from .conftest import reg_test, reg_train
 
 # Test trainers ============================================== >>
 
-
 def test_sh_skip_runs_too_large():
     """Assert that an error is raised if skip_runs >= n_runs."""
     sh = SuccessiveHalvingRegressor(models=["OLS", "BR"], skip_runs=2)
@@ -57,7 +56,6 @@ def test_ts_different_train_sizes_types():
 
 
 # Test goals ======================================================= >>
-
 
 def test_goals_trainers():
     """Assert that the goal of every Trainer class is set correctly."""
