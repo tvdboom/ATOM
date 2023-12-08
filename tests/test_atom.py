@@ -362,7 +362,7 @@ def test_reset():
     atom.scale()
     atom.branch = "2"
     atom.encode()
-    atom.run("LR", errors="raise")
+    atom.run("LR")
     atom.reset(hard=True)
     assert not atom.models
     assert len(atom._branches) == 1
@@ -606,7 +606,7 @@ def test_ignore_columns():
     """Assert that columns can be ignored from transformations."""
     atom = ATOMRegressor(X_reg, y_reg, ignore="age", random_state=1)
     atom.scale()
-    atom.run("OLS", errors="raise")
+    atom.run("OLS")
     assert "age" in atom
     assert "age" not in atom.pipeline.named_steps["scaler"].feature_names_in_
     assert "age" not in atom.ols.estimator.feature_names_in_

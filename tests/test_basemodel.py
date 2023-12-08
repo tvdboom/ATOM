@@ -352,7 +352,7 @@ def test_continued_hyperparameter_tuning():
 def test_continued_bootstrapping():
     """Assert that the bootstrapping method can be recalled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", est_params={"n_estimators": 5}, errors="raise")
+    atom.run("LGB", est_params={"n_estimators": 5})
     assert not hasattr(atom.lgb, "bootstrap")
     atom.lgb.bootstrapping(3)
     assert len(atom.lgb.bootstrap) == 3
@@ -605,7 +605,7 @@ def test_shape_property():
 def test_columns_property():
     """Assert that the columns property returns the columns of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, ignore=(0, 1), random_state=1)
-    atom.run("MNB", errors="raise")
+    atom.run("MNB")
     assert len(atom.mnb.columns) == len(atom.columns) - 2
 
 

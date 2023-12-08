@@ -366,7 +366,7 @@ class BaseModel(RunnerPlot):
         """Get the trial's hyperparameters.
 
         This method fetches the suggestions from the trial and
-        rounds floats to the 4th digit.
+        rounds floats to the fourth digit.
 
         Parameters
         ----------
@@ -656,14 +656,14 @@ class BaseModel(RunnerPlot):
                     attr = attribute
                     break
 
-        df = self.branch._get_rows(rows)
+        X, y = self.branch._get_rows(rows, return_X_y=True)
 
         # Filter for indices in dataset (required for sh and ts)
-        X = df.iloc[df.index.isin(self._all.index), :self.n_features]
-        y_true = df.iloc[df.index.isin(self._all.index), self.n_features:]
+        X = X.loc[X.index.isin(self._all.index)]
+        y_true = y.loc[y.index.isin(self._all.index)]
 
         if self.task.is_forecast:
-            y_pred = self._prediction(X.index, X=check_empty(X), verbose=0, method=attr)
+            y_pred = self._prediction(fh=X.index, X=check_empty(X), verbose=0, method=attr)
         else:
             y_pred = self._prediction(X.index, verbose=0, method=attr)
 
@@ -757,10 +757,7 @@ class BaseModel(RunnerPlot):
 
         # Forecasting models can have first prediction NaN
         if self.task.is_forecast and all(x.isna()[0] for x in get_cols(y_pred)):
-            (
-                y_true,
-                y_pred,
-            ) = y_true.iloc[1:], y_pred.iloc[1:]
+            y_true, y_pred = y_true.iloc[1:], y_pred.iloc[1:]
 
         if self.task is Task.multiclass_multioutput_classification:
             # Get the mean of the scores over the target columns

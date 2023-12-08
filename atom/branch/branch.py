@@ -600,8 +600,8 @@ class Branch:
                         inc.append(df.columns[int(col)])
                     else:
                         raise IndexError(
-                            f"Invalid value for the columns parameter. Value {col} "
-                            f"is out of range for data with {df.shape[1]} columns."
+                            f"Invalid column selection. Value {col} is out "
+                            f"of range for data with {df.shape[1]} columns."
                         )
                 elif isinstance(col, str):
                     for c in col.split("+"):
@@ -619,19 +619,19 @@ class Branch:
                                 array.extend(df.select_dtypes(c).columns)
                             except TypeError:
                                 raise ValueError(
-                                    "Invalid value for the columns parameter. "
-                                    f"Could not find any column that matches {c}."
+                                    "Invalid column selection. Could "
+                                    f"not find any column that matches {c}."
                                 ) from None
 
         if len(inc) + len(exc) == 0:
             raise ValueError(
-                "Invalid value for the columns parameter, got "
-                f"{columns}. At least one column has to be selected."
+                f"Invalid column selection, got {columns}. "
+                f"At least one column has to be selected."
             )
         elif inc and exc:
             raise ValueError(
-                "Invalid value for the columns parameter. You can either "
-                "include or exclude columns, not combinations of these."
+                "Invalid column selection. You can either include "
+                "or exclude columns, not combinations of these."
             )
         elif exc:
             # If columns were excluded with `!`, select all but those

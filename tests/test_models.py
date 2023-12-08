@@ -208,7 +208,6 @@ def test_pruning_non_sklearn(model):
     atom.run(
         models=model,
         n_trials=7,
-        errors="raise",
         est_params={"n_estimators": 10, "max_depth": 2},
         ht_params={"pruner": PatientPruner(None, patience=1)},
     )

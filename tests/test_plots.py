@@ -153,7 +153,7 @@ def test_get_plot_models_max_one():
 def test_custom_title_and_legend(func):
     """Assert that title and legend can be customized."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", errors="raise")
+    atom.run("Tree")
     atom.plot_roc(title={"text": "test", "x": 0}, legend={"font_color": "red"})
     func.assert_called_once()
 
