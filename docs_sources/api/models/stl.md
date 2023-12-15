@@ -1,7 +1,7 @@
-# BernoulliNB
--------------
+# STL
+-----
 
-:: atom.models:BernoulliNB
+:: atom.models:STL
     :: tags
     :: description
     :: see also

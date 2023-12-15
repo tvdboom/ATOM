@@ -41,6 +41,13 @@ def test_getstate_and_setstate():
         ATOMClassifier.load("atom")
 
 
+def test_dir():
+    """Assert that __dir__ contains all the extra attributes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("dummy")
+    assert all(attr in dir(atom) for attr in ("X", "main", "mean radius", "dummy"))
+
+
 def test_getattr_branch():
     """Assert that branches can be called."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

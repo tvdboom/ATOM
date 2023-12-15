@@ -25,12 +25,12 @@ from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from sklearn.tree import DecisionTreeClassifier
 
-from atom import ATOMClassifier, ATOMModel, ATOMRegressor
+from atom import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.utils.utils import check_is_fitted, check_scaling
 
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
-    y_class, y_idx, y_label, y_multiclass, y_reg,
+    y_class, y_fc, y_idx, y_label, y_multiclass, y_reg,
 )
 
 
@@ -44,11 +44,18 @@ def test_scaler():
     assert not atom.lda.scaler
 
 
-def test_str():
+def test_repr():
     """Assert that the __repr__ method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LDA")
     assert str(atom.lda).startswith("LinearDiscriminantAnalysis")
+
+
+def test_dir():
+    """Assert that __dir__ contains all the extra attributes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("dummy")
+    assert all(attr in dir(atom.dummy) for attr in ("y", "mean radius", "head"))
 
 
 def test_getattr():
@@ -638,90 +645,6 @@ def test_all_property():
     assert len(atom.ols._all) == len(X_bin)
 
 
-# Test prediction methods ========================================== >>
-
-def test_predictions_from_index():
-    """Assert that predictions can be made from data indices."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, holdout_size=0.1, random_state=1)
-    atom.run("LR")
-    assert isinstance(atom.lr.decision_function(("index_4", "index_5")), pd.Series)
-    assert isinstance(atom.lr.predict(["index_4", "index_8"]), pd.Series)
-    assert isinstance(atom.lr.predict_log_proba(-100), pd.DataFrame)
-    assert isinstance(atom.lr.predict_proba("index_4"), pd.DataFrame)
-    assert isinstance(atom.lr.score(slice(10, 20)), float)
-
-
-def test_transformations_first():
-    """Assert that the transformations are applied before predicting."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode(max_onehot=None)
-    atom.run("Tree")
-    assert isinstance(atom.tree.predict(X10_str), pd.Series)
-
-
-def test_data_is_scaled():
-    """Assert that the data is scaled for models that need it."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert sum(atom.lr.predict(X_bin)) > 0  # Always 0 if not scaled
-
-
-def test_predictions_from_new_data():
-    """Assert that predictions can be made from new data."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert isinstance(atom.lr.predict(X_bin), pd.Series)
-    assert isinstance(atom.lr.predict_proba(X_bin), pd.DataFrame)
-
-
-def test_prediction_from_multioutput():
-    """Assert that predictions can be made for multioutput datasets."""
-    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    atom.run("LR")
-    assert isinstance(atom.lr.predict_proba(X_class).index, pd.MultiIndex)
-
-
-def test_prediction_inverse_transform():
-    """Assert that the predict method can return the inversely transformed data."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.scale(columns=-1)
-    atom.run("Tree")
-    assert check_scaling(atom.tree.predict(X_reg, inverse=False))
-    assert not check_scaling(atom.tree.predict(X_reg, inverse=True))
-
-
-def test_score_regression():
-    """Assert that the score returns r2 for regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, shuffle=False, random_state=1)
-    atom.run("Tree")
-    r2 = r2_score(y_reg, atom.tree.predict(X_reg))
-    assert atom.tree.score(X_reg, y_reg) == r2
-
-
-def test_score_metric_is_None():
-    """Assert that the score method returns the default metric."""
-    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
-    atom.run("Tree")
-    f1 = f1_score(y_bin, atom.tree.predict(X_bin))
-    assert atom.tree.score(X_bin, y_bin) == f1
-
-
-def test_score_custom_metric():
-    """Assert that the score method works when sample weights are provided."""
-    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
-    atom.run("Tree")
-    recall = recall_score(y_bin, atom.tree.predict(X_bin))
-    assert atom.tree.score(X_bin, y_bin, metric="recall") == recall
-
-
-def test_score_with_sample_weight():
-    """Assert that the score method works when sample weights are provided."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    score = atom.tree.score(X_bin, y_bin, sample_weight=list(range(len(y_bin))))
-    assert isinstance(score, float)
-
-
 # Test utility methods ============================================= >>
 
 def test_calibrate_invalid_task():
@@ -1003,3 +926,103 @@ def test_transform():
     X = atom.lr.transform(X10_str)
     assert len(X.columns) > 3  # Data is one-hot encoded
     assert all(-3 <= v <= 3 for v in X.to_numpy().ravel())  # Data is scaled
+
+
+# Test ClassRegModel ================================================== >>
+
+def test_classreg_get_tags():
+    """Assert that the get_tags method returns the tags."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.get_tags(), dict)
+
+
+def test_predictions_from_index():
+    """Assert that predictions can be made from data indices."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, holdout_size=0.1, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.decision_function(("index_4", "index_5")), pd.Series)
+    assert isinstance(atom.lr.predict(["index_4", "index_8"]), pd.Series)
+    assert isinstance(atom.lr.predict_log_proba(-100), pd.DataFrame)
+    assert isinstance(atom.lr.predict_proba("index_4"), pd.DataFrame)
+    assert isinstance(atom.lr.score(slice(10, 20)), float)
+
+
+def test_transformations_first():
+    """Assert that the transformations are applied before predicting."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.encode(max_onehot=None)
+    atom.run("Tree")
+    assert isinstance(atom.tree.predict(X10_str), pd.Series)
+
+
+def test_data_is_scaled():
+    """Assert that the data is scaled for models that need it."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert sum(atom.lr.predict(X_bin)) > 0  # Always 0 if not scaled
+
+
+def test_predictions_from_new_data():
+    """Assert that predictions can be made from new data."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.predict(X_bin), pd.Series)
+    assert isinstance(atom.lr.predict_proba(X_bin), pd.DataFrame)
+
+
+def test_prediction_from_multioutput():
+    """Assert that predictions can be made for multioutput datasets."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.predict_proba(X_class).index, pd.MultiIndex)
+
+
+def test_prediction_inverse_transform():
+    """Assert that the predict method can return the inversely transformed data."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.scale(columns=-1)
+    atom.run("Tree")
+    assert check_scaling(atom.tree.predict(X_reg, inverse=False))
+    assert not check_scaling(atom.tree.predict(X_reg, inverse=True))
+
+
+def test_score_regression():
+    """Assert that the score returns r2 for regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, shuffle=False, random_state=1)
+    atom.run("Tree")
+    r2 = r2_score(y_reg, atom.tree.predict(X_reg))
+    assert atom.tree.score(X_reg, y_reg) == r2
+
+
+def test_score_metric_is_None():
+    """Assert that the score method returns the default metric."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
+    atom.run("Tree")
+    f1 = f1_score(y_bin, atom.tree.predict(X_bin))
+    assert atom.tree.score(X_bin, y_bin) == f1
+
+
+def test_score_custom_metric():
+    """Assert that the score method works when sample weights are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
+    atom.run("Tree")
+    recall = recall_score(y_bin, atom.tree.predict(X_bin))
+    assert atom.tree.score(X_bin, y_bin, metric="recall") == recall
+
+
+def test_score_with_sample_weight():
+    """Assert that the score method works when sample weights are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    score = atom.tree.score(X_bin, y_bin, sample_weight=list(range(len(y_bin))))
+    assert isinstance(score, float)
+
+
+# Test ForecastModel =============================================== >>
+
+def test_forecast_get_tags():
+    """Assert that the get_tags method returns the tags."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    assert isinstance(atom.nf.get_tags(), dict)

@@ -3,73 +3,6 @@
 Author: Mavs
 Description: Module for models.
 
-To add new models, note the following:
-
-1. Add the class in the right file depending on the task.
-2. Models are ordered alphabetically.
-3. Models have the following structure:
-
-Class attributes
-----------------
-acronym: str
-    Acronym of the model's name.
-
-needs_scaling: bool
-    Whether the model needs scaled features.
-
-accepts_sparse: bool
-    Whether the model has native support for sparse matrices.
-
-native_multilabel: bool
-    Whether the model has native support for multilabel tasks.
-
-native_multioutput: bool
-    Whether the model has native support for multioutput tasks.
-
-has_validation: str or None
-    Whether the model allows in-training validation. If str,
-    name of the estimator's parameter that states the number
-    of iterations. If None, no support for in-training
-    validation.
-
-supports_engines: list
-    Engines that can be used to run this model.
-
-_module: str
-    Module from which to load the class. If one of engines,
-    ignore the engine name, i.e., use "ensemble" instead of
-    "sklearn.ensemble".
-
-_estimators: dict
-    Name of the estimators per goal.
-
-Instance attributes
--------------------
-name: str
-    Name of the model. Defaults to the same as the acronym
-    but can be different if the same model is called multiple
-    times. The name is assigned in the basemodel.py module.
-
-Methods
--------
-_get_parameters(self, x) -> dict:
-    Return the trial's suggestions with (optionally) custom changes
-    to the params. Don't implement if the parent's implementation
-    is sufficient.
-
-_trial_to_est(self, params) -> dict:
-    Convert trial's hyperparameters to parameters for the
-    estimator. Only implement for models whose study params are
-    different from those for the estimator.
-
-_fit_estimator(self, estimator, data, est_params_fit, validation, trial):
-    This method is called to fit the estimator. Implement only
-    to customize the fit.
-
-_get_distributions(self) -> dict:
-    Return a list of the hyperparameter distributions for
-    optimization.
-
 """
 
 from atom.models.classreg import (
@@ -87,8 +20,8 @@ from atom.models.classreg import (
 from atom.models.custom import CustomModel
 from atom.models.ensembles import Stacking, Voting
 from atom.models.ts import (
-    ARIMA, ETS, AutoARIMA, ExponentialSmoothing, NaiveForecaster,
-    PolynomialTrend,
+    ARIMA, BATS, ETS, STL, TBATS, AutoARIMA, Croston, ExponentialSmoothing,
+    NaiveForecaster, PolynomialTrend, Theta,
 )
 from atom.utils.types import Predictor
 from atom.utils.utils import ClassMap
@@ -101,11 +34,13 @@ MODELS = ClassMap(
     AutoARIMA,
     AutomaticRelevanceDetermination,
     Bagging,
+    BATS,
     BayesianRidge,
     BernoulliNB,
     CatBoost,
     CategoricalNB,
     ComplementNB,
+    Croston,
     DecisionTree,
     Dummy,
     ElasticNet,
@@ -137,8 +72,11 @@ MODELS = ClassMap(
     RadiusNearestNeighbors,
     RandomForest,
     Ridge,
+    STL,
     StochasticGradientDescent,
     SupportVectorMachine,
+    TBATS,
+    Theta,
     XGBoost,
     key="acronym",
 )

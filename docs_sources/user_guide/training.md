@@ -201,7 +201,7 @@ The predefined models that support in-training validation are:
 * [XGBoost][]
 
 To apply in-training validation to a [custom model][custom-models], use the
-[`has_validation`][atommodel-has_validation] parameter when creating the
+[`validation`][atommodel-validation] parameter when creating the
 custom model.
 
 !!! warning

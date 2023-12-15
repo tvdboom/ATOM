@@ -109,10 +109,10 @@ class FeatureExtractor(TransformerMixin):
     Attributes
     ----------
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -360,10 +360,10 @@ class FeatureGenerator(TransformerMixin):
         - **fitness:** Fitness score.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -487,7 +487,7 @@ class FeatureGenerator(TransformerMixin):
             )
 
             # Select the new features (dfs also returns originals)
-            self._dfs = self._dfs[X.shape[1] - 1 :]
+            self._dfs = self._dfs[X.shape[1] - 1:]
 
             # Get a random selection of features
             if self.n_features and self.n_features < len(self._dfs):
@@ -638,10 +638,10 @@ class FeatureGrouper(TransformerMixin):
     Attributes
     ----------
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -976,10 +976,10 @@ class FeatureSelector(TransformerMixin):
         strategy.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------

@@ -353,10 +353,11 @@ class BaseTransformer:
     # Methods ====================================================== >>
 
     def _inherit(self, obj: T_Estimator) -> T_Estimator:
-        """Inherit n_jobs and/or random_state from parent.
+        """Inherit parameters from parent.
 
-        Utility method to set the n_jobs and random_state parameters
-        of an estimator (if available) equal to that of this instance.
+        Utility method to set the sp (seasonal period), n_jobs and
+        random_state parameters of an estimator (if available) equal
+        to that of this instance.
 
         Parameters
         ----------
@@ -370,9 +371,9 @@ class BaseTransformer:
 
         """
         signature = sign(obj.__init__)  # type: ignore[misc]
-        for p in ("n_jobs", "random_state"):
+        for p in ("sp", "n_jobs", "random_state"):
             if p in signature and getattr(obj, p, "<!>") == signature[p]._default:
-                setattr(obj, p, getattr(self, p))
+                setattr(obj, p, getattr(self, p, signature[p]._default))
 
         return obj
 

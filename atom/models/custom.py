@@ -41,10 +41,11 @@ class CustomModel(ClassRegModel):
                 f"the model's acronym."
             )
 
+        self.handles_missing = getattr(est, "handles_missing", False)
         self.needs_scaling = getattr(est, "needs_scaling", False)
         self.native_multilabel = getattr(est, "native_multilabel", False)
         self.native_multioutput = getattr(est, "native_multioutput", False)
-        self.has_validation = getattr(est, "has_validation", None)
+        self.validation = getattr(est, "validation", None)
 
         super().__init__(name=name, **kwargs)
 

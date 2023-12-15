@@ -28,8 +28,9 @@ class Stacking(ClassRegModel):
     """
 
     acronym = "Stack"
+    handles_missing = False
     needs_scaling = False
-    has_validation = None
+    validation = None
     native_multilabel = False
     native_multioutput = False
     supports_engines = ()
@@ -83,8 +84,9 @@ class Voting(ClassRegModel):
     """
 
     acronym = "Vote"
+    handles_missing = False
     needs_scaling = False
-    has_validation = None
+    validation = None
     native_multilabel = False
     native_multioutput = False
     supports_engines = ()

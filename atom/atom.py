@@ -56,7 +56,7 @@ from atom.utils.types import (
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
     RowSelector, Scalar, ScalerStrats, Sequence, Series, TargetSelector,
     Transformer, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
-    sequence_t, tsindex_t,
+    sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -95,6 +95,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector = -1,
         index: IndexSelector = False,
         ignore: ColumnSelector | None = None,
+        sp: Int | str | Sequence[Int | str] | None = None,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
         n_rows: Scalar = 1,
@@ -133,18 +134,19 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             holdout_size=holdout_size,
         )
 
-        self._log("<< ================== ATOM ================== >>", 1)
-
         # Initialize the branch system and fill with data
         self._branches = BranchManager(memory=self.memory)
         self._branches.fill(*self._get_data(arrays, y=y))
 
         self.ignore = ignore  # type: ignore[assignment]
+        self.sp = sp  # type: ignore[assignment]
+
         self.missing = DEFAULT_MISSING
 
         self._models = ClassMap()
         self._metric = ClassMap()
 
+        self._log("<< ================== ATOM ================== >>", 1)
         self._log("\nConfiguration ==================== >>", 1)
         self._log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
@@ -747,8 +749,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 if atom._config.index is False:
                     branch._container = DataContainer(
                         data=(dataset := branch._container.data.reset_index(drop=True)),
-                        train_idx=dataset.index[: len(branch._container.train_idx)],
-                        test_idx=dataset.index[-len(branch._container.test_idx) :],
+                        train_idx=dataset.index[:len(branch._container.train_idx)],
+                        test_idx=dataset.index[-len(branch._container.test_idx):],
                         n_cols=branch._container.n_cols,
                     )
 
@@ -956,11 +958,13 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         self._log("Dataset stats " + "=" * 20 + " >>", _vb)
         self._log(f"Shape: {self.shape}", _vb)
+        if self.task.is_forecast and self.sp:
+            self._log(f"Seasonal period: {self.sp}", _vb)
 
-        for set_ in ("train", "test", "holdout"):
-            if (data := getattr(self, set_)) is not None:
-                self._log(f"{set_.capitalize()} set size: {len(data)}", _vb)
-                if isinstance(self.branch.train.index, tsindex_t):
+        for ds in ("train", "test", "holdout"):
+            if (data := getattr(self, ds)) is not None:
+                self._log(f"{ds.capitalize()} set size: {len(data)}", _vb)
+                if self.task.is_forecast:
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)
@@ -1231,7 +1235,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             self.branch._container = DataContainer(
                 data=(data := self.dataset.reset_index(drop=True)),
                 train_idx=data.index[: len(self.branch._data.train_idx)],
-                test_idx=data.index[-len(self.branch._data.test_idx) :],
+                test_idx=data.index[-len(self.branch._data.test_idx):],
                 n_cols=self.branch._data.n_cols,
             )
             if self.branch._holdout is not None:

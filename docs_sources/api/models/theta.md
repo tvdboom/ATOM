@@ -1,7 +1,7 @@
-# BernoulliNB
--------------
+# Theta
+-------
 
-:: atom.models:BernoulliNB
+:: atom.models:Theta
     :: tags
     :: description
     :: see also

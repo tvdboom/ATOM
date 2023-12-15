@@ -1,7 +1,7 @@
-# BernoulliNB
--------------
+# BATS
+------
 
-:: atom.models:BernoulliNB
+:: atom.models:BATS
     :: tags
     :: description
     :: see also

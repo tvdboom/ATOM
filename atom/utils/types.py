@@ -159,14 +159,6 @@ Float: TypeAlias = float | np.floating
 Scalar: TypeAlias = Int | Float
 Segment: TypeAlias = range | slice
 Index: TypeAlias = pd.Index | md.Index
-TSIndex: TypeAlias = (
-    pd.PeriodIndex
-    | md.PeriodIndex
-    | pd.DatetimeIndex
-    | md.DatetimeIndex
-    | pd.TimedeltaIndex
-    | md.TimedeltaIndex
-)
 Series: TypeAlias = pd.Series | md.Series
 DataFrame: TypeAlias = pd.DataFrame | md.DataFrame
 Pandas: TypeAlias = Series | DataFrame
@@ -262,6 +254,7 @@ NItems: TypeAlias = (
     | dict[str, IntLargerEqualZero]
     | Sequence[IntLargerEqualZero]
 )
+HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
 
 # Allowed values for method selection
 PredictionMethods: TypeAlias = Literal[
@@ -310,7 +303,6 @@ int_t = (int, np.integer)
 float_t = (float, np.floating)
 segment_t = (slice, range)
 index_t = (pd.Index, md.Index)
-tsindex_t = TSIndex.__args__
 series_t = (pd.Series, md.Series)
 sequence_t = (range, list, tuple, np.ndarray, *index_t, *series_t)
 dataframe_t = (pd.DataFrame, md.DataFrame)

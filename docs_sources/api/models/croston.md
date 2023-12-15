@@ -1,7 +1,7 @@
-# BernoulliNB
--------------
+# Croston
+---------
 
-:: atom.models:BernoulliNB
+:: atom.models:Croston
     :: tags
     :: description
     :: see also

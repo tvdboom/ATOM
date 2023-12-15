@@ -66,6 +66,7 @@ additional libraries. You can install all the optional dependencies using
 * **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.3.1)
+* **[tbats](https://github.com/intive-DataScience/tbats)** (>=1.1.3)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=2.0.0)
 
@@ -75,7 +76,7 @@ additional libraries. You can install all the optional dependencies using
 The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
 necessary to [contribute][contributing] to the project. Install them
-running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/latest/) with
+running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/latest/) first with
 `pip install -U pdm`).
 
 **Linting**

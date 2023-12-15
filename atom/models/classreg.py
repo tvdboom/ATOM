@@ -63,11 +63,12 @@ class AdaBoost(ClassRegModel):
     """
 
     acronym = "AdaB"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "ensemble"
@@ -133,11 +134,12 @@ class AutomaticRelevanceDetermination(ClassRegModel):
     """
 
     acronym = "ARD"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -201,11 +203,12 @@ class Bagging(ClassRegModel):
     """
 
     acronym = "Bag"
+    handles_missing = True
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "ensemble"
@@ -267,11 +270,12 @@ class BayesianRidge(ClassRegModel):
     """
 
     acronym = "BR"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -331,11 +335,12 @@ class BernoulliNB(ClassRegModel):
     """
 
     acronym = "BNB"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
@@ -410,11 +415,12 @@ class CatBoost(ClassRegModel):
     """
 
     acronym = "CatB"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = "n_estimators"
+    validation = "n_estimators"
     supports_engines = ("catboost",)
 
     _module = "catboost"
@@ -532,8 +538,8 @@ class CatBoost(ClassRegModel):
             if trial and len(self._metric) == 1 and cb._pruned:
                 # Add the pruned step to the output
                 step = len(self.evals[f"{m}_train"])
-                steps = estimator.get_params()[self.has_validation]
-                trial.params[self.has_validation] = f"{step}/{steps}"
+                steps = estimator.get_params()[self.validation]
+                trial.params[self.validation] = f"{step}/{steps}"
 
                 trial.set_user_attr("estimator", estimator)
                 raise TrialPruned(cb._message)
@@ -597,11 +603,12 @@ class CategoricalNB(ClassRegModel):
     """
 
     acronym = "CatNB"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
@@ -657,11 +664,12 @@ class ComplementNB(ClassRegModel):
     """
 
     acronym = "CNB"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
@@ -717,11 +725,12 @@ class DecisionTree(ClassRegModel):
     """
 
     acronym = "Tree"
+    handles_missing = True
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = True
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "tree"
@@ -792,11 +801,12 @@ class Dummy(ClassRegModel):
     """
 
     acronym = "Dummy"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "dummy"
@@ -859,11 +869,12 @@ class ElasticNet(ClassRegModel):
     """
 
     acronym = "EN"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
@@ -924,11 +935,12 @@ class ExtraTree(ClassRegModel):
     """
 
     acronym = "ETree"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = True
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "tree"
@@ -998,11 +1010,12 @@ class ExtraTrees(ClassRegModel):
     """
 
     acronym = "ET"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = True
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "ensemble"
@@ -1027,9 +1040,8 @@ class ExtraTrees(ClassRegModel):
         """
         params = super()._get_parameters(trial)
 
-        if not self._get_param("bootstrap", params):
-            if "max_samples" in params:
-                params["max_samples"] = None
+        if not self._get_param("bootstrap", params) and "max_samples" in params:
+            params["max_samples"] = None
 
         return params
 
@@ -1094,11 +1106,12 @@ class GaussianNB(ClassRegModel):
     """
 
     acronym = "GNB"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
@@ -1153,11 +1166,12 @@ class GaussianProcess(ClassRegModel):
     """
 
     acronym = "GP"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "gaussian_process"
@@ -1209,11 +1223,12 @@ class GradientBoostingMachine(ClassRegModel):
     """
 
     acronym = "GBM"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "ensemble"
@@ -1288,11 +1303,12 @@ class HuberRegression(ClassRegModel):
     """
 
     acronym = "Huber"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -1354,11 +1370,12 @@ class HistGradientBoosting(ClassRegModel):
     """
 
     acronym = "hGBM"
+    handles_missing = True
     needs_scaling = False
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "ensemble"
@@ -1430,11 +1447,12 @@ class KNearestNeighbors(ClassRegModel):
     """
 
     acronym = "KNN"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = True
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "neighbors"
@@ -1502,11 +1520,12 @@ class Lasso(ClassRegModel):
     """
 
     acronym = "Lasso"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
@@ -1565,11 +1584,12 @@ class LeastAngleRegression(ClassRegModel):
     """
 
     acronym = "Lars"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -1620,11 +1640,12 @@ class LightGBM(ClassRegModel):
     """
 
     acronym = "LGB"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = "n_estimators"
+    validation = "n_estimators"
     supports_engines = ("lightgbm",)
 
     _module = "lightgbm.sklearn"
@@ -1720,8 +1741,8 @@ class LightGBM(ClassRegModel):
 
             # Add the pruned step to the output
             step = str(ex).split(" ")[-1][:-1]
-            steps = estimator.get_params()[self.has_validation]
-            trial.params[self.has_validation] = f"{step}/{steps}"
+            steps = estimator.get_params()[self.validation]
+            trial.params[self.validation] = f"{step}/{steps}"
 
             trial.set_user_attr("estimator", estimator)
             raise ex
@@ -1793,11 +1814,12 @@ class LinearDiscriminantAnalysis(ClassRegModel):
     """
 
     acronym = "LDA"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "discriminant_analysis"
@@ -1819,9 +1841,8 @@ class LinearDiscriminantAnalysis(ClassRegModel):
         """
         params = super()._get_parameters(trial)
 
-        if self._get_param("solver", params) == "svd":
-            if "shrinkage" in params:
-                params["shrinkage"] = None
+        if self._get_param("solver", params) == "svd" and "shrinkage" in params:
+            params["shrinkage"] = None
 
         return params
 
@@ -1877,11 +1898,12 @@ class LinearSVM(ClassRegModel):
     """
 
     acronym = "lSVM"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "cuml")
 
     _module = "svm"
@@ -1916,11 +1938,9 @@ class LinearSVM(ClassRegModel):
                     params["dual"] = True
             elif self._get_param("loss", params) == "squared_hinge":
                 # l1 regularization can't be combined with squared_hinge when dual=True
-                if self._get_param("penalty", params) == "l1":
-                    if "dual" in params:
-                        params["dual"] = False
-        elif self._get_param("loss", params) == "epsilon_insensitive":
-            if "dual" in params:
+                if self._get_param("penalty", params) == "l1" and "dual" in params:
+                    params["dual"] = False
+        elif self._get_param("loss", params) == "epsilon_insensitive" and "dual" in params:
                 params["dual"] = True
 
         return params
@@ -2006,11 +2026,12 @@ class LogisticRegression(ClassRegModel):
     """
 
     acronym = "LR"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
@@ -2039,9 +2060,8 @@ class LogisticRegression(ClassRegModel):
         cond_2 = penalty == "l1" and solver not in ("liblinear", "saga")
         cond_3 = penalty == "elasticnet" and solver != "saga"
 
-        if cond_1 or cond_2 or cond_3:
-            if "penalty" in params:
-                params["penalty"] = "l2"  # Change to default value
+        if cond_1 or cond_2 or cond_3 and "penalty" in params:
+            params["penalty"] = "l2"  # Change to default value
 
         return params
 
@@ -2113,11 +2133,12 @@ class MultiLayerPerceptron(ClassRegModel):
     """
 
     acronym = "MLP"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = False
-    has_validation = "max_iter"
+    validation = "max_iter"
     supports_engines = ("sklearn",)
 
     _module = "neural_network"
@@ -2219,11 +2240,12 @@ class MultinomialNB(ClassRegModel):
     """
 
     acronym = "MNB"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "cuml")
 
     _module = "naive_bayes"
@@ -2281,11 +2303,12 @@ class OrdinaryLeastSquares(ClassRegModel):
     """
 
     acronym = "OLS"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
@@ -2326,11 +2349,12 @@ class OrthogonalMatchingPursuit(ClassRegModel):
     """
 
     acronym = "OMP"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -2373,11 +2397,12 @@ class PassiveAggressive(ClassRegModel):
     """
 
     acronym = "PA"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = "max_iter"
+    validation = "max_iter"
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -2449,11 +2474,12 @@ class Perceptron(ClassRegModel):
     """
 
     acronym = "Perc"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = "max_iter"
+    validation = "max_iter"
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -2514,11 +2540,12 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
     """
 
     acronym = "QDA"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = False
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "discriminant_analysis"
@@ -2584,11 +2611,12 @@ class RadiusNearestNeighbors(ClassRegModel):
     """
 
     acronym = "RNN"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = True
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn",)
 
     _module = "neighbors"
@@ -2660,11 +2688,12 @@ class RandomForest(ClassRegModel):
     """
 
     acronym = "RF"
+    handles_missing = False
     needs_scaling = False
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = True
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "ensemble"
@@ -2689,9 +2718,8 @@ class RandomForest(ClassRegModel):
         """
         params = super()._get_parameters(trial)
 
-        if not self._get_param("bootstrap", params):
-            if "max_samples" in params:
-                params["max_samples"] = None
+        if not self._get_param("bootstrap", params) and "max_samples" in params:
+            params["max_samples"] = None
 
         return params
 
@@ -2775,11 +2803,12 @@ class Ridge(ClassRegModel):
     """
 
     acronym = "Ridge"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = True
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "linear_model"
@@ -2848,11 +2877,12 @@ class StochasticGradientDescent(ClassRegModel):
     """
 
     acronym = "SGD"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = "max_iter"
+    validation = "max_iter"
     supports_engines = ("sklearn",)
 
     _module = "linear_model"
@@ -2933,11 +2963,12 @@ class SupportVectorMachine(ClassRegModel):
     """
 
     acronym = "SVM"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = None
+    validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
     _module = "svm"
@@ -2959,9 +2990,8 @@ class SupportVectorMachine(ClassRegModel):
         """
         params = super()._get_parameters(trial)
 
-        if self._get_param("kernel", params) == "poly":
-            if "gamma" in params:
-                params["gamma"] = "scale"  # Crashes in combination with "auto"
+        if self._get_param("kernel", params) == "poly" and "gamma" in params:
+            params["gamma"] = "scale"  # Crashes in combination with "auto"
 
         return params
 
@@ -3053,11 +3083,12 @@ class XGBoost(ClassRegModel):
     """
 
     acronym = "XGB"
+    handles_missing = False
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
     native_multioutput = False
-    has_validation = "n_estimators"
+    validation = "n_estimators"
     supports_engines = ("xgboost",)
 
     _module = "xgboost"
@@ -3174,8 +3205,8 @@ class XGBoost(ClassRegModel):
 
             # Add the pruned step to the output
             step = str(ex).split(" ")[-1][:-1]
-            steps = estimator.get_params()[self.has_validation]
-            trial.params[self.has_validation] = f"{step}/{steps}"
+            steps = estimator.get_params()[self.validation]
+            trial.params[self.validation] = f"{step}/{steps}"
 
             trial.set_user_attr("estimator", estimator)
             raise ex

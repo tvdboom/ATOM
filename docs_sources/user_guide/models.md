@@ -13,53 +13,11 @@ can be accessed using their acronyms, e.g., `atom.LGB` to access the
 LightGBM model. The available models and their corresponding
 acronyms are:
 
-* [AdaBoost][] (AdaB)
-* [ARIMA][] (Arima)
-* [AutoARIMA][] (AutoARIMA)
-* [AutomaticRelevanceDetermination][] (ARD)
-* [Bagging][] (Bag)
-* [BayesianRidge][] (BR)
-* [BernoulliNB][] (BNB)
-* [CatBoost][] (CatB)
-* [CategoricalNB][] (CatNB)
-* [ComplementNB][] (CNB)
-* [DecisionTree][] (Tree)
-* [Dummy][] (Dummy)
-* [ElasticNet][] (EN)
-* [ETS][] (ETS)
-* [ExponentialSmoothing][] (ES)
-* [ExtraTree][] (ETree)
-* [ExtraTrees][] (ET)
-* [GaussianNB][] (GNB)
-* [GaussianProcess][] (GP)
-* [GradientBoostingMachine][] (GBM)
-* [HuberRegression][] (Huber)
-* [HistGradientBoosting][] (hGBM)
-* [KNearestNeighbors][] (KNN)
-* [Lasso][] (Lasso)
-* [LeastAngleRegression][] (Lars)
-* [LightGBM][] (LGB)
-* [LinearDiscriminantAnalysis][] (LDA)
-* [LinearSVM][] (lSVM)
-* [LogisticRegression][] (LR)
-* [MultiLayerPerceptron][] (MLP)
-* [MultinomialNB][] (MNB)
-* [NaiveForecaster][] (NF)
-* [OrdinaryLeastSquares][] (OLS)
-* [OrthogonalMatchingPursuit][] (OMP)
-* [PassiveAggressive][] (PA)
-* [Perceptron][] (Perc)
-* [PolynomialTrend][] (PT)
-* [QuadraticDiscriminantAnalysis][] (QDA)
-* [RadiusNearestNeighbors][] (RNN)
-* [RandomForest][] (RF)
-* [Ridge][] (Ridge)
-* [StochasticGradientDescent][] (SGD)
-* [SupportVectorMachine][] (SVM)
-* [XGBoost][] (XGB)
+:: atom.models:MODELS
+    :: toc
 
 !!! warning
-    The model classes can not be initialized directly by the user! Use
+    The model classes cannot be initialized directly by the user! Use
     them only through atom.
 
 !!! tip

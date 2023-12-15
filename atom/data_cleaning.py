@@ -274,13 +274,13 @@ class Balancer(TransformerMixin):
         Target values mapped to their respective encoded integers.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     target_names_in_: np.ndarray
-        Names of the target column seen during fit.
+        Names of the target column seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -527,9 +527,9 @@ class Balancer(TransformerMixin):
                 ]
 
             # Select the new samples and assign the new indices
-            X_new = X_new.iloc[-len(X_new) + len(o_samples) :]
+            X_new = X_new.iloc[-len(X_new) + len(o_samples):]
             X_new.index = n_idx
-            y_new = y_new.iloc[-len(y_new) + len(o_samples) :]
+            y_new = y_new.iloc[-len(y_new) + len(o_samples):]
             y_new.index = n_idx
 
             # First, output the samples created
@@ -603,21 +603,22 @@ class Cleaner(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "cuml"
 
     verbose: int, default=0
@@ -646,13 +647,13 @@ class Cleaner(TransformerMixin):
         available if encode_target=True.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     target_names_in_: np.ndarray
-        Names of the target column(s) seen during fit.
+        Names of the target column(s) seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -1031,21 +1032,22 @@ class Discretizer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "cuml"
 
     verbose: int, default=0
@@ -1068,10 +1070,10 @@ class Discretizer(TransformerMixin):
     Attributes
     ----------
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -1398,10 +1400,10 @@ class Encoder(TransformerMixin):
         the key to its mapping dictionary. Only for ordinal encoding.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -1731,21 +1733,22 @@ class Imputer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "cuml"
 
     verbose: int, default=0
@@ -1775,10 +1778,10 @@ class Imputer(TransformerMixin):
         with sklearn estimators.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -2132,21 +2135,22 @@ class Normalizer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "cuml"
 
     verbose: int, default=0
@@ -2174,10 +2178,10 @@ class Normalizer(TransformerMixin):
         `normalizer.yeojohnson` for the default strategy.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -2453,10 +2457,10 @@ class Pruner(TransformerMixin):
         isolation forest strategy. Not available for strategy="zscore".
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -2708,21 +2712,22 @@ class Scaler(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "cuml"
 
     verbose: int, default=0
@@ -2746,10 +2751,10 @@ class Scaler(TransformerMixin):
         `scaler.standard` for the default strategy.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------

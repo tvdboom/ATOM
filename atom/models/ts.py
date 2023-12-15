@@ -11,10 +11,12 @@ from typing import Any, ClassVar
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
+from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
 from optuna.trial import Trial
 
 from atom.basemodel import ForecastModel
+from atom.utils.types import Predictor
 
 
 class ARIMA(ForecastModel):
@@ -23,7 +25,7 @@ class ARIMA(ForecastModel):
     Seasonal ARIMA models and exogenous input is supported, hence this
     estimator is capable of fitting SARIMA, ARIMAX, and SARIMAX.
 
-    An ARIMA model, is a generalization of an autoregressive moving
+    An ARIMA model is a generalization of an autoregressive moving
     average (ARMA) model, and is fitted to time-series data in an effort
     to forecast future points. ARIMA models can be especially
     efficacious in cases where data shows evidence of non-stationarity.
@@ -72,18 +74,17 @@ class ARIMA(ForecastModel):
     """
 
     acronym = "ARIMA"
-    needs_scaling = False
-    accepts_sparse = False
-    native_multilabel = False
-    native_multioutput = True
-    has_validation = None
+    handles_missing = True
+    uses_exogenous = True
+    in_sample_prediction = True
+    native_multivariate = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.arima"
     _estimators: ClassVar[dict[str, str]] = {"forecast": "ARIMA"}
 
     _order = ("p", "d", "q")
-    _sorder = ("P", "D", "Q", "S")
+    _seasonal_order = ("P", "D", "Q", "S")
 
     def _get_parameters(self, trial: Trial) -> dict[str, BaseDistribution]:
         """Get the trial's hyperparameters.
@@ -103,7 +104,7 @@ class ARIMA(ForecastModel):
 
         # If no seasonal periodicity, set seasonal components to zero
         if self._get_param("S", params) == 0:
-            for p in self._sorder:
+            for p in self._seasonal_order:
                 if p in params:
                     params[p] = 0
 
@@ -128,8 +129,8 @@ class ARIMA(ForecastModel):
         # Convert params to hyperparameters 'order' and 'seasonal_order'
         if all(p in params for p in self._order):
             params["order"] = tuple(params.pop(p) for p in self._order)
-        if all(p in params for p in self._sorder):
-            params["seasonal_order"] = tuple(params.pop(p) for p in self._sorder)
+        if all(p in params for p in self._seasonal_order):
+            params["seasonal_order"] = tuple(params.pop(p) for p in self._seasonal_order)
 
         return params
 
@@ -162,7 +163,7 @@ class ARIMA(ForecastModel):
             for p in self._order:
                 dist.pop(p)
         if "seasonal_order" in self._est_params:
-            for p in self._sorder:
+            for p in self._seasonal_order:
                 dist.pop(p)
 
         return dist
@@ -214,11 +215,10 @@ class AutoARIMA(ForecastModel):
     """
 
     acronym = "AutoARIMA"
-    needs_scaling = False
-    accepts_sparse = False
-    native_multilabel = False
-    native_multioutput = True
-    has_validation = None
+    handles_missing = True
+    uses_exogenous = True
+    in_sample_prediction = True
+    native_multivariate = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.arima"
@@ -243,12 +243,161 @@ class AutoARIMA(ForecastModel):
         }
 
 
-class ExponentialSmoothing(ForecastModel):
-    """Exponential Smoothing forecaster.
+class BATS(ForecastModel):
+    """BATS forecaster with multiple seasonality.
 
-    Holt-Winters exponential smoothing forecaster. The default settings
-    use simple exponential smoothing, without trend and seasonality
-    components.
+    BATS is acronym for:
+
+    - Box-Cox transformation
+    - ARMA errors
+    - Trend
+    - Seasonal components
+
+    BATS was designed to forecast time series with multiple seasonal
+    periods. For example, daily data may have a weekly pattern as well
+    as an annual pattern. Or hourly data can have three seasonal periods:
+    a daily pattern, a weekly pattern, and an annual pattern.
+
+    In BATS, a [Box-Cox transformation][boxcox] is applied to the
+    original time series, and then this is modeled as a linear
+    combination of an exponentially smoothed trend, a seasonal
+    component and an ARMA component. BATS conducts some hyperparameter
+    tuning (e.g., which of these components to keep and which to discard)
+    using AIC.
+
+    Corresponding estimators are:
+
+    - [BATS][batsclass] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:ARIMA
+    atom.models:AutoARIMA
+    atom.models:TBATS
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="BATS", verbose=2)
+    ```
+
+    """
+
+    acronym = "BATS"
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.bats"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "BATS"}
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return self._est_class(
+            show_warnings=params.pop("show_warnings", self.warnings in ("always", "default")),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
+            **params,
+        )
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {
+            "use_box_cox": Cat([True, False, None]),
+            "use_trend": Cat([True, False, None]),
+            "use_damped_trend": Cat([True, False, None]),
+            "use_arma_errors": Cat([True, False]),
+        }
+
+
+class Croston(ForecastModel):
+    """Croston's method for forecasting.
+
+    Croston's method is a modification of (vanilla) exponential
+    smoothing to handle intermittent time series. A time series is
+    considered intermittent if many of its values are zero and the
+    gaps between non-zero entries are not periodic.
+
+    Croston's method will predict a constant value for all future
+    times, so Croston's method essentially provides another notion
+    for the average value of a time series.
+
+    Corresponding estimators are:
+
+    - [Croston][crostonclass] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:ExponentialSmoothing
+    atom.models:ETS
+    atom.models:NaiveForecaster
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="Croston", verbose=2)
+    ```
+
+    """
+
+    acronym = "Croston"
+    handles_missing = False
+    uses_exogenous = True
+    in_sample_prediction = True
+    native_multivariate = False
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.croston"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "Croston"}
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {"smoothing": Float(0, 1, step=0.1)}
+
+
+class ExponentialSmoothing(ForecastModel):
+    """Holt-Winters Exponential Smoothing forecaster.
 
     Corresponding estimators are:
 
@@ -275,15 +424,35 @@ class ExponentialSmoothing(ForecastModel):
     """
 
     acronym = "ES"
-    needs_scaling = False
-    accepts_sparse = False
-    native_multilabel = False
-    native_multioutput = True
-    has_validation = None
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.exp_smoothing"
     _estimators: ClassVar[dict[str, str]] = {"forecast": "ExponentialSmoothing"}
+
+    def _get_parameters(self, trial: Trial) -> dict:
+        """Get the trial's hyperparameters.
+
+        Parameters
+        ----------
+        trial: [Trial][]
+            Current trial.
+
+        Returns
+        -------
+        dict
+            Trial's hyperparameters.
+
+        """
+        params = super()._get_parameters(trial)
+
+        if not self._get_param("trend", params) and "damped_trend" in params:
+            params["damped_trend"] = False
+
+        return params
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -295,8 +464,6 @@ class ExponentialSmoothing(ForecastModel):
             Hyperparameter distributions.
 
         """
-        methods = ["L-BFGS-B", "TNC", "SLSQP", "Powell", "trust-constr", "bh", "ls"]
-
         return {
             "trend": Cat(["add", "mul", None]),
             "damped_trend": Cat([True, False]),
@@ -304,7 +471,8 @@ class ExponentialSmoothing(ForecastModel):
             "sp": Cat([4, 6, 7, 12, None]),
             "use_boxcox": Cat([True, False]),
             "initialization_method": Cat(["estimated", "heuristic"]),
-            "method": Cat(methods),
+            "method": Cat(["L-BFGS-B", "TNC", "SLSQP", "Powell", "trust-constr", "bh", "ls"]),
+            "use_brute": Cat([True, False]),
         }
 
 
@@ -342,15 +510,35 @@ class ETS(ForecastModel):
     """
 
     acronym = "ETS"
-    needs_scaling = False
-    accepts_sparse = False
-    native_multilabel = False
-    native_multioutput = True
-    has_validation = None
+    handles_missing = True
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.ets"
     _estimators: ClassVar[dict[str, str]] = {"forecast": "AutoETS"}
+
+    def _get_parameters(self, trial: Trial) -> dict:
+        """Get the trial's hyperparameters.
+
+        Parameters
+        ----------
+        trial: [Trial][]
+            Current trial.
+
+        Returns
+        -------
+        dict
+            Trial's hyperparameters.
+
+        """
+        params = super()._get_parameters(trial)
+
+        if not self._get_param("trend", params) and "damped_trend" in params:
+            params["damped_trend"] = False
+
+        return params
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -372,6 +560,10 @@ class ETS(ForecastModel):
             "maxiter": Int(500, 2000, step=100),
             "auto": Cat([True, False]),
             "information_criterion": Cat(["aic", "bic", "aicc"]),
+            "allow_multiplicative_trend": Cat([True, False]),
+            "restrict": Cat([True, False]),
+            "additive_only": Cat([True, False]),
+            "ignore_inf_ic": Cat([True, False]),
         }
 
 
@@ -409,11 +601,10 @@ class NaiveForecaster(ForecastModel):
     """
 
     acronym = "NF"
-    needs_scaling = False
-    accepts_sparse = False
-    native_multilabel = False
-    native_multioutput = True
-    has_validation = None
+    handles_missing = True
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.naive"
@@ -464,11 +655,10 @@ class PolynomialTrend(ForecastModel):
     """
 
     acronym = "PT"
-    needs_scaling = False
-    accepts_sparse = False
-    native_multilabel = False
-    native_multioutput = True
-    has_validation = None
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.trend"
@@ -488,3 +678,221 @@ class PolynomialTrend(ForecastModel):
             "degree": Int(1, 5),
             "with_intercept": Cat([True, False]),
         }
+
+
+class STL(ForecastModel):
+    """Seasonal-Trend decomposition using Loess.
+
+    STL is a technique commonly used for decomposing time series data
+    into components like trend, seasonality, and residuals.
+
+    Corresponding estimators are:
+
+    - [STLForecaster][] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:Croston
+    atom.models:ETS
+    atom.models:Theta
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="STL", verbose=2)
+    ```
+
+    """
+
+    acronym = "STL"
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.trend"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "STLForecaster"}
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {
+            "seasonal": Int(3, 11, step=2),
+            "seasonal_deg": Cat([0, 1]),
+            "trend_deg": Cat([0, 1]),
+            "low_pass_deg": Cat([0, 1]),
+            "robust": Cat([True, False]),
+        }
+
+
+class TBATS(ForecastModel):
+    """TBATS forecaster with multiple seasonality.
+
+    TBATS is acronym for:
+
+    - Trigonometric seasonality
+    - Box-Cox transformation
+    - ARMA errors
+    - Trend
+    - Seasonal components
+
+    TBATS was designed to forecast time series with multiple seasonal
+    periods. For example, daily data may have a weekly pattern as well
+    as an annual pattern. Or hourly data can have three seasonal periods:
+    a daily pattern, a weekly pattern, and an annual pattern.
+
+    In BATS, a [Box-Cox transformation][boxcox] is applied to the
+    original time series, and then this is modeled as a linear
+    combination of an exponentially smoothed trend, a seasonal
+    component and an ARMA component. The seasonal components are
+    modeled by trigonometric functions via Fourier series. TBATS
+    conducts some hyper-parameter tuning (e.g. which of these
+    components to keep and which to discard) using AIC.
+
+    Corresponding estimators are:
+
+    - [TBATS][tbatsclass] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:BATS
+    atom.models:ARIMA
+    atom.models:AutoARIMA
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="TBATS", verbose=2)
+    ```
+
+    """
+
+    acronym = "TBATS"
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.tbats"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "TBATS"}
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return self._est_class(
+            show_warnings=params.pop("show_warnings", self.warnings in ("always", "default")),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
+            **params,
+        )
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {
+            "use_box_cox": Cat([True, False, None]),
+            "use_trend": Cat([True, False, None]),
+            "use_damped_trend": Cat([True, False, None]),
+            "use_arma_errors": Cat([True, False]),
+        }
+
+
+class Theta(ForecastModel):
+    """Theta method for forecasting.
+
+    The theta method is equivalent to simple [ExponentialSmoothing][]
+    with drift. The series is tested for seasonality, and, if deemed
+    seasonal, the series is seasonally adjusted using a classical
+    multiplicative decomposition before applying the theta method. The
+    resulting forecasts are then reseasonalised.
+
+    In cases where ES results in a constant forecast, the theta
+    forecaster will revert to predicting the SES constant plus a linear
+    trend derived from the training data.
+
+    Prediction intervals are computed using the underlying state space
+    model.
+
+    Corresponding estimators are:
+
+    - [ThetaForecaster][] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:Croston
+    atom.models:ExponentialSmoothing
+    atom.models:PolynomialTrend
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="Theta", verbose=2)
+    ```
+
+    """
+
+    acronym = "Theta"
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    native_multivariate = False
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.theta"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "ThetaForecaster"}
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {"deseasonalize": Cat([False, True])}

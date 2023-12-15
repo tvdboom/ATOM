@@ -374,10 +374,10 @@ class TextNormalizer(TransformerMixin):
     Attributes
     ----------
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -606,10 +606,10 @@ class Tokenizer(TransformerMixin):
         Created quadgrams and their frequencies.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
     See Also
     --------
@@ -808,21 +808,22 @@ class Vectorizer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict, default={"data": "numpy", "estimator": "sklearn"}
+    engine: dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
         [estimators][estimator-acceleration]. The value should be a
         dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. Choose from:
+        corresponding choice as values. If None, the default values
+        are used.Choose from:
 
         - "data":
 
-            - "numpy"
+            - "numpy" (default)
             - "pyarrow"
             - "modin"
 
         - "estimator":
 
-            - "sklearn"
+            - "sklearn" (default)
             - "cuml"
 
     verbose: int, default=0
@@ -847,10 +848,10 @@ class Vectorizer(TransformerMixin):
         corpus, e.g., `vectorizer.tfidf` for the tfidf strategy.
 
     feature_names_in_: np.ndarray
-        Names of features seen during fit.
+        Names of features seen during `fit`.
 
     n_features_in_: int
-        Number of features seen during fit.
+        Number of features seen during `fit`.
 
 
     See Also

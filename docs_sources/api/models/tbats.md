@@ -1,7 +1,7 @@
-# BernoulliNB
--------------
+# TBATS
+-------
 
-:: atom.models:BernoulliNB
+:: atom.models:TBATS
     :: tags
     :: description
     :: see also

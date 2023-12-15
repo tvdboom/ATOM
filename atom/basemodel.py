@@ -253,12 +253,22 @@ class BaseModel(RunnerPlot):
             self._branch = branches.current
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
-            if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
-                self.scaler = Scaler().fit(self.X_train)
+            if hasattr(self, "needs_scaling"):
+                if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
+                    self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""
         return f"{self.__class__.__name__}()"
+
+    def __dir__(self) -> list[str]:
+        """Add additional attrs from __getattr__ to the dir."""
+        attrs = list(super().__dir__())
+        if "_branch" in self.__dict__:
+            attrs += [x for x in dir(self.branch) if not x.startswith("_")]
+            attrs += list(DF_ATTRS)
+            attrs += list(self.columns)
+        return attrs
 
     def __getattr__(self, item: str) -> Any:
         """Get attributes from branch or data."""
@@ -449,9 +459,10 @@ class BaseModel(RunnerPlot):
                     estimator = MultiOutputClassifier(estimator)
                 elif self.task.is_regression:
                     estimator = MultiOutputRegressor(estimator)
-            elif hasattr(self, "_estimators") and self._goal.name not in self._estimators:
-                # Forecasting task with a regressor
-                estimator = make_reduction(estimator)
+            elif self.task.is_forecast:
+                if hasattr(self, "_estimators") and self._goal.name not in self._estimators:
+                    # Forecasting task with a regressor
+                    estimator = make_reduction(estimator)
 
         return self._inherit(estimator)
 
@@ -494,13 +505,13 @@ class BaseModel(RunnerPlot):
             Fitted instance.
 
         """
-        if self.has_validation and hasattr(estimator, "partial_fit") and validation:
+        if getattr(self, "validation", False) and hasattr(estimator, "partial_fit") and validation:
             # Loop over first parameter in estimator
             try:
-                steps = estimator.get_params()[self.has_validation]
+                steps = estimator.get_params()[self.validation]
             except KeyError:
                 # For meta-estimators like multioutput
-                steps = estimator.get_params()[f"estimator__{self.has_validation}"]
+                steps = estimator.get_params()[f"estimator__{self.validation}"]
 
             for step in range(steps):
                 kwargs = {}
@@ -533,8 +544,8 @@ class BaseModel(RunnerPlot):
 
                     if trial.should_prune():
                         # Hacky solution to add the pruned step to the output
-                        if self.has_validation in trial.params:
-                            trial.params[self.has_validation] = f"{step}/{steps}"
+                        if self.validation in trial.params:
+                            trial.params[self.validation] = f"{step}/{steps}"
 
                         trial.set_user_attr("estimator", estimator)
                         raise TrialPruned
@@ -1308,7 +1319,7 @@ class BaseModel(RunnerPlot):
         """Change the model's name."""
         # Drop the acronym if provided by the user
         if re.match(f"{self.acronym}_", value, re.I):
-            value = value[len(self.acronym) + 1 :]
+            value = value[len(self.acronym) + 1:]
 
         # Add the acronym in front (with right capitalization)
         self._name = f"{self.acronym}{f'_{value}' if value else ''}"
@@ -2437,6 +2448,32 @@ class BaseModel(RunnerPlot):
 class ClassRegModel(BaseModel):
     """Classification and regression models."""
 
+    def get_tags(self) -> dict[str, Any]:
+        """Get the model's tags.
+
+        Return class parameters that provide general information about
+        the estimator's characteristics.
+
+        Returns
+        -------
+        dict
+            Model's tags.
+
+        """
+        return {
+            "acronym": self.acronym,
+            "fullname": self.fullname,
+            "estimator": self._est_class,
+            "module": self._est_class.__module__.split(".")[0] + self._module,
+            "handles_missing": self.handles_missing,
+            "needs_scaling": self.needs_scaling,
+            "accepts_sparse": self.accepts_sparse,
+            "native_multilabel": self.native_multilabel,
+            "native_multioutput": self.native_multioutput,
+            "validation": self.validation,
+            "supports_engines": ", ".join(self.supports_engines),
+        }
+
     @overload
     def _prediction(
         self,
@@ -2844,6 +2881,29 @@ class ClassRegModel(BaseModel):
 
 class ForecastModel(BaseModel):
     """Forecasting models."""
+
+    def get_tags(self) -> dict[str, Any]:
+        """Get the model's tags.
+
+        Return class parameters that provide general information about
+        the estimator's characteristics.
+
+        Returns
+        -------
+        dict
+            Model's tags.
+
+        """
+        return {
+            "acronym": self.acronym,
+            "fullname": self.fullname,
+            "estimator": self._est_class.__name__,
+            "module": self._est_class.__module__.split(".")[0] + self._module,
+            "handles_missing": self.handles_missing,
+            "in_sample_prediction": self.in_sample_prediction,
+            "native_multivariate": self.native_multivariate,
+            "supports_engines": ", ".join(self.supports_engines),
+        }
 
     @overload
     def _prediction(

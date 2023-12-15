@@ -7,6 +7,7 @@ Description: Module containing the BaseRunner class.
 
 from __future__ import annotations
 
+import math
 import random
 import re
 from abc import ABCMeta
@@ -17,12 +18,17 @@ from pathlib import Path
 from typing import Any
 
 import dill as pickle
+import numpy as np
 import pandas as pd
 from beartype import beartype
+from pandas.tseries.frequencies import to_offset
+from pmdarima.arima.utils import ndiffs
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 from sktime.datatypes import check_is_mtype
+from sktime.param_est.seasonality import SeasonalityACF
+from sktime.transformations.series.difference import Differencer
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
@@ -31,14 +37,15 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, FloatZeroToOneExc, Int, MetricConstructor, Model,
-    ModelSelector, ModelsSelector, Pandas, RowSelector, Scalar, Segment,
-    Sequence, Series, YSelector, dataframe_t, int_t, segment_t, sequence_t,
+    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int,
+    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
+    RowSelector, Scalar, Segment, Sequence, Series, YSelector, dataframe_t,
+    int_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataContainer, Task, bk, check_is_fitted, composed, crash,
-    divide, flt, get_cols, get_segment, get_versions, has_task, lst, merge,
-    method_to_log, n_cols,
+    ClassMap, DataContainer, SeasonalPeriod, Task, bk, check_is_fitted,
+    composed, crash, divide, flt, get_cols, get_segment, get_versions,
+    has_task, lst, merge, method_to_log, n_cols,
 )
 
 
@@ -69,6 +76,17 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         1,
                         severity="warning",
                     )
+
+    def __dir__(self) -> list[str]:
+        """Add additional attrs from __getattr__ to the dir."""
+        attrs = list(super().__dir__())
+        attrs += [x for x in dir(self.branch) if not x.startswith("_")]
+        attrs += list(DF_ATTRS)
+        attrs += [b.name.lower() for b in self._branches]
+        attrs += list(self.columns)
+        if isinstance(self._models, ClassMap):
+            attrs += [m.name.lower() for m in self._models]
+        return attrs
 
     def __getattr__(self, item: str) -> Any:
         """Get branch, attr from branch, model, column or attr from dataset."""
@@ -137,6 +155,33 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def task(self) -> Task:
         """Dataset's [task][] type."""
         return self._goal.infer_task(self.y)
+
+    @property
+    def sp(self) -> int | list[int] | None:
+        """Seasonal period(s) of the time series.
+
+        Read more about seasonality in the [user guide][seasonality].
+
+        """
+        return self._sp
+
+    @sp.setter
+    def sp(self, sp: Int | str | Sequence[Int | str] | None):
+        """Convert seasonal period to integer value."""
+        if sp is None:
+            self._sp = None
+        elif sp == "index":
+            if not hasattr(self.dataset.index, "freqstr"):
+                raise ValueError(
+                    f"Invalid value for the seasonal period, got {sp}. "
+                    f"The dataset's index has no attribute freqstr."
+                )
+            else:
+                self._sp = self.dataset.index.freqstr
+        elif sp == "infer":
+            self._sp = self.get_seasonal_period()
+        else:
+            self._sp = flt([self._get_sp(x) for x in lst(sp)])
 
     @property
     def og(self) -> Branch:
@@ -268,6 +313,36 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return df
 
     # Utility methods ============================================== >>
+
+    @staticmethod
+    def _get_sp(sp: Int | str) -> int:
+        """Get the seasonal period from a value or string.
+
+        Parameters
+        ----------
+        sp: int or str
+            Seasonal period provided as int or [DateOffset][].
+
+        Returns
+        -------
+        int
+            Seasonal period.
+
+        """
+        if isinstance(sp, str):
+            if offset := to_offset(sp):  # Convert to pandas' DateOffset
+                name, period = offset.name.split("-")[0], offset.n
+
+            if name not in SeasonalPeriod.__members__:
+                raise ValueError(
+                    f"Invalid value for the seasonal period, got {name}. "
+                    f"Valid values are: {', '.join(SeasonalPeriod.__members__)}"
+                )
+
+            # Formula is same as SeasonalPeriod[name] for period=1
+            return math.lcm(SeasonalPeriod[name].value, period) // period
+        else:
+            return int(sp)
 
     def _set_index(self, df: DataFrame, y: Pandas | None) -> DataFrame:
         """Assign an index to the dataframe.
@@ -482,8 +557,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
                 container = DataContainer(
                     data=(data := complete_set.iloc[: len(data)]),
-                    train_idx=data.index[: -len(test)],
-                    test_idx=data.index[-len(test) :],
+                    train_idx=data.index[:-len(test)],
+                    test_idx=data.index[-len(test):],
                     n_cols=len(get_cols(y)),
                 )
 
@@ -500,7 +575,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     raise ex
 
             if holdout is not None:
-                holdout = complete_set.iloc[len(data) :]
+                holdout = complete_set.iloc[len(data):]
 
             return container, holdout
 
@@ -589,19 +664,19 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 train.index = self._config.index[: len(train)]
                 test.index = self._config.index[len(train) : len(train) + len(test)]
                 if holdout is not None:
-                    holdout.index = self._config.index[-len(holdout) :]
+                    holdout.index = self._config.index[-len(holdout):]
 
             complete_set = self._set_index(bk.concat([train, test, holdout]), y_test)
 
             container = DataContainer(
-                data=(data := complete_set.iloc[: len(train) + len(test)]),
+                data=(data := complete_set.iloc[:len(train) + len(test)]),
                 train_idx=data.index[: len(train)],
-                test_idx=data.index[-len(test) :],
+                test_idx=data.index[-len(test):],
                 n_cols=len(get_cols(y_train)),
             )
 
             if holdout is not None:
-                holdout = complete_set.iloc[len(train) + len(test) :]
+                holdout = complete_set.iloc[len(train) + len(test):]
 
             return container, holdout
 
@@ -819,20 +894,27 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         Returns
         -------
         pd.DataFrame
-            Information about the available [predefined models][]. Columns
-            include:
+            Tags of the available [predefined models][]. The columns
+            depend on the task, but can include:
 
             - **acronym:** Model's acronym (used to call the model).
-            - **model:** Name of the model's class.
-            - **estimator:** The model's underlying estimator.
+            - **fullname:** Name of the model's class.
+            - **estimator:** Class of the model's underlying estimator.
             - **module:** The estimator's module.
+            - **handles_missing:** Whether the model can handle `NaN` values
+              without preprocessing.
             - **needs_scaling:** Whether the model requires feature scaling.
             - **accepts_sparse:** Whether the model accepts sparse matrices.
+            - **uses_exogenous:** Whether the model uses exogenous variables.
+            - **in_sample_prediction:** Whether the model can do predictions
+              on the training set.
             - **native_multilabel:** Whether the model has native support
               for [multilabel][] tasks.
             - **native_multioutput:** Whether the model has native support
               for [multioutput tasks][].
-            - **has_validation:** Whether the model has [in-training validation][].
+            - **native_multivariate:** Whether the model has native support
+              for [multivariate][] tasks.
+            - **validation:** Whether the model has [in-training validation][].
             - **supports_engines:** Engines supported by the model.
 
         """
@@ -840,20 +922,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         for model in MODELS:
             m = model(goal=self._goal)
             if self._goal.name in m._estimators:
-                rows.append(
-                    {
-                        "acronym": m.acronym,
-                        "model": m.fullname,
-                        "estimator": m._est_class.__name__,
-                        "module": m._est_class.__module__.split(".")[0] + m._module,
-                        "needs_scaling": m.needs_scaling,
-                        "accepts_sparse": m.accepts_sparse,
-                        "native_multilabel": m.native_multilabel,
-                        "native_multioutput": m.native_multioutput,
-                        "has_validation": bool(m.has_validation),
-                        "supports_engines": ", ".join(m.supports_engines),
-                    }
-                )
+                rows.append(m.get_tags())
 
         return pd.DataFrame(rows)
 
@@ -1050,6 +1119,94 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         _, y = self.branch._get_rows(rows, return_X_y=True)
         weights = compute_sample_weight("balanced", y=y)
         return bk.Series(weights, name="sample_weight").round(3)
+
+    @available_if(has_task("forecast"))
+    @composed(crash, beartype)
+    def get_seasonal_period(
+        self,
+        max_sp: Int | None = None,
+        harmonics: HarmonicsSelector | None = None,
+    ) -> int:
+        """Get the seasonal periods of the time series.
+
+        Use the data in the training set to calculate the seasonal
+        period. The data is internally differentiated before the
+        seasonality is detected using ACF.
+
+        !!! tip
+            Read more about seasonality in the [user guide][seasonality].
+
+        Parameters
+        ----------
+        max_sp: int or None, default=None
+            Maximum seasonal period to consider. If None, the maximum
+            period is given by `(len(y_train) - 1) // 2`.
+
+        harmonics: str or None, default=None
+            Defines the strategy on how to deal with harmonics from the
+            detected seasonal periods. Choose from the following options:
+
+            - None: The detected seasonal periods are left unchanged
+              (no harmonic removal).
+            - "drop": Remove all harmonics.
+            - "raw_strength": Keep the highest order harmonics, maintaining
+              the order of significance.
+            - "harmonic_strength": Replace seasonal periods with their highest
+              harmonic.
+
+            E.g., if the detected seasonal periods in strength order are
+            `[2, 3, 4, 7, 8]` (note that 4 and 8 are harmonics of 2), then:
+
+            - If "drop", result=[2, 3, 7]
+            - If "raw_strength", result=[3, 7, 8]
+            - If "harmonic_strength", result=[8, 3, 7]
+
+        Returns
+        -------
+        list of int
+            Seasonal periods, ordered by significance.
+
+        """
+        yt = self.y_train.copy()
+        max_sp = max_sp or (len(yt) - 1) // 2
+
+        for _ in np.arange(ndiffs(yt)):
+            yt = Differencer().fit_transform(yt)
+
+        acf = SeasonalityACF(nlags=max_sp).fit(pd.DataFrame(yt))
+        seasonal_periods = acf.get_fitted_params().get("sp_significant")
+
+        if harmonics and len(seasonal_periods) > 1:
+            # Create a dictionary of the seasonal periods and their harmonics
+            harmonic_dict: dict[int, list[int]] = {}
+            for sp in seasonal_periods:
+                for k in harmonic_dict:
+                    if sp % k == 0:
+                        harmonic_dict[k].append(sp)
+                        break
+                else:
+                    harmonic_dict[sp] = []
+
+            # For periods without harmonics, simplify operations
+            # by setting the value of the key to itself
+            harmonic_dict = {k: (v or [k]) for k, v in harmonic_dict.items()}
+
+            if harmonics == "drop":
+                seasonal_periods = list(harmonic_dict.keys())
+            elif harmonics == "raw_strength":
+                seasonal_periods = [
+                    sp for sp in seasonal_periods
+                    if any(max(v) == sp for v in harmonic_dict.values())
+                ]
+            elif harmonics == "harmonic_strength":
+                seasonal_periods = [max(v) for v in harmonic_dict.values()]
+
+        if not (seasonal_periods := [int(sp) for sp in seasonal_periods if sp <= max_sp]):
+            raise ValueError(
+                "No seasonal periods were detected. Try decreasing the max_sp parameter."
+            )
+
+        return flt(seasonal_periods)
 
     @composed(crash, method_to_log, beartype)
     def merge(self, other: BaseRunner, /, suffix: str = "2"):

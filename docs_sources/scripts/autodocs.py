@@ -43,6 +43,7 @@ CUSTOM_URLS = dict(
     joblibmemory="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html",
     warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
     datetimeindex="https://pandas.pydata.org/docs/reference/api/pandas.DatetimeIndex.html",
+    periodalias="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases",
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
@@ -130,6 +131,7 @@ CUSTOM_URLS = dict(
     baggingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html",
     baggingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html",
     bagdocs="https://scikit-learn.org/stable/modules/ensemble.html#bootstrapping",
+    batsclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.bats.BATS.html",
     bayesianridgeclass="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html",
     brdocs="https://scikit-learn.org/stable/modules/linear_model.html#bayesian-regression",
     bernoullinbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html",
@@ -141,6 +143,7 @@ CUSTOM_URLS = dict(
     catnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#categorical-naive-bayes",
     complementnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.CategoricalNB.html",
     cnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#complement-naive-bayes",
+    crostonclass="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.croston.Croston.html",
     decisiontreeclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html",
     decisiontreeregressor="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html",
     treedocs="https://scikit-learn.org/stable/modules/tree.html",
@@ -213,9 +216,12 @@ CUSTOM_URLS = dict(
     sgdclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html",
     sgdregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html",
     sgddocs="https://scikit-learn.org/stable/modules/sgd.html",
+    stlforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.trend.STLForecaster.html",
     svc="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html",
     svr="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html",
     svmdocs="https://scikit-learn.org/stable/modules/svm.html",
+    tbatsclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.tbats.TBATS.html",
+    thetaforecaster="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.theta.ThetaForecaster.html",
     xgbclassifier="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier",
     xgbregressor="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor",
     xgbdocs="https://xgboost.readthedocs.io/en/latest/index.html",
@@ -249,7 +255,6 @@ CUSTOM_URLS = dict(
 
 # Classes ========================================================== >>
 
-
 @dataclass
 class DummyTrainer:
     """Dummy trainer class to call model instances."""
@@ -265,6 +270,7 @@ class AutoDocs:
     The docstring should follow the numpydoc style[^1]. Blocks should
     start with `::`. The following blocks are accepted:
 
+    - toc
     - tags
     - head (summary + description)
     - summary (first line of docstring, required)
@@ -374,6 +380,27 @@ class AutoDocs:
 
         return text + "\n"
 
+    def get_toc(self) -> str:
+        """Return a toc of the objects in self.
+
+        Note that object must be iterable.
+
+        Returns
+        -------
+        str
+            Toc of the objects.
+
+        """
+        toc = "<table markdown style='font-size: 0.9em'>"
+        for obj in self.obj:
+            func = AutoDocs(obj)
+
+            name = f"[{obj.__name__}][] ({obj.acronym})"
+            toc += f"<tr><td>{name}</td><td>{func.get_summary()}</td></tr>"
+
+        toc += "</table>"
+        return toc
+
     def get_tags(self) -> str:
         """Return the object's tags.
 
@@ -386,15 +413,17 @@ class AutoDocs:
 
         """
         text = f"[{self.obj.acronym}][predefined-models]{{ .md-tag }}"
-        if self.obj.needs_scaling:
+        if getattr(self.obj, "needs_scaling", False):
             text += "&nbsp;&nbsp;[needs scaling][automated-feature-scaling]{ .md-tag }"
-        if self.obj.accepts_sparse:
+        if getattr(self.obj, "accepts_sparse", False):
             text += "&nbsp;&nbsp;[accept sparse][sparse-datasets]{ .md-tag }"
-        if self.obj.native_multilabel:
+        if getattr(self.obj, "native_multilabel", False):
             text += "&nbsp;&nbsp;[native multilabel][multilabel]{ .md-tag }"
-        if self.obj.native_multioutput:
+        if getattr(self.obj, "native_multioutput", False):
             text += "&nbsp;&nbsp;[native multioutput][multioutput-tasks]{ .md-tag }"
-        if self.obj.has_validation:
+        if getattr(self.obj, "native_multivariate", False):
+            text += "&nbsp;&nbsp;[native multivariate][multivariate]{ .md-tag }"
+        if getattr(self.obj, "validation", None):
             text += "&nbsp;&nbsp;[allows validation][in-training-validation]{ .md-tag }"
         if any(engine not in ("sklearn", "sktime") for engine in self.obj.supports_engines):
             text += "&nbsp;&nbsp;[supports acceleration][estimator-acceleration]{ .md-tag }"
@@ -484,7 +513,7 @@ class AutoDocs:
 
         """
         pattern = f".*?(?={'|'.join(self.blocks)})"
-        match = re.match(pattern, self.doc[len(self.get_summary()) :], re.S)
+        match = re.match(pattern, self.doc[len(self.get_summary()):], re.S)
         return match.group() if match else ""
 
     def get_see_also(self) -> str:
@@ -560,8 +589,7 @@ class AutoDocs:
                 attrs = include
             else:
                 attrs = [
-                    m
-                    for m, _ in getmembers(self.obj, lambda x: not isroutine(x))
+                    m for m, _ in getmembers(self.obj, lambda x: not isroutine(x))
                     if not m.startswith("_")
                     and not any(re.fullmatch(p, m) for p in config.get("exclude", []))
                 ]
@@ -806,12 +834,14 @@ def render(markdown: str, **kwargs) -> str:
         if isinstance(command, str):
             if ":" in command:
                 autodocs = AutoDocs.get_obj(command)
-                markdown = markdown[: match.start()] + markdown[match.end() :]
+                markdown = markdown[:match.start()] + markdown[match.end():]
                 continue
             else:
                 command = {command: None}  # Has no options specified
 
-        if "tags" in command:
+        if "toc" in command:
+            text = autodocs.get_toc()
+        elif "tags" in command:
             text = autodocs.get_tags()
         elif "signature" in command:
             text = autodocs.get_signature()
@@ -840,7 +870,7 @@ def render(markdown: str, **kwargs) -> str:
         else:
             text = ""
 
-        markdown = markdown[: match.start()] + text + markdown[match.end() :]
+        markdown = markdown[:match.start()] + text + markdown[match.end():]
 
         # Change the custom autorefs now to use [self-...][]
         markdown = custom_autorefs(markdown, autodocs)

@@ -14,10 +14,10 @@ from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-from atom import ATOMClassifier, ATOMModel, ATOMRegressor
+from atom import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.pipeline import Pipeline
 
-from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_reg
+from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_fc, y_reg
 
 
 def test_custom_model_properties():
@@ -101,6 +101,12 @@ def test_all_models_regression():
         },
         errors="raise",
     )
+
+
+def test_all_models_forecast():
+    """Assert that all models work with forecast."""
+    atom = ATOMForecaster(y_fc, random_state=2)
+    atom.run(models=None, n_trials=5, errors="raise")
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")

@@ -28,7 +28,7 @@ def test_atommodel():
     assert model.acronym == "huber"
     assert model.needs_scaling is True
     assert model.native_multioutput is False
-    assert model.has_validation is None
+    assert model.validation is None
 
 
 def test_atomclassifier():

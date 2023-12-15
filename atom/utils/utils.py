@@ -16,7 +16,7 @@ from collections.abc import Callable, Hashable, Iterator
 from contextlib import contextmanager
 from copy import copy
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import cached_property, wraps
 from importlib import import_module
 from importlib.util import find_spec
@@ -178,6 +178,29 @@ class Task(Enum):
         return self.value in (2, 3, 5, 7)
 
 
+class SeasonalPeriod(IntEnum):
+    """Seasonal periodicity.
+
+    Covers pandas' aliases for periods.
+    See: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases
+
+    """
+
+    B = 5  # business day
+    D = 7  # calendar day
+    W = 52  # week
+    M = 12  # month
+    Q = 4  # quarter
+    A = 1  # year
+    Y = 1  # year
+    H = 24  # hours
+    T = 60  # minutes
+    S = 60  # seconds
+    L = 1e3  # milliseconds
+    U = 1e6  # microseconds
+    N = 1e9  # nanoseconds
+
+
 @dataclass
 class DataContainer:
     """Stores a branch's data."""
@@ -222,6 +245,7 @@ class DataConfig:
 
     index: IndexSelector = True
     ignore: tuple[str, ...] = ()
+    sp: int | list[int] | None = None
     shuffle: Bool = False
     stratify: IndexSelector = True
     n_rows: Scalar = 1

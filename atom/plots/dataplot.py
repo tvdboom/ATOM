@@ -652,7 +652,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         fig.add_trace(
             go.Bar(
-                x=(data := series[-self._get_show(show, len(series)) :]),
+                x=(data := series[-self._get_show(show, len(series)):]),
                 y=data.index,
                 orientation="h",
                 marker={

@@ -182,7 +182,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                             raise ValueError(
                                 f"Invalid value for the models parameter, got {m}. "
                                 "Note that tags must be separated by an underscore. "
-                                f"Available model are:\n"
+                                "Available model are:\n" +
                                 "\n".join(
                                     [
                                         f" --> {m.__name__} ({m.acronym})"
@@ -195,8 +195,11 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                         # Check if libraries for non-sklearn models are available
                         dependencies = {
                             "ARIMA": "pmdarima",
-                            "Catb": "castboost",
+                            "AutoARIMA": "pmdarima",
+                            "BATS": "tbats",
+                            "CatB": "catboost",
                             "LGB": "lightgbm",
+                            "TBATS": "tbats",
                             "XGB": "xgboost",
                         }
                         if cls.acronym in dependencies:

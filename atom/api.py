@@ -17,8 +17,9 @@ from sklearn.base import clone
 
 from atom.atom import ATOM
 from atom.utils.types import (
-    Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
-    NJobs, Predictor, Scalar, Verbose, Warnings, YSelector,
+    Backend, Bool, ColumnSelector, Engine, IndexSelector, Int,
+    IntLargerEqualZero, NJobs, Predictor, Scalar, Sequence, Verbose, Warnings,
+    YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -35,13 +36,13 @@ def ATOMModel(
     needs_scaling: Bool = False,
     native_multilabel: Bool = False,
     native_multioutput: Bool = False,
-    has_validation: str | None = None,
+    validation: str | None = None,
 ) -> T_Predictor:
     """Convert an estimator to a model that can be ingested by atom.
 
-    This function adds the relevant attributes to the estimator so
-    that they can be used by atom. Note that only estimators that
-    follow [sklearn's API][api] are compatible.
+    This function adds the relevant tags to the estimator so that they
+    can be used by `atom`. Note that only estimators that follow
+    [sklearn's API][api] are compatible.
 
     Read more about custom models in the [user guide][custom-models].
 
@@ -75,7 +76,7 @@ def ATOMModel(
         If False and the task is multioutput, a multioutput
         meta-estimator is wrapped around the estimator.
 
-    has_validation: str or None, default=None
+    validation: str or None, default=None
         Whether the model allows [in-training validation][].
 
         - If None: No support for in-training validation.
@@ -121,7 +122,7 @@ def ATOMModel(
     estimator_c.needs_scaling = needs_scaling
     estimator_c.native_multioutput = native_multioutput
     estimator_c.native_multilabel = native_multilabel
-    estimator_c.has_validation = has_validation
+    estimator_c.validation = validation
 
     return estimator_c
 
@@ -453,6 +454,24 @@ class ATOMForecaster(ATOM):
         and model training. The features are still used in the remaining
         methods.
 
+    sp: int, str, sequence or None, default=None
+        [Seasonal period][seasonality] of the time series.
+
+        - If None: No seasonal period.
+        - If int: Seasonal period, e.g., 7 for weekly data, and 12 for
+          monthly data.
+        - If str:
+
+            - Seasonal period provided as [PeriodAlias][], e.g., "M" for
+              12 or "H" for 24.
+            - "index": The frequency of the data index is mapped to a
+              seasonal period.
+            - "infer": Automatically infer the seasonal period from the
+              data (calls [get_seasonal_period][self-get_seasonal_period]
+              under the hood, using default parameters).
+
+        - If sequence: Multiple seasonal periods provided as int or str.
+
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
@@ -592,6 +611,7 @@ class ATOMForecaster(ATOM):
         *arrays,
         y: YSelector = -1,
         ignore: ColumnSelector | None = None,
+        sp: Int | str | Sequence[Int | str] | None = None,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -611,6 +631,7 @@ class ATOMForecaster(ATOM):
             y=y,
             index=True,
             ignore=ignore,
+            sp=sp,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=False,
