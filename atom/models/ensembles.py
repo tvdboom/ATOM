@@ -63,7 +63,8 @@ class Stacking(ClassRegModel):
         """
         return self._est_class(
             estimators=[
-                (m.name, m.export_pipeline() if m.scaler else m.estimator) for m in self._models
+                (m.name, m.export_pipeline() if m.scaler else m.estimator)
+                for m in self._models
             ],
             n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
@@ -128,7 +129,8 @@ class Voting(ClassRegModel):
         """
         return self._est_class(
             estimators=[
-                (m.name, m.export_pipeline() if m.scaler else m.estimator) for m in self._models
+                (m.name, m.export_pipeline() if m.scaler else m.estimator)
+                for m in self._models
             ],
             n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,

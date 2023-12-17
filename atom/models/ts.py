@@ -77,6 +77,7 @@ class ARIMA(ForecastModel):
     handles_missing = True
     uses_exogenous = True
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -84,7 +85,7 @@ class ARIMA(ForecastModel):
     _estimators: ClassVar[dict[str, str]] = {"forecast": "ARIMA"}
 
     _order = ("p", "d", "q")
-    _seasonal_order = ("P", "D", "Q", "S")
+    _s_order = ("P", "D", "Q")
 
     def _get_parameters(self, trial: Trial) -> dict[str, BaseDistribution]:
         """Get the trial's hyperparameters.
@@ -103,8 +104,8 @@ class ARIMA(ForecastModel):
         params = super()._get_parameters(trial)
 
         # If no seasonal periodicity, set seasonal components to zero
-        if self._get_param("S", params) == 0:
-            for p in self._seasonal_order:
+        if not self._config.sp:
+            for p in self._s_order:
                 if p in params:
                     params[p] = 0
 
@@ -127,10 +128,21 @@ class ARIMA(ForecastModel):
         params = super()._trial_to_est(params)
 
         # Convert params to hyperparameters 'order' and 'seasonal_order'
-        if all(p in params for p in self._order):
-            params["order"] = tuple(params.pop(p) for p in self._order)
-        if all(p in params for p in self._seasonal_order):
-            params["seasonal_order"] = tuple(params.pop(p) for p in self._seasonal_order)
+        if all(p in params for p in self._order) and "order" not in params:
+            params["order"] = [params.pop(p) for p in self._order]
+        else:
+            for p in self._order:
+                params.pop(p, None)
+
+        if (
+            all(p in params for p in self._s_order)
+            and self._config.sp
+            and "seasonal_order" not in params
+        ):
+            params["seasonal_order"] = [params.pop(p) for p in self._s_order] + [self._config.sp]
+        else:
+            for p in self._s_order:
+                params.pop(p, None)
 
         return params
 
@@ -143,8 +155,6 @@ class ARIMA(ForecastModel):
             Hyperparameter distributions.
 
         """
-        methods = ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
-
         dist = {
             "p": Int(0, 2),
             "d": Int(0, 1),
@@ -152,8 +162,9 @@ class ARIMA(ForecastModel):
             "P": Int(0, 2),
             "D": Int(0, 1),
             "Q": Int(0, 2),
-            "S": Cat([0, 4, 6, 7, 12]),
-            "method": Cat(methods),
+            "method": Cat(
+                ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
+            ),
             "maxiter": Int(50, 200, step=10),
             "with_intercept": Cat([True, False]),
         }
@@ -163,7 +174,7 @@ class ARIMA(ForecastModel):
             for p in self._order:
                 dist.pop(p)
         if "seasonal_order" in self._est_params:
-            for p in self._seasonal_order:
+            for p in self._s_order:
                 dist.pop(p)
 
         return dist
@@ -218,6 +229,7 @@ class AutoARIMA(ForecastModel):
     handles_missing = True
     uses_exogenous = True
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -293,6 +305,7 @@ class BATS(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -313,11 +326,7 @@ class BATS(ForecastModel):
             Estimator instance.
 
         """
-        return self._est_class(
-            show_warnings=params.pop("show_warnings", self.warnings in ("always", "default")),
-            n_jobs=params.pop("n_jobs", self.n_jobs),
-            **params,
-        )
+        return super()._get_est({"show_warnings": self.warnings != "ignore"} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -377,6 +386,7 @@ class Croston(ForecastModel):
     handles_missing = False
     uses_exogenous = True
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -427,6 +437,7 @@ class ExponentialSmoothing(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -468,7 +479,6 @@ class ExponentialSmoothing(ForecastModel):
             "trend": Cat(["add", "mul", None]),
             "damped_trend": Cat([True, False]),
             "seasonal": Cat(["add", "mul", None]),
-            "sp": Cat([4, 6, 7, 12, None]),
             "use_boxcox": Cat([True, False]),
             "initialization_method": Cat(["estimated", "heuristic"]),
             "method": Cat(["L-BFGS-B", "TNC", "SLSQP", "Powell", "trust-constr", "bh", "ls"]),
@@ -513,6 +523,7 @@ class ETS(ForecastModel):
     handles_missing = True
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -555,7 +566,6 @@ class ETS(ForecastModel):
             "trend": Cat(["add", "mul", None]),
             "damped_trend": Cat([True, False]),
             "seasonal": Cat(["add", "mul", None]),
-            "sp": Cat([1, 4, 6, 7, 12]),
             "initialization_method": Cat(["estimated", "heuristic"]),
             "maxiter": Int(500, 2000, step=100),
             "auto": Cat([True, False]),
@@ -604,6 +614,7 @@ class NaiveForecaster(ForecastModel):
     handles_missing = True
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -658,6 +669,7 @@ class PolynomialTrend(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -714,6 +726,7 @@ class STL(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -791,6 +804,7 @@ class TBATS(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = True
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -811,11 +825,7 @@ class TBATS(ForecastModel):
             Estimator instance.
 
         """
-        return self._est_class(
-            show_warnings=params.pop("show_warnings", self.warnings in ("always", "default")),
-            n_jobs=params.pop("n_jobs", self.n_jobs),
-            **params,
-        )
+        return super()._get_est({"show_warnings": self.warnings != "ignore"} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -879,6 +889,7 @@ class Theta(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     in_sample_prediction = True
+    multiple_seasonality = False
     native_multivariate = False
     supports_engines = ("sktime",)
 
@@ -896,3 +907,171 @@ class Theta(ForecastModel):
 
         """
         return {"deseasonalize": Cat([False, True])}
+
+
+class VAR(ForecastModel):
+    """Vector Autoregressive.
+
+    A VAR model is a generalization of the univariate autoregressive.
+
+    Corresponding estimators are:
+
+    - [VAR][varclass] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:MSTL
+    atom.models:Prophet
+    atom.models:VARMAX
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="VAR", verbose=2)
+    ```
+
+    """
+
+    acronym = "VAR"
+    handles_missing = False
+    uses_exogenous = False
+    in_sample_prediction = True
+    multiple_seasonality = False
+    native_multivariate = True
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.var"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "VAR"}
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {
+            "trend": Cat(["c", "ct", "ctt", "n"]),
+            "ic": Cat(["aic", "fpe", "hqic", "bic"]),
+        }
+
+
+class VARMAX(ForecastModel):
+    """Vector Autoregressive Moving Average.
+
+    Variation on the [VAR][] that makes use of the exogenous variables.
+
+    Corresponding estimators are:
+
+    - [VARMAX][varmaxclass] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:MSTL
+    atom.models:Prophet
+    atom.models:VAR
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="VARMAX", verbose=2)
+    ```
+
+    """
+
+    acronym = "VARMAX"
+    handles_missing = False
+    uses_exogenous = True
+    in_sample_prediction = True
+    multiple_seasonality = False
+    native_multivariate = True
+    supports_engines = ("sktime",)
+
+    _module = "sktime.forecasting.var"
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "VARMAX"}
+
+    _order = ("p", "q")
+
+    def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Convert trial's hyperparameters to parameters for the estimator.
+
+        Parameters
+        ----------
+        params: dict
+            Trial's hyperparameters.
+
+        Returns
+        -------
+        dict
+            Estimator's hyperparameters.
+
+        """
+        params = super()._trial_to_est(params)
+
+        # Convert params to hyperparameter 'order'
+        if all(p in params for p in self._order) and "order" not in params:
+            params["order"] = [params.pop(p) for p in self._order]
+        else:
+            for p in self._order:
+                params.pop(p, None)
+
+        return params
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {
+            "p": Int(0, 2),
+            "q": Int(0, 2),
+            "trend": Cat(["c", "ct", "ctt", "n"]),
+            "error_cov_type": Cat(["diagonal", "unstructured"]),
+            "measurement_error": Cat([True, False]),
+            "enforce_stationarity": Cat([True, False]),
+            "enforce_invertibility": Cat([True, False]),
+            "cov_type": Cat(["opg", "oim", "approx", "robust", "robust_approx"]),
+            "method": Cat(
+                ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
+            ),
+            "maxiter": Int(50, 200, step=10),
+            "optim_score": Cat(["harvey", "approx", None]),
+            "optim_complex_step": Cat([True, False]),
+            "optim_hessian": Cat(["opg", "oim", "approx"]),
+        }

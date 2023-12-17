@@ -37,10 +37,10 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int,
+    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int, IntLargerOne,
     MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Scalar, Segment, Sequence, Series, YSelector, dataframe_t,
-    int_t, segment_t, sequence_t,
+    RowSelector, Scalar, Seasonality, Segment, Sequence, Series,
+    TargetSelector, YSelector, dataframe_t, int_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, SeasonalPeriod, Task, bk, check_is_fitted,
@@ -166,7 +166,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._sp
 
     @sp.setter
-    def sp(self, sp: Int | str | Sequence[Int | str] | None):
+    def sp(self, sp: Seasonality):
         """Convert seasonal period to integer value."""
         if sp is None:
             self._sp = None
@@ -177,7 +177,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     f"The dataset's index has no attribute freqstr."
                 )
             else:
-                self._sp = self.dataset.index.freqstr
+                self._sp = self._get_sp(self.dataset.index.freqstr)
         elif sp == "infer":
             self._sp = self.get_seasonal_period()
         else:
@@ -908,6 +908,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             - **uses_exogenous:** Whether the model uses exogenous variables.
             - **in_sample_prediction:** Whether the model can do predictions
               on the training set.
+            - **multiple_seasonality:** Whether the model can handle more than
+              one [seasonality periods][seasonality].
             - **native_multilabel:** Whether the model has native support
               for [multilabel][] tasks.
             - **native_multioutput:** Whether the model has native support
@@ -1124,9 +1126,10 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     @composed(crash, beartype)
     def get_seasonal_period(
         self,
-        max_sp: Int | None = None,
+        max_sp: IntLargerOne | None = None,
         harmonics: HarmonicsSelector | None = None,
-    ) -> int:
+        target: TargetSelector = 0,
+    ) -> int | list[int]:
         """Get the seasonal periods of the time series.
 
         Use the data in the training set to calculate the seasonal
@@ -1161,13 +1164,16 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             - If "raw_strength", result=[3, 7, 8]
             - If "harmonic_strength", result=[8, 3, 7]
 
+        target: int or str, default=0
+            Target column to look at. Only for [multivariate][] tasks.
+
         Returns
         -------
-        list of int
+        int or list of int
             Seasonal periods, ordered by significance.
 
         """
-        yt = self.y_train.copy()
+        yt = self.dataset[self.branch._get_target(target, only_columns=True)]
         max_sp = max_sp or (len(yt) - 1) // 2
 
         for _ in np.arange(ndiffs(yt)):

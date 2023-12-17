@@ -194,8 +194,6 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
 
                         # Check if libraries for non-sklearn models are available
                         dependencies = {
-                            "ARIMA": "pmdarima",
-                            "AutoARIMA": "pmdarima",
                             "BATS": "tbats",
                             "CatB": "catboost",
                             "LGB": "lightgbm",

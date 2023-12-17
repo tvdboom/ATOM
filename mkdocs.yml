@@ -222,6 +222,8 @@ nav:
             - SupportVectorMachine: API/models/svm.md
             - TBATS: API/models/tbats.md
             - Theta: API/models/theta.md
+            - VAR: API/models/var.md
+            - VARMAX: API/models/varmax.md
             - XGBoost: API/models/xgb.md
         - Pipeline:
             - Pipeline: API/pipeline/pipeline.md

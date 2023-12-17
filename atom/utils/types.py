@@ -248,14 +248,6 @@ FeatureSelectionSolvers: TypeAlias = (
     | None
 )
 
-# Runner parameters
-NItems: TypeAlias = (
-    IntLargerEqualZero
-    | dict[str, IntLargerEqualZero]
-    | Sequence[IntLargerEqualZero]
-)
-HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
-
 # Allowed values for method selection
 PredictionMethods: TypeAlias = Literal[
     "decision_function", "predict", "predict_log_proba", "predict_proba", "score"
@@ -289,8 +281,15 @@ Legend: TypeAlias = Literal[
     "out",
 ]
 
-# Mlflow stages
+# Others
+Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
+HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
 Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]
+NItems: TypeAlias = (
+    IntLargerEqualZero
+    | dict[str, IntLargerEqualZero]
+    | Sequence[IntLargerEqualZero]
+)
 
 
 # Variable types for isinstance ================================== >>

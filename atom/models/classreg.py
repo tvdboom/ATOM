@@ -472,17 +472,17 @@ class CatBoost(ClassRegModel):
         if getattr(self, "_metric", None) and not self._gpu:
             eval_metric = CatBMetric(self._metric[0], task=self.task)
 
-        return self._est_class(
-            eval_metric=params.pop("eval_metric", eval_metric),
-            train_dir=params.pop("train_dir", ""),
-            allow_writing_files=params.pop("allow_writing_files", False),
-            thread_count=params.pop("n_jobs", self.n_jobs),
-            task_type=params.pop("task_type", "GPU" if self._gpu else "CPU"),
-            devices=str(self._device_id),
-            verbose=params.pop("verbose", False),
-            random_state=params.pop("random_state", self.random_state),
-            **params,
-        )
+        default = {
+            "eval_metric": eval_metric,
+            "train_dir": "",
+            "allow_writing_files": False,
+            "thread_count": self.n_jobs,
+            "task_type": "GPU" if self._gpu else "CPU",
+            "devices": str(self._device_id),
+            "verbose": False,
+        }
+
+        return super()._get_est(default | params)
 
     def _fit_estimator(
         self,
@@ -1672,14 +1672,13 @@ class LightGBM(ClassRegModel):
         # PYTHONWarnings doesn't work since they go from C/C++ code to stdout
         warns = {"always": 2, "default": 1, "once": 0, "error": 0, "ignore": -1}
 
-        return self._est_class(
-            verbose=params.pop("verbose", warns.get(self.warnings, -1)),
-            n_jobs=params.pop("n_jobs", self.n_jobs),
-            device=params.pop("device", "gpu" if self._gpu else "cpu"),
-            gpu_device_id=params.pop("gpu_device_id", self._device_id or -1),
-            random_state=params.pop("random_state", self.random_state),
-            **params,
-        )
+        default = {
+            "verbose": warns.get(self.warnings, -1),
+            "device": "gpu" if self._gpu else "cpu",
+            "gpu_device_id": self._device_id or -1,
+        }
+
+        return super()._get_est(default | params)
 
     def _fit_estimator(
         self,
@@ -1960,7 +1959,7 @@ class LinearSVM(ClassRegModel):
 
         """
         if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
-            return self._est_class(probability=params.pop("probability", True), **params)
+            return super()._get_est({"probability": True} | params)
         else:
             return super()._get_est(params)
 
@@ -3010,11 +3009,7 @@ class SupportVectorMachine(ClassRegModel):
 
         """
         if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
-            return self._est_class(
-                probability=params.pop("probability", True),
-                random_state=params.pop("random_state", self.random_state),
-                **params,
-            )
+            return super()._get_est({"probability": True} | params)
         else:
             return super()._get_est(params)
 
@@ -3142,14 +3137,8 @@ class XGBoost(ClassRegModel):
         if getattr(self, "_metric", None):
             eval_metric = XGBMetric(self._metric[0], task=self.task)
 
-        return self._est_class(
-            eval_metric=params.pop("eval_metric", eval_metric),
-            n_jobs=params.pop("n_jobs", self.n_jobs),
-            device=params.pop("device", self.device),
-            verbosity=params.pop("verbosity", 0),
-            random_state=params.pop("random_state", self.random_state),
-            **params,
-        )
+        default = {"eval_metric": eval_metric, "device": self.device, "verbosity": 0}
+        return super()._get_est(default | params)
 
     def _fit_estimator(
         self,

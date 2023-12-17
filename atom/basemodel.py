@@ -2901,6 +2901,7 @@ class ForecastModel(BaseModel):
             "module": self._est_class.__module__.split(".")[0] + self._module,
             "handles_missing": self.handles_missing,
             "in_sample_prediction": self.in_sample_prediction,
+            "multiple_seasonality": self.multiple_seasonality,
             "native_multivariate": self.native_multivariate,
             "supports_engines": ", ".join(self.supports_engines),
         }

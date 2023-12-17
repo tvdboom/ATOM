@@ -23,3 +23,4 @@
  that occurs at specific intervals of time. It's associated with seasonal 
  effects, which are patterns that tend to recur at consistent intervals.
  
+The same period is used for all columns in a [multivariate][] setting.

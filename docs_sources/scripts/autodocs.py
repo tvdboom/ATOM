@@ -226,6 +226,8 @@ CUSTOM_URLS = dict(
     xgbregressor="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor",
     xgbdocs="https://xgboost.readthedocs.io/en/latest/index.html",
     naiveforecasterclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.naive.NaiveForecaster.html",
+    varclass="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.var.VAR.html",
+    varmaxclass="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.varmax.VARMAX.html",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -417,6 +419,8 @@ class AutoDocs:
             text += "&nbsp;&nbsp;[needs scaling][automated-feature-scaling]{ .md-tag }"
         if getattr(self.obj, "accepts_sparse", False):
             text += "&nbsp;&nbsp;[accept sparse][sparse-datasets]{ .md-tag }"
+        if getattr(self.obj, "multiple_seasonality", False):
+            text += "&nbsp;&nbsp;[multiple seasonality][seasonality]{ .md-tag }"
         if getattr(self.obj, "native_multilabel", False):
             text += "&nbsp;&nbsp;[native multilabel][multilabel]{ .md-tag }"
         if getattr(self.obj, "native_multioutput", False):
@@ -424,7 +428,7 @@ class AutoDocs:
         if getattr(self.obj, "native_multivariate", False):
             text += "&nbsp;&nbsp;[native multivariate][multivariate]{ .md-tag }"
         if getattr(self.obj, "validation", None):
-            text += "&nbsp;&nbsp;[allows validation][in-training-validation]{ .md-tag }"
+            text += "&nbsp;&nbsp;[in-training validation][]{ .md-tag }"
         if any(engine not in ("sklearn", "sktime") for engine in self.obj.supports_engines):
             text += "&nbsp;&nbsp;[supports acceleration][estimator-acceleration]{ .md-tag }"
 

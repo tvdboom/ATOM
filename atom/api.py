@@ -17,9 +17,8 @@ from sklearn.base import clone
 
 from atom.atom import ATOM
 from atom.utils.types import (
-    Backend, Bool, ColumnSelector, Engine, IndexSelector, Int,
-    IntLargerEqualZero, NJobs, Predictor, Scalar, Sequence, Verbose, Warnings,
-    YSelector,
+    Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
+    NJobs, Predictor, Scalar, Seasonality, Verbose, Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -611,7 +610,7 @@ class ATOMForecaster(ATOM):
         *arrays,
         y: YSelector = -1,
         ignore: ColumnSelector | None = None,
-        sp: Int | str | Sequence[Int | str] | None = None,
+        sp: Seasonality = None,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
