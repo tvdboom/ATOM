@@ -26,6 +26,38 @@ acronyms are:
 
 <br>
 
+## Model selection
+
+Although ATOM allows running all models for a given task using
+`#!python atom.run(models=None)`, it's usually smarter to select only
+a subset of models. Every model has a series of tags that indicate
+special characteristics of the model. Use a model's [`get_tags`][adaboost-get_tags]
+method to see its tags, or the [available_models][atomclassifier-available_models]
+method to get an overview of all models and their tags. The tags differ
+per task, but can include:
+
+- **acronym:** Model's acronym (used to call the model).
+- **fullname:** Name of the model's class.
+- **estimator:** Class of the model's underlying estimator.
+- **module:** The estimator's module.
+- **handles_missing:** Whether the model can handle missing (`NaN`) values
+  without preprocessing. If False, consider using the [Imputer][] class
+  before training the models.
+- **needs_scaling:** Whether the model requires feature scaling. If True,
+  [automated feature scaling][] is applied.
+- **accepts_sparse:** Whether the model accepts [sparse input][sparse-datasets].
+- **uses_exogenous:** Whether the model uses [exogenous variables][].
+- **multiple_seasonality:** Whether the model can handle more than one
+  [seasonality period][seasonality].
+- **native_multilabel:** Whether the model has native support for [multilabel][] tasks.
+- **native_multioutput:** Whether the model has native support for [multioutput tasks][].
+- **native_multivariate:** Whether the model has native support for [multivariate][] tasks.
+- **validation:** Whether the model has [in-training validation][].
+- **supports_engines:** [Engines][estimator-acceleration] supported by the model.
+
+
+<br>
+
 ## Custom models
 
 It is also possible to create your own models in ATOM's pipeline. For

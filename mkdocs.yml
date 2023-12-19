@@ -188,6 +188,7 @@ nav:
             - Croston: API/models/croston.md
             - DecisionTree: API/models/tree.md
             - Dummy: API/models/dummy.md
+            - DynamicFactor: API/models/df.md
             - ElasticNet: API/models/en.md
             - ETS: API/models/ets.md
             - ExponentialSmoothing: API/models/es.md
@@ -205,6 +206,7 @@ nav:
             - LinearDiscriminantAnalysis: API/models/lda.md
             - LinearSVM: API/models/lsvm.md
             - LogisticRegression: API/models/lr.md
+            - MSTL: API/models/mstl.md
             - MultiLayerPerceptron: API/models/mlp.md
             - MultinomialNB: API/models/mnb.md
             - NaiveForecaster: API/models/nf.md
@@ -213,10 +215,12 @@ nav:
             - PassiveAggressive: API/models/pa.md
             - Perceptron: API/models/perc.md
             - PolynomialTrend: API/models/pt.md
+            - Prophet: API/models/prophet.md
             - QuadraticDiscriminantAnalysis: API/models/qda.md
             - RadiusNearestNeighbors: API/models/rnn.md
             - RandomForest: API/models/rf.md
             - Ridge: API/models/ridge.md
+            - SARIMAX: API/models/sarimax.md
             - StochasticGradientDescent: API/models/sgd.md
             - STL: API/models/stl.md
             - SupportVectorMachine: API/models/svm.md

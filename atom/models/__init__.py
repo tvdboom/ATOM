@@ -20,8 +20,9 @@ from atom.models.classreg import (
 from atom.models.custom import CustomModel
 from atom.models.ensembles import Stacking, Voting
 from atom.models.ts import (
-    ARIMA, BATS, ETS, STL, TBATS, AutoARIMA, Croston, ExponentialSmoothing,
-    NaiveForecaster, PolynomialTrend, Theta,
+    ARIMA, BATS, ETS, MSTL, SARIMAX, STL, TBATS, VAR, VARMAX, AutoARIMA,
+    Croston, DynamicFactor, ExponentialSmoothing, NaiveForecaster,
+    PolynomialTrend, Prophet, Theta,
 )
 from atom.utils.types import Predictor
 from atom.utils.utils import ClassMap
@@ -43,6 +44,7 @@ MODELS = ClassMap(
     Croston,
     DecisionTree,
     Dummy,
+    DynamicFactor,
     ElasticNet,
     ETS,
     ExponentialSmoothing,
@@ -60,6 +62,7 @@ MODELS = ClassMap(
     LinearDiscriminantAnalysis,
     LinearSVM,
     LogisticRegression,
+    MSTL,
     MultiLayerPerceptron,
     MultinomialNB,
     NaiveForecaster,
@@ -67,16 +70,20 @@ MODELS = ClassMap(
     OrthogonalMatchingPursuit,
     PassiveAggressive,
     Perceptron,
+    Prophet,
     PolynomialTrend,
     QuadraticDiscriminantAnalysis,
     RadiusNearestNeighbors,
     RandomForest,
     Ridge,
+    SARIMAX,
     STL,
     StochasticGradientDescent,
     SupportVectorMachine,
     TBATS,
     Theta,
+    VAR,
+    VARMAX,
     XGBoost,
     key="acronym",
 )

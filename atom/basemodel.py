@@ -267,7 +267,7 @@ class BaseModel(RunnerPlot):
         if "_branch" in self.__dict__:
             attrs += [x for x in dir(self.branch) if not x.startswith("_")]
             attrs += list(DF_ATTRS)
-            attrs += list(self.columns)
+            attrs += [c for c in self.columns if re.fullmatch(r"\w+$", c)]
         return attrs
 
     def __getattr__(self, item: str) -> Any:
@@ -694,7 +694,7 @@ class BaseModel(RunnerPlot):
         X: DataFrame,
         y: Pandas,
         **kwargs,
-    ) -> float:
+    ) -> Float:
         """Calculate the metric score from an estimator.
 
         Parameters
@@ -737,7 +737,7 @@ class BaseModel(RunnerPlot):
         y_true: Pandas,
         y_pred: Pandas,
         **kwargs,
-    ) -> float:
+    ) -> Float:
         """Calculate the metric score from predicted values.
 
         Since sklearn metrics don't support multiclass-multioutput
@@ -770,12 +770,15 @@ class BaseModel(RunnerPlot):
         if self.task.is_forecast and all(x.isna()[0] for x in get_cols(y_pred)):
             y_true, y_pred = y_true.iloc[1:], y_pred.iloc[1:]
 
-        if self.task is Task.multiclass_multioutput_classification:
-            # Get the mean of the scores over the target columns
-            scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
-            return float(np.mean(scores, axis=0))
-        else:
-            return float(scorer._sign * func(y_true, y_pred))
+        try:
+            if self.task is Task.multiclass_multioutput_classification:
+                # Get the mean of the scores over the target columns
+                scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
+                return np.mean(scores, axis=0)
+            else:
+                return scorer._sign * func(y_true, y_pred)
+        except ValueError:
+            return np.NaN  # Some forecast models predict NaN
 
     def _get_score(
         self,
@@ -885,7 +888,7 @@ class BaseModel(RunnerPlot):
                 estimator: Predictor,
                 train_idx: np.ndarray,
                 val_idx: np.ndarray,
-            ) -> tuple[Predictor, list[float]]:
+            ) -> tuple[Predictor, list[Float]]:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation

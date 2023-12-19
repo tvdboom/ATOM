@@ -197,6 +197,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                             "BATS": "tbats",
                             "CatB": "catboost",
                             "LGB": "lightgbm",
+                            "MSTL": "statsforecast",
                             "TBATS": "tbats",
                             "XGB": "xgboost",
                         }

@@ -17,6 +17,11 @@
 
 <br>
 
+## Exogenous variables
+
+
+<br>
+
 ## Seasonality
 
  It refers to the regular and repeating pattern of variation in data

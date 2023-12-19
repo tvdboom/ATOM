@@ -415,7 +415,7 @@ class CatBoost(ClassRegModel):
     """
 
     acronym = "CatB"
-    handles_missing = False
+    handles_missing = True
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
@@ -1640,7 +1640,7 @@ class LightGBM(ClassRegModel):
     """
 
     acronym = "LGB"
-    handles_missing = False
+    handles_missing = True
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False
@@ -2165,7 +2165,7 @@ class MultiLayerPerceptron(ClassRegModel):
         hidden_layer_sizes = [
             value
             for param in [p for p in sorted(params) if p.startswith("hidden_layer")]
-            if (value := params.pop(param))  # Neurons should be more than zero
+            if (value := params.pop(param))  # Neurons should be >0
         ]
 
         if hidden_layer_sizes:
@@ -3078,7 +3078,7 @@ class XGBoost(ClassRegModel):
     """
 
     acronym = "XGB"
-    handles_missing = False
+    handles_missing = True
     needs_scaling = True
     accepts_sparse = True
     native_multilabel = False

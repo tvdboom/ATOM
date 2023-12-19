@@ -83,7 +83,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         attrs += [x for x in dir(self.branch) if not x.startswith("_")]
         attrs += list(DF_ATTRS)
         attrs += [b.name.lower() for b in self._branches]
-        attrs += list(self.columns)
+        attrs += [c for c in self.columns if re.fullmatch(r"\w+$", c)]
         if isinstance(self._models, ClassMap):
             attrs += [m.name.lower() for m in self._models]
         return attrs
@@ -163,13 +163,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         Read more about seasonality in the [user guide][seasonality].
 
         """
-        return self._sp
+        return self._config.sp
 
     @sp.setter
     def sp(self, sp: Seasonality):
         """Convert seasonal period to integer value."""
         if sp is None:
-            self._sp = None
+            self._config.sp = None
         elif sp == "index":
             if not hasattr(self.dataset.index, "freqstr"):
                 raise ValueError(
@@ -177,11 +177,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     f"The dataset's index has no attribute freqstr."
                 )
             else:
-                self._sp = self._get_sp(self.dataset.index.freqstr)
+                self._config.sp = self._get_sp(self.dataset.index.freqstr)
         elif sp == "infer":
-            self._sp = self.get_seasonal_period()
+            self._config.sp = self.get_seasonal_period()
         else:
-            self._sp = flt([self._get_sp(x) for x in lst(sp)])
+            self._config.sp = flt([self._get_sp(x) for x in lst(sp)])
 
     @property
     def og(self) -> Branch:
@@ -901,15 +901,15 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             - **fullname:** Name of the model's class.
             - **estimator:** Class of the model's underlying estimator.
             - **module:** The estimator's module.
-            - **handles_missing:** Whether the model can handle `NaN` values
-              without preprocessing.
+            - **handles_missing:** Whether the model can handle missing
+              (`NaN`) values without preprocessing. If False, consider using
+              the [Imputer][] class before training the models.
             - **needs_scaling:** Whether the model requires feature scaling.
-            - **accepts_sparse:** Whether the model accepts sparse matrices.
-            - **uses_exogenous:** Whether the model uses exogenous variables.
-            - **in_sample_prediction:** Whether the model can do predictions
-              on the training set.
+              If True, [automated feature scaling][] is applied.
+            - **accepts_sparse:** Whether the model accepts [sparse input][sparse-datasets].
+            - **uses_exogenous:** Whether the model uses [exogenous variables][].
             - **multiple_seasonality:** Whether the model can handle more than
-              one [seasonality periods][seasonality].
+              one [seasonality period][seasonality].
             - **native_multilabel:** Whether the model has native support
               for [multilabel][] tasks.
             - **native_multioutput:** Whether the model has native support
