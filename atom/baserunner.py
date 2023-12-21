@@ -43,7 +43,7 @@ from atom.utils.types import (
     TargetSelector, YSelector, dataframe_t, int_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataContainer, SeasonalPeriod, Task, bk, check_is_fitted,
+    ClassMap, DataContainer, Goal, SeasonalPeriod, Task, bk, check_is_fitted,
     composed, crash, divide, flt, get_cols, get_segment, get_versions,
     has_task, lst, merge, method_to_log, n_cols,
 )
@@ -705,7 +705,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 X_test, y_test = self._check_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
             elif isinstance(arrays[1], (*int_t, str)) or n_cols(arrays[1]) == 1:
-                if not self._goal.name == "forecast":
+                if self._goal is not Goal.forecast:
                     # X, y
                     sets = _no_data_sets(*self._check_input(arrays[0], arrays[1]))
                 else:
@@ -899,7 +899,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             - **acronym:** Model's acronym (used to call the model).
             - **fullname:** Name of the model's class.
-            - **estimator:** Class of the model's underlying estimator.
+            - **estimator:** Name of the model's underlying estimator.
             - **module:** The estimator's module.
             - **handles_missing:** Whether the model can handle missing
               (`NaN`) values without preprocessing. If False, consider using
@@ -914,15 +914,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
               for [multilabel][] tasks.
             - **native_multioutput:** Whether the model has native support
               for [multioutput tasks][].
-            - **native_multivariate:** Whether the model has native support
-              for [multivariate][] tasks.
             - **validation:** Whether the model has [in-training validation][].
             - **supports_engines:** Engines supported by the model.
 
         """
         rows = []
         for model in MODELS:
-            m = model(goal=self._goal)
+            m = model(goal=self._goal, branches=self._branches)
             if self._goal.name in m._estimators:
                 rows.append(m.get_tags())
 

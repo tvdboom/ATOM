@@ -429,8 +429,6 @@ class AutoDocs:
             text += "&nbsp;&nbsp;[native multilabel][multilabel]{ .md-tag }"
         if getattr(self.obj, "native_multioutput", False):
             text += "&nbsp;&nbsp;[native multioutput][multioutput-tasks]{ .md-tag }"
-        if getattr(self.obj, "native_multivariate", False):
-            text += "&nbsp;&nbsp;[native multivariate][multivariate]{ .md-tag }"
         if getattr(self.obj, "validation", None):
             text += "&nbsp;&nbsp;[in-training validation][]{ .md-tag }"
         if any(engine not in ("sklearn", "sktime") for engine in self.obj.supports_engines):

@@ -1,21 +1,7 @@
 # Time series
 -------------
 
-
-## Forecast
-
-
-<br>
-
-## Time series classification
-
-
-<br>
-
-## Time series regression
-
-
-<br>
+Introduction
 
 ## Exogenous variables
 
@@ -29,3 +15,9 @@
  effects, which are patterns that tend to recur at consistent intervals.
  
 The same period is used for all columns in a [multivariate][] setting.
+
+<br>
+
+## Forecasting with regressors
+
+No in-sample predictions, so scores on training set are `NaN`.

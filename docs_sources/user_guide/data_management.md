@@ -206,14 +206,14 @@ for each sample.
 Multivariate is the multioutput task for forecasting. In this case, we
 try to forecast more than one time series at the same time.
 
-Although all forecasting models in ATOM support multivariate tasks, we
+Although all forecasting models in ATOM support multioutput tasks, we
 differentiate two types of models:
 
-* The "native multivariate" models apply forecasts where every prediction
-  of endogeneous (`y`) variables will depend on values of the other target
+* The "native multioutput" models apply forecasts where every prediction
+  of endogenous (`y`) variables will depend on values of the other target
   columns.
 * The rest of the models apply an estimator per column, meaning that forecasts
-  will be made per endogeneous variable, and not be affected by other variables.
+  will be made per endogenous variable, and not be affected by other variables.
   To access the column-wise estimators, use the estimator's `forecasters_`
   parameter, which stores the fitted forecasters in a dataframe.
 
@@ -223,8 +223,8 @@ Read more about time series tasks [here][time-series].
 
 Some models have native support for multioutput tasks. This means that
 the original estimator is used to make predictions directly on all the
-target columns. Examples of such models are [KNearestNeighbors][],
-[RandomForest][] and [ExtraTrees][].
+target columns. Read in the [model selection][] section how to get an
+overview of all models and their tags, including the `native_multioutput`.
 
 
 ### Non-native multioutput models
@@ -246,7 +246,7 @@ meta-estimators are respectively:
 !!! warning
     Currently, scikit-learn metrics do not support multiclass-multioutput
     classification tasks. In this case, ATOM calculates the mean of the
-    selected metric over every individual target.
+    selected metric over every target.
 
 !!! tip
     * Set the `native_multilabel` or `native_multioutput` parameter in

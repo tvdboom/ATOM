@@ -22,7 +22,7 @@ from optuna import Study, create_study
 from atom.baserunner import BaseRunner
 from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
-from atom.models import MODELS, CustomModel
+from atom.models import MODELS, create_custom_model
 from atom.plots import RunnerPlot
 from atom.utils.types import Model, sequence_t
 from atom.utils.utils import (
@@ -168,60 +168,59 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             if isinstance(model, str):
                 for m in model.split("+"):
                     if m.startswith("!"):
-                        exc.append(m[1:])
-                    else:
-                        try:
-                            if len(name := m.split("_", 1)) > 1:
-                                name, tag = name[0].lower(), f"_{name[1]}"
-                            else:
-                                name, tag = name[0].lower(), ""
+                        exc.append(m[1:].lower())
+                        continue
 
-                            cls = next(n for n in MODELS if n.acronym.lower() == name)
+                    try:
+                        if len(name := m.split("_", 1)) > 1:
+                            name, tag = name[0].lower(), f"_{name[1]}"
+                        else:
+                            name, tag = name[0].lower(), ""
 
-                        except StopIteration:
+                        cls = next(n for n in MODELS if n.acronym.lower() == name)
+
+                    except StopIteration:
+                        raise ValueError(
+                            f"Invalid value for the models parameter, got {m}. "
+                            "Note that tags must be separated by an underscore. "
+                            "Available model are:\n" +
+                            "\n".join(
+                                [
+                                    f" --> {m.__name__} ({m.acronym})"
+                                    for m in MODELS
+                                    if self._goal.name in m._estimators
+                                ]
+                            )
+                        ) from None
+
+                    # Check if libraries for non-sklearn models are available
+                    dependencies = {
+                        "BATS": "tbats",
+                        "CatB": "catboost",
+                        "LGB": "lightgbm",
+                        "MSTL": "statsforecast",
+                        "TBATS": "tbats",
+                        "XGB": "xgboost",
+                    }
+                    if cls.acronym in dependencies:
+                        check_dependency(dependencies[cls.acronym])
+
+                    # Check if the model supports the task
+                    if self._goal.name not in cls._estimators:
+                        # Forecast task can use regression models
+                        if self._goal is not Goal.forecast or "regression" not in cls._estimators:
                             raise ValueError(
-                                f"Invalid value for the models parameter, got {m}. "
-                                "Note that tags must be separated by an underscore. "
-                                "Available model are:\n" +
-                                "\n".join(
-                                    [
-                                        f" --> {m.__name__} ({m.acronym})"
-                                        for m in MODELS
-                                        if self._goal.name in m._estimators
-                                    ]
-                                )
-                            ) from None
+                                f"The {cls.__name__} model is not "
+                                f"available for {self.task.name} tasks!"
+                            )
 
-                        # Check if libraries for non-sklearn models are available
-                        dependencies = {
-                            "BATS": "tbats",
-                            "CatB": "catboost",
-                            "LGB": "lightgbm",
-                            "MSTL": "statsforecast",
-                            "TBATS": "tbats",
-                            "XGB": "xgboost",
-                        }
-                        if cls.acronym in dependencies:
-                            check_dependency(dependencies[cls.acronym])
-
-                        # Check if the model supports the task
-                        if self._goal.name not in cls._estimators:
-                            # Forecast task can use regression models
-                            if self._goal.name == "forecast" and "regression" in cls._estimators:
-                                kwargs["goal"] = Goal.Regression
-                            else:
-                                raise ValueError(
-                                    f"The {cls.__name__} model is not "
-                                    f"available for {self.task.name} tasks!"
-                                )
-
-                        inc.append(cls(name=f"{cls.acronym}{tag}", **kwargs))
+                    inc.append(cls(name=f"{cls.acronym}{tag}", **kwargs))
 
             elif isinstance(model, Model):  # For new instances or reruns
                 inc.append(model)
 
             else:  # Model is a custom estimator
-                inc.append(CustomModel(estimator=model, **kwargs))
+                inc.append(create_custom_model(estimator=model, **kwargs))
 
         if inc and exc:
             raise ValueError(
@@ -239,9 +238,8 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             self._models = ClassMap(*inc)
         else:
             self._models = ClassMap(
-                model(**kwargs)
-                for model in MODELS
-                if self._goal.name in model._estimators and model.acronym not in exc
+                model(**kwargs) for model in MODELS
+                if self._goal.name in model._estimators and model.acronym.lower() not in exc
             )
 
         # Prepare est_params ======================================= >>

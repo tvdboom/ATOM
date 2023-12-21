@@ -119,8 +119,8 @@ def ATOMModel(
     if acronym:
         estimator_c.acronym = acronym
     estimator_c.needs_scaling = needs_scaling
-    estimator_c.native_multioutput = native_multioutput
     estimator_c.native_multilabel = native_multilabel
+    estimator_c.native_multioutput = native_multioutput
     estimator_c.validation = validation
 
     return estimator_c

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from atom.basemodel import ClassRegModel
+from atom.basemodel import BaseModel, ClassRegModel
 from atom.utils.types import Model, Predictor
 from atom.utils.utils import sign
 
@@ -43,7 +43,7 @@ class Stacking(ClassRegModel):
 
     def __init__(self, models: list[Model], **kwargs):
         self._models = models
-        kw_model = {k: v for k, v in kwargs.items() if k in sign(ClassRegModel.__init__)}
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
@@ -100,7 +100,7 @@ class Voting(ClassRegModel):
 
     def __init__(self, models: list[Model], **kwargs):
         self._models = models
-        kw_model = {k: v for k, v in kwargs.items() if k in sign(ClassRegModel.__init__)}
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
         super().__init__(**kw_model)
         self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 

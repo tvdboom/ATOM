@@ -53,9 +53,9 @@ def test_repr():
 
 def test_dir():
     """Assert that __dir__ contains all the extra attributes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("dummy")
-    assert all(attr in dir(atom.dummy) for attr in ("y", "mean radius", "head"))
+    assert all(attr in dir(atom.dummy) for attr in ("y", "age", "head"))
 
 
 def test_getattr():

@@ -372,13 +372,13 @@ class BaseTransformer:
         """
         signature = sign(obj.__init__)  # type: ignore[misc]
         for p in ("n_jobs", "random_state"):
-            if p in signature and obj.get_params()[p] == signature[p]._default:
-                obj.set_params(**{p: getattr(self, p)})
+            if p in signature and getattr(obj, p, "<!>") == signature[p]._default:
+                setattr(obj, p, getattr(self, p))
 
         # Add seasonal period to the estimator
-        if self._config.sp:
-            if "sp" in signature and obj.get_params()["sp"] == signature["sp"]._default:
-                obj.set_params(sp=self._config.sp)
+        if hasattr(self, "_config") and self._config.sp:
+            if "sp" in signature and getattr(obj, "sp", "<!>") == signature["sp"]._default:
+                obj.sp = self._config.sp
 
         return obj
 

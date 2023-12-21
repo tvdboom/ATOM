@@ -565,7 +565,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
-    @available_if(has_task("regression"))
+    @available_if(has_task("!classification"))
     @crash
     def plot_errors(
         self,
@@ -1071,32 +1071,36 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         # Draw original time series
-        for ds in ("train", "test"):
-            fig.add_trace(
-                go.Scatter(
-                    x=self._get_plot_index(getattr(self, ds)),
-                    y=getattr(self, ds)[target_c],
-                    mode="lines+markers",
-                    line={
-                        "width": 2,
-                        "color": "black",
-                        "dash": BasePlot._fig.get_elem(ds, "dash"),
-                    },
-                    opacity=0.6,
-                    name=ds,
-                    showlegend=False if models else BasePlot._fig.showlegend(ds, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
+        for ds in ("train", "test", "holdout"):
+            if getattr(self, ds) is not None:
+                fig.add_trace(
+                    go.Scatter(
+                        x=self._get_plot_index(getattr(self, ds)),
+                        y=getattr(self, ds)[target_c],
+                        mode="lines+markers",
+                        line={
+                            "width": 2,
+                            "color": "black",
+                            "dash": BasePlot._fig.get_elem(ds, "dash"),
+                        },
+                        opacity=0.6,
+                        name=ds,
+                        showlegend=False if models else BasePlot._fig.showlegend(ds, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
         # Draw predictions
         for m in models_c:
-            # TODO: Fix the way we get fh
             if isinstance(fh, str):
-                pass
+                # Get fh and corresponding X from data set
+                fh = self.branch._get_rows(fh).index
+                X = m.X.loc[fh]
+            elif X is not None:
+                X = m.transform(X)
 
-            y_pred = m.predict(fh, X)
+            y_pred = m.predict(fh=fh, X=X)
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
 
@@ -1114,7 +1118,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             if plot_interval:
                 try:
-                    y_pred = m.predict_interval(fh, X)
+                    y_pred = m.predict_interval(fh=fh, X=X)
                 except NotImplementedError:
                     continue  # Fails for some models like ES
 
@@ -1570,6 +1574,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_parshap(
         self,
@@ -1593,7 +1598,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         line) performed worse on the test set than on the training set.
         If the estimator has a `scores_`, `feature_importances_` or
         `coef_` attribute, its normalized values are shown in a color
-        map.
+        map. This plot is not available for [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -2785,7 +2790,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
-    @available_if(has_task("regression"))
+    @available_if(has_task("!classification"))
     @crash
     def plot_residuals(
         self,

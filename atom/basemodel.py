@@ -459,10 +459,12 @@ class BaseModel(RunnerPlot):
                     estimator = MultiOutputClassifier(estimator)
                 elif self.task.is_regression:
                     estimator = MultiOutputRegressor(estimator)
-            elif self.task.is_forecast:
-                if hasattr(self, "_estimators") and self._goal.name not in self._estimators:
-                    # Forecasting task with a regressor
-                    estimator = make_reduction(estimator)
+            elif self.task.is_forecast and self._goal.name not in self._estimators:
+                # Forecasting task with a regressor
+                if self.native_multioutput:
+                    estimator = make_reduction(estimator, strategy="multioutput")
+                else:
+                    estimator = make_reduction(estimator, strategy="recursive")
 
         return self._inherit(estimator)
 
@@ -558,7 +560,6 @@ class BaseModel(RunnerPlot):
                         est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
 
                 estimator.fit(data[1], X=check_empty(data[0]), **est_params_fit)
-
             else:
                 estimator.fit(*data, **est_params_fit)
 
@@ -674,7 +675,11 @@ class BaseModel(RunnerPlot):
         y_true = y.loc[y.index.isin(self._all.index)]
 
         if self.task.is_forecast:
-            y_pred = self._prediction(fh=X.index, X=check_empty(X), verbose=0, method=attr)
+            try:
+                y_pred = self._prediction(fh=X.index, X=check_empty(X), verbose=0, method=attr)
+            except (ValueError, NotImplementedError):
+                # In-sample predictions aren't implemented for some models
+                y_pred = bk.Series([np.NaN] * len(X), index=X.index)
         else:
             y_pred = self._prediction(X.index, verbose=0, method=attr)
 
@@ -2451,11 +2456,32 @@ class BaseModel(RunnerPlot):
 class ClassRegModel(BaseModel):
     """Classification and regression models."""
 
+    _prediction_methods = (
+        "predict",
+        "predict_proba",
+        "predict_log_proba",
+        "decision_function",
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Assign prediction methods depending on the task.
+
+        Regressors can be used for forecast tasks, hence we need to
+        overwrite the default prediction methods.
+
+        """
+        super().__init__(*args, **kwargs)
+
+        if self._goal is Goal.forecast:
+            for method in ("_prediction", *ForecastModel._prediction_methods):
+                setattr(self.__class__, method, getattr(ForecastModel, method))
+
+    @crash
     def get_tags(self) -> dict[str, Any]:
         """Get the model's tags.
 
         Return class parameters that provide general information about
-        the estimator's characteristics.
+        the model's characteristics.
 
         Returns
         -------
@@ -2467,14 +2493,14 @@ class ClassRegModel(BaseModel):
             "acronym": self.acronym,
             "fullname": self.fullname,
             "estimator": self._est_class,
-            "module": self._est_class.__module__.split(".")[0] + self._module,
-            "handles_missing": self.handles_missing,
+            "module": self._est_class.__module__,
+            "handles_missing": getattr(self, "handles_missing", None),
             "needs_scaling": self.needs_scaling,
-            "accepts_sparse": self.accepts_sparse,
+            "accepts_sparse": getattr(self, "accepts_sparse", None),
             "native_multilabel": self.native_multilabel,
             "native_multioutput": self.native_multioutput,
             "validation": self.validation,
-            "supports_engines": ", ".join(self.supports_engines),
+            "supports_engines": ", ".join(getattr(self, "supports_engines", [])),
         }
 
     @overload
@@ -2885,11 +2911,21 @@ class ClassRegModel(BaseModel):
 class ForecastModel(BaseModel):
     """Forecasting models."""
 
+    _prediction_methods = (
+        "predict",
+        "predict_interval",
+        "predict_proba",
+        "predict_quantiles",
+        "predict_residuals",
+        "predict_var",
+    )
+
+    @crash
     def get_tags(self) -> dict[str, Any]:
         """Get the model's tags.
 
         Return class parameters that provide general information about
-        the estimator's characteristics.
+        the model's characteristics.
 
         Returns
         -------
@@ -2900,13 +2936,12 @@ class ForecastModel(BaseModel):
         return {
             "acronym": self.acronym,
             "fullname": self.fullname,
-            "estimator": self._est_class.__name__,
-            "module": self._est_class.__module__.split(".")[0] + self._module,
-            "handles_missing": self.handles_missing,
-            "in_sample_prediction": self.in_sample_prediction,
-            "multiple_seasonality": self.multiple_seasonality,
-            "native_multivariate": self.native_multivariate,
-            "supports_engines": ", ".join(self.supports_engines),
+            "estimator": self._est_class,
+            "module": self._est_class.__module__,
+            "handles_missing": getattr(self, "handles_missing", None),
+            "multiple_seasonality": getattr(self, "multiple_seasonality", None),
+            "native_multioutput": self.native_multioutput,
+            "supports_engines": ", ".join(getattr(self, "supports_engines", [])),
         }
 
     @overload

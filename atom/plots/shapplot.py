@@ -16,13 +16,14 @@ from typing import Any
 import matplotlib.pyplot as plt
 import shap
 from beartype import beartype
+from sklearn.utils.metaestimators import available_if
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.types import (
     Bool, Int, IntLargerZero, Legend, ModelSelector, RowSelector,
     TargetsSelector,
 )
-from atom.utils.utils import check_canvas, crash
+from atom.utils.utils import check_canvas, crash, has_task
 
 
 @beartype
@@ -36,6 +37,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
     """
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_bar(
         self,
@@ -150,6 +152,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_beeswarm(
         self,
@@ -262,6 +265,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_decision(
         self,
@@ -386,6 +390,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_force(
         self,
@@ -517,6 +522,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
             return None
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_heatmap(
         self,
@@ -633,6 +639,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_scatter(
         self,
@@ -752,6 +759,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("!forecast"))
     @crash
     def plot_shap_waterfall(
         self,

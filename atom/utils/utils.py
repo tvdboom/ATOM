@@ -2715,24 +2715,6 @@ def has_task(task: str | Sequence[str]) -> Callable:
     return check
 
 
-def has_attr(attr: str) -> Callable:
-    """Check that the instance has attribute `attr`.
-
-    Parameters
-    ----------
-    attr: str
-        Name of the attribute to check.
-
-    """
-
-    def check(runner: BaseRunner) -> bool:
-        # Raise original `AttributeError` if `attr` does not exist
-        getattr(runner, attr)
-        return True
-
-    return check
-
-
 def estimator_has_attr(attr: str) -> Callable:
     """Check that the estimator has attribute `attr`.
 

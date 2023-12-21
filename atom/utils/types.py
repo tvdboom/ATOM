@@ -186,7 +186,7 @@ XTypes: TypeAlias = (
 XSelector: TypeAlias = XTypes | Callable[..., XTypes]
 YTypes: TypeAlias = dict[str, Any] | Sequence[Any] | XSelector
 YSelector: TypeAlias = Int | str | YTypes
-FHSelector: TypeAlias = int | Sequence[Any] | ForecastingHorizon
+FHSelector: TypeAlias = Int | Sequence[Any] | ForecastingHorizon
 
 # Return types for transform methods
 TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame

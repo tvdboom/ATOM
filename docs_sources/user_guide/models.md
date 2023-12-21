@@ -38,7 +38,7 @@ per task, but can include:
 
 - **acronym:** Model's acronym (used to call the model).
 - **fullname:** Name of the model's class.
-- **estimator:** Class of the model's underlying estimator.
+- **estimator:** Name of the model's underlying estimator.
 - **module:** The estimator's module.
 - **handles_missing:** Whether the model can handle missing (`NaN`) values
   without preprocessing. If False, consider using the [Imputer][] class
@@ -51,7 +51,6 @@ per task, but can include:
   [seasonality period][seasonality].
 - **native_multilabel:** Whether the model has native support for [multilabel][] tasks.
 - **native_multioutput:** Whether the model has native support for [multioutput tasks][].
-- **native_multivariate:** Whether the model has native support for [multivariate][] tasks.
 - **validation:** Whether the model has [in-training validation][].
 - **supports_engines:** [Engines][estimator-acceleration] supported by the model.
 

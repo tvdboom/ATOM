@@ -17,6 +17,7 @@ from optuna.trial import Trial
 
 from atom.basemodel import ForecastModel
 from atom.utils.types import Predictor
+from atom.utils.utils import SeasonalPeriod
 
 
 class ARIMA(ForecastModel):
@@ -79,7 +80,7 @@ class ARIMA(ForecastModel):
     handles_missing = True
     uses_exogenous = True
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.arima"
@@ -226,7 +227,7 @@ class AutoARIMA(ForecastModel):
     handles_missing = True
     uses_exogenous = True
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.arima"
@@ -301,7 +302,7 @@ class BATS(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.bats"
@@ -381,7 +382,7 @@ class Croston(ForecastModel):
     handles_missing = False
     uses_exogenous = True
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.croston"
@@ -418,7 +419,7 @@ class DynamicFactor(ForecastModel):
     See Also
     --------
     atom.models:ExponentialSmoothing
-    atom.models:LTS
+    atom.models:STL
     atom.models:PolynomialTrend
 
     Examples
@@ -440,7 +441,7 @@ class DynamicFactor(ForecastModel):
     handles_missing = True
     uses_exogenous = True
     multiple_seasonality = False
-    native_multivariate = True
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.dynamic_factor"
@@ -505,7 +506,7 @@ class ExponentialSmoothing(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.exp_smoothing"
@@ -590,7 +591,7 @@ class ETS(ForecastModel):
     handles_missing = True
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.ets"
@@ -683,7 +684,7 @@ class MSTL(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = True
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.statsforecast"
@@ -760,7 +761,7 @@ class NaiveForecaster(ForecastModel):
     handles_missing = True
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.naive"
@@ -814,7 +815,7 @@ class PolynomialTrend(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.trend"
@@ -873,11 +874,44 @@ class Prophet(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = True
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.fbprophet"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "StatsForecastMSTL"}
+    _estimators: ClassVar[dict[str, str]] = {"forecast": "Prophet"}
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+
+        """
+        # Prophet expects a DateTime index frequency
+        if self._config.sp:
+            try:
+                freq = next(
+                    n for n, m in SeasonalPeriod.__members__.items()
+                    if m.value == self._config.sp
+                )
+            except StopIteration:
+                # If not in mapping table, get from index
+                if hasattr(self.X_train.index, "freq"):
+                    freq = self.X_train.index.freq.name
+                else:
+                    freq = None
+        else:
+            freq = None
+
+        return super()._get_est({"freq": freq} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -945,7 +979,7 @@ class SARIMAX(ForecastModel):
     handles_missing = False
     uses_exogenous = True
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.sarimax"
@@ -1081,7 +1115,7 @@ class STL(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.trend"
@@ -1158,7 +1192,7 @@ class TBATS(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = True
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.tbats"
@@ -1242,7 +1276,7 @@ class Theta(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = False
+    native_multioutput = False
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.theta"
@@ -1300,7 +1334,7 @@ class VAR(ForecastModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multivariate = True
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.var"
@@ -1359,7 +1393,7 @@ class VARMAX(ForecastModel):
     handles_missing = False
     uses_exogenous = True
     multiple_seasonality = False
-    native_multivariate = True
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _module = "sktime.forecasting.var"

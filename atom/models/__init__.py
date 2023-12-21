@@ -17,7 +17,7 @@ from atom.models.classreg import (
     QuadraticDiscriminantAnalysis, RadiusNearestNeighbors, RandomForest, Ridge,
     StochasticGradientDescent, SupportVectorMachine, XGBoost,
 )
-from atom.models.custom import CustomModel
+from atom.models.custom import create_custom_model
 from atom.models.ensembles import Stacking, Voting
 from atom.models.ts import (
     ARIMA, BATS, ETS, MSTL, SARIMAX, STL, TBATS, VAR, VARMAX, AutoARIMA,
