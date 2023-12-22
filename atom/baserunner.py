@@ -212,7 +212,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     @property
     def models(self) -> str | list[str] | None:
         """Name of the model(s)."""
-        if isinstance(self._models, ClassMap):
+        if self._models:
             return flt(self._models.keys())
         else:
             return None
@@ -220,7 +220,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     @property
     def metric(self) -> str | list[str] | None:
         """Name of the metric(s)."""
-        if isinstance(self._metric, ClassMap):
+        if self._metric:
             return flt(self._metric.keys())
         else:
             return None

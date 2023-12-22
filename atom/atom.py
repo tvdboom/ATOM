@@ -2078,7 +2078,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 self._delete_models(model.name)
                 self._log(
                     f"Consecutive runs of model {model.name}. "
-                    "The former model has been overwritten.", 1,
+                    "The former model has been overwritten.", 3,
                 )
 
         self._models.extend(trainer._models)

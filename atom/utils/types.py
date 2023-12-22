@@ -21,7 +21,6 @@ from beartype.door import is_bearable
 from beartype.typing import Protocol
 from beartype.vale import Is
 from optuna.distributions import BaseDistribution
-from sktime.forecasting.base import ForecastingHorizon
 
 
 if TYPE_CHECKING:
@@ -186,7 +185,6 @@ XTypes: TypeAlias = (
 XSelector: TypeAlias = XTypes | Callable[..., XTypes]
 YTypes: TypeAlias = dict[str, Any] | Sequence[Any] | XSelector
 YSelector: TypeAlias = Int | str | YTypes
-FHSelector: TypeAlias = Int | Sequence[Any] | ForecastingHorizon
 
 # Return types for transform methods
 TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame
@@ -266,7 +264,7 @@ PredictionMethodsTS: TypeAlias = Literal[
 PlotBackend: TypeAlias = Literal["plotly", "matplotlib"]
 ParamsSelector: TypeAlias = str | Segment | Sequence[IntLargerEqualZero | str]
 TargetSelector: TypeAlias = IntLargerEqualZero | str
-TargetsSelector: TypeAlias = TargetSelector | tuple[TargetSelector, ...]
+TargetsSelector: TypeAlias = TargetSelector | tuple[TargetSelector, TargetSelector]
 Kind: TypeAlias = Literal["average", "individual", "average+individual", "individual+average"]
 Legend: TypeAlias = Literal[
     "upper left",

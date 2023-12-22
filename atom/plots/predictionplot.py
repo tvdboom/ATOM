@@ -978,31 +978,31 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         filename: str | Path | None = None,
         display: Bool | None = True,
     ) -> go.Figure | None:
-        """Plot a time series with model forecasts.
+        """Plot model forecasts for the target time series.
 
-        This plot is only available for forecasting tasks.
+        The gray, intersected line shows the target time series. This
+        plot is only available for [forecast][time-series] tasks.
 
         Parameters
         ----------
         models: int, str, Model, segment, sequence or None, default=None
-            Models to plot. If None, all models are selected. If no
-            models are selected, only the target column is plotted.
+            Models to plot. If None, all models are selected.
 
-        fh: hashable, segment, sequence or [ForecastingHorizon][], default="test"
-            [Forecast horizon][row-and-column-selection] for which to
-            plot the predictions.
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][], default="test"
+            The [forecasting horizon][row-and-column-selection] for
+            which to plot the predictions.
 
         X: dataframe-like or None, default=None
-            Exogenous time series corresponding to fh. This parameter
-            is ignored if fh is a data set.
+            Exogenous time series corresponding to `fh`. This parameter
+            is ignored if `fh` is part of the dataset.
 
         target: int or str, default=0
             Target column to look at. Only for [multivariate][] tasks.
 
         plot_interval: bool, default=True
-            Whether to plot prediction intervals instead of the exact
-            prediction values. If True, the plotted estimators should
-            have a `predict_interval` method.
+            Whether to plot prediction intervals together with the exact
+            predicted values. Models wihtout a `predict_interval` method
+            are skipped silently.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -1038,8 +1038,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         See Also
         --------
-        atom.plots:PredictionPlot.plot_lift
-        atom.plots:PredictionPlot.plot_prc
+        atom.plots:DataPlot.plot_distribution
+        atom.plots:DataPlot.plot_series
         atom.plots:PredictionPlot.plot_roc
 
         Examples
@@ -1051,7 +1051,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         y = load_airline()
 
         atom = ATOMForecaster(y, random_state=1)
-        atom.plot_forecast()
         atom.run(
             models="arima",
             est_params={"order": (1, 1, 0), "seasonal_order": (0, 1, 0, 12)},
@@ -1060,46 +1059,26 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         atom.plot_forecast(fh="train+test", plot_interval=False)
 
         # Forecast the next 4 years starting from the test set
-        atom.plot_forecast(fh=range(1, 48))
+        atom.plot_forecast(fh=range(len(atom.test), len(atom.test) + 48))
         ```
 
         """
-        models_c = self._get_plot_models(models, check_fitted=False)
+        models_c = self._get_plot_models(models)
         target_c = self.branch._get_target(target, only_columns=True)
+
+        if not isinstance(fh, ForecastingHorizon):
+            fh = self.branch._get_rows(fh).index
+
+        if X is None:
+            X = self.branch.X.loc[fh]
+        else:
+            X = self.transform(X)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        # Draw original time series
-        for ds in ("train", "test", "holdout"):
-            if getattr(self, ds) is not None:
-                fig.add_trace(
-                    go.Scatter(
-                        x=self._get_plot_index(getattr(self, ds)),
-                        y=getattr(self, ds)[target_c],
-                        mode="lines+markers",
-                        line={
-                            "width": 2,
-                            "color": "black",
-                            "dash": BasePlot._fig.get_elem(ds, "dash"),
-                        },
-                        opacity=0.6,
-                        name=ds,
-                        showlegend=False if models else BasePlot._fig.showlegend(ds, legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
-                )
-
         # Draw predictions
         for m in models_c:
-            if isinstance(fh, str):
-                # Get fh and corresponding X from data set
-                fh = self.branch._get_rows(fh).index
-                X = m.X.loc[fh]
-            elif X is not None:
-                X = m.transform(X)
-
             y_pred = m.predict(fh=fh, X=X)
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
@@ -1157,11 +1136,26 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     ]
                 )
 
+        # Draw original time series
+        fig.add_trace(
+            go.Scatter(
+                x=y_pred.index,
+                y=self.branch.dataset.loc[y_pred.index, target_c],
+                mode="lines+markers",
+                line={"width": 1, "color": "black", "dash": "dash"},
+                opacity=0.6,
+                layer="below",
+                showlegend=False,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+        )
+
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup" if plot_interval else "toggleitem",
-            xlabel=self.branch.y.index.name or "index",
+            xlabel=self.branch.dataset.index.name or "index",
             ylabel=target,
             title=title,
             legend=legend,

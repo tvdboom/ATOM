@@ -50,6 +50,7 @@ from sklearn.multioutput import (
 )
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
+from sktime.forecasting.base import ForecastingHorizon
 from sktime.forecasting.compose import make_reduction
 from sktime.proba.normal import Normal
 from sktime.split import SingleWindowSplitter
@@ -61,18 +62,18 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    HT, Backend, Bool, DataFrame, Engine, FHSelector, Float, FloatZeroToOneExc,
-    Index, Int, IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs,
-    Pandas, PredictionMethods, PredictionMethodsTS, Predictor, RowSelector,
-    Scalar, Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings,
-    XSelector, YSelector, dataframe_t, float_t, int_t,
+    HT, Backend, Bool, DataFrame, Engine, Float, FloatZeroToOneExc, Index, Int,
+    IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
+    PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
+    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector,
+    YSelector, dataframe_t, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust_verbosity, bk, cache, check_dependency, check_empty,
     check_is_fitted, check_scaling, composed, crash, estimator_has_attr,
     fit_and_score, flt, get_cols, get_custom_scorer, has_task, it, lst, merge,
-    method_to_log, rnd, sign, time_to_str, to_df, to_pandas, to_series,
+    method_to_log, rnd, sign, time_to_str, to_pandas,
 )
 
 
@@ -540,7 +541,7 @@ class BaseModel(RunnerPlot):
                 # Multi-objective optimization doesn't support pruning
                 if trial and len(self._metric) == 1:
                     trial.report(
-                        self._score_from_est(self._metric[0], estimator, *validation),
+                        value=float(self._score_from_est(self._metric[0], estimator, *validation)),
                         step=step,
                     )
 
@@ -726,15 +727,16 @@ class BaseModel(RunnerPlot):
 
         """
         if self.task.is_forecast:
-            # Sktime uses signature estimator.predict(fh, X)
-            y_pred = to_series(estimator.predict(y.index, check_empty(X)), index=y.index)
-            return self._score_from_pred(scorer, y, y_pred, **kwargs)
-        elif self.task is Task.multiclass_multioutput_classification:
-            # Calculate predictions with shape=(n_samples, n_targets)
-            y_pred = to_df(estimator.predict(X), index=y.index, columns=y.columns)
-            return self._score_from_pred(scorer, y, y_pred, **kwargs)
+            y_pred = estimator.predict(fh=y.index, X=check_empty(X))
         else:
-            return scorer(estimator, X, y, **kwargs)
+            y_pred = to_pandas(
+                data=estimator.predict(X),
+                index=y.index,
+                columns=getattr(y, "columns", None),
+                name=getattr(y, "name", None),
+            )
+
+        return self._score_from_pred(scorer, y, y_pred, **kwargs)
 
     def _score_from_pred(
         self,
@@ -3012,13 +3014,17 @@ class ForecastModel(BaseModel):
             called.
 
         """
-        Xt, yt = X, y  # self.transform(X, y, verbose=verbose)  TODO: Fix pipeline ts
+        Xt, yt = self.transform(X, y, verbose=verbose)
 
         if method != "score":
+            fh = kwargs.get("fh")
+            if fh is not None and not isinstance(fh, ForecastingHorizon):
+                kwargs["fh"] = self.branch._get_rows(fh).index
+
             if "y" in sign(func := getattr(self.estimator, method)):
-                return self.memory.cache(func)(y=yt, X=Xt, **kwargs)
+                return self.memory.cache(func)(fh=fh, y=yt, X=Xt, **kwargs)
             else:
-                return self.memory.cache(func)(X=Xt, **kwargs)
+                return self.memory.cache(func)(fh=fh, X=Xt, **kwargs)
         else:
             if metric is None:
                 scorer = self._metric[0]
@@ -3031,7 +3037,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict(
         self,
-        fh: FHSelector,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
@@ -3046,9 +3052,9 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        fh: int, range, sequence or [ForecastingHorizon][]
-            The forecasting horizon encoding the time stamps to
-            forecast at.
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][]
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
@@ -3070,7 +3076,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_interval(
         self,
-        fh: FHSelector,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
@@ -3086,9 +3092,9 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        fh: int, range, sequence or [ForecastingHorizon][]
-            The forecasting horizon encoding the time stamps to
-            forecast at.
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][]
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
@@ -3119,7 +3125,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_proba(
         self,
-        fh: FHSelector,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         marginal: Bool = True,
@@ -3135,9 +3141,9 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        fh: int, range, sequence or [ForecastingHorizon][]
-            The forecasting horizon encoding the time stamps to
-            forecast at.
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][]
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
@@ -3167,7 +3173,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_quantiles(
         self,
-        fh: FHSelector,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
@@ -3183,9 +3189,9 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        fh: int, range, sequence or [ForecastingHorizon][]
-            The forecasting horizon encoding the time stamps to
-            forecast at.
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][]
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
@@ -3256,7 +3262,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_var(
         self,
-        fh: RowSelector | FHSelector,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         cov: Bool = False,
@@ -3272,9 +3278,9 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        fh: int, range, sequence or [ForecastingHorizon][]
-            The forecasting horizon encoding the time stamps to
-            forecast at.
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][]
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
@@ -3308,7 +3314,7 @@ class ForecastModel(BaseModel):
         self,
         y: RowSelector | YSelector,
         X: XSelector | None = None,
-        fh: FHSelector | None = None,
+        fh: RowSelector | ForecastingHorizon | None = None,
         *,
         metric: str | MetricFunction | Scorer | None = None,
         verbose: Int | None = None,
@@ -3334,9 +3340,9 @@ class ForecastModel(BaseModel):
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
 
-        fh: int, sequence or [ForecastingHorizon][] or None, default=None
-            The forecasting horizon encoding the time stamps to
-            forecast at.
+        fh: hashable, segment, sequence, dataframe, [ForecastingHorizon][] or None, default=None
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,

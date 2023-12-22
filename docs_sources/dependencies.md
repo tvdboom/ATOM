@@ -41,7 +41,6 @@ packages are necessary for its correct functioning.
 * **[numpy](https://numpy.org/)** (>=1.23.0)
 * **[optuna](https://optuna.org/)** (>=3.4.0)
 * **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.1.2)
-* **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.7.1)
 * **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
@@ -49,7 +48,7 @@ packages are necessary for its correct functioning.
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)
-* **[sktime](http://www.sktime.net/en/latest/)** (>=0.24.0)
+* **[sktime[forecasting]](http://www.sktime.net/en/latest/)** (>=0.24.0)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
 
@@ -64,11 +63,9 @@ additional libraries. You can install all the optional dependencies using
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.3)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.44.4)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=4.1.0)
-* **[prophet](https://facebook.github.io/prophet/)** (>=1.1.5)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
 * **[statsforecast](https://github.com/Nixtla/statsforecast/)** (>=1.6.0)
 * **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.3.1)
-* **[tbats](https://github.com/intive-DataScience/tbats)** (>=1.1.3)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=2.0.0)
 

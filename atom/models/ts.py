@@ -706,6 +706,30 @@ class MSTL(ForecastModel):
         """
         return super()._get_est({"season_length": self._config.sp or 1} | params)
 
+    def _get_parameters(self, trial: Trial) -> dict:
+        """Get the trial's hyperparameters.
+
+        Parameters
+        ----------
+        trial: [Trial][]
+            Current trial.
+
+        Returns
+        -------
+        dict
+            Trial's hyperparameters.
+
+        """
+        params = super()._get_parameters(trial)
+
+        # MSTL has stl_kwargs, that takes a dict of hyperparameters
+        if "stl_kwargs" in self._est_params:
+            new_params = {}
+        else:
+            new_params = {"stl_kwargs": params}
+
+        return new_params
+
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.

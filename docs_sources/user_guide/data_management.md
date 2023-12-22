@@ -394,6 +394,11 @@ The check is performed in the order described hereunder:
    Rows and columns can only be included or excluded, and not both at the same
    time. For example, this selection raises an exception `#!python column=["col1", "!col2"]`.
 
+Additionally, the forecast horizon (parameter `fh`) in [forecasting tasks][time-series]
+can be selected much in the same way as `rows`, where the horizon is inferred
+as the index of the row selection.
+
+
 !!! info
     In some [plotting methods][prediction-plots], it's possible to plot separate
     lines for different subsets of the rows. For example, to compare the results

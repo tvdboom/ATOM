@@ -418,17 +418,21 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
         """
         return go.Scatter(
-            line={
-                "width": self.line_width,
-                "color": BasePlot._fig.get_elem(parent),
-                "dash": BasePlot._fig.get_elem(child, "dash"),
-            },
-            marker={
-                "symbol": BasePlot._fig.get_elem(child, "marker"),
-                "size": self.marker_size,
-                "color": BasePlot._fig.get_elem(parent),
-                "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-            },
+            line=kwargs.pop(
+                "line", {
+                    "width": self.line_width,
+                    "color": BasePlot._fig.get_elem(parent),
+                    "dash": BasePlot._fig.get_elem(child, "dash"),
+                }
+            ),
+            marker=kwargs.pop(
+                "marker", {
+                    "symbol": BasePlot._fig.get_elem(child, "marker"),
+                    "size": self.marker_size,
+                    "color": BasePlot._fig.get_elem(parent),
+                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                }
+            ),
             hovertemplate=kwargs.pop(
                 "hovertemplate",
                 f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>",

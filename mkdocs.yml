@@ -264,6 +264,7 @@ nav:
             - plot_results: API/plots/plot_results.md
             - plot_rfecv: API/plots/plot_rfecv.md
             - plot_roc: API/plots/plot_roc.md
+            - plot_series: API/plots/plot_series.md
             - plot_shap_bar: API/plots/plot_shap_bar.md
             - plot_shap_beeswarm: API/plots/plot_shap_beeswarm.md
             - plot_shap_decision: API/plots/plot_shap_decision.md

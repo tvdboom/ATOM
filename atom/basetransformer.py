@@ -378,7 +378,7 @@ class BaseTransformer:
         # Add seasonal period to the estimator
         if hasattr(self, "_config") and self._config.sp:
             if "sp" in signature and getattr(obj, "sp", "<!>") == signature["sp"]._default:
-                obj.sp = self._config.sp
+                obj.sp = self._config.sp if self.multiple_seasonality else flt(self._config.sp)
 
         return obj
 

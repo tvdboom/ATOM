@@ -1249,6 +1249,128 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         )
 
     @crash
+    def plot_series(
+        self,
+        rows: str | Sequence[str] | dict[str, RowSelector] = ("train", "test"),
+        columns: ColumnSelector | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper left",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot a data series.
+
+        This plot is specially useful to plot the time series for
+        [forecast][time-series] tasks.
+
+        Parameters
+        ----------
+        rows: str, sequence or dict, default=("train", "test")
+            Selection of rows on which to calculate the metric.
+
+            - If str: Name of the data set to plot.
+            - If sequence: Names of the data sets to plot.
+            - If dict: Names of the sets with corresponding
+              [selection of rows][row-and-column-selection] as values.
+
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            [Columns][row-and-column-selection] to plot. If None, all
+            target columns are selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_distribution
+        atom.plots:DataPlot.plot_relationships
+        atom.plots:DataPlot.plot_qq
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_series()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.target)
+        else:
+            columns_c = self.branch._get_columns(columns, include_target=True)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for col in columns_c:
+            for child, ds in self._get_set(rows):
+                fig.add_trace(
+                    self._draw_line(
+                        x=self._get_plot_index(y := self.branch._get_rows(ds)[col]),
+                        y=y,
+                        mode="lines+markers",
+                        marker={
+                            "size": self.marker_size,
+                            "color": BasePlot._fig.get_elem(col),
+                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                        },
+                        parent=col,
+                        child=child,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel=self.branch.dataset.index.name or "index",
+            ylabel="Values",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_series",
+            filename=filename,
+            display=display,
+        )
+
+    @crash
     def plot_wordcloud(
         self,
         rows: RowSelector = "dataset",
