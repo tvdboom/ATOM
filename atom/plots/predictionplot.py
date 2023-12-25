@@ -967,10 +967,11 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     def plot_forecast(
         self,
         models: ModelsSelector = None,
-        fh: RowSelector | ForecastingHorizon = "test",
+        fh: RowSelector | ForecastingHorizon = "dataset",
         X: XSelector | None = None,
         target: TargetSelector = 0,
         *,
+        plot_insample: Bool = False,
         plot_interval: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
@@ -988,7 +989,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][], default="test"
+        fh: hashable, segment, sequence, dataframe or [ForecastingHorizon][], default="dataset"
             The [forecasting horizon][row-and-column-selection] for
             which to plot the predictions.
 
@@ -998,6 +999,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         target: int or str, default=0
             Target column to look at. Only for [multivariate][] tasks.
+
+        plot_insample: bool, default=False
+            Whether to draw in-sample predictions (predictions on the training
+            set). Models that do not support this feature are silently skipped.
 
         plot_interval: bool, default=True
             Whether to plot prediction intervals together with the exact
@@ -1040,7 +1045,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         --------
         atom.plots:DataPlot.plot_distribution
         atom.plots:DataPlot.plot_series
-        atom.plots:PredictionPlot.plot_roc
+        atom.plots:PredictionPlot.plot_errors
 
         Examples
         --------
@@ -1070,7 +1075,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             fh = self.branch._get_rows(fh).index
 
         if X is None:
-            X = self.branch.X.loc[fh]
+            X = self.branch._all.loc[fh]
         else:
             X = self.transform(X)
 
@@ -1083,9 +1088,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
 
+            if not plot_insample:
+                y_pred.loc[m.branch.train.index] = np.NaN
+
             fig.add_trace(
                 self._draw_line(
-                    x=self._get_plot_index(y_pred),
+                    x=(x := self._get_plot_index(y_pred)),
                     y=y_pred,
                     mode="lines+markers",
                     parent=m.name,
@@ -1098,7 +1106,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             if plot_interval:
                 try:
                     y_pred = m.predict_interval(fh=fh, X=X)
-                except NotImplementedError:
+                except (AttributeError, NotImplementedError):
                     continue  # Fails for some models like ES
 
                 if self.task.is_multioutput:
@@ -1107,10 +1115,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 else:
                     y = y_pred  # Univariate
 
+                if not plot_insample:
+                    y_pred.loc[m.branch.train.index] = np.NaN
+
                 fig.add_traces(
                     [
                         go.Scatter(
-                            x=self._get_plot_index(y_pred),
+                            x=x,
                             y=y.iloc[:, 1],
                             mode="lines",
                             line={"width": 1, "color": BasePlot._fig.get_elem(m.name)},
@@ -1121,7 +1132,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             yaxis=yaxis,
                         ),
                         go.Scatter(
-                            x=self._get_plot_index(y_pred),
+                            x=x,
                             y=y.iloc[:, 0],
                             mode="lines",
                             line={"width": 1, "color": BasePlot._fig.get_elem(m.name)},
@@ -1139,12 +1150,11 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         # Draw original time series
         fig.add_trace(
             go.Scatter(
-                x=y_pred.index,
-                y=self.branch.dataset.loc[y_pred.index, target_c],
+                x=x,
+                y=self.branch._all.loc[y_pred.index, target_c],
                 mode="lines+markers",
                 line={"width": 1, "color": "black", "dash": "dash"},
                 opacity=0.6,
-                layer="below",
                 showlegend=False,
                 xaxis=xaxis,
                 yaxis=yaxis,

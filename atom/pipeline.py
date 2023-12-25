@@ -477,6 +477,9 @@ class Pipeline(SkPipeline):
             Transformed target column. Only returned if provided.
 
         """
+        if X is None and y is None:
+            raise ValueError("X and y cannot be both None.")
+
         for _, _, transformer in self._iter(**kwargs):
             with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y)
@@ -520,6 +523,9 @@ class Pipeline(SkPipeline):
             Transformed target column. Only returned if provided.
 
         """
+        if X is None and y is None:
+            raise ValueError("X and y cannot be both None.")
+
         for _, _, transformer in reversed(list(self._iter())):
             with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y, method="inverse_transform")

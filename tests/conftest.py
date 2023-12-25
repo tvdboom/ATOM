@@ -333,7 +333,7 @@ y_multireg = merge(
 
 # Time series datasets
 y_fc = load_airline()
-y_ex, X_ex = load_longley()
+y_multivariate = load_longley()
 
 # Train and test sets per task
 bin_train, bin_test = get_train_test(X_bin, y_bin)

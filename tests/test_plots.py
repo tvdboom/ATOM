@@ -22,8 +22,8 @@ from atom.utils.types import Legend
 from atom.utils.utils import NotFittedError
 
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10,
-    y_bin, y_class, y_ex, y_fc, y_label, y_multiclass, y_reg,
+    X10, X10_str, X_bin, X_class, X_label, X_reg, X_sparse, X_text, y10, y_bin,
+    y_class, y_fc, y_label, y_multiclass, y_multivariate, y_reg,
 )
 
 
@@ -552,7 +552,7 @@ def test_plot_feature_importance():
 
 def test_plot_forecast():
     """Assert that the plot_forecast method works."""
-    atom = ATOMForecaster(X_ex, y=y_ex, holdout_size=0.1, random_state=1)
+    atom = ATOMForecaster(y_multivariate, y=(-2, -1), holdout_size=0.1, random_state=1)
     atom.run(models=["NF", "ES"])
     atom.plot_forecast(display=False)
     atom.plot_forecast(fh=atom.holdout.index, X=atom.holdout, display=False)

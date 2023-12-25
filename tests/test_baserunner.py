@@ -788,10 +788,12 @@ def test_get_models_remove_duplicates():
 def test_available_models():
     """Assert that the available_models method shows the models per task."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    models = atom.available_models()
+    models = atom.available_models(native_multioutput=True, supports_engines="cuml")
     assert isinstance(models, pd.DataFrame)
-    assert "LR" in models["acronym"].unique()
+    assert "RF" in models["acronym"].unique()
     assert "BR" not in models["acronym"].unique()  # Is not a classifier
+    assert "MLP" not in models["acronym"].unique()  # Is not native multioutput
+    assert models["supports_engines"].str.contains("cuml").all()
 
 
 def test_clear():
@@ -879,6 +881,37 @@ def test_get_sample_weight_multioutput():
     """Assert that the get_sample_weight method works for multioutput."""
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
     assert len(atom.get_sample_weight()) == len(atom.train)
+
+
+def test_get_seasonal_period_no_harmonics():
+    """Assert that the get_seasonal_period returns a list of periods."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    assert atom.get_seasonal_period(harmonics=None) == [12, 24, 36, 11, 48]
+
+
+def test_get_seasonal_period_drop_harmonics():
+    """Assert that the harmonics are dropped from the seasonal periods."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    assert atom.get_seasonal_period(harmonics="drop") == [12, 11]
+
+
+def test_get_seasonal_period_raw_strength_harmonics():
+    """Assert that the strongest harmonics are kept in the seasonal periods."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    assert atom.get_seasonal_period(harmonics="raw_strength") == [11, 48]
+
+
+def test_get_seasonal_period_harmonic_strength_harmonics():
+    """Assert that the strongest harmonics are pushed forward."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    assert atom.get_seasonal_period(harmonics="harmonic_strength") == [48, 11]
+
+
+def test_get_seasonal_period_no_periods():
+    """Assert that an error is raised when no periods are detected."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    with pytest.raises(ValueError, match=".*No seasonal periods.*"):
+        atom.get_seasonal_period(max_sp=2)
 
 
 def test_merge_invalid_class():

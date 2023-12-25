@@ -3014,7 +3014,15 @@ class ForecastModel(BaseModel):
             called.
 
         """
-        Xt, yt = self.transform(X, y, verbose=verbose)
+        if y is not None or X is not None:
+            if isinstance(out := self.transform(X, y, verbose=verbose), tuple):
+                Xt, yt = out
+            elif X is not None:
+                Xt, yt = out, y
+            else:
+                Xt, yt = X, out
+        else:
+            Xt, yt = X, y
 
         if method != "score":
             fh = kwargs.get("fh")
@@ -3022,9 +3030,9 @@ class ForecastModel(BaseModel):
                 kwargs["fh"] = self.branch._get_rows(fh).index
 
             if "y" in sign(func := getattr(self.estimator, method)):
-                return self.memory.cache(func)(fh=fh, y=yt, X=Xt, **kwargs)
+                return self.memory.cache(func)(y=yt, X=Xt, **kwargs)
             else:
-                return self.memory.cache(func)(fh=fh, X=Xt, **kwargs)
+                return self.memory.cache(func)(X=Xt, **kwargs)
         else:
             if metric is None:
                 scorer = self._metric[0]

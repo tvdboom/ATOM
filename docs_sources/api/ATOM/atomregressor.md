@@ -145,7 +145,6 @@ of utility methods to handle the data and manage the pipeline.
         - eda
         - evaluate
         - export_pipeline
-        - get_class_weight
         - get_sample_weight
         - inverse_transform
         - load

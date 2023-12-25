@@ -40,7 +40,7 @@ per task, but can include:
 - **fullname:** Name of the model's class.
 - **estimator:** Name of the model's underlying estimator.
 - **module:** The estimator's module.
-- **handles_missing:** Whether the model can handle missing (`NaN`) values
+- **handles_missing:** Whether the model can handle missing values
   without preprocessing. If False, consider using the [Imputer][] class
   before training the models.
 - **needs_scaling:** Whether the model requires feature scaling. If True,
@@ -53,6 +53,11 @@ per task, but can include:
 - **native_multioutput:** Whether the model has native support for [multioutput tasks][].
 - **validation:** Whether the model has [in-training validation][].
 - **supports_engines:** [Engines][estimator-acceleration] supported by the model.
+
+To filter for specific tags, specify the column name with the desired value
+in the arguments of `available_models`, e.g., `#!python atom.available_models(accepts_sparse=True)`
+to get all models that accept sparse input or `#!python atom.available_models(supports_engines="cuml")`
+to get all models that support the [cuML][] engine.
 
 
 <br>

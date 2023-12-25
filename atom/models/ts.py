@@ -21,7 +21,7 @@ from atom.utils.utils import SeasonalPeriod
 
 
 class ARIMA(ForecastModel):
-    """Autoregressive Integrated Moving Average Model.
+    """Autoregressive Integrated Moving Average.
 
     Seasonal ARIMA models and exogenous input is supported, hence this
     estimator is capable of fitting SARIMA, ARIMAX, and SARIMAX.
@@ -178,7 +178,7 @@ class ARIMA(ForecastModel):
 
 
 class AutoARIMA(ForecastModel):
-    """Automatic Autoregressive Integrated Moving Average Model.
+    """Automatic Autoregressive Integrated Moving Average.
 
     [ARIMA][] implementation that includes automated fitting of
     (S)ARIMA(X) hyperparameters (p, d, q, P, D, Q). The AutoARIMA
@@ -649,7 +649,7 @@ class ETS(ForecastModel):
 
 
 class MSTL(ForecastModel):
-    """Multiple Seasonal-Trend decomposition using LOESS model.
+    """Multiple Seasonal-Trend decomposition using LOESS.
 
     The MSTL decomposes the time series in multiple seasonalities using
     LOESS. Then forecasts the trend using a custom non-seasonal model
@@ -956,7 +956,7 @@ class Prophet(ForecastModel):
 
 
 class SARIMAX(ForecastModel):
-    """Seasonal Autoregressive Integrated Moving Average with eXogenous factors.
+    """Seasonal Autoregressive Integrated Moving Average.
 
     SARIMAX stands for Seasonal Autoregressive Integrated Moving Average
     with eXogenous factors. It extends [ARIMA][] by incorporating seasonal
@@ -1106,7 +1106,7 @@ class SARIMAX(ForecastModel):
 
 
 class STL(ForecastModel):
-    """Seasonal-Trend decomposition using Loess.
+    """Seasonal-Trend decomposition using LOESS.
 
     STL is a technique commonly used for decomposing time series data
     into components like trend, seasonality, and residuals.
@@ -1381,7 +1381,7 @@ class VAR(ForecastModel):
 
 
 class VARMAX(ForecastModel):
-    """Vector Autoregressive Moving-Average with exogenous variables.
+    """Vector Autoregressive Moving-Average.
 
     VARMAX is an extension of the [VAR][] model that incorporates not
     only lagged values of the endogenous variables, but also includes

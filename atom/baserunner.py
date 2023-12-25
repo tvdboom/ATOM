@@ -40,7 +40,8 @@ from atom.utils.types import (
     Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int, IntLargerOne,
     MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
     RowSelector, Scalar, Seasonality, Segment, Sequence, Series,
-    TargetSelector, YSelector, dataframe_t, int_t, segment_t, sequence_t,
+    TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
+    sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Goal, SeasonalPeriod, Task, bk, check_is_fitted,
@@ -888,8 +889,17 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             self._metric = ClassMap()
 
     @crash
-    def available_models(self) -> pd.DataFrame:
+    def available_models(self, **kwargs) -> pd.DataFrame:
         """Give an overview of the available predefined models.
+
+        Parameters
+        ----------
+        **kwargs
+            Filter the returned models providing any of the column as
+            keyword arguments, where the value is the desired filter,
+            e.g., `accepts_sparse=True`, to get all models that accept
+            sparse input or `supports_engines="cuml"` to get all models
+            that support the [cuML][] engine.
 
         Returns
         -------
@@ -902,8 +912,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             - **estimator:** Name of the model's underlying estimator.
             - **module:** The estimator's module.
             - **handles_missing:** Whether the model can handle missing
-              (`NaN`) values without preprocessing. If False, consider using
-              the [Imputer][] class before training the models.
+              values without preprocessing. If False, consider using the
+              [Imputer][] class before training the models.
             - **needs_scaling:** Whether the model requires feature scaling.
               If True, [automated feature scaling][] is applied.
             - **accepts_sparse:** Whether the model accepts [sparse input][sparse-datasets].
@@ -922,7 +932,16 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         for model in MODELS:
             m = model(goal=self._goal, branches=self._branches)
             if self._goal.name in m._estimators:
-                rows.append(m.get_tags())
+                tags = m.get_tags()
+
+                for key, value in kwargs.items():
+                    k = tags.get(key)
+                    if isinstance(value, bool_t) and value is not bool(k):
+                        break
+                    elif isinstance(value, str) and not re.search(value, k, re.I):
+                        break
+                else:
+                    rows.append(tags)
 
         return pd.DataFrame(rows)
 

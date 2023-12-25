@@ -81,6 +81,13 @@ def test_fit_transform(pipeline):
     assert isinstance(pl.fit_transform(X_bin, y_bin), tuple)  # Returns X, y
 
 
+def test_transform_both_None(pipeline):
+    """Assert that an error is raised when both X and y are None."""
+    pl = pipeline(model=False)
+    with pytest.raises(ValueError, match=".*X and y cannot be both None.*"):
+        pl.transform()
+
+
 def test_transform_train_only(pipeline):
     """Assert that the pipeline ignores train_only during predicting."""
     pl = pipeline(model=False)
@@ -122,6 +129,13 @@ def test_transform(pipeline):
     pl = pipeline(model=False)
     assert isinstance(pl.transform(X_bin), pd.DataFrame)
     assert isinstance(pl.transform(X_bin, y_bin), tuple)
+
+
+def test_inverse_transform_both_None(pipeline):
+    """Assert that an error is raised when both X and y are None."""
+    pl = pipeline(model=False)
+    with pytest.raises(ValueError, match=".*X and y cannot be both None.*"):
+        pl.inverse_transform()
 
 
 def test_inverse_transform():
