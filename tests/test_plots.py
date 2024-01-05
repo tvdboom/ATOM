@@ -219,7 +219,7 @@ def test_canvas():
     """Assert that the canvas works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with atom.canvas(1, 2, title="Title", display=False) as fig:
+    with atom.canvas(1, 2, sharex=True, sharey=True, title="Title", display=False) as fig:
         atom.plot_residuals(title={"text": "Residuals plot", "x": 0})
         atom.plot_feature_importance(title="Feature importance plot")
     assert fig.__class__.__name__ == "Figure"
