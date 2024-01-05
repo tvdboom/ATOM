@@ -531,16 +531,33 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         fig = fig or BasePlot._fig.figure
         if isinstance(fig, go.Figure):
             if isinstance(ax, tuple):
+                # Hide the axis' label and ticks from non-border subplots
+                if not BasePlot._fig.sharex or self._fig.grid[0] == self._fig.rows:
+                    fig.update_layout(
+                        {
+                            f"{ax[0]}_title": {
+                                "text": kwargs.get("xlabel"),
+                                "font_size": self.label_fontsize,
+                            }
+                        }
+                    )
+                else:
+                    fig.update_layout({f"{ax[0]}_showticklabels": False})
+
+                if not BasePlot._fig.sharey or self._fig.grid[1] == 1:
+                    fig.update_layout(
+                        {
+                            f"{ax[1]}_title": {
+                                "text": kwargs.get("ylabel"),
+                                "font_size": self.label_fontsize,
+                            }
+                        }
+                    )
+                else:
+                    fig.update_layout({f"{ax[1]}_showticklabels": False})
+
                 fig.update_layout(
                     {
-                        f"{ax[0]}_title": {
-                            "text": kwargs.get("xlabel"),
-                            "font_size": self.label_fontsize,
-                        },
-                        f"{ax[1]}_title": {
-                            "text": kwargs.get("ylabel"),
-                            "font_size": self.label_fontsize,
-                        },
                         f"{ax[0]}_range": kwargs.get("xlim"),
                         f"{ax[1]}_range": kwargs.get("ylim"),
                         f"{ax[0]}_automargin": True,
@@ -692,8 +709,10 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         rows: IntLargerZero = 1,
         cols: IntLargerZero = 2,
         *,
-        horizontal_spacing: FloatZeroToOneExc = 0.05,
-        vertical_spacing: FloatZeroToOneExc = 0.07,
+        sharex: Bool = False,
+        sharey: Bool = False,
+        hspace: FloatZeroToOneExc = 0.05,
+        vspace: FloatZeroToOneExc = 0.07,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "out",
         figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
@@ -714,11 +733,19 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         cols: int, default=2
             Number of plots in width.
 
-        horizontal_spacing: float, default=0.05
+        sharex: bool, default=False
+            If True, hide the label and ticks from non-border subplots
+            on the x-axis.
+
+        sharey: bool, default=False
+            If True, hide the label and ticks from non-border subplots
+            on the y-axis.
+
+        hspace: float, default=0.05
             Space between subplot rows in normalized plot coordinates.
             The spacing is relative to the figure's size.
 
-        vertical_spacing: float, default=0.07
+        vspace: float, default=0.07
             Space between subplot cols in normalized plot coordinates.
             The spacing is relative to the figure's size.
 
@@ -759,8 +786,10 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         BasePlot._fig = BaseFigure(
             rows=rows,
             cols=cols,
-            horizontal_spacing=horizontal_spacing,
-            vertical_spacing=vertical_spacing,
+            sharex=sharex,
+            sharey=sharey,
+            hspace=hspace,
+            vspace=vspace,
             palette=self.palette,
             is_canvas=True,
         )
@@ -779,11 +808,12 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                 display=display,
             )
 
-    def reset_aesthetics(self):
+    @classmethod
+    def reset_aesthetics(cls):
         """Reset the plot [aesthetics][] to their default values."""
-        self._custom_layout = {}
-        self._custom_traces = {}
-        self._aesthetics = Aesthetics(
+        cls._custom_layout = {}
+        cls._custom_traces = {}
+        cls._aesthetics = Aesthetics(
             palette=list(PALETTE),
             title_fontsize=24,
             label_fontsize=16,
@@ -792,7 +822,8 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             marker_size=8,
         )
 
-    def update_layout(self, **kwargs):
+    @classmethod
+    def update_layout(cls, **kwargs):
         """Update the properties of the plot's layout.
 
         Recursively update the structure of the original layout with
@@ -804,9 +835,10 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             Keyword arguments for the figure's [update_layout][] method.
 
         """
-        self._custom_layout = kwargs
+        cls._custom_layout = kwargs
 
-    def update_traces(self, **kwargs):
+    @classmethod
+    def update_traces(cls, **kwargs):
         """Update the properties of the plot's traces.
 
         Recursively update the structure of the original traces with
@@ -818,4 +850,4 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             Keyword arguments for the figure's [update_traces][] method.
 
         """
-        self._custom_traces = kwargs
+        cls._custom_traces = kwargs

@@ -35,11 +35,19 @@ class BaseFigure:
     cols: int, default=1
         Number of subplot columns in the canvas.
 
-    horizontal_spacing: float, default=0.05
+    sharex: bool, default=False
+        If True, hide the label and ticks from non-border subplots
+        on the x-axis.
+
+    sharey: bool, default=False
+        If True, hide the label and ticks from non-border subplots
+        on the y-axis.
+
+    hspace: float, default=0.05
         Space between subplot rows in normalized plot coordinates.
         The spacing is relative to the figure's size.
 
-    vertical_spacing: float, default=0.07
+    vspace: float, default=0.07
         Space between subplot cols in normalized plot coordinates.
         The spacing is relative to the figure's size.
 
@@ -66,8 +74,10 @@ class BaseFigure:
         rows: IntLargerZero = 1,
         cols: IntLargerZero = 1,
         *,
-        horizontal_spacing: FloatZeroToOneExc = 0.05,
-        vertical_spacing: FloatZeroToOneExc = 0.07,
+        sharex: Bool = False,
+        sharey: Bool = False,
+        hspace: FloatZeroToOneExc = 0.05,
+        vspace: FloatZeroToOneExc = 0.07,
         palette: str | Sequence[str] = "Prism",
         is_canvas: Bool = False,
         backend: PlotBackend = "plotly",
@@ -75,8 +85,10 @@ class BaseFigure:
     ):
         self.rows = rows
         self.cols = cols
-        self.horizontal_spacing = horizontal_spacing
-        self.vertical_spacing = vertical_spacing
+        self.sharex = sharex
+        self.sharey = sharey
+        self.hspace = hspace
+        self.vspace = vspace
         if isinstance(palette, str):
             self._palette = getattr(px.colors.qualitative, palette)
             self.palette = cycle(self._palette)
@@ -235,8 +247,8 @@ class BaseFigure:
         self.axes += 1
 
         # Calculate the distance between subplots
-        x_offset = divide(self.horizontal_spacing, (self.cols - 1))
-        y_offset = divide(self.vertical_spacing, (self.rows - 1))
+        x_offset = divide(self.hspace, (self.cols - 1))
+        y_offset = divide(self.vspace, (self.rows - 1))
 
         # Calculate the size of the subplot
         x_size = (1 - ((x_offset * 2) * (self.cols - 1))) / self.cols
