@@ -1510,7 +1510,7 @@ def check_empty(obj: Pandas) -> Pandas | None:
         Same object or None if empty.
 
     """
-    return obj if not obj.empty else None
+    return obj if isinstance(obj, dataframe_t) and not obj.empty else None
 
 
 def check_dependency(name: str):

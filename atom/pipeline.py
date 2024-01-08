@@ -18,6 +18,7 @@ from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
+from sktime.proba.normal import Normal
 from typing_extensions import Self
 
 from atom.utils.types import (
@@ -65,6 +66,7 @@ class Pipeline(SkPipeline):
         - It returns attributes from the final estimator if they are
           not of the Pipeline.
         - The last estimator is also cached.
+        - Supports time series models following sktime's API.
 
     !!! warning
         This Pipeline only works with estimators whose parameters
@@ -526,13 +528,23 @@ class Pipeline(SkPipeline):
         return self.steps[-1][1].decision_function(X)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: XConstructor, **predict_params) -> np.ndarray:
+    def predict(
+        self,
+        X: XConstructor | None = None,
+        fh: FHConstructor | None = None,
+        **predict_params,
+    ) -> np.ndarray | Pandas:
         """Transform, then predict of the final estimator.
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). Can only
+            be `None` for [forecast][time-series] tasks.
+
+        fh: int, sequence or [ForecastingHorizon][] or None, default=None
+            The forecasting horizon encoding the time stamps to
+            forecast at. Only for [forecast][time-series] tasks.
 
         **predict_params
             Additional keyword arguments for the predict method. Note
@@ -543,16 +555,59 @@ class Pipeline(SkPipeline):
 
         Returns
         -------
-        np.ndarray
+        np.ndarray, series or dataframe
             Predictions with shape=(n_samples,) or shape=(n_samples,
             n_targets) for [multioutput tasks][].
 
         """
+        if X is None and fh is None:
+            raise ValueError("X and fh cannot be both None.")
+
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
-        return self.steps[-1][1].predict(X, **predict_params)
+        if "fh" in sign(self.steps[-1][1].predict):
+            if fh is None:
+                raise ValueError("The fh parameter cannot be None for forecasting estimators.")
+
+            return self.steps[-1][1].predict(fh=fh, X=X, **predict_params)
+        else:
+            return self.steps[-1][1].predict(X, **predict_params)
+
+    @available_if(_final_estimator_has("predict_interval"))
+    def predict_interval(
+        self,
+        fh: FHConstructor,
+        X: XConstructor | None = None,
+        *,
+        coverage: Float | Sequence[Float] = 0.9,
+    ) -> Pandas:
+        """Transform, then predict_quantiles of the final estimator.
+
+        Parameters
+        ----------
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
+
+        coverage: float or sequence, default=0.9
+            Nominal coverage(s) of predictive interval(s).
+
+        Returns
+        -------
+        dataframe
+            Computed interval forecasts.
+
+        """
+        for _, _, transformer in self._iter(with_final=False):
+            with adjust_verbosity(transformer, self.verbose):
+                X, y = self._mem_transform(transformer, X)
+
+        return self.steps[-1][1].predict_interval(fh=fh, X=X, coverage=coverage)
 
     @available_if(_final_estimator_has("predict_log_proba"))
     def predict_log_proba(self, X: XConstructor) -> np.ndarray:
@@ -577,26 +632,89 @@ class Pipeline(SkPipeline):
         return self.steps[-1][1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X: XConstructor) -> np.ndarray:
+    def predict_proba(
+        self,
+        X: XConstructor | None = None,
+        fh: FHConstructor | None = None,
+        *,
+        marginal: Bool = True,
+    ) -> list[np.ndarray] | np.ndarray | Normal:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). Can only
+            be `None` for [forecast][time-series] tasks.
+
+        fh: int, sequence, [ForecastingHorizon][] or None, default=None
+            The forecasting horizon encoding the time stamps to
+            forecast at. Only for [forecast][time-series] tasks.
+
+        marginal: bool, default=True
+            Whether returned distribution is marginal by time index.
+            Only for [forecast][time-series] tasks.
 
         Returns
         -------
-        np.ndarray
-            Predicted class probabilities with shape=(n_samples,
-            n_classes) or a list of arrays for [multioutput tasks][].
+        list, np.ndarray or sktime.proba.[Normal][]
+
+            - For classification tasks: Predicted class probabilities
+              with shape=(n_samples, n_classes).
+            - For [multioutput tasks][]: A list of arrays with
+              shape=(n_samples, n_classes).
+            - For [forecast][time-series] tasks: Distribution object.
 
         """
+        if X is None and fh is None:
+            raise ValueError("X and fh cannot be both None.")
+
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
-        return self.steps[-1][1].predict_proba(X)
+        if "fh" in sign(self.steps[-1][1].predict_proba):
+            if fh is None:
+                raise ValueError("The fh parameter cannot be None for forecasting estimators.")
+
+            return self.steps[-1][1].predict_proba(fh=fh, X=X, marginal=marginal)
+        else:
+            return self.steps[-1][1].predict_proba(X)
+
+    @available_if(_final_estimator_has("predict_quantiles"))
+    def predict_quantiles(
+        self,
+        fh: FHConstructor,
+        X: XConstructor | None = None,
+        *,
+        alpha: Float | Sequence[Float] = (0.05, 0.95),
+    ) -> Pandas:
+        """Transform, then predict_quantiles of the final estimator.
+
+        Parameters
+        ----------
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
+
+        alpha: float or sequence, default=(0.05, 0.95)
+            A probability or list of, at which quantile forecasts are
+            computed.
+
+        Returns
+        -------
+        dataframe
+            Computed quantile forecasts.
+
+        """
+        for _, _, transformer in self._iter(with_final=False):
+            with adjust_verbosity(transformer, self.verbose):
+                X, y = self._mem_transform(transformer, X)
+
+        return self.steps[-1][1].predict_quantiles(fh=fh, X=X, alpha=alpha)
 
     @available_if(_final_estimator_has("predict_residuals"))
     def predict_residuals(
@@ -625,7 +743,7 @@ class Pipeline(SkPipeline):
             with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
-        return self.steps[-1][1].predict_residuals(y, X)
+        return self.steps[-1][1].predict_residuals(y=y, X=X)
 
     @available_if(_final_estimator_has("predict_var"))
     def predict_var(
@@ -665,8 +783,8 @@ class Pipeline(SkPipeline):
     @available_if(_final_estimator_has("score"))
     def score(
         self,
-        X: XConstructor,
-        y: YConstructor,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         fh: FHConstructor | None = None,
         *,
         sample_weight: Sequence[Scalar] | None = None,
@@ -675,10 +793,11 @@ class Pipeline(SkPipeline):
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). Can only
+            be `None` for [forecast][time-series] tasks.
 
-        y: sequence or dataframe
+        y: dict, sequence, dataframe or None, default=None
             Target values corresponding to `X`.
 
         fh: int, sequence, [ForecastingHorizon][] or None, default=None
@@ -694,11 +813,14 @@ class Pipeline(SkPipeline):
             to y.
 
         """
+        if X is None and y is None:
+            raise ValueError("X and y cannot be both None.")
+
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
         if "fh" in sign(self.steps[-1][1].score):
-            return self.steps[-1][1].score(y, X=X, fh=fh)
+            return self.steps[-1][1].score(y=y, X=X, fh=fh)
         else:
             return self.steps[-1][1].score(X, y, sample_weight=sample_weight)

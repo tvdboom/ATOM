@@ -9,6 +9,7 @@ import glob
 import sys
 from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 import requests
@@ -20,17 +21,22 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import f1_score, r2_score, recall_score
+from sklearn.metrics import (
+    f1_score, mean_absolute_error, mean_absolute_percentage_error, r2_score,
+    recall_score,
+)
 from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from sklearn.tree import DecisionTreeClassifier
+from sktime.forecasting.base import ForecastingHorizon
+from sktime.proba.normal import Normal
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.utils.utils import check_is_fitted, check_scaling
 
 from .conftest import (
-    X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
-    y_class, y_fc, y_idx, y_label, y_multiclass, y_reg,
+    X10_str, X_bin, X_class, X_ex, X_idx, X_label, X_reg, y10, y10_str, y_bin,
+    y_class, y_ex, y_fc, y_idx, y_label, y_multiclass, y_reg,
 )
 
 
@@ -1004,7 +1010,7 @@ def test_score_metric_is_None():
 
 
 def test_score_custom_metric():
-    """Assert that the score method works when sample weights are provided."""
+    """Assert that the score method works for a custom scorer."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.run("Tree")
     recall = recall_score(y_bin, atom.tree.predict(X_bin))
@@ -1026,3 +1032,43 @@ def test_forecast_get_tags():
     atom = ATOMForecaster(y_fc, random_state=1)
     atom.run("NF")
     assert isinstance(atom.nf.get_tags(), dict)
+
+
+def test_predictions_only_fh():
+    """Assert that predictions can be made using only the fh."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    assert isinstance(atom.nf.predict(fh=range(10)), pd.Series)
+    assert isinstance(atom.nf.predict_interval(fh=ForecastingHorizon([1, 2])), pd.DataFrame)
+
+
+def test_predictions_with_exogenous():
+    """Assert that predictions can be made with exogenous variables."""
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.run("NF")
+    assert isinstance(atom.nf.predict_proba(fh=range(10), X=X_ex.iloc[:10]), Normal)
+    assert isinstance(atom.nf.predict_quantiles(fh=range(10), X=X_ex.iloc[:10]), pd.DataFrame)
+    assert isinstance(atom.nf.predict_var(fh=range(10), X=X_ex.iloc[:10]), pd.DataFrame)
+
+
+def test_predictions_with_y():
+    """Assert that predictions can be made with y."""
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.run("NF")
+    assert isinstance(atom.nf.predict_residuals(y=y_ex[:10], X=X_ex.iloc[:10]), pd.Series)
+
+
+def test_score_ts_metric_is_None():
+    """Assert that the score method returns the default metric."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    mape = mean_absolute_percentage_error(y_fc[:10], atom.nf.predict(range(10)))
+    assert atom.nf.score(y_fc[:10]) == np.negative(mape)
+
+
+def test_score_ts_custom_metric():
+    """Assert that the score method works for a custom scorer."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    mae = mean_absolute_error(y_fc[:10], atom.nf.predict(range(10)))
+    assert atom.nf.score(y_fc[:10], metric="mae") == np.negative(mae)

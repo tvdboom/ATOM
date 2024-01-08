@@ -2254,6 +2254,8 @@ class BaseModel(RunnerPlot):
             Original target column. Only returned if provided.
 
         """
+        X, y = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
+
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
             return pipeline.inverse_transform(X, y)
 
@@ -2451,6 +2453,8 @@ class BaseModel(RunnerPlot):
             Transformed target column. Only returned if provided.
 
         """
+        X, y = self._check_input(X, y, columns=self.og.features, name=self.og.target)
+
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
             return pipeline.transform(X, y)
 
@@ -2951,6 +2955,7 @@ class ForecastModel(BaseModel):
     @overload
     def _prediction(
         self,
+        fh: RowSelector | FHConstructor | None = None,
         y: RowSelector | YSelector | None = None,
         X: XSelector | None = None,
         metric: str | MetricFunction | Scorer | None = None,
@@ -2962,6 +2967,7 @@ class ForecastModel(BaseModel):
     @overload
     def _prediction(
         self,
+        fh: RowSelector | FHConstructor | None = None,
         y: RowSelector | YSelector | None = None,
         X: XSelector | None = None,
         metric: str | MetricFunction | Scorer | None = None,
@@ -2972,6 +2978,7 @@ class ForecastModel(BaseModel):
 
     def _prediction(
         self,
+        fh: RowSelector | FHConstructor | None = None,
         y: RowSelector | YSelector | None = None,
         X: XSelector | None = None,
         metric: str | MetricFunction | Scorer | None = None,
@@ -2987,6 +2994,10 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
+        fh: hashable, segment, sequence, dataframe, [ForecastingHorizon][] or None, default=None
+            The [forecasting horizon][row-and-column-selection] encoding
+            the time stamps to forecast at.
+
         y: int, str, dict, sequence, dataframe or None, default=None
             Ground truth observations.
 
@@ -3027,14 +3038,12 @@ class ForecastModel(BaseModel):
             Xt, yt = X, y
 
         if method != "score":
-            fh = kwargs.get("fh")
-            if fh is not None and not isinstance(fh, ForecastingHorizon):
-                kwargs["fh"] = self.branch._get_rows(fh).index
-
             if "y" in sign(func := getattr(self.estimator, method)):
                 return self.memory.cache(func)(y=yt, X=Xt, **kwargs)
             else:
-                return self.memory.cache(func)(X=Xt, **kwargs)
+                if fh is not None and not isinstance(fh, ForecastingHorizon):
+                    fh = self.branch._get_rows(fh).index
+                return self.memory.cache(func)(fh=fh, X=Xt, **kwargs)
         else:
             if metric is None:
                 scorer = self._metric[0]
@@ -3119,8 +3128,7 @@ class ForecastModel(BaseModel):
         Returns
         -------
         dataframe
-            Predictions with shape=(n_samples, 2) or shape=(n_samples,
-            2 * n_targets) for [multivariate][] tasks.
+            Computed interval forecasts.
 
         """
         return self._prediction(
@@ -3168,7 +3176,7 @@ class ForecastModel(BaseModel):
         Returns
         -------
         sktime.proba.[Normal][]
-            Predicted distribution.
+            Distribution object.
 
         """
         return self._prediction(
@@ -3189,7 +3197,7 @@ class ForecastModel(BaseModel):
         alpha: Float | Sequence[Float] = (0.05, 0.95),
         verbose: Int | None = None,
     ) -> DataFrame:
-        """Get probabilistic forecasts on new data or existing rows.
+        """Get quantile forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
         Transformers that are only applied on the training set are
@@ -3217,9 +3225,7 @@ class ForecastModel(BaseModel):
         Returns
         -------
         dataframe
-            Predictions with shape=(n_samples, len(alpha)) or
-            shape=(n_samples, len(alpha) * n_targets) for [multivariate][]
-            tasks.
+            Computed quantile forecasts.
 
         """
         return self._prediction(

@@ -639,6 +639,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Original target column. Only returned if provided.
 
         """
+        X, y = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
+
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
             return pipeline.inverse_transform(X, y)
 
@@ -1069,6 +1071,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Transformed target column. Only returned if provided.
 
         """
+        X, y = self._check_input(X, y, columns=self.og.features, name=self.og.target)
+
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
             return pipeline.transform(X, y)
 

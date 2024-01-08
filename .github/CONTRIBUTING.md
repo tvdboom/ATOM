@@ -96,9 +96,8 @@ and accept your changes.
   as possible.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
-* Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
-* Run [ruff](https://docs.astral.sh/ruff/): ` ruff check --fix atom tests`.
-* Run [mypy](https://www.mypy-lang.org/): `mypy atom tests`.
+* Run [pre-commit](https://pre-commit.com/): `pre-commit run --all-files`
+  and make sure all tests pass.
 
 If your contribution requires a new library dependency:
 
