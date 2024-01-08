@@ -13,11 +13,11 @@ jobs:
       pull-requests: write
 
     steps:
-    - uses: actions/stale@v7
+    - uses: actions/stale@v9
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: 'Stale issue message: This issue will be automatically closed by GitHub Actions in 1 week if there is no further activity.'
         stale-pr-message: 'Stale pull request message: This PR will be automatically closed by GitHub Actions in 1 week if there is no further activity.'
-        stale-issue-label: 'no-issue-activity'
-        stale-pr-label: 'no-pr-activity'
+        stale-issue-label: 'stale'
+        stale-pr-label: 'stale'
         exempt-issue-labels: 'bug,enhancement,help wanted'

@@ -56,8 +56,8 @@ from atom.utils.types import (
     Bool, DataFrame, Estimator, Float, Index, IndexSelector, Int,
     IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
     Scorer, Segment, Sequence, Series, Transformer, TReturn, TReturns, Verbose,
-    XSelector, YSelector, YTypes, dataframe_t, int_t, pandas_t, segment_t,
-    sequence_t, series_t,
+    XConstructor, XSelector, YConstructor, YSelector, dataframe_t, int_t,
+    pandas_t, segment_t, sequence_t, series_t,
 )
 
 
@@ -1897,7 +1897,7 @@ def to_series(
 
 @overload
 def to_series(
-    data: YTypes,
+    data: dict[str, Any] | Sequence[Any],
     index: Axes | None = ...,
     name: Hashable | None = ...,
     dtype: Dtype | None = ...,
@@ -1905,7 +1905,7 @@ def to_series(
 
 
 def to_series(
-    data: dict[str, Any] | Sequence[Any] | np.ndarray | Series | None,
+    data: dict[str, Any] | Sequence[Any] | None,
     index: Axes | None = None,
     name: Hashable | None = None,
     dtype: Dtype | None = None,
@@ -1968,7 +1968,7 @@ def to_pandas(
 
 @overload
 def to_pandas(
-    data: YTypes,
+    data: YConstructor,
     index: Axes | None = ...,
     columns: Axes | None = ...,
     name: str | None = ...,
@@ -1977,7 +1977,7 @@ def to_pandas(
 
 
 def to_pandas(
-    data: YTypes | None,
+    data: YConstructor | None,
     index: Axes | None = None,
     columns: Axes | None = None,
     name: str | None = None,
@@ -2359,12 +2359,12 @@ def reorder_cols(
 
 def fit_one(
     estimator: Estimator,
-    X: XSelector | None = None,
-    y: YSelector | None = None,
+    X: XConstructor | None = None,
+    y: YConstructor | None = None,
     message: str | None = None,
     **fit_params,
 ) -> Estimator:
-    """Fit the data using one estimator.
+    """Fit the data on an estimator.
 
     Parameters
     ----------
@@ -2376,7 +2376,7 @@ def fit_one(
         X is ignored.
 
     y: int, str, dict, sequence, dataframe or None, default=None
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.
@@ -2433,8 +2433,8 @@ def fit_one(
 
 def transform_one(
     transformer: Transformer,
-    X: XSelector | None = None,
-    y: YSelector | None = None,
+    X: XConstructor | None = None,
+    y: YConstructor | None = None,
     method: Literal["transform", "inverse_transform"] = "transform",
 ) -> tuple[DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
@@ -2449,7 +2449,7 @@ def transform_one(
         X is ignored.
 
     y: int, str, dict, sequence, dataframe or None, default=None
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.
@@ -2522,9 +2522,9 @@ def transform_one(
     )
 
     kwargs: dict[str, Any] = {}
-    inc = getattr(transformer, "_cols", getattr(Xt, "columns", []))
+    inc = list(getattr(transformer, "_cols", getattr(Xt, "columns", [])))
     if "X" in (params := sign(getattr(transformer, method))):
-        if Xt is not None and (cols := [c for c in inc if c in Xt]):
+        if Xt is not None and (not inc or (cols := [c for c in inc if c in Xt])):
             kwargs["X"] = Xt[cols]
 
         # X is required but has not been provided
@@ -2575,8 +2575,8 @@ def transform_one(
 
 def fit_transform_one(
     transformer: Transformer,
-    X: XSelector | None = None,
-    y: YSelector | None = None,
+    X: XConstructor | None = None,
+    y: YConstructor | None = None,
     message: str | None = None,
     **fit_params,
 ) -> tuple[DataFrame | None, Series | None, Transformer]:
@@ -2592,7 +2592,7 @@ def fit_transform_one(
         X is ignored.
 
     y: int, str, dict, sequence, dataframe or None, default=None
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.

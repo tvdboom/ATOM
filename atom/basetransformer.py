@@ -454,7 +454,7 @@ class BaseTransformer:
             X is ignored.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -466,7 +466,7 @@ class BaseTransformer:
             - If dataframe: Target columns for multioutput tasks.
 
         columns: sequence or None, default=None
-            Names of the features corresponding to X. If X already is a
+            Names of the features corresponding to `X`. If X already is a
             dataframe, force feature order. If None and X is not a
             dataframe, assign default feature names.
 
@@ -480,7 +480,7 @@ class BaseTransformer:
             Feature dataset. Only returned if provided.
 
         series, dataframe or None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
         """
         Xt: DataFrame | None = None

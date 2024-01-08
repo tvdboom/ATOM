@@ -197,7 +197,7 @@ def test_multi_objective_optimization():
 def test_hyperparameter_tuning_with_plot():
     """Assert that you can plot the hyperparameter tuning as it runs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, ht_params={"plot": True})
+    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, errors="raise", ht_params={"plot": True})
 
 
 def test_xgb_optimizes_score():

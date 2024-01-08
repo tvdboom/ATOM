@@ -21,6 +21,7 @@ from beartype.door import is_bearable
 from beartype.typing import Protocol
 from beartype.vale import Is
 from optuna.distributions import BaseDistribution
+from sktime.forecasting.base import ForecastingHorizon
 
 
 if TYPE_CHECKING:
@@ -174,7 +175,7 @@ FloatZeroToOneInc: TypeAlias = Annotated[Scalar, Is[lambda x: 0 <= x <= 1]]
 FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 
 # Types for X, y and fh
-XTypes: TypeAlias = (
+XConstructor: TypeAlias = (
     dict[str, Sequence[Any]]
     | Sequence[Sequence[Any]]
     | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
@@ -182,9 +183,10 @@ XTypes: TypeAlias = (
     | sps.spmatrix
     | DataFrame
 )
-XSelector: TypeAlias = XTypes | Callable[..., XTypes]
-YTypes: TypeAlias = dict[str, Any] | Sequence[Any] | XSelector
-YSelector: TypeAlias = Int | str | YTypes
+XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
+YConstructor: TypeAlias = dict[str, Any] | Sequence[Any] | XConstructor
+YSelector: TypeAlias = Int | str | YConstructor
+FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
 
 # Return types for transform methods
 TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame
@@ -264,7 +266,7 @@ PredictionMethodsTS: TypeAlias = Literal[
 PlotBackend: TypeAlias = Literal["plotly", "matplotlib"]
 ParamsSelector: TypeAlias = str | Segment | Sequence[IntLargerEqualZero | str]
 TargetSelector: TypeAlias = IntLargerEqualZero | str
-TargetsSelector: TypeAlias = TargetSelector | tuple[TargetSelector, TargetSelector]
+TargetsSelector: TypeAlias = TargetSelector | tuple[TargetSelector, ...]
 Kind: TypeAlias = Literal["average", "individual", "average+individual", "individual+average"]
 Legend: TypeAlias = Literal[
     "upper left",

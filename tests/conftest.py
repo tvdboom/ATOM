@@ -123,7 +123,7 @@ def get_train_test(
         Feature set. If None, split as time series data set.
 
     y: sequence or DataFrame
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
     Returns
     -------

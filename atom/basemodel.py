@@ -62,11 +62,11 @@ from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    HT, Backend, Bool, DataFrame, Engine, Float, FloatZeroToOneExc, Index, Int,
-    IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
-    PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
-    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector,
-    YSelector, dataframe_t, float_t, int_t,
+    HT, Backend, Bool, DataFrame, Engine, FHConstructor, Float,
+    FloatZeroToOneExc, Index, Int, IntLargerEqualZero, MetricConstructor,
+    MetricFunction, NJobs, Pandas, PredictionMethods, PredictionMethodsTS,
+    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, TargetSelector,
+    Verbose, Warnings, XSelector, YSelector, dataframe_t, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
@@ -715,7 +715,7 @@ class BaseModel(RunnerPlot):
             Feature set.
 
         y: series or dataframe
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
         **kwargs
             Additional keyword arguments for the score function.
@@ -1156,7 +1156,7 @@ class BaseModel(RunnerPlot):
             `self.X_train` is used.
 
         y: series, dataframe or None
-            Target column corresponding to X. If None, `self.y_train`
+            Target column corresponding to `X`. If None, `self.y_train`
             is used.
 
         """
@@ -2231,7 +2231,7 @@ class BaseModel(RunnerPlot):
             If None, X is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -2242,8 +2242,8 @@ class BaseModel(RunnerPlot):
             - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -2428,7 +2428,7 @@ class BaseModel(RunnerPlot):
             X is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -2439,8 +2439,8 @@ class BaseModel(RunnerPlot):
             - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -2550,7 +2550,7 @@ class ClassRegModel(BaseModel):
             on.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -2571,8 +2571,8 @@ class ClassRegModel(BaseModel):
             Sample weights for the score method.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         method: str, default="predict"
             Prediction method to be applied to the estimator.
@@ -2704,15 +2704,16 @@ class ClassRegModel(BaseModel):
             on.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
         series or dataframe
             Predicted confidence scores with shape=(n_samples,) for
-            binary classification tasks or shape=(n_samples, n_classes)
-            for multiclass classification tasks.
+            binary classification tasks (log likelihood ratio of the
+            positive class) or shape=(n_samples, n_classes) for
+            multiclass classification tasks.
 
         """
         return self._prediction(X, verbose=verbose, method="decision_function")
@@ -2748,8 +2749,8 @@ class ClassRegModel(BaseModel):
             no `inverse_transform` method or don't apply to `y`.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -2789,14 +2790,15 @@ class ClassRegModel(BaseModel):
             on.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
         dataframe
-            Class log-probability predictions with shape=(n_samples,
-            n_classes).
+            Predicted class log-probabilities with shape=(n_samples,
+            n_classes) or shape=(n_samples * n_classes, n_targets) with
+            a multiindex format for [multioutput tasks][].
 
         """
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
@@ -2825,15 +2827,15 @@ class ClassRegModel(BaseModel):
             on.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
         dataframe
-            Class probability predictions with shape=(n_samples, n_classes)
-            or (n_targets * n_samples, n_classes) with a multiindex format
-            for [multioutput tasks][].
+            Predicted class probabilities with shape=(n_samples,
+            n_classes) or shape=(n_samples * n_classes, n_targets) with
+            a multiindex format for [multioutput tasks][].
 
         """
         return self._prediction(X, verbose=verbose, method="predict_proba")
@@ -2870,7 +2872,7 @@ class ClassRegModel(BaseModel):
             on.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: `X` must be a selection of rows in the dataset.
             - If int: Position of the target column in X.
@@ -2891,8 +2893,8 @@ class ClassRegModel(BaseModel):
             Sample weights corresponding to y.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -2998,8 +3000,8 @@ class ForecastModel(BaseModel):
             tasks and r2 for regression tasks. Only for method="score".
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         method: str, default="predict"
             Prediction method to be applied to the estimator.
@@ -3045,7 +3047,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict(
         self,
-        fh: RowSelector | ForecastingHorizon,
+        fh: RowSelector | FHConstructor,
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
@@ -3068,8 +3070,8 @@ class ForecastModel(BaseModel):
             Exogenous time series corresponding to `fh`.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -3084,7 +3086,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_interval(
         self,
-        fh: RowSelector | ForecastingHorizon,
+        fh: RowSelector | FHConstructor,
         X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
@@ -3111,8 +3113,8 @@ class ForecastModel(BaseModel):
             Nominal coverage(s) of predictive interval(s).
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -3133,7 +3135,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_proba(
         self,
-        fh: RowSelector | ForecastingHorizon,
+        fh: RowSelector | FHConstructor,
         X: XSelector | None = None,
         *,
         marginal: Bool = True,
@@ -3160,8 +3162,8 @@ class ForecastModel(BaseModel):
             Whether returned distribution is marginal by time index.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -3181,7 +3183,7 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_quantiles(
         self,
-        fh: RowSelector | ForecastingHorizon,
+        fh: RowSelector | FHConstructor,
         X: XSelector | None = None,
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
@@ -3209,8 +3211,8 @@ class ForecastModel(BaseModel):
             computed.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -3236,7 +3238,7 @@ class ForecastModel(BaseModel):
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
-    ) -> DataFrame:
+    ) -> Pandas:
         """Get residuals of forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3254,13 +3256,13 @@ class ForecastModel(BaseModel):
             Exogenous time series corresponding to `y`.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
         series or dataframe
-            Predictions with shape=(n_samples,) or shape=(n_samples,
+            Residuals with shape=(n_samples,) or shape=(n_samples,
             n_targets) for [multivariate][] tasks.
 
         """
@@ -3270,13 +3272,13 @@ class ForecastModel(BaseModel):
     @composed(crash, method_to_log, beartype)
     def predict_var(
         self,
-        fh: RowSelector | ForecastingHorizon,
+        fh: RowSelector | FHConstructor,
         X: XSelector | None = None,
         *,
         cov: Bool = False,
         verbose: Int | None = None,
     ) -> DataFrame:
-        """Get probabilistic forecasts on new data or existing rows.
+        """Get variance forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
         Transformers that are only applied on the training set are
@@ -3298,14 +3300,13 @@ class ForecastModel(BaseModel):
             variance forecasts.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
         dataframe
-            Predictions with shape=(n_samples,) or shape=(n_samples,
-            n_targets) for [multivariate][] tasks.
+            Computed variance forecasts.
 
         """
         return self._prediction(
@@ -3322,7 +3323,7 @@ class ForecastModel(BaseModel):
         self,
         y: RowSelector | YSelector,
         X: XSelector | None = None,
-        fh: RowSelector | ForecastingHorizon | None = None,
+        fh: RowSelector | FHConstructor | None = None,
         *,
         metric: str | MetricFunction | Scorer | None = None,
         verbose: Int | None = None,
@@ -3359,8 +3360,8 @@ class ForecastModel(BaseModel):
             metric for [multi-metric runs][]).
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------

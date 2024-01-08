@@ -16,17 +16,38 @@ from atom.feature_engineering import (
 from atom.utils.utils import to_df
 
 from .conftest import (
-    X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_reg,
+    X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_fc,
+    y_reg,
 )
 
 
 # Test FeatureExtractor ============================================ >>
 
-
 def test_invalid_features():
     """Assert that an error is raised when features are invalid."""
     with pytest.raises(ValueError, match=".*an attribute of pd.Series.dt.*"):
         FeatureExtractor(features="invalid").transform(X10_dt)
+
+
+def test_from_index_invalid():
+    """Assert that an error is raised when the index is no datetime."""
+    extractor = FeatureExtractor(from_index=True)
+    with pytest.raises(ValueError, match=".*index to a timestamp format.*"):
+        extractor.transform(X_bin)
+
+
+def test_from_index():
+    """Assert that features can be extracted from the index."""
+    extractor = FeatureExtractor(from_index=True)
+    X = extractor.transform(pd.DataFrame(y_fc))
+    assert "Period_year" in X.columns
+
+
+def test_skip_no_variance():
+    """Assert that features with no variance are not in the output."""
+    extractor = FeatureExtractor(from_index=True)
+    X = extractor.transform(pd.DataFrame(y_fc))
+    assert "Period_day" not in X.columns
 
 
 def test_wrongly_converted_columns_are_ignored():

@@ -39,11 +39,11 @@ from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IntLargerEqualZero, IntLargerZero, NJobs, Operators,
-    Pandas, Scalar, Sequence, Series, Verbose, sequence_t, series_t,
+    Pandas, Scalar, Sequence, Series, Verbose, series_t,
 )
 from atom.utils.utils import (
-    Goal, Task, check_scaling, composed, crash, get_custom_scorer, is_sparse,
-    lst, merge, method_to_log, sign,
+    Goal, Task, bk, check_scaling, composed, crash, get_custom_scorer,
+    is_sparse, lst, merge, method_to_log, sign,
 )
 
 
@@ -75,13 +75,12 @@ class FeatureExtractor(TransformerMixin):
         in a column that only contains dates) are ignored. Allowed
         values are datetime attributes from `pandas.Series.dt`.
 
-    fmt: str, sequence or None, default=None
+    fmt: str, dict or None, default=None
         Format (`strptime`) of the categorical columns that need
-        to be converted to datetime. If sequence, the n-th format
-        corresponds to the n-th categorical column that can be
-        successfully converted. If None, the format is inferred
-        automatically from the first non NaN value. Values that
-        cannot be converted are returned as `NaT`.
+        to be converted to datetime. If dict, use the column's name
+        as key and the format as value. If None, the format is
+        inferred automatically from the first non NaN value. Values
+        that cannot be converted are returned as `NaT`.
 
     encoding_type: str, default="ordinal"
         Type of encoding to use. Choose from:
@@ -91,8 +90,12 @@ class FeatureExtractor(TransformerMixin):
           their cyclic nature. This approach creates two columns for
           every feature. Non-cyclic features still use ordinal encoding.
 
+    from_index: bool, default=False
+        Whether to use the index as the datetime column to convert.
+
     drop_columns: bool, default=True
-        Whether to drop the original columns after transformation.
+        Whether to drop the original columns after transformation. This
+        parameter is ignored if `from_index=True`.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -163,10 +166,11 @@ class FeatureExtractor(TransformerMixin):
     def __init__(
         self,
         features: str | Sequence[str] = ("day", "month", "year"),
-        fmt: str | Sequence[str] | None = None,
+        fmt: str | dict[str, str] | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
         drop_columns: Bool = True,
+        from_index: Bool = False,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
     ):
@@ -175,6 +179,7 @@ class FeatureExtractor(TransformerMixin):
         self.features = features
         self.encoding_type = encoding_type
         self.drop_columns = drop_columns
+        self.from_index = from_index
 
     @composed(crash, method_to_log)
     def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
@@ -196,42 +201,49 @@ class FeatureExtractor(TransformerMixin):
         """
         self._log("Extracting datetime features...", 1)
 
-        i = 0
-        for name, column in X.select_dtypes(exclude="number").items():
-            if column.dtype.name == "datetime64[ns]":
-                col_dt = column
-                self._log(f" --> Extracting features from column {name}.", 1)
+        if self.from_index:
+            if hasattr(X.index, "to_timestamp"):
+                Xc = bk.DataFrame(X.index.to_timestamp())
+                order = Xc.columns.tolist() + X.columns.tolist()
             else:
-                col_dt = pd.to_datetime(
-                    arg=column,
-                    errors="coerce",  # Converts to NaT if he can't format
-                    format=self.fmt[i] if isinstance(self.fmt, sequence_t) else self.fmt,
-                    infer_datetime_format=True,
-                )
+                raise ValueError("Unable to convert the index to a timestamp format.")
+        else:
+            Xc = X.select_dtypes(exclude="number")
+            order = X.columns.tolist()
 
-                # If >30% values are NaT, the conversion was unsuccessful
-                if 100.0 * col_dt.isna().sum() / len(X) >= 30:
-                    continue  # Skip this column
-                else:
-                    i += 1
-                    self._log(f" --> Extracting features from categorical column {name}.", 1)
+        Xt = bk.DataFrame(index=X.index)
+        for name, column in Xc.items():
+            col_dt = pd.to_datetime(
+                arg=column,
+                errors="coerce",  # Converts to NaT if he can't format
+                format=self.fmt.get(name) if isinstance(self.fmt, dict) else self.fmt,
+            )
+
+            # If >30% values are NaT, the conversion was unsuccessful
+            if col_dt.isna().sum() / len(Xc) >= 0.3:
+                continue  # Skip this column
+
+            self._log(f" --> Extracting features from column {name}.", 1)
 
             # Extract features from the datetime column
-            for fx in map(str.lower, lst(self.features)):
+            # Reverse to keep the provided order of features
+            for fx in map(str.lower, reversed(lst(self.features))):
                 if hasattr(col_dt.dt, fx.lower()):
-                    values = getattr(col_dt.dt, fx)
+                    series = getattr(col_dt.dt, fx)
                 else:
                     raise ValueError(
                         "Invalid value for the feature parameter. Value "
                         f"{fx.lower()} is not an attribute of pd.Series.dt."
                     )
 
-                # Skip if the information is not present in the format
-                if not isinstance(values, series_t):
+                if not isinstance(series, series_t):
                     self._log(
-                        f"   --> Extracting feature {fx} failed. Result is not a Series.dt.", 2
+                        f"   --> Extracting feature {fx} "
+                        "failed. Result is not a Series.dt.", 2
                     )
-                    continue
+                    continue  # Skip if the information is not present in the format
+                elif (series == series[0]).all():
+                    continue  # Skip if the resulting feature has zero variance
 
                 min_val: int = 0
                 max_val: Scalar | Series | None = None  # None if isn't cyclic
@@ -254,23 +266,24 @@ class FeatureExtractor(TransformerMixin):
                     elif fx == "quarter":
                         min_val, max_val = 1, 4
 
-                # Add every new feature after the previous one
                 new_name = f"{name}_{fx}"
-                idx = X.columns.get_loc(name)
                 if self.encoding_type == "ordinal" or max_val is None:
                     self._log(f"   --> Creating feature {new_name}.", 2)
-                    X.insert(idx, new_name, values)
+                    Xt[new_name] = series.to_numpy()
+                    order.insert(order.index(name) + 1, new_name)
                 elif self.encoding_type == "cyclic":
                     self._log(f"   --> Creating cyclic feature {new_name}.", 2)
-                    pos = 2 * np.pi * (values - min_val) / np.array(max_val)
-                    X.insert(idx, f"{new_name}_sin", np.sin(pos))
-                    X.insert(idx + 1, f"{new_name}_cos", np.cos(pos))
+                    pos = 2 * np.pi * (series.to_numpy() - min_val) / np.array(max_val)
+                    Xt[f"{new_name}_sin"] = np.sin(pos)
+                    Xt[f"{new_name}_cos"] = np.cos(pos)
+                    order.insert(order.index(name) + 1, f"{new_name}_sin")
+                    order.insert(order.index(name) + 2, f"{new_name}_cos")
 
-            # Drop the original datetime column
-            if self.drop_columns:
-                X = X.drop(columns=name)
+            # Drop the original column
+            if self.drop_columns or self.from_index:
+                order.remove(name)
 
-        return X
+        return merge(Xt, X)[order]
 
 
 @beartype
@@ -436,7 +449,7 @@ class FeatureGenerator(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -1068,7 +1081,7 @@ class FeatureSelector(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.

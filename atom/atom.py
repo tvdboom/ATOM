@@ -616,7 +616,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             If None, X is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -627,8 +627,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -677,7 +677,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Feature set with shape=(n_samples, n_features).
 
             **y: int, str or sequence**<br>
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
@@ -1046,7 +1046,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             X is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -1057,8 +1057,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
-            Verbosity level for the transformers in the pipeline. If None,
-            it uses the pipeline's verbosity.
+            Verbosity level for the transformers in the pipeline. If
+            None, it uses the pipeline's verbosity.
 
         Returns
         -------
@@ -1858,10 +1858,11 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     def feature_extraction(
         self,
         features: str | Sequence[str] = ("day", "month", "year"),
-        fmt: str | Sequence[str] | None = None,
+        fmt: str | dict[str, str] | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
         drop_columns: Bool = True,
+        from_index: Bool = False,
         **kwargs,
     ):
         """Extract features from datetime columns.
@@ -1882,6 +1883,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             fmt=fmt,
             encoding_type=encoding_type,
             drop_columns=drop_columns,
+            from_index=from_index,
             **self._prepare_kwargs(kwargs, sign(FeatureExtractor)),
         )
 

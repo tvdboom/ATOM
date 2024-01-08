@@ -473,7 +473,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 Feature set with shape=(n_samples, n_features).
 
             y: series or dataframe
-                Target column(s) corresponding to X.
+                Target column(s) corresponding to `X`.
 
             Returns
             -------
@@ -599,19 +599,19 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 Training set.
 
             y_train: series or dataframe
-                Target column(s) corresponding to X_train.
+                Target column(s) corresponding to `X`_train.
 
             X_test: dataframe
                 Test set.
 
             y_test: series or dataframe
-                Target column(s) corresponding to X_test.
+                Target column(s) corresponding to `X`_test.
 
             X_holdout: dataframe or None
                 Holdout set. Is None if not provided by the user.
 
             y_holdout: series, dataframe or None
-                Target column(s) corresponding to X_holdout.
+                Target column(s) corresponding to `X`_holdout.
 
             Returns
             -------

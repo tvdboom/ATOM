@@ -158,7 +158,7 @@ class ATOMClassifier(ATOM):
         Feature set with shape=(n_samples, n_features).
 
         **y: int, str or sequence**<br>
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
@@ -167,7 +167,7 @@ class ATOMClassifier(ATOM):
         - If dataframe: Target columns for multioutput tasks.
 
     y: int, str, dict, sequence or dataframe, default=-1
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
@@ -681,7 +681,7 @@ class ATOMRegressor(ATOM):
         Feature set with shape=(n_samples, n_features).
 
         **y: int, str or sequence**<br>
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
@@ -690,7 +690,7 @@ class ATOMRegressor(ATOM):
         - If dataframe: Target columns for multioutput tasks.
 
     y: int, str, dict, sequence or dataframe, default=-1
-        Target column corresponding to X.
+        Target column corresponding to `X`.
 
         - If None: y is ignored.
         - If int: Position of the target column in X.

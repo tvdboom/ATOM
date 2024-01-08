@@ -104,7 +104,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -145,7 +145,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -189,7 +189,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -354,7 +354,7 @@ class Balancer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict or sequence, default=-1
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -443,7 +443,7 @@ class Balancer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence, default=-1
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
@@ -729,7 +729,7 @@ class Cleaner(TransformerMixin):
             X is ignored.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -799,7 +799,7 @@ class Cleaner(TransformerMixin):
             X is ignored.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -923,7 +923,7 @@ class Cleaner(TransformerMixin):
             Do nothing. Implemented for continuity of the API.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -1489,7 +1489,7 @@ class Encoder(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence or dataframe-like
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -1977,7 +1977,7 @@ class Imputer(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -2540,7 +2540,7 @@ class Pruner(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to X.
+            Target column corresponding to `X`.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.

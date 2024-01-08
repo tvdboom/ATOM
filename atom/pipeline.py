@@ -21,12 +21,12 @@ from sklearn.utils.validation import check_memory
 from typing_extensions import Self
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Float, Pandas, Scalar, Sequence, Verbose,
-    XSelector, YSelector,
+    Bool, DataFrame, Estimator, FHConstructor, Float, Pandas, Scalar, Sequence,
+    Verbose, XConstructor, YConstructor,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
-    fit_transform_one, transform_one, variable_return,
+    fit_transform_one, sign, transform_one, variable_return,
 )
 
 
@@ -64,7 +64,7 @@ class Pipeline(SkPipeline):
           the underlying transformers/estimator in the pipeline are.
         - It returns attributes from the final estimator if they are
           not of the Pipeline.
-        - The last transformer is also cached.
+        - The last estimator is also cached.
 
     !!! warning
         This Pipeline only works with estimators whose parameters
@@ -259,8 +259,8 @@ class Pipeline(SkPipeline):
 
     def _fit(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params_steps,
     ) -> tuple[DataFrame | None, Pandas | None]:
         """Get data transformed through the pipeline.
@@ -271,13 +271,8 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored. None if the pipeline only uses y.
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+        y: dict, sequence, dataframe or None, default=None
+            Target column corresponding to `X`.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -330,8 +325,8 @@ class Pipeline(SkPipeline):
 
     def fit(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params,
     ) -> Self:
         """Fit the pipeline.
@@ -342,13 +337,8 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+        y: dict, sequence, dataframe or None, default=None
+            Target column corresponding to `X`.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -373,8 +363,8 @@ class Pipeline(SkPipeline):
     @available_if(_can_transform)
     def fit_transform(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Fit the pipeline and transform the data.
@@ -393,16 +383,8 @@ class Pipeline(SkPipeline):
             X is ignored. None
             if the estimator only uses y.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: dict, sequence, dataframe or None, default=None
+            Target column corresponding to `X`.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -438,8 +420,8 @@ class Pipeline(SkPipeline):
     @available_if(_can_transform)
     def transform(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **kwargs,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform the data.
@@ -457,13 +439,8 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored. None if the pipeline only uses y.
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+        y: dict, sequence, dataframe or None, default=None
+            Target column corresponding to `X`.
 
         **kwargs
             Additional keyword arguments for the `_iter` inner method.
@@ -489,8 +466,8 @@ class Pipeline(SkPipeline):
     @available_if(_can_inverse_transform)
     def inverse_transform(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inverse transform for each step in a reverse order.
 
@@ -503,16 +480,8 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored. None if the pipeline only uses y.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to X.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: dict, sequence, dataframe or None, default=None
+            Target column corresponding to `X`.
 
         Returns
         -------
@@ -532,8 +501,32 @@ class Pipeline(SkPipeline):
 
         return variable_return(X, y)
 
+    @available_if(_final_estimator_has("decision_function"))
+    def decision_function(self, X: XConstructor) -> np.ndarray:
+        """Transform, then decision_function of the final estimator.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        Returns
+        -------
+        np.ndarray
+            Predicted confidence scores with shape=(n_samples,) for
+            binary classification tasks (log likelihood ratio of the
+            positive class) or shape=(n_samples, n_classes) for
+            multiclass classification tasks.
+
+        """
+        for _, _, transformer in self._iter(with_final=False):
+            with adjust_verbosity(transformer, self.verbose):
+                X, _ = self._mem_transform(transformer, X)
+
+        return self.steps[-1][1].decision_function(X)
+
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: XSelector, **predict_params) -> np.ndarray:
+    def predict(self, X: XConstructor, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -551,17 +544,40 @@ class Pipeline(SkPipeline):
         Returns
         -------
         np.ndarray
-            Predicted classes with shape=(n_samples,).
+            Predictions with shape=(n_samples,) or shape=(n_samples,
+            n_targets) for [multioutput tasks][].
 
         """
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
-        return self.steps[-1][-1].predict(X, **predict_params)
+        return self.steps[-1][1].predict(X, **predict_params)
+
+    @available_if(_final_estimator_has("predict_log_proba"))
+    def predict_log_proba(self, X: XConstructor) -> np.ndarray:
+        """Transform, then predict_log_proba of the final estimator.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        Returns
+        -------
+        list or np.ndarray
+            Predicted class log-probabilities with shape=(n_samples,
+            n_classes) or a list of arrays for [multioutput tasks][].
+
+        """
+        for _, _, transformer in self._iter(with_final=False):
+            with adjust_verbosity(transformer, self.verbose):
+                X, _ = self._mem_transform(transformer, X)
+
+        return self.steps[-1][1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X: XSelector) -> np.ndarray:
+    def predict_proba(self, X: XConstructor) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
@@ -572,62 +588,87 @@ class Pipeline(SkPipeline):
         Returns
         -------
         np.ndarray
-            Predicted class probabilities.
+            Predicted class probabilities with shape=(n_samples,
+            n_classes) or a list of arrays for [multioutput tasks][].
 
         """
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
-        return self.steps[-1][-1].predict_proba(X)
+        return self.steps[-1][1].predict_proba(X)
 
-    @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X: XSelector) -> np.ndarray:
-        """Transform, then predict_log_proba of the final estimator.
+    @available_if(_final_estimator_has("predict_residuals"))
+    def predict_residuals(
+        self,
+        y: YConstructor,
+        X: XConstructor | None = None,
+    ) -> Pandas:
+        """Transform, then predict_residuals of the final estimator.
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        y: sequence or dataframe
+            Ground truth observations.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to `y`.
 
         Returns
         -------
-        np.ndarray
-            Predicted class log-probabilities.
+        series or dataframe
+            Residuals with shape=(n_samples,) or shape=(n_samples,
+            n_targets) for [multivariate][] tasks.
 
         """
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
-                X, _ = self._mem_transform(transformer, X)
+                X, y = self._mem_transform(transformer, X, y)
 
-        return self.steps[-1][-1].predict_log_proba(X)
+        return self.steps[-1][1].predict_residuals(y, X)
 
-    @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X: XSelector) -> np.ndarray:
-        """Transform, then decision_function of the final estimator.
+    @available_if(_final_estimator_has("predict_var"))
+    def predict_var(
+        self,
+        fh: FHConstructor,
+        X: XConstructor | None = None,
+        *,
+        cov: Bool = False,
+    ) -> DataFrame:
+        """Transform, then predict_var of the final estimator.
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        fh: int, sequence or [ForecastingHorizon][]
+            The forecasting horizon encoding the time stamps to
+            forecast at.
+
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`.
+
+        cov: bool, default=False
+            Whether to compute covariance matrix forecast or marginal
+            variance forecasts.
 
         Returns
         -------
-        np.ndarray
-            Predicted confidence scores.
+        dataframe
+            Computed variance forecasts.
 
         """
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, _ = self._mem_transform(transformer, X)
 
-        return self.steps[-1][-1].decision_function(X)
+        return self.steps[-1][1].predict_var(fh=fh, X=X, cov=cov)
 
     @available_if(_final_estimator_has("score"))
     def score(
         self,
-        X: XSelector,
-        y: YSelector,
+        X: XConstructor,
+        y: YConstructor,
+        fh: FHConstructor | None = None,
+        *,
         sample_weight: Sequence[Scalar] | None = None,
     ) -> Float:
         """Transform, then score of the final estimator.
@@ -637,10 +678,11 @@ class Pipeline(SkPipeline):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+        y: sequence or dataframe
+            Target values corresponding to `X`.
+
+        fh: int, sequence, [ForecastingHorizon][] or None, default=None
+            The forecasting horizon encoding the time stamps to score.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y.
@@ -648,11 +690,15 @@ class Pipeline(SkPipeline):
         Returns
         -------
         float
-            Mean accuracy or r2 of self.predict(X) with respect to y.
+            Mean accuracy, r2 or mape of self.predict(X) with respect
+            to y.
 
         """
         for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self.verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
-        return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)
+        if "fh" in sign(self.steps[-1][1].score):
+            return self.steps[-1][1].score(y, X=X, fh=fh)
+        else:
+            return self.steps[-1][1].score(X, y, sample_weight=sample_weight)
