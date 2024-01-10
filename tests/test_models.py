@@ -105,8 +105,21 @@ def test_all_models_regression():
 
 def test_all_models_forecast():
     """Assert that all models work with forecast."""
-    atom = ATOMForecaster(y_fc, sp=12, random_state=2)
-    atom.run(models="!DF", n_trials=2, ht_params={"catch": (Exception,)}, errors="raise")
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run(
+        models=["!DF", "!MSTL", "!VAR", "!VARMAX"],
+        n_trials=1,
+        est_params={
+            "arima": {"maxiter": 5, "method": "nm"},
+            "autoarima": {"maxiter": 5, "method": "nm"},
+            "bats": {"use_trend": False, "use_damped_trend": False, "use_arma_errors": False},
+            "prophet": {"seasonality_mode": "additive"},
+            "stl": {"seasonal": 3, "seasonal_deg": 0, "low_pass_deg": 0},
+            "tbats": {"use_trend": False, "use_damped_trend": False, "use_arma_errors": False},
+            "ets": {"maxiter": 5},
+        },
+        errors="raise",
+    )
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")

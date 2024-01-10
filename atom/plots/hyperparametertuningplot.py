@@ -250,6 +250,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
+
         for m in models_c:
             for met in metric_c:
                 y = np.sum(m.trials[met].values[:, np.newaxis] <= x, axis=0)
@@ -373,6 +374,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
+
         for m in models_c:
             fanova = FanovaImportanceEvaluator(seed=self.random_state)
             importances = fanova.evaluate(m.study, target=self._optuna_target(metric_c))
@@ -1192,6 +1194,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
+
         for m in models_c:
             if m._ht["cv"] > 1 and len(self._metric) == 1:
                 info = self.memory.cache(_get_improvement_info)(m.study, get_error=True)
@@ -1473,6 +1476,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
+
         for m in models_c:
             for met in metric_c:
                 # Place a star symbol at the best trial

@@ -143,6 +143,22 @@ class ARIMA(ForecastModel):
 
         return params
 
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
+
     def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
@@ -232,6 +248,22 @@ class AutoARIMA(ForecastModel):
 
     _module = "sktime.forecasting.arima"
     _estimators: ClassVar[dict[str, str]] = {"forecast": "AutoARIMA"}
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1158,7 +1190,6 @@ class STL(ForecastModel):
         return {
             "seasonal": Int(3, 11, step=2),
             "seasonal_deg": Cat([0, 1]),
-            "trend_deg": Cat([0, 1]),
             "low_pass_deg": Cat([0, 1]),
             "robust": Cat([True, False]),
         }

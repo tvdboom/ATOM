@@ -87,9 +87,9 @@ def test_order_features():
     """Assert that the new features are in the order provided."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_dt)
-    assert X.columns.get_loc("x2_day") == 2
+    assert X.columns.get_loc("x2_year") == 2
     assert X.columns.get_loc("x2_month") == 3
-    assert X.columns.get_loc("x2_year") == 4
+    assert X.columns.get_loc("x2_day") == 4
 
 
 @pytest.mark.parametrize(

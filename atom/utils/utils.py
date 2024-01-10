@@ -320,6 +320,24 @@ class PandasModin:
 bk = PandasModin()
 
 
+class MetricFunctionWrapper:
+    """Wrapper for a sklearn metric function.
+
+    This class is necessary for the cross_validate method of BaseModel
+    because there is a bug in sktime's evaluate function that passes
+    invalid kwargs to the metric function with make_forecasting_scorer.
+
+    """
+
+    def __init__(self, metric):
+        self.metric = metric
+
+    def __call__(self, y_true, y_pred, **kwargs):
+        """Call the metric function passing only valid kwargs."""
+        kwargs = {k: v for k, v in kwargs.items() if k in sign(self.metric)}
+        return self.metric(y_true, y_pred, **kwargs)
+
+
 class CatBMetric:
     """Custom evaluation metric for the CatBoost model.
 
@@ -2681,7 +2699,8 @@ def cache(f: Callable) -> Callable:
 
     memoize = functools.cache(f)
 
-    # Add a function to clear the cache
+    # Add methods from memoizer to the decorator
+    wrapper.cache_info = memoize.cache_info
     wrapper.clear_cache = memoize.cache_clear
 
     return wrapper

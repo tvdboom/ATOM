@@ -6,16 +6,27 @@ Description: Unit tests for the utils module.
 """
 
 from datetime import timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
 from sklearn.base import BaseEstimator
 
+from atom import show_versions
 from atom.utils.utils import (
     ClassMap, NotFittedError, check_is_fitted, time_to_str, to_df, to_series,
 )
 
+
+# Test _show_versions ============================================== >>
+
+@patch.dict("sys.modules", {"sklearn": "1.3.2"}, clear=True)
+def test_show_versions():
+    """Assert that the show_versions function runs without errors."""
+    show_versions()
+
+
+# Test utils ======================================================= >>
 
 def test_classmap_failed_initialization():
     """Assert that an error is raised when the classes do not have the key attribute."""

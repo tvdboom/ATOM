@@ -898,8 +898,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
                 fig.add_trace(
                     self._draw_line(
-                        x=np.percentile(samples, percentiles),
-                        y=np.percentile(values, percentiles),
+                        x=(x := np.percentile(samples, percentiles)),
+                        y=(y := np.percentile(values, percentiles)),
                         mode="markers",
                         parent=col,
                         child=dist,
@@ -909,7 +909,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                     )
                 )
 
-        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),

@@ -755,6 +755,14 @@ def test_cross_validate():
     assert isinstance(atom.lr.cross_validate(scoring="AP"), pd.DataFrame)
 
 
+def test_cross_validate_ts():
+    """Assert that the cross_validate method works for forecast tasks."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    assert isinstance(atom.nf.cross_validate(), pd.DataFrame)
+    assert isinstance(atom.nf.cross_validate(scoring="mae"), pd.DataFrame)
+
+
 def test_evaluate_invalid_threshold_length():
     """Assert that an error is raised when the threshold is invalid."""
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)

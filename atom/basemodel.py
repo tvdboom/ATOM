@@ -52,8 +52,10 @@ from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
 from sktime.forecasting.base import ForecastingHorizon
 from sktime.forecasting.compose import make_reduction
+from sktime.forecasting.model_evaluation import evaluate
+from sktime.performance_metrics.forecasting import make_forecasting_scorer
 from sktime.proba.normal import Normal
-from sktime.split import SingleWindowSplitter
+from sktime.split import ExpandingWindowSplitter, SingleWindowSplitter
 from starlette.requests import Request
 
 from atom.branch import Branch, BranchManager
@@ -69,11 +71,11 @@ from atom.utils.types import (
     Verbose, Warnings, XSelector, YSelector, dataframe_t, float_t, int_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
-    TrialsCallback, adjust_verbosity, bk, cache, check_dependency, check_empty,
-    check_is_fitted, check_scaling, composed, crash, estimator_has_attr,
-    fit_and_score, flt, get_cols, get_custom_scorer, has_task, it, lst, merge,
-    method_to_log, rnd, sign, time_to_str, to_pandas,
+    ClassMap, DataConfig, Goal, MetricFunctionWrapper, PlotCallback,
+    ShapExplanation, Task, TrialsCallback, adjust_verbosity, bk, cache,
+    check_dependency, check_empty, check_is_fitted, check_scaling, composed,
+    crash, estimator_has_attr, fit_and_score, flt, get_cols, get_custom_scorer,
+    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_pandas,
 )
 
 
@@ -676,10 +678,9 @@ class BaseModel(RunnerPlot):
         y_true = y.loc[y.index.isin(self._all.index)]
 
         if self.task.is_forecast:
-            try:
+            if self.estimator.get_tags().get("capability:insample"):
                 y_pred = self._prediction(fh=X.index, X=check_empty(X), verbose=0, method=attr)
-            except (ValueError, NotImplementedError):
-                # In-sample predictions aren't implemented for some models
+            else:
                 y_pred = bk.Series([np.NaN] * len(X), index=X.index)
         else:
             y_pred = self._prediction(X.index, verbose=0, method=attr)
@@ -1955,15 +1956,18 @@ class BaseModel(RunnerPlot):
         """Evaluate the model using cross-validation.
 
         This method cross-validates the whole pipeline on the complete
-        dataset. Use it to assess the robustness of the solution's
-        performance.
+        dataset. Use it to assess the robustness of the model's
+        performance. If the scoring method is not specified in `kwargs`,
+        it uses atom's metric.
 
         Parameters
         ----------
         **kwargs
-            Additional keyword arguments for sklearn's cross_validate
-            function. If the scoring method is not specified, it uses
-            atom's metric.
+
+            - For forecast tasks: Additional keyword arguments for sktime's
+              [validate][sktimevalidate] function.
+            - Else: Additional keyword arguments for sklearn's
+              [cross_validate][sklearncrossvalidate] function.
 
         Returns
         -------
@@ -1975,37 +1979,61 @@ class BaseModel(RunnerPlot):
         if kwargs.get("scoring"):
             scorer = get_custom_scorer(kwargs.pop("scoring"))
             scoring = {scorer.name: scorer}
-
         else:
             scoring = dict(self._metric)
 
         self._log("Applying cross-validation...", 1)
 
-        # Monkey patch sklearn's _fit_and_score function to allow
-        # for pipelines that drop samples during transformation
-        with patch("sklearn.model_selection._validation._fit_and_score", fit_and_score):
-            self.cv = cross_validate(
-                estimator=self.export_pipeline(),
-                X=self.og.X,
+        results = pd.DataFrame()
+        if self.task.is_forecast:
+            self.cv = evaluate(
+                forecaster=self.export_pipeline(),
                 y=self.og.y,
-                scoring=scoring,
-                return_train_score=kwargs.pop("return_train_score", True),
-                error_score=kwargs.pop("error_score", "raise"),
-                n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-                verbose=kwargs.pop("verbose", 0),
-                **kwargs,
+                X=self.og.X,
+                scoring=[
+                    make_forecasting_scorer(
+                        func=MetricFunctionWrapper(metric._score_func),
+                        name=name,
+                        greater_is_better=metric._sign == 1,
+                    )
+                    for name, metric in scoring.items()
+                ],
+                cv=kwargs.pop(
+                    "cv", ExpandingWindowSplitter(
+                        fh=len(self.og.test) // 5,
+                        initial_window=len(self.og.train),
+                        step_length=len(self.og.test) // 5,
+                    )
+                ),
+                backend=kwargs.pop("backend", self.backend if self.backend != "ray" else None),
+                backend_params=kwargs.pop("backend_params", {"n_jobs": self.n_jobs}),
             )
+        else:
+            # Monkey patch sklearn's _fit_and_score function to allow
+            # for pipelines that drop samples during transformation
+            with patch("sklearn.model_selection._validation._fit_and_score", fit_and_score):
+                self.cv = cross_validate(
+                    estimator=self.export_pipeline(),
+                    X=self.og.X,
+                    y=self.og.y,
+                    scoring=scoring,
+                    return_train_score=kwargs.pop("return_train_score", True),
+                    error_score=kwargs.pop("error_score", "raise"),
+                    n_jobs=kwargs.pop("n_jobs", self.n_jobs),
+                    verbose=kwargs.pop("verbose", 0),
+                    **kwargs,
+                )
 
-        df = pd.DataFrame()
         for m in scoring:
             if f"train_{m}" in self.cv:
-                df[f"train_{m}"] = self.cv[f"train_{m}"]
-            df[f"test_{m}"] = self.cv[f"test_{m}"]
-        df["time (s)"] = self.cv["fit_time"]
-        df.loc["mean"] = df.mean()
-        df.loc["std"] = df.std()
+                results[f"train_{m}"] = self.cv[f"train_{m}"]
+            if f"test_{m}" in self.cv:
+                results[f"test_{m}"] = self.cv[f"test_{m}"]
+        results["time (s)"] = self.cv["fit_time"]
+        results.loc["mean"] = results.mean()
+        results.loc["std"] = results.std()
 
-        return df
+        return results
 
     @composed(crash, beartype)
     def evaluate(
@@ -3039,11 +3067,11 @@ class ForecastModel(BaseModel):
 
         if method != "score":
             if "y" in sign(func := getattr(self.estimator, method)):
-                return self.memory.cache(func)(y=yt, X=Xt, **kwargs)
+                return self.memory.cache(func)(y=yt, X=check_empty(Xt), **kwargs)
             else:
                 if fh is not None and not isinstance(fh, ForecastingHorizon):
                     fh = self.branch._get_rows(fh).index
-                return self.memory.cache(func)(fh=fh, X=Xt, **kwargs)
+                return self.memory.cache(func)(fh=fh, X=check_empty(Xt), **kwargs)
         else:
             if metric is None:
                 scorer = self._metric[0]

@@ -270,6 +270,7 @@ def test_update_traces():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.update_traces(mode="lines+markers")
     atom._custom_traces["mode"] = "lines+markers"
+    atom.reset_aesthetics()
 
 
 # Test DataPlot ==================================================== >>

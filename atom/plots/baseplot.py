@@ -10,10 +10,13 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime as dt
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, ClassVar, Literal, overload
 
 import matplotlib.pyplot as plt
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from beartype import beartype
@@ -443,12 +446,20 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                 "legendgrouptitle",
                 {"text": parent, "font_size": self.label_fontsize} if child else None,
             ),
-            showlegend=BasePlot._fig.showlegend(f"{parent}-{child}", legend),
+            showlegend=kwargs.pop(
+                "showlegend",
+                BasePlot._fig.showlegend(f"{parent}-{child}", legend)
+            ),
             **kwargs,
         )
 
     @staticmethod
-    def _draw_straight_line(y: Scalar | str, xaxis: str, yaxis: str):
+    def _draw_straight_line(
+        values: tuple,
+        y: Scalar | Literal["diagonal"],
+        xaxis: str,
+        yaxis: str,
+    ):
         """Draw a line across the axis.
 
         The line can be either horizontal or diagonal. The line should
@@ -457,6 +468,10 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
         Parameters
         ----------
+        values: tuple of sequence
+            Values of the data points required to determine the ranges in
+            format (x, y).
+
         y: int, float or str, default = "diagonal"
             Coordinates on the y-axis. If a value, draw a horizontal line
             at that value. If "diagonal", draw a diagonal line from x.
@@ -468,17 +483,29 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             Name of the y-axis to draw in.
 
         """
+        # Get the ranges with a 5% margin
+        x_min, x_max = min(values[0]), max(values[0])
+        y_min, y_max = min(values[1]), max(values[1])
+        if np.issubdtype(type(x_min), np.number):
+            x_min *= 0.95
+            x_max *= 1.05
+            y_min *= 0.95
+            y_max *= 1.05
+        elif isinstance(x_min, dt):
+            x_min -= timedelta(seconds=(x_max - x_min).total_seconds() * 0.05)
+            x_max += timedelta(seconds=(x_max - x_min).total_seconds() * 0.05)
+
         BasePlot._fig.figure.add_shape(
             type="line",
-            x0=0,
-            x1=1,
-            y0=0 if y == "diagonal" else y,
-            y1=1 if y == "diagonal" else y,
-            xref=f"{xaxis} domain",
-            yref=f"{yaxis} domain" if y == "diagonal" else yaxis,
-            line={"width": 1, "color": "black", "dash": "dash"},
+            x0=y_min if y == "diagonal" else x_min,
+            x1=y_max if y == "diagonal" else x_max,
+            y0=y_min if y == "diagonal" else y,
+            y1=y_max if y == "diagonal" else y,
+            xref=xaxis,
+            yref=yaxis,
+            line={"width": 1 if y != 0 else 2, "color": "black", "dash": "dash"},
             opacity=0.6,
-            layer="below",
+            layer="below" if y != 0 else "above",
         )
 
     def _plot(

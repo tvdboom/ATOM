@@ -69,7 +69,7 @@ class FeatureExtractor(TransformerMixin):
 
     Parameters
     ----------
-    features: str or sequence, default=("day", "month", "year")
+    features: str or sequence, default=("year", "month", "day")
         Features to create from the datetime columns. Note that
         created features with zero variance (e.g., the feature hour
         in a column that only contains dates) are ignored. Allowed
@@ -165,7 +165,7 @@ class FeatureExtractor(TransformerMixin):
 
     def __init__(
         self,
-        features: str | Sequence[str] = ("day", "month", "year"),
+        features: str | Sequence[str] = ("year", "month", "day"),
         fmt: str | dict[str, str] | None = None,
         *,
         encoding_type: Literal["ordinal", "cyclic"] = "ordinal",
