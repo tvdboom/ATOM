@@ -44,6 +44,7 @@ dependencies = [
     "scipy>=1.10.1",
     "shap>=0.43.0",
     "sktime[forecasting]>=0.24.0",
+    "statsmodels>=0.14.1",
     "zoofs>=0.1.26",
 ]
 

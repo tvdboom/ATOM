@@ -139,9 +139,10 @@ of utility methods to handle the data and manage the pipeline.
         - apply
         - available_models
         - canvas
+        - checks
         - clear
         - delete
-        - distribution
+        - distributions
         - eda
         - evaluate
         - export_pipeline

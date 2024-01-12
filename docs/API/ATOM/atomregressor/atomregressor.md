@@ -140,7 +140,7 @@ of utility methods to handle the data and manage the pipeline.
         - canvas
         - clear
         - delete
-        - distribution
+        - distributions
         - eda
         - evaluate
         - export_pipeline

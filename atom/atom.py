@@ -27,6 +27,8 @@ from pandas._typing import DtypeObj
 from scipy import stats
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.utils.metaestimators import available_if
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.tsa.stattools import adfuller, kpss
 
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
@@ -439,8 +441,77 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
     # Utility methods =============================================== >>
 
+    @available_if(has_task("forecast"))
     @crash
-    def distribution(
+    def checks(self, *, columns: ColumnSelector | None = None) -> pd.DataFrame:
+        """Get statistics on stationarity and white noise.
+
+        Compute various statistical test to check for stationarity and
+        white noise against a column in the dataset. Only for numerical
+        columns. Missing values are ignored. The performed tests are:
+
+        - [Augmented Dickey-Fuller test][adf] (adf) for difference
+          stationarity.
+        - [Kwiatkowski-Phillips-Schmidt-Shin test][kpss] (kpss) for
+          trend stationarity.
+        - [Ljung-Box test][lb] (lb). The lag in the autocorrelation
+          function with the minimum p-value is returned. If the p-value
+          is larger than 0.05, it suggests the data is consistent with
+          white noise.
+
+        !!! tip
+            Use the [plot_acf][] and [plot_pcf][] methods to visually
+            inspect any significant lagged correlations.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            [Selection of columns][row-and-column-selection] on which
+            to perform the tests. If None, it uses the target column.
+
+        Returns
+        -------
+        pd.DataFrame
+            Statistic results with multiindex levels:
+
+            - **test**: Acronym of the test 'adf', 'kpss' or 'lb').
+            - **stat:** Statistic results:
+
+                - **score:** KS-test score.
+                - **p_value:** Corresponding p-value.
+
+        """
+        columns_c = self.branch._get_columns(columns, only_numerical=True)
+
+        df = pd.DataFrame(
+            index=pd.MultiIndex.from_product(
+                iterables=(("adf", "kpss", "lb"), ("score", "p_value")),
+                names=("test", "stat"),
+            ),
+            columns=columns_c,
+        )
+
+        for col in columns_c:
+            # Drop missing values from the column before testing
+            X = replace_missing(self[col], self.missing).dropna().to_numpy(dtype=float)
+
+            for test in ("adf", "kpss", "lb"):
+                if test == "adf":
+                    stat = adfuller(X, maxlag=None, autolag="AIC")
+                elif test == "kpss":
+                    stat = kpss(X, regression="ct", nlags="auto")  # ct is trend stationarity
+                elif test == "lb":
+                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp)[0])
+                    stat = l_jung.loc[l_jung["lb_pvalue"].idxmin()]
+
+                # Add as column to the dataframe
+                df.loc[(test, "score"), col] = round(stat[0], 4)
+                df.loc[(test, "p_value"), col] = round(stat[1], 4)
+
+        return df
+
+    @crash
+    def distributions(
         self,
         distributions: str | Sequence[str] | None = None,
         *,
@@ -463,9 +534,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             statistics on. If None, a selection of the most common
             ones is used.
 
-        columns: int, str, segment, sequence or None, default=None
-            [Selection of columns][row-and-column-selection] to perform
-            the test on. If None, select all numerical columns.
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            [Selection of columns][row-and-column-selection] on which
+            to perform the test. If None, select all numerical columns.
 
         Returns
         -------
@@ -474,6 +545,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             - **dist:** Name of the distribution.
             - **stat:** Statistic results:
+
                 - **score:** KS-test score.
                 - **p_value:** Corresponding p-value.
 
@@ -506,14 +578,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         )
 
         for col in columns_c:
-            # Drop missing values from the column before fitting
-            X = replace_missing(self[col], self.missing).dropna()
-            X = X.to_numpy(dtype=float)
+            # Drop missing values from the column before testing
+            X = replace_missing(self[col], self.missing).dropna().to_numpy(dtype=float)
 
             for dist in distributions_c:
                 # Get KS-statistic with fitted distribution parameters
-                param = getattr(stats, dist).fit(X)
-                stat = stats.kstest(X, dist, args=param)
+                stat = stats.kstest(X, dist, args=getattr(stats, dist).fit(X))
 
                 # Add as column to the dataframe
                 df.loc[(dist, "score"), col] = round(stat[0], 4)

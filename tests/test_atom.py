@@ -266,11 +266,18 @@ def test_unavailable_regression_properties():
 
 # Test utility methods ============================================= >>
 
+def test_checks():
+    """Assert that the checks method works as expected."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    checks = atom.checks()
+    assert isinstance(checks, pd.DataFrame)
+
+
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
 def test_distribution(distributions):
-    """Assert that the distribution method and file are created."""
+    """Assert that the distribution method works as expected."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    dist = atom.distribution(distributions=distributions, columns=(0, 1))
+    dist = atom.distributions(distributions=distributions, columns=(0, 1))
     assert isinstance(dist, pd.DataFrame)
 
 

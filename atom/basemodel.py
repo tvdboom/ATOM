@@ -74,9 +74,9 @@ from atom.utils.types import (
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, MetricFunctionWrapper, PlotCallback,
     ShapExplanation, Task, TrialsCallback, adjust_verbosity, bk, cache,
-    check_dependency, check_empty, check_is_fitted, check_scaling, composed,
-    crash, estimator_has_attr, flt, get_cols, get_custom_scorer, has_task, it,
-    lst, merge, method_to_log, rnd, sign, time_to_str, to_pandas,
+    check_dependency, check_empty, check_scaling, composed, crash,
+    estimator_has_attr, flt, get_cols, get_custom_scorer, has_task, it, lst,
+    merge, method_to_log, rnd, sign, time_to_str, to_pandas,
 )
 
 

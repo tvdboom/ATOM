@@ -49,6 +49,7 @@ packages are necessary for its correct functioning.
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)
 * **[sktime[forecasting]](http://www.sktime.net/en/latest/)** (>=0.24.0)
+* **[statsmodels](https://www.statsmodels.org/stable/index.html)** (>=0.14.1)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
 

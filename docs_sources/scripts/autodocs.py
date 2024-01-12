@@ -47,6 +47,9 @@ CUSTOM_URLS = dict(
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
+    adf="https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test",
+    kpss="https://en.wikipedia.org/wiki/KPSS_test",
+    lb="https://en.wikipedia.org/wiki/Ljung%E2%80%93Box_test",
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
     skpipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
     pipelinedocs="https://scikit-learn.org/stable/modules/compose.html#pipeline",
