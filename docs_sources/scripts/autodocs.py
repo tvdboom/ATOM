@@ -71,6 +71,13 @@ CUSTOM_URLS = dict(
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
     ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
+    # BaseRunner
+    stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
+    stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
+    stackingforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.StackingForecaster.html",
+    votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
+    votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
+    ensembleforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.EnsembleForecaster.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
@@ -90,11 +97,6 @@ CUSTOM_URLS = dict(
     minmax="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html",
     maxabs="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html",
     robust="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html",
-    # Ensembles
-    votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
-    votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
-    stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
-    stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
     # Feature engineering
     dfs="https://docs.featuretools.com/en/v0.16.0/automated_feature_engineering/afe.html#deep-feature-synthesis",
     gfg="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer",

@@ -663,7 +663,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         f"that of the data sets ({len_data})."
                     )
                 train.index = self._config.index[: len(train)]
-                test.index = self._config.index[len(train) : len(train) + len(test)]
+                test.index = self._config.index[len(train): len(train) + len(test)]
                 if holdout is not None:
                     holdout.index = self._config.index[-len(holdout):]
 
@@ -1050,7 +1050,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             Model for which to export the pipeline. If the model used
             [automated feature scaling][], the [Scaler][] is added to
             the pipeline. If None, the pipeline in the current branch
-            is exported.
+            is exported (without any model).
 
         Returns
         -------
@@ -1350,6 +1350,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         self,
         models: Segment | Sequence[ModelSelector] | None = None,
         name: str = "Stack",
+        *,
+        train_on_test: Bool = False,
         **kwargs,
     ):
         """Add a [Stacking][] model to the pipeline.
@@ -1361,17 +1363,31 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         Parameters
         ----------
         models: segment, sequence or None, default=None
-            Models that feed the stacking estimator. The models must have
-            been fitted on the current branch.
+            Models that feed the stacking estimator. The models must
+            have been fitted on the current branch.
 
         name: str, default="Stack"
             Name of the model. The name is always presided with the
             model's acronym: `Stack`.
 
+        train_on_test: bool, default=False
+            Whether to train the final estimator of the stacking model
+            on the test set instead of the training set. Note that
+            training it on the training set (default option) means there
+            is a high risk of overfitting. It's recommended to use this
+            option if you have another, independent set for testing
+            ([holdout set][data-sets]).
+
         **kwargs
-            Additional keyword arguments for sklearn's stacking instance.
-            The model's acronyms can be used for the `final_estimator`
-            parameter.
+            Additional keyword arguments for one of these estimators.
+
+            - For classification tasks: [StackingClassifier][].
+            - For regression tasks: [StackingRegressor][].
+            - For forecast tasks: [StackingForecaster][].
+
+            !!! tip
+                The model's acronyms can be used for the `final_estimator`
+                parameter, e.g., `atom.stacking(final_estimator="LR")`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1401,26 +1417,32 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
         )
 
-        if isinstance(kwargs.get("final_estimator"), str):
+        # The parameter name is different in sklearn and sktime
+        regressor = "regressor" if self.task.is_forecast else "final_estimator"
+        if isinstance(kwargs.get(regressor), str):
             if kwargs["final_estimator"] not in MODELS:
+                valid_models = [m.acronym for m in MODELS if self._goal.name in m._estimators]
                 raise ValueError(
-                    "Invalid value for the final_estimator parameter. "
-                    f"Unknown model: {kwargs['final_estimator']}. Choose "
-                    f"from: {', '.join(MODELS.keys())}."
+                    f"Invalid value for the {regressor} parameter. Unknown model: "
+                    f"{kwargs[regressor]}. Choose from: {', '.join(valid_models)}."
                 )
             else:
-                model = MODELS[kwargs["final_estimator"]](**kw_model)
+                model = MODELS[kwargs[regressor]](**kw_model)
                 if self._goal.name not in model._estimators:
                     raise ValueError(
-                        "Invalid value for the final_estimator parameter. Model "
+                        f"Invalid value for the {regressor} parameter. Model "
                         f"{model.fullname} can not perform {self.task} tasks."
                     )
 
-                kwargs["final_estimator"] = model._get_est({})
+                kwargs[regressor] = model._get_est({})
 
-        self._models.append(Stacking(models=models_c, name=name, **kw_model, **kwargs))
+        self._models.append(Stacking(models=models_c, name=name, **kw_model))
+        self[name]._est_params = kwargs if self.task.is_forecast else {"cv": "prefit"} | kwargs
 
-        self[name].fit()
+        if train_on_test:
+            self[name].fit(self.X_test, self.y_test)
+        else:
+            self[name].fit()
 
     @composed(crash, method_to_log, beartype)
     def voting(
@@ -1446,7 +1468,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             model's acronym: `Vote`.
 
         **kwargs
-            Additional keyword arguments for sklearn's voting instance.
+            Additional keyword arguments for one of these estimators.
+
+            - For classification tasks: [VotingClassifier][].
+            - For regression tasks: [VotingRegressor][].
+            - For forecast tasks: [EnsembleForecaster][].
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1468,6 +1494,15 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 "train multiple Voting models within the same instance."
             )
 
+        if kwargs.get("voting") == "soft":
+            for m in models_c:
+                if not hasattr(m.estimator, "predict_proba"):
+                    raise ValueError(
+                        "Invalid value for the voting parameter. If "
+                        "'soft', all models in the ensemble should have "
+                        f"a predict_proba method, got {m.name}."
+                    )
+
         self._models.append(
             Voting(
                 models=models_c,
@@ -1477,8 +1512,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 branches=self._branches,
                 metric=self._metric,
                 **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
-                **kwargs,
             )
         )
-
+        self[name]._est_params = kwargs
         self[name].fit()

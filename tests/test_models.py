@@ -13,6 +13,7 @@ import pytest
 from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sktime.forecasting.croston import Croston
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.pipeline import Pipeline
@@ -301,6 +302,14 @@ def test_stacking():
     assert isinstance(atom.stack.feature_importance, pd.Series)
 
 
+def test_stacking_forecast():
+    """Assert that the Stacking model works for forecast tasks."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run(models=["Croston", "Theta"])
+    atom.stacking()
+    assert isinstance(atom.stack.estimator.forecasters_[0], Croston)
+
+
 def test_voting():
     """Assert that the Voting model works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -320,3 +329,11 @@ def test_voting():
     assert isinstance(atom.vote.estimator.estimators_[0], RandomForestClassifier)
     assert isinstance(atom.vote.estimator.estimators_[1], Pipeline)
     assert isinstance(atom.vote.feature_importance, pd.Series)
+
+
+def test_voting_forecast():
+    """Assert that the Voting model works for forecast tasks."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run(models=["Croston", "Theta"])
+    atom.voting()
+    assert isinstance(atom.vote.estimator.forecasters_[0], Croston)

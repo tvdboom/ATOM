@@ -1174,7 +1174,8 @@ class FeatureSelector(TransformerMixin):
                     else:
                         raise ValueError(
                             "Invalid value for the solver parameter. Unknown "
-                            f"model: {solver}. Choose from: {', '.join(MODELS.keys())}."
+                            f"model: {solver}. Available model are:\n" +
+                            "\n".join([f" --> {m.__name__} ({m.acronym})" for m in MODELS])
                         )
                 else:
                     solver = self.solver

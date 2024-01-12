@@ -63,6 +63,7 @@ from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
+from atom.utils.patches import fit_and_score
 from atom.utils.types import (
     HT, Backend, Bool, DataFrame, Engine, FHConstructor, Float,
     FloatZeroToOneExc, Index, Int, IntLargerEqualZero, MetricConstructor,
@@ -74,8 +75,8 @@ from atom.utils.utils import (
     ClassMap, DataConfig, Goal, MetricFunctionWrapper, PlotCallback,
     ShapExplanation, Task, TrialsCallback, adjust_verbosity, bk, cache,
     check_dependency, check_empty, check_is_fitted, check_scaling, composed,
-    crash, estimator_has_attr, fit_and_score, flt, get_cols, get_custom_scorer,
-    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_pandas,
+    crash, estimator_has_attr, flt, get_cols, get_custom_scorer, has_task, it,
+    lst, merge, method_to_log, rnd, sign, time_to_str, to_pandas,
 )
 
 
@@ -250,6 +251,11 @@ class BaseModel(RunnerPlot):
         self._bootstrap: pd.DataFrame | None = None
         self._time_bootstrap = 0.0
 
+        # "Inherit" task specific methods from ClassRegModel or ForecastModel
+        for n, m in vars(ForecastModel if goal is Goal.forecast else ClassRegModel).items():
+            if not n.startswith("__"):
+                setattr(self.__class__, n, m)
+
         # Skip this part if not called for the estimator
         if branches:
             self._og = branches.og
@@ -309,18 +315,17 @@ class BaseModel(RunnerPlot):
         retrieves the model's estimator from the right library.
 
         """
-        try:
-            engine = self.engine.get("estimator", "sklearn")
-            module = import_module(f"{engine}.{self._module}")
-            c = self._estimators.get(self._goal.name, self._estimators.get("regression"))
-        except (ModuleNotFoundError, AttributeError):
-            if "sklearn" in self.supports_engines:
-                module = import_module(f"sklearn.{self._module}")
-            else:
-                module = import_module(self._module)
-            c = self._estimators.get(self._goal.name, self._estimators.get("regression"))
+        locator = self._estimators.get(self._goal.name, self._estimators.get("regression"))
+        module, est_name = locator.rsplit(".", 1)
 
-        return getattr(module, c)
+        # Try engine, else import from the default module
+        try:
+            engine = self.engine.get("estimator", "sktime" if self.task.is_forecast else "sklearn")
+            module = import_module(f"{engine}.{module.split('.', 1)[1:]}")
+        except (ModuleNotFoundError, AttributeError):
+            module = import_module(module)
+
+        return getattr(module, est_name)
 
     @property
     def _shap(self) -> ShapExplanation:
@@ -678,7 +683,13 @@ class BaseModel(RunnerPlot):
         y_true = y.loc[y.index.isin(self._all.index)]
 
         if self.task.is_forecast:
-            if self.estimator.get_tags().get("capability:insample"):
+            # Some forecasters can't make predictions on the training set
+            # or can only make predictions on the forecast horizon specified
+            # during fitting. In these cases, return NaN.
+            if (
+                self.estimator.get_tags().get("capability:insample")
+                and (not self.estimator.get_tags()["requires-fh-in-fit"] or rows == "test")
+            ):
                 y_pred = self._prediction(fh=X.index, X=check_empty(X), verbose=0, method=attr)
             else:
                 y_pred = bk.Series([np.NaN] * len(X), index=X.index)
@@ -774,9 +785,10 @@ class BaseModel(RunnerPlot):
         """
         func = lambda y1, y2: scorer._score_func(y1, y2, **scorer._kwargs, **kwargs)
 
-        # Forecasting models can have first prediction NaN
-        if self.task.is_forecast and all(x.isna()[0] for x in get_cols(y_pred)):
-            y_true, y_pred = y_true.iloc[1:], y_pred.iloc[1:]
+        # Forecasting models can have NaN predictions, for example when
+        # using internally a boxcox transformation on negative predictions
+        if self.task.is_forecast:
+            y_true, y_pred = y_true.dropna(), y_pred.dropna()
 
         try:
             if self.task is Task.multiclass_multioutput_classification:
@@ -979,14 +991,13 @@ class BaseModel(RunnerPlot):
             estimator = self._get_est(self._est_params | self._trial_to_est(params))
 
             # Check if the same parameters have already been evaluated
-            past_t = trial.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-            for t in past_t[::-1]:
+            for t in trial.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))[::-1]:
                 if trial.params == t.params:
                     # Get same estimator and score as previous evaluation
                     estimator = deepcopy(t.user_attrs["estimator"])
                     score = t.value if len(self._metric) == 1 else t.values
-
-            if not check_is_fitted(estimator, exception=False):
+                    break
+            else:
                 # Follow the same stratification strategy as atom
                 cols = self._config.get_stratify_columns(self.og.train, self.og.y_train)
 
@@ -1754,9 +1765,9 @@ class BaseModel(RunnerPlot):
         ----------
         **kwargs
             Additional keyword arguments for sklearn's CCV. Using
-            cv="prefit" will use the trained model and fit the
-            calibrator on the test set. Use this only if you have
-            another, independent set for testing.
+            cv="prefit" will use the trained model and use the test
+            set for calibration. Use this only if you have another,
+            independent set for testing ([holdout set][data-sets]).
 
         """
         calibrator = CalibratedClassifierCV(
@@ -1963,11 +1974,10 @@ class BaseModel(RunnerPlot):
         Parameters
         ----------
         **kwargs
+            Additional keyword arguments for one of these functions.
 
-            - For forecast tasks: Additional keyword arguments for sktime's
-              [validate][sktimevalidate] function.
-            - Else: Additional keyword arguments for sklearn's
-              [cross_validate][sklearncrossvalidate] function.
+            - For forecast tasks: [validate][sktimevalidate].
+            - Else: [cross_validate][sklearncrossvalidate].
 
         Returns
         -------
@@ -2487,28 +2497,8 @@ class BaseModel(RunnerPlot):
             return pipeline.transform(X, y)
 
 
-class ClassRegModel(BaseModel):
+class ClassRegModel:
     """Classification and regression models."""
-
-    _prediction_methods = (
-        "predict",
-        "predict_proba",
-        "predict_log_proba",
-        "decision_function",
-    )
-
-    def __init__(self, *args, **kwargs):
-        """Assign prediction methods depending on the task.
-
-        Regressors can be used for forecast tasks, hence we need to
-        overwrite the default prediction methods.
-
-        """
-        super().__init__(*args, **kwargs)
-
-        if self._goal is Goal.forecast:
-            for method in ("_prediction", *ForecastModel._prediction_methods):
-                setattr(self.__class__, method, getattr(ForecastModel, method))
 
     @crash
     def get_tags(self) -> dict[str, Any]:
@@ -2944,17 +2934,8 @@ class ClassRegModel(BaseModel):
         )
 
 
-class ForecastModel(BaseModel):
+class ForecastModel:
     """Forecasting models."""
-
-    _prediction_methods = (
-        "predict",
-        "predict_interval",
-        "predict_proba",
-        "predict_quantiles",
-        "predict_residuals",
-        "predict_var",
-    )
 
     @crash
     def get_tags(self) -> dict[str, Any]:
@@ -2977,7 +2958,7 @@ class ForecastModel(BaseModel):
             "handles_missing": getattr(self, "handles_missing", None),
             "multiple_seasonality": getattr(self, "multiple_seasonality", None),
             "native_multioutput": self.native_multioutput,
-            "supports_engines": ", ".join(getattr(self, "supports_engines", [])),
+            "supports_engines": ", ".join(getattr(self, "supports_engines", ())),
         }
 
     @overload

@@ -21,12 +21,12 @@ from optuna.integration import (
 )
 from optuna.trial import Trial
 
-from atom.basemodel import ClassRegModel
+from atom.basemodel import BaseModel
 from atom.utils.types import DataFrame, Pandas, Predictor
 from atom.utils.utils import CatBMetric, Goal, LGBMetric, XGBMetric
 
 
-class AdaBoost(ClassRegModel):
+class AdaBoost(BaseModel):
     """Adaptive Boosting.
 
     AdaBoost is a meta-estimator that begins by fitting a
@@ -71,10 +71,9 @@ class AdaBoost(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "ensemble"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "AdaBoostClassifier",
-        "regression": "AdaBoostRegressor",
+        "classification": "sklearn.ensemble.AdaBoostClassifier",
+        "regression": "sklearn.ensemble.AdaBoostRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -99,7 +98,7 @@ class AdaBoost(ClassRegModel):
         return dist
 
 
-class AutomaticRelevanceDetermination(ClassRegModel):
+class AutomaticRelevanceDetermination(BaseModel):
     """Automatic Relevance Determination.
 
     Automatic Relevance Determination is very similar to
@@ -142,8 +141,9 @@ class AutomaticRelevanceDetermination(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "ARDRegression"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.ARDRegression"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -164,7 +164,7 @@ class AutomaticRelevanceDetermination(ClassRegModel):
         }
 
 
-class Bagging(ClassRegModel):
+class Bagging(BaseModel):
     """Bagging model (with decision tree as base estimator).
 
     Bagging uses an ensemble meta-estimator that fits base predictors
@@ -211,10 +211,9 @@ class Bagging(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "ensemble"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "BaggingClassifier",
-        "regression": "BaggingRegressor",
+        "classification": "sklearn.ensemble.BaggingClassifier",
+        "regression": "sklearn.ensemble.BaggingRegressor",
     }
 
     @staticmethod
@@ -236,7 +235,7 @@ class Bagging(ClassRegModel):
         }
 
 
-class BayesianRidge(ClassRegModel):
+class BayesianRidge(BaseModel):
     """Bayesian ridge regression.
 
     Bayesian regression techniques can be used to include regularization
@@ -278,8 +277,9 @@ class BayesianRidge(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "BayesianRidge"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.BayesianRidge"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -300,7 +300,7 @@ class BayesianRidge(ClassRegModel):
         }
 
 
-class BernoulliNB(ClassRegModel):
+class BernoulliNB(BaseModel):
     """Bernoulli Naive Bayes.
 
     BernoulliNB implements the Naive Bayes algorithm for multivariate
@@ -343,8 +343,9 @@ class BernoulliNB(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "cuml")
 
-    _module = "naive_bayes"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "BernoulliNB"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.naive_bayes.BernoulliNB"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -362,7 +363,7 @@ class BernoulliNB(ClassRegModel):
         }
 
 
-class CatBoost(ClassRegModel):
+class CatBoost(BaseModel):
     """Cat Boosting Machine.
 
     CatBoost is a machine learning method based on gradient boosting
@@ -423,10 +424,9 @@ class CatBoost(ClassRegModel):
     validation = "n_estimators"
     supports_engines = ("catboost",)
 
-    _module = "catboost"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "CatBoostClassifier",
-        "regression": "CatBoostRegressor",
+        "classification": "catboost.CatBoostClassifier",
+        "regression": "catboost.CatBoostRegressor",
     }
 
     def _get_parameters(self, trial: Trial) -> dict:
@@ -568,7 +568,7 @@ class CatBoost(ClassRegModel):
         }
 
 
-class CategoricalNB(ClassRegModel):
+class CategoricalNB(BaseModel):
     """Categorical Naive Bayes.
 
     Categorical Naive Bayes implements the Naive Bayes algorithm for
@@ -611,8 +611,9 @@ class CategoricalNB(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "cuml")
 
-    _module = "naive_bayes"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "CategoricalNB"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.naive_bayes.CategoricalNB"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -630,7 +631,7 @@ class CategoricalNB(ClassRegModel):
         }
 
 
-class ComplementNB(ClassRegModel):
+class ComplementNB(BaseModel):
     """Complement Naive Bayes.
 
     The Complement Naive Bayes classifier was designed to correct the
@@ -672,8 +673,9 @@ class ComplementNB(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "cuml")
 
-    _module = "naive_bayes"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "ComplementNB"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.naive_bayes.ComplementNB"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -692,7 +694,7 @@ class ComplementNB(ClassRegModel):
         }
 
 
-class DecisionTree(ClassRegModel):
+class DecisionTree(BaseModel):
     """Single Decision Tree.
 
     A single decision tree classifier/regressor.
@@ -733,10 +735,9 @@ class DecisionTree(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "tree"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "DecisionTreeClassifier",
-        "regression": "DecisionTreeRegressor",
+        "classification": "sklearn.tree.DecisionTreeClassifier",
+        "regression": "sklearn.tree.DecisionTreeRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -764,7 +765,7 @@ class DecisionTree(ClassRegModel):
         }
 
 
-class Dummy(ClassRegModel):
+class Dummy(BaseModel):
     """Dummy classifier/regressor.
 
     When doing supervised learning, a simple sanity check consists of
@@ -809,10 +810,9 @@ class Dummy(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "dummy"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "DummyClassifier",
-        "regression": "DummyRegressor",
+        "classification": "sklearn.dummy.DummyClassifier",
+        "regression": "sklearn.dummy.DummyRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -837,7 +837,7 @@ class Dummy(ClassRegModel):
         return dist
 
 
-class ElasticNet(ClassRegModel):
+class ElasticNet(BaseModel):
     """Linear Regression with elasticnet regularization.
 
     Linear least squares with l1 and l2 regularization.
@@ -877,8 +877,9 @@ class ElasticNet(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "ElasticNet"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.ElasticNet"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -897,7 +898,7 @@ class ElasticNet(ClassRegModel):
         }
 
 
-class ExtraTree(ClassRegModel):
+class ExtraTree(BaseModel):
     """Extremely Randomized Tree.
 
     Extra-trees differ from classic decision trees in the way they are
@@ -943,10 +944,9 @@ class ExtraTree(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "tree"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "ExtraTreeClassifier",
-        "regression": "ExtraTreeRegressor",
+        "classification": "sklearn.tree.ExtraTreeClassifier",
+        "regression": "sklearn.tree.ExtraTreeRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -974,7 +974,7 @@ class ExtraTree(ClassRegModel):
         }
 
 
-class ExtraTrees(ClassRegModel):
+class ExtraTrees(BaseModel):
     """Extremely Randomized Trees.
 
     Extra-Trees use a meta estimator that fits a number of randomized
@@ -1018,10 +1018,9 @@ class ExtraTrees(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "ensemble"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "ExtraTreesClassifier",
-        "regression": "ExtraTreesRegressor",
+        "classification": "sklearn.ensemble.ExtraTreesClassifier",
+        "regression": "sklearn.ensemble.ExtraTreesRegressor",
     }
 
     def _get_parameters(self, trial: Trial) -> dict:
@@ -1072,7 +1071,7 @@ class ExtraTrees(ClassRegModel):
         }
 
 
-class GaussianNB(ClassRegModel):
+class GaussianNB(BaseModel):
     """Gaussian Naive Bayes.
 
     Gaussian Naive Bayes implements the Naive Bayes algorithm for
@@ -1114,11 +1113,12 @@ class GaussianNB(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "cuml")
 
-    _module = "naive_bayes"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "GaussianNB"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.naive_bayes.GaussianNB"
+    }
 
 
-class GaussianProcess(ClassRegModel):
+class GaussianProcess(BaseModel):
     """Gaussian process.
 
     Gaussian Processes are a generic supervised learning method
@@ -1174,14 +1174,13 @@ class GaussianProcess(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "gaussian_process"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "GaussianProcessClassifier",
-        "regression": "GaussianProcessRegressor",
+        "classification": "sklearn.gaussian_process.GaussianProcessClassifier",
+        "regression": "sklearn.gaussian_process.GaussianProcessRegressor",
     }
 
 
-class GradientBoostingMachine(ClassRegModel):
+class GradientBoostingMachine(BaseModel):
     """Gradient Boosting Machine.
 
     A Gradient Boosting Machine builds an additive model in a forward
@@ -1231,10 +1230,9 @@ class GradientBoostingMachine(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "ensemble"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "GradientBoostingClassifier",
-        "regression": "GradientBoostingRegressor",
+        "classification": "sklearn.ensemble.GradientBoostingClassifier",
+        "regression": "sklearn.ensemble.GradientBoostingRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -1269,7 +1267,7 @@ class GradientBoostingMachine(ClassRegModel):
         return dist
 
 
-class HuberRegression(ClassRegModel):
+class HuberRegression(BaseModel):
     """Huber regressor.
 
     Huber is a linear regression model that is robust to outliers. It
@@ -1311,8 +1309,9 @@ class HuberRegression(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "HuberRegressor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.HuberRegressor"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1331,7 +1330,7 @@ class HuberRegression(ClassRegModel):
         }
 
 
-class HistGradientBoosting(ClassRegModel):
+class HistGradientBoosting(BaseModel):
     """Histogram-based Gradient Boosting Machine.
 
     This Histogram-based Gradient Boosting Machine is much faster than
@@ -1378,10 +1377,9 @@ class HistGradientBoosting(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "ensemble"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "HistGradientBoostingClassifier",
-        "regression": "HistGradientBoostingRegressor",
+        "classification": "sklearn.ensemble.HistGradientBoostingClassifier",
+        "regression": "sklearn.ensemble.HistGradientBoostingRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -1411,7 +1409,7 @@ class HistGradientBoosting(ClassRegModel):
         return dist
 
 
-class KNearestNeighbors(ClassRegModel):
+class KNearestNeighbors(BaseModel):
     """K-Nearest Neighbors.
 
     K-Nearest Neighbors, as the name clearly indicates, implements the
@@ -1455,10 +1453,9 @@ class KNearestNeighbors(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "neighbors"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "KNeighborsClassifier",
-        "regression": "KNeighborsRegressor",
+        "classification": "sklearn.neighbors.KNeighborsClassifier",
+        "regression": "sklearn.neighbors.KNeighborsRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -1488,7 +1485,7 @@ class KNearestNeighbors(ClassRegModel):
         return dist
 
 
-class Lasso(ClassRegModel):
+class Lasso(BaseModel):
     """Linear Regression with lasso regularization.
 
     Linear least squares with l1 regularization.
@@ -1528,8 +1525,9 @@ class Lasso(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "Lasso"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.Lasso"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1547,7 +1545,7 @@ class Lasso(ClassRegModel):
         }
 
 
-class LeastAngleRegression(ClassRegModel):
+class LeastAngleRegression(BaseModel):
     """Least Angle Regression.
 
     Least-Angle Regression is a regression algorithm for
@@ -1592,11 +1590,12 @@ class LeastAngleRegression(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "Lars"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.Lars"
+    }
 
 
-class LightGBM(ClassRegModel):
+class LightGBM(BaseModel):
     """Light Gradient Boosting Machine.
 
     LightGBM is a gradient boosting model that uses tree based learning
@@ -1648,10 +1647,9 @@ class LightGBM(ClassRegModel):
     validation = "n_estimators"
     supports_engines = ("lightgbm",)
 
-    _module = "lightgbm.sklearn"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "LGBMClassifier",
-        "regression": "LGBMRegressor",
+        "classification": "lightgbm.sklearn.LGBMClassifier",
+        "regression": "lightgbm.sklearn.LGBMRegressor",
     }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
@@ -1777,7 +1775,7 @@ class LightGBM(ClassRegModel):
         }
 
 
-class LinearDiscriminantAnalysis(ClassRegModel):
+class LinearDiscriminantAnalysis(BaseModel):
     """Linear Discriminant Analysis.
 
     Linear Discriminant Analysis is a classifier with a linear
@@ -1821,8 +1819,9 @@ class LinearDiscriminantAnalysis(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "discriminant_analysis"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "LinearDiscriminantAnalysis"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.discriminant_analysis.LinearDiscriminantAnalysis"
+    }
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -1861,7 +1860,7 @@ class LinearDiscriminantAnalysis(ClassRegModel):
         }
 
 
-class LinearSVM(ClassRegModel):
+class LinearSVM(BaseModel):
     """Linear Support Vector Machine.
 
     Similar to [SupportVectorMachine][] but with a linear kernel.
@@ -1905,10 +1904,9 @@ class LinearSVM(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "cuml")
 
-    _module = "svm"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "LinearSVC",
-        "regression": "LinearSVR",
+        "classification": "sklearn.svm.LinearSVC",
+        "regression": "sklearn.svm.LinearSVR",
     }
 
     def _get_parameters(self, trial: Trial) -> dict:
@@ -1988,7 +1986,7 @@ class LinearSVM(ClassRegModel):
         return dist
 
 
-class LogisticRegression(ClassRegModel):
+class LogisticRegression(BaseModel):
     """Logistic Regression.
 
     Logistic regression, despite its name, is a linear model for
@@ -2033,8 +2031,9 @@ class LogisticRegression(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "LogisticRegression"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.linear_model.LogisticRegression"
+    }
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -2094,7 +2093,7 @@ class LogisticRegression(ClassRegModel):
         return dist
 
 
-class MultiLayerPerceptron(ClassRegModel):
+class MultiLayerPerceptron(BaseModel):
     """Multi-layer Perceptron.
 
     Multi-layer Perceptron is a supervised learning algorithm that
@@ -2140,10 +2139,9 @@ class MultiLayerPerceptron(ClassRegModel):
     validation = "max_iter"
     supports_engines = ("sklearn",)
 
-    _module = "neural_network"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "MLPClassifier",
-        "regression": "MLPRegressor",
+        "classification": "sklearn.neural_network.MLPClassifier",
+        "regression": "sklearn.neural_network.MLPRegressor",
     }
 
     def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -2203,7 +2201,7 @@ class MultiLayerPerceptron(ClassRegModel):
             return dist
 
 
-class MultinomialNB(ClassRegModel):
+class MultinomialNB(BaseModel):
     """Multinomial Naive Bayes.
 
     MultinomialNB implements the Naive Bayes algorithm for multinomially
@@ -2247,8 +2245,9 @@ class MultinomialNB(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "cuml")
 
-    _module = "naive_bayes"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "MultinomialNB"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.naive_bayes.MultinomialNB"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -2266,7 +2265,7 @@ class MultinomialNB(ClassRegModel):
         }
 
 
-class OrdinaryLeastSquares(ClassRegModel):
+class OrdinaryLeastSquares(BaseModel):
     """Linear Regression.
 
     Ordinary Least Squares is just linear regression without any
@@ -2310,11 +2309,12 @@ class OrdinaryLeastSquares(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "LinearRegression"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.LinearRegression"
+    }
 
 
-class OrthogonalMatchingPursuit(ClassRegModel):
+class OrthogonalMatchingPursuit(BaseModel):
     """Orthogonal Matching Pursuit.
 
     Orthogonal Matching Pursuit implements the OMP algorithm for
@@ -2356,11 +2356,12 @@ class OrthogonalMatchingPursuit(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"regression": "OrthogonalMatchingPursuit"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "regression": "sklearn.linear_model.OrthogonalMatchingPursuit"
+    }
 
 
-class PassiveAggressive(ClassRegModel):
+class PassiveAggressive(BaseModel):
     """Passive Aggressive.
 
     The passive-aggressive algorithms are a family of algorithms for
@@ -2404,10 +2405,9 @@ class PassiveAggressive(ClassRegModel):
     validation = "max_iter"
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "PassiveAggressiveClassifier",
-        "regression": "PassiveAggressiveRegressor",
+        "classification": "sklearn.linear_model.PassiveAggressiveClassifier",
+        "regression": "sklearn.linear_model.PassiveAggressiveRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -2432,7 +2432,7 @@ class PassiveAggressive(ClassRegModel):
         }
 
 
-class Perceptron(ClassRegModel):
+class Perceptron(BaseModel):
     """Linear Perceptron classification.
 
     The Perceptron is a simple classification algorithm suitable for
@@ -2481,8 +2481,9 @@ class Perceptron(ClassRegModel):
     validation = "max_iter"
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "Perceptron"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.linear_model.Perceptron"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -2503,7 +2504,7 @@ class Perceptron(ClassRegModel):
         }
 
 
-class QuadraticDiscriminantAnalysis(ClassRegModel):
+class QuadraticDiscriminantAnalysis(BaseModel):
     """Quadratic Discriminant Analysis.
 
     Quadratic Discriminant Analysis is a classifier with a quadratic
@@ -2547,8 +2548,9 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "discriminant_analysis"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "QuadraticDiscriminantAnalysis"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -2563,7 +2565,7 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
         return {"reg_param": Float(0, 1.0, step=0.1)}
 
 
-class RadiusNearestNeighbors(ClassRegModel):
+class RadiusNearestNeighbors(BaseModel):
     """Radius Nearest Neighbors.
 
     Radius Nearest Neighbors implements the nearest neighbors vote,
@@ -2618,10 +2620,9 @@ class RadiusNearestNeighbors(ClassRegModel):
     validation = None
     supports_engines = ("sklearn",)
 
-    _module = "neighbors"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "RadiusNeighborsClassifier",
-        "regression": "RadiusNeighborsRegressor",
+        "classification": "sklearn.neighbors.RadiusNeighborsClassifier",
+        "regression": "sklearn.neighbors.RadiusNeighborsRegressor",
     }
 
     @staticmethod
@@ -2643,7 +2644,7 @@ class RadiusNearestNeighbors(ClassRegModel):
         }
 
 
-class RandomForest(ClassRegModel):
+class RandomForest(BaseModel):
     """Random Forest.
 
     Random forests are an ensemble learning method that operate by
@@ -2695,10 +2696,9 @@ class RandomForest(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "ensemble"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "RandomForestClassifier",
-        "regression": "RandomForestRegressor",
+        "classification": "sklearn.ensemble.RandomForestClassifier",
+        "regression": "sklearn.ensemble.RandomForestRegressor",
     }
 
     def _get_parameters(self, trial: Trial) -> dict:
@@ -2764,7 +2764,7 @@ class RandomForest(ClassRegModel):
         return dist
 
 
-class Ridge(ClassRegModel):
+class Ridge(BaseModel):
     """Linear least squares with l2 regularization.
 
     If classifier, it first converts the target values into {-1, 1}
@@ -2810,10 +2810,9 @@ class Ridge(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "linear_model"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "RidgeClassifier",
-        "regression": "Ridge",
+        "classification": "sklearn.linear_model.RidgeClassifier",
+        "regression": "sklearn.linear_model.Ridge",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -2839,7 +2838,7 @@ class Ridge(ClassRegModel):
         return dist
 
 
-class StochasticGradientDescent(ClassRegModel):
+class StochasticGradientDescent(BaseModel):
     """Stochastic Gradient Descent.
 
     Stochastic Gradient Descent is a simple yet very efficient approach
@@ -2884,10 +2883,9 @@ class StochasticGradientDescent(ClassRegModel):
     validation = "max_iter"
     supports_engines = ("sklearn",)
 
-    _module = "linear_model"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "SGDClassifier",
-        "regression": "SGDRegressor",
+        "classification": "sklearn.linear_model.SGDClassifier",
+        "regression": "sklearn.linear_model.SGDRegressor",
     }
 
     def _get_distributions(self) -> dict[str, BaseDistribution]:
@@ -2925,7 +2923,7 @@ class StochasticGradientDescent(ClassRegModel):
         }
 
 
-class SupportVectorMachine(ClassRegModel):
+class SupportVectorMachine(BaseModel):
     """Support Vector Machine.
 
     The implementation of the Support Vector Machine is based on libsvm.
@@ -2970,8 +2968,10 @@ class SupportVectorMachine(ClassRegModel):
     validation = None
     supports_engines = ("sklearn", "sklearnex", "cuml")
 
-    _module = "svm"
-    _estimators: ClassVar[dict[str, str]] = {"classification": "SVC", "regression": "SVR"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "classification": "sklearn.svm.SVC",
+        "regression": "sklearn.svm.SVR",
+    }
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -3042,7 +3042,7 @@ class SupportVectorMachine(ClassRegModel):
         return dist
 
 
-class XGBoost(ClassRegModel):
+class XGBoost(BaseModel):
     """Extreme Gradient Boosting.
 
     XGBoost is an optimized distributed gradient boosting model
@@ -3086,10 +3086,9 @@ class XGBoost(ClassRegModel):
     validation = "n_estimators"
     supports_engines = ("xgboost",)
 
-    _module = "xgboost"
     _estimators: ClassVar[dict[str, str]] = {
-        "classification": "XGBClassifier",
-        "regression": "XGBRegressor",
+        "classification": "xgboost.XGBClassifier",
+        "regression": "xgboost.XGBRegressor",
     }
 
     @property

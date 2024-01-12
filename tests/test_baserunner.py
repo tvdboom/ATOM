@@ -1068,6 +1068,14 @@ def test_stacking_predefined_final_estimator():
     assert isinstance(atom.stack.estimator.final_estimator_, LDA)
 
 
+def test_stacking_train_on_test():
+    """Assert that the stacking model can be trained on the test set."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
+    atom.stacking(train_on_test=True)
+    assert atom.stack.score("test") > 0.95
+
+
 def test_voting():
     """Assert that the voting method creates a Vote model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

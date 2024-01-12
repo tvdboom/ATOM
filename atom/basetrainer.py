@@ -22,7 +22,7 @@ from optuna import Study, create_study
 from atom.baserunner import BaseRunner
 from atom.branch import BranchManager
 from atom.data_cleaning import BaseTransformer
-from atom.models import MODELS, create_custom_model
+from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
 from atom.utils.types import Model, sequence_t
 from atom.utils.utils import (
@@ -220,7 +220,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 inc.append(model)
 
             else:  # Model is a custom estimator
-                inc.append(create_custom_model(estimator=model, **kwargs))
+                inc.append(CustomModel(estimator=model, **kwargs))
 
         if inc and exc:
             raise ValueError(

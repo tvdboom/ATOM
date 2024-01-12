@@ -148,9 +148,9 @@ stacking. Click [here][example-ensembles] to see an example that uses
 ensemble models.
 
 If the ensemble's underlying estimator is a model that used [automated feature scaling][],
-it's added as a Pipeline containing the `scaler` and estimator. If a
-[mlflow experiment][tracking] is active, the ensembles start their own
-run, just like the [predefined models][] do.
+it's added as a Pipeline containing the [`Scaler`][] and estimator. If
+a [mlflow experiment][tracking] is active, the ensembles start their
+own run, just like the [predefined models][] do.
 
 !!! warning
     Combining models trained on different branches into one ensemble is
@@ -183,9 +183,6 @@ resources, since the classes are always initialized with fitted estimators.
 As a consequence of this, the VotingClassifier can not use sklearn's build-in
 LabelEncoder for the target column since it can't be fitted when initializing
 the class. For the vast majority of use cases, the changes will have no effect.
-If you want to export the estimator and retrain it on different data, just make
-sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
-the underlying estimators first.
 
 
 <br>
@@ -200,13 +197,12 @@ prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 A stacking model is created from a trainer through the [stacking][atomclassifier-stacking]
 method. The stacking model is added automatically to the list of
 models in the trainer, under the `Stack` acronym. The underlying
-estimator is a custom adaptation of [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html)
-or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
-depending on the task. The only difference between ATOM's and sklearn's
-implementation is that ATOM's implementation doesn't fit estimators if
-they're already fitted. The two estimators are customized in this way to
-save time and computational resources, since the classes are always
-initialized with fitted estimators. For the vast majority of use cases,
-the changes will have no effect. If you want to export the estimator and
-retrain it on different data, just make sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
-the underlying estimators first.
+estimators are [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html) or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
+depending on the task.
+
+!!! tip
+    By default, the final estimator is trained on the training set.
+    Note that this is the same data on which the other estimators are
+    fitted, increasing the chance of overfitting. If possible, it's 
+    recommended to use `train_on_test=True` in combination with a
+    [holdout set][data-sets] for model evaluation.

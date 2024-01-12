@@ -15,12 +15,12 @@ from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
 from optuna.trial import Trial
 
-from atom.basemodel import ForecastModel
+from atom.basemodel import BaseModel
 from atom.utils.types import Predictor
 from atom.utils.utils import SeasonalPeriod
 
 
-class ARIMA(ForecastModel):
+class ARIMA(BaseModel):
     """Autoregressive Integrated Moving Average.
 
     Seasonal ARIMA models and exogenous input is supported, hence this
@@ -83,8 +83,9 @@ class ARIMA(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.arima"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "ARIMA"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.arima.ARIMA"
+    }
 
     _order = ("p", "d", "q")
     _s_order = ("P", "D", "Q")
@@ -193,7 +194,7 @@ class ARIMA(ForecastModel):
         return dist
 
 
-class AutoARIMA(ForecastModel):
+class AutoARIMA(BaseModel):
     """Automatic Autoregressive Integrated Moving Average.
 
     [ARIMA][] implementation that includes automated fitting of
@@ -246,8 +247,9 @@ class AutoARIMA(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.arima"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "AutoARIMA"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.arima.AutoARIMA"
+    }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -284,7 +286,7 @@ class AutoARIMA(ForecastModel):
         }
 
 
-class BATS(ForecastModel):
+class BATS(BaseModel):
     """BATS forecaster with multiple seasonality.
 
     BATS is acronym for:
@@ -337,8 +339,9 @@ class BATS(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.bats"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "BATS"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.bats.BATS"
+    }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -374,7 +377,7 @@ class BATS(ForecastModel):
         }
 
 
-class Croston(ForecastModel):
+class Croston(BaseModel):
     """Croston's method for forecasting.
 
     Croston's method is a modification of (vanilla) exponential
@@ -417,8 +420,9 @@ class Croston(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.croston"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "Croston"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.croston.Croston"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -433,7 +437,7 @@ class Croston(ForecastModel):
         return {"smoothing": Float(0, 1, step=0.1)}
 
 
-class DynamicFactor(ForecastModel):
+class DynamicFactor(BaseModel):
     """Dynamic Factor.
 
     The DynamicFactor model incorporates dynamic factors to predict
@@ -476,8 +480,9 @@ class DynamicFactor(ForecastModel):
     native_multioutput = True
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.dynamic_factor"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "DynamicFactor"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.dynamic_factor.DynamicFactor"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -502,7 +507,7 @@ class DynamicFactor(ForecastModel):
         }
 
 
-class ExponentialSmoothing(ForecastModel):
+class ExponentialSmoothing(BaseModel):
     """Holt-Winters Exponential Smoothing forecaster.
 
     ExponentialSmoothing is a forecasting model that extends simple
@@ -541,8 +546,9 @@ class ExponentialSmoothing(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.exp_smoothing"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "ExponentialSmoothing"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.exp_smoothing.ExponentialSmoothing"
+    }
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -586,7 +592,7 @@ class ExponentialSmoothing(ForecastModel):
         }
 
 
-class ETS(ForecastModel):
+class ETS(BaseModel):
     """ETS model with automatic fitting capabilities.
 
     The ETS models are a family of time series models with an
@@ -626,8 +632,9 @@ class ETS(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.ets"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "AutoETS"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.ets.AutoETS"
+    }
 
     def _get_parameters(self, trial: Trial) -> dict:
         """Get the trial's hyperparameters.
@@ -680,7 +687,7 @@ class ETS(ForecastModel):
         return dist
 
 
-class MSTL(ForecastModel):
+class MSTL(BaseModel):
     """Multiple Seasonal-Trend decomposition using LOESS.
 
     The MSTL decomposes the time series in multiple seasonalities using
@@ -719,8 +726,9 @@ class MSTL(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.statsforecast"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "StatsForecastMSTL"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.statsforecast.StatsForecastMSTL"
+    }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -780,7 +788,7 @@ class MSTL(ForecastModel):
         }
 
 
-class NaiveForecaster(ForecastModel):
+class NaiveForecaster(BaseModel):
     """Naive Forecaster.
 
     NaiveForecaster is a dummy forecaster that makes forecasts using
@@ -820,8 +828,9 @@ class NaiveForecaster(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.naive"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "NaiveForecaster"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.naive.NaiveForecaster"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -836,7 +845,7 @@ class NaiveForecaster(ForecastModel):
         return {"strategy": Cat(["last", "mean", "drift"])}
 
 
-class PolynomialTrend(ForecastModel):
+class PolynomialTrend(BaseModel):
     """Polynomial Trend forecaster.
 
     Forecast time series data with a polynomial trend, using a sklearn
@@ -874,8 +883,9 @@ class PolynomialTrend(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.trend"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "PolynomialTrendForecaster"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.trend.PolynomialTrendForecaster"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -893,7 +903,7 @@ class PolynomialTrend(ForecastModel):
         }
 
 
-class Prophet(ForecastModel):
+class Prophet(BaseModel):
     """Prophet forecaster by Facebook.
 
     Prophet is designed to handle time series data with strong seasonal
@@ -933,8 +943,9 @@ class Prophet(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.fbprophet"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "Prophet"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.fbprophet.Prophet"
+    }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -987,7 +998,7 @@ class Prophet(ForecastModel):
         }
 
 
-class SARIMAX(ForecastModel):
+class SARIMAX(BaseModel):
     """Seasonal Autoregressive Integrated Moving Average.
 
     SARIMAX stands for Seasonal Autoregressive Integrated Moving Average
@@ -1038,8 +1049,9 @@ class SARIMAX(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.sarimax"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "SARIMAX"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.sarimax.SARIMAX"
+    }
 
     _order = ("p", "d", "q")
     _s_order = ("P", "D", "Q")
@@ -1137,7 +1149,7 @@ class SARIMAX(ForecastModel):
         return dist
 
 
-class STL(ForecastModel):
+class STL(BaseModel):
     """Seasonal-Trend decomposition using LOESS.
 
     STL is a technique commonly used for decomposing time series data
@@ -1174,8 +1186,9 @@ class STL(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.trend"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "STLForecaster"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.trend.STLForecaster"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1195,7 +1208,7 @@ class STL(ForecastModel):
         }
 
 
-class TBATS(ForecastModel):
+class TBATS(BaseModel):
     """TBATS forecaster with multiple seasonality.
 
     TBATS is acronym for:
@@ -1250,8 +1263,9 @@ class TBATS(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.tbats"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "TBATS"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.tbats.TBATS"
+    }
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -1287,7 +1301,7 @@ class TBATS(ForecastModel):
         }
 
 
-class Theta(ForecastModel):
+class Theta(BaseModel):
     """Theta method for forecasting.
 
     The theta method is equivalent to simple [ExponentialSmoothing][]
@@ -1334,8 +1348,9 @@ class Theta(ForecastModel):
     native_multioutput = False
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.theta"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "ThetaForecaster"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.theta.ThetaForecaster"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1350,7 +1365,7 @@ class Theta(ForecastModel):
         return {"deseasonalize": Cat([False, True])}
 
 
-class VAR(ForecastModel):
+class VAR(BaseModel):
     """Vector Autoregressive.
 
     The Vector Autoregressive (VAR) model is a type of multivariate
@@ -1392,8 +1407,9 @@ class VAR(ForecastModel):
     native_multioutput = True
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.var"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "VAR"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.var.VAR"
+    }
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1411,7 +1427,7 @@ class VAR(ForecastModel):
         }
 
 
-class VARMAX(ForecastModel):
+class VARMAX(BaseModel):
     """Vector Autoregressive Moving-Average.
 
     VARMAX is an extension of the [VAR][] model that incorporates not
@@ -1451,8 +1467,9 @@ class VARMAX(ForecastModel):
     native_multioutput = True
     supports_engines = ("sktime",)
 
-    _module = "sktime.forecasting.var"
-    _estimators: ClassVar[dict[str, str]] = {"forecast": "VARMAX"}
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.var.VARMAX"
+    }
 
     _order = ("p", "q")
 
