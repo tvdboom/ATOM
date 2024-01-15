@@ -31,14 +31,16 @@ from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
 from ray.util.joblib import register_ray
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_memory
 
+from atom.utils.constants import SHARED_PARAMS
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, Estimator, Int, IntLargerEqualZero,
     Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
     bool_t, dataframe_t, int_t, sequence_t,
 )
-from atom.utils.utils import crash, flt, n_cols, sign, to_df, to_pandas
+from atom.utils.utils import crash, flt, lst, n_cols, sign, to_df, to_pandas
 
 
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
@@ -357,12 +359,15 @@ class BaseTransformer:
 
         Utility method to set the sp (seasonal period), n_jobs and
         random_state parameters of an estimator (if available) equal
-        to that of this instance.
+        to that of this instance. If `obj` is a meta-estimator, it
+        also sets the parameters to the base estimator. Note that
+        the parameters are only changed when the value is equal to
+        the constructor's default value.
 
         Parameters
         ----------
         obj: Estimator
-            Object in which to change the parameters.
+            Instance for which to change the parameters.
 
         Returns
         -------
@@ -370,15 +375,19 @@ class BaseTransformer:
             Same object with changed parameters.
 
         """
-        signature = sign(obj.__init__)  # type: ignore[misc]
-        for p in ("n_jobs", "random_state"):
-            if p in signature and getattr(obj, p, "<!>") == signature[p]._default:
-                setattr(obj, p, getattr(self, p))
-
-        # Add seasonal period to the estimator
-        if hasattr(self, "_config") and self._config.sp:
-            if "sp" in signature and getattr(obj, "sp", "<!>") == signature["sp"]._default:
-                obj.sp = self._config.sp if self.multiple_seasonality else flt(self._config.sp)
+        signature = sign(obj.__class__)
+        for p, value in obj.get_params().items():
+            if p in SHARED_PARAMS and (p not in signature or value == signature[p]._default):
+                # Some estimators like XGB use kwargs, so param
+                # isn't in signature. In that case, always override
+                obj.set_params(**{p: getattr(self, p)})
+            elif isinstance(value, BaseEstimator):
+                obj.set_params(**{p: self._inherit(value)})
+            elif p == "sp" and hasattr(self, "_config") and self._config.sp:
+                if self.multiple_seasonality:
+                    obj.set_params(**{p: self._config.sp})
+                else:
+                    obj.set_params(**{p: lst(self._config.sp)[0]})
 
         return obj
 

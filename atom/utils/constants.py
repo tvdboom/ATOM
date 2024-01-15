@@ -15,6 +15,9 @@ CAT_TYPES = ["object", "category", "string", "boolean"]
 # Default string values considered missing
 DEFAULT_MISSING = ["", "?", "NA", "nan", "NaN", "NaT", "none", "None", "inf", "-inf"]
 
+# Shared parameters between estimators
+SHARED_PARAMS = ("n_jobs", "random_state")
+
 # Attributes shared between atom and a dataframe
 DF_ATTRS = (
     "size",

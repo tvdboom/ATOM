@@ -455,8 +455,7 @@ class BaseModel(RunnerPlot):
                 else:
                     sub_params[name] = value
 
-        estimator = self._inherit(self._est_class(**base_params))
-        estimator.set_params(**sub_params)
+        estimator = self._est_class(**base_params).set_params(**sub_params)
 
         if hasattr(self, "task"):
             if self.task is Task.multilabel_classification:
@@ -1021,7 +1020,7 @@ class BaseModel(RunnerPlot):
                             random_state=trial.number + (self.random_state or 0),
                         )
                 else:  # Custom cross-validation generator
-                    splitter = self._inherit(cv)
+                    splitter = cv
 
                 args = [self.og.X_train]
                 if "y" in sign(splitter.split) and cols is not None:
