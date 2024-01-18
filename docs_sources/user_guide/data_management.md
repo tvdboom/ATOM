@@ -40,7 +40,7 @@ or together:
 
 Remember to use the `y` parameter to indicate the target column in X when
 using the first option. If not specified, the last column in X is used as
-target. In both these cases, the size of the sets are defined using the
+the target. In both these cases, the sizes of the sets are defined using the
 `test_size` and `holdout_size` parameters. Note that the splits are made
 after the subsample of the dataset with the `n_rows` parameter (when not
 left to its default value).
@@ -55,7 +55,7 @@ following formats:
 * (X_train, y_train), (X_test, y_test)
 * (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-The input data is always converted internally to a [dataframe][],
+The input data is always converted internally to a [dataframe][]
 if it isn't one already. The column names should always be strings. If
 they are not, atom changes their type at initialization. If no column
 names are provided, default names are given of the form `X[N-1]`,

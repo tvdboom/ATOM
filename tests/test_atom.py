@@ -507,17 +507,10 @@ def test_custom_params_to_method():
 def test_add_basetransformer_params_are_attached():
     """Assert that the n_jobs and random_state params from atom are used."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.add(PCA())  # When left to default
-    atom.add(PCA(random_state=2))  # When changed
+    atom.add(PCA)  # When class
+    atom.add(PCA(random_state=2))  # When instance
     assert atom.pipeline[0].get_params()["random_state"] == 1
     assert atom.pipeline[1].get_params()["random_state"] == 2
-
-
-def test_add_class_not_instance():
-    """Assert that atom accepts transformer classes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.add(StandardScaler)
-    assert check_scaling(atom.X)
 
 
 def test_add_train_only():

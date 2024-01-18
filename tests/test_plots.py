@@ -480,6 +480,18 @@ def test_plot_trials():
 
 # Test PredictionPlot =================================================== >>
 
+def test_plot_bootstrap():
+    """Assert that the plot_bootstrap method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["OLS", "Tree", "Tree_2"], n_bootstrap=(3, 3, 0))
+
+    with pytest.raises(ValueError, match=".*have bootstrap scores.*"):
+        atom.plot_bootstrap(models="Tree_2", display=False)
+
+    atom.plot_bootstrap(display=False)  # Mixed bootstrap
+    atom.plot_bootstrap(models=["OLS", "Tree"], display=False)  # All bootstrap
+
+
 def test_plot_calibration():
     """Assert that the plot_calibration method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -695,23 +707,17 @@ def test_plot_residuals():
     atom.plot_residuals(display=False)
 
 
-@pytest.mark.parametrize("metric", ["me", ["me", "r2"]])
-def test_plot_results_metric(metric):
+def test_plot_results():
     """Assert that the plot_results method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["OLS", "Tree", "Tree_2"], metric=metric, n_bootstrap=(3, 3, 0))
-    atom.voting()
-    atom.plot_results(metric="me", display=False)  # Mixed bootstrap
-    atom.plot_results(models=["OLS", "Tree"], metric="me", display=False)  # All bootstrap
-    atom.plot_results(models="Tree_2", metric="me", display=False)  # No bootstrap
+    atom.run("Tree")
 
+    with pytest.raises(ValueError, match=".*can't be mixed with non-time metrics.*"):
+        atom.plot_results(metric="time+mae", display=False)
 
-@pytest.mark.parametrize("metric", ["time_ht", "time_fit", "time"])
-def test_plot_results_time(metric):
-    """Assert that the plot_results method works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree", n_trials=1)
-    atom.plot_results(metric=metric, display=False)
+    atom.plot_results(metric=None, display=False)
+    atom.plot_results(metric=["time_fit+time"], display=False)
+    atom.plot_results(metric=["mae", "mse"], display=False)
 
 
 def test_plot_roc():

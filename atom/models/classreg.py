@@ -1598,7 +1598,7 @@ class LeastAngleRegression(BaseModel):
 class LightGBM(BaseModel):
     """Light Gradient Boosting Machine.
 
-    LightGBM is a gradient boosting model that uses tree based learning
+    LightGBM is a gradient boosting model that uses tree-based learning
     algorithms. It is designed to be distributed and efficient with the
     following advantages:
 

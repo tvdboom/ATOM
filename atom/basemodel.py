@@ -448,32 +448,38 @@ class BaseModel(RunnerPlot):
         """
         # Separate the params for the estimator from those in sub-estimators
         base_params, sub_params = {}, {}
-        if params:
-            for name, value in params.items():
-                if "__" not in name:
-                    base_params[name] = value
-                else:
-                    sub_params[name] = value
+        for name, value in params.items():
+            if "__" not in name:
+                base_params[name] = value
+            else:
+                sub_params[name] = value
 
         estimator = self._est_class(**base_params).set_params(**sub_params)
 
+        fixed = tuple(params)
         if hasattr(self, "task"):
-            if self.task is Task.multilabel_classification:
-                if not self.native_multilabel:
-                    estimator = ClassifierChain(estimator)
-            elif self.task.is_multioutput and not self.native_multioutput:
-                if self.task.is_classification:
-                    estimator = MultiOutputClassifier(estimator)
-                elif self.task.is_regression:
-                    estimator = MultiOutputRegressor(estimator)
-            elif self.task.is_forecast and self._goal.name not in self._estimators:
+            if self.task.is_forecast and self._goal.name not in self._estimators:
+                fixed = tuple(f"estimator__{f}" for f in fixed)
+
                 # Forecasting task with a regressor
-                if self.native_multioutput:
+                if self.task.is_multioutput:
                     estimator = make_reduction(estimator, strategy="multioutput")
                 else:
                     estimator = make_reduction(estimator, strategy="recursive")
 
-        return self._inherit(estimator)
+            elif self.task is Task.multilabel_classification:
+                if not self.native_multilabel:
+                    fixed = tuple(f"base_estimator__{f}" for f in fixed)
+                    estimator = ClassifierChain(estimator)
+
+            elif self.task.is_multioutput and not self.native_multioutput:
+                fixed = tuple(f"estimator__{f}" for f in fixed)
+                if self.task.is_classification:
+                    estimator = MultiOutputClassifier(estimator)
+                elif self.task.is_regression:
+                    estimator = MultiOutputRegressor(estimator)
+
+        return self._inherit(estimator, fixed=fixed)
 
     def _fit_estimator(
         self,
@@ -1550,7 +1556,7 @@ class BaseModel(RunnerPlot):
                 data[f"{met}_ht"] = self.trials.loc[self.best_trial.number, met]
             data["time_ht"] = self.trials.iloc[-1, -2]
         for met in self._metric:
-            for ds in ("train", "test"):
+            for ds in ["train", "test"] + ([] if self.holdout is None else ["holdout"]):
                 data[f"{met.name}_{ds}"] = self._get_score(met, ds)
         data["time_fit"] = self._time_fit
         if self._bootstrap is not None:
@@ -1975,7 +1981,7 @@ class BaseModel(RunnerPlot):
         **kwargs
             Additional keyword arguments for one of these functions.
 
-            - For forecast tasks: [validate][sktimevalidate].
+            - For forecast tasks: [evaluate][sktimeevaluate].
             - Else: [cross_validate][sklearncrossvalidate].
 
         Returns

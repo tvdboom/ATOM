@@ -80,7 +80,7 @@ class ARIMA(BaseModel):
     handles_missing = True
     uses_exogenous = True
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -244,7 +244,7 @@ class AutoARIMA(BaseModel):
     handles_missing = True
     uses_exogenous = True
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -336,7 +336,7 @@ class BATS(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -417,7 +417,7 @@ class Croston(BaseModel):
     handles_missing = False
     uses_exogenous = True
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -543,7 +543,7 @@ class ExponentialSmoothing(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -629,7 +629,7 @@ class ETS(BaseModel):
     handles_missing = True
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -723,7 +723,7 @@ class MSTL(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = True
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -825,7 +825,7 @@ class NaiveForecaster(BaseModel):
     handles_missing = True
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -880,7 +880,7 @@ class PolynomialTrend(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -940,7 +940,7 @@ class Prophet(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = True
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -1046,7 +1046,7 @@ class SARIMAX(BaseModel):
     handles_missing = False
     uses_exogenous = True
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -1183,7 +1183,7 @@ class STL(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -1260,7 +1260,7 @@ class TBATS(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = True
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
@@ -1345,7 +1345,7 @@ class Theta(BaseModel):
     handles_missing = False
     uses_exogenous = False
     multiple_seasonality = False
-    native_multioutput = False
+    native_multioutput = True
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {

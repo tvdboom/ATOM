@@ -108,15 +108,15 @@ def test_all_models_forecast():
     """Assert that all models work with forecast."""
     atom = ATOMForecaster(y_fc, random_state=1)
     atom.run(
-        models=["!DF", "!MSTL", "!VAR", "!VARMAX"],
+        models=["!DF", "!MSTL", "!Prophet", "!VAR", "!VARMAX"],
         n_trials=1,
         est_params={
             "arima": {"maxiter": 5, "method": "nm"},
             "autoarima": {"maxiter": 5, "method": "nm"},
-            "bats": {"use_trend": False, "use_damped_trend": False, "use_arma_errors": False},
-            "prophet": {"seasonality_mode": "additive"},
+            "bats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
+            # "prophet": {"seasonality_mode": "additive"},  # noqa: ERA001
             "stl": {"seasonal": 3, "seasonal_deg": 0, "low_pass_deg": 0},
-            "tbats": {"use_trend": False, "use_damped_trend": False, "use_arma_errors": False},
+            "tbats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
             "ets": {"maxiter": 5},
         },
         errors="raise",

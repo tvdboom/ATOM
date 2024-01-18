@@ -1050,7 +1050,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             if hasattr(self.X, "sparse"):  # All columns are sparse
                 self._log(f"Density: {100. * self.X.sparse.density:.2f}%", _vb)
             else:  # Not all columns are sparse
-                n_sparse = sum([pd.api.types.is_sparse(self.X[c]) for c in self.X])
+                n_sparse = sum(isinstance(self[c].dtype, pd.SparseDtype) for c in self.features)
                 n_dense = self.n_features - n_sparse
                 p_sparse = round(100 * n_sparse / self.n_features, 1)
                 p_dense = round(100 * n_dense / self.n_features, 1)
@@ -1193,14 +1193,13 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         transformed and the transformer is added to atom's
         pipeline.
 
-        If the transformer has the n_jobs and/or random_state
-        parameters and they are left to their default value,
-        they adopt atom's values.
-
         Parameters
         ----------
         transformer: Transformer
             Estimator to add. Should implement a `transform` method.
+            If a class is provided (instead of an instance), and it
+            has the `n_jobs` and/or `random_state` parameters, it
+            adopts atom's values.
 
         columns: int, str, segment, sequence or None, default=None
             Columns in the dataset to transform. If None, transform
@@ -1220,7 +1219,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         if callable(transformer):
-            transformer_c = transformer()
+            transformer_c = self._inherit(transformer())
         else:
             transformer_c = transformer
 
@@ -1230,9 +1229,6 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 "after it has been used to train models. Create a "
                 "new branch to continue the pipeline."
             )
-
-        # Add BaseTransformer params to the estimator if left to default
-        transformer_c = self._inherit(transformer_c)
 
         if not hasattr(transformer_c, "_train_only"):
             transformer_c._train_only = train_only
@@ -1385,16 +1381,13 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
               This means that the transformer should not add, remove or
               shuffle rows unless it returns a dataframe.
 
-        !!! note
-            If the transformer has a `n_jobs` and/or `random_state`
-            parameter that is left to its default value, it adopts
-            atom's value.
-
         Parameters
         ----------
         transformer: Transformer
             Estimator to add to the pipeline. Should implement a
-            `transform` method.
+            `transform` method. If a class is provided (instead of an
+            instance), and it has the `n_jobs` and/or `random_state`
+            parameters, it adopts atom's values.
 
         columns: int, str, segment, sequence or None, default=None
             [Selection of columns][row-and-column-selection] to

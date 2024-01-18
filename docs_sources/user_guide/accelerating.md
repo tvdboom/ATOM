@@ -46,9 +46,10 @@ regardless of the engine parameter.
     one to use, the first one is used by default.
 
 !!! example
-    [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)<br><br>
-    Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
-    the badge above and run the notebook! Make sure to choose the GPU compute
+    [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)
+    
+    Train a model on a GPU yourself using Google Colab. Just click on the
+    badge above and run the notebook! Make sure to choose the GPU runtime
     type.
 
 

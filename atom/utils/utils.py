@@ -1509,7 +1509,7 @@ def is_sparse(obj: Pandas) -> bool:
         Whether the data set is sparse.
 
     """
-    return any(pd.api.types.is_sparse(col) for col in get_cols(obj))
+    return any(isinstance(col.dtype, pd.SparseDtype) for col in get_cols(obj))
 
 
 def check_empty(obj: Pandas) -> Pandas | None:

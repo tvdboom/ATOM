@@ -16,11 +16,13 @@ from unittest.mock import patch
 import mlflow
 import pandas as pd
 import pytest
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multioutput import ClassifierChain
 from sklearn.naive_bayes import GaussianNB
 from sklearnex import get_config
 from sklearnex.svm import SVC
 
-from atom import ATOMClassifier
+from atom import ATOMClassifier, ATOMForecaster
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier
 from atom.utils.utils import merge
@@ -180,9 +182,32 @@ def test_device_id_invalid():
 
 def test_inherit():
     """Assert that the inherit method passes the parameters correctly."""
-    base = BaseTransformer(random_state=2)
-    svc = base._inherit(SVC())
+    base = BaseTransformer(n_jobs=2, random_state=2)
+    svc = base._inherit(RandomForestClassifier())
+    assert svc.get_params()["n_jobs"] == 2
     assert svc.get_params()["random_state"] == 2
+
+
+def test_inherit_with_fixed_params():
+    """Assert that fixed parameters aren't inherited."""
+    base = BaseTransformer(random_state=2)
+    chain = base._inherit(ClassifierChain(SVC(random_state=3)), ("base_estimator__random_state",))
+    assert chain.get_params()["random_state"] == 2
+    assert chain.base_estimator.get_params()["random_state"] == 3
+
+
+def test_inherit_sp():
+    """Assert that the seasonal periodicity is correctly inherited."""
+    atom = ATOMForecaster(y_fc, sp=[12, 24], verbose=2, random_state=1)
+    atom.run(
+        models=["bats", "tbats"],
+        est_params={
+            "bats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
+            "tbats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
+        },
+    )
+    assert atom.bats.estimator.get_params()["sp"] == 12  # Single seasonality
+    assert atom.tbats.estimator.get_params()["sp"] == [12, 24]  # Multiple seasonality
 
 
 # Test _get_est_class ============================================== >>

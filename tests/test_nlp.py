@@ -200,7 +200,7 @@ def test_gpu():
 def test_return_sparse():
     """Assert that the output is sparse."""
     X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text, y10)
-    assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
+    assert all(isinstance(dtype, pd.SparseDtype) for dtype in X.dtypes)
 
 
 def test_error_sparse_with_dense():
@@ -226,4 +226,4 @@ def test_sparse_with_dense():
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(test_func)
     atom.vectorize(strategy="bow", return_sparse=False)
-    assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
+    assert not any(isinstance(dtype, pd.SparseDtype) for dtype in atom.dtypes)

@@ -232,6 +232,7 @@ nav:
         - Pipeline:
             - Pipeline: API/pipeline/pipeline.md
         - Plots:
+            - plot_bootstrap: API/plots/plot_bootstrap.md
             - plot_calibration: API/plots/plot_calibration.md
             - plot_components: API/plots/plot_components.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
@@ -285,6 +286,7 @@ nav:
         - Advanced plotting: examples/advanced_plotting.ipynb
         - Automated feature scaling: examples/automated_feature_scaling.ipynb
         - Binary classification: examples/binary_classification.ipynb
+        - Bootstrapping: examples/bootstrapping.ipynb
         - Calibration: examples/calibration.ipynb
         - Deep learning: examples/deep_learning.ipynb
         - Ensembles: examples/ensembles.ipynb

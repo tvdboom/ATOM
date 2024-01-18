@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import random
+import re
 import tempfile
 import warnings
 from collections.abc import Hashable
@@ -31,16 +32,14 @@ from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
 from ray.util.joblib import register_ray
-from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_memory
 
-from atom.utils.constants import SHARED_PARAMS
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, Estimator, Int, IntLargerEqualZero,
     Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
     bool_t, dataframe_t, int_t, sequence_t,
 )
-from atom.utils.utils import crash, flt, lst, n_cols, sign, to_df, to_pandas
+from atom.utils.utils import crash, flt, lst, n_cols, to_df, to_pandas
 
 
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
@@ -354,20 +353,21 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _inherit(self, obj: T_Estimator) -> T_Estimator:
+    def _inherit(self, obj: T_Estimator, fixed: tuple[str, ...] = ()) -> T_Estimator:
         """Inherit parameters from parent.
 
         Utility method to set the sp (seasonal period), n_jobs and
         random_state parameters of an estimator (if available) equal
         to that of this instance. If `obj` is a meta-estimator, it
-        also sets the parameters to the base estimator. Note that
-        the parameters are only changed when the value is equal to
-        the constructor's default value.
+        also adjusts the parameters of the base estimator.
 
         Parameters
         ----------
         obj: Estimator
             Instance for which to change the parameters.
+
+        fixed: tuple of str, default=()
+            Fixed parameters that should not be overriden.
 
         Returns
         -------
@@ -375,15 +375,12 @@ class BaseTransformer:
             Same object with changed parameters.
 
         """
-        signature = sign(obj.__class__)
-        for p, value in obj.get_params().items():
-            if p in SHARED_PARAMS and (p not in signature or value == signature[p]._default):
-                # Some estimators like XGB use kwargs, so param
-                # isn't in signature. In that case, always override
-                obj.set_params(**{p: getattr(self, p)})
-            elif isinstance(value, BaseEstimator):
-                obj.set_params(**{p: self._inherit(value)})
-            elif p == "sp" and hasattr(self, "_config") and self._config.sp:
+        for p in obj.get_params():
+            if p in fixed:
+                continue
+            elif match := re.search("(n_jobs|random_state)$|__\1$", p):
+                obj.set_params(**{p: getattr(self, match.group())})
+            elif re.search(r"sp$|__sp$", p) and hasattr(self, "_config") and self._config.sp:
                 if self.multiple_seasonality:
                     obj.set_params(**{p: self._config.sp})
                 else:

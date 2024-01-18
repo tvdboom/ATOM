@@ -38,8 +38,8 @@ from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
-    MetricSelector, Model, ModelsSelector, RowSelector, Scalar, Sequence,
-    TargetSelector, TargetsSelector, XSelector, index_t,
+    MetricSelector, ModelsSelector, RowSelector, Sequence, TargetSelector,
+    TargetsSelector, XSelector, index_t,
 )
 from atom.utils.utils import (
     Task, bk, check_canvas, check_dependency, check_empty, check_predict_proba,
@@ -58,6 +58,172 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     becomes unavailable.
 
     """
+
+    @crash
+    def plot_bootstrap(
+        self,
+        models: ModelsSelector = None,
+        metric: MetricSelector = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "lower right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the [bootstrapping][] scores.
+
+        If all models applied bootstrap, it shows a boxplot of the
+        results. If only some models applied bootstrap, the plot is
+        a barplot, where the standard deviation of the bootstrapped
+        results is shown as a black line on top of the bar. Models
+        are ordered based on their score from the top down.
+
+        !!! tip
+            Use the [plot_results][] method to compare the model's
+            scores on any metric.
+
+        Parameters
+        ----------
+        models: int, str, Model, segment, sequence or None, default=None
+            Models to plot. If None, all models are selected.
+
+        metric: int, str, sequence or None, default=None
+            Metric to plot. Use a sequence or add `+` between options
+            to select more than one. If None, the metric used to run
+            the pipeline is selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of models.
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_learning_curve
+        atom.plots:PredictionPlot.plot_results
+        atom.plots:PredictionPlot.plot_threshold
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier
+        from sklearn.datasets import make_classification
+
+        X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run(["GNB", "LR"], metric=["f1", "recall"], n_bootstrap=5)
+        atom.plot_bootstrap()
+
+        # Add another model without bootstrap
+        atom.run("LDA")
+        atom.plot_bootstrap()
+        ```
+
+        """
+        models_c = self._get_plot_models(models)
+        metric_c = self._get_metric(metric)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        if all(m._bootstrap is None for m in models_c):
+            raise ValueError(
+                "Invalid value for the models parameter. None of the selected models "
+                f"have bootstrap scores, got {models_c}. Run bootstrap through the "
+                "run method,e.g., atom.run(models=['LR', 'LDA'], n_bootstrap=5)."
+            )
+
+        for met in metric_c:
+            if any(m._bootstrap is None for m in models_c):
+                fig.add_trace(
+                    go.Bar(
+                        x=[m._best_score(met) for m in models_c],
+                        y=[m.name for m in models_c],
+                        error_x={
+                            "type": "data",
+                            "array": [
+                                0 if m._bootstrap is None else m.bootstrap.loc[:, met].std()
+                                for m in models_c
+                            ],
+                        },
+                        orientation="h",
+                        marker={
+                            "color": f"rgba({BasePlot._fig.get_elem(met)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(met)},
+                        },
+                        hovertemplate="%{x}<extra></extra>",
+                        name=met,
+                        legendgroup=met,
+                        showlegend=BasePlot._fig.showlegend(met, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+            else:
+                fig.add_trace(
+                    go.Box(
+                        x=np.ravel([m.bootstrap.loc[:, met] for m in models_c]),
+                        y=np.ravel([[m.name] * len(m.bootstrap) for m in models_c]),
+                        marker_color=BasePlot._fig.get_elem(met),
+                        boxpoints="outliers",
+                        orientation="h",
+                        name=met,
+                        legendgroup=met,
+                        showlegend=BasePlot._fig.showlegend(met, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"},
+                "bargroupgap": 0.05,
+                "boxmode": "group",
+            }
+        )
+
+        BasePlot._fig.used_models.extend(models_c)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="score",
+            title=title,
+            legend=legend,
+            figsize=figsize or (900, 400 + len(models_c) * 50),
+            plotname="plot_bootstrap",
+            filename=filename,
+            display=display,
+        )
 
     @available_if(has_task("binary"))
     @crash
@@ -2996,6 +3162,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         self,
         models: ModelsSelector = None,
         metric: MetricSelector = None,
+        rows: RowSelector = "test",
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "lower right",
@@ -3003,13 +3170,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         filename: str | Path | None = None,
         display: Bool | None = True,
     ) -> go.Figure | None:
-        """Plot the model results.
+        """Compare metric results of the models.
 
-        If all models applied bootstrap, the plot is a boxplot. If
-        not, the plot is a barplot. Models are ordered based on
-        their score from the top down. The score is either the
-        `[metric]_bootstrap` or `[metric]_test` values, selected
-        in that order.
+        Shows a barplot of the metric scores. Models are ordered based
+        on their score from the top down.
 
         Parameters
         ----------
@@ -3017,10 +3181,17 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             Models to plot. If None, all models are selected.
 
         metric: int, str, sequence or None, default=None
-            Metric to plot (only for multi-metric runs). Other available
-            options are: "time_bo", "time_fit", "time_bootstrap", "time".
-            If str, add `+` between options to select more than one. If
-            None, the metric used to run the pipeline is selected.
+            Metric to plot. Choose from any of sklearn's scorers, a
+            function with signature `metric(y_true, y_pred, **kwargs)`
+            or a scorer object. Use a sequence or add `+` between
+            options to select more than one. If None, the metric used
+            to run the pipeline is selected. Other available options
+            are: "time_bo", "time_fit", "time_bootstrap", "time".
+
+        rows: hashable, segment, sequence or dataframe, default="test"
+            [Selection of rows][row-and-column-selection] on which to
+            calculate the metric. This parameter is ignored if `metric`
+            is a time metric.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3057,7 +3228,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         See Also
         --------
-        atom.plots:PredictionPlot.plot_confusion_matrix
+        atom.plots:PredictionPlot.plot_bootstrap
         atom.plots:PredictionPlot.plot_probabilities
         atom.plots:PredictionPlot.plot_threshold
 
@@ -3070,55 +3241,52 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         X, y = make_classification(n_samples=1000, flip_y=0.2, random_state=1)
 
         atom = ATOMClassifier(X, y, random_state=1)
-        atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"])
+        atom.run(["GNB", "LR"], metric=["f1", "recall"])
         atom.plot_results()
 
-        atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"], n_bootstrap=5)
-        atom.plot_results()
+        # Plot the time it took to fit the models
         atom.plot_results(metric="time_fit+time")
+
+        # Plot a different metric
+        atom.plot_results(metric="accuracy")
+
+        # Plot the results on the training set
+        atom.plot_results(metric="f1", rows="train")
         ```
 
         """
-
-        def get_std(model: Model, metric: str) -> Scalar:
-            """Get the standard deviation of the bootstrap scores.
-
-            Parameters
-            ----------
-            model: Model
-                 Model to get the std from.
-
-            metric: str
-                Name of the metric to get it from.
-
-            Returns
-            -------
-            int or float
-                Standard deviation score. Zero if isn't bootstrapped.
-
-            """
-            if model._bootstrap is None:
-                return 0
-            else:
-                return model.bootstrap.loc[:, metric].std()
-
         models_c = self._get_plot_models(models)
-        metric_c = self._get_metric(metric)
+
+        if metric is None:
+            metric_c = list(self._metric.values())
+        else:
+            metric_c = []
+            for m in lst(metric):
+                if isinstance(m, str):
+                    metric_c.extend(m.split("+"))
+                else:
+                    metric_c.append(m)
+            metric_c = [m if "time" in m else get_custom_scorer(m) for m in metric_c]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for met in metric_c:
-            if "time" in met:
-                color = BasePlot._fig.get_elem(met)
+            if isinstance(met, str):
+                if any(not isinstance(m, str) for m in metric_c):
+                    raise ValueError(
+                        "Invalid value for the metric parameter. Time metrics "
+                        f"can't be mixed with non-time metrics, got {metric_c}."
+                    )
+
                 fig.add_trace(
                     go.Bar(
                         x=[m.results[met] for m in models_c],
                         y=[m.name for m in models_c],
                         orientation="h",
                         marker={
-                            "color": f"rgba({color[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": color},
+                            "color": f"rgba({BasePlot._fig.get_elem(met)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(met)},
                         },
                         hovertemplate=f"%{{x}}<extra>{met}</extra>",
                         name=met,
@@ -3129,60 +3297,35 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     )
                 )
             else:
-                color = BasePlot._fig.get_elem()
-
-                if all(m._bootstrap is not None for m in models_c):
-                    x = np.array([m.bootstrap.loc[:, met] for m in models_c]).ravel()
-                    y = np.array([[m.name] * len(m.bootstrap) for m in models_c]).ravel()
-                    fig.add_trace(
-                        go.Box(
-                            x=x,
-                            y=list(y),
-                            marker_color=color,
-                            boxpoints="outliers",
-                            orientation="h",
-                            name=met,
-                            legendgroup=met,
-                            showlegend=BasePlot._fig.showlegend(met, legend),
-                            xaxis=xaxis,
-                            yaxis=yaxis,
-                        )
+                fig.add_trace(
+                    go.Bar(
+                        x=[m._get_score(met, rows) for m in models_c],
+                        y=[m.name for m in models_c],
+                        orientation="h",
+                        marker={
+                            "color": f"rgba({BasePlot._fig.get_elem(met.name)[4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": BasePlot._fig.get_elem(met.name)},
+                        },
+                        hovertemplate="%{x}<extra></extra>",
+                        name=met.name,
+                        legendgroup=met.name,
+                        showlegend=BasePlot._fig.showlegend(met, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
                     )
-                else:
-                    fig.add_trace(
-                        go.Bar(
-                            x=[m._best_score(met) for m in models_c],
-                            y=[m.name for m in models_c],
-                            error_x={
-                                "type": "data",
-                                "array": [get_std(m, met) for m in models_c],
-                            },
-                            orientation="h",
-                            marker={
-                                "color": f"rgba({color[4:-1]}, 0.2)",
-                                "line": {"width": 2, "color": color},
-                            },
-                            hovertemplate="%{x}<extra></extra>",
-                            name=met,
-                            legendgroup=met,
-                            showlegend=BasePlot._fig.showlegend(met, legend),
-                            xaxis=xaxis,
-                            yaxis=yaxis,
-                        )
-                    )
+                )
 
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"},
                 "bargroupgap": 0.05,
-                "boxmode": "group",
             }
         )
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel="time (s)" if all("time" in m for m in metric_c) else "score",
+            xlabel="time (s)" if isinstance(met, str) else "score",
             title=title,
             legend=legend,
             figsize=figsize or (900, 400 + len(models_c) * 50),
@@ -3502,10 +3645,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         metric: str, func, scorer, sequence or None, default=None
             Metric to plot. Choose from any of sklearn's scorers, a
-            function with signature `metric(y_true, y_pred)`, a scorer
-            object or a sequence of these. Use a sequence or add `+`
-            between options to select more than one. If None, the
-            metric used to run the pipeline is selected.
+            function with signature `metric(y_true, y_pred, **kwargs)`
+            or a scorer object. Use a sequence or add `+` between
+            options to select more than one. If None, the metric used
+            to run the pipeline is selected.
 
         rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] on which to

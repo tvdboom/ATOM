@@ -60,7 +60,7 @@ def test_wrongly_converted_columns_are_ignored():
 def test_datetime_features_are_used():
     """Assert that datetime64 features are used as is."""
     X = to_df(X10_dt)
-    X["x2"] = pd.to_datetime(X["x2"])
+    X["x2"] = pd.to_datetime(X["x2"], dayfirst=True)
 
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X)

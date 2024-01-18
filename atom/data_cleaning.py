@@ -406,14 +406,15 @@ class Balancer(TransformerMixin):
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
                     f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = strategies[self.strategy.lower()](**self.kwargs)
+            est_class = strategies[self.strategy.lower()]
+            estimator = self._inherit(est_class(**self.kwargs), fixed=tuple(self.kwargs))
         elif not hasattr(self.strategy, "fit_resample"):
             raise TypeError(
                 "Invalid type for the strategy parameter. A "
                 "custom estimator must have a fit_resample method."
             )
         elif callable(self.strategy):
-            estimator = self.strategy(**self.kwargs)
+            estimator = self._inherit(self.strategy(**self.kwargs), fixed=tuple(self.kwargs))
         else:
             estimator = self.strategy
 
@@ -425,8 +426,7 @@ class Balancer(TransformerMixin):
         for key, value in self.mapping_.items():
             self._counts[key] = np.sum(y == value)
 
-        # Add n_jobs or random_state if its one of the estimator's parameters
-        self._estimator = self._inherit(estimator).fit(X, y)
+        self._estimator = estimator.fit(X, y)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{estimator.__class__.__name__.lower()}_", self._estimator)

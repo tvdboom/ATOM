@@ -62,7 +62,7 @@ package files for all versions published on PyPI.
 
 ## Usage
 
-[![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/getting_started.ipynb)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tvdboom/ATOM/blob/master/examples/getting_started.ipynb)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD)
 
 ATOM contains a variety of classes and functions to perform data cleaning,
