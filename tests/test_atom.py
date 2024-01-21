@@ -759,6 +759,13 @@ def test_clean():
     assert atom.mapping == {"target": {"n": 0, "y": 1}}
 
 
+def test_decompose():
+    """Assert that the decompose method works."""
+    atom = ATOMForecaster(y_fc, sp=12, random_state=1)
+    atom.decompose(columns=-1)
+    assert atom.dataset.iloc[0, 0] != atom.og.dataset.iloc[0, 0]
+
+
 def test_discretize():
     """Assert that the discretize method bins the numerical columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

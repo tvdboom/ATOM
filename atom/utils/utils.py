@@ -325,6 +325,8 @@ class MetricFunctionWrapper:
     because there is a bug in sktime's evaluate function that passes
     invalid kwargs to the metric function with make_forecasting_scorer.
 
+    # TODO: Remove with new release of sktime
+
     """
 
     def __init__(self, metric):
@@ -2432,11 +2434,19 @@ def fit_one(
                         kwargs["X"] = to_df(yt)[inc]
                     elif params["X"].default != Parameter.empty:
                         kwargs["X"] = params["X"].default  # Fill X with default
-                    else:
+                    elif Xt is None:
                         raise ValueError(
                             "Exception while trying to fit transformer "
                             f"{estimator.__class__.__name__}. Parameter "
                             "X is required but has not been provided."
+                        )
+                    elif Xt.empty:
+                        raise ValueError(
+                            "Exception while trying to fit transformer "
+                            f"{estimator.__class__.__name__}. Parameter X is "
+                            "required but the provided feature set is empty. "
+                            "Use the columns parameter to only transform the "
+                            "target column, e.g., atom.decompose(columns=-1)."
                         )
 
             if "y" in params and yt is not None:
@@ -2542,7 +2552,7 @@ def transform_one(
     kwargs: dict[str, Any] = {}
     inc = list(getattr(transformer, "_cols", getattr(Xt, "columns", [])))
     if "X" in (params := sign(getattr(transformer, method))):
-        if Xt is not None and (not inc or (cols := [c for c in inc if c in Xt])):
+        if Xt is not None and (cols := [c for c in inc if c in Xt]):
             kwargs["X"] = Xt[cols]
 
         # X is required but has not been provided

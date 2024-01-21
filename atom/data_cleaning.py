@@ -38,19 +38,20 @@ from sklearn.base import BaseEstimator, _clone_parametrized
 from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
+from sktime.transformations.series.detrend import Deseasonalizer, Detrender
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
-    Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo, NJobs,
-    NormalizerStrats, NumericalStrats, Pandas, PrunerStrats, Scalar,
-    ScalerStrats, Sequence, Series, Transformer, Verbose, XSelector, YSelector,
-    dataframe_t, sequence_t, series_t,
+    Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo,
+    IntLargerZero, NJobs, NormalizerStrats, NumericalStrats, Pandas, Predictor,
+    PrunerStrats, Scalar, ScalerStrats, Sequence, Series, Transformer, Verbose,
+    XSelector, YSelector, dataframe_t, sequence_t, series_t,
 )
 from atom.utils.utils import (
-    bk, composed, crash, get_col_order, get_cols, it, lst, merge,
+    Goal, bk, composed, crash, get_col_order, get_cols, it, lst, merge,
     method_to_log, n_cols, replace_missing, sign, to_df, to_series,
     variable_return, wrap_methods,
 )
@@ -233,7 +234,7 @@ class Balancer(TransformerMixin):
 
     Parameters
     ----------
-    strategy: str or estimator, default="ADASYN"
+    strategy: str or transformer, default="ADASYN"
         Type of algorithm with which to balance the dataset. Choose
         from the name of any estimator in the imbalanced-learn package
         or provide a custom instance of such.
@@ -371,10 +372,10 @@ class Balancer(TransformerMixin):
             Estimator instance.
 
         """
-        if isinstance(y, dataframe_t):
-            raise ValueError("The Balancer class does not support multioutput tasks.")
-        else:
+        if isinstance(y, series_t):
             self.target_names_in_ = np.array([y.name])
+        else:
+            raise ValueError("The Balancer class does not support multioutput tasks.")
 
         strategies = {
             # clustercentroids=ClusterCentroids,  #  noqa: ERA001 (has no sample_indices_)
@@ -758,7 +759,7 @@ class Cleaner(TransformerMixin):
             if isinstance(y, series_t):
                 self.target_names_in_ = np.array([y.name])
             else:
-                self.target_names_in_ = y.columns.values
+                self.target_names_in_ = y.columns.to_numpy()
 
             if self.drop_chars:
                 if isinstance(y, series_t):
@@ -815,7 +816,7 @@ class Cleaner(TransformerMixin):
         dataframe
             Transformed feature set. Only returned if provided.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
@@ -971,6 +972,245 @@ class Cleaner(TransformerMixin):
             y = yt
 
         return variable_return(X, y)
+
+
+@beartype
+class Decomposer(TransformerMixin):
+    """Detrend and deseasonalize the time series.
+
+    This class does two things:
+
+    - Remove the trend from every column, returning the in-sample
+      residuals of the model's predicted values.
+    - Remove the seasonal component from every column.
+
+    Categorical columns are ignored.
+
+    This class can be accessed from atom through the [decompose]
+    [atomclassifier-decompose] method. Read more in the [user guide]
+    [time-series-decomposition].
+
+    Parameters
+    ----------
+    model: str, predictor or None, default=None
+        The forecasting model to remove the trend with. It must be
+        a model that supports the forecast task. If None,
+        [PolynomialTrend][](degree=1) is used.
+
+    sp: int or None, default=None
+        Seasonality period of the time series. If None, there's no
+        seasonality.
+
+    mode: str, default="additive"
+        Mode of the decomposition. Choose from:
+
+        - "additive": Assumes the components have a linear relation,
+          i.e., y(t) = level + trend + seasonality + noise.
+        - "multiplicative": Assumes the components have a nonlinear
+          relation, i.e., y(t) = level * trend * seasonality * noise.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
+        - If None: Logging isn't used.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    Attributes
+    ----------
+    feature_names_in_: np.ndarray
+        Names of features seen during `fit`.
+
+    n_features_in_: int
+        Number of features seen during `fit`.
+
+    See Also
+    --------
+    atom.data_cleaning:Encoder
+    atom.data_cleaning:Discretizer
+    atom.data_cleaning:Scaler
+
+    Examples
+    --------
+    === "atom"
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        print(atom.y)
+
+        atom.decompose(verbose=2)
+
+        print(atom.y)
+        ```
+
+    === "stand-alone"
+        ```pycon
+        from atom.data_cleaning import Decomposer
+        from sktime.datasets import load_longley
+
+        X, _ = load_longley()
+
+        decomposer = Decomposer(verbose=2)
+        X = decomposer.fit_transform(X)
+
+        print(atom.y)
+        ```
+
+    """
+
+    def __init__(
+        self,
+        *,
+        model: str | Predictor | None = None,
+        sp: IntLargerZero | None = None,
+        mode: Literal["additive", "multiplicative"] = "additive",
+        n_jobs: NJobs = 1,
+        verbose: Verbose = 0,
+        logger: str | Path | Logger | None = None,
+        random_state: IntLargerEqualZero | None = None,
+    ):
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
+        )
+        self.model = model
+        self.sp = sp
+        self.mode = mode
+
+    @composed(crash, method_to_log)
+    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence, dataframe-like or None, default=None
+            Do nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        Self
+            Estimator instance.
+
+        """
+        from atom.models import MODELS
+
+        if isinstance(self.model, str):
+            if self.model in MODELS:
+                model = MODELS[self.model](
+                    goal=Goal.forecast,
+                    **{x: getattr(self, x) for x in BaseTransformer.attrs if hasattr(self, x)},
+                )
+                model.task = Goal.forecast.infer_task(y)
+                forecaster = model._get_est({})
+            else:
+                raise ValueError(
+                    "Invalid value for the model parameter. Unknown "
+                    f"model: {self.model}. Available models are:\n" +
+                    "\n".join(
+                        [
+                            f" --> {m.__name__} ({m.acronym})"
+                            for m in MODELS
+                            if "forecast" in m._estimators
+                        ]
+                    )
+                )
+        elif callable(self.model):
+            forecaster = self._inherit(self.model())
+        else:
+            forecaster = self.model
+
+        self._log("Fitting Decomposer...", 1)
+
+        self._estimators: dict[Hashable, tuple[Transformer, Transformer]] = {}
+        for name, column in X.select_dtypes(include="number").items():
+            trend = Detrender(
+                forecaster=forecaster,
+                model=self.mode,
+            ).fit(column)
+
+            season = Deseasonalizer(
+                sp=self.sp or 1,
+                model=self.mode,
+            ).fit(trend.transform(column))
+
+            self._estimators[name] = (trend, season)
+
+        return self
+
+    @composed(crash, method_to_log)
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+        """Decompose the data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence, dataframe-like or None, default=None
+            Do nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        dataframe
+            Transformed feature set.
+
+        """
+        self._log("Decomposing the data...", 1)
+
+        for col, (trend, season) in self._estimators.items():
+            X[col] = season.transform(trend.transform(X[col]))
+
+        return X
+
+    @composed(crash, method_to_log)
+    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+        """Inversely transform the data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence, dataframe-like or None, default=None
+            Do nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        dataframe
+            Original feature set.
+
+        """
+        self._log("Inversely decomposing the data...", 1)
+
+        for col, (trend, season) in self._estimators.items():
+            X[col] = trend.inverse_transform(season.inverse_transform(X[col]))
+
+        return X
 
 
 @beartype
@@ -1343,7 +1583,7 @@ class Encoder(TransformerMixin):
 
     Parameters
     ----------
-    strategy: str or estimator, default="Target"
+    strategy: str or transformer, default="Target"
         Type of encoding to use for high cardinality features. Choose
         from any of the estimators in the category-encoders package
         or provide a custom one.
@@ -1993,7 +2233,7 @@ class Imputer(TransformerMixin):
         dataframe
             Imputed dataframe.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
@@ -2556,7 +2796,7 @@ class Pruner(TransformerMixin):
         dataframe
             Transformed feature set.
 
-        series
+        series or dataframe
             Transformed target column. Only returned if provided.
 
         """
@@ -2687,7 +2927,8 @@ class Pruner(TransformerMixin):
 class Scaler(TransformerMixin):
     """Scale the data.
 
-    Apply one of sklearn's scalers. Categorical columns are ignored.
+    Apply one of sklearn's scaling strategies. Categorical columns
+    are ignored.
 
     This class can be accessed from atom through the [scale]
     [atomclassifier-scale] method. Read more in the [user guide]

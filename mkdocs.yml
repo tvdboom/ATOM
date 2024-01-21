@@ -147,6 +147,7 @@ nav:
         - Data cleaning:
             - Balancer: API/data_cleaning/balancer.md
             - Cleaner: API/data_cleaning/cleaner.md
+            - Decomposer: API/data_cleaning/decomposer.md
             - Discretizer: API/data_cleaning/discretizer.md
             - Encoder: API/data_cleaning/encoder.md
             - Imputer: API/data_cleaning/imputer.md

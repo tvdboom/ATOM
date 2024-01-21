@@ -90,9 +90,7 @@ class AdaBoost(BaseModel):
             "learning_rate": Float(0.01, 10, log=True),
         }
 
-        if self._goal is Goal.classification:
-            dist["algorithm"] = Cat(["SAMME.R", "SAMME"])
-        else:
+        if self._goal is Goal.regression:
             dist["loss"] = Cat(["linear", "square", "exponential"])
 
         return dist

@@ -24,7 +24,6 @@ from atom.models.ts import (
     Croston, DynamicFactor, ExponentialSmoothing, NaiveForecaster,
     PolynomialTrend, Prophet, Theta,
 )
-from atom.utils.types import Predictor
 from atom.utils.utils import ClassMap
 
 

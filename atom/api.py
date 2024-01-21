@@ -458,7 +458,7 @@ class ATOMForecaster(ATOM):
 
         - If None: No seasonal period.
         - If int: Seasonal period, e.g., 7 for weekly data, and 12 for
-          monthly data.
+          monthly data. The value must be >=2.
         - If str:
 
             - Seasonal period provided as [PeriodAlias][], e.g., "M" for

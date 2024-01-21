@@ -30,6 +30,7 @@ class Stacking(BaseModel):
     handles_missing = False
     needs_scaling = False
     validation = None
+    multiple_seasonality = False
     native_multilabel = False
     native_multioutput = False
     supports_engines = ("sklearn",)
@@ -85,6 +86,7 @@ class Voting(BaseModel):
     handles_missing = False
     needs_scaling = False
     validation = None
+    multiple_seasonality = False
     native_multilabel = False
     native_multioutput = False
     supports_engines = ("sklearn",)

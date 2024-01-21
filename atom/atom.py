@@ -34,8 +34,8 @@ from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch, BranchManager
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
-    Scaler, TransformerMixin,
+    Balancer, Cleaner, Decomposer, Discretizer, Encoder, Imputer, Normalizer,
+    Pruner, Scaler, TransformerMixin,
 )
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
@@ -55,10 +55,10 @@ from atom.utils.types import (
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
-    NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Sequence, Series, TargetSelector,
-    Transformer, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
-    sequence_t,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
+    Series, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
+    XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -97,7 +97,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector = -1,
         index: IndexSelector = False,
         ignore: ColumnSelector | None = None,
-        sp: Int | str | Sequence[Int | str] | None = None,
+        sp: Seasonality = None,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
         n_rows: Scalar = 1,
@@ -1273,8 +1273,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             if self.memory.location is not None:
                 if fit._is_in_cache_and_valid([*fit._get_output_identifiers(**kwargs)]):
                     self._log(
-                        "Retrieving cached results for "
-                        f"{transformer_c.__class__.__name__}...", 1
+                        f"Retrieving cached results for {transformer_c.__class__.__name__}...", 1
                     )
 
             transformer_c = fit(**kwargs)
@@ -1561,6 +1560,46 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self.branch._mapping.update(cleaner.mapping_)
 
     @composed(crash, method_to_log)
+    def decompose(
+        self,
+        *,
+        model: str | Predictor | None = None,
+        mode: Literal["additive", "multiplicative"] = "additive",
+        **kwargs,
+    ):
+        """Detrend and deseasonalize the time series.
+
+        This class does two things:
+
+        - Remove the trend from every column, returning the in-sample
+          residuals of the model's predicted values.
+        - Remove the seasonal component from every column.
+
+        Categorical columns are ignored.
+
+        See the [Decomposer][] class for a description of the parameters.
+        ATOM automatically injects the `sp` parameter.
+
+        !!! tip
+            * Use the `columns` parameter to only decompose the target
+              column, e.g., `atom.decompose(columns=atom.target)`.
+            * Use the [plot_decomposition][] method to visualize the
+              trend, seasonality and residuals of the time series. This
+              can help to determine if the data follows an additive or
+              multiplicative trend.
+
+        """
+        columns = kwargs.pop("columns", None)
+        decomposer = Decomposer(
+            model=model,
+            sp=lst(self.sp)[0],
+            mode=mode,
+            **self._prepare_kwargs(kwargs, sign(Decomposer)),
+        )
+
+        self._add_transformer(decomposer, columns=columns)
+
+    @composed(crash, method_to_log)
     def discretize(
         self,
         strategy: DiscretizerStrats = "quantile",
@@ -1754,7 +1793,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     ):
         """Scale the data.
 
-        Apply one of sklearn's scalers. Categorical columns are ignored.
+        Apply one of sklearn's scaling strategies. Categorical columns
+        are ignored.
 
         See the [Scaler][] class for a description of the parameters.
 

@@ -244,7 +244,7 @@ FeatureSelectionStrats: TypeAlias = Literal[
 FeatureSelectionSolvers: TypeAlias = (
     str
     | Callable[..., tuple[Sequence[Scalar], Sequence[Scalar]]]  # e.g., f_classif
-    | Estimator
+    | Predictor
     | None
 )
 

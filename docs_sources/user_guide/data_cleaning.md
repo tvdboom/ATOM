@@ -52,6 +52,24 @@ choose which transformations to perform. The available steps are:
 
 <br>
 
+## Time series decomposition
+
+Time series decomposition involves thinking of a series as a combination
+of level, trend, seasonality, and noise components, each representing one
+of the underlying categories of patterns. Decomposing the series is a
+statistical task that deconstructs the data, leaving some components to
+model them in isolation.
+
+Use the [Decomposer][] class to remove trend and seasonality. It can be
+accessed from atom through the [decompose][atomclassifier-decompose] method.
+
+!!! tip
+    Use the [plot_decomposition][] method to visualize the trend,
+    seasonality and residuals of the time series. This can help to determine
+    if the data follows an additive or multiplicative trend.
+
+<br>
+
 ## Binning numerical features
 
 Discretization (otherwise known as quantization or binning) provides

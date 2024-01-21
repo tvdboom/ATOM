@@ -245,11 +245,18 @@ def test_goal_attribute():
     assert selector._estimator.estimator.__class__.__name__.endswith("Regressor")
 
 
-def test_solver_parameter_invalid_value():
-    """Assert that an error is raised when solver is unknown."""
-    selector = FeatureSelector(strategy="rfe", solver="invalid")
+def test_sfm_invalid_solver():
+    """Assert that an error is raised when solver is invalid."""
+    selector = FeatureSelector(strategy="sfm", solver="invalid_class", n_features=5)
     with pytest.raises(ValueError, match=".*Unknown model.*"):
-        selector.fit(X_reg, y_reg)
+        selector.fit_transform(X_bin, y_bin)
+
+
+def test_sfm_invalid_solver_no_task():
+    """Assert that an error is raised when solver is invalid."""
+    selector = FeatureSelector(strategy="sfm", solver="RF")
+    with pytest.raises(ValueError, match=".*must be followed by '_class'.*"):
+        selector.fit_transform(X_bin, y_bin)
 
 
 def test_kwargs_but_no_strategy():
@@ -382,13 +389,6 @@ def test_sfm_strategy_not_threshold():
     assert X.shape[1] == 16
 
 
-def test_sfm_invalid_solver():
-    """Assert that an error is raised when solver is invalid."""
-    selector = FeatureSelector(strategy="sfm", solver="invalid", n_features=5)
-    with pytest.raises(ValueError, match=".*Unknown model.*"):
-        selector.fit_transform(X_bin, y_bin)
-
-
 def test_sfm_strategy_fitted_solver():
     """Assert that the sfm strategy works when the solver is already fitted."""
     selector = FeatureSelector(
@@ -465,10 +465,10 @@ def test_rfecv_strategy_before_pipeline_regression():
 
 
 def test_kwargs_parameter_threshold():
-    """Assert that the kwargs parameter works as intended (add threshold)."""
+    """Assert that the kwargs parameter works as intended."""
     selector = FeatureSelector(
         strategy="sfm",
-        solver=DecisionTreeClassifier(random_state=1),
+        solver=DecisionTreeClassifier,
         n_features=3,
         threshold="mean",
         random_state=1,

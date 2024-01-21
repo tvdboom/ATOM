@@ -88,6 +88,9 @@ with pyarrow, which atom uses when specifying the pyarrow data engine.
 The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement for
 pandas, that uses [Ray](https://www.ray.io/) as backend.
 
+!!! warning
+    The modin backend is not compatible with [forecast][time-series] tasks.
+
 
 ## Estimator acceleration
 

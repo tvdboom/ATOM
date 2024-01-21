@@ -34,7 +34,6 @@ from zoofs import (
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
-from atom.models import MODELS
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
@@ -820,7 +819,7 @@ class FeatureSelector(TransformerMixin):
         - "[dfo][]": Dragonfly Optimization.
         - "[go][]": Genetic Optimization.
 
-    solver: str, func, estimator or None, default=None
+    solver: str, func, predictor or None, default=None
         Solver/estimator to use for the feature selection strategy. See
         the corresponding documentation for an extended description of
         the choices. If None, the default value is used (only if
@@ -972,7 +971,7 @@ class FeatureSelector(TransformerMixin):
         number generator is the `RandomState` used by `np.random`.
 
     **kwargs
-        Any extra keyword argument for the strategy estimator. See the
+        Any extra keyword argument for the `strategy` estimator. See the
         corresponding documentation for the available options.
 
     Attributes
@@ -1099,6 +1098,7 @@ class FeatureSelector(TransformerMixin):
             Estimator instance.
 
         """
+        from atom.models import MODELS
 
         def check_y():
             """For some strategies, y needs to be provided."""
@@ -1157,7 +1157,11 @@ class FeatureSelector(TransformerMixin):
                         goal = Goal.regression
                         solver = self.solver[:-4]
                     else:
-                        solver = self.solver
+                        raise ValueError(
+                            "Invalid value for the solver parameter. The name of the model "
+                            "must be followed by '_class' or '_reg' to specify the task, e.g.,"
+                            "solver='RF_class'."
+                        )
 
                     # Get estimator from predefined models
                     if solver in MODELS:
@@ -1174,9 +1178,17 @@ class FeatureSelector(TransformerMixin):
                     else:
                         raise ValueError(
                             "Invalid value for the solver parameter. Unknown "
-                            f"model: {solver}. Available model are:\n" +
-                            "\n".join([f" --> {m.__name__} ({m.acronym})" for m in MODELS])
+                            f"model: {solver}. Available models are:\n" +
+                            "\n".join(
+                                [
+                                    f" --> {m.__name__} ({m.acronym})"
+                                    for m in MODELS
+                                    if goal.name in m._estimators
+                                ]
+                            )
                         )
+                elif callable(self.solver):
+                    solver = self._inherit(self.solver())  # type: ignore[type-var, assignment]
                 else:
                     solver = self.solver
 

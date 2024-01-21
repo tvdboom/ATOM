@@ -206,16 +206,23 @@ for each sample.
 Multivariate is the multioutput task for forecasting. In this case, we
 try to forecast more than one time series at the same time.
 
-Although all forecasting models in ATOM support multioutput tasks, we
-differentiate two types of models:
+Although all forecasting models in ATOM support multioutput tasks (thus
+have the `native multioutput=True` flag), we still differentiate two types
+of models:
 
-* The "native multioutput" models apply forecasts where every prediction
+* The "genuine multioutput" models apply forecasts where every prediction
   of endogenous (`y`) variables will depend on values of the other target
   columns.
 * The rest of the models apply an estimator per column, meaning that forecasts
   will be made per endogenous variable, and not be affected by other variables.
   To access the column-wise estimators, use the estimator's `forecasters_`
   parameter, which stores the fitted forecasters in a dataframe.
+
+!!! tip
+    Use sktime's `get_tags()` method to check if an estimator is "genuine
+    multioutput", e.g. `atom.tbats.estimator.get_tags()`. Search for the
+    `scitype:y` key in the response. If the value is 'univariate', the
+    estimator is genuine multioutput, and if 'multivariate', it isn't.
 
 Read more about time series tasks [here][time-series].
 

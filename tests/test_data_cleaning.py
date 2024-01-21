@@ -13,15 +13,16 @@ from imblearn.combine import SMOTETomek
 from pandas.testing import assert_frame_equal, assert_series_equal
 from sklearn.base import clone
 from sklearn.preprocessing import StandardScaler
+from sktime.forecasting.naive import NaiveForecaster
 
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
-    Scaler,
+    Balancer, Cleaner, Decomposer, Discretizer, Encoder, Imputer, Normalizer,
+    Pruner, Scaler,
 )
 from atom.utils.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
-    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
+    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_ex, X_idx, y10,
     y10_label, y10_nan, y10_str, y_bin, y_class, y_idx, y_multiclass,
 )
 
@@ -254,6 +255,27 @@ def test_cleaner_target_mapping_binary():
     """Assert that the mapping attribute is set for binary tasks."""
     cleaner = Cleaner().fit(y=y10_str)
     assert cleaner.mapping_ == {"target": {"n": 0, "y": 1}}
+
+
+# Test Decomposer ================================================== >>
+
+def test_decomposer_invalid_model():
+    """Assert that an error is raised when model is invalid."""
+    with pytest.raises(ValueError, match=".*value for the model.*"):
+        Decomposer(model="invalid").fit(X_ex)
+
+
+@pytest.mark.parametrize("model", ["croston", NaiveForecaster, NaiveForecaster()])
+def test_decomposer_custom_model(model):
+    """Assert that the decomposer works with multiple model inputs."""
+    composer = Decomposer(model=model).fit(X_ex)
+    assert composer.transform(X_ex).shape == X_ex.shape
+
+
+def test_decomposer_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    composer = Decomposer().fit(X_ex)
+    assert_frame_equal(X_ex, composer.inverse_transform(composer.transform(X_ex)))
 
 
 # Test Discretizer ================================================= >>

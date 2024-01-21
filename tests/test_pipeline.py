@@ -78,8 +78,15 @@ def test_transform_only_X_or_y():
 def test_X_is_required_and_not_provided():
     """Assert that an error is raised when the transformer requires features."""
     pl = Pipeline(steps=[("scaler", StandardScaler())])
-    with pytest.raises(ValueError, match=".*X is required.*"):
+    with pytest.raises(ValueError, match=".*X is required but has not been provided.*"):
         pl.fit()  # StandardScaler.fit requires X
+
+
+def test_X_is_required_but_provided_empty():
+    """Assert that an error is raised when the transformer requires features."""
+    pl = Pipeline(steps=[("scaler", StandardScaler())])
+    with pytest.raises(ValueError, match=".*the provided feature set is empty.*"):
+        pl.fit(pd.DataFrame())
 
 
 def test_fit_transform(pipeline):

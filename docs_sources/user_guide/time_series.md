@@ -36,7 +36,8 @@ Add seasonality to atom using the [`sp`][atomforecaster-sp] parameter. You can
 add a single value for single seasonality or a sequence of values for multiple
 seasonalities. If you don't know the seasonality a priori, you can use the
 [`get_seasonal_period`][atomforecaster-get_seasonal_period] method to
-automatically detect the seasonality, e.g. `#!python atom.sp = atom.get_seasonal_period()`.
+automatically detect the seasonality, e.g. `#!python atom.sp = atom.get_seasonal_period()`
+or directly from the constructor `#!python atom = ATOMForecaster(y, sp="infer")`.
 
 The majority of models only support one seasonal period. If more than one period
 is defined, such models only use the first one. Read [here][model-selection] how
@@ -87,4 +88,4 @@ created:
 
 !!! warning
     Regressor forecasters do not support in-sample predictions. Scores on the
-    training set return `NaN`.
+    training set always return `NaN`.
