@@ -47,7 +47,7 @@ from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import _print_elapsed_time
+from sklearn.utils import Bunch, _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
@@ -2409,7 +2409,7 @@ def fit_one(
         Short message. If None, nothing will be printed.
 
     **fit_params
-        Additional keyword arguments for the fit method.
+        Additional keyword arguments passed to the `fit` method.
 
     Returns
     -------
@@ -2464,6 +2464,7 @@ def transform_one(
     X: XConstructor | None = None,
     y: YConstructor | None = None,
     method: Literal["transform", "inverse_transform"] = "transform",
+    **transform_params,
 ) -> tuple[DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
 
@@ -2488,6 +2489,9 @@ def transform_one(
 
     method: str, default="transform"
         Method to apply: transform or inverse_transform.
+
+    **transform_params
+        Additional keyword arguments passed to the method.
 
     Returns
     -------
@@ -2570,7 +2574,7 @@ def transform_one(
         elif "X" not in params:
             return Xt, yt  # If y is None and no X in transformer, skip the transformer
 
-    out: TReturns = getattr(transformer, method)(**kwargs)
+    out: TReturns = getattr(transformer, method)(**kwargs, **transform_params)
 
     # Transform can return X, y or both
     if isinstance(out, tuple):
@@ -2603,10 +2607,10 @@ def transform_one(
 
 def fit_transform_one(
     transformer: Transformer,
-    X: XConstructor | None = None,
-    y: YConstructor | None = None,
+    X: XConstructor | None,
+    y: YConstructor | None,
+    routed_params: Bunch,
     message: str | None = None,
-    **fit_params,
 ) -> tuple[DataFrame | None, Series | None, Transformer]:
     """Fit and transform the data using one estimator.
 
@@ -2615,11 +2619,11 @@ def fit_transform_one(
     transformer: Transformer
         Instance to fit.
 
-    X: dataframe-like or None, default=None
+    X: dataframe-like or None
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence, dataframe or None, default=None
+    y: int, str, dict, sequence, dataframe or None
         Target column corresponding to `X`.
 
         - If None: y is ignored.
@@ -2629,11 +2633,11 @@ def fit_transform_one(
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
-    message: str or None
-        Short message. If None, nothing will be printed.
+    routed_params: Bunch
+        Routed parmeters for the `fit` and `transform` methods.
 
-    **fit_params
-        Additional keyword arguments for the fit method.
+    message: str or None, default=None
+        Short message. If None, nothing will be printed.
 
     Returns
     -------
@@ -2647,8 +2651,8 @@ def fit_transform_one(
         Fitted transformer.
 
     """
-    fit_one(transformer, X, y, message, **fit_params)
-    X, y = transform_one(transformer, X, y)
+    fit_one(transformer, X, y, message, **routed_params.fit)
+    X, y = transform_one(transformer, X, y, **routed_params.transform)
 
     return X, y, transformer
 
