@@ -50,6 +50,7 @@ from sklearn.multioutput import (
 )
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
+from sklearn.utils.validation import _check_response_method
 from sktime.forecasting.base import ForecastingHorizon
 from sktime.forecasting.compose import make_reduction
 from sktime.forecasting.model_evaluation import evaluate
@@ -643,7 +644,7 @@ class BaseModel(RunnerPlot):
         self,
         rows: RowSelector,
         target: TargetSelector | None = None,
-        attr: PredictionMethods | Literal["thresh"] = "predict",
+        method: PredictionMethods | Sequence[PredictionMethods] = "predict",
     ) -> tuple[Pandas, Pandas]:
         """Get the true and predicted values for a column.
 
@@ -661,9 +662,10 @@ class BaseModel(RunnerPlot):
             Target column to look at. Only for [multioutput tasks][].
             If None, all columns are returned.
 
-        attr: str, default="predict"
-            Method used to get predictions. Use "thresh" to get
-            `decision_function` or `predict_proba` in that order.
+        method: str or sequence, default="predict"
+            Response method(s) used to get predictions. If sequence,
+            the order provided states the order in which the methods
+            are tried.
 
         Returns
         -------
@@ -674,12 +676,7 @@ class BaseModel(RunnerPlot):
             Predicted values.
 
         """
-        # Select method to use for predictions
-        if attr == "thresh":
-            for attribute in PredictionMethods.__args__:
-                if hasattr(self.estimator, attribute):
-                    attr = attribute
-                    break
+        method_caller = _check_response_method(self.estimator, method).__name__
 
         X, y = self.branch._get_rows(rows, return_X_y=True)
 
@@ -695,11 +692,16 @@ class BaseModel(RunnerPlot):
                 self.estimator.get_tags().get("capability:insample")
                 and (not self.estimator.get_tags()["requires-fh-in-fit"] or rows == "test")
             ):
-                y_pred = self._prediction(fh=X.index, X=check_empty(X), verbose=0, method=attr)
+                y_pred = self._prediction(
+                    fh=X.index,
+                    X=check_empty(X),
+                    verbose=0,
+                    method=method_caller,
+                )
             else:
                 y_pred = bk.Series([np.NaN] * len(X), index=X.index)
         else:
-            y_pred = self._prediction(X.index, verbose=0, method=attr)
+            y_pred = self._prediction(X.index, verbose=0, method=method_caller)
 
         if self.task.is_multioutput:
             if target is not None:
@@ -843,21 +845,21 @@ class BaseModel(RunnerPlot):
             Metric score on the selected data set.
 
         """
-        if scorer.__class__.__name__ == "_ThresholdScorer":
-            y_true, y_pred = self._get_pred(rows, attr="thresh")
-        elif scorer.__class__.__name__ == "_ProbaScorer":
-            y_true, y_pred = self._get_pred(rows, attr="predict_proba")
-        else:
-            if threshold and self.task.is_binary and hasattr(self, "predict_proba"):
-                y_true, y_pred = self._get_pred(rows, attr="predict_proba")
-                if isinstance(y_pred, dataframe_t):
-                    # Update every target column with its corresponding threshold
-                    for i, value in enumerate(threshold):
-                        y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
-                else:
-                    y_pred = (y_pred > threshold[0]).astype("int")
+        if (
+            scorer._response_method == "predict"
+            and threshold
+            and self.task.is_binary
+            and hasattr(self.estimator, "predict_proba")
+        ):
+            y_true, y_pred = self._get_pred(rows, method="predict_proba")
+            if isinstance(y_pred, dataframe_t):
+                # Update every target column with its corresponding threshold
+                for i, value in enumerate(threshold):
+                    y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
             else:
-                y_true, y_pred = self._get_pred(rows, attr="predict")
+                y_pred = (y_pred > threshold[0]).astype("int")
+        else:
+            y_true, y_pred = self._get_pred(rows, method=scorer._response_method)
 
         kwargs = {}
         if "sample_weight" in sign(scorer._score_func):
@@ -2917,7 +2919,7 @@ class ClassRegModel:
             metric for [multi-metric runs][]).
 
         sample_weight: sequence or None, default=None
-            Sample weights corresponding to y.
+            Sample weights corresponding to `y`.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If

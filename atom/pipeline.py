@@ -90,7 +90,9 @@ class Pipeline(SkPipeline):
     verbose: int or None, default=0
         Verbosity level of the transformers in the pipeline. If None,
         it leaves them to their original verbosity. If >0, the time
-        elapsed while fitting each step is printed.
+        elapsed while fitting each step is printed. Note this is not
+        the same as sklearn's `verbose` parameter. Use the pipeline's
+        verbose attribute to modify that one (defaults to False).
 
     Attributes
     ----------
@@ -128,9 +130,9 @@ class Pipeline(SkPipeline):
     # Train models
     atom.run(models="LR")
 
-    # Get the pipeline and make predictions
-    pl = atom.lr.export_pipeline()
-    print(pl.predict(X))
+    # Get the pipeline object
+    pipeline = atom.lr.export_pipeline()
+    print(pipeline)
     ``
 
     """
@@ -224,7 +226,7 @@ class Pipeline(SkPipeline):
         *,
         with_final: Bool = True,
         filter_passthrough: Bool = True,
-        filter_train_only: Bool = True,
+        filter_train_only: Bool = False,
     ) -> Iterator[tuple[int, str, Estimator]]:
         """Generate (idx, name, estimator) tuples from self.steps.
 
@@ -239,7 +241,7 @@ class Pipeline(SkPipeline):
         filter_passthrough: bool, default=True
             Whether to exclude `passthrough` elements.
 
-        filter_passthrough: bool, default=True
+        filter_train_only: bool, default=False
             Whether to exclude estimators that should only be used for
             training (have the `_train_only` attribute).
 
@@ -293,9 +295,7 @@ class Pipeline(SkPipeline):
         self.steps: list[tuple[str, Estimator]] = list(self.steps)
         self._validate_steps()
 
-        for step, name, transformer in self._iter(
-            with_final=False, filter_passthrough=False, filter_train_only=False
-        ):
+        for step, name, transformer in self._iter(with_final=False, filter_passthrough=False):
             if transformer is None or transformer == "passthrough":
                 with _print_elapsed_time("Pipeline", self._log_message(step)):
                     continue
@@ -351,17 +351,9 @@ class Pipeline(SkPipeline):
             Target column corresponding to `X`.
 
         **params
-            - If `enable_metadata_routing=False` (default):
-
-                Parameters passed to the `fit` method of each step,
-                where each parameter name is prefixed such that
-                parameter `p` for step `s` has key `s__p`.
-
-            - If `enable_metadata_routing=True`:
-
-                Parameters requested and accepted by steps. Each step
-                must have requested certain metadata for these parameters
-                to be forwarded to them.
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
 
         Returns
         -------
@@ -370,11 +362,12 @@ class Pipeline(SkPipeline):
 
         """
         routed_params = self._check_method_params(method="fit", props=params)
+
         X, y = self._fit(X, y, routed_params)
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator is not None and self._final_estimator != "passthrough":
                 with adjust_verbosity(self._final_estimator, self._verbose):
-                    self._final_estimator.fit(X, y, **routed_params[self.steps[-1][0]]["fit"])
+                    self._final_estimator.fit(X, y, **routed_params[self.steps[-1][0]].fit)
 
         return self
 
@@ -405,17 +398,9 @@ class Pipeline(SkPipeline):
             Target column corresponding to `X`.
 
         **params
-            - If `enable_metadata_routing=False` (default):
-
-                Parameters passed to the `fit` method of each step,
-                where each parameter name is prefixed such that
-                parameter `p` for step `s` has key `s__p`.
-
-            - If `enable_metadata_routing=True`:
-
-                Parameters requested and accepted by steps. Each step
-                must have requested certain metadata for these parameters
-                to be forwarded to them.
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
 
         Returns
         -------
@@ -449,6 +434,8 @@ class Pipeline(SkPipeline):
         self,
         X: XConstructor | None = None,
         y: YConstructor | None = None,
+        *,
+        filter_train_only: Bool = True,
         **params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Transform the data.
@@ -468,6 +455,10 @@ class Pipeline(SkPipeline):
 
         y: dict, sequence, dataframe or None, default=None
             Target column corresponding to `X`.
+
+        filter_train_only: bool, default=True
+            Whether to exclude transformers that should only be used
+            on the training set.
 
         **params
             Parameters requested and accepted by steps. Each step must
@@ -489,7 +480,7 @@ class Pipeline(SkPipeline):
         _raise_for_params(params, self, "transform")
 
         routed_params = process_routing(self, "transform", **params)
-        for _, name, transformer in self._iter():
+        for _, name, transformer in self._iter(filter_train_only=filter_train_only):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(
                     transformer=transformer,
@@ -505,6 +496,8 @@ class Pipeline(SkPipeline):
         self,
         X: XConstructor | None = None,
         y: YConstructor | None = None,
+        *,
+        filter_train_only: Bool = True,
         **params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Inverse transform for each step in a reverse order.
@@ -520,6 +513,10 @@ class Pipeline(SkPipeline):
 
         y: dict, sequence, dataframe or None, default=None
             Target column corresponding to `X`.
+
+        filter_train_only: bool, default=True
+            Whether to exclude transformers that should only be used
+            on the training set.
 
         **params
             Parameters requested and accepted by steps. Each step must
@@ -541,7 +538,8 @@ class Pipeline(SkPipeline):
         _raise_for_params(params, self, "inverse_transform")
 
         routed_params = process_routing(self, "inverse_transform", **params)
-        for _, name, transformer in reversed(list(self._iter())):
+        reverse_iter = reversed(list(self._iter(filter_train_only=filter_train_only)))
+        for _, name, transformer in reverse_iter:
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(
                     transformer=transformer,
@@ -554,13 +552,18 @@ class Pipeline(SkPipeline):
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X: XConstructor) -> np.ndarray:
+    def decision_function(self, X: XConstructor, **params) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
+
+        **params
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
 
         Returns
         -------
@@ -571,18 +574,28 @@ class Pipeline(SkPipeline):
             multiclass classification tasks.
 
         """
-        for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
-                X, _ = self._mem_transform(transformer, X)
+        _raise_for_params(params, self, "decision_function")
 
-        return self.steps[-1][1].decision_function(X)
+        routed_params = process_routing(self, "decision_function", **params)
+
+        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+            with adjust_verbosity(transformer, self._verbose):
+                X, _ = self._mem_transform(
+                    transformer=transformer,
+                    X=X,
+                    **routed_params.get(name, {}).get("transform", {}),
+                )
+
+        return self.steps[-1][1].decision_function(
+            X, **routed_params.get(self.steps[-1][0], {}).get("decision_function", {})
+        )
 
     @available_if(_final_estimator_has("predict"))
     def predict(
         self,
         X: XConstructor | None = None,
         fh: FHConstructor | None = None,
-        **predict_params,
+        **params,
     ) -> np.ndarray | Pandas:
         """Transform, then predict of the final estimator.
 
@@ -596,12 +609,14 @@ class Pipeline(SkPipeline):
             The forecasting horizon encoding the time stamps to
             forecast at. Only for [forecast][time-series] tasks.
 
-        **predict_params
-            Additional keyword arguments for the predict method. Note
-            that while this may be used to return uncertainties from
-            some models with return_std or return_cov, uncertainties
-            that are generated by the transformations in the pipeline
-            are not propagated to the final estimator.
+        **params
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them. Note that while this may be used to
+            return uncertainties from some models with `return_std` or
+            `return_cov`, uncertainties that are generated by the
+            transformations in the pipeline are not propagated to the
+            final estimator.
 
         Returns
         -------
@@ -613,17 +628,19 @@ class Pipeline(SkPipeline):
         if X is None and fh is None:
             raise ValueError("X and fh cannot be both None.")
 
-        for _, _, transformer in self._iter(with_final=False):
+        routed_params = process_routing(self, "predict", **params)
+
+        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
-                X, _ = self._mem_transform(transformer, X)
+                X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
         if "fh" in sign(self.steps[-1][1].predict):
             if fh is None:
                 raise ValueError("The fh parameter cannot be None for forecasting estimators.")
 
-            return self.steps[-1][1].predict(fh=fh, X=X, **predict_params)
+            return self.steps[-1][1].predict(fh=fh, X=X)
         else:
-            return self.steps[-1][1].predict(X, **predict_params)
+            return self.steps[-1][1].predict(X, **routed_params[self.steps[-1][0]].predict)
 
     @available_if(_final_estimator_has("predict_interval"))
     def predict_interval(
@@ -653,20 +670,25 @@ class Pipeline(SkPipeline):
             Computed interval forecasts.
 
         """
-        for _, _, transformer in self._iter(with_final=False):
+        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X)
 
         return self.steps[-1][1].predict_interval(fh=fh, X=X, coverage=coverage)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X: XConstructor) -> np.ndarray:
+    def predict_log_proba(self, X: XConstructor, **params) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
+
+        **params
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
 
         Returns
         -------
@@ -675,11 +697,15 @@ class Pipeline(SkPipeline):
             n_classes) or a list of arrays for [multioutput tasks][].
 
         """
-        for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
-                X, _ = self._mem_transform(transformer, X)
+        routed_params = process_routing(self, "predict_log_proba", **params)
 
-        return self.steps[-1][1].predict_log_proba(X)
+        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+            with adjust_verbosity(transformer, self._verbose):
+                X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
+
+        return self.steps[-1][1].predict_log_proba(
+            X, **routed_params[self.steps[-1][0]].predict_log_proba
+        )
 
     @available_if(_final_estimator_has("predict_proba"))
     def predict_proba(
@@ -688,6 +714,7 @@ class Pipeline(SkPipeline):
         fh: FHConstructor | None = None,
         *,
         marginal: Bool = True,
+        **params,
     ) -> list[np.ndarray] | np.ndarray | Normal:
         """Transform, then predict_proba of the final estimator.
 
@@ -705,6 +732,11 @@ class Pipeline(SkPipeline):
             Whether returned distribution is marginal by time index.
             Only for [forecast][time-series] tasks.
 
+        **params
+            Parameters requested and accepted by steps. Each step must
+            have requested certain metadata for these parameters to be
+            forwarded to them.
+
         Returns
         -------
         list, np.ndarray or sktime.proba.[Normal][]
@@ -719,9 +751,11 @@ class Pipeline(SkPipeline):
         if X is None and fh is None:
             raise ValueError("X and fh cannot be both None.")
 
-        for _, _, transformer in self._iter(with_final=False):
+        routed_params = process_routing(self, "predict_proba", **params)
+
+        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
-                X, _ = self._mem_transform(transformer, X)
+                X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
         if "fh" in sign(self.steps[-1][1].predict_proba):
             if fh is None:
@@ -729,7 +763,9 @@ class Pipeline(SkPipeline):
 
             return self.steps[-1][1].predict_proba(fh=fh, X=X, marginal=marginal)
         else:
-            return self.steps[-1][1].predict_proba(X)
+            return self.steps[-1][1].predict_proba(
+                X, **routed_params[self.steps[-1][0]].predict_proba
+            )
 
     @available_if(_final_estimator_has("predict_quantiles"))
     def predict_quantiles(
@@ -760,7 +796,7 @@ class Pipeline(SkPipeline):
             Computed quantile forecasts.
 
         """
-        for _, _, transformer in self._iter(with_final=False):
+        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X)
 
@@ -789,7 +825,7 @@ class Pipeline(SkPipeline):
             n_targets) for [multivariate][] tasks.
 
         """
-        for _, _, transformer in self._iter(with_final=False):
+        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
@@ -824,7 +860,7 @@ class Pipeline(SkPipeline):
             Computed variance forecasts.
 
         """
-        for _, _, transformer in self._iter(with_final=False):
+        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
                 X, _ = self._mem_transform(transformer, X)
 
@@ -838,6 +874,7 @@ class Pipeline(SkPipeline):
         fh: FHConstructor | None = None,
         *,
         sample_weight: Sequence[Scalar] | None = None,
+        **params,
     ) -> Float:
         """Transform, then score of the final estimator.
 
@@ -854,23 +891,27 @@ class Pipeline(SkPipeline):
             The forecasting horizon encoding the time stamps to score.
 
         sample_weight: sequence or None, default=None
-            Sample weights corresponding to y.
+            Sample weights corresponding to `y` passed to the `score`
+            method of the final estimator. If None, no sampling weight
+            is performed.
 
         Returns
         -------
         float
             Mean accuracy, r2 or mape of self.predict(X) with respect
-            to y.
+            to `y` (depending on task).
 
         """
         if X is None and y is None:
             raise ValueError("X and y cannot be both None.")
 
-        for _, _, transformer in self._iter(with_final=False):
+        routed_params = process_routing(self, "score", sample_weight=sample_weight, **params)
+
+        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
             with adjust_verbosity(transformer, self._verbose):
-                X, y = self._mem_transform(transformer, X, y)
+                X, y = self._mem_transform(transformer, X, y, **routed_params[name].transform)
 
         if "fh" in sign(self.steps[-1][1].score):
             return self.steps[-1][1].score(y=y, X=X, fh=fh)
         else:
-            return self.steps[-1][1].score(X, y, sample_weight=sample_weight)
+            return self.steps[-1][1].score(X, y, **routed_params[self.steps[-1][0]].score)

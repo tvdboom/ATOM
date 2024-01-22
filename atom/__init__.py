@@ -12,4 +12,4 @@ from atom.api import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.utils.constants import __version__
 
 
-sklearn.set_config(transform_output="pandas")
+sklearn.set_config(transform_output="pandas", enable_metadata_routing=True)

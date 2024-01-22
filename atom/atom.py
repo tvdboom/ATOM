@@ -1349,7 +1349,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """Add a transformer to the pipeline.
 
         If the transformer is not fitted, it is fitted on the complete
-        training set. Afterwards, the data set is transformed and the
+        training set. Afterward, the data set is transformed and the
         estimator is added to atom's pipeline. If the estimator is
         a sklearn Pipeline, every estimator is merged independently
         with atom.
@@ -1639,7 +1639,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         max_onehot: IntLargerTwo | None = 10,
         ordinal: dict[str, Sequence[Any]] | None = None,
         infrequent_to_value: FloatLargerZero | None = None,
-        value: str = "rare",
+        value: str = "infrequent",
         **kwargs,
     ):
         """Perform encoding of categorical features.

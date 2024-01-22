@@ -342,7 +342,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             for child, ds in self._get_set(rows):
-                y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
+                y_true, y_pred = m._get_pred(ds, target, method="predict_proba")
 
                 # Get calibration (frac of positives and predicted values)
                 frac_pos, pred = calibration_curve(y_true, y_pred, n_bins=n_bins)
@@ -533,7 +533,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
-            y_true, y_pred = m._get_pred(rows, target_c, attr="predict")
+            y_true, y_pred = m._get_pred(rows, target_c, method="predict")
             if threshold != 0.5:
                 y_pred = (y_pred > threshold).astype(int)
 
@@ -705,7 +705,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             for child, ds in self._get_set(rows):
                 # Get fpr-fnr pairs for different thresholds
-                fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
+                fpr, fnr, _ = det_curve(
+                    *m._get_pred(ds, target, method=("decision_function", "predict_proba"))
+                )
 
                 fig.add_trace(
                     self._draw_line(
@@ -1472,7 +1474,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             for child, ds in self._get_set(rows):
-                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
+                y_true, y_pred = m._get_pred(
+                    ds, target, method=("decision_function", "predict_proba")
+                )
 
                 fig.add_trace(
                     self._draw_line(
@@ -1751,7 +1755,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             for child, ds in self._get_set(rows):
-                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
+                y_true, y_pred = m._get_pred(
+                    ds, target, method=("decision_function", "predict_proba")
+                )
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
                 fig.add_trace(
@@ -2817,7 +2823,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             for child, ds in self._get_set(rows):
-                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
+                y_true, y_pred = m._get_pred(
+                    ds, target, method=("decision_function", "predict_proba")
+                )
 
                 # Get precision-recall pairs for different thresholds
                 prec, rec, _ = precision_recall_curve(y_true, y_pred)
@@ -3429,7 +3437,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             for child, ds in self._get_set(rows):
                 # Get False (True) Positive Rate as arrays
-                fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
+                fpr, tpr, _ = roc_curve(
+                    *m._get_pred(ds, target, method=("decision_function", "predict_proba"))
+                )
 
                 fig.add_trace(
                     self._draw_line(
@@ -3731,7 +3741,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
-            y_true, y_pred = m._get_pred(rows, target, attr="predict_proba")
+            y_true, y_pred = m._get_pred(rows, target, method="predict_proba")
             for met in metric_c:
                 fig.add_trace(
                     self._draw_line(

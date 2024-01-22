@@ -44,7 +44,7 @@ packages are necessary for its correct functioning.
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.7.1)
 * **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.1)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)

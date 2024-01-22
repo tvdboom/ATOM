@@ -22,6 +22,7 @@ from sklearn.utils import shuffle
 from sktime.datasets import load_airline, load_longley
 from sktime.split import temporal_train_test_split
 
+from atom.data_cleaning import TransformerMixin
 from atom.utils.utils import merge, n_cols, to_df, to_pandas
 
 
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
     from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
 
 
-class DummyTransformer(BaseEstimator):
+class DummyTransformer(TransformerMixin, BaseEstimator):
     """Transformer class for testing name keeping of arrays.
 
     Parameters
@@ -49,6 +50,7 @@ class DummyTransformer(BaseEstimator):
     """
 
     def __init__(self, strategy: str):
+        super().__init__(logger=None, verbose=0)
         self.strategy = strategy
 
     def transform(self, X: DataFrame) -> np.ndarray:

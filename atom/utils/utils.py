@@ -413,12 +413,12 @@ class CatBMetric:
             # Convert CatBoost predictions to probabilities
             e = np.exp(approxes[0])
             y_pred = e / (1 + e)
-            if self.scorer.__class__.__name__ == "_PredictScorer":
+            if self.scorer._response_method == "predict":
                 y_pred = (y_pred > 0.5).astype(int)
 
         elif self.task.is_multiclass:
             y_pred = np.array(approxes).T
-            if self.scorer.__class__.__name__ == "_PredictScorer":
+            if self.scorer._response_method == "predict":
                 y_pred = np.argmax(y_pred, axis=1)
 
         else:
@@ -481,7 +481,7 @@ class LGBMetric:
             Whether higher is better.
 
         """
-        if self.scorer.__class__.__name__ == "_PredictScorer":
+        if self.scorer._response_method == "predict":
             if self.task.is_binary:
                 y_pred = (y_pred > 0.5).astype(int)
             elif self.task.is_multiclass:
@@ -536,7 +536,7 @@ class XGBMetric:
             Metric score.
 
         """
-        if self.scorer.__class__.__name__ == "_PredictScorer":
+        if self.scorer._response_method == "predict":
             if self.task.is_binary:
                 y_pred = (y_pred > 0.5).astype(int)
             elif self.task.is_multiclass:
@@ -2634,7 +2634,8 @@ def fit_transform_one(
         - If dataframe: Target columns for multioutput tasks.
 
     routed_params: Bunch
-        Routed parmeters for the `fit` and `transform` methods.
+        Routed parameters for the `fit` method. Note that parameters
+        are never routed to the `transform` method.
 
     message: str or None, default=None
         Short message. If None, nothing will be printed.
@@ -2651,8 +2652,8 @@ def fit_transform_one(
         Fitted transformer.
 
     """
-    fit_one(transformer, X, y, message, **routed_params.fit)
-    X, y = transform_one(transformer, X, y, **routed_params.transform)
+    fit_one(transformer, X, y, message, **routed_params.fit_transform)
+    X, y = transform_one(transformer, X, y)
 
     return X, y, transformer
 
@@ -2814,16 +2815,22 @@ def wrap_methods(f: Callable) -> Callable:
             self._check_feature_names(Xt, reset=True)
             self._check_n_features(Xt, reset=True)
             return f(self, Xt, yt, **kwargs)
+
         else:
             if "TransformerMixin" not in str(self.fit):
                 check_is_fitted(self)
+
             Xt, yt = self._check_input(
                 X=X,
                 y=y,
                 columns=getattr(self, "feature_names_in_", None),
                 name=getattr(self, "target_names_in_", None),
             )
-            return f(self, Xt, yt, **kwargs)
+
+            if "y" in sign(f):
+                return f(self, Xt, yt, **kwargs)
+            else:
+                return f(self, Xt, **kwargs)
 
     return wrapper
 
