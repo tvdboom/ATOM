@@ -364,7 +364,7 @@ dataset in the current branch.
 Many methods in atom contain the `rows` or `columns` parameter to select a
 subset of the dataset. Examples are the [evaluate][atomclassifier-evaluate]
 and [save_data][atomclassifier-save_data] methods for `rows`, and the
-[distribution][atomclassifier-distribution] and [shrink][atomclassifier-shrink]
+[distributions][atomclassifier-distributions] and [shrink][atomclassifier-shrink]
 methods for `columns`. All [data cleaning][] and [feature engineering][] methods
 use the `columns` parameter to apply the transformation only to that selection
 of columns, and all [prediction methods][predicting] use the `rows` parameter

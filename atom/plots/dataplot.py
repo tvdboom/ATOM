@@ -319,7 +319,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
           Only one categorical column can be plotted at the same time.
 
         !!! tip
-            Use atom's [distribution][atomclassifier-distribution]
+            Use atom's [distributions][atomclassifier-distributions]
             method to check which distribution fits the column best.
 
         Parameters

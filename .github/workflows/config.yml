@@ -11,8 +11,6 @@ on:
       - development
 
 jobs:
-  # Run jobs from pre-commit to ensure version equality
-
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -101,6 +99,7 @@ jobs:
           python -m pip install -U pip setuptools
           pip install -U pytest pytest-mock pytest-cov pytest-xdist
           pip install -e .[full]
+          pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
       - name: Run tests w/ coverage
         run: pytest -n=auto --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov

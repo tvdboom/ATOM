@@ -112,7 +112,7 @@ class Pipeline(SkPipeline):
 
     Examples
     --------
-    ``pycon
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -132,7 +132,7 @@ class Pipeline(SkPipeline):
     # Get the pipeline object
     pipeline = atom.lr.export_pipeline()
     print(pipeline)
-    ``
+    ```
 
     """
 

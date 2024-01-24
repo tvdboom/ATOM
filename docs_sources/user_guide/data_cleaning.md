@@ -61,7 +61,7 @@ statistical task that deconstructs the data, leaving some components to
 model them in isolation.
 
 Use the [Decomposer][] class to remove trend and seasonality. It can be
-accessed from atom through the [decompose][atomclassifier-decompose] method.
+accessed from atom through the [decompose][atomforecaster-decompose] method.
 
 !!! tip
     Use the [plot_decomposition][] method to visualize the trend,

@@ -1073,7 +1073,7 @@ class Decomposer(TransformerMixin):
         decomposer = Decomposer(verbose=2)
         X = decomposer.fit_transform(X)
 
-        print(atom.y)
+        print(X)
         ```
 
     """

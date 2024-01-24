@@ -462,11 +462,11 @@ class DynamicFactor(BaseModel):
     --------
     ```pycon
     from atom import ATOMForecaster
-    from sktime.datasets import load_airline
+    from sktime.datasets import load_longley
 
-    y = load_airline()
+    _, X = load_longley()
 
-    atom = ATOMForecaster(y, random_state=1)
+    atom = ATOMForecaster(X, y=(-1, -2), random_state=1)
     atom.run(models="DF", verbose=2)
 
     ```
@@ -1376,6 +1376,9 @@ class VAR(BaseModel):
     the system. This allows for capturing the interdependencies and
     dynamic relationships among the variables over time.
 
+    !!! warning
+        VAR only supports [multivariate][] tasks.
+
     Corresponding estimators are:
 
     - [VAR][varclass] for forecasting tasks.
@@ -1390,11 +1393,11 @@ class VAR(BaseModel):
     --------
     ```pycon
     from atom import ATOMForecaster
-    from sktime.datasets import load_airline
+    from sktime.datasets import load_longley
 
-    y = load_airline()
+    _, X = load_longley()
 
-    atom = ATOMForecaster(y, random_state=1)
+    atom = ATOMForecaster(X, y=(-1, -2), random_state=1)
     atom.run(models="VAR", verbose=2)
     ```
 
@@ -1436,6 +1439,9 @@ class VARMAX(BaseModel):
     interdependencies among multiple time series variables and the
     influence of external factors.
 
+    !!! warning
+        VARMAX only supports [multivariate][] tasks.
+
     Corresponding estimators are:
 
     - [VARMAX][varmaxclass] for forecasting tasks.
@@ -1450,11 +1456,11 @@ class VARMAX(BaseModel):
     --------
     ```pycon
     from atom import ATOMForecaster
-    from sktime.datasets import load_airline
+    from sktime.datasets import load_longley
 
-    y = load_airline()
+    _, X = load_longley()
 
-    atom = ATOMForecaster(y, random_state=1)
+    atom = ATOMForecaster(X, y=(-1, -2), random_state=1)
     atom.run(models="VARMAX", verbose=2)
     ```
 
@@ -1468,7 +1474,7 @@ class VARMAX(BaseModel):
     supports_engines = ("sktime",)
 
     _estimators: ClassVar[dict[str, str]] = {
-        "forecast": "sktime.forecasting.var.VARMAX"
+        "forecast": "sktime.forecasting.varmax.VARMAX"
     }
 
     _order = ("p", "q")

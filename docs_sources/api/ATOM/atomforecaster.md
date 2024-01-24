@@ -143,6 +143,7 @@ of utility methods to handle the data and manage the pipeline.
         - clear
         - delete
         - distributions
+        - decompose
         - eda
         - evaluate
         - export_pipeline

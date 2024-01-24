@@ -18,7 +18,7 @@ from sktime.forecasting.croston import Croston
 from atom import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.pipeline import Pipeline
 
-from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_fc, y_reg
+from .conftest import X_bin, X_class, X_ex, X_reg, y_bin, y_class, y_fc, y_reg
 
 
 def test_custom_model_properties():
@@ -108,16 +108,29 @@ def test_all_models_forecast():
     """Assert that all models work with forecast."""
     atom = ATOMForecaster(y_fc, random_state=1)
     atom.run(
-        models=["!DF", "!MSTL", "!Prophet", "!VAR", "!VARMAX"],
+        models=["!DF", "!VAR", "!VARMAX"],
         n_trials=1,
         est_params={
             "arima": {"maxiter": 5, "method": "nm"},
             "autoarima": {"maxiter": 5, "method": "nm"},
             "bats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
-            # "prophet": {"seasonality_mode": "additive"},  # noqa: ERA001
             "stl": {"seasonal": 3, "seasonal_deg": 0, "low_pass_deg": 0},
             "tbats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
             "ets": {"maxiter": 5},
+        },
+        errors="raise",
+    )
+
+
+def test_all_models_forecast_multivariate():
+    """Assert that all models work with multivariate forecast."""
+    atom = ATOMForecaster(X_ex, y=(-1, -2), verbose=2, random_state=1)
+    atom.run(
+        models=["DF", "VAR", "VARMAX"],
+        n_trials=1,
+        est_params={
+            "df": {"k_factors": 1},
+            "varmax": {"error_cov_type": "diagonal", "method": "nm", "maxiter": 5},
         },
         errors="raise",
     )

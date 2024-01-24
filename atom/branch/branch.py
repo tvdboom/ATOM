@@ -272,7 +272,7 @@ class Branch:
 
     @property
     def pipeline(self) -> Pipeline:
-        """Pipeline of transforms.
+        """Pipeline of transformers.
 
         !!! tip
             Use the [plot_pipeline][] method to visualize the pipeline.

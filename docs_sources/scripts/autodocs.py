@@ -622,10 +622,9 @@ class AutoDocs:
                     elif obj.__class__.__name__ == "cached_property":
                         obj = obj.func
 
-                    # Get the output type
-                    output = str(signature(obj)).split(" -> ")[-1]
-                    if output.startswith("'") and output.endswith("'"):
-                        output = output[1:-1]
+                    # Get the return type. Sometimes it returns a string 'Pandas'
+                    # and sometimes a class pandas.DataFrame. Unclear why
+                    output = str(signature(obj).return_annotation)
 
                     header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}\n</div>"
@@ -908,28 +907,26 @@ def types_conversion(dtype: str) -> str:
 
     """
     types = {
-        # "typing.": "",
-        # "Scalar": "int | float",
-        # "Pandas": "Series | DataFrame",
-        # "Model": "[model][models]",
-        # "Run": "[Run][mlflowrun]",
-        # "Study": "[Study][]",
-        # "FrozenTrial": "[FrozenTrial][]",
-        # "Union[int, numpy.integer]": "int",
-        # "Union[float, numpy.floating]": "float",
-        # "pandas.core.indexes.base.Index": "Index",
-        # "pandas.core.series.Series": "Series",
-        # "pandas.core.frame.DataFrame": "DataFrame",
-        # "Union[int, numpy.integer, float, numpy.floating]": "int | float",
-        # "Union[Series, modin.pandas.series.Series]": "Series",
-        # "Union[DataFrame, modin.pandas.dataframe.DataFrame]": "DataFrame",
-        # "Union[int, numpy.integer, Series, modin.pandas.series.Series]": "int | Series",
-        # "Union[Series, modin.pandas.series.Series, DataFrame, modin.pandas.dataframe.DataFrame]": "Series | DataFrame",
-        # "dict[str, dict[collections.abc.Hashable, int | numpy.integer | float | numpy.floating]]": "dict[str, dict[str, int | float]]",
-        # "atom.branch.branch.": "",
-        # "Branch": "[Branch][]",
-        # "atom.pipeline.": "",
-        # "Pipeline": "[Pipeline][]",
+        "<class '": "",
+        "'>": "",
+        "typing.": "",  # For typing.Any
+        "atom.pipeline.": "",  # To transform later both class and str
+        "Study": "[Study][]",
+        "FrozenTrial": "[FrozenTrial][]",
+        "Model": "[model][models]",
+        "Run": "[Run][mlflowrun]",
+        "pandas.core.indexes.base.Index": "Index",
+        "pandas.core.series.Series": "Series",
+        "pandas.core.frame.DataFrame": "DataFrame",
+        "atom.branch.branch.Branch": "[Branch][]",
+        "Pipeline": "[Pipeline][]",
+        "collections.abc.Hashable": "str",
+        "Scalar": "int | float",
+        "Pandas": "Series | DataFrame",
+        "int | numpy.integer": "int",
+        "float | numpy.floating": "float",
+        "Series | modin.pandas.series.Series": "Series",
+        "DataFrame | modin.pandas.dataframe.DataFrame": "DataFrame",
     }
 
     for k, v in types.items():

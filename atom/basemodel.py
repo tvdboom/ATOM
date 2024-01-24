@@ -681,20 +681,14 @@ class BaseModel(RunnerPlot):
         y_true = y.loc[y.index.isin(self._all.index)]
 
         if self.task.is_forecast:
-            # Some forecasters can't make predictions on the training set
-            # or can only make predictions on the forecast horizon specified
-            # during fitting. In these cases, return NaN.
-            if (
-                self.estimator.get_tags().get("capability:insample")
-                and (not self.estimator.get_tags()["requires-fh-in-fit"] or rows == "test")
-            ):
+            try:
                 y_pred = self._prediction(
                     fh=X.index,
                     X=check_empty(X),
                     verbose=0,
                     method=method_caller,
                 )
-            else:
+            except ValueError:
                 y_pred = bk.Series([np.NaN] * len(X), index=X.index)
         else:
             y_pred = self._prediction(X.index, verbose=0, method=method_caller)
@@ -791,17 +785,16 @@ class BaseModel(RunnerPlot):
         # Forecasting models can have NaN predictions, for example, when
         # using internally a boxcox transformation on negative predictions
         if self.task.is_forecast:
-            y_true, y_pred = y_true.dropna(), y_pred.dropna()
+            y_pred = y_pred.dropna()
+            y_true = y_true.loc[y_pred.index]
+
+        if y_pred.empty:
+            return np.NaN
 
         if self.task is Task.multiclass_multioutput_classification:
             # Get the mean of the scores over the target columns
             scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
             return np.mean(scores, axis=0)
-        elif self.task.is_forecast:
-            try:
-                return scorer._sign * func(y_true, y_pred)
-            except ValueError:
-                return np.NaN  # Forecast models can fail for in-sample predictions
         else:
             return scorer._sign * func(y_true, y_pred)
 
@@ -1602,7 +1595,7 @@ class BaseModel(RunnerPlot):
 
     @property
     def pipeline(self) -> Pipeline:
-        """Pipeline of transforms.
+        """Pipeline of transformers.
 
         Models that used [automated feature scaling][] have the scaler
         added.
