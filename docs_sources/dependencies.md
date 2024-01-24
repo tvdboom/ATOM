@@ -42,7 +42,7 @@ packages are necessary for its correct functioning.
 * **[optuna](https://optuna.org/)** (>=3.4.0)
 * **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.1.2)
 * **[plotly](https://plotly.com/python/)** (>=5.15.0)
-* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.7.1)
+* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.9.1)
 * **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)

@@ -37,7 +37,7 @@ dependencies = [
     "optuna>=3.4.0",
     "pandas[parquet]>=2.1.2",
     "plotly>=5.15.0",
-    "ray[serve]>=2.7.1",
+    "ray[serve]>=2.9.1",
     "requests>=2.31.0",
     "scikit-learn>=1.4.0",
     "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",

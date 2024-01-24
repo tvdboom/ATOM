@@ -47,7 +47,7 @@ from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import Bunch, _print_elapsed_time
+from sklearn.utils import _print_elapsed_time
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
@@ -2609,10 +2609,12 @@ def fit_transform_one(
     transformer: Transformer,
     X: XConstructor | None,
     y: YConstructor | None,
-    routed_params: Bunch,
     message: str | None = None,
+    **fit_params,
 ) -> tuple[DataFrame | None, Series | None, Transformer]:
     """Fit and transform the data using one estimator.
+
+    Estimators without a `transform` method aren't transformed.
 
     Parameters
     ----------
@@ -2633,12 +2635,11 @@ def fit_transform_one(
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
-    routed_params: Bunch
-        Routed parameters for the `fit` method. Note that parameters
-        are never routed to the `transform` method.
-
     message: str or None, default=None
         Short message. If None, nothing will be printed.
+
+    **fit_params
+        Additional keyword arguments passed to the `fit` method.
 
     Returns
     -------
@@ -2652,7 +2653,7 @@ def fit_transform_one(
         Fitted transformer.
 
     """
-    fit_one(transformer, X, y, message, **routed_params.fit_transform)
+    fit_one(transformer, X, y, message, **fit_params)
     X, y = transform_one(transformer, X, y)
 
     return X, y, transformer

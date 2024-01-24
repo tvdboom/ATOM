@@ -18,6 +18,8 @@ body:
       label: Description
       description: Provide a brief description of the bug in 1-2 sentences.
   - type: textarea
+    validations:
+      required: true
     attributes:
       label: Steps to reproduce
       description: >
@@ -51,8 +53,6 @@ body:
         ```
         Sample code to reproduce the problem.
         ```
-    validations:
-      required: true
   - type: textarea
     validations:
       required: true
@@ -84,14 +84,16 @@ body:
       placeholder: >
         Please paste or specifically describe the actual output or traceback.
   - type: textarea
+    validations:
+      required: true
     attributes:
-      label: Python and package version
+      label: Python and package versions
+      render: Shell
       description: |
-        Provide the used versions, i.e., run the following commands ans paste them below.
+        Please run the following and paste the output below.
 
         ```python
-        import sys; print(sys.version)
-        import atom; print(atom.__version__)
+        import atom; atom.show_versions()
         ```
   - type: markdown
     attributes:

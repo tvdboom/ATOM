@@ -38,6 +38,8 @@ from atom.utils.utils import Goal
 CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
+    metadata_routing="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
+    metadatarouter="https://scikit-learn.org/stable/modules/generated/sklearn.utils.metadata_routing.MetadataRouter.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     pathlibpath="https://docs.python.org/3/library/pathlib.html#pathlib.Path",
     joblibmemory="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html",
@@ -223,7 +225,7 @@ CUSTOM_URLS = dict(
     ridgedocs="https://scikit-learn.org/stable/modules/linear_model.html#ridge-regression",
     cumlrf="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.ensemble.RandomForestClassifier",
     rfdocs="https://scikit-learn.org/stable/modules/ensemble.html#random-forests",
-    sarimaxdocs="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.sarimax.SARIMAX.html",
+    sarimaxclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.sarimax.SARIMAX.html",
     sgdclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html",
     sgdregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html",
     sgddocs="https://scikit-learn.org/stable/modules/sgd.html",
@@ -840,7 +842,7 @@ def render(markdown: str, **kwargs) -> str:
 
     """
     autodocs = None
-    while match := re.search("(:: )(\\w.*?)(?=::|\n\n|\\Z)", markdown, re.S):
+    while match := re.search("(:: )([a-z].*?)(?=::|\n\n|\\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))
 
         # Commands should always be dicts with the configuration as a list in values
@@ -906,27 +908,28 @@ def types_conversion(dtype: str) -> str:
 
     """
     types = {
-        "typing.": "",
-        "Scalar": "int | float",
-        "Pandas": "Series | DataFrame",
-        "Model": "[model][models]",
-        "Run": "[Run][mlflowrun]",
-        "Study": "[Study][]",
-        "FrozenTrial": "[FrozenTrial][]",
-        "Union[int, numpy.integer]": "int",
-        "Union[float, numpy.floating]": "float",
-        "pandas.core.indexes.base.Index": "Index",
-        "pandas.core.series.Series": "Series",
-        "pandas.core.frame.DataFrame": "DataFrame",
-        "Union[int, numpy.integer, float, numpy.floating]": "int | float",
-        "Union[Series, modin.pandas.series.Series]": "Series",
-        "Union[DataFrame, modin.pandas.dataframe.DataFrame]": "DataFrame",
-        "Union[int, numpy.integer, Series, modin.pandas.series.Series]": "int | Series",
-        "Union[Series, modin.pandas.series.Series, DataFrame, modin.pandas.dataframe.DataFrame]": "Series | DataFrame",
-        "atom.branch.branch.": "",
-        "Branch": "[Branch][]",
-        "atom.pipeline.": "",
-        "Pipeline": "[Pipeline][]",
+        # "typing.": "",
+        # "Scalar": "int | float",
+        # "Pandas": "Series | DataFrame",
+        # "Model": "[model][models]",
+        # "Run": "[Run][mlflowrun]",
+        # "Study": "[Study][]",
+        # "FrozenTrial": "[FrozenTrial][]",
+        # "Union[int, numpy.integer]": "int",
+        # "Union[float, numpy.floating]": "float",
+        # "pandas.core.indexes.base.Index": "Index",
+        # "pandas.core.series.Series": "Series",
+        # "pandas.core.frame.DataFrame": "DataFrame",
+        # "Union[int, numpy.integer, float, numpy.floating]": "int | float",
+        # "Union[Series, modin.pandas.series.Series]": "Series",
+        # "Union[DataFrame, modin.pandas.dataframe.DataFrame]": "DataFrame",
+        # "Union[int, numpy.integer, Series, modin.pandas.series.Series]": "int | Series",
+        # "Union[Series, modin.pandas.series.Series, DataFrame, modin.pandas.dataframe.DataFrame]": "Series | DataFrame",
+        # "dict[str, dict[collections.abc.Hashable, int | numpy.integer | float | numpy.floating]]": "dict[str, dict[str, int | float]]",
+        # "atom.branch.branch.": "",
+        # "Branch": "[Branch][]",
+        # "atom.pipeline.": "",
+        # "Pipeline": "[Pipeline][]",
     }
 
     for k, v in types.items():

@@ -52,6 +52,12 @@ def test_getattr(pipeline):
         print(pl.test)
 
 
+def test_metadata_routing_empty_pipeline():
+    """Assert that get_metadata_routing works for an empty pipeline."""
+    pl = Pipeline([])
+    assert pl.get_metadata_routing()
+
+
 def test_fit(pipeline):
     """Assert that the pipeline can be fitted normally."""
     pl = pipeline(model=True)

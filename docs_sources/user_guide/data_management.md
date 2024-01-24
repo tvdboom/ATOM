@@ -333,9 +333,9 @@ specified location (in a directory called `joblib`, the name of the underlying
 library managing the caching), maintaining only the current active branch in
 memory. This mechanism results in a slight drop in performance because of the
 I/O overhead, but can save a lot of memory. Additionally, the memory's location
-is also used to cache the output of the `fit` method of transformers in the
-pipeline. See [here][example-memory-considerations] an example using the memory
-parameter.
+is also used to cache the output of the `fit` and `transform` methods of steps
+in the pipeline. See [here][example-memory-considerations] an example using the
+memory parameter.
 
 Apart from the dataset itself, a model's metric scores and [shap values][shap]
 are also stored as attributes of the model to avoid having to recalculate

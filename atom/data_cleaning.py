@@ -987,7 +987,7 @@ class Decomposer(TransformerMixin):
     Categorical columns are ignored.
 
     This class can be accessed from atom through the [decompose]
-    [atomclassifier-decompose] method. Read more in the [user guide]
+    [atomforecaster-decompose] method. Read more in the [user guide]
     [time-series-decomposition].
 
     Parameters

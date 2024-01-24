@@ -51,7 +51,7 @@ from sklearn.multioutput import (
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import _check_response_method
-from sktime.forecasting.base import ForecastingHorizon
+from sktime.forecasting.base import BaseForecaster, ForecastingHorizon
 from sktime.forecasting.compose import make_reduction
 from sktime.forecasting.model_evaluation import evaluate
 from sktime.performance_metrics.forecasting import make_forecasting_scorer
@@ -486,7 +486,6 @@ class BaseModel(RunnerPlot):
         self,
         estimator: Predictor,
         data: tuple[DataFrame, Pandas],
-        est_params_fit: dict,
         validation: tuple[DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ) -> Predictor:
@@ -508,9 +507,6 @@ class BaseModel(RunnerPlot):
         validation: tuple or None
             Validation data of the form (X, y). If None, no validation
             is performed.
-
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
 
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
@@ -540,7 +536,7 @@ class BaseModel(RunnerPlot):
                     else:
                         kwargs["classes"] = list(np.unique(self.y))
 
-                estimator.partial_fit(*data, **est_params_fit, **kwargs)
+                estimator.partial_fit(*data, **self._est_params_fit, **kwargs)
 
                 if not trial:
                     # Store train and validation scores on the main metric in evals attr
@@ -568,14 +564,14 @@ class BaseModel(RunnerPlot):
 
         else:
             # Add the forecasting horizon to sktime estimators
-            if self.task.is_forecast:
-                if "fh" in sign(estimator.fit) and hasattr(estimator, "get_tag"):
-                    if estimator.get_tag("requires-fh-in-fit"):
-                        est_params_fit["fh"] = est_params_fit.get("fh", self.test.index)
+            if isinstance(estimator, BaseForecaster):
+                ts_kwargs = {}
+                if estimator.get_tag("requires-fh-in-fit") and "fh" not in self._est_params_fit:
+                    ts_kwargs["fh"] = self.test.index
 
-                estimator.fit(data[1], X=check_empty(data[0]), **est_params_fit)
+                estimator.fit(data[1], X=check_empty(data[0]), **self._est_params_fit, **ts_kwargs)
             else:
-                estimator.fit(*data, **est_params_fit)
+                estimator.fit(*data, **self._est_params_fit)
 
         return estimator
 
@@ -737,7 +733,7 @@ class BaseModel(RunnerPlot):
             Target column corresponding to `X`.
 
         **kwargs
-            Additional keyword arguments for the score function.
+            Additional keyword arguments for the `scorer`.
 
         Returns
         -------
@@ -792,27 +788,28 @@ class BaseModel(RunnerPlot):
         """
         func = lambda y1, y2: scorer._score_func(y1, y2, **scorer._kwargs, **kwargs)
 
-        # Forecasting models can have NaN predictions, for example when
+        # Forecasting models can have NaN predictions, for example, when
         # using internally a boxcox transformation on negative predictions
         if self.task.is_forecast:
             y_true, y_pred = y_true.dropna(), y_pred.dropna()
 
-        try:
-            if self.task is Task.multiclass_multioutput_classification:
-                # Get the mean of the scores over the target columns
-                scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
-                return np.mean(scores, axis=0)
-            else:
+        if self.task is Task.multiclass_multioutput_classification:
+            # Get the mean of the scores over the target columns
+            scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
+            return np.mean(scores, axis=0)
+        elif self.task.is_forecast:
+            try:
                 return scorer._sign * func(y_true, y_pred)
-        except ValueError:
-            return np.NaN  # Some forecast models predict NaN
+            except ValueError:
+                return np.NaN  # Forecast models can fail for in-sample predictions
+        else:
+            return scorer._sign * func(y_true, y_pred)
 
     def _get_score(
         self,
         scorer: Scorer,
         rows: RowSelector,
         threshold: Sequence[FloatZeroToOneExc] | None = None,
-        sample_weight: Sequence[Scalar] | None = None,
     ) -> Scalar:
         """Calculate a metric score.
 
@@ -834,10 +831,6 @@ class BaseModel(RunnerPlot):
             - The task is binary or multilabel classification.
             - The model has a `predict_proba` method.
             - The metric evaluates predicted target values.
-
-        sample_weight: sequence or None, default=None
-            Sample weights corresponding to y in `dataset`. Is tuple to
-            allow hashing.
 
         Returns
         -------
@@ -861,11 +854,7 @@ class BaseModel(RunnerPlot):
         else:
             y_true, y_pred = self._get_pred(rows, method=scorer._response_method)
 
-        kwargs = {}
-        if "sample_weight" in sign(scorer._score_func):
-            kwargs["sample_weight"] = sample_weight
-
-        result = rnd(self._score_from_pred(scorer, y_true, y_pred, **kwargs))
+        result = rnd(self._score_from_pred(scorer, y_true, y_pred))
 
         # Log metric to mlflow run for predictions on data sets
         if self.experiment and isinstance(rows, str):
@@ -955,17 +944,9 @@ class BaseModel(RunnerPlot):
                     X_sub, y_sub = pl.fit_transform(X_sub, y_sub)
                     X_val, y_val = pl.transform(X_val, y_val)
 
-                # Match the sample_weight with the length of the subtrain set
-                # Make copy of est_params to not alter the mutable variable
-                if "sample_weight" in (est_copy := self._est_params_fit.copy()):
-                    est_copy["sample_weight"] = [
-                        self._est_params_fit["sample_weight"][i] for i in train_idx
-                    ]
-
                 estimator = self._fit_estimator(
                     estimator=estimator,
                     data=(X_sub, y_sub),
-                    est_params_fit=est_copy,
                     validation=(X_val, y_val),
                     trial=trial,
                 )
@@ -1200,7 +1181,6 @@ class BaseModel(RunnerPlot):
         self._estimator = self._fit_estimator(
             estimator=self.estimator,
             data=(X, y),
-            est_params_fit=self._est_params_fit,
             validation=(self.X_test, self.y_test),
         )
 
@@ -1302,11 +1282,7 @@ class BaseModel(RunnerPlot):
             )
 
             # Fit on a bootstrapped set
-            estimator = self._fit_estimator(
-                estimator=self.estimator,
-                data=(sample_x, sample_y),
-                est_params_fit=self._est_params_fit,
-            )
+            estimator = self._fit_estimator(self.estimator, data=(sample_x, sample_y))
 
             # Get scores on the test set
             scores = pd.DataFrame(
@@ -2059,7 +2035,6 @@ class BaseModel(RunnerPlot):
         rows: RowSelector = "test",
         *,
         threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-        sample_weight: Sequence[Scalar] | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
@@ -2090,9 +2065,6 @@ class BaseModel(RunnerPlot):
             a sequence of thresholds (one per target column, as returned
             by the [get_best_threshold][self-get_best_threshold] method).
             If float, the same threshold is applied to all target columns.
-
-        sample_weight: sequence or None, default=None
-            Sample weights corresponding to y in `dataset`.
 
         Returns
         -------
@@ -2152,12 +2124,7 @@ class BaseModel(RunnerPlot):
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
             scorer = get_custom_scorer(met)
-            scores[scorer.name] = self._get_score(
-                scorer=scorer,
-                rows=rows,
-                threshold=threshold_c,
-                sample_weight=sample_weight,
-            )
+            scores[scorer.name] = self._get_score(scorer, rows=rows, threshold=threshold_c)
 
         return scores
 
@@ -2244,7 +2211,7 @@ class BaseModel(RunnerPlot):
         """
         results = []
         for target in lst(self.target):
-            y_true, y_pred = self._get_pred(rows, target, attr="predict_proba")
+            y_true, y_pred = self._get_pred(rows, target, method="predict_proba")
             fpr, tpr, thresholds = roc_curve(y_true, y_pred)
 
             results.append(thresholds[np.argmax(tpr - fpr)])
@@ -2597,7 +2564,7 @@ class ClassRegModel:
             tasks and r2 for regression tasks. Only for method="score".
 
         sample_weight: sequence or None, default=None
-            Sample weights for the score method.
+            Sample weights for the `score` method.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If

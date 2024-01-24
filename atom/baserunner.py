@@ -39,9 +39,8 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int, IntLargerOne,
     MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Scalar, Seasonality, Segment, Sequence, Series,
-    TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
-    sequence_t,
+    RowSelector, Seasonality, Segment, Sequence, Series, TargetSelector,
+    YSelector, bool_t, dataframe_t, int_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Goal, SeasonalPeriod, Task, bk, check_is_fitted,
@@ -991,7 +990,6 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         rows: RowSelector = "test",
         *,
         threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-        sample_weight: Sequence[Scalar] | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -1018,9 +1016,6 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             The same threshold per target column is applied to all
             models.
 
-        sample_weight: sequence or None, default=None
-            Sample weights corresponding to y in `dataset`.
-
         Returns
         -------
         pd.DataFrame
@@ -1029,12 +1024,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         check_is_fitted(self, attributes="_models")
 
-        return pd.DataFrame(
-            [
-                m.evaluate(metric, rows, threshold=threshold, sample_weight=sample_weight)
-                for m in self._models
-            ]
-        )
+        return pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
 
     @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:

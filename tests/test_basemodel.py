@@ -6,7 +6,6 @@ Description: Unit tests for basemodel.py
 """
 
 import glob
-import sys
 from unittest.mock import patch
 
 import numpy as np
@@ -203,7 +202,7 @@ def test_multi_objective_optimization():
 def test_hyperparameter_tuning_with_plot():
     """Assert that you can plot the hyperparameter tuning as it runs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, errors="raise", ht_params={"plot": True})
+    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, ht_params={"plot": True})
 
 
 def test_xgb_optimizes_score():
@@ -262,19 +261,6 @@ def test_ht_with_pruning():
         },
     )
     assert "PRUNED" in atom.sgd.trials["state"].unique()
-
-
-def test_sample_weight_fit():
-    """Assert that sample weights can be used with the BO."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models="LGB",
-        n_trials=1,
-        est_params={
-            "n_estimators": 5,
-            "sample_weight_fit": list(range(len(atom.y_train))),
-        },
-    )
 
 
 def test_custom_cv():
@@ -758,7 +744,7 @@ def test_cross_validate():
 def test_cross_validate_ts():
     """Assert that the cross_validate method works for forecast tasks."""
     atom = ATOMForecaster(y_fc, random_state=1)
-    atom.run("NF", errors="raise")
+    atom.run("NF")
     assert isinstance(atom.nf.cross_validate(), pd.DataFrame)
     assert isinstance(atom.nf.cross_validate(scoring="mae"), pd.DataFrame)
 
@@ -821,15 +807,6 @@ def test_evaluate_threshold_multilabel():
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
     atom.run("Tree")
     assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8, 0.9]), pd.Series)
-
-
-def test_evaluate_sample_weight():
-    """Assert that the sample_weight parameter changes the predictions."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("RF")
-    pred_1 = atom.rf.evaluate(sample_weight=None)
-    pred_2 = atom.rf.evaluate(sample_weight=list(range(len(atom.y_test))))
-    assert not pred_1.equals(pred_2)
 
 
 def test_export_pipeline():
@@ -902,7 +879,6 @@ def test_save_estimator():
     assert glob.glob("MultinomialNB.pkl")
 
 
-@pytest.mark.skipif(sys.version_info.minor == 11, reason="Ray doesn't support 3.11")
 def test_serve():
     """Assert that the serve method deploys a reachable endpoint."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -1278,7 +1278,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             transformer_c = fit(**kwargs)
 
-        # If this is the last empty branch, create a new og branch
+        # If this is the last empty branch, create a new 'og' branch
         if len([b for b in self._branches if not b.pipeline.steps]) == 1:
             self._branches.add("og")
 

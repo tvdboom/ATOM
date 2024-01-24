@@ -8,6 +8,7 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from itertools import islice
 from typing import Any, Literal
 
 import numpy as np
@@ -16,9 +17,11 @@ from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import Bunch, _print_elapsed_time
+from sklearn.utils._metadata_requests import MetadataRouter, MethodMapping
 from sklearn.utils.metadata_routing import _raise_for_params, process_routing
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
+from sktime.forecasting.base import BaseForecaster
 from sktime.proba.normal import Normal
 from typing_extensions import Self
 
@@ -27,8 +30,8 @@ from atom.utils.types import (
     Verbose, XConstructor, YConstructor,
 )
 from atom.utils.utils import (
-    NotFittedError, adjust_verbosity, check_is_fitted, fit_transform_one, sign,
-    transform_one, variable_return,
+    NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
+    fit_transform_one, transform_one, variable_return,
 )
 
 
@@ -41,11 +44,7 @@ class Pipeline(SkPipeline):
     estimator only needs to implement `fit`. The transformers in the
     pipeline can be cached using the `memory` parameter.
 
-    The purpose of the pipeline is to assemble several steps that can
-    be cross-validated together while setting different parameters. For
-    this, it enables setting parameters of the various steps using their
-    names and the parameter name separated by `__`, as in the example
-    below. A step's estimator may be replaced entirely by setting the
+    A step's estimator may be replaced entirely by setting the
     parameter with its name to another estimator, or a transformer
     removed by setting it to `passthrough` or `None`.
 
@@ -55,7 +54,7 @@ class Pipeline(SkPipeline):
         This class behaves similarly to sklearn's [pipeline][skpipeline],
         and additionally:
 
-        - Works with an empty pipeline.
+        - Can initialize with an empty pipeline.
         - Accepts transformers that drop rows.
         - Accepts transformers that only are fitted on a subset of the
           provided dataset.
@@ -144,7 +143,7 @@ class Pipeline(SkPipeline):
         memory: str | Memory | None = None,
         verbose: Verbose | None = 0,
     ):
-        super().__init__(steps, memory=memory, verbose=False)
+        super().__init__(steps=steps, memory=memory, verbose=False)
         self._verbose = verbose
 
     def __bool__(self):
@@ -186,7 +185,8 @@ class Pipeline(SkPipeline):
     def memory(self, value: str | Memory | None):
         """Create a new internal memory object."""
         self._memory = check_memory(value)
-        self._mem_fit = self._memory.cache(fit_transform_one)
+        self._mem_fit = self._memory.cache(fit_one)
+        self._mem_fit_transform = self._memory.cache(fit_transform_one)
         self._mem_transform = self._memory.cache(transform_one)
 
     @property
@@ -226,7 +226,7 @@ class Pipeline(SkPipeline):
         *,
         with_final: Bool = True,
         filter_passthrough: Bool = True,
-        filter_train_only: Bool = False,
+        filter_train_only: Bool = True,
     ) -> Iterator[tuple[int, str, Estimator]]:
         """Generate (idx, name, estimator) tuples from self.steps.
 
@@ -241,12 +241,12 @@ class Pipeline(SkPipeline):
         filter_passthrough: bool, default=True
             Whether to exclude `passthrough` elements.
 
-        filter_train_only: bool, default=False
+        filter_train_only: bool, default=True
             Whether to exclude estimators that should only be used for
-            training (have the `_train_only` attribute).
+            training (have `_train_only=True` attribute).
 
-        Returns
-        -------
+        Yields
+        ------
         int
             Index position in the pipeline.
 
@@ -257,11 +257,16 @@ class Pipeline(SkPipeline):
             Transformer or predictor instance.
 
         """
-        it = super()._iter(with_final=with_final, filter_passthrough=filter_passthrough)
-        if filter_train_only:
-            return (x for x in it if not getattr(x[-1], "_train_only", False))
-        else:
-            return it
+        stop = len(self.steps)
+        if not with_final and stop > 0:
+            stop -= 1
+
+        for idx, (name, trans) in enumerate(islice(self.steps, 0, stop)):
+            if (
+                (not filter_passthrough or (trans is not None and trans != "passthrough"))
+                and (not filter_train_only or not getattr(trans, "_train_only", False))
+            ):
+                yield idx, name, trans
 
     def _fit(
         self,
@@ -295,7 +300,9 @@ class Pipeline(SkPipeline):
         self.steps: list[tuple[str, Estimator]] = list(self.steps)
         self._validate_steps()
 
-        for step, name, transformer in self._iter(with_final=False, filter_passthrough=False):
+        for step, name, transformer in self._iter(
+                with_final=False, filter_passthrough=False, filter_train_only=False
+        ):
             if transformer is None or transformer == "passthrough":
                 with _print_elapsed_time("Pipeline", self._log_message(step)):
                     continue
@@ -315,12 +322,12 @@ class Pipeline(SkPipeline):
                 # Fit or load the current estimator from cache
                 # Type ignore because routed_params is never None but
                 # the signature of _fit needs to comply with sklearn's
-                X, y, fitted_transformer = self._mem_fit(
+                X, y, fitted_transformer = self._mem_fit_transform(
                     transformer=cloned,
                     X=X,
                     y=y,
                     message=self._log_message(step),
-                    routed_params=routed_params[name],  # type: ignore[index]
+                    **routed_params[name].fit_transform,  # type: ignore[index]
                 )
 
             # Replace the estimator of the step with the fitted
@@ -328,6 +335,82 @@ class Pipeline(SkPipeline):
             self.steps[step] = (name, fitted_transformer)
 
         return X, y
+
+    def get_metadata_routing(self):
+        """Get metadata routing of this object.
+
+        Check [sklearn's documentation][metadata_routing] on how the
+        routing mechanism works.
+
+        Returns
+        -------
+        MetadataRouter
+            A [MetadataRouter][] encapsulating routing information.
+
+        """
+        router = MetadataRouter(owner=self.__class__.__name__)
+
+        # First, we add all steps except the last one
+        for _, name, trans in self._iter(with_final=False, filter_train_only=False):
+            method_mapping = MethodMapping()
+            # fit, fit_predict, and fit_transform call fit_transform if it
+            # exists, or else fit and transform
+            if hasattr(trans, "fit_transform"):
+                (
+                    method_mapping.add(caller="fit", callee="fit_transform")
+                    .add(caller="fit_transform", callee="fit_transform")
+                    .add(caller="fit_predict", callee="fit_transform")
+                )
+            else:
+                (
+                    method_mapping.add(caller="fit", callee="fit")
+                    .add(caller="fit", callee="transform")
+                    .add(caller="fit_transform", callee="fit")
+                    .add(caller="fit_transform", callee="transform")
+                    .add(caller="fit_predict", callee="fit")
+                    .add(caller="fit_predict", callee="transform")
+                )
+
+            (
+                method_mapping.add(caller="predict", callee="transform")
+                .add(caller="predict", callee="transform")
+                .add(caller="predict_proba", callee="transform")
+                .add(caller="decision_function", callee="transform")
+                .add(caller="predict_log_proba", callee="transform")
+                .add(caller="transform", callee="transform")
+                .add(caller="inverse_transform", callee="inverse_transform")
+                .add(caller="score", callee="transform")
+            )
+
+            router.add(method_mapping=method_mapping, **{name: trans})
+
+        # Then we add the last step
+        if len(self.steps) > 0:
+            final_name, final_est = self.steps[-1]
+            if final_est is not None and final_est != "passthrough":
+                # then we add the last step
+                method_mapping = MethodMapping()
+                if hasattr(final_est, "fit_transform"):
+                    method_mapping.add(caller="fit_transform", callee="fit_transform")
+                else:
+                    method_mapping.add(caller="fit", callee="fit").add(
+                        caller="fit", callee="transform"
+                    )
+                (
+                    method_mapping.add(caller="fit", callee="fit")
+                    .add(caller="predict", callee="predict")
+                    .add(caller="fit_predict", callee="fit_predict")
+                    .add(caller="predict_proba", callee="predict_proba")
+                    .add(caller="decision_function", callee="decision_function")
+                    .add(caller="predict_log_proba", callee="predict_log_proba")
+                    .add(caller="transform", callee="transform")
+                    .add(caller="inverse_transform", callee="inverse_transform")
+                    .add(caller="score", callee="score")
+                )
+
+                router.add(method_mapping=method_mapping, **{final_name: final_est})
+
+        return router
 
     def fit(
         self,
@@ -362,12 +445,17 @@ class Pipeline(SkPipeline):
 
         """
         routed_params = self._check_method_params(method="fit", props=params)
-
         X, y = self._fit(X, y, routed_params)
+
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator is not None and self._final_estimator != "passthrough":
                 with adjust_verbosity(self._final_estimator, self._verbose):
-                    self._final_estimator.fit(X, y, **routed_params[self.steps[-1][0]].fit)
+                    self._mem_fit(
+                        estimator=self._final_estimator,
+                        X=X,
+                        y=y,
+                        **routed_params[self.steps[-1][0]].fit,
+                    )
 
         return self
 
@@ -414,18 +502,17 @@ class Pipeline(SkPipeline):
         routed_params = self._check_method_params(method="fit_transform", props=params)
         X, y = self._fit(X, y, routed_params)
 
-        # Don't clone when caching is disabled to preserve backward compatibility
-        if self.memory.location is None:
-            last_step = self._final_estimator
-        else:
-            last_step = clone(self._final_estimator)
-
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
-            if last_step is None or last_step == "passthrough":
+            if self._final_estimator is None or self._final_estimator == "passthrough":
                 return variable_return(X, y)
 
-            with adjust_verbosity(last_step, self._verbose):
-                X, y, _ = self._mem_fit(last_step, X, y, routed_params[self.steps[-1][0]])
+            with adjust_verbosity(self._final_estimator, self._verbose):
+                X, y, _ = self._mem_fit_transform(
+                    transformer=self._final_estimator,
+                    X=X,
+                    y=y,
+                    **routed_params[self.steps[-1][0]].fit_transform,
+                )
 
         return variable_return(X, y)
 
@@ -578,7 +665,7 @@ class Pipeline(SkPipeline):
 
         routed_params = process_routing(self, "decision_function", **params)
 
-        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, name, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, _ = self._mem_transform(
                     transformer=transformer,
@@ -630,11 +717,11 @@ class Pipeline(SkPipeline):
 
         routed_params = process_routing(self, "predict", **params)
 
-        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, name, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
-        if "fh" in sign(self.steps[-1][1].predict):
+        if isinstance(self._final_estimator, BaseForecaster):
             if fh is None:
                 raise ValueError("The fh parameter cannot be None for forecasting estimators.")
 
@@ -670,7 +757,7 @@ class Pipeline(SkPipeline):
             Computed interval forecasts.
 
         """
-        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X)
 
@@ -699,7 +786,7 @@ class Pipeline(SkPipeline):
         """
         routed_params = process_routing(self, "predict_log_proba", **params)
 
-        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, name, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
@@ -753,11 +840,11 @@ class Pipeline(SkPipeline):
 
         routed_params = process_routing(self, "predict_proba", **params)
 
-        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, name, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
-        if "fh" in sign(self.steps[-1][1].predict_proba):
+        if isinstance(self._final_estimator, BaseForecaster):
             if fh is None:
                 raise ValueError("The fh parameter cannot be None for forecasting estimators.")
 
@@ -796,7 +883,7 @@ class Pipeline(SkPipeline):
             Computed quantile forecasts.
 
         """
-        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X)
 
@@ -825,7 +912,7 @@ class Pipeline(SkPipeline):
             n_targets) for [multivariate][] tasks.
 
         """
-        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
@@ -860,7 +947,7 @@ class Pipeline(SkPipeline):
             Computed variance forecasts.
 
         """
-        for _, _, transformer in self._iter(with_final=False, filter_train_only=True):
+        for _, _, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, _ = self._mem_transform(transformer, X)
 
@@ -893,25 +980,29 @@ class Pipeline(SkPipeline):
         sample_weight: sequence or None, default=None
             Sample weights corresponding to `y` passed to the `score`
             method of the final estimator. If None, no sampling weight
-            is performed.
+            is performed. Only for non-forecast tasks.
 
         Returns
         -------
         float
             Mean accuracy, r2 or mape of self.predict(X) with respect
-            to `y` (depending on task).
+            to `y` (depending on the task).
 
         """
         if X is None and y is None:
             raise ValueError("X and y cannot be both None.")
 
-        routed_params = process_routing(self, "score", sample_weight=sample_weight, **params)
+        # Drop sample weights if sktime estimator
+        if not isinstance(self._final_estimator, BaseForecaster):
+            params["sample_weight"] = sample_weight
 
-        for _, name, transformer in self._iter(with_final=False, filter_train_only=True):
+        routed_params = process_routing(self, "score", **params)
+
+        for _, name, transformer in self._iter(with_final=False):
             with adjust_verbosity(transformer, self._verbose):
                 X, y = self._mem_transform(transformer, X, y, **routed_params[name].transform)
 
-        if "fh" in sign(self.steps[-1][1].score):
+        if isinstance(self._final_estimator, BaseForecaster):
             return self.steps[-1][1].score(y=y, X=X, fh=fh)
         else:
             return self.steps[-1][1].score(X, y, **routed_params[self.steps[-1][0]].score)

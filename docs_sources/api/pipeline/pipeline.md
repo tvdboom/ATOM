@@ -20,6 +20,3 @@
 
 :: methods:
     toc_only: False
-    exclude:
-        - get_metadata_routing
-        - set_score_request
