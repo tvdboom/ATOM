@@ -408,14 +408,16 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         child: str or None, default=None
             Name of the secondary attribute.
 
-        legend: str, dict or None
+        legend: str, dict or None, default=None
             Legend argument provided by the user.
 
         **kwargs
             Additional keyword arguments for the trace.
 
         """
-        Baseplot._fig.figure.add_scatter(
+        BasePlot._fig.figure.add_scatter(
+            name=kwargs.pop("name", child or parent),
+            mode=kwargs.pop("mode", "lines"),
             line=kwargs.pop(
                 "line", {
                     "width": self.line_width,
@@ -435,7 +437,6 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                 "hovertemplate",
                 f"(%{{x}}, %{{y}})<extra>{parent}{f' - {child}' if child else ''}</extra>",
             ),
-            name=kwargs.pop("name", child or parent),
             legendgroup=kwargs.pop("legendgroup", parent),
             legendgrouptitle=kwargs.pop(
                 "legendgrouptitle",
@@ -443,7 +444,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             ),
             showlegend=kwargs.pop(
                 "showlegend",
-                BasePlot._fig.showlegend(f"{parent}-{child}", legend)
+                BasePlot._fig.showlegend(f"{parent}-{child}" if child else parent, legend)
             ),
             **kwargs,
         )

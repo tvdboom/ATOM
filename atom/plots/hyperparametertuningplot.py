@@ -248,7 +248,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         x_max = bk.concat([m.trials[metric_c] for m in models_c]).max(axis=None)
         x = np.linspace(x_min, x_max, 100)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -1178,7 +1178,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         models_c = self._get_plot_models(models, ensembles=False)
         models_c = self._check_hyperparams(models_c)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:

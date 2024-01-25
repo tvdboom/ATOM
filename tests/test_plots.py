@@ -275,6 +275,12 @@ def test_update_traces():
 
 # Test DataPlot ==================================================== >>
 
+def test_plot_acf():
+    """Assert that the plot_acf method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_acf(display=False)
+
+
 @pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
     """Assert that the plot_components method works."""
@@ -309,6 +315,12 @@ def test_plot_ngrams(ngram):
     atom.plot_ngrams(ngram=ngram, display=False)  # When the corpus is a str
     atom.tokenize()
     atom.plot_ngrams(ngram=ngram, display=False)  # When the corpus consists of tokens
+
+
+def test_plot_pacf():
+    """Assert that the plot_pacf method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_pacf(display=False)
 
 
 @pytest.mark.parametrize("X", [X10, X_sparse])

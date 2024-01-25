@@ -687,7 +687,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -700,7 +700,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=fpr,
                     y=fnr,
-                    mode="lines",
                     parent=m.name,
                     child=child,
                     legend=legend,
@@ -812,7 +811,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -839,7 +838,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
                     y=estimator.predict(x[:, np.newaxis]),
-                    mode="lines",
                     hovertemplate="(%{x}, %{y})<extra></extra>",
                     parent=m.name,
                     legend=None,
@@ -943,7 +941,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models, ensembles=False)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -1441,7 +1439,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -1453,7 +1451,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
                     y=(y := np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()),
-                    mode="lines",
                     parent=m.name,
                     child=child,
                     legend=legend,
@@ -1718,7 +1715,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -1730,7 +1727,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
                     y=(y := np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum() / x),
-                    mode="lines",
                     parent=m.name,
                     child=child,
                     legend=legend,
@@ -1785,8 +1781,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        columns: int, str, segment, sequence or None, default=None
-            XSelector to plot. If None, it plots all features.
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            [Feature set][row-and-column-selection] to plot. If None,
+            it selects all features.
 
         target: int, str or tuple, default=1
             Class in the target column to target. For multioutput tasks,
@@ -1984,9 +1981,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         models: int, str, Model, segment, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
-        columns: int, str, segment, sequence, dataframe, default=(0, 1, 2)
-            [XSelector][row-and-column-selection] to get the partial
-            dependence from.
+        columns: int, str, segment, sequence or dataframe, default=(0, 1, 2)
+            [Feature set][row-and-column-selection] to get the
+            partial dependence from.
 
         kind: str or sequence, default="average"
             Kind of dependence to plot. Use a sequence or add `+` between
@@ -2773,7 +2770,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -2788,7 +2785,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=rec,
                     y=prec,
-                    mode="lines",
                     parent=m.name,
                     child=child,
                     legend=legend,
@@ -2924,7 +2920,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 else:
                     hist = y_pred.loc[y_true == v, str(cls)]
 
-                fig.add_sactter(
+                fig.add_scatter(
                     x=(x := np.linspace(0, 1, 100)),
                     y=stats.gaussian_kde(hist)(x),
                     mode="lines",
@@ -3374,7 +3370,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -3387,7 +3383,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=fpr,
                     y=tpr,
-                    mode="lines",
                     parent=m.name,
                     child=child,
                     legend=legend,
@@ -3675,7 +3670,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     metric_c.append(m)
             metric_c = [get_custom_scorer(m)._score_func for m in metric_c]
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:

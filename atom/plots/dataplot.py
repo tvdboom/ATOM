@@ -10,10 +10,9 @@ from __future__ import annotations
 from abc import ABCMeta
 from pathlib import Path
 from typing import Any, Literal
-from statsmodels.tsa.stattools import pacf
+
 import numpy as np
 import pandas as pd
-from sklearn.utils.metaestimators import available_if
 import plotly.graph_objects as go
 from beartype import beartype
 from nltk.collocations import (
@@ -22,15 +21,19 @@ from nltk.collocations import (
 )
 from scipy import stats
 from sklearn.base import is_classifier
+from sklearn.utils.metaestimators import available_if
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.stattools import acf, pacf
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, RowSelector,
-    Segment, Sequence, Series,
+    Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, PACFMethods,
+    RowSelector, SeasonalityMode, Segment, Sequence, Series,
 )
 from atom.utils.utils import (
-    check_dependency, crash, divide, get_corpus, lst, replace_missing, rnd, has_task
+    check_dependency, crash, divide, get_corpus, has_task, lst,
+    replace_missing, rnd,
 )
 
 
@@ -43,6 +46,170 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     be used for model training only, not for data manipulation.
 
     """
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_acf(
+        self,
+        columns: ColumnSelector | None = None,
+        nlags: IntLargerZero | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the autocorrelation function.
+
+        The autocorrelation function (ACF) measures the correlation
+        between a time series and lagged versions of itself. It's
+        useful, for example, to identify the order of an autoregressive
+        model. This plot is only available for [forecast][time-series]
+        tasks.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            Columns to plot the pacf from. If None, it selects the
+            target column.
+
+        nlags: int or None, default=None
+            Number of lags to return autocorrelation for. If None, it
+            uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
+            returned value includes lag 0 (i.e., 1), so the size of the
+            vector is `(nlags + 1,)`.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of lags shown.
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_acf
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_ttf
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_acf()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        if nlags is None:
+            nlags = min(int(10 * np.log10(self.branch.shape[0])), self.branch.shape[0] // 2 - 1)
+
+        for col in columns_c:
+            # Returns correlation array and confidence interval
+            corr, conf = acf(self.branch.dataset[col], nlags=nlags, alpha=0.05)
+
+            for pos in (x := np.arange(len(corr))):
+                self._draw_line(
+                    x=(pos, pos),
+                    y=(0, corr[pos]),
+                    parent=col,
+                    hoverinfo="skip",
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+            self._draw_line(
+                x=x,
+                y=corr,
+                parent=col,
+                mode="markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 1], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        hovertemplate="%{y}<extra>upper bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 0], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        fill="tonexty",
+                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                        hovertemplate="%{y}<extra>lower bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                ]
+            )
+
+        fig.update_yaxes(zerolinecolor="black")
+        fig.update_layout({"hovermode": "x unified"})
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Lag",
+            ylabel="Autocorrelation",
+            title=title,
+            legend=legend,
+            figsize=figsize or (700 + nlags * 10, 600),
+            plotname="plot_acf",
+            filename=filename,
+            display=display,
+        )
 
     @crash
     def plot_components(
@@ -290,6 +457,178 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize,
             plotname="plot_correlation",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_decomposition(
+        self,
+        columns: ColumnSelector | None = None,
+        mode: SeasonalityMode = "additive",
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "out",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the trend, seasonality and residuals of a time series.
+
+        This plot is only available for [forecast][time-series] tasks.
+
+        !!! tip
+            Use atom's [decompose][atomforecaster-decompose] method to
+            remove trend and seasonality from the data.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence or dataframe, default=-1
+            [Selection of columns][row-and-column-selection] to plot.
+            If None, the target column is selected.
+
+        mode: str, default="additive"
+            Mode of the decomposition. Choose from:
+
+            - "additive": Assumes the components have a linear relation,
+              i.e., y(t) = level + trend + seasonality + noise.
+            - "multiplicative": Assumes the components have a nonlinear
+              relation, i.e., y(t) = level * trend * seasonality * noise.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="out"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 900)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_acf
+        atom.plots:DataPlot.plot_pacf
+        atom.plots:DataPlot.plot_series
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_decomposition()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes(y=(0.76, 1.0))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.51, 0.74))
+        xaxis3, yaxis3 = BasePlot._fig.get_axes(y=(0.26, 0.49))
+        xaxis4, yaxis4 = BasePlot._fig.get_axes(y=(0.0, 0.24))
+
+        # Returns correlation array and confidence interval
+        decompose = seasonal_decompose(
+            x=self.branch.dataset[columns_c],
+            model=mode,
+            period=self.sp,
+        )
+
+        for col in columns_c:
+            self._draw_line(
+                x=(x := self._get_plot_index(decompose.trend)),
+                y=decompose.observed,
+                parent=col,
+                child="observed",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis,
+            )
+
+            self._draw_line(
+                x=x,
+                y=decompose.trend,
+                parent=col,
+                child="trend",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis2,
+            )
+
+            self._draw_line(
+                x=x,
+                y=decompose.seasonal,
+                parent=col,
+                child="trend",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis3,
+            )
+
+            self._draw_line(
+                x=x,
+                y=decompose.resid,
+                parent=col,
+                child="trend",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis4,
+            )
+
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            ylabel="Values",
+        )
+
+        self._plot(
+            ax=(f"xaxis{xaxis3[1:]}", f"yaxis{yaxis3[1:]}"),
+            ylabel="Values",
+        )
+
+        self._plot(
+            ax=(f"xaxis{xaxis4[1:]}", f"yaxis{yaxis4[1:]}"),
+            ylabel="Values",
+        )
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel=self.branch.dataset.index.name or "index",
+            ylabel="Values",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_acf",
             filename=filename,
             display=display,
         )
@@ -673,21 +1012,22 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     def plot_pacf(
         self,
         columns: ColumnSelector | None = None,
-        show: IntLargerZero | None = 10,
+        nlags: IntLargerZero | None = None,
+        method: PACFMethods = "ywadjusted",
         *,
         title: str | dict[str, Any] | None = None,
-        legend: Legend | dict[str, Any] | None = "lower right",
+        legend: Legend | dict[str, Any] | None = "upper right",
         figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
         filename: str | Path | None = None,
         display: Bool | None = True,
     ) -> go.Figure | None:
         """Plot the partial autocorrelation function.
 
-        Missing values are ignored.
-
-        !!! tip
-            Use atom's [decompose][atomforecaster-decompose] method to
-            remove trend and seasonality from the data.
+        The partial autocorrelation function (PACF) measures the
+        correlation between a time series and lagged versions of
+        itself. It's useful, for example, to identify the order of
+        an autoregressive model. This plot is only available for
+        [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -695,9 +1035,29 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             Columns to plot the pacf from. If None, it selects the
             target column.
 
-        show: int or None, default=10
-            Number of n-grams (ordered by number of occurrences) to
-            show in the plot. If none, show all n-grams (up to 200).
+        nlags: int or None, default=None
+            Number of lags to return autocorrelation for. If None, it
+            uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
+            returned value includes lag 0 (i.e., 1), so the size of the
+            vector is `(nlags + 1,)`.
+
+        method : str, default="ywadjusted"
+            Specifies which method to use for the calculations.
+
+            - "yw" or "ywadjusted": Yule-Walker with sample-size
+              adjustment in denominator for acovf.
+            - "ywm" or "ywmle": Yule-Walker without adjustment.
+            - "ols" : Regression of time series on lags of it and on
+              constant.
+            - "ols-inefficient": Regression of time series on lags using
+              a single common sample to estimate all pacf coefficients.
+            - "ols-adjusted": Regression of time series on lags with a
+              bias adjustment.
+            - "ld" or "ldadjusted": Levinson-Durbin recursion with bias
+              correction.
+            - "ldb" or "ldbiased": Levinson-Durbin recursion without bias
+              correction.
+            - "burg":  Burg"s partial autocorrelation estimator.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -706,7 +1066,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="lower right"
+        legend: str, dict or None, default="upper right"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
@@ -716,7 +1076,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
-            adapts the size to the number of n-grams shown.
+            adapts the size to the number of lags shown.
 
         filename: str, Path or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -755,39 +1115,76 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             columns_c = lst(self.branch.target)
         else:
             columns_c = self.branch._get_columns(columns)
-        show_c = self._get_show(show)
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
+        if nlags is None:
+            nlags = min(int(10 * np.log10(self.branch.shape[0])), self.branch.shape[0] // 2 - 1)
+
         for col in columns_c:
-            corr_array = pacf(self.branch.dataset[col].dropna(), nlags=10, alpha=0.05)
+            # Returns correlation array and confidence interval
+            corr, conf = pacf(self.branch.dataset[col], nlags=nlags, method=method, alpha=0.05)
 
-            lower_y = corr_array[1][:, 0] - corr_array[0]
-            upper_y = corr_array[1][:, 1] - corr_array[0]
+            for pos in (x := np.arange(len(corr))):
+                self._draw_line(
+                    x=(pos, pos),
+                    y=(0, corr[pos]),
+                    parent=col,
+                    hoverinfo="skip",
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
 
-            for x in range(len(corr_array[0])):
-                fig.add_scatter(x=(x, x), y=(0, corr_array[0][x]), mode='lines', line_color='#3f3f3f', xaxis=xaxis, yaxis=yaxis)
+            self._draw_line(
+                x=x,
+                y=corr,
+                parent=col,
+                mode="markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
 
-            fig.add_scatter(x=np.arange(len(corr_array[0])), y=corr_array[0], mode='markers',
-                            marker_color='#1f77b4',
-                            marker_size=12, xaxis=xaxis, yaxis=yaxis)
-            fig.add_scatter(x=np.arange(len(corr_array[0])), y=upper_y, mode='lines',
-                            line_color='rgba(255,255,255,0)', xaxis=xaxis, yaxis=yaxis)
-            fig.add_scatter(x=np.arange(len(corr_array[0])), y=lower_y, mode='lines',
-                            fillcolor='rgba(32, 146, 230,0.3)',
-                            fill='tonexty', line_color='rgba(255,255,255,0)', xaxis=xaxis, yaxis=yaxis)
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 1], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        hovertemplate="%{y}<extra>upper bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 0], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        fill="tonexty",
+                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                        hovertemplate="%{y}<extra>lower bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                ]
+            )
 
-            fig.update_traces(showlegend=False)
-            # fig.update_xaxes(range=[-1, 42])
-            fig.update_yaxes(zerolinecolor="black")
+        fig.update_yaxes(zerolinecolor="black")
+        fig.update_layout({"hovermode": "x unified"})
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Lag",
+            ylabel="Partial autocorrelation",
             title=title,
             legend=legend,
-            figsize=figsize or (900, 400 + show_c * 50),
+            figsize=figsize or (700 + nlags * 10, 600),
             plotname="plot_pacf",
             filename=filename,
             display=display,
@@ -994,7 +1391,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         """
         columns_c = self.branch._get_columns(columns)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         percentiles = np.linspace(0, 100, 101)
@@ -1285,20 +1682,18 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         mean = self.rfecv_.cv_results_["mean_test_score"]
         std = self.rfecv_.cv_results_["std_test_score"]
 
-        fig.add_scatter(
+        self._draw_line(
             x=list(x),
             y=mean,
+            parent="rfecv",
+            name=ylabel,
             mode="lines+markers",
-            line={"width": self.line_width, "color": BasePlot._fig.get_elem("rfecv")},
             marker={
                 "symbol": symbols,
                 "size": sizes,
                 "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
                 "opacity": 1,
             },
-            name=ylabel,
-            legendgroup="rfecv",
-            showlegend=BasePlot._fig.showlegend("rfecv", legend),
             xaxis=xaxis,
             yaxis=yaxis,
         )
@@ -1350,6 +1745,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("forecast"))
     @crash
     def plot_series(
         self,
@@ -1364,8 +1760,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     ) -> go.Figure | None:
         """Plot a data series.
 
-        This plot is specially useful to plot the time series for
-        [forecast][time-series] tasks.
+        This plot is only available for [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -1437,7 +1832,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         else:
             columns_c = self.branch._get_columns(columns, include_target=True)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for col in columns_c:
@@ -1445,14 +1840,14 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 self._draw_line(
                     x=self._get_plot_index(y := self.branch._get_rows(ds)[col]),
                     y=y,
+                    parent=col,
+                    child=child,
                     mode="lines+markers",
                     marker={
                         "size": self.marker_size,
                         "color": BasePlot._fig.get_elem(col),
                         "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
                     },
-                    parent=col,
-                    child=child,
                     legend=legend,
                     xaxis=xaxis,
                     yaxis=yaxis,

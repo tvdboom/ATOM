@@ -20,8 +20,8 @@ from sklearn.utils.metaestimators import available_if
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.types import (
-    Bool, Int, IntLargerZero, Legend, ModelSelector, RowSelector,
-    TargetsSelector,
+    Bool, ColumnSelector, Int, IntLargerZero, Legend, ModelSelector,
+    RowSelector, TargetsSelector,
 )
 from atom.utils.utils import check_canvas, crash, has_task
 
@@ -645,7 +645,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
         self,
         models: ModelSelector | None = None,
         rows: RowSelector = "test",
-        columns: Int | str = 0,
+        columns: ColumnSelector = 0,
         target: TargetsSelector = 1,
         *,
         title: str | dict[str, Any] | None = None,
@@ -676,8 +676,9 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             plot_shap_scatter method does not support plotting a single
             sample.
 
-        columns: int or str, default=0
-            Column to plot.
+        columns: int, str, segment, sequence or dataframe, default=0
+            [Feature][row-and-column-selection] to plot. Only one
+            column can be selected.
 
         target: int, str or tuple, default=1
             Class in the target column to target. For multioutput tasks,
