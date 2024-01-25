@@ -254,16 +254,14 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             for met in metric_c:
                 y = np.sum(m.trials[met].values[:, np.newaxis] <= x, axis=0)
-                fig.add_trace(
-                    self._draw_line(
-                        x=x,
-                        y=y / len(m.trials),
-                        parent=m.name,
-                        child=met,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=x,
+                    y=y / len(m.trials),
+                    parent=m.name,
+                    child=met,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -379,22 +377,20 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             fanova = FanovaImportanceEvaluator(seed=self.random_state)
             importances = fanova.evaluate(m.study, target=self._optuna_target(metric_c))
 
-            fig.add_trace(
-                go.Bar(
-                    x=np.array(list(importances.values())) / sum(importances.values()),
-                    y=list(importances),
-                    orientation="h",
-                    marker={
-                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
-                    },
-                    hovertemplate="%{x}<extra></extra>",
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            fig.add_bar(
+                x=np.array(list(importances.values())) / sum(importances.values()),
+                y=list(importances),
+                orientation="h",
+                marker={
+                    "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                    "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                },
+                hovertemplate="%{x}<extra></extra>",
+                name=m.name,
+                legendgroup=m.name,
+                showlegend=BasePlot._fig.showlegend(m.name, legend),
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
         fig.update_layout(
@@ -534,46 +530,42 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                     },
                 )
 
-                fig.add_trace(
-                    go.Scatter(
-                        x=model.trials[params_c[y]],
-                        y=model.trials[params_c[x + 1]],
-                        mode="markers",
-                        marker={
-                            "size": self.marker_size,
-                            "color": BasePlot._fig.get_elem(model.name),
-                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                        },
-                        customdata=list(
-                            zip(model.trials.index, model.trials[metric_c], strict=True)
-                        ),
-                        hovertemplate=(
-                            f"{params_c[y]}:%{{x}}<br>"
-                            f"{params_c[x + 1]}:%{{y}}<br>"
-                            f"{metric_c}:%{{customdata[1]:.4f}}"
-                            "<extra>Trial %{customdata[0]}</extra>"
-                        ),
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_scatter(
+                    x=model.trials[params_c[y]],
+                    y=model.trials[params_c[x + 1]],
+                    mode="markers",
+                    marker={
+                        "size": self.marker_size,
+                        "color": BasePlot._fig.get_elem(model.name),
+                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    },
+                    customdata=list(
+                        zip(model.trials.index, model.trials[metric_c], strict=True)
+                    ),
+                    hovertemplate=(
+                        f"{params_c[y]}:%{{x}}<br>"
+                        f"{params_c[x + 1]}:%{{y}}<br>"
+                        f"{metric_c}:%{{customdata[1]:.4f}}"
+                        "<extra>Trial %{customdata[0]}</extra>"
+                    ),
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
-                fig.add_trace(
-                    go.Contour(
-                        x=model.trials[params_c[y]],
-                        y=model.trials[params_c[x + 1]],
-                        z=model.trials[metric_c],
-                        contours={
-                            "showlabels": True,
-                            "labelfont": {"size": self.tick_fontsize, "color": "white"},
-                        },
-                        coloraxis="coloraxis99",
-                        hoverinfo="skip",
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_contour(
+                    x=model.trials[params_c[y]],
+                    y=model.trials[params_c[x + 1]],
+                    z=model.trials[metric_c],
+                    contours={
+                        "showlabels": True,
+                        "labelfont": {"size": self.tick_fontsize, "color": "white"},
+                    },
+                    coloraxis="coloraxis99",
+                    hoverinfo="skip",
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 if _is_log_scale(model.study.trials, params_c[y]):
@@ -762,17 +754,15 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
             }
         )
 
-        fig.add_trace(
-            go.Parcoords(
-                dimensions=dims,
-                line={
-                    "color": dims[0]["values"],
-                    "coloraxis": f"coloraxis{xaxis[1:]}",
-                },
-                unselected={"line": {"color": "gray", "opacity": 0.5}},
-                labelside="bottom",
-                labelfont={"size": self.label_fontsize},
-            )
+        fig.add_parcoords(
+            dimensions=dims,
+            line={
+                "color": dims[0]["values"],
+                "coloraxis": f"coloraxis{xaxis[1:]}",
+            },
+            unselected={"line": {"color": "gray", "opacity": 0.5}},
+            labelside="bottom",
+            labelfont={"size": self.label_fontsize},
         )
 
         BasePlot._fig.used_models.append(model)
@@ -904,22 +894,20 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                     y=(y_pos, rnd(y_pos + size)),
                 )
 
-                fig.add_trace(
-                    go.Scatter(
-                        x=model.trials[metric_c[y]],
-                        y=model.trials[metric_c[x + 1]],
-                        mode="markers",
-                        marker={
-                            "size": self.marker_size,
-                            "color": model.trials.index,
-                            "colorscale": "Teal",
-                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                        },
-                        customdata=model.trials.index,
-                        hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_scatter(
+                    x=model.trials[metric_c[y]],
+                    y=model.trials[metric_c[x + 1]],
+                    mode="markers",
+                    marker={
+                        "size": self.marker_size,
+                        "color": model.trials.index,
+                        "colorscale": "Teal",
+                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    },
+                    customdata=model.trials.index,
+                    hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 if x < length - 1:
@@ -1057,22 +1045,20 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                 y=(y_pos, rnd(y_pos + y_size)),
             )
 
-            fig.add_trace(
-                go.Scatter(
-                    x=model.trials[params_c[y]],
-                    y=model.trials[metric_c[x]],
-                    mode="markers",
-                    marker={
-                        "size": self.marker_size,
-                        "color": model.trials.index,
-                        "colorscale": "Teal",
-                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                    },
-                    customdata=model.trials.index,
-                    hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            fig.add_scatter(
+                x=model.trials[params_c[y]],
+                y=model.trials[metric_c[x]],
+                mode="markers",
+                marker={
+                    "size": self.marker_size,
+                    "color": model.trials.index,
+                    "colorscale": "Teal",
+                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                },
+                customdata=model.trials.index,
+                hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
             if _is_log_scale(model.study.trials, params_c[y]):
@@ -1205,17 +1191,15 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                     "(e.g., using ht_params={'cv': 5}) on a single-metric optimization."
                 )
 
-            fig.add_trace(
-                self._draw_line(
-                    x=m.trials.index,
-                    y=info.improvements,
-                    error_y={"type": "data", "array": info.errors},
-                    mode="markers+lines",
-                    parent=m.name,
-                    legend=legend,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            self._draw_line(
+                x=m.trials.index,
+                y=info.improvements,
+                error_y={"type": "data", "array": info.errors},
+                mode="markers+lines",
+                parent=m.name,
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -1350,24 +1334,22 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
             for state in sorted(TrialState, key=lambda x: x.name):
                 if bars := list(filter(lambda x: x.state == state, info)):
-                    fig.add_trace(
-                        go.Bar(
-                            name=state.name,
-                            x=[b.duration for b in bars],
-                            y=[b.number for b in bars],
-                            base=[b.start.isoformat() for b in bars],
-                            text=[b.hovertext for b in bars],
-                            textposition="none",
-                            hovertemplate=f"%{{text}}<extra>{m.name}</extra>",
-                            orientation="h",
-                            marker={
-                                "color": f"rgba({_cm[state.name][4:-1]}, 0.2)",
-                                "line": {"width": 2, "color": _cm[state.name]},
-                            },
-                            showlegend=BasePlot._fig.showlegend(_cm[state.name], legend),
-                            xaxis=xaxis,
-                            yaxis=yaxis,
-                        )
+                    fig.add_bar(
+                        name=state.name,
+                        x=[b.duration for b in bars],
+                        y=[b.number for b in bars],
+                        base=[b.start.isoformat() for b in bars],
+                        text=[b.hovertext for b in bars],
+                        textposition="none",
+                        hovertemplate=f"%{{text}}<extra>{m.name}</extra>",
+                        orientation="h",
+                        marker={
+                            "color": f"rgba({_cm[state.name][4:-1]}, 0.2)",
+                            "line": {"width": 2, "color": _cm[state.name]},
+                        },
+                        showlegend=BasePlot._fig.showlegend(_cm[state.name], legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
                     )
 
         fig.update_layout({f"xaxis{yaxis[1:]}_type": "date", "barmode": "group"})
@@ -1485,34 +1467,30 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
                 sizes = [self.marker_size] * len(m.trials)
                 sizes[m.best_trial.number] = self.marker_size * 1.5
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=m.trials.index,
-                        y=m.trials[met],
-                        mode="lines+markers",
-                        marker_symbol=symbols,
-                        marker_size=sizes,
-                        hovertemplate=None,
-                        parent=m.name,
-                        child=self._metric[met].name,
-                        legend=legend,
-                        xaxis=xaxis2,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=m.trials.index,
+                    y=m.trials[met],
+                    mode="lines+markers",
+                    marker_symbol=symbols,
+                    marker_size=sizes,
+                    hovertemplate=None,
+                    parent=m.name,
+                    child=self._metric[met].name,
+                    legend=legend,
+                    xaxis=xaxis2,
+                    yaxis=yaxis,
                 )
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=m.trials.index,
-                        y=m.trials[met].diff(),
-                        mode="lines+markers",
-                        marker_symbol="circle",
-                        parent=m.name,
-                        child=self._metric[met].name,
-                        legend=legend,
-                        xaxis=xaxis2,
-                        yaxis=yaxis2,
-                    )
+                self._draw_line(
+                    x=m.trials.index,
+                    y=m.trials[met].diff(),
+                    mode="lines+markers",
+                    marker_symbol="circle",
+                    parent=m.name,
+                    child=self._metric[met].name,
+                    legend=legend,
+                    xaxis=xaxis2,
+                    yaxis=yaxis2,
                 )
 
         fig.update_layout(

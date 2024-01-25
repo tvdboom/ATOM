@@ -165,44 +165,40 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for met in metric_c:
             if any(m._bootstrap is None for m in models_c):
-                fig.add_trace(
-                    go.Bar(
-                        x=[m._best_score(met) for m in models_c],
-                        y=[m.name for m in models_c],
-                        error_x={
-                            "type": "data",
-                            "array": [
-                                0 if m._bootstrap is None else m.bootstrap.loc[:, met].std()
-                                for m in models_c
-                            ],
-                        },
-                        orientation="h",
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(met)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(met)},
-                        },
-                        hovertemplate="%{x}<extra></extra>",
-                        name=met,
-                        legendgroup=met,
-                        showlegend=BasePlot._fig.showlegend(met, legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_bar(
+                    x=[m._best_score(met) for m in models_c],
+                    y=[m.name for m in models_c],
+                    error_x={
+                        "type": "data",
+                        "array": [
+                            0 if m._bootstrap is None else m.bootstrap.loc[:, met].std()
+                            for m in models_c
+                        ],
+                    },
+                    orientation="h",
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(met)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(met)},
+                    },
+                    hovertemplate="%{x}<extra></extra>",
+                    name=met,
+                    legendgroup=met,
+                    showlegend=BasePlot._fig.showlegend(met, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
             else:
-                fig.add_trace(
-                    go.Box(
-                        x=np.ravel([m.bootstrap.loc[:, met] for m in models_c]),
-                        y=np.ravel([[m.name] * len(m.bootstrap) for m in models_c]),
-                        marker_color=BasePlot._fig.get_elem(met),
-                        boxpoints="outliers",
-                        orientation="h",
-                        name=met,
-                        legendgroup=met,
-                        showlegend=BasePlot._fig.showlegend(met, legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_box(
+                    x=np.ravel([m.bootstrap.loc[:, met] for m in models_c]),
+                    y=np.ravel([[m.name] * len(m.bootstrap) for m in models_c]),
+                    marker_color=BasePlot._fig.get_elem(met),
+                    boxpoints="outliers",
+                    orientation="h",
+                    name=met,
+                    legendgroup=met,
+                    showlegend=BasePlot._fig.showlegend(met, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         fig.update_layout(
@@ -347,34 +343,30 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 # Get calibration (frac of positives and predicted values)
                 frac_pos, pred = calibration_curve(y_true, y_pred, n_bins=n_bins)
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=pred,
-                        y=frac_pos,
-                        parent=m.name,
-                        child=child,
-                        mode="lines+markers",
-                        marker_symbol="circle",
-                        legend=legend,
-                        xaxis=xaxis2,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=pred,
+                    y=frac_pos,
+                    parent=m.name,
+                    child=child,
+                    mode="lines+markers",
+                    marker_symbol="circle",
+                    legend=legend,
+                    xaxis=xaxis2,
+                    yaxis=yaxis,
                 )
 
-                fig.add_trace(
-                    go.Histogram(
-                        x=y_pred,
-                        xbins={"start": 0, "end": 1, "size": 1.0 / n_bins},
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
-                        },
-                        name=m.name,
-                        legendgroup=m.name,
-                        showlegend=False,
-                        xaxis=xaxis2,
-                        yaxis=yaxis2,
-                    )
+                fig.add_histogram(
+                    x=y_pred,
+                    xbins={"start": 0, "end": 1, "size": 1.0 / n_bins},
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                    },
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis2,
+                    yaxis=yaxis2,
                 )
 
         self._draw_straight_line((pred, frac_pos), y="diagonal", xaxis=xaxis2, yaxis=yaxis)
@@ -544,27 +536,25 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     target_c, np.unique(m.branch.dataset[target_c]).astype(str)
                 )
 
-                fig.add_trace(
-                    go.Heatmap(
-                        x=ticks,
-                        y=ticks,
-                        z=100.0 * cm / cm.sum(axis=1)[:, np.newaxis],
-                        coloraxis=f"coloraxis{xaxis[1:]}",
-                        text=cm,
-                        customdata=labels,
-                        texttemplate="%{text}<br>(%{z:.2f}%)",
-                        textfont={"size": self.label_fontsize},
-                        hovertemplate=(
-                            "%{customdata}<extra></extra>"
-                            if self.task.is_binary
-                            else ""
-                            "Predicted label:%{x}<br>True label:%{y}<br>Percentage:%{z}"
-                            "<extra></extra>"
-                        ),
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_heatmap(
+                    x=ticks,
+                    y=ticks,
+                    z=100.0 * cm / cm.sum(axis=1)[:, np.newaxis],
+                    coloraxis=f"coloraxis{xaxis[1:]}",
+                    text=cm,
+                    customdata=labels,
+                    texttemplate="%{text}<br>(%{z:.2f}%)",
+                    textfont={"size": self.label_fontsize},
+                    hovertemplate=(
+                        "%{customdata}<extra></extra>"
+                        if self.task.is_binary
+                        else ""
+                        "Predicted label:%{x}<br>True label:%{y}<br>Percentage:%{z}"
+                        "<extra></extra>"
+                    ),
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 fig.update_layout(
@@ -577,22 +567,20 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 )
 
             else:
-                fig.add_trace(
-                    go.Bar(
-                        x=cm.ravel(),
-                        y=labels.ravel(),
-                        orientation="h",
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
-                        },
-                        hovertemplate="%{x}<extra></extra>",
-                        name=m.name,
-                        legendgroup=m.name,
-                        showlegend=BasePlot._fig.showlegend(m.name, legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_bar(
+                    x=cm.ravel(),
+                    y=labels.ravel(),
+                    orientation="h",
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                    },
+                    hovertemplate="%{x}<extra></extra>",
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=BasePlot._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 fig.update_layout(bargroupgap=0.05)
@@ -709,17 +697,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     *m._get_pred(ds, target, method=("decision_function", "predict_proba"))
                 )
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=fpr,
-                        y=fnr,
-                        mode="lines",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=fpr,
+                    y=fnr,
+                    mode="lines",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -833,17 +819,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target)
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=y_true,
-                        y=y_pred,
-                        mode="markers",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=y_true,
+                    y=y_pred,
+                    mode="markers",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 # Fit the points using linear regression
@@ -852,17 +836,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 model = OrdinaryLeastSquares(goal=self._goal)
                 estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
-                        y=estimator.predict(x[:, np.newaxis]),
-                        mode="lines",
-                        hovertemplate="(%{x}, %{y})<extra></extra>",
-                        parent=m.name,
-                        legend=None,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
+                    y=estimator.predict(x[:, np.newaxis]),
+                    mode="lines",
+                    hovertemplate="(%{x}, %{y})<extra></extra>",
+                    parent=m.name,
+                    legend=None,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line((y_true, y_pred), y="diagonal", xaxis=xaxis, yaxis=yaxis)
@@ -972,17 +954,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 )
 
             for ds in dataset.split("+"):
-                fig.add_trace(
-                    self._draw_line(
-                        x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
-                        y=m.evals[f"{self._metric[0].name}_{ds}"],
-                        marker_symbol="circle",
-                        parent=m.name,
-                        child=ds,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
+                    y=m.evals[f"{self._metric[0].name}_{ds}"],
+                    marker_symbol="circle",
+                    parent=m.name,
+                    child=ds,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -1094,22 +1074,20 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     "nor coef_ attribute."
                 ) from None
 
-            fig.add_trace(
-                go.Bar(
-                    x=fi,
-                    y=fi.index,
-                    orientation="h",
-                    marker={
-                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
-                    },
-                    hovertemplate="%{x}<extra></extra>",
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            fig.add_bar(
+                x=fi,
+                y=fi.index,
+                orientation="h",
+                marker={
+                    "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                    "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                },
+                hovertemplate="%{x}<extra></extra>",
+                name=m.name,
+                legendgroup=m.name,
+                showlegend=BasePlot._fig.showlegend(m.name, legend),
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
         fig.update_layout(
@@ -1272,30 +1250,26 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             y_true = m.branch._all.loc[y_pred.index, target_c]
 
-            fig.add_trace(
-                self._draw_line(
-                    x=(x := self._get_plot_index(y_pred)),
-                    y=y_pred,
-                    mode="lines+markers",
-                    parent=m.name,
-                    legend=legend,
-                    xaxis=xaxis2,
-                    yaxis=yaxis,
-                )
+            self._draw_line(
+                x=(x := self._get_plot_index(y_pred)),
+                y=y_pred,
+                mode="lines+markers",
+                parent=m.name,
+                legend=legend,
+                xaxis=xaxis2,
+                yaxis=yaxis,
             )
 
             # Draw residuals
-            fig.add_trace(
-                self._draw_line(
-                    x=x,
-                    y=np.subtract(y_true, y_pred),
-                    mode="lines+markers",
-                    parent=m.name,
-                    legend=legend,
-                    showlegend=False,
-                    xaxis=xaxis2,
-                    yaxis=yaxis2,
-                )
+            self._draw_line(
+                x=x,
+                y=np.subtract(y_true, y_pred),
+                mode="lines+markers",
+                parent=m.name,
+                legend=legend,
+                showlegend=False,
+                xaxis=xaxis2,
+                yaxis=yaxis2,
             )
 
             if plot_interval:
@@ -1343,17 +1317,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 )
 
         # Draw original time series
-        fig.add_trace(
-            go.Scatter(
-                x=x,
-                y=y_true,
-                mode="lines+markers",
-                line={"width": 1, "color": "black", "dash": "dash"},
-                opacity=0.6,
-                showlegend=False,
-                xaxis=xaxis2,
-                yaxis=yaxis,
-            )
+        fig.add_scatter(
+            x=x,
+            y=y_true,
+            mode="lines+markers",
+            line={"width": 1, "color": "black", "dash": "dash"},
+            opacity=0.6,
+            showlegend=False,
+            xaxis=xaxis2,
+            yaxis=yaxis,
         )
 
         # Draw horizontal reference line for residuals
@@ -1478,17 +1450,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     ds, target, method=("decision_function", "predict_proba")
                 )
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
-                        y=(y := np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()),
-                        mode="lines",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
+                    y=(y := np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()),
+                    mode="lines",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
@@ -1601,19 +1571,17 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     std[m._group].append(m.bootstrap.loc[:, met].std())
 
             for group in x:
-                fig.add_trace(
-                    self._draw_line(
-                        x=x[group],
-                        y=y[group],
-                        mode="lines+markers",
-                        marker_symbol="circle",
-                        error_y={"type": "data", "array": std[group], "visible": True},
-                        parent=group,
-                        child=self._metric[met].name,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=x[group],
+                    y=y[group],
+                    mode="lines+markers",
+                    marker_symbol="circle",
+                    error_y={"type": "data", "array": std[group], "visible": True},
+                    parent=group,
+                    child=self._metric[met].name,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 # Add error bands
@@ -1759,18 +1727,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     ds, target, method=("decision_function", "predict_proba")
                 )
 
-                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
-                fig.add_trace(
-                    self._draw_line(
-                        x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
-                        y=(y := gains / x),
-                        mode="lines",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
+                    y=(y := np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum() / x),
+                    mode="lines",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line((x, y), y=1, xaxis=xaxis, yaxis=yaxis)
@@ -1943,31 +1908,29 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             else:
                 color = BasePlot._fig.get_elem("parshap")
 
-            fig.add_trace(
-                go.Scatter(
-                    x=(x := parshap["train"]),
-                    y=(y := parshap["test"]),
-                    mode="markers+text",
-                    marker={
-                        "color": color,
-                        "size": self.marker_size,
-                        "coloraxis": f"coloraxis{xaxis[1:]}",
-                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                    },
-                    text=m.branch.features,
-                    textposition="top center",
-                    customdata=(data := None if isinstance(color, str) else list(color)),
-                    hovertemplate=(
-                        f"%{{text}}<br>(%{{x}}, %{{y}})"
-                        f"{'<br>Feature importance: %{customdata:.4f}' if data else ''}"
-                        f"<extra>{m.name}</extra>"
-                    ),
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            fig.add_scatter(
+                x=(x := parshap["train"]),
+                y=(y := parshap["test"]),
+                mode="markers+text",
+                marker={
+                    "color": color,
+                    "size": self.marker_size,
+                    "coloraxis": f"coloraxis{xaxis[1:]}",
+                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                },
+                text=m.branch.features,
+                textposition="top center",
+                customdata=(data := None if isinstance(color, str) else list(color)),
+                hovertemplate=(
+                    f"%{{text}}<br>(%{{x}}, %{{y}})"
+                    f"{'<br>Feature importance: %{customdata:.4f}' if data else ''}"
+                    f"<extra>{m.name}</extra>"
+                ),
+                name=m.name,
+                legendgroup=m.name,
+                showlegend=BasePlot._fig.showlegend(m.name, legend),
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
         self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
@@ -2198,18 +2161,16 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
                     # Draw the mean of the individual lines
                     if "average" in kind:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=pred["values"][0],
-                                y=pred["average"][target_c].ravel(),
-                                mode="lines",
-                                line={"width": 2, "color": color},
-                                name=m.name,
-                                legendgroup=m.name,
-                                showlegend=BasePlot._fig.showlegend(m.name, legend),
-                                xaxis=ax[0],
-                                yaxis=axes[0][1],
-                            )
+                        fig.add_scatter(
+                            x=pred["values"][0],
+                            y=pred["average"][target_c].ravel(),
+                            mode="lines",
+                            line={"width": 2, "color": color},
+                            name=m.name,
+                            legendgroup=m.name,
+                            showlegend=BasePlot._fig.showlegend(m.name, legend),
+                            xaxis=ax[0],
+                            yaxis=axes[0][1],
                         )
 
                     # Draw all individual (per sample) lines (ICE)
@@ -2221,42 +2182,38 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             replace=False,
                         )
                         for sample in pred["individual"][target_c, idx, :]:
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=pred["values"][0],
-                                    y=sample,
-                                    mode="lines",
-                                    line={"width": 0.5, "color": color},
-                                    name=m.name,
-                                    legendgroup=m.name,
-                                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                                    xaxis=ax[0],
-                                    yaxis=axes[0][1],
-                                )
+                            fig.add_scatter(
+                                x=pred["values"][0],
+                                y=sample,
+                                mode="lines",
+                                line={"width": 0.5, "color": color},
+                                name=m.name,
+                                legendgroup=m.name,
+                                showlegend=BasePlot._fig.showlegend(m.name, legend),
+                                xaxis=ax[0],
+                                yaxis=axes[0][1],
                             )
 
                 else:
                     colorscale = PALETTE.get(BasePlot._fig.get_elem(m.name), "Teal")
-                    fig.add_trace(
-                        go.Contour(
-                            x=pred["values"][0],
-                            y=pred["values"][1],
-                            z=pred["average"][target_c],
-                            contours={
-                                "showlabels": True,
-                                "labelfont": {
-                                    "size": self.tick_fontsize,
-                                    "color": "white",
-                                },
+                    fig.add_contour(
+                        x=pred["values"][0],
+                        y=pred["values"][1],
+                        z=pred["average"][target_c],
+                        contours={
+                            "showlabels": True,
+                            "labelfont": {
+                                "size": self.tick_fontsize,
+                                "color": "white",
                             },
-                            hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
-                            hoverongaps=False,
-                            colorscale=colorscale,
-                            showscale=False,
-                            showlegend=False,
-                            xaxis=ax[0],
-                            yaxis=axes[0][1],
-                        )
+                        },
+                        hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
+                        hoverongaps=False,
+                        colorscale=colorscale,
+                        showscale=False,
+                        showlegend=False,
+                        xaxis=ax[0],
+                        yaxis=axes[0][1],
                     )
 
                 self._plot(
@@ -2378,19 +2335,17 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 random_state=self.random_state,
             )
 
-            fig.add_trace(
-                go.Box(
-                    x=permutations["importances"].ravel(),
-                    y=list(np.ravel([[fx] * n_repeats for fx in m.branch.features])),
-                    marker_color=BasePlot._fig.get_elem(m.name),
-                    boxpoints="outliers",
-                    orientation="h",
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=BasePlot._fig.showlegend(m.name, legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            fig.add_box(
+                x=permutations["importances"].ravel(),
+                y=list(np.ravel([[fx] * n_repeats for fx in m.branch.features])),
+                marker_color=BasePlot._fig.get_elem(m.name),
+                boxpoints="outliers",
+                orientation="h",
+                name=m.name,
+                legendgroup=m.name,
+                showlegend=BasePlot._fig.showlegend(m.name, legend),
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
         fig.update_layout(
@@ -2830,17 +2785,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 # Get precision-recall pairs for different thresholds
                 prec, rec, _ = precision_recall_curve(y_true, y_pred)
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=rec,
-                        y=prec,
-                        mode="lines",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=rec,
+                    y=prec,
+                    mode="lines",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line(
@@ -2971,29 +2924,27 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 else:
                     hist = y_pred.loc[y_true == v, str(cls)]
 
-                fig.add_trace(
-                    go.Scatter(
-                        x=(x := np.linspace(0, 1, 100)),
-                        y=stats.gaussian_kde(hist)(x),
-                        mode="lines",
-                        line={
-                            "width": 2,
-                            "color": BasePlot._fig.get_elem(m.name),
-                            "dash": BasePlot._fig.get_elem(str(v), "dash"),
-                        },
-                        fill="tonexty",
-                        fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
-                        fillpattern={"shape": BasePlot._fig.get_elem(str(v), "shape")},
-                        name=f"{col}={v}",
-                        legendgroup=m.name,
-                        legendgrouptitle={
-                            "text": m.name,
-                            "font_size": self.label_fontsize,
-                        },
-                        showlegend=BasePlot._fig.showlegend(f"{m.name}-{v}", legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_sactter(
+                    x=(x := np.linspace(0, 1, 100)),
+                    y=stats.gaussian_kde(hist)(x),
+                    mode="lines",
+                    line={
+                        "width": 2,
+                        "color": BasePlot._fig.get_elem(m.name),
+                        "dash": BasePlot._fig.get_elem(str(v), "dash"),
+                    },
+                    fill="tonexty",
+                    fillcolor=f"rgba{BasePlot._fig.get_elem(m.name)[3:-1]}, 0.2)",
+                    fillpattern={"shape": BasePlot._fig.get_elem(str(v), "shape")},
+                    name=f"{col}={v}",
+                    legendgroup=m.name,
+                    legendgrouptitle={
+                        "text": m.name,
+                        "font_size": self.label_fontsize,
+                    },
+                    showlegend=BasePlot._fig.showlegend(f"{m.name}-{v}", legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -3112,33 +3063,29 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             for child, ds in self._get_set(rows):
                 y_true, y_pred = m._get_pred(ds, target)
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=y_true,
-                        y=(res := np.subtract(y_true, y_pred)),
-                        mode="markers",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=y_true,
+                    y=(res := np.subtract(y_true, y_pred)),
+                    mode="markers",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
-                fig.add_trace(
-                    go.Histogram(
-                        y=res,
-                        bingroup="residuals",
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
-                        },
-                        name=m.name,
-                        legendgroup=m.name,
-                        showlegend=False,
-                        xaxis=xaxis2,
-                        yaxis=yaxis,
-                    )
+                fig.add_histogram(
+                    y=res,
+                    bingroup="residuals",
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(m.name)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(m.name)},
+                    },
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis2,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line((y_true, res), y=0, xaxis=xaxis, yaxis=yaxis)
@@ -3287,40 +3234,36 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         f"can't be mixed with non-time metrics, got {metric_c}."
                     )
 
-                fig.add_trace(
-                    go.Bar(
-                        x=[m.results[met] for m in models_c],
-                        y=[m.name for m in models_c],
-                        orientation="h",
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(met)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(met)},
-                        },
-                        hovertemplate=f"%{{x}}<extra>{met}</extra>",
-                        name=met,
-                        legendgroup=met,
-                        showlegend=BasePlot._fig.showlegend(met, legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_bar(
+                    x=[m.results[met] for m in models_c],
+                    y=[m.name for m in models_c],
+                    orientation="h",
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(met)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(met)},
+                    },
+                    hovertemplate=f"%{{x}}<extra>{met}</extra>",
+                    name=met,
+                    legendgroup=met,
+                    showlegend=BasePlot._fig.showlegend(met, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
             else:
-                fig.add_trace(
-                    go.Bar(
-                        x=[m._get_score(met, rows) for m in models_c],
-                        y=[m.name for m in models_c],
-                        orientation="h",
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(met.name)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(met.name)},
-                        },
-                        hovertemplate="%{x}<extra></extra>",
-                        name=met.name,
-                        legendgroup=met.name,
-                        showlegend=BasePlot._fig.showlegend(met, legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_bar(
+                    x=[m._get_score(met, rows) for m in models_c],
+                    y=[m.name for m in models_c],
+                    orientation="h",
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(met.name)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(met.name)},
+                    },
+                    hovertemplate="%{x}<extra></extra>",
+                    name=met.name,
+                    legendgroup=met.name,
+                    showlegend=BasePlot._fig.showlegend(met, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         fig.update_layout(
@@ -3441,17 +3384,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     *m._get_pred(ds, target, method=("decision_function", "predict_proba"))
                 )
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=fpr,
-                        y=tpr,
-                        mode="lines",
-                        parent=m.name,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=fpr,
+                    y=tpr,
+                    mode="lines",
+                    parent=m.name,
+                    child=child,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line((fpr, tpr), y="diagonal", xaxis=xaxis, yaxis=yaxis)
@@ -3564,24 +3505,21 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     std[m._group].append(m.bootstrap.loc[:, met].std())
 
             for group in x:
-                fig.add_trace(
-                    self._draw_line(
-                        x=x[group],
-                        y=y[group],
-                        mode="lines+markers",
-                        marker_symbol="circle",
-                        error_y={"type": "data", "array": std[group], "visible": True},
-                        parent=group,
-                        child=self._metric[met].name,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=x[group],
+                    y=y[group],
+                    mode="lines+markers",
+                    marker_symbol="circle",
+                    error_y={"type": "data", "array": std[group], "visible": True},
+                    parent=group,
+                    child=self._metric[met].name,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 # Add error bands
                 if m.bootstrap is not None:
-                    fillcolor = f"rgba{BasePlot._fig.get_elem(group)[3:-1]}, 0.2)"
                     fig.add_traces(
                         [
                             go.Scatter(
@@ -3601,7 +3539,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                                 mode="lines",
                                 line={"width": 1, "color": BasePlot._fig.get_elem(group)},
                                 fill="tonexty",
-                                fillcolor=fillcolor,
+                                fillcolor=f"rgba{BasePlot._fig.get_elem(group)[3:-1]}, 0.2)",
                                 hovertemplate="%{y}<extra>lower bound</extra>",
                                 legendgroup=group,
                                 showlegend=False,
@@ -3743,16 +3681,14 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             y_true, y_pred = m._get_pred(rows, target, method="predict_proba")
             for met in metric_c:
-                fig.add_trace(
-                    self._draw_line(
-                        x=(x := np.linspace(0, 1, steps)),
-                        y=[met(y_true, y_pred >= step) for step in x],
-                        parent=m.name,
-                        child=met.__name__,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=(x := np.linspace(0, 1, steps)),
+                    y=[met(y_true, y_pred >= step) for step in x],
+                    parent=m.name,
+                    child=met.__name__,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         BasePlot._fig.used_models.extend(models_c)

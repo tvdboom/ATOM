@@ -392,8 +392,8 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         child: str | None = None,
         legend: Legend | dict[str, Any] | None = None,
         **kwargs,
-    ) -> go.Scatter:
-        """Draw a line.
+    ):
+        """Draw a line on the current figure.
 
         Unify the style to draw a line, where parent and child
         (e.g., model - data set or column - distribution) keep the
@@ -414,13 +414,8 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         **kwargs
             Additional keyword arguments for the trace.
 
-        Returns
-        -------
-        go.Scatter
-            New trace to add to figure.
-
         """
-        return go.Scatter(
+        Baseplot._fig.figure.add_scatter(
             line=kwargs.pop(
                 "line", {
                     "width": self.line_width,
