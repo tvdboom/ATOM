@@ -255,7 +255,7 @@ class BaseTransformer:
             "ray",
             "modin",
             "featuretools",
-            "evalml",
+            "prophet",
         ]
 
         # Clear existing handlers for external loggers

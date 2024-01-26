@@ -115,9 +115,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         See Also
         --------
-        atom.plots:DataPlot.plot_acf
+        atom.plots:DataPlot.plot_series
         atom.plots:DataPlot.plot_decomposition
-        atom.plots:DataPlot.plot_ttf
+        atom.plots:DataPlot.plot_pacf
 
         Examples
         --------
@@ -491,7 +491,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Parameters
         ----------
-        columns: int, str, segment, sequence or dataframe, default=-1
+        columns: int, str, segment, sequence, dataframe or None, default=None
             [Selection of columns][row-and-column-selection] to plot.
             If None, the target column is selected.
 
@@ -1069,7 +1069,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         --------
         atom.plots:DataPlot.plot_acf
         atom.plots:DataPlot.plot_decomposition
-        atom.plots:DataPlot.plot_ttf
+        atom.plots:DataPlot.plot_series
 
         Examples
         --------

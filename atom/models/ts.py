@@ -468,7 +468,6 @@ class DynamicFactor(BaseModel):
 
     atom = ATOMForecaster(X, y=(-1, -2), random_state=1)
     atom.run(models="DF", verbose=2)
-
     ```
 
     """
@@ -620,7 +619,6 @@ class ETS(BaseModel):
 
     atom = ATOMForecaster(y, random_state=1)
     atom.run(models="ETS", verbose=2)
-
     ```
 
     """
@@ -690,9 +688,17 @@ class ETS(BaseModel):
 class MSTL(BaseModel):
     """Multiple Seasonal-Trend decomposition using LOESS.
 
-    The MSTL decomposes the time series in multiple seasonalities using
-    LOESS. Then forecasts the trend using a custom non-seasonal model
-    (trend_forecaster) and each seasonality using a SeasonalNaive model.
+    The MSTL model (Multiple Seasonal-Trend decomposition using LOESS)
+    is a method used to decompose a time series into its seasonal,
+    trend and residual components. This approach is based on the use
+    of LOESS (Local Regression Smoothing) to estimate the components
+    of the time series.
+
+    The MSTL decomposition is an extension of the classic seasonal-trend
+    decomposition method (also known as Holt-Winters decomposition),
+    which is designed to handle situations where multiple seasonal
+    patterns exist in the data. This can occur, for example, when a
+    time series exhibits daily, and yearly patterns simultaneously.
 
     Corresponding estimators are:
 
@@ -700,9 +706,9 @@ class MSTL(BaseModel):
 
     See Also
     --------
-    atom.models:DynamicFactor
     atom.models:Prophet
-    atom.models:VARMAX
+    atom.models:STL
+    atom.models:TBATS
 
     Examples
     --------
@@ -714,7 +720,6 @@ class MSTL(BaseModel):
 
     atom = ATOMForecaster(y, random_state=1)
     atom.run(models="MSTL", verbose=2)
-
     ```
 
     """
@@ -746,32 +751,25 @@ class MSTL(BaseModel):
         """
         return super()._get_est({"season_length": self._config.sp or 1} | params)
 
-    def _get_parameters(self, trial: Trial) -> dict:
-        """Get the trial's hyperparameters.
+    def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Convert trial's hyperparameters to parameters for the estimator.
 
         Parameters
         ----------
-        trial: [Trial][]
-            Current trial.
+        params: dict
+            Trial's hyperparameters.
 
         Returns
         -------
         dict
-            Trial's hyperparameters.
+            Estimator's hyperparameters.
 
         """
-        params = super()._get_parameters(trial)
+        params = super()._trial_to_est(params)
 
-        # MSTL has stl_kwargs, that takes a dict of hyperparameters
-        if "stl_kwargs" in self._est_params:
-            new_params = {}
-        else:
-            new_params = {"stl_kwargs": params}
+        return {"stl_kwargs": self._est_params.get("stl_kwargs", {}) | params}
 
-        return new_params
-
-    @staticmethod
-    def _get_distributions() -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -780,12 +778,18 @@ class MSTL(BaseModel):
             Hyperparameter distributions.
 
         """
-        return {
+        dist = {
             "seasonal_deg": Cat([0, 1]),
             "trend_deg": Cat([0, 1]),
             "low_pass_deg": Cat([0, 1]),
             "robust": Cat([True, False]),
         }
+
+        # StatsForecastMSTL has stl_kwargs, that takes a dict of hyperparameters
+        for p in self._est_params.get("stl_kwargs", {}):
+            dist.pop(p)
+
+        return dist
 
 
 class NaiveForecaster(BaseModel):
@@ -816,7 +820,6 @@ class NaiveForecaster(BaseModel):
 
     atom = ATOMForecaster(y, random_state=1)
     atom.run(models="NF", verbose=2)
-
     ```
 
     """
@@ -931,7 +934,6 @@ class Prophet(BaseModel):
 
     atom = ATOMForecaster(y, random_state=1)
     atom.run(models="Prophet", verbose=2)
-
     ```
 
     """

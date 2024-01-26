@@ -318,26 +318,6 @@ class PandasModin:
 bk = PandasModin()
 
 
-class MetricFunctionWrapper:
-    """Wrapper for a sklearn metric function.
-
-    This class is necessary for the cross_validate method of BaseModel
-    because there is a bug in sktime's evaluate function that passes
-    invalid kwargs to the metric function with make_forecasting_scorer.
-
-    # TODO: Remove with new release of sktime
-
-    """
-
-    def __init__(self, metric):
-        self.metric = metric
-
-    def __call__(self, y_true, y_pred, **kwargs):
-        """Call the metric function passing only valid kwargs."""
-        kwargs = {k: v for k, v in kwargs.items() if k in sign(self.metric)}
-        return self.metric(y_true, y_pred, **kwargs)
-
-
 class CatBMetric:
     """Custom evaluation metric for the CatBoost model.
 
@@ -2183,8 +2163,7 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
         scorer = copy(metric)
 
         # Some scorers use default kwargs
-        default_kwargs = ("precision", "recall", "f1", "jaccard")
-        if any(scorer._score_func.__name__.startswith(name) for name in default_kwargs):
+        if scorer._score_func.__name__.startswith(("precision", "recall", "f1", "jaccard")):
             if not scorer._kwargs:
                 scorer._kwargs = {"average": "binary"}
 

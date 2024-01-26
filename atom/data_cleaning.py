@@ -1060,7 +1060,7 @@ class Decomposer(TransformerMixin):
         atom = ATOMForecaster(y, random_state=1)
         print(atom.y)
 
-        atom.decompose(verbose=2)
+        atom.decompose(columns=-1, verbose=2)
 
         print(atom.y)
         ```

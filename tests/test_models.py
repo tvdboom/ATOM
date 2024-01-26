@@ -108,7 +108,7 @@ def test_all_models_forecast():
     """Assert that all models work with forecast."""
     atom = ATOMForecaster(y_fc, random_state=1)
     atom.run(
-        models=["!DF", "!VAR", "!VARMAX"],
+        models=["!DF", "!MSTL", "!VAR", "!VARMAX"],
         n_trials=1,
         est_params={
             "arima": {"maxiter": 5, "method": "nm"},
@@ -232,6 +232,22 @@ def test_RNN():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("RNN", n_trials=1, est_params={"outlier_label": "most_frequent"})
     assert atom.models == "RNN"
+
+
+@patch("sktime.forecasting.statsforecast.StatsForecastMSTL")
+def test_MSTL(cls):
+    """Assert that the MSTL model works when providing stl_kwargs params."""
+    cls.return_value.set_params.return_value.predict.__name__ = "predict"
+
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run(
+        models="MSTL",
+        n_trials=1,
+        est_params={"stl_kwargs": {"seasonal_deg": 0}},
+        ht_params={"catch": (Exception,)},
+        errors="raise",
+    )
+    assert atom.models == "MSTL"
 
 
 @pytest.mark.parametrize("model", ["CatB", "LGB", "XGB"])

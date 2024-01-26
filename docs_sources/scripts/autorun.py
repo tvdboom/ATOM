@@ -91,7 +91,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         """
         if code == "":
             return code
-        elif not any(code.startswith(x) for x in (" ", ")", "]", "}")):
+        elif not code.startswith((" ", ")", "]", "}")):
             return f">>> {code}"
         else:
             return f"... {code}"

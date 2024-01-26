@@ -460,7 +460,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
           white noise.
 
         !!! tip
-            Use the [plot_acf][] and [plot_pcf][] methods to visually
+            Use the [plot_acf][] and [plot_acf][] methods to visually
             inspect any significant lagged correlations.
 
         Parameters

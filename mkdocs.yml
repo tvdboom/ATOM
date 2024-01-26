@@ -313,6 +313,7 @@ nav:
         - Train sizing: examples/train_sizing.ipynb
         - Utilities: examples/utilities.ipynb
     - Changelog:
+        - v6.x.x: changelog/v6.x.x.md
         - v5.x.x: changelog/v5.x.x.md
         - v4.x.x: changelog/v4.x.x.md
     - FAQ: faq.md

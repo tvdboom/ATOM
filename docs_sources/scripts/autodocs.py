@@ -388,7 +388,7 @@ class AutoDocs:
 
         """
         text = "\n"
-        if any(body.lstrip().startswith(c) for c in ("- ", "* ", "+ ")):
+        if body.lstrip().startswith(("- ", "* ", "+ ")):
             text += "\n"
 
         text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])

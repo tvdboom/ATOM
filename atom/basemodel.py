@@ -73,11 +73,11 @@ from atom.utils.types import (
     Verbose, Warnings, XSelector, YSelector, dataframe_t, float_t, int_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, Goal, MetricFunctionWrapper, PlotCallback,
-    ShapExplanation, Task, TrialsCallback, adjust_verbosity, bk, cache,
-    check_dependency, check_empty, check_scaling, composed, crash,
-    estimator_has_attr, flt, get_cols, get_custom_scorer, has_task, it, lst,
-    merge, method_to_log, rnd, sign, time_to_str, to_pandas,
+    ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
+    TrialsCallback, adjust_verbosity, bk, cache, check_dependency, check_empty,
+    check_scaling, composed, crash, estimator_has_attr, flt, get_cols,
+    get_custom_scorer, has_task, it, lst, merge, method_to_log, rnd, sign,
+    time_to_str, to_pandas,
 )
 
 
@@ -563,10 +563,10 @@ class BaseModel(RunnerPlot):
                         raise TrialPruned
 
         else:
-            # Add the forecasting horizon to sktime estimators
             if isinstance(estimator, BaseForecaster):
                 ts_kwargs = {}
                 if estimator.get_tag("requires-fh-in-fit") and "fh" not in self._est_params_fit:
+                    # Add the forecasting horizon to sktime estimators when required
                     ts_kwargs["fh"] = self.test.index
 
                 estimator.fit(data[1], X=check_empty(data[0]), **self._est_params_fit, **ts_kwargs)
@@ -1978,7 +1978,7 @@ class BaseModel(RunnerPlot):
                 X=self.og.X,
                 scoring=[
                     make_forecasting_scorer(
-                        func=MetricFunctionWrapper(metric._score_func),
+                        func=metric._score_func,
                         name=name,
                         greater_is_better=metric._sign == 1,
                     )
