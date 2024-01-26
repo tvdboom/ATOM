@@ -35,7 +35,8 @@ from ray.util.joblib import register_ray
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
-    Backend, Bool, DataFrame, Engine, Estimator, Int, IntLargerEqualZero,
+    Backend, Bool, DataFrame, Engine, EngineDataOptions,
+    EngineEstimatorOptions, EngineTuple, Estimator, Int, IntLargerEqualZero,
     Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
     bool_t, dataframe_t, int_t, sequence_t,
 )
@@ -115,26 +116,37 @@ class BaseTransformer:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
 
     @property
-    def engine(self) -> Engine:
-        """Execution engine for estimators."""
+    def engine(self) -> EngineTuple:
+        """Execution engine for data and estimators."""
         return self._engine
 
     @engine.setter
     @beartype
-    def engine(self, value: Engine | None):
+    def engine(self, value: Engine):
         if value is None:
-            value = {"data": "numpy", "estimator": "sklearn"}
+            engine = EngineTuple(data="numpy", estimator="sklearn")
+        elif value in EngineDataOptions.__args__:
+            engine = EngineTuple(data=value, estimator="sklearn")  # type: ignore[arg-type]
+        elif value in EngineEstimatorOptions.__args__:
+            engine = EngineTuple(data="numpy", estimator=value)  # type: ignore[arg-type]
+        elif isinstance(value, dict):
+            engine = EngineTuple(
+                data=value.get("data", "numpy"),
+                estimator=value.get("estimator", "sklearn"),
+            )
+        else:
+            engine = value  # type: ignore[assignment]
 
-        if value.get("data") == "modin" and not ray.is_initialized():
+        if engine.data == "modin" and not ray.is_initialized():
             ray.init(
                 runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_Pandas__": "1"}},
                 log_to_driver=False,
             )
 
         # Update env variable to use for PandasModin in utils.py
-        os.environ["ATOM_DATA_ENGINE"] = value.get("data", "numpy")
+        os.environ["ATOM_DATA_ENGINE"] = engine.data
 
-        if value.get("estimator") == "sklearnex":
+        if engine.estimator == "sklearnex":
             if not find_spec("sklearnex"):
                 raise ModuleNotFoundError(
                     "Failed to import scikit-learn-intelex. The library is "
@@ -145,11 +157,11 @@ class BaseTransformer:
                 import sklearnex
 
                 sklearnex.set_config(self.device.lower() if self._gpu else "auto")
-        elif value.get("estimator") == "cuml":
+        elif engine.estimator == "cuml":
             if not find_spec("cuml"):
                 raise ModuleNotFoundError(
-                    "Failed to import cuml. Package is not installed. Refer "
-                    "to: https://rapids.ai/start.html#install."
+                    "Failed to import cuml. Package is not installed. "
+                    "Refer to: https://rapids.ai/start.html#install."
                 )
             else:
                 from cuml.common.device_selection import set_global_device_type
@@ -161,7 +173,7 @@ class BaseTransformer:
 
                 set_global_output_type("numpy")
 
-        self._engine = value
+        self._engine = engine
 
     @property
     def backend(self) -> Backend:
@@ -409,8 +421,7 @@ class BaseTransformer:
 
         """
         try:
-            engine = self.engine.get("estimator", "sklearn")
-            return getattr(import_module(f"{engine}.{module}"), name)
+            return getattr(import_module(f"{self.engine.estimator}.{module}"), name)
         except (ModuleNotFoundError, AttributeError):
             return getattr(import_module(f"sklearn.{module}"), name)
 

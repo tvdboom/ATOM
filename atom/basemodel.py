@@ -119,12 +119,13 @@ class BaseModel(RunnerPlot):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -199,7 +200,7 @@ class BaseModel(RunnerPlot):
         *,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -321,8 +322,7 @@ class BaseModel(RunnerPlot):
 
         # Try engine, else import from the default module
         try:
-            engine = self.engine.get("estimator", "sktime" if self.task.is_forecast else "sklearn")
-            module = import_module(f"{engine}.{module.split('.', 1)[1:]}")
+            module = import_module(f"{self.engine.estimator}.{module.split('.', 1)[1:]}")
         except (ModuleNotFoundError, AttributeError):
             module = import_module(module)
 

@@ -342,12 +342,13 @@ class DirectClassifier(Direct):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -456,7 +457,7 @@ class DirectClassifier(Direct):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -575,12 +576,13 @@ class DirectForecaster(Direct):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -686,7 +688,7 @@ class DirectForecaster(Direct):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -804,12 +806,13 @@ class DirectRegressor(Direct):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -918,7 +921,7 @@ class DirectRegressor(Direct):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -1043,12 +1046,13 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -1158,7 +1162,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -1279,12 +1283,13 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -1391,7 +1396,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -1512,12 +1517,13 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -1627,7 +1633,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -1757,12 +1763,13 @@ class TrainSizingClassifier(TrainSizing):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -1872,7 +1879,7 @@ class TrainSizingClassifier(TrainSizing):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -1999,12 +2006,13 @@ class TrainSizingForecaster(TrainSizing):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -2111,7 +2119,7 @@ class TrainSizingForecaster(TrainSizing):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -2237,12 +2245,13 @@ class TrainSizingRegressor(TrainSizing):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -2352,7 +2361,7 @@ class TrainSizingRegressor(TrainSizing):
         errors: Literal["raise", "skip", "keep"] = "skip",
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,

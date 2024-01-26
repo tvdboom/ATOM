@@ -1471,7 +1471,7 @@ class KNearestNeighbors(BaseModel):
 
         if self._gpu:
             dist.pop("algorithm")  # Only 'brute' is supported
-            if self.engine.get("estimator") == "cuml":
+            if self.engine.estimator == "cuml":
                 dist.pop("weights")  # Only 'uniform' is supported
                 dist.pop("leaf_size")
                 dist.pop("p")
@@ -1946,7 +1946,7 @@ class LinearSVM(BaseModel):
             Estimator instance.
 
         """
-        if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
+        if self.engine.estimator == "cuml" and self._goal is Goal.classification:
             return super()._get_est({"probability": True} | params)
         else:
             return super()._get_est(params)
@@ -1970,7 +1970,7 @@ class LinearSVM(BaseModel):
         dist["C"] = Float(1e-3, 100, log=True)
         dist["dual"] = Cat([True, False])
 
-        if self.engine.get("estimator") == "cuml":
+        if self.engine.estimator == "cuml":
             dist.pop("dual")
 
         return dist
@@ -2071,13 +2071,13 @@ class LogisticRegression(BaseModel):
         }
 
         if self._gpu:
-            if self.engine.get("estimator") == "cuml":
+            if self.engine.estimator == "cuml":
                 dist["penalty"] = Cat(["none", "l1", "l2", "elasticnet"])
                 dist.pop("solver")  # Only `qn` is supported
-            elif self.engine.get("estimator") == "sklearnex":
+            elif self.engine.estimator == "sklearnex":
                 dist["penalty"] = Cat(["none", "l1", "elasticnet"])
                 dist["solver"] = Cat(["lbfgs", "liblinear", "sag", "saga"])
-        elif self.engine.get("estimator") == "sklearnex":
+        elif self.engine.estimator == "sklearnex":
             dist["solver"] = Cat(["lbfgs", "newton-cg"])
 
         return dist
@@ -2724,7 +2724,7 @@ class RandomForest(BaseModel):
         if self._goal is Goal.classification:
             criterion = ["gini", "entropy"]
         else:
-            if self.engine.get("estimator") == "cuml":
+            if self.engine.estimator == "cuml":
                 criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
             else:
                 criterion = ["squared_error", "absolute_error", "poisson"]
@@ -2741,10 +2741,10 @@ class RandomForest(BaseModel):
             "ccp_alpha": Float(0, 0.035, step=0.005),
         }
 
-        if self.engine.get("estimator") == "sklearnex":
+        if self.engine.estimator == "sklearnex":
             dist.pop("criterion")
             dist.pop("ccp_alpha")
-        elif self.engine.get("estimator") == "cuml":
+        elif self.engine.estimator == "cuml":
             dist["split_criterion"] = dist.pop("criterion")
             dist["max_depth"] = Int(1, 17)
             dist["max_features"] = Cat(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
@@ -2820,9 +2820,9 @@ class Ridge(BaseModel):
         }
 
         if self._goal is Goal.regression:
-            if self.engine.get("estimator") == "sklearnex":
+            if self.engine.estimator == "sklearnex":
                 dist.pop("solver")  # Only supports 'auto'
-            elif self.engine.get("estimator") == "cuml":
+            elif self.engine.estimator == "cuml":
                 dist["solver"] = Cat(["eig", "svd", "cd"])
 
         return dist
@@ -2998,7 +2998,7 @@ class SupportVectorMachine(BaseModel):
             Estimator instance.
 
         """
-        if self.engine.get("estimator") == "cuml" and self._goal is Goal.classification:
+        if self.engine.estimator == "cuml" and self._goal is Goal.classification:
             return super()._get_est({"probability": True} | params)
         else:
             return super()._get_est(params)
@@ -3025,7 +3025,7 @@ class SupportVectorMachine(BaseModel):
         if self._goal is Goal.classification:
             dist.pop("epsilon")
 
-        if self.engine.get("estimator") == "cuml":
+        if self.engine.estimator == "cuml":
             dist.pop("epsilon")
             dist.pop("shrinking")
 

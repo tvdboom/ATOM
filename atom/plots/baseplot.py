@@ -784,7 +784,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Iterable, Iterator
 from typing import (
-    TYPE_CHECKING, Annotated, Any, Literal, SupportsIndex, TypeAlias,
-    TypedDict, TypeVar, overload, runtime_checkable,
+    TYPE_CHECKING, Annotated, Any, Literal, NamedTuple, SupportsIndex,
+    TypeAlias, TypedDict, TypeVar, overload, runtime_checkable,
 )
 
 import modin.pandas as md
@@ -69,11 +69,23 @@ class Sequence(Protocol[_T]):
         ]
 
 
-class Engine(TypedDict, total=False):
-    """Types for the `engine` parameter."""
+class EngineDict(TypedDict, total=False):
+    """Dictionary type for the `engine` parameter."""
 
-    data: Literal["numpy", "pyarrow", "modin"]
-    estimator: Literal["sklearn", "sklearnex", "cuml"]
+    data: EngineDataOptions
+    estimator: EngineEstimatorOptions
+
+
+class EngineTuple(NamedTuple):
+    """Return type of the `engine` parameter.
+
+    We use a namedtuple for immutability to be able to clone
+    the estimator since sklearn does a `is` instance check.
+
+    """
+
+    data: EngineDataOptions
+    estimator: EngineEstimatorOptions
 
 
 class HT(TypedDict, total=False):
@@ -216,6 +228,9 @@ MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZe
 
 # Allowed values for BaseTransformer parameter
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
+EngineDataOptions: TypeAlias = Literal["numpy", "pyarrow", "modin"]
+EngineEstimatorOptions: TypeAlias = Literal["sklearn", "sklearnex", "cuml"]
+Engine: TypeAlias = EngineDataOptions | EngineEstimatorOptions | EngineDict | EngineTuple | None
 Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray"]
 Warnings: TypeAlias = Literal["default", "error", "ignore", "always", "module", "once"]
 Severity: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]

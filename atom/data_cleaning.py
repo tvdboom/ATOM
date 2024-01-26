@@ -605,12 +605,13 @@ class Cleaner(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -707,7 +708,7 @@ class Cleaner(TransformerMixin):
         drop_missing_target: Bool = True,
         encode_target: Bool = True,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
     ):
@@ -1273,12 +1274,13 @@ class Discretizer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -1373,7 +1375,7 @@ class Discretizer(TransformerMixin):
         bins: Bins = 5,
         labels: Sequence[str] | dict[str, Sequence[str]] | None = None,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
@@ -1974,12 +1976,13 @@ class Imputer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -2083,7 +2086,7 @@ class Imputer(TransformerMixin):
         max_nan_cols: FloatLargerZero | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
@@ -2153,7 +2156,7 @@ class Imputer(TransformerMixin):
         # Load the imputer class from sklearn or cuml (note the different modules)
         SimpleImputer = self._get_est_class(
             name="SimpleImputer",
-            module="preprocessing" if self.engine.get("estimator") == "cuml" else "impute",
+            module="preprocessing" if self.engine.estimator == "cuml" else "impute",
         )
 
         # Note missing_values=pd.NA also imputes np.NaN
@@ -2376,12 +2379,13 @@ class Normalizer(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -2471,7 +2475,7 @@ class Normalizer(TransformerMixin):
         strategy: NormalizerStrats = "yeojohnson",
         *,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
@@ -2655,12 +2659,13 @@ class Pruner(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -2755,7 +2760,7 @@ class Pruner(TransformerMixin):
         max_sigma: FloatLargerZero = 3,
         include_target: Bool = False,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         **kwargs,
@@ -2954,12 +2959,13 @@ class Scaler(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: dict or None, default=None
+    engine: str, dict or None, default=None
         Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be a
-        dictionary with keys `data` and/or `estimator`, with their
-        corresponding choice as values. If None, the default values
-        are used.Choose from:
+        [estimators][estimator-acceleration]. The value should be
+        one of the possible values to change one of the two engines,
+        or a dictionary with keys `data` and `estimator`, with their
+        corresponding choice as values to change both engines. If
+        None, the default values are used. Choose from:
 
         - "data":
 
@@ -3044,7 +3050,7 @@ class Scaler(TransformerMixin):
         *,
         include_binary: Bool = False,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
         **kwargs,

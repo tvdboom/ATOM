@@ -275,10 +275,11 @@ def test_update_traces():
 
 # Test DataPlot ==================================================== >>
 
-def test_plot_acf():
+@pytest.mark.parametrize("columns", [None, -1])
+def test_plot_acf(columns):
     """Assert that the plot_acf method works."""
     atom = ATOMForecaster(y_fc, random_state=1)
-    atom.plot_acf(display=False)
+    atom.plot_acf(columns=columns, display=False)
 
 
 @pytest.mark.parametrize("show", [10, None])
@@ -300,6 +301,13 @@ def test_plot_correlation():
     atom.plot_correlation(display=False)
 
 
+@pytest.mark.parametrize("columns", [None, -1])
+def test_plot_decomposition(columns):
+    """Assert that the plot_decomposition method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_decomposition(columns=columns, display=False)
+
+
 def test_plot_distribution():
     """Assert that the plot_distribution method works."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -317,10 +325,11 @@ def test_plot_ngrams(ngram):
     atom.plot_ngrams(ngram=ngram, display=False)  # When the corpus consists of tokens
 
 
-def test_plot_pacf():
+@pytest.mark.parametrize("columns", [None, -1])
+def test_plot_pacf(columns):
     """Assert that the plot_pacf method works."""
     atom = ATOMForecaster(y_fc, random_state=1)
-    atom.plot_pacf(display=False)
+    atom.plot_pacf(columns=columns, display=False)
 
 
 @pytest.mark.parametrize("X", [X10, X_sparse])
@@ -838,6 +847,10 @@ def test_plot_shap_scatter():
     """Assert that the plot_shap_scatter method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
+
+    with pytest.raises(ValueError, match=".*at most one feature.*"):
+        atom.plot_shap_scatter(columns=(0, 1), display=False)
+
     atom.plot_shap_scatter(display=False)
 
 

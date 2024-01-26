@@ -25,6 +25,7 @@ from sklearnex.svm import SVC
 from atom import ATOMClassifier, ATOMForecaster
 from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier
+from atom.utils.types import EngineTuple
 from atom.utils.utils import merge
 
 from .conftest import (
@@ -59,17 +60,20 @@ def test_device_parameter():
 @patch("ray.init")
 def test_engine_parameter_modin(ray):
     """Assert that ray is initialized when modin is data backend."""
-    BaseTransformer(device="cpu", engine={"data": "modin"})
+    base = BaseTransformer(device="cpu", engine="modin")
+    assert base.engine.data == "modin"
     assert ray.is_called_once
 
 
 def test_engine_parameter_env_var():
     """Assert that the environment variable is set."""
-    BaseTransformer(device="cpu", engine={"data": "pyarrow"})
-    assert os.environ["ATOM_DATA_ENGINE"] == "pyarrow"
+    base = BaseTransformer(device="cpu", engine="pyarrow")
+    assert base.engine == EngineTuple(data="pyarrow", estimator="sklearn")
+    assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
 
-    BaseTransformer(device="cpu", engine={"estimator": "sklearn"})  # No data key
-    assert os.environ["ATOM_DATA_ENGINE"] == "numpy"
+    base = BaseTransformer(device="cpu", engine="sklearnex")
+    assert base.engine == EngineTuple(data="numpy", estimator="sklearnex")
+    assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
 
 
 @patch.dict("sys.modules", {"sklearnex": None})

@@ -92,7 +92,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -148,11 +148,15 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             corr, conf = acf(self.branch.dataset[col], nlags=nlags, alpha=0.05)
 
             for pos in (x := np.arange(len(corr))):
-                self._draw_line(
+                fig.add_scatter(
                     x=(pos, pos),
                     y=(0, corr[pos]),
-                    parent=col,
+                    mode="lines",
+                    line={"width": self.line_width, "color": BasePlot._fig.get_elem(col)},
                     hoverinfo="skip",
+                    hovertemplate=None,
+                    legendgroup=col,
+                    showlegend=False,
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -167,6 +171,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
+            # Add error bands
             fig.add_traces(
                 [
                     go.Scatter(
@@ -201,8 +206,10 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
             xlabel="Lag",
             ylabel="Autocorrelation",
+            xlim=(-1, nlags + 1),
             title=title,
             legend=legend,
             figsize=figsize or (700 + nlags * 10, 600),
@@ -245,7 +252,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -469,7 +476,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         mode: SeasonalityMode = "additive",
         *,
         title: str | dict[str, Any] | None = None,
-        legend: Legend | dict[str, Any] | None = "out",
+        legend: Legend | dict[str, Any] | None = "upper left",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
         filename: str | Path | None = None,
         display: Bool | None = True,
@@ -503,12 +510,12 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="out"
+        legend: str, dict or None, default="upper left"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 900)
@@ -558,77 +565,43 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         xaxis3, yaxis3 = BasePlot._fig.get_axes(y=(0.26, 0.49))
         xaxis4, yaxis4 = BasePlot._fig.get_axes(y=(0.0, 0.24))
 
-        # Returns correlation array and confidence interval
-        decompose = seasonal_decompose(
-            x=self.branch.dataset[columns_c],
-            model=mode,
-            period=self.sp,
-        )
-
         for col in columns_c:
+            # Returns correlation array and confidence interval
+            decompose = seasonal_decompose(
+                x=self.branch.dataset[col],
+                model=mode,
+                period=self.sp or self._get_sp(self.branch.dataset.index.freqstr),
+            )
+
             self._draw_line(
                 x=(x := self._get_plot_index(decompose.trend)),
                 y=decompose.observed,
                 parent=col,
-                child="observed",
                 legend=legend,
                 xaxis=xaxis4,
                 yaxis=yaxis,
             )
 
-            self._draw_line(
-                x=x,
-                y=decompose.trend,
-                parent=col,
-                child="trend",
-                legend=legend,
-                xaxis=xaxis4,
-                yaxis=yaxis2,
-            )
+            self._draw_line(x=x, y=decompose.trend, parent=col, xaxis=xaxis4, yaxis=yaxis2)
+            self._draw_line(x=x, y=decompose.seasonal, parent=col, xaxis=xaxis4, yaxis=yaxis3)
+            self._draw_line(x=x, y=decompose.resid, parent=col, xaxis=xaxis4, yaxis=yaxis4)
 
-            self._draw_line(
-                x=x,
-                y=decompose.seasonal,
-                parent=col,
-                child="trend",
-                legend=legend,
-                xaxis=xaxis4,
-                yaxis=yaxis3,
-            )
-
-            self._draw_line(
-                x=x,
-                y=decompose.resid,
-                parent=col,
-                child="trend",
-                legend=legend,
-                xaxis=xaxis4,
-                yaxis=yaxis4,
-            )
-
-        self._plot(
-            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
-            ylabel="Values",
-        )
-
-        self._plot(
-            ax=(f"xaxis{xaxis3[1:]}", f"yaxis{yaxis3[1:]}"),
-            ylabel="Values",
-        )
-
+        self._plot(ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"), ylabel="Trend")
+        self._plot(ax=(f"xaxis{xaxis3[1:]}", f"yaxis{yaxis3[1:]}"), ylabel="Seasonal")
         self._plot(
             ax=(f"xaxis{xaxis4[1:]}", f"yaxis{yaxis4[1:]}"),
-            ylabel="Values",
+            ylabel="Residuals",
+            xlabel=self.branch.dataset.index.name or "index",
         )
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel=self.branch.dataset.index.name or "index",
-            ylabel="Values",
+            groupclick="togglegroup",
+            ylabel="Observed",
             title=title,
             legend=legend,
             figsize=figsize,
-            plotname="plot_acf",
+            plotname="plot_decomposition",
             filename=filename,
             display=display,
         )
@@ -689,7 +662,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -887,7 +860,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -1071,7 +1044,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -1127,11 +1100,15 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             corr, conf = pacf(self.branch.dataset[col], nlags=nlags, method=method, alpha=0.05)
 
             for pos in (x := np.arange(len(corr))):
-                self._draw_line(
+                fig.add_scatter(
                     x=(pos, pos),
                     y=(0, corr[pos]),
-                    parent=col,
+                    mode="lines",
+                    line={"width": self.line_width, "color": BasePlot._fig.get_elem(col)},
                     hoverinfo="skip",
+                    hovertemplate=None,
+                    legendgroup=col,
+                    showlegend=False,
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
@@ -1146,6 +1123,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
+            # Add error bands
             fig.add_traces(
                 [
                     go.Scatter(
@@ -1180,8 +1158,10 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
             xlabel="Lag",
             ylabel="Partial autocorrelation",
+            xlim=(-1, nlags + 1),
             title=title,
             legend=legend,
             figsize=figsize or (700 + nlags * 10, 600),
@@ -1349,7 +1329,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -1592,7 +1572,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         self,
         *,
         title: str | dict[str, Any] | None = None,
-        legend: Legend | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
         filename: str | Path | None = None,
         display: Bool | None = True,
@@ -1612,12 +1592,12 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default=None
+        legend: str, dict or None, default="upper right"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -1668,7 +1648,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         except AttributeError:
             ylabel = "accuracy" if is_classifier(self.rfecv_.estimator_) else "r2"
 
-        x = range(self.rfecv_.min_features_to_select, self.rfecv_.n_features_in_ + 1)
+        x = np.arange(self.rfecv_.min_features_to_select, self.rfecv_.n_features_in_ + 1)
 
         # Create star symbol at selected number of features
         sizes = [6] * len(x)
@@ -1683,10 +1663,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         std = self.rfecv_.cv_results_["std_test_score"]
 
         self._draw_line(
-            x=list(x),
+            x=x,
             y=mean,
-            parent="rfecv",
-            name=ylabel,
+            parent=ylabel,
             mode="lines+markers",
             marker={
                 "symbol": symbols,
@@ -1694,6 +1673,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
                 "opacity": 1,
             },
+            legend=legend,
             xaxis=xaxis,
             yaxis=yaxis,
         )
@@ -1702,25 +1682,25 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         fig.add_traces(
             [
                 go.Scatter(
-                    x=tuple(x),
-                    y=mean + std,
+                    x=x,
+                    y=np.add(mean, std),
                     mode="lines",
-                    line={"width": 1, "color": BasePlot._fig.get_elem("rfecv")},
+                    line={"width": 1, "color": BasePlot._fig.get_elem(ylabel)},
                     hovertemplate="%{y}<extra>upper bound</extra>",
-                    legendgroup="rfecv",
+                    legendgroup=ylabel,
                     showlegend=False,
                     xaxis=xaxis,
                     yaxis=yaxis,
                 ),
                 go.Scatter(
-                    x=tuple(x),
-                    y=mean - std,
+                    x=x,
+                    y=np.subtract(mean, std),
                     mode="lines",
-                    line={"width": 1, "color": BasePlot._fig.get_elem("rfecv")},
+                    line={"width": 1, "color": BasePlot._fig.get_elem(ylabel)},
                     fill="tonexty",
-                    fillcolor=f"rgba{BasePlot._fig.get_elem('rfecv')[3:-1]}, 0.2)",
+                    fillcolor=f"rgba{BasePlot._fig.get_elem(ylabel)[3:-1]}, 0.2)",
                     hovertemplate="%{y}<extra>lower bound</extra>",
-                    legendgroup="rfecv",
+                    legendgroup=ylabel,
                     showlegend=False,
                     xaxis=xaxis,
                     yaxis=yaxis,
@@ -1788,7 +1768,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)

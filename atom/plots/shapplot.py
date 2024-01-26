@@ -678,7 +678,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         columns: int, str, segment, sequence or dataframe, default=0
             [Feature][row-and-column-selection] to plot. Only one
-            column can be selected.
+            feature can be selected.
 
         target: int, str or tuple, default=1
             Class in the target column to target. For multioutput tasks,
@@ -735,12 +735,21 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models, max_one=True)[0]
         X, _ = models_c.branch._get_rows(rows, return_X_y=True)
-        columns_c = models_c.branch._get_columns(columns, include_target=False)[0]
+        columns_c = models_c.branch._get_columns(columns, include_target=False)
+
+        if len(columns_c) > 1:
+            raise ValueError(
+                f"Invalid value for the columns parameter, got {columns_c}. "
+                f"Select at most one feature, got {len(columns_c)}."
+            )
+        else:
+            col = columns_c[0]
+
         target_c = self.branch._get_target(target)
         explanation = models_c._shap.get_explanation(X, target_c)
 
         # Get explanation for a specific column
-        explanation = explanation[:, models_c.branch.columns.get_loc(columns_c)]
+        explanation = explanation[:, models_c.branch.columns.get_loc(col)]
 
         self._get_figure(backend="matplotlib")
         check_canvas(BasePlot._fig.is_canvas, "plot_shap_scatter")

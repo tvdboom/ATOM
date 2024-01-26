@@ -105,7 +105,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -289,7 +289,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 900)
@@ -454,7 +454,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -645,7 +645,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -771,7 +771,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -901,7 +901,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -1015,7 +1015,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -1174,7 +1174,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 900)
@@ -1397,7 +1397,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -1514,7 +1514,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -1673,7 +1673,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -1803,7 +1803,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -2019,7 +2019,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -2273,7 +2273,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -2728,7 +2728,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -2857,7 +2857,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -3011,7 +3011,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -3156,7 +3156,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
@@ -3328,7 +3328,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -3446,7 +3446,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
@@ -3615,7 +3615,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             an extended description of the choices.
 
             - If None: No legend is shown.
-            - If str: Location where to show the legend.
+            - If str: Position to display the legend.
             - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)

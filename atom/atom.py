@@ -105,7 +105,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         holdout_size: Scalar | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine | None = None,
+        engine: Engine = None,
         backend: Backend = "loky",
         memory: Bool | str | Path | Memory = False,
         verbose: Verbose = 0,
@@ -162,10 +162,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             )
         if "cpu" not in self.device.lower():
             self._log(f"Device: {self.device}", 1)
-        if (data := self.engine.get("data", "numpy")) != "numpy":
-            self._log(f"Data engine: {data}", 1)
-        if (models := self.engine.get("estimator", "sklearn")) != "sklearn":
-            self._log(f"Estimator engine: {models}", 1)
+        if self.engine.data != "numpy":
+            self._log(f"Data engine: {self.engine.data}", 1)
+        if self.engine.estimator != "sklearn":
+            self._log(f"Estimator engine: {self.engine.estimator}", 1)
         if self.backend == "ray" or self.n_jobs > 1:
             self._log(f"Parallelization backend: {self.backend}", 1)
         if self.memory.location is not None:
@@ -1011,7 +1011,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 get_data(r[0]) for r in t if r[1] <= column.min() and r[2] >= column.max()
             )
 
-        if self.engine.get("data") == "pyarrow":
+        if self.engine.data == "pyarrow":
             self.branch.dataset = self.dataset.astype(
                 {name: to_pyarrow(col) for name, col in self.dataset.items()}
             )
