@@ -56,9 +56,9 @@ from atom.utils.types import (
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
-    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
-    Series, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
-    XSelector, YSelector, sequence_t,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality,
+    SeasonalityMode, Sequence, Series, TargetSelector, Transformer,
+    VectorizerStarts, Verbose, Warnings, XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -922,7 +922,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Whether to convert all features to sparse format. The value
             that is compressed is the most frequent value in the column.
 
-        columns: int, str, segment, sequence or None, default=None
+        columns: int, str, segment, sequence, dataframe or None, default=None
             [Selection of columns][row-and-column-selection] to shrink. If
             None, transform all columns.
 
@@ -1201,7 +1201,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             has the `n_jobs` and/or `random_state` parameters, it
             adopts atom's values.
 
-        columns: int, str, segment, sequence or None, default=None
+        columns: int, str, segment, sequence, dataframe or None, default=None
             Columns in the dataset to transform. If None, transform
             all features.
 
@@ -1388,7 +1388,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             instance), and it has the `n_jobs` and/or `random_state`
             parameters, it adopts atom's values.
 
-        columns: int, str, segment, sequence or None, default=None
+        columns: int, str, segment, sequence, dataframe or None, default=None
             [Selection of columns][row-and-column-selection] to
             transform. Only select features or the target column, not
             both at the same time (if that happens, the target column
@@ -1564,7 +1564,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self,
         *,
         model: str | Predictor | None = None,
-        mode: Literal["additive", "multiplicative"] = "additive",
+        mode: SeasonalityMode = "additive",
         **kwargs,
     ):
         """Detrend and deseasonalize the time series.
@@ -1584,9 +1584,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             * Use the `columns` parameter to only decompose the target
               column, e.g., `atom.decompose(columns=atom.target)`.
             * Use the [plot_decomposition][] method to visualize the
-              trend, seasonality and residuals of the time series. This
-              can help to determine if the data follows an additive or
-              multiplicative trend.
+              trend, seasonality and residuals of the time series.
 
         """
         columns = kwargs.pop("columns", None)

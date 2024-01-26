@@ -21,15 +21,19 @@ from nltk.collocations import (
 )
 from scipy import stats
 from sklearn.base import is_classifier
+from sklearn.utils.metaestimators import available_if
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.stattools import acf, pacf
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, RowSelector,
-    Segment, Sequence, Series,
+    Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, PACFMethods,
+    RowSelector, SeasonalityMode, Segment, Sequence, Series,
 )
 from atom.utils.utils import (
-    check_dependency, crash, divide, get_corpus, lst, replace_missing, rnd,
+    check_dependency, crash, divide, get_corpus, has_task, lst,
+    replace_missing, rnd,
 )
 
 
@@ -42,6 +46,170 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     be used for model training only, not for data manipulation.
 
     """
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_acf(
+        self,
+        columns: ColumnSelector | None = None,
+        nlags: IntLargerZero | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the autocorrelation function.
+
+        The autocorrelation function (ACF) measures the correlation
+        between a time series and lagged versions of itself. It's
+        useful, for example, to identify the order of an autoregressive
+        model. This plot is only available for [forecast][time-series]
+        tasks.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            Columns to plot the pacf from. If None, it selects the
+            target column.
+
+        nlags: int or None, default=None
+            Number of lags to return autocorrelation for. If None, it
+            uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
+            returned value includes lag 0 (i.e., 1), so the size of the
+            vector is `(nlags + 1,)`.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of lags shown.
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_acf
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_ttf
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_acf()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        if nlags is None:
+            nlags = min(int(10 * np.log10(self.branch.shape[0])), self.branch.shape[0] // 2 - 1)
+
+        for col in columns_c:
+            # Returns correlation array and confidence interval
+            corr, conf = acf(self.branch.dataset[col], nlags=nlags, alpha=0.05)
+
+            for pos in (x := np.arange(len(corr))):
+                self._draw_line(
+                    x=(pos, pos),
+                    y=(0, corr[pos]),
+                    parent=col,
+                    hoverinfo="skip",
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+            self._draw_line(
+                x=x,
+                y=corr,
+                parent=col,
+                mode="markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 1], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        hovertemplate="%{y}<extra>upper bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 0], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        fill="tonexty",
+                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                        hovertemplate="%{y}<extra>lower bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                ]
+            )
+
+        fig.update_yaxes(zerolinecolor="black")
+        fig.update_layout({"hovermode": "x unified"})
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Lag",
+            ylabel="Autocorrelation",
+            title=title,
+            legend=legend,
+            figsize=figsize or (700 + nlags * 10, 600),
+            plotname="plot_acf",
+            filename=filename,
+            display=display,
+        )
 
     @crash
     def plot_components(
@@ -136,22 +304,20 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         color = BasePlot._fig.get_elem("components")
         opacity = [0.2] * self.pca_._comps + [0] * (len(variance) - self.pca_._comps)
 
-        fig.add_trace(
-            go.Bar(
-                x=variance,
-                y=[f"pca{i}" for i in range(len(variance))],
-                orientation="h",
-                marker={
-                    "color": [f"rgba({color[4:-1]}, {o})" for o in opacity],
-                    "line": {"width": 2, "color": color},
-                },
-                hovertemplate="%{x}<extra></extra>",
-                name=f"Variance retained: {variance[:self.pca_._comps].sum():.3f}",
-                legendgroup="components",
-                showlegend=BasePlot._fig.showlegend("components", legend),
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
+        fig.add_bar(
+            x=variance,
+            y=[f"pca{i}" for i in range(len(variance))],
+            orientation="h",
+            marker={
+                "color": [f"rgba({color[4:-1]}, {o})" for o in opacity],
+                "line": {"width": 2, "color": color},
+            },
+            hovertemplate="%{x}<extra></extra>",
+            name=f"Variance retained: {variance[:self.pca_._comps].sum():.3f}",
+            legendgroup="components",
+            showlegend=BasePlot._fig.showlegend("components", legend),
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
         fig.update_layout({f"yaxis{yaxis[1:]}": {"categoryorder": "total ascending"}})
@@ -264,18 +430,16 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             },
         )
 
-        fig.add_trace(
-            go.Heatmap(
-                z=corr.mask(mask),
-                x=columns_c,
-                y=columns_c,
-                coloraxis=f"coloraxis{xaxis[1:]}",
-                hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
-                hoverongaps=False,
-                showlegend=False,
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
+        fig.add_heatmap(
+            z=corr.mask(mask),
+            x=columns_c,
+            y=columns_c,
+            coloraxis=f"coloraxis{xaxis[1:]}",
+            hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
+            hoverongaps=False,
+            showlegend=False,
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
         fig.update_layout(
@@ -293,6 +457,178 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize,
             plotname="plot_correlation",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_decomposition(
+        self,
+        columns: ColumnSelector | None = None,
+        mode: SeasonalityMode = "additive",
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "out",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the trend, seasonality and residuals of a time series.
+
+        This plot is only available for [forecast][time-series] tasks.
+
+        !!! tip
+            Use atom's [decompose][atomforecaster-decompose] method to
+            remove trend and seasonality from the data.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence or dataframe, default=-1
+            [Selection of columns][row-and-column-selection] to plot.
+            If None, the target column is selected.
+
+        mode: str, default="additive"
+            Mode of the decomposition. Choose from:
+
+            - "additive": Assumes the components have a linear relation,
+              i.e., y(t) = level + trend + seasonality + noise.
+            - "multiplicative": Assumes the components have a nonlinear
+              relation, i.e., y(t) = level * trend * seasonality * noise.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="out"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 900)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_acf
+        atom.plots:DataPlot.plot_pacf
+        atom.plots:DataPlot.plot_series
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_decomposition()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes(y=(0.76, 1.0))
+        xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.51, 0.74))
+        xaxis3, yaxis3 = BasePlot._fig.get_axes(y=(0.26, 0.49))
+        xaxis4, yaxis4 = BasePlot._fig.get_axes(y=(0.0, 0.24))
+
+        # Returns correlation array and confidence interval
+        decompose = seasonal_decompose(
+            x=self.branch.dataset[columns_c],
+            model=mode,
+            period=self.sp,
+        )
+
+        for col in columns_c:
+            self._draw_line(
+                x=(x := self._get_plot_index(decompose.trend)),
+                y=decompose.observed,
+                parent=col,
+                child="observed",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis,
+            )
+
+            self._draw_line(
+                x=x,
+                y=decompose.trend,
+                parent=col,
+                child="trend",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis2,
+            )
+
+            self._draw_line(
+                x=x,
+                y=decompose.seasonal,
+                parent=col,
+                child="trend",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis3,
+            )
+
+            self._draw_line(
+                x=x,
+                y=decompose.resid,
+                parent=col,
+                child="trend",
+                legend=legend,
+                xaxis=xaxis4,
+                yaxis=yaxis4,
+            )
+
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            ylabel="Values",
+        )
+
+        self._plot(
+            ax=(f"xaxis{xaxis3[1:]}", f"yaxis{yaxis3[1:]}"),
+            ylabel="Values",
+        )
+
+        self._plot(
+            ax=(f"xaxis{xaxis4[1:]}", f"yaxis{yaxis4[1:]}"),
+            ylabel="Values",
+        )
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel=self.branch.dataset.index.name or "index",
+            ylabel="Values",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_acf",
             filename=filename,
             display=display,
         )
@@ -412,21 +748,19 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             show_c = self._get_show(show, len(series))
 
             color = BasePlot._fig.get_elem()
-            fig.add_trace(
-                go.Bar(
-                    x=series,
-                    y=series.index,
-                    orientation="h",
-                    marker={
-                        "color": f"rgba({color[4:-1]}, 0.2)",
-                        "line": {"width": 2, "color": color},
-                    },
-                    hovertemplate="%{x}<extra></extra>",
-                    name=f"{columns_c[0]}: {len(series)} classes",
-                    showlegend=BasePlot._fig.showlegend("dist", legend),
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
+            fig.add_bar(
+                x=series,
+                y=series.index,
+                orientation="h",
+                marker={
+                    "color": f"rgba({color[4:-1]}, 0.2)",
+                    "line": {"width": 2, "color": color},
+                },
+                hovertemplate="%{x}<extra></extra>",
+                name=f"{columns_c[0]}: {len(series)} classes",
+                showlegend=BasePlot._fig.showlegend("dist", legend),
+                xaxis=xaxis,
+                yaxis=yaxis,
             )
 
             return self._plot(
@@ -443,22 +777,20 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         else:
             for col in [c for c in columns_c if c in num_columns]:
-                fig.add_trace(
-                    go.Histogram(
-                        x=self.branch.dataset[col],
-                        histnorm="probability density",
-                        marker={
-                            "color": f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": BasePlot._fig.get_elem(col)},
-                        },
-                        nbinsx=40,
-                        name="dist",
-                        legendgroup=col,
-                        legendgrouptitle={"text": col, "font_size": self.label_fontsize},
-                        showlegend=BasePlot._fig.showlegend(f"{col}-dist", legend),
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_histogram(
+                    x=self.branch.dataset[col],
+                    histnorm="probability density",
+                    marker={
+                        "color": f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": BasePlot._fig.get_elem(col)},
+                    },
+                    nbinsx=40,
+                    name="dist",
+                    legendgroup=col,
+                    legendgrouptitle={"text": col, "font_size": self.label_fontsize},
+                    showlegend=BasePlot._fig.showlegend(f"{col}-dist", legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
                 x = np.linspace(
@@ -480,16 +812,14 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                             params = getattr(stats, dist).fit(values)
                             y = getattr(stats, dist).pdf(x, *params)
 
-                        fig.add_trace(
-                            self._draw_line(
-                                x=x,
-                                y=y,
-                                parent=col,
-                                child=dist,
-                                legend=legend,
-                                xaxis=xaxis,
-                                yaxis=yaxis,
-                            )
+                        self._draw_line(
+                            x=x,
+                            y=y,
+                            parent=col,
+                            child=dist,
+                            legend=legend,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
                         )
 
             fig.update_layout({"barmode": "overlay"})
@@ -650,22 +980,20 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        fig.add_trace(
-            go.Bar(
-                x=(data := series[-self._get_show(show, len(series)):]),
-                y=data.index,
-                orientation="h",
-                marker={
-                    "color": f"rgba({BasePlot._fig.get_elem(ngram_c)[4:-1]}, 0.2)",
-                    "line": {"width": 2, "color": BasePlot._fig.get_elem(ngram_c)},
-                },
-                hovertemplate="%{x}<extra></extra>",
-                name=f"Total {ngram_c}: {len(series)}",
-                legendgroup=ngram_c,
-                showlegend=BasePlot._fig.showlegend(ngram_c, legend),
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
+        fig.add_bar(
+            x=(data := series[-self._get_show(show, len(series)):]),
+            y=data.index,
+            orientation="h",
+            marker={
+                "color": f"rgba({BasePlot._fig.get_elem(ngram_c)[4:-1]}, 0.2)",
+                "line": {"width": 2, "color": BasePlot._fig.get_elem(ngram_c)},
+            },
+            hovertemplate="%{x}<extra></extra>",
+            name=f"Total {ngram_c}: {len(series)}",
+            legendgroup=ngram_c,
+            showlegend=BasePlot._fig.showlegend(ngram_c, legend),
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
         return self._plot(
@@ -675,6 +1003,189 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize or (900, 400 + show_c * 50),
             plotname="plot_ngrams",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_pacf(
+        self,
+        columns: ColumnSelector | None = None,
+        nlags: IntLargerZero | None = None,
+        method: PACFMethods = "ywadjusted",
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the partial autocorrelation function.
+
+        The partial autocorrelation function (PACF) measures the
+        correlation between a time series and lagged versions of
+        itself. It's useful, for example, to identify the order of
+        an autoregressive model. This plot is only available for
+        [forecast][time-series] tasks.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            Columns to plot the pacf from. If None, it selects the
+            target column.
+
+        nlags: int or None, default=None
+            Number of lags to return autocorrelation for. If None, it
+            uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
+            returned value includes lag 0 (i.e., 1), so the size of the
+            vector is `(nlags + 1,)`.
+
+        method : str, default="ywadjusted"
+            Specifies which method to use for the calculations.
+
+            - "yw" or "ywadjusted": Yule-Walker with sample-size
+              adjustment in denominator for acovf.
+            - "ywm" or "ywmle": Yule-Walker without adjustment.
+            - "ols" : Regression of time series on lags of it and on
+              constant.
+            - "ols-inefficient": Regression of time series on lags using
+              a single common sample to estimate all pacf coefficients.
+            - "ols-adjusted": Regression of time series on lags with a
+              bias adjustment.
+            - "ld" or "ldadjusted": Levinson-Durbin recursion with bias
+              correction.
+            - "ldb" or "ldbiased": Levinson-Durbin recursion without bias
+              correction.
+            - "burg":  Burg"s partial autocorrelation estimator.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of lags shown.
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_acf
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_ttf
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_pacf()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        if nlags is None:
+            nlags = min(int(10 * np.log10(self.branch.shape[0])), self.branch.shape[0] // 2 - 1)
+
+        for col in columns_c:
+            # Returns correlation array and confidence interval
+            corr, conf = pacf(self.branch.dataset[col], nlags=nlags, method=method, alpha=0.05)
+
+            for pos in (x := np.arange(len(corr))):
+                self._draw_line(
+                    x=(pos, pos),
+                    y=(0, corr[pos]),
+                    parent=col,
+                    hoverinfo="skip",
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+            self._draw_line(
+                x=x,
+                y=corr,
+                parent=col,
+                mode="markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 1], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        hovertemplate="%{y}<extra>upper bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                    go.Scatter(
+                        x=x,
+                        y=np.subtract(conf[:, 0], corr),
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        fill="tonexty",
+                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                        hovertemplate="%{y}<extra>lower bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                ]
+            )
+
+        fig.update_yaxes(zerolinecolor="black")
+        fig.update_layout({"hovermode": "x unified"})
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Lag",
+            ylabel="Partial autocorrelation",
+            title=title,
+            legend=legend,
+            figsize=figsize or (700 + nlags * 10, 600),
+            plotname="plot_pacf",
             filename=filename,
             display=display,
         )
@@ -761,23 +1272,21 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
-        fig.add_trace(
-            go.Scatter(
-                x=tuple(range(1, self.pca_.n_features_in_ + 1)),
-                y=np.cumsum(self.pca_.explained_variance_ratio_),
-                mode="lines+markers",
-                line={"width": self.line_width, "color": BasePlot._fig.get_elem("pca")},
-                marker={
-                    "symbol": symbols,
-                    "size": sizes,
-                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                    "opacity": 1,
-                },
-                hovertemplate="%{y}<extra></extra>",
-                showlegend=False,
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
+        fig.add_scatter(
+            x=tuple(range(1, self.pca_.n_features_in_ + 1)),
+            y=np.cumsum(self.pca_.explained_variance_ratio_),
+            mode="lines+markers",
+            line={"width": self.line_width, "color": BasePlot._fig.get_elem("pca")},
+            marker={
+                "symbol": symbols,
+                "size": sizes,
+                "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                "opacity": 1,
+            },
+            hovertemplate="%{y}<extra></extra>",
+            showlegend=False,
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
         fig.update_layout(
@@ -821,7 +1330,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Parameters
         ----------
-        columns: int, str, slice or sequence, default=0
+        columns: int, str, segment, sequence or dataframe, default=0
             Columns to plot. Selected categorical columns are ignored.
 
         distributions: str or sequence, default="norm"
@@ -882,7 +1391,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         """
         columns_c = self.branch._get_columns(columns)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         percentiles = np.linspace(0, 100, 101)
@@ -896,17 +1405,15 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 params = stat.fit(values)
                 samples = stat.rvs(*params, size=101, random_state=self.random_state)
 
-                fig.add_trace(
-                    self._draw_line(
-                        x=(x := np.percentile(samples, percentiles)),
-                        y=(y := np.percentile(values, percentiles)),
-                        mode="markers",
-                        parent=col,
-                        child=dist,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=(x := np.percentile(samples, percentiles)),
+                    y=(y := np.percentile(values, percentiles)),
+                    mode="markers",
+                    parent=col,
+                    child=dist,
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
@@ -1027,43 +1534,37 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             )
 
             if x == y:
-                fig.add_trace(
-                    go.Histogram(
-                        x=self.branch.dataset[columns_c[x]],
-                        marker={
-                            "color": f"rgba({color[4:-1]}, 0.2)",
-                            "line": {"width": 2, "color": color},
-                        },
-                        name=columns_c[x],
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_histogram(
+                    x=self.branch.dataset[columns_c[x]],
+                    marker={
+                        "color": f"rgba({color[4:-1]}, 0.2)",
+                        "line": {"width": 2, "color": color},
+                    },
+                    name=columns_c[x],
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
             elif x > y:
-                fig.add_trace(
-                    go.Scatter(
-                        x=sample(columns_c[y]),
-                        y=sample(columns_c[x]),
-                        mode="markers",
-                        marker={"color": color},
-                        hovertemplate="(%{x}, %{y})<extra></extra>",
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_scatter(
+                    x=sample(columns_c[y]),
+                    y=sample(columns_c[x]),
+                    mode="markers",
+                    marker={"color": color},
+                    hovertemplate="(%{x}, %{y})<extra></extra>",
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
             elif y > x:
-                fig.add_trace(
-                    go.Histogram2dContour(
-                        x=self.branch.dataset[columns_c[y]],
-                        y=self.branch.dataset[columns_c[x]],
-                        coloraxis=f"coloraxis{xaxis[1:]}",
-                        hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                fig.add_histogram2dcontour(
+                    x=self.branch.dataset[columns_c[y]],
+                    y=self.branch.dataset[columns_c[x]],
+                    coloraxis=f"coloraxis{xaxis[1:]}",
+                    hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
             if x < len(columns_c) - 1:
@@ -1181,24 +1682,20 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         mean = self.rfecv_.cv_results_["mean_test_score"]
         std = self.rfecv_.cv_results_["std_test_score"]
 
-        fig.add_trace(
-            go.Scatter(
-                x=list(x),
-                y=mean,
-                mode="lines+markers",
-                line={"width": self.line_width, "color": BasePlot._fig.get_elem("rfecv")},
-                marker={
-                    "symbol": symbols,
-                    "size": sizes,
-                    "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                    "opacity": 1,
-                },
-                name=ylabel,
-                legendgroup="rfecv",
-                showlegend=BasePlot._fig.showlegend("rfecv", legend),
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
+        self._draw_line(
+            x=list(x),
+            y=mean,
+            parent="rfecv",
+            name=ylabel,
+            mode="lines+markers",
+            marker={
+                "symbol": symbols,
+                "size": sizes,
+                "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                "opacity": 1,
+            },
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
         # Add error bands
@@ -1248,6 +1745,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @available_if(has_task("forecast"))
     @crash
     def plot_series(
         self,
@@ -1262,8 +1760,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     ) -> go.Figure | None:
         """Plot a data series.
 
-        This plot is specially useful to plot the time series for
-        [forecast][time-series] tasks.
+        This plot is only available for [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -1335,27 +1832,25 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         else:
             columns_c = self.branch._get_columns(columns, include_target=True)
 
-        fig = self._get_figure()
+        self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for col in columns_c:
             for child, ds in self._get_set(rows):
-                fig.add_trace(
-                    self._draw_line(
-                        x=self._get_plot_index(y := self.branch._get_rows(ds)[col]),
-                        y=y,
-                        mode="lines+markers",
-                        marker={
-                            "size": self.marker_size,
-                            "color": BasePlot._fig.get_elem(col),
-                            "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
-                        },
-                        parent=col,
-                        child=child,
-                        legend=legend,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    )
+                self._draw_line(
+                    x=self._get_plot_index(y := self.branch._get_rows(ds)[col]),
+                    y=y,
+                    parent=col,
+                    child=child,
+                    mode="lines+markers",
+                    marker={
+                        "size": self.marker_size,
+                        "color": BasePlot._fig.get_elem(col),
+                        "line": {"width": 1, "color": "rgba(255, 255, 255, 0.9)"},
+                    },
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
 
         return self._plot(
@@ -1476,13 +1971,11 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
-        fig.add_trace(
-            go.Image(
-                z=wordcloud.generate(get_text(rows_c[corpus])),
-                hoverinfo="skip",
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
+        fig.add_image(
+            z=wordcloud.generate(get_text(rows_c[corpus])),
+            hoverinfo="skip",
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
         fig.update_layout(

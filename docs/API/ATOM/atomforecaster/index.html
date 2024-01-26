@@ -5133,7 +5133,7 @@ atom's value.</p>
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='add-transformer'></a><strong>transformer: Transformer</strong><br><div markdown class='param'>
 Estimator to add to the pipeline. Should implement a
 <code>transform</code> method.</p>
-<p></div><a id='add-columns'></a><strong>columns: int, str, segment, sequence or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='add-columns'></a><strong>columns: int, str, segment, sequence, dataframe or None, default=None</strong><br><div markdown class='param'>
 <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of columns</a> to
 transform. Only select features or the target column, not
 both at the same time (if that happens, the target column
@@ -5279,7 +5279,7 @@ distribution.</p>
 Names of the distributions in <code>scipy.stats</code> to get the
 statistics on. If None, a selection of the most common
 ones is used.</p>
-<p></div><a id='distribution-columns'></a><strong>columns: int, str, segment, sequence or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='distribution-columns'></a><strong>columns: int, str, segment, sequence, dataframe or None, default=None</strong><br><div markdown class='param'>
 <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of columns</a> to perform
 the test on. If None, select all numerical columns.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='distribution-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
@@ -5558,7 +5558,7 @@ number of categories is less than 30% of the column's length.</p>
 <p></div><a id='shrink-dense2sparse'></a><strong>dense2sparse: bool, default=False</strong><br><div markdown class='param'>
 Whether to convert all features to sparse format. The value
 that is compressed is the most frequent value in the column.</p>
-<p></div><a id='shrink-columns'></a><strong>columns: int, str, segment, sequence or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='shrink-columns'></a><strong>columns: int, str, segment, sequence, dataframe or None, default=None</strong><br><div markdown class='param'>
 <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of columns</a> to shrink. If
 None, transform all columns.
 </div></td></tr></p>
