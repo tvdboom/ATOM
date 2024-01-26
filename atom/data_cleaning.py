@@ -47,8 +47,9 @@ from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
     Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo,
     IntLargerZero, NJobs, NormalizerStrats, NumericalStrats, Pandas, Predictor,
-    PrunerStrats, Scalar, ScalerStrats, Sequence, Series, Transformer, Verbose,
-    XSelector, YSelector, dataframe_t, sequence_t, series_t,
+    PrunerStrats, Scalar, ScalerStrats, SeasonalityMode, Sequence, Series,
+    Transformer, Verbose, XSelector, YSelector, dataframe_t, sequence_t,
+    series_t,
 )
 from atom.utils.utils import (
     Goal, bk, composed, crash, get_col_order, get_cols, it, lst, merge,
@@ -1083,7 +1084,7 @@ class Decomposer(TransformerMixin):
         *,
         model: str | Predictor | None = None,
         sp: IntLargerZero | None = None,
-        mode: Literal["additive", "multiplicative"] = "additive",
+        mode: SeasonalityMode = "additive",
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,

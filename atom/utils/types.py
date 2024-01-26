@@ -284,8 +284,23 @@ Legend: TypeAlias = Literal[
 
 # Others
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
+SeasonalityMode: TypeAlias = Literal["additive", "multiplicative"]
 HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
 Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]
+PACFMethods: TypeAlias = Literal[
+    "yw",
+    "ywadjusted",
+    "ywm",
+    "ywmle",
+    "ols",
+    "ols-inefficient",
+    "ols-adjusted",
+    "ld",
+    "ldadjusted",
+    "ldb",
+    "ldbiased",
+    "burg",
+]
 NItems: TypeAlias = (
     IntLargerEqualZero
     | dict[str, IntLargerEqualZero]
