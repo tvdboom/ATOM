@@ -157,7 +157,9 @@ def test_cleaner_drop_invalid_dtypes():
     """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
-    X = Cleaner(drop_dtypes="datetime64[ns]").fit_transform(X)
+    cleaner = Cleaner(drop_dtypes="datetime64[ns]").fit(X)
+    assert "datetime_col" not in cleaner.get_feature_names_out()
+    X = cleaner.transform(X)
     assert "datetime_col" not in X.columns
 
 
@@ -212,7 +214,8 @@ def test_cleaner_drop_duplicate_rows():
 
 def test_cleaner_drop_missing_target():
     """Assert that rows with missing values in the target column are dropped."""
-    y = Cleaner().fit_transform(y=y10_nan)
+    a = Cleaner()
+    y = a.fit_transform(y=y10_nan)
     assert len(y) == 9
 
 
@@ -415,7 +418,7 @@ def test_unknown_classes_are_imputed():
 
 
 def test_ordinal_encoder():
-    """Assert that the Ordinal-encoder works as intended."""
+    """Assert that the ordinal encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["x2"] == 0) | (X["x2"] == 1))
@@ -431,9 +434,10 @@ def test_ordinal_features():
 
 
 def test_one_hot_encoder():
-    """Assert that the OneHot-encoder works as intended."""
-    encoder = Encoder(max_onehot=4)
-    X = encoder.fit_transform(X10_str, y10)
+    """Assert that the onehot encoder works as intended."""
+    encoder = Encoder(max_onehot=4).fit(X10_str, y10)
+    assert "x2_c" in encoder.get_feature_names_out()
+    X = encoder.transform(X10_str)
     assert "x2_c" in X.columns
 
 
@@ -502,8 +506,9 @@ def test_cols_too_many_nans(max_nan_cols):
         strat_num="mean",
         strat_cat="most_frequent",
         max_nan_cols=max_nan_cols,
-    )
-    X, y = imputer.fit_transform(X, y_bin)
+    ).fit(X, y_bin)
+    assert len(imputer.get_feature_names_out()) == 30
+    X, y = imputer.transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
 

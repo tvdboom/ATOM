@@ -22,6 +22,9 @@ from nltk.collocations import (
 )
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
+from sklearn.base import OneToOneFeatureMixin
+from sklearn.utils._set_output import _SetOutputMixin
+from sklearn.utils.validation import _check_feature_names_in
 from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
@@ -30,13 +33,13 @@ from atom.utils.types import (
     VectorizerStarts, Verbose, bool_t,
 )
 from atom.utils.utils import (
-    check_nltk_module, composed, crash, get_corpus, is_sparse, merge,
-    method_to_log, to_df,
+    check_is_fitted, check_nltk_module, composed, crash, get_corpus, is_sparse,
+    merge, method_to_log, to_df,
 )
 
 
 @beartype
-class TextCleaner(TransformerMixin):
+class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     r"""Applies standard text cleaning to the corpus.
 
     Transformations include normalizing characters and dropping
@@ -324,7 +327,7 @@ class TextCleaner(TransformerMixin):
 
 
 @beartype
-class TextNormalizer(TransformerMixin):
+class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Normalize the corpus.
 
     Convert words to a more uniform standard. The transformations
@@ -546,7 +549,7 @@ class TextNormalizer(TransformerMixin):
 
 
 @beartype
-class Tokenizer(TransformerMixin):
+class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Tokenize the corpus.
 
     Convert documents into sequences of words. Additionally,
@@ -772,7 +775,7 @@ class Tokenizer(TransformerMixin):
 
 
 @beartype
-class Vectorizer(TransformerMixin):
+class Vectorizer(TransformerMixin, _SetOutputMixin):
     """Vectorize text data.
 
     Transform the corpus into meaningful vectors of numbers. The
@@ -926,6 +929,25 @@ class Vectorizer(TransformerMixin):
         self.return_sparse = return_sparse
         self.kwargs = kwargs
 
+    def _get_corpus_columns(self) -> list[str]:
+        """Get the names of the columns created by the vectorizer.
+
+        Returns
+        -------
+        list of str
+            Column names.
+
+        """
+        if hasattr(self._estimator, "get_feature_names_out"):
+            return [f"{self._corpus}_{w}" for w in self._estimator.get_feature_names_out()]
+        elif hasattr(self._estimator, "get_feature_names"):
+            # cuML estimators have a different method name (returns a cudf.Series)
+            return [f"{self._corpus}_{w}" for w in self._estimator.get_feature_names().to_numpy()]
+        else:
+            raise ValueError(
+                "The get_feature_names_out method is not available for strategy='hashing'."
+            )
+
     @composed(crash, method_to_log)
     def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
         """Fit to data.
@@ -946,11 +968,11 @@ class Vectorizer(TransformerMixin):
             Estimator instance.
 
         """
-        corpus = get_corpus(X)
+        self._corpus = get_corpus(X)
 
         # Convert a sequence of tokens to space separated string
-        if not isinstance(X[corpus].iloc[0], str):
-            X[corpus] = X[corpus].apply(lambda row: " ".join(row))
+        if not isinstance(X[self._corpus].iloc[0], str):
+            X[self._corpus] = X[self._corpus].apply(lambda row: " ".join(row))
 
         strategies = {
             "bow": "CountVectorizer",
@@ -969,12 +991,33 @@ class Vectorizer(TransformerMixin):
             self._estimator.set_output(transform="default")
 
         self._log("Fitting Vectorizer...", 1)
-        self._estimator.fit(X[corpus])
+        self._estimator.fit(X[self._corpus])
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)
 
         return self
+
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+        """Get output feature names for transformation.
+
+        Parameters
+        ----------
+        input_features: sequence or None, default=None
+            Only used to validate feature names with the names seen in
+            `fit`.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed feature names.
+
+        """
+        check_is_fitted(self, attributes="feature_names_in_")
+        _check_feature_names_in(self, input_features)
+
+        og_columns = [c for c in self.feature_names_in_ if c != self._corpus]
+        return og_columns + self._get_corpus_columns()
 
     @composed(crash, method_to_log)
     def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
@@ -996,30 +1039,17 @@ class Vectorizer(TransformerMixin):
             Transformed corpus.
 
         """
-        corpus = get_corpus(X)
-
         self._log("Vectorizing the corpus...", 1)
 
         # Convert a sequence of tokens to space-separated string
-        if not isinstance(X[corpus].iloc[0], str):
-            X[corpus] = X[corpus].apply(lambda row: " ".join(row))
+        if not isinstance(X[self._corpus].iloc[0], str):
+            X[self._corpus] = X[self._corpus].apply(lambda row: " ".join(row))
 
-        matrix = self._estimator.transform(X[corpus])
-        if hasattr(self._estimator, "get_feature_names_out"):
-            columns = [f"corpus_{w}" for w in self._estimator.get_feature_names_out()]
-        else:
-            # Hashing has no words to put as column names
-            columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
-
-        X = X.drop(columns=corpus)  # Drop original corpus column
+        matrix = self._estimator.transform(X[self._corpus])
+        X = X.drop(columns=self._corpus)  # Drop original corpus column
 
         if "sklearn" not in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy
-
-            # cuML estimators have a slightly different method name
-            if hasattr(self._estimator, "get_feature_names"):
-                vocabulary = self._estimator.get_feature_names()  # cudf.Series
-                columns = [f"{corpus}_{w}" for w in vocabulary.to_numpy()]
 
         if not self.return_sparse:
             self._log(" --> Converting the output to a full array.", 2)
@@ -1031,4 +1061,10 @@ class Vectorizer(TransformerMixin):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        return merge(X, to_df(matrix, X.index, columns))
+        if self.strategy != "hashing":
+            columns = self._get_corpus_columns()
+        else:
+            # Hashing has no words to put as column names
+            columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
+
+        return merge(X, to_df(matrix, index=X.index, columns=columns))

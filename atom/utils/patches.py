@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from functools import wraps
 from typing import Any
 from unittest.mock import patch
 
@@ -21,6 +22,7 @@ from sklearn.ensemble import VotingRegressor as VR
 from sklearn.ensemble._base import _fit_single_estimator
 from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.utils import Bunch
+from sklearn.utils._set_output import _wrap_method_output
 from sklearn.utils.multiclass import check_classification_targets
 from sktime.forecasting.compose import EnsembleForecaster as EF
 from sktime.forecasting.compose import StackingForecaster as SF
@@ -33,6 +35,24 @@ from atom.utils.utils import check_is_fitted
 
 
 # Functions ======================================================== >>
+
+def wrap_method_output(f: Callable, method: str) -> Callable:
+    """Wrap sklearn's _wrap_method_output function.
+
+    Custom implementation to avoid errors for transformers that allow
+    only providing `y`. Is used internally by _SetOutputMixin.
+
+    """
+
+    @wraps(f)
+    def wrapped(self, *args, **kwargs):
+        try:
+            return _wrap_method_output(f, method)(self, *args, **kwargs)
+        except TypeError:
+            return f(self, *args, **kwargs)
+
+    return wrapped
+
 
 def fit_and_score(*args, **kwargs) -> dict[str, Any]:
     """Wrap sklearn's _fit_and_score function.

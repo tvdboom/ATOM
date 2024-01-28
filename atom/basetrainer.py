@@ -67,8 +67,8 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
         self.parallel = parallel
         self.errors = errors
 
-        self._models = lst(models) if models is not None else []
-        self._metric = lst(metric) if metric is not None else []
+        self._models = lst(models) if models is not None else ClassMap()
+        self._metric = lst(metric) if metric is not None else ClassMap()
 
         self._config = DataConfig()
         self._branches = BranchManager(memory=self.memory)

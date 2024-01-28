@@ -162,6 +162,13 @@ def test_lemmatization():
 
 # Test Vectorizer ================================================== >>
 
+def test_hashing_with_get_feature_names_out():
+    """Assert that get_feature_names_out doesn't work with hashing."""
+    vectorizer = Vectorizer(strategy="hashing", n_features=10).fit(X_text)
+    with pytest.raises(ValueError, match=".*get_feature_names_out method.*"):
+        vectorizer.get_feature_names_out()
+
+
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
     assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
@@ -169,14 +176,14 @@ def test_vectorizer_space_separation():
 
 @pytest.mark.parametrize("strategy", ["bow", "tfidf"])
 def test_strategies(strategy):
-    """Assert that the BOW and TF-IDF strategies works as intended."""
+    """Assert that the bow and tf-idf strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)
     assert X.shape == (10, 20)
     assert "corpus_york" in X
 
 
 def test_hashing():
-    """Assert that the Hashing strategy works as intended."""
+    """Assert that the hashing strategy works as intended."""
     X = Vectorizer(strategy="hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
     assert "hash1" in X
@@ -193,7 +200,7 @@ def test_hashing():
 )
 def test_gpu():
     """Assert that the gpu implementation calls the get method of matrix."""
-    vectorizer = Vectorizer(device="gpu", engine={"estimator": "cuml"})
+    vectorizer = Vectorizer(device="gpu", engine="cuml")
     pytest.raises(ValueError, vectorizer.fit_transform, X_text)
 
 

@@ -57,7 +57,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     """
 
     def __getstate__(self) -> dict[str, Any]:
-        """Require to store an extra attribute with the package versions."""
+        """Require storing an extra attribute with the package versions."""
         return self.__dict__ | {"_versions": get_versions(self._models)}
 
     def __setstate__(self, state: dict[str, Any]):
@@ -148,6 +148,10 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
         else:
             return self.dataset[item]  # Get subset of dataset
+
+    def __sklearn_is_fitted__(self) -> bool:
+        """Return fitted when there are trained models."""
+        return bool(self._models)
 
     # Utility properties =========================================== >>
 
@@ -1022,7 +1026,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             Scores of the models.
 
         """
-        check_is_fitted(self, attributes="_models")
+        check_is_fitted(self)
 
         return pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
 
@@ -1380,7 +1384,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 parameter, e.g., `atom.stacking(final_estimator="LR")`.
 
         """
-        check_is_fitted(self, attributes="_models")
+        check_is_fitted(self)
         models_c = self._get_models(models, ensembles=False, branch=self.branch)
 
         if len(models_c) < 2:
@@ -1465,7 +1469,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             - For forecast tasks: [EnsembleForecaster][].
 
         """
-        check_is_fitted(self, attributes="_models")
+        check_is_fitted(self)
         models_c = self._get_models(models, ensembles=False, branch=self.branch)
 
         if len(models_c) < 2:

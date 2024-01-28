@@ -48,6 +48,7 @@ from sklearn.metrics import (
     matthews_corrcoef,
 )
 from sklearn.utils import _print_elapsed_time
+from sklearn.utils.validation import _is_fitted
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
@@ -2069,19 +2070,10 @@ def check_is_fitted(
         else:
             return not value
 
-    is_fitted = False
     if hasattr(obj, "_is_fitted"):
         is_fitted = obj._is_fitted
-    if hasattr(obj, "__sklearn_is_fitted__"):
-        is_fitted = obj.__sklearn_is_fitted__()
-    elif attributes is None:
-        # Check for attributes from a fitted object
-        for k, v in vars(obj).items():
-            if k.endswith("_") and not k.startswith("__") and v is not None:
-                is_fitted = True
-                break
-    elif not all(check_attr(attr) for attr in lst(attributes)):
-        is_fitted = True
+    else:
+        is_fitted = _is_fitted(obj, attributes)
 
     if not is_fitted:
         if exception:
@@ -2248,7 +2240,7 @@ def name_cols(
 
 
 def get_col_order(
-    df: DataFrame,
+    new_columns: list[str],
     og_columns: list[str],
     col_names: list[str],
 ) -> list[str]:
@@ -2260,11 +2252,11 @@ def get_col_order(
 
     Parameters
     ----------
-    df: dataframe
-        New dataframe.
+    new_columns: list of str
+        Columns in the new dataframe.
 
     og_columns: list of str
-        Column order of the original dataframe.
+        Columns in the original dataframe.
 
     col_names: list of str
         Names of the columns used in the transformer.
@@ -2277,15 +2269,15 @@ def get_col_order(
     """
     columns: list[str] = []
     for col in og_columns:
-        if col in df or col not in col_names:
+        if col in new_columns or col not in col_names:
             columns.append(col)
 
         # Add all derivative columns: columns that originate from another
         # and start with its progenitor name, e.g., one-hot encoded columns
-        columns.extend([c for c in df.columns if c.startswith(f"{col}_") and c not in og_columns])
+        columns.extend([c for c in new_columns if c.startswith(f"{col}_") and c not in og_columns])
 
     # Add remaining new columns (non-derivatives)
-    columns.extend([col for col in df.columns if col not in columns])
+    columns.extend([col for col in new_columns if col not in columns])
 
     return columns
 
@@ -2341,7 +2333,7 @@ def reorder_cols(
             "the columns."
         ) from ex
 
-    columns = get_col_order(df, original_df.columns.tolist(), col_names)
+    columns = get_col_order(df.columns.tolist(), original_df.columns.tolist(), col_names)
 
     # Merge the new and old datasets keeping the newest columns
     new_df = df.merge(
@@ -2771,14 +2763,14 @@ def method_to_log(f: Callable) -> Callable:
     return wrapper
 
 
-def wrap_methods(f: Callable) -> Callable:
+def wrap_transformer_methods(f: Callable) -> Callable:
     """Wrap transformer methods with shared code.
 
     The following operations are always performed:
 
     - Transform the input to pandas types.
+    - Add the `feature_names_in_` and `n_features_in_` attributes.
     - Check if the instance is fitted before transforming.
-    - Convert output to pyarrow dtypes if specified in config.
 
     """
 

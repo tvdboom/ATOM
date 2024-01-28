@@ -312,7 +312,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         """
         if hasattr(self, "_get_models"):
             if check_fitted:
-                check_is_fitted(self, attributes="_models")
+                check_is_fitted(self)
 
             models_c = self._get_models(models, ensembles=ensembles)
             if max_one and len(models_c) > 1:

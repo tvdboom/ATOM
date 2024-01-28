@@ -9,9 +9,7 @@ from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import numpy as np
-import pandas as pd
 import pytest
-from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 from sklearn.linear_model import LinearRegression
@@ -21,7 +19,7 @@ from atom import show_versions
 from atom.pipeline import Pipeline
 from atom.utils.patches import VotingClassifier, VotingRegressor
 from atom.utils.utils import (
-    ClassMap, NotFittedError, check_is_fitted, time_to_str, to_df, to_series,
+    ClassMap, check_is_fitted, time_to_str, to_df, to_series,
 )
 
 from .conftest import X_bin, X_reg, y_bin, y_reg
@@ -166,13 +164,3 @@ def test_to_pandas_with_cuml():
     """Assert that cuML objects use the to_pandas method."""
     to_df(Mock(spec=["to_pandas"]), columns=[0, 1])
     to_series(Mock(spec=["to_pandas"]))
-
-
-def test_check_is_fitted_with_pandas():
-    """Assert that the function works for empty pandas objects."""
-    estimator = BaseEstimator()
-    estimator.attr = pd.DataFrame([])
-    pytest.raises(NotFittedError, check_is_fitted, estimator, attributes="attr")
-    assert not check_is_fitted(estimator, exception=False, attributes="attr")
-    estimator.attr = pd.Series([0, 1])
-    assert check_is_fitted(estimator, attributes="attr")

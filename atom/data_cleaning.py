@@ -12,7 +12,8 @@ from collections import defaultdict
 from collections.abc import Hashable
 from logging import Logger
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -34,15 +35,20 @@ from imblearn.under_sampling import (
     TomekLinks,
 )
 from scipy.stats import zscore
-from sklearn.base import BaseEstimator, _clone_parametrized
+from sklearn.base import (
+    BaseEstimator, OneToOneFeatureMixin, _clone_parametrized,
+)
 from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
+from sklearn.utils._set_output import _SetOutputMixin
+from sklearn.utils.validation import _check_feature_names_in
 from sktime.transformations.series.detrend import Deseasonalizer, Detrender
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
+from atom.utils.patches import wrap_method_output
 from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
     Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo,
@@ -52,10 +58,13 @@ from atom.utils.types import (
     series_t,
 )
 from atom.utils.utils import (
-    Goal, bk, composed, crash, get_col_order, get_cols, it, lst, merge,
-    method_to_log, n_cols, replace_missing, sign, to_df, to_series,
-    variable_return, wrap_methods,
+    Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
+    lst, merge, method_to_log, n_cols, replace_missing, sign, to_df, to_series,
+    variable_return, wrap_transformer_methods,
 )
+
+
+T = TypeVar("T", bound=Transformer)
 
 
 @beartype
@@ -74,12 +83,14 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
     def __init_subclass__(cls, **kwargs):
         """Wrap transformer methods to apply data and fit check."""
-        super().__init_subclass__(**kwargs)
-
         for k in ("fit", "transform", "inverse_transform"):
-            setattr(cls, k, wrap_methods(getattr(cls, k)))
+            setattr(cls, k, wrap_transformer_methods(getattr(cls, k)))
 
-    def __sklearn_clone__(self):
+        # Patch to avoid errors for transformers that allow passing only y
+        with patch("sklearn.utils._set_output._wrap_method_output", wrap_method_output):
+            super().__init_subclass__(**kwargs)
+
+    def __sklearn_clone__(self: T) -> T:
         """Wrap cloning method to attach internal attributes."""
         cloned = _clone_parametrized(self)
 
@@ -89,6 +100,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
         return cloned
 
+    @composed(crash, method_to_log)
     def fit(
         self,
         X: DataFrame | None = None,
@@ -216,7 +228,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
 
 @beartype
-class Balancer(TransformerMixin):
+class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Balance the number of samples per class in the target column.
 
     When oversampling, the newly created samples have an increasing
@@ -551,7 +563,7 @@ class Balancer(TransformerMixin):
 
 
 @beartype
-class Cleaner(TransformerMixin):
+class Cleaner(TransformerMixin, _SetOutputMixin):
     """Applies standard data cleaning steps on a dataset.
 
     Use the parameters to choose which transformations to perform.
@@ -750,12 +762,16 @@ class Cleaner(TransformerMixin):
 
         """
         self.mapping_: dict[str, Any] = {}
+        self._drop_cols = []
         self._estimators = {}
 
         if not hasattr(self, "missing_"):
             self.missing_ = DEFAULT_MISSING
 
         self._log("Fitting Cleaner...", 1)
+
+        if X is not None and self.drop_dtypes is not None:
+            self._drop_cols = list(X.select_dtypes(include=list(self.drop_dtypes)).columns)
 
         if y is not None:
             if isinstance(y, series_t):
@@ -786,6 +802,32 @@ class Cleaner(TransformerMixin):
                         self.mapping_.update({col.name: {str(it(v)): i for i, v in enumerate(uq)}})
 
         return self
+
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+        """Get output feature names for transformation.
+
+        Parameters
+        ----------
+        input_features: sequence or None, default=None
+            Only used to validate feature names with the names seen in
+            `fit`.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed feature names.
+
+        """
+        check_is_fitted(self, attributes="feature_names_in_")
+        _check_feature_names_in(self, input_features)
+
+        columns = [col for col in self.feature_names_in_ if col not in self._drop_cols]
+
+        if self.drop_chars:
+            # Drop prohibited chars from column names
+            columns = [re.sub(self.drop_chars, "", str(c)) for c in columns]
+
+        return columns
 
     @composed(crash, method_to_log)
     def transform(
@@ -829,18 +871,15 @@ class Cleaner(TransformerMixin):
             X = replace_missing(X, self.missing_)
 
             for name, column in X.items():
-                dtype = column.dtype.name
-
                 # Drop features with an invalid data type
-                if dtype in lst(self.drop_dtypes):
+                if name in self._drop_cols:
                     self._log(
-                        f" --> Dropping feature {name} for having a prohibited type: {dtype}.",
-                        2,
+                        f" --> Dropping feature {name} for "
+                        f"having type: {column.dtype.name}.", 2
                     )
                     X = X.drop(columns=name)
-                    continue
 
-                elif dtype in CAT_TYPES:
+                elif column.dtype.name in CAT_TYPES:
                     if self.strip_categorical:
                         # Strip strings from blank spaces
                         X[name] = column.apply(
@@ -977,7 +1016,7 @@ class Cleaner(TransformerMixin):
 
 
 @beartype
-class Decomposer(TransformerMixin):
+class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Detrend and deseasonalize the time series.
 
     This class does two things:
@@ -1216,7 +1255,7 @@ class Decomposer(TransformerMixin):
 
 
 @beartype
-class Discretizer(TransformerMixin):
+class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Bin continuous data into intervals.
 
     For each feature, the bin edges are computed during fit and,
@@ -1559,7 +1598,7 @@ class Discretizer(TransformerMixin):
 
 
 @beartype
-class Encoder(TransformerMixin):
+class Encoder(TransformerMixin, _SetOutputMixin):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
@@ -1869,6 +1908,29 @@ class Encoder(TransformerMixin):
 
         return self
 
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+        """Get output feature names for transformation.
+
+        Parameters
+        ----------
+        input_features: sequence or None, default=None
+            Only used to validate feature names with the names seen in
+            `fit`.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed feature names.
+
+        """
+        check_is_fitted(self, attributes="feature_names_in_")
+        _check_feature_names_in(self, input_features)
+
+        # Drop _nan columns (since missing values are propagated)
+        cols = [c for c in self._estimator.get_feature_names_out() if not c.endswith("_nan")]
+
+        return get_col_order(cols, self.feature_names_in_, self._estimator.feature_names_in_)
+
     @composed(crash, method_to_log)
     def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Encode the data.
@@ -1916,14 +1978,11 @@ class Encoder(TransformerMixin):
 
         Xt = self._estimator.transform(X)
 
-        # Drop _nan columns (since missing values are propagated)
-        Xt = Xt.loc[:, ~Xt.columns.str.endswith("_nan")]
-
-        return Xt[get_col_order(Xt, X.columns.tolist(), self._estimator.feature_names_in_)]
+        return Xt[self.get_feature_names_out()]
 
 
 @beartype
-class Imputer(TransformerMixin):
+class Imputer(TransformerMixin, _SetOutputMixin):
     """Handle missing values in the data.
 
     Impute or remove missing values according to the selected strategy.
@@ -2203,6 +2262,25 @@ class Imputer(TransformerMixin):
 
         return self
 
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+        """Get output feature names for transformation.
+
+        Parameters
+        ----------
+        input_features: sequence or None, default=None
+            Only used to validate feature names with the names seen in
+            `fit`.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed feature names.
+
+        """
+        check_is_fitted(self, attributes="feature_names_in_")
+        _check_feature_names_in(self, input_features)
+        return [c for c in self.feature_names_in_ if c in self._estimator.get_feature_names_out()]
+
     @composed(crash, method_to_log)
     def transform(
         self,
@@ -2329,20 +2407,20 @@ class Imputer(TransformerMixin):
                             2,
                         )
 
-        X = self._estimator.transform(X)
+        Xt = self._estimator.transform(X)
 
         # Make y consistent with X
         if y is not None:
-            y = y[y.index.isin(X.index)]
+            y = y[y.index.isin(Xt.index)]
 
         # Reorder columns to original order
-        X = X[[col for col in self.feature_names_in_ if col in X.columns]]
+        Xt = Xt[self.get_feature_names_out()]
 
-        return variable_return(X, y)
+        return variable_return(Xt, y)
 
 
 @beartype
-class Normalizer(TransformerMixin):
+class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Transform the data to follow a Normal/Gaussian distribution.
 
     This transformation is useful for modeling issues related to
@@ -2604,7 +2682,7 @@ class Normalizer(TransformerMixin):
 
 
 @beartype
-class Pruner(TransformerMixin):
+class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Prune outliers from the data.
 
     Replace or remove outliers. The definition of outlier depends
@@ -2930,7 +3008,7 @@ class Pruner(TransformerMixin):
 
 
 @beartype
-class Scaler(TransformerMixin):
+class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     """Scale the data.
 
     Apply one of sklearn's scaling strategies. Categorical columns

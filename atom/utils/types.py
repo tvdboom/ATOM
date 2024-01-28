@@ -212,7 +212,7 @@ RowSelector: TypeAlias = Hashable | Sequence[Hashable] | ColumnSelector
 # Assignment of index or stratify parameter
 IndexSelector: TypeAlias = Bool | Int | str | Sequence[Hashable]
 
-# Types to initialize and select models and metric
+# Construct and select models and metric
 ModelsConstructor: TypeAlias = str | Predictor | Sequence[str | Predictor] | None
 ModelSelector: TypeAlias = Int | str | Model
 ModelsSelector: TypeAlias = ModelSelector | Segment | Sequence[ModelSelector] | None
@@ -226,7 +226,7 @@ MetricConstructor: TypeAlias = (
 )
 MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZero | str] | None
 
-# Allowed values for BaseTransformer parameter
+# BaseTransformer parameters
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
 EngineDataOptions: TypeAlias = Literal["numpy", "pyarrow", "modin"]
 EngineEstimatorOptions: TypeAlias = Literal["sklearn", "sklearnex", "cuml"]
