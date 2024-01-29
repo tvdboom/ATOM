@@ -18,7 +18,8 @@ from sklearn.base import clone
 from atom.atom import ATOM
 from atom.utils.types import (
     Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
-    NJobs, Predictor, Scalar, Seasonality, Verbose, Warnings, YSelector,
+    NJobs, Predictor, Scalar, Seasonality, SPDict, Verbose, Warnings,
+    YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -454,10 +455,10 @@ class ATOMForecaster(ATOM):
         and model training. The features are still used in the remaining
         methods.
 
-    sp: int, str, sequence or None, default=None
-        [Seasonal period][seasonality] of the time series.
+    sp: int, str, sequence, dict or None, default=None
+        [Seasonality][] of the time series.
 
-        - If None: No seasonal period.
+        - If None: No seasonality.
         - If int: Seasonal period, e.g., 7 for weekly data, and 12 for
           monthly data. The value must be >=2.
         - If str:
@@ -471,6 +472,12 @@ class ATOMForecaster(ATOM):
               under the hood, using default parameters).
 
         - If sequence: Multiple seasonal periods provided as int or str.
+        - If dict: Dictionary with keys:
+
+            - "sp": Seasonal period provided as one of the aforementioned
+              options.
+            - "seasonal_model" (optional): "additive" or "multiplicative".
+            - "trend_model" (optional): "additive" or "multiplicative".
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -612,7 +619,7 @@ class ATOMForecaster(ATOM):
         *arrays,
         y: YSelector = -1,
         ignore: ColumnSelector | None = None,
-        sp: Seasonality = None,
+        sp: Seasonality | SPDict = None,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,

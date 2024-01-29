@@ -7,6 +7,10 @@ future values or events and finds applications in finance, healthcare, weather
 forecasting, and more. ATOM support two time series tasks: univariate forecast
 and multivariate forecast.
 
+!!! example
+    See our time series examples for [univariate][example-univariate-forecast]
+    and [multivariate][example-multivariate-forecast] forecast.
+
 <br>
 
 ## Exogenous variables
@@ -32,10 +36,10 @@ Seasonality refers to the recurring patterns that repeat at regular intervals
 over time, often corresponding to specific time periods, such as days, weeks,
 or months, and can significantly influence the observed data.
 
-Add seasonality to atom using the [`sp`][atomforecaster-sp] parameter. You can
-add a single value for single seasonality or a sequence of values for multiple
-seasonalities. If you don't know the seasonality a priori, you can use the
-[`get_seasonal_period`][atomforecaster-get_seasonal_period] method to
+Add seasonality to atom using the [`sp`][atomforecaster-sp] parameter or attribute.
+You can add a single value for single seasonality or a sequence of values for
+multiple seasonalities. If you don't know the seasonality a priori, you can use
+the [`get_seasonal_period`][atomforecaster-get_seasonal_period] method to
 automatically detect the seasonality, e.g. `#!python atom.sp = atom.get_seasonal_period()`
 or directly from the constructor `#!python atom = ATOMForecaster(y, sp="infer")`.
 
@@ -45,6 +49,17 @@ to check which models support multiple seasonality.
 
 !!! info
     In a [multivariate][] setting, the same period is used for all target columns.
+
+In addition to the period, it's possible to further tune the seasonality by
+specifying the trend and seasonal models. In an `additive` model, the components
+are added together. It implies that the effect of one component does not depend
+on the level of the other components. In a `multiplicative` model, the components
+are multiplied together. This suggests that the effect of one component is
+proportional to the level of the other components.
+
+Specify the trend and/or seasonal models providing the `sp` parameter (or attribute)
+with a dictionary, e.g., `#!python atom.sp = {"sp": 12, "seasonal_model": "multiplicative"}`.
+Both the `seasonal_trend` and `seasonal_model` values default to `additive`.
 
 <br>
 

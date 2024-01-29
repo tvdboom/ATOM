@@ -178,6 +178,7 @@ nav:
             - AdaBoost: API/models/adab.md
             - ARIMA: API/models/arima.md
             - AutoARIMA: API/models/autoarima.md
+            - AutoETS: API/models/autoets.md
             - AutomaticRelevanceDetermination: API/models/ard.md
             - Bagging: API/models/bag.md
             - BATS: API/models/bats.md

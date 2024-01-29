@@ -39,8 +39,9 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int, IntLargerOne,
     MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Seasonality, Segment, Sequence, Series, TargetSelector,
-    YSelector, bool_t, dataframe_t, int_t, segment_t, sequence_t,
+    RowSelector, Seasonality, Segment, Sequence, Series, SPDict, SPTuple,
+    TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
+    sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Goal, SeasonalPeriod, Task, bk, check_is_fitted,
@@ -161,8 +162,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._goal.infer_task(self.y)
 
     @property
-    def sp(self) -> int | list[int] | None:
-        """Seasonal period(s) of the time series.
+    def sp(self) -> SPTuple:
+        """Seasonality of the time series.
 
         Read more about seasonality in the [user guide][seasonality].
 
@@ -170,22 +171,19 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._config.sp
 
     @sp.setter
-    def sp(self, sp: Seasonality):
-        """Convert seasonal period to integer value."""
+    @beartype
+    def sp(self, sp: Seasonality | SPDict):
+        """Convert seasonality to information container."""
         if sp is None:
-            self._config.sp = None
-        elif sp == "index":
-            if not hasattr(self.dataset.index, "freqstr"):
-                raise ValueError(
-                    f"Invalid value for the seasonal period, got {sp}. "
-                    f"The dataset's index has no attribute freqstr."
-                )
-            else:
-                self._config.sp = self._get_sp(self.dataset.index.freqstr)
-        elif sp == "infer":
-            self._config.sp = self.get_seasonal_period()
+            self._config.sp = SPTuple()
+        elif isinstance(sp, dict):
+            self._config.sp = SPTuple(
+                sp=self._get_sp(sp.get("sp", SPTuple().sp)),
+                seasonal_model=sp.get("seasonal_model", SPTuple().seasonal_model),
+                trend_model=sp.get("trend_model", SPTuple().trend_model),
+            )
         else:
-            self._config.sp = flt([self._get_sp(x) for x in lst(sp)])
+            self._config.sp = SPTuple(sp=self._get_sp(sp))
 
     @property
     def og(self) -> Branch:
@@ -318,35 +316,65 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     # Utility methods ============================================== >>
 
-    @staticmethod
-    def _get_sp(sp: Int | str) -> int:
-        """Get the seasonal period from a value or string.
+    def _get_sp(self, sp: Seasonality) -> int | list[int] | None:
+        """Get the seasonal period.
 
         Parameters
         ----------
-        sp: int or str
-            Seasonal period provided as int or [DateOffset][].
+        sp: int, str, sequence or None
+            Seasonal period provided. If None, it means there is
+            no seasonality.
 
         Returns
         -------
-        int
+        int, list or None
             Seasonal period.
 
         """
-        if isinstance(sp, str):
-            if offset := to_offset(sp):  # Convert to pandas' DateOffset
-                name, period = offset.name.split("-")[0], offset.n
 
-            if name not in SeasonalPeriod.__members__:
+        def get_single_sp(sp: Int | str) -> int:
+            """Get a seasonal period from a single value.
+
+            Parameters
+            ----------
+            sp: int, str or None
+                Seasonal period as int or [DateOffset][].
+
+            Returns
+            -------
+            int
+                Seasonal period.
+
+            """
+            if isinstance(sp, str):
+                if offset := to_offset(sp):  # Convert to pandas' DateOffset
+                    name, period = offset.name.split("-")[0], offset.n
+
+                if name not in SeasonalPeriod.__members__:
+                    raise ValueError(
+                        f"Invalid value for the seasonal period, got {name}. "
+                        f"Valid values are: {', '.join(SeasonalPeriod.__members__)}"
+                    )
+
+                # Formula is same as SeasonalPeriod[name] for period=1
+                return math.lcm(SeasonalPeriod[name].value, period) // period
+            else:
+                return int(sp)
+
+        if sp is None:
+            return None
+        elif sp == "infer":
+            return self.get_seasonal_period()
+        elif sp == "index":
+            if not hasattr(self.dataset.index, "freqstr"):
                 raise ValueError(
-                    f"Invalid value for the seasonal period, got {name}. "
-                    f"Valid values are: {', '.join(SeasonalPeriod.__members__)}"
+                    f"Invalid value for the seasonal period, got {sp}. "
+                    f"The dataset's index has no attribute freqstr."
                 )
-
-            # Formula is same as SeasonalPeriod[name] for period=1
-            return math.lcm(SeasonalPeriod[name].value, period) // period
+            else:
+                return get_single_sp(self.dataset.index.freqstr)
         else:
-            return int(sp)
+            return flt([get_single_sp(x) for x in lst(sp)])
 
     def _set_index(self, df: DataFrame, y: Pandas | None) -> DataFrame:
         """Assign an index to the dataframe.

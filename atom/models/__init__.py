@@ -21,7 +21,7 @@ from atom.models.custom import CustomModel
 from atom.models.ensembles import Stacking, Voting
 from atom.models.ts import (
     ARIMA, BATS, ETS, MSTL, SARIMAX, STL, TBATS, VAR, VARMAX, AutoARIMA,
-    Croston, DynamicFactor, ExponentialSmoothing, NaiveForecaster,
+    AutoETS, Croston, DynamicFactor, ExponentialSmoothing, NaiveForecaster,
     PolynomialTrend, Prophet, Theta,
 )
 from atom.utils.utils import ClassMap
@@ -32,6 +32,7 @@ MODELS = ClassMap(
     AdaBoost,
     ARIMA,
     AutoARIMA,
+    AutoETS,
     AutomaticRelevanceDetermination,
     Bagging,
     BATS,

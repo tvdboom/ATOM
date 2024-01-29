@@ -20,6 +20,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier, DirectForecaster
+from atom.utils.types import SPTuple
 from atom.utils.utils import NotFittedError, merge
 
 from .conftest import (
@@ -179,6 +180,48 @@ def test_getitem_list():
 
 
 # Test utility properties ========================================== >>
+
+def test_sp_property_none():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp=None, random_state=1)
+    assert atom.sp == atom._config.sp == SPTuple()
+
+
+def test_sp_property_index():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp="index", random_state=1)
+    assert atom.sp.sp == 12
+
+
+def test_sp_property_infer():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp="infer", random_state=1)
+    assert atom.sp.sp == [12, 24, 36, 11, 48]
+
+
+def test_sp_property_str():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp="W", random_state=1)
+    assert atom.sp.sp == 52
+
+
+def test_sp_property_int():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp=3, random_state=1)
+    assert atom.sp.sp == 3
+
+
+def test_sp_property_sequence():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp=(12, 24), random_state=1)
+    assert atom.sp == SPTuple(sp=[12, 24])
+
+
+def test_sp_property_dict():
+    """Assert that the sp property can be set up correctly."""
+    atom = ATOMForecaster(y_fc, sp={"sp": 3, "seasonal_model": "multiplicative"}, random_state=1)
+    assert atom.sp == SPTuple(sp=3, seasonal_model="multiplicative")
+
 
 def test_branch_property():
     """Assert that the branch property returns the current branch."""

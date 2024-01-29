@@ -69,20 +69,16 @@ class Sequence(Protocol[_T]):
         ]
 
 
+class SPDict(TypedDict, total=False):
+    """Dictionary type for the `sp` parameter."""
+
+    sp: Seasonality
+    seasonal_model: SeasonalityModels
+    trend_model: SeasonalityModels
+
+
 class EngineDict(TypedDict, total=False):
     """Dictionary type for the `engine` parameter."""
-
-    data: EngineDataOptions
-    estimator: EngineEstimatorOptions
-
-
-class EngineTuple(NamedTuple):
-    """Return type of the `engine` parameter.
-
-    We use a namedtuple for immutability to be able to clone
-    the estimator since sklearn does a `is` instance check.
-
-    """
 
     data: EngineDataOptions
     estimator: EngineEstimatorOptions
@@ -104,6 +100,26 @@ class Style(TypedDict):
     marker: dict[str, str]
     dash: dict[str, str]
     shape: dict[str, str]
+
+
+class EngineTuple(NamedTuple):
+    """Return type of the `engine` parameter.
+
+    We use a namedtuple for immutability to be able to clone
+    the estimator since sklearn does a `is` instance check.
+
+    """
+
+    data: EngineDataOptions = "numpy"
+    estimator: EngineEstimatorOptions = "sklearn"
+
+
+class SPTuple(NamedTuple):
+    """Return type of the `sp` parameter."""
+
+    sp: int | list[int] | None = None
+    seasonal_model: SeasonalityModels = "additive"
+    trend_model: SeasonalityModels = "additive"
 
 
 @runtime_checkable
@@ -299,7 +315,7 @@ Legend: TypeAlias = Literal[
 
 # Others
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
-SeasonalityMode: TypeAlias = Literal["additive", "multiplicative"]
+SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
 HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
 Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]
 PACFMethods: TypeAlias = Literal[

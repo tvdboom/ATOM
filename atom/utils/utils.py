@@ -54,9 +54,9 @@ from atom.utils.constants import __version__
 from atom.utils.types import (
     Bool, DataFrame, Estimator, Float, Index, IndexSelector, Int,
     IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Sequence, Series, Transformer, TReturn, TReturns, Verbose,
-    XConstructor, XSelector, YConstructor, YSelector, dataframe_t, int_t,
-    pandas_t, segment_t, sequence_t, series_t,
+    Scorer, Segment, Sequence, Series, SPTuple, Transformer, TReturn, TReturns,
+    Verbose, XConstructor, XSelector, YConstructor, YSelector, dataframe_t,
+    int_t, pandas_t, segment_t, sequence_t, series_t,
 )
 
 
@@ -244,7 +244,7 @@ class DataConfig:
 
     index: IndexSelector = True
     ignore: tuple[str, ...] = ()
-    sp: int | list[int] | None = None
+    sp: SPTuple = SPTuple()  # noqa: RUF009
     shuffle: Bool = False
     stratify: IndexSelector = True
     n_rows: Scalar = 1

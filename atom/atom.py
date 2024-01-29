@@ -56,9 +56,9 @@ from atom.utils.types import (
     FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
-    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality,
-    SeasonalityMode, Sequence, Series, TargetSelector, Transformer,
-    VectorizerStarts, Verbose, Warnings, XSelector, YSelector, sequence_t,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
+    Series, SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose,
+    Warnings, XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -97,7 +97,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector = -1,
         index: IndexSelector = False,
         ignore: ColumnSelector | None = None,
-        sp: Seasonality = None,
+        sp: Seasonality | SPDict = None,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
         n_rows: Scalar = 1,
@@ -501,7 +501,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 elif test == "kpss":
                     stat = kpss(X, regression="ct", nlags="auto")  # ct is trend stationarity
                 elif test == "lb":
-                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp)[0])
+                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
                     stat = l_jung.loc[l_jung["lb_pvalue"].idxmin()]
 
                 # Add as column to the dataframe
@@ -1030,8 +1030,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         self._log("Dataset stats " + "=" * 20 + " >>", _vb)
         self._log(f"Shape: {self.shape}", _vb)
-        if self.task.is_forecast and self.sp:
-            self._log(f"Seasonal period: {self.sp}", _vb)
+        if self.task.is_forecast and self.sp.sp:
+            self._log(f"Seasonal period: {self.sp.sp}", _vb)
 
         for ds in ("train", "test", "holdout"):
             if (data := getattr(self, ds)) is not None:
@@ -1536,7 +1536,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         - Strip categorical features from spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
-        - Encode the target column (ignored for regression tasks).
+        - Encode the target column (only for classification tasks).
 
         See the [Cleaner][] class for a description of the parameters.
 
@@ -1564,7 +1564,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self,
         *,
         model: str | Predictor | None = None,
-        mode: SeasonalityMode = "additive",
+        test_seasonality: Bool = True,
         **kwargs,
     ):
         """Detrend and deseasonalize the time series.
@@ -1573,12 +1573,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         - Remove the trend from every column, returning the in-sample
           residuals of the model's predicted values.
-        - Remove the seasonal component from every column.
+        - Remove the seasonal component from every column, subject to
+          a seasonaility test.
 
         Categorical columns are ignored.
 
         See the [Decomposer][] class for a description of the parameters.
-        ATOM automatically injects the `sp` parameter.
+        ATOM automatically injects the `sp`, `trend_model` and
+        `seasonal_model` parameters of the Decomposer class. See the
+        [seasonality][] section in the user guide to learn how to adjust
+        these values.
 
         !!! tip
             * Use the `columns` parameter to only decompose the target
@@ -1590,8 +1594,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         columns = kwargs.pop("columns", None)
         decomposer = Decomposer(
             model=model,
-            sp=lst(self.sp)[0],
-            mode=mode,
+            trend_model=self.sp.trend_model,
+            test_seasonality=test_seasonality,
+            sp=lst(self.sp.sp)[0],
+            seasonal_model=self.sp.seasonal_model,
             **self._prepare_kwargs(kwargs, sign(Decomposer)),
         )
 

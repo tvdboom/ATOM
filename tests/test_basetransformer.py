@@ -202,7 +202,7 @@ def test_inherit_with_fixed_params():
 
 def test_inherit_sp():
     """Assert that the seasonal periodicity is correctly inherited."""
-    atom = ATOMForecaster(y_fc, sp=[12, 24], verbose=2, random_state=1)
+    atom = ATOMForecaster(y_fc, sp=[12, 24], random_state=1)
     atom.run(
         models=["bats", "tbats"],
         est_params={

@@ -277,7 +277,7 @@ def test_decomposer_custom_model(model):
 
 def test_decomposer_inverse_transform():
     """Assert that the inverse_transform method works."""
-    composer = Decomposer().fit(X_ex)
+    composer = Decomposer(test_seasonality=False).fit(X_ex)
     assert_frame_equal(X_ex, composer.inverse_transform(composer.transform(X_ex)))
 
 

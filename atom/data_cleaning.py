@@ -43,7 +43,9 @@ from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
 from sklearn.utils._set_output import _SetOutputMixin
 from sklearn.utils.validation import _check_feature_names_in
-from sktime.transformations.series.detrend import Deseasonalizer, Detrender
+from sktime.transformations.series.detrend import (
+    ConditionalDeseasonalizer, Deseasonalizer, Detrender,
+)
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
@@ -53,7 +55,7 @@ from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
     Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo,
     IntLargerZero, NJobs, NormalizerStrats, NumericalStrats, Pandas, Predictor,
-    PrunerStrats, Scalar, ScalerStrats, SeasonalityMode, Sequence, Series,
+    PrunerStrats, Scalar, ScalerStrats, SeasonalityModels, Sequence, Series,
     Transformer, Verbose, XSelector, YSelector, dataframe_t, sequence_t,
     series_t,
 )
@@ -1023,13 +1025,19 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
     - Remove the trend from every column, returning the in-sample
       residuals of the model's predicted values.
-    - Remove the seasonal component from every column.
+    - Remove the seasonal component from every column, subject to
+      a seasonaility test.
 
     Categorical columns are ignored.
 
     This class can be accessed from atom through the [decompose]
     [atomforecaster-decompose] method. Read more in the [user guide]
     [time-series-decomposition].
+
+    !!! note
+        When using this class from atom, the `trend_model`, `sp` and
+        `seasonal_model` parameters are set automatically based on the
+        `atom.sp` attribute.
 
     Parameters
     ----------
@@ -1038,12 +1046,28 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         a model that supports the forecast task. If None,
         [PolynomialTrend][](degree=1) is used.
 
+    trend_model: str, default="additive"
+        Mode of the trend decomposition. Choose from:
+
+        - "additive": The `model.transform` subtracts the trend, i.e.,
+          `transform(X)` returns `X - model.predict(fh=X.index)`.
+        - "multiplicative": The `model.transform` divides by the trend,
+          i.e., `transform(X)` returns `X / model.predict(fh=X.index)`.
+
+    test_seasonality: bool, default=True
+
+        - If True, it fits a 90% autocorrelation seasonality test, and
+          if the passed time series has a seasonal component, it
+          applies seasonal decomposition. If the test is negative,
+          deseasonalization is skipped.
+        - If False, always performs deseasonalization.
+
     sp: int or None, default=None
         Seasonality period of the time series. If None, there's no
         seasonality.
 
-    mode: str, default="additive"
-        Mode of the decomposition. Choose from:
+    seasonal_model: str, default="additive"
+        Mode of the seasonal decomposition. Choose from:
 
         - "additive": Assumes the components have a linear relation,
           i.e., y(t) = level + trend + seasonality + noise.
@@ -1123,8 +1147,10 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self,
         *,
         model: str | Predictor | None = None,
+        trend_model: SeasonalityModels = "additive",
+        test_seasonality: Bool = True,
         sp: IntLargerZero | None = None,
-        mode: SeasonalityMode = "additive",
+        seasonal_model: SeasonalityModels = "additive",
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
         logger: str | Path | Logger | None = None,
@@ -1137,8 +1163,10 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             random_state=random_state,
         )
         self.model = model
+        self.trend_model = trend_model
+        self.test_seasonality = test_seasonality
         self.sp = sp
-        self.mode = mode
+        self.seasonal_model = seasonal_model
 
     @composed(crash, method_to_log)
     def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
@@ -1191,13 +1219,19 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         for name, column in X.select_dtypes(include="number").items():
             trend = Detrender(
                 forecaster=forecaster,
-                model=self.mode,
+                model=self.trend_model,
             ).fit(column)
 
-            season = Deseasonalizer(
-                sp=self.sp or 1,
-                model=self.mode,
-            ).fit(trend.transform(column))
+            if self.test_seasonality:
+                season = ConditionalDeseasonalizer(
+                    sp=self.sp or 1,
+                    model=self.seasonal_model,
+                ).fit(trend.transform(column))
+            else:
+                season = Deseasonalizer(
+                    sp=self.sp or 1,
+                    model=self.seasonal_model,
+                ).fit(trend.transform(column))
 
             self._estimators[name] = (trend, season)
 

@@ -29,7 +29,7 @@ from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, PACFMethods,
-    RowSelector, SeasonalityMode, Segment, Sequence, Series,
+    RowSelector, Segment, Sequence, Series,
 )
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, has_task, lst,
@@ -473,7 +473,6 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     def plot_decomposition(
         self,
         columns: ColumnSelector | None = None,
-        mode: SeasonalityMode = "additive",
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
@@ -494,14 +493,6 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         columns: int, str, segment, sequence, dataframe or None, default=None
             [Selection of columns][row-and-column-selection] to plot.
             If None, the target column is selected.
-
-        mode: str, default="additive"
-            Mode of the decomposition. Choose from:
-
-            - "additive": Assumes the components have a linear relation,
-              i.e., y(t) = level + trend + seasonality + noise.
-            - "multiplicative": Assumes the components have a nonlinear
-              relation, i.e., y(t) = level * trend * seasonality * noise.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -569,8 +560,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             # Returns correlation array and confidence interval
             decompose = seasonal_decompose(
                 x=self.branch.dataset[col],
-                model=mode,
-                period=self.sp or self._get_sp(self.branch.dataset.index.freqstr),
+                model=self.sp.seasonal_model,
+                period=self.sp.sp or self._get_sp(self.branch.dataset.index.freqstr),
             )
 
             self._draw_line(

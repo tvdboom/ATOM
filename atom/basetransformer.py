@@ -124,15 +124,15 @@ class BaseTransformer:
     @beartype
     def engine(self, value: Engine):
         if value is None:
-            engine = EngineTuple(data="numpy", estimator="sklearn")
+            engine = EngineTuple()
         elif value in EngineDataOptions.__args__:
-            engine = EngineTuple(data=value, estimator="sklearn")  # type: ignore[arg-type]
+            engine = EngineTuple(data=value)  # type: ignore[arg-type]
         elif value in EngineEstimatorOptions.__args__:
-            engine = EngineTuple(data="numpy", estimator=value)  # type: ignore[arg-type]
+            engine = EngineTuple(estimator=value)  # type: ignore[arg-type]
         elif isinstance(value, dict):
             engine = EngineTuple(
-                data=value.get("data", "numpy"),
-                estimator=value.get("estimator", "sklearn"),
+                data=value.get("data", EngineTuple().data),
+                estimator=value.get("estimator", EngineTuple().estimator),
             )
         else:
             engine = value  # type: ignore[assignment]
@@ -392,11 +392,11 @@ class BaseTransformer:
                 continue
             elif match := re.search("(n_jobs|random_state)$|__\1$", p):
                 obj.set_params(**{p: getattr(self, match.group())})
-            elif re.search(r"sp$|__sp$", p) and hasattr(self, "_config") and self._config.sp:
+            elif re.search(r"^sp$|__sp$", p) and hasattr(self, "_config") and self._config.sp:
                 if self.multiple_seasonality:
-                    obj.set_params(**{p: self._config.sp})
+                    obj.set_params(**{p: self._config.sp.sp})
                 else:
-                    obj.set_params(**{p: lst(self._config.sp)[0]})
+                    obj.set_params(**{p: lst(self._config.sp.sp)[0]})
 
         return obj
 

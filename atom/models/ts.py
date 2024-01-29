@@ -107,7 +107,7 @@ class ARIMA(BaseModel):
         params = super()._get_parameters(trial)
 
         # If no seasonal periodicity, set seasonal components to zero
-        if not self._config.sp:
+        if not self._config.sp.sp:
             for p in self._s_order:
                 if p in params:
                     params[p] = 0
@@ -133,8 +133,8 @@ class ARIMA(BaseModel):
         # Convert params to hyperparameters 'order' and 'seasonal_order'
         if all(p in params for p in self._order):
             params["order"] = [params[p] for p in self._order]
-        if all(p in params for p in self._s_order) and self._config.sp:
-            params["seasonal_order"] = [params[p] for p in self._s_order] + [self._config.sp]
+        if all(p in params for p in self._s_order) and self._config.sp.sp:
+            params["seasonal_order"] = [params[p] for p in self._s_order] + [self._config.sp.sp]
 
         # Drop order and seasonal_order params
         for p in self._order:
@@ -278,11 +278,90 @@ class AutoARIMA(BaseModel):
 
         """
         return {
+            "information_criterion": Cat(["aic", "bic", "hqic", "oob"]),
             "method": Cat(
                 ["newton", "nm", "bfgs", "lbfgs", "powell", "cg", "ncg", "basinhopping"]
             ),
             "maxiter": Int(50, 200, step=10),
             "with_intercept": Cat([True, False]),
+        }
+
+
+class AutoETS(BaseModel):
+    """ETS model with automatic fitting capabilities.
+
+    The [ETS][] models are a family of time series models with an
+    underlying state space model consisting of a level component,
+    a trend component (T), a seasonal component (S), and an error
+    term (E). This implementation automatically tunes the ETS terms.
+
+    Corresponding estimators are:
+
+    - [AutoETS][] for forecasting tasks.
+
+    See Also
+    --------
+    atom.models:AutoARIMA
+    atom.models:ETS
+    atom.models:SARIMAX
+
+    Examples
+    --------
+    ```pycon
+    from atom import ATOMForecaster
+    from sktime.datasets import load_airline
+
+    y = load_airline()
+
+    atom = ATOMForecaster(y, random_state=1)
+    atom.run(models="ETS", verbose=2)
+    ```
+
+    """
+
+    acronym = "AutoETS"
+    handles_missing = True
+    uses_exogenous = False
+    multiple_seasonality = False
+    native_multioutput = True
+    supports_engines = ("sktime",)
+
+    _estimators: ClassVar[dict[str, str]] = {
+        "forecast": "sktime.forecasting.ets.AutoETS"
+    }
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return super()._get_est({"auto": True} | params)
+
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        dict
+            Hyperparameter distributions.
+
+        """
+        return {
+            "information_criterion": Cat(["aic", "bic", "aicc"]),
+            "allow_multiplicative_trend": Cat([True, False]),
+            "restrict": Cat([True, False]),
+            "additive_only": Cat([True, False]),
+            "ignore_inf_ic": Cat([True, False]),
         }
 
 
@@ -549,26 +628,26 @@ class ExponentialSmoothing(BaseModel):
         "forecast": "sktime.forecasting.exp_smoothing.ExponentialSmoothing"
     }
 
-    def _get_parameters(self, trial: Trial) -> dict:
-        """Get the trial's hyperparameters.
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
 
         Parameters
         ----------
-        trial: [Trial][]
-            Current trial.
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
-        dict
-            Trial's hyperparameters.
+        Predictor
+            Estimator instance.
 
         """
-        params = super()._get_parameters(trial)
-
-        if not self._get_param("trend", params) and "damped_trend" in params:
-            params["damped_trend"] = False
-
-        return params
+        return super()._get_est(
+            {
+                "trend": self._config.sp.trend_model,
+                "seasonal": self._config.sp.seasonal_model,
+            } | params
+        )
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -581,9 +660,7 @@ class ExponentialSmoothing(BaseModel):
 
         """
         return {
-            "trend": Cat(["add", "mul", None]),
             "damped_trend": Cat([True, False]),
-            "seasonal": Cat(["add", "mul", None]),
             "use_boxcox": Cat([True, False]),
             "initialization_method": Cat(["estimated", "heuristic"]),
             "method": Cat(["L-BFGS-B", "TNC", "SLSQP", "Powell", "trust-constr", "bh", "ls"]),
@@ -592,7 +669,7 @@ class ExponentialSmoothing(BaseModel):
 
 
 class ETS(BaseModel):
-    """ETS model with automatic fitting capabilities.
+    """Error-Trend-Seasonality model.
 
     The ETS models are a family of time series models with an
     underlying state space model consisting of a level component,
@@ -606,8 +683,8 @@ class ETS(BaseModel):
     See Also
     --------
     atom.models:ARIMA
-    atom.models:ExponentialSmoothing
-    atom.models:PolynomialTrend
+    atom.models:AutoETS
+    atom.models:SARIMAX
 
     Examples
     --------
@@ -634,28 +711,29 @@ class ETS(BaseModel):
         "forecast": "sktime.forecasting.ets.AutoETS"
     }
 
-    def _get_parameters(self, trial: Trial) -> dict:
-        """Get the trial's hyperparameters.
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
 
         Parameters
         ----------
-        trial: [Trial][]
-            Current trial.
+        params: dict
+            Hyperparameters for the estimator.
 
         Returns
         -------
-        dict
-            Trial's hyperparameters.
+        Predictor
+            Estimator instance.
 
         """
-        params = super()._get_parameters(trial)
+        return super()._get_est(
+            {
+                "trend": self._config.sp.trend_model,
+                "seasonal": self._config.sp.seasonal_model,
+            } | params
+        )
 
-        if not self._get_param("trend", params) and "damped_trend" in params:
-            params["damped_trend"] = False
-
-        return params
-
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    @staticmethod
+    def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -664,25 +742,12 @@ class ETS(BaseModel):
             Hyperparameter distributions.
 
         """
-        dist = {
+        return {
             "error": Cat(["add", "mul"]),
-            "trend": Cat(["add", "mul", None]),
             "damped_trend": Cat([True, False]),
-            "seasonal": Cat(["add", "mul"]),
             "initialization_method": Cat(["estimated", "heuristic"]),
             "maxiter": Int(500, 2000, step=100),
-            "auto": Cat([True, False]),
-            "information_criterion": Cat(["aic", "bic", "aicc"]),
-            "allow_multiplicative_trend": Cat([True, False]),
-            "restrict": Cat([True, False]),
-            "additive_only": Cat([True, False]),
-            "ignore_inf_ic": Cat([True, False]),
         }
-
-        if not self._config.sp:
-            dist.pop("seasonal")
-
-        return dist
 
 
 class MSTL(BaseModel):
@@ -749,7 +814,7 @@ class MSTL(BaseModel):
             Estimator instance.
 
         """
-        return super()._get_est({"season_length": self._config.sp or 1} | params)
+        return super()._get_est({"season_length": self._config.sp.sp or 1} | params)
 
     def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
@@ -965,11 +1030,11 @@ class Prophet(BaseModel):
 
         """
         # Prophet expects a DateTime index frequency
-        if self._config.sp:
+        if self._config.sp.sp:
             try:
                 freq = next(
                     n for n, m in SeasonalPeriod.__members__.items()
-                    if m.value == self._config.sp
+                    if m.value == self._config.sp.sp
                 )
             except StopIteration:
                 # If not in mapping table, get from index
@@ -980,7 +1045,9 @@ class Prophet(BaseModel):
         else:
             freq = None
 
-        return super()._get_est({"freq": freq} | params)
+        return super()._get_est(
+            {"freq": freq, "seasonality_mode": self._config.sp.seasonal_model} | params
+        )
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -993,7 +1060,6 @@ class Prophet(BaseModel):
 
         """
         return {
-            "seasonality_mode": Cat(["additive", "multiplicative"]),
             "changepoint_prior_scale": Float(0.001, 0.5, log=True),
             "seasonality_prior_scale": Float(0.001, 10, log=True),
             "holidays_prior_scale": Float(0.001, 10, log=True),
@@ -1075,7 +1141,7 @@ class SARIMAX(BaseModel):
         params = super()._get_parameters(trial)
 
         # If no seasonal periodicity, set seasonal components to zero
-        if not self._config.sp:
+        if not self._config.sp.sp:
             for p in self._s_order:
                 if p in params:
                     params[p] = 0
@@ -1101,8 +1167,8 @@ class SARIMAX(BaseModel):
         # Convert params to hyperparameters 'order' and 'seasonal_order'
         if all(p in params for p in self._order):
             params["order"] = [params[p] for p in self._order]
-        if all(p in params for p in self._s_order) and self._config.sp:
-            params["seasonal_order"] = [params[p] for p in self._s_order] + [self._config.sp]
+        if all(p in params for p in self._s_order) and self._config.sp.sp:
+            params["seasonal_order"] = [params[p] for p in self._s_order] + [self._config.sp.sp]
 
         # Drop order and seasonal_order params
         for p in self._order:

@@ -682,14 +682,30 @@ class BaseModel(RunnerPlot):
 
         if self.task.is_forecast:
             try:
+                if X.empty:
+                    exog = None
+                else:
+                    # Statsmodels models such as SARIMAX and DF require all
+                    # exogenous data after the last row of the train set
+                    # Other models accept this format
+                    Xe = bk.concat([self.test, self.holdout])  # type: ignore[list-item]
+                    exog = Xe.loc[Xe.index <= X.index.max(), self.features]  # type: ignore[index]
+
                 y_pred = self._prediction(
                     fh=X.index,
-                    X=check_empty(X),
+                    X=exog,
                     verbose=0,
                     method=method_caller,
                 )
-            except ValueError:
+
+            except ValueError as ex:
+                # Fails for models that don't allow in-sample predictions
+                self._log(
+                    f"Failed to get predictions for model {self.name} "
+                    f"on rows {rows}. Returning NaN. Exception: {ex}.", 3
+                )
                 y_pred = bk.Series([np.NaN] * len(X), index=X.index)
+
         else:
             y_pred = self._prediction(X.index, verbose=0, method=method_caller)
 
