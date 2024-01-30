@@ -773,7 +773,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         self._log("Fitting Cleaner...", 1)
 
         if X is not None and self.drop_dtypes is not None:
-            self._drop_cols = list(X.select_dtypes(include=list(self.drop_dtypes)).columns)
+            self._drop_cols = list(X.select_dtypes(include=lst(self.drop_dtypes)).columns)
 
         if y is not None:
             if isinstance(y, series_t):

@@ -214,8 +214,7 @@ def test_cleaner_drop_duplicate_rows():
 
 def test_cleaner_drop_missing_target():
     """Assert that rows with missing values in the target column are dropped."""
-    a = Cleaner()
-    y = a.fit_transform(y=y10_nan)
+    y = Cleaner().fit_transform(y=y10_nan)
     assert len(y) == 9
 
 

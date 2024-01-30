@@ -344,7 +344,7 @@ class AutoETS(BaseModel):
             Estimator instance.
 
         """
-        return super()._get_est({"auto": True} | params)
+        return super()._get_est({"sp": self._config.sp.sp or 1, "auto": True} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -900,6 +900,22 @@ class NaiveForecaster(BaseModel):
         "forecast": "sktime.forecasting.naive.NaiveForecaster"
     }
 
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return super()._get_est({"sp": self._config.sp.sp or 1} | params)
+
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -1258,6 +1274,24 @@ class STL(BaseModel):
         "forecast": "sktime.forecasting.trend.STLForecaster"
     }
 
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        # Parameter sp must be provided to STL and >=2
+        # None is only accepted if y has freq in index but sktime passes array
+        return super()._get_est({"sp": self._config.sp.sp or 2} | params)
+
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
@@ -1419,6 +1453,22 @@ class Theta(BaseModel):
     _estimators: ClassVar[dict[str, str]] = {
         "forecast": "sktime.forecasting.theta.ThetaForecaster"
     }
+
+    def _get_est(self, params: dict[str, Any]) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Parameters
+        ----------
+        params: dict
+            Hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        return super()._get_est({"sp": self._config.sp.sp or 1} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:

@@ -1431,13 +1431,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 "train multiple Stacking models within the same instance."
             )
 
-        kw_model = dict(
-            goal=self._goal,
-            config=self._config,
-            branches=self._branches,
-            metric=self._metric,
+        kw_model = {
+            "goal": self._goal,
+            "config": self._config,
+            "branches": self._branches,
+            "metric": self._metric,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
-        )
+        }
 
         # The parameter name is different in sklearn and sktime
         regressor = "regressor" if self.task.is_forecast else "final_estimator"

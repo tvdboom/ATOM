@@ -90,6 +90,24 @@ Example steps taken by ATOM's pipeline:
 
 <br><br>
 
+❗ Why you should use ATOM
+-------------------------
+
+* [Multiple data cleaning and feature engineering classes](https://tvdboom.github.io/ATOM/latest/user_guide/data_cleaning/)
+* [55+ classification, regression and forecast models](https://tvdboom.github.io/ATOM/latest/user_guide/models/) to choose from
+* [Possibility to train multiple models with one line of code](https://tvdboom.github.io/ATOM/latest/getting_started/#usage)
+* [Fast implementation of hyperparameter tuning](https://tvdboom.github.io/ATOM/latest/user_guide/training/#hyperparameter-tuning)
+* [Easy way to compare the results from different models](https://tvdboom.github.io/ATOM/latest/user_guide/training/)
+* [50+ plots to analyze the data and model performance](https://tvdboom.github.io/ATOM/latest/user_guide/plots/#available-plots)
+* [Avoid refactoring to test new pipelines](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#branches)
+* [Native support for GPU training](https://tvdboom.github.io/ATOM/latest/user_guide/accelerating/#gpu-acceleration)
+* [25+ example notebooks to get you started](https://tvdboom.github.io/ATOM/latest/examples/accelerating_cuml/)
+* [Full integration with multilabel and multioutput datasets](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#multioutput-tasks)
+* [Native support for sparse datasets](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#sparse-datasets)
+* [Build-in transformers for NLP pipelines](https://tvdboom.github.io/ATOM/latest/user_guide/nlp/)
+* [Avoid endless imports and documentation lookups](https://tvdboom.github.io/ATOM/latest/getting_started/#usage)
+
+<br><br>
 
 🛠️ Installation
 ---------------
@@ -183,10 +201,10 @@ atom.plot_lift()
 --- | ---
 ⭐ **[About](https://tvdboom.github.io/ATOM/latest/release_history/)** | Learn more about the package.
 🚀 **[Getting started](https://tvdboom.github.io/ATOM/latest/getting_started/)** | New to ATOM? Here's how to get you started!
-📢 **[Release history](https://tvdboom.github.io/ATOM/latest/release_history/)** | What are the new features of the latest release?
 👨‍💻 **[User guide](https://tvdboom.github.io/ATOM/latest/user_guide/introduction/)** | How to use ATOM and its features.
 🎛️ **[API Reference](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/)** | The detailed reference for ATOM's API.
 📋 **[Examples](https://tvdboom.github.io/ATOM/latest/examples/binary_classification/)** | Example notebooks show you what can be done and how.
+📢 **[Chagelog](https://tvdboom.github.io/ATOM/latest/changelog/)** | What are the new features in the latest release?
 ❔ **[FAQ](https://tvdboom.github.io/ATOM/latest/faq/)** | Get answers to frequently asked questions.
 🔧 **[Contributing](https://tvdboom.github.io/ATOM/latest/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
 🌳 **[Dependencies](https://tvdboom.github.io/ATOM/latest/dependencies/)** | Which other packages does ATOM depend on?

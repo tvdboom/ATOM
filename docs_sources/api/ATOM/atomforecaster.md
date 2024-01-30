@@ -84,6 +84,7 @@ in the instance after [training][].
         include:
             - ignore
             - missing
+            - sp
             - branch
             - models
             - metric

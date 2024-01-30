@@ -237,6 +237,7 @@ nav:
             - plot_acf: API/plots/plot_acf.md
             - plot_bootstrap: API/plots/plot_bootstrap.md
             - plot_calibration: API/plots/plot_calibration.md
+            - plot_ccf: API/plots/plot_ccf.md
             - plot_components: API/plots/plot_components.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_correlation: API/plots/plot_correlation.md
@@ -247,6 +248,7 @@ nav:
             - plot_errors: API/plots/plot_errors.md
             - plot_evals: API/plots/plot_evals.md
             - plot_feature_importance: API/plots/plot_feature_importance.md
+            - plot_fft: API/plots/plot_fft.md
             - plot_forecast: API/plots/plot_forecast.md
             - plot_gains: API/plots/plot_gains.md
             - plot_hyperparameter_importance: API/plots/plot_hyperparameter_importance.md
@@ -260,6 +262,7 @@ nav:
             - plot_parshap: API/plots/plot_parshap.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md
             - plot_pca: API/plots/plot_pca.md
+            - plot_periodogram: API/plots/plot_periodogram.md
             - plot_permutation_importance: API/plots/plot_permutation_importance.md
             - plot_pipeline: API/plots/plot_pipeline.md
             - plot_prc: API/plots/plot_prc.md

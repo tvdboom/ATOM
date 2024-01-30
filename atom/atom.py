@@ -1261,12 +1261,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             # Memoize the fitted transformer_c for repeated instantiations of atom
             fit = self._memory.cache(fit_one)
-            kwargs = dict(
-                estimator=transformer_c,
-                X=self.X_train,
-                y=self.y_train,
+            kwargs = {
+                "estimator": transformer_c,
+                "X": self.X_train,
+                "y": self.y_train,
                 **fit_params,
-            )
+            }
 
             # Check if the fitted estimator is retrieved from cache to inform
             # the user, else user might notice the lack of printed messages

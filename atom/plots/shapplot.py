@@ -677,7 +677,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
             sample.
 
         columns: int, str, segment, sequence or dataframe, default=0
-            [Feature][row-and-column-selection] to plot. Only one
+            [Feature][row-and-column-selection] to plot. Only a single
             feature can be selected.
 
         target: int, str or tuple, default=1

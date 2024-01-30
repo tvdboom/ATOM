@@ -154,13 +154,13 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
 
         # Define models ============================================ >>
 
-        kwargs = dict(
-            goal=self._goal,
-            config=self._config,
-            branches=self._branches,
-            metric=self._metric,
+        kwargs = {
+            "goal": self._goal,
+            "config": self._config,
+            "branches": self._branches,
+            "metric": self._metric,
             **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
-        )
+        }
 
         inc = []
         exc = []

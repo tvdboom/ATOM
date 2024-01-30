@@ -59,11 +59,23 @@ class Stacking(BaseModel):
             Estimator instance.
 
         """
+        # We use _est_class with get_params instead of just a dict
+        # to also fix the parameters of the models in the ensemble
+        estimator = self._est_class(
+            **{
+                "estimators" if not self.task.is_forecast else "forecasters": [
+                    (m.name, m.export_pipeline()[-2:] if m.scaler else m.estimator)
+                    for m in self._models
+                ]
+            }
+        )
+
+        # Drop the model names from params since those
+        # are not direct parameters of the ensemble
         default = {
-            "estimators" if not self.task.is_forecast else "forecasters": [
-                (m.name, m.export_pipeline()[-2:] if m.scaler else m.estimator)
-                for m in self._models
-            ]
+            k: v
+            for k, v in estimator.get_params().items()
+            if k not in (m.name for m in self._models)
         }
 
         return super()._get_est(default | params)
@@ -115,11 +127,23 @@ class Voting(BaseModel):
             Estimator instance.
 
         """
+        # We use _est_class with get_params instead of just a dict
+        # to also fix the parameters of the models in the ensemble
+        estimator = self._est_class(
+            **{
+                "estimators" if not self.task.is_forecast else "forecasters": [
+                    (m.name, m.export_pipeline()[-2:] if m.scaler else m.estimator)
+                    for m in self._models
+                ]
+            }
+        )
+
+        # Drop the model names from params since those
+        # are not direct parameters of the ensemble
         default = {
-            "estimators" if not self.task.is_forecast else "forecasters": [
-                (m.name, m.export_pipeline()[-2:] if m.scaler else m.estimator)
-                for m in self._models
-            ]
+            k: v
+            for k, v in estimator.get_params().items()
+            if k not in (m.name for m in self._models)
         }
 
         return super()._get_est(default | params)

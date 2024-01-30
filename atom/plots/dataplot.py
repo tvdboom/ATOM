@@ -20,16 +20,18 @@ from nltk.collocations import (
     TrigramCollocationFinder,
 )
 from scipy import stats
+from scipy.fft import fft
+from scipy.signal import periodogram
 from sklearn.base import is_classifier
 from sklearn.utils.metaestimators import available_if
 from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.tsa.stattools import acf, ccf, pacf
 
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, PACFMethods,
-    RowSelector, Segment, Sequence, Series,
+    RowSelector, Segment, Sequence, Series, TargetSelector,
 )
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, has_task, lst,
@@ -65,13 +67,14 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         The autocorrelation function (ACF) measures the correlation
         between a time series and lagged versions of itself. It's
         useful, for example, to identify the order of an autoregressive
-        model. This plot is only available for [forecast][time-series]
+        model. The transparent band represents the 95% confidence
+        interval. This plot is only available for [forecast][time-series]
         tasks.
 
         Parameters
         ----------
         columns: int, str, segment, sequence, dataframe or None, default=None
-            Columns to plot the pacf from. If None, it selects the
+            Columns to plot the acf from. If None, it selects the
             target column.
 
         nlags: int or None, default=None
@@ -214,6 +217,192 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize or (700 + nlags * 10, 600),
             plotname="plot_acf",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_ccf(
+        self,
+        columns: ColumnSelector = 0,
+        target: TargetSelector = 0,
+        nlags: IntLargerZero | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the cross-correlation between two time series.
+
+        The Cross-Correlation Function (CCF) plot measures the similarity
+        between features and the target column as a function of the
+        displacement of one series relative to the other. It's similar to
+        the [acf][plot_acf] plot, where the correlation is plotted against
+        lagged versions of itself. The transparent band represents the 95%
+        confidence interval. This plot is only available for
+        [forecast][time-series] tasks.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence or dataframe, default=0
+            Columns to plot the periodogram from. If None, it selects
+            all numerical features.
+
+        target: int or str, default=0
+            Target column against which to calculate the correlations.
+            Only for [multivariate][] tasks.
+
+        nlags: int or None, default=None
+            Number of lags to return autocorrelation for. If None, it
+            uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
+            returned value includes lag 0 (i.e., 1), so the size of the
+            vector is `(nlags + 1,)`.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Position to display the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of lags shown.
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_series
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_periodogram
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_ccf()
+        ```
+
+        """
+        if self.branch.dataset.shape[1] < 2:
+            raise ValueError(
+                "The plot_ccf method requires at least two columns in the dataset, got 1. "
+                "Read more about the use of exogenous variables in the user guide."
+            )
+
+        columns_c = self.branch._get_columns(columns, only_numerical=True)
+        target_c = self.branch._get_target(target, only_columns=True)
+
+        if nlags is None:
+            nlags = min(int(10 * np.log10(self.branch.shape[0])), self.branch.shape[0] // 2 - 1)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for col in columns_c:
+            corr, conf = ccf(
+                x=self.branch.dataset[target_c],
+                y=self.branch.dataset[col],
+                nlags=nlags,
+                alpha=0.05,
+            )
+
+            for pos in (x := np.arange(len(corr))):
+                fig.add_scatter(
+                    x=(pos, pos),
+                    y=(0, corr[pos]),
+                    mode="lines",
+                    line={"width": self.line_width, "color": BasePlot._fig.get_elem(col)},
+                    hoverinfo="skip",
+                    hovertemplate=None,
+                    legendgroup=col,
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+            self._draw_line(
+                x=x,
+                y=corr,
+                parent=col,
+                mode="markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+            # Add error bands
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=x,
+                        y=conf[:, 1],
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        hovertemplate="%{y}<extra>upper bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                    go.Scatter(
+                        x=x,
+                        y=conf[:, 0],
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                        fill="tonexty",
+                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                        hovertemplate="%{y}<extra>lower bound</extra>",
+                        legendgroup=col,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                ]
+            )
+
+        fig.update_yaxes(zerolinecolor="black")
+        fig.update_layout({"hovermode": "x unified"})
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            xlabel="Lag",
+            ylabel="Correlation",
+            xlim=(-1, nlags),
+            title=title,
+            legend=legend,
+            figsize=figsize or (700 + nlags * 10, 600),
+            plotname="plot_ccf",
             filename=filename,
             display=display,
         )
@@ -800,6 +989,133 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 display=display,
             )
 
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_fft(
+        self,
+        columns: ColumnSelector | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the fourier transformation of a time series.
+
+        A Fast Fourier Transformper (FFT) plot visualizes the frequency
+        domain representation of a signal by transforming it from the
+        time domain to the frequency domain using the FFT algorithm.
+        The x-axis shows the frequencies, normalized to the
+        [Nyquist frequency][], and the y-axis shows the power spectral
+        density or squared amplitude per frequency unit on a logarithmic
+        scale. This plot is only available for [forecast][time-series]
+        tasks.
+
+        !!! tip
+            - If the plot peaks at f~0, it can indicate the wandering
+              behavior characteristic of a [random walk][] that needs
+              to be differentiated. It could also be indicative of a
+              stationary [ARMA][] process with a high positive phi value.
+            - Peaking at a frequency and its multiples is indicative of
+              seasonality. The lowest frequency in this case is called
+              the fundamental frequency, and the inverse of this
+              frequency is the seasonal period of the data.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            Columns to plot the periodogram from. If None, it selects
+            the target column.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Position to display the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_series
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_periodogram
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_fft()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for col in columns_c:
+            fft_values = fft(self.branch.dataset[col].to_numpy(), workers=self.n_jobs)
+            psd = np.abs(fft_values) ** 2
+            freq = np.fft.fftfreq(len(psd))
+
+            self._draw_line(
+                x=freq[freq >= 0],  # Only draw >0 since the fft is mirrored along x=0
+                y=psd[freq >= 0],
+                parent=col,
+                mode="lines+markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        fig.update_yaxes(type="log")
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Frequency",
+            ylabel="PSD",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_fft",
+            filename=filename,
+            display=display,
+        )
+
     @crash
     def plot_ngrams(
         self,
@@ -990,8 +1306,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         The partial autocorrelation function (PACF) measures the
         correlation between a time series and lagged versions of
         itself. It's useful, for example, to identify the order of
-        an autoregressive model. This plot is only available for
-        [forecast][time-series] tasks.
+        an autoregressive model. The transparent band represents
+        the 95% confidence interval.This plot is only available
+        for [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -1278,6 +1595,132 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize,
             plotname="plot_pca",
+            filename=filename,
+            display=display,
+        )
+
+    @available_if(has_task("forecast"))
+    @crash
+    def plot_periodogram(
+        self,
+        columns: ColumnSelector | None = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Plot the spectral density of a time series.
+
+        A periodogram plot is used to visualize the frequency content
+        of a time series signal. It's particularly useful in time
+        series analysis for identifying dominant frequencies, periodic
+        patterns, and overall spectral characteristics of the data.
+        The x-axis shows the frequencies, normalized to the
+        [Nyquist frequency][], and the y-axis shows the power spectral
+        density or squared amplitude per frequency unit on a logarithmic
+        scale. This plot is only available for [forecast][time-series]
+        tasks.
+
+        !!! tip
+            - If the plot peaks at f~0, it can indicate the wandering
+              behavior characteristic of a [random walk][] that needs
+              to be differentiated. It could also be indicative of a
+              stationary [ARMA][] process with a high positive phi value.
+            - Peaking at a frequency and its multiples is indicative of
+              seasonality. The lowest frequency in this case is called
+              the fundamental frequency, and the inverse of this
+              frequency is the seasonal period of the data.
+
+        Parameters
+        ----------
+        columns: int, str, segment, sequence, dataframe or None, default=None
+            Columns to plot the periodogram from. If None, it selects
+            the target column.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Position to display the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_series
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_fft
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMForecaster
+        from sktime.datasets import load_airline
+
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.plot_periodogram()
+        ```
+
+        """
+        if columns is None:
+            columns_c = lst(self.branch.target)
+        else:
+            columns_c = self.branch._get_columns(columns)
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        for col in columns_c:
+            freq, psd = periodogram(self.branch.dataset[col], window="parzen")
+
+            self._draw_line(
+                x=freq,
+                y=psd,
+                parent=col,
+                mode="lines+markers",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        fig.update_yaxes(type="log")
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Frequency",
+            ylabel="PSD",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_periodogram",
             filename=filename,
             display=display,
         )

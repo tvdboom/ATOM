@@ -571,7 +571,8 @@ class Branch:
             select from.
 
         only_numerical: bool, default=False
-            Whether to select only numerical columns.
+            Whether to select only numerical columns when
+            `columns=None`.
 
         Returns
         -------

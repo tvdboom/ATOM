@@ -171,7 +171,9 @@ def test_hashing_with_get_feature_names_out():
 
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
-    assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
+    vectorizer = Vectorizer().fit({"corpus": [["hi"], ["hi"]]})
+    assert "corpus_hi" in vectorizer.get_feature_names_out()
+    assert "corpus_hi" in vectorizer.transform({"corpus": [["hi"]]})
 
 
 @pytest.mark.parametrize("strategy", ["bow", "tfidf"])

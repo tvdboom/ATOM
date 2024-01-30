@@ -390,7 +390,7 @@ class BaseTransformer:
         for p in obj.get_params():
             if p in fixed:
                 continue
-            elif match := re.search("(n_jobs|random_state)$|__\1$", p):
+            elif match := re.search("^(n_jobs|random_state)$|__\1$", p):
                 obj.set_params(**{p: getattr(self, match.group())})
             elif re.search(r"^sp$|__sp$", p) and hasattr(self, "_config") and self._config.sp:
                 if self.multiple_seasonality:
