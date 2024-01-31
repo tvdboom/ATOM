@@ -253,7 +253,20 @@ Severity: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]
 Verbose: TypeAlias = Literal[0, 1, 2]
 
 # Data cleaning parameters
-NumericalStrats: TypeAlias = Literal["drop", "mean", "median", "knn", "iterative", "most_frequent"]
+NumericalStrats: TypeAlias = Literal[
+    "drop",
+    "mean",
+    "median",
+    "knn",
+    "iterative",
+    "most_frequent",
+    "drift",
+    "linear",
+    "nearest",
+    "bfill",
+    "ffill",
+    "random",
+]
 CategoricalStrats: TypeAlias = Literal["drop", "most_frequent"]
 DiscretizerStrats: TypeAlias = Literal["uniform", "quantile", "kmeans", "custom"]
 Bins: TypeAlias = IntLargerOne | Sequence[Scalar] | dict[str, IntLargerOne | Sequence[Scalar]]

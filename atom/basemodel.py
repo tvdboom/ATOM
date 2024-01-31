@@ -309,7 +309,7 @@ class BaseModel(RunnerPlot):
         """Return the model's class name."""
         return self.__class__.__name__
 
-    @property
+    @cached_property
     def _est_class(self) -> type[Predictor]:
         """Return the estimator's class (not instance).
 
@@ -698,8 +698,8 @@ class BaseModel(RunnerPlot):
                     method=method_caller,
                 )
 
-            except ValueError as ex:
-                # Fails for models that don't allow in-sample predictions
+            except (ValueError, NotImplementedError) as ex:
+                # Can fail for models that don't allow in-sample predictions
                 self._log(
                     f"Failed to get predictions for model {self.name} "
                     f"on rows {rows}. Returning NaN. Exception: {ex}.", 3

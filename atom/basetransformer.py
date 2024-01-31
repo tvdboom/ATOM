@@ -32,6 +32,7 @@ from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
 from ray.util.joblib import register_ray
+from sklearn.base import OneToOneFeatureMixin
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
@@ -40,7 +41,9 @@ from atom.utils.types import (
     Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
     bool_t, dataframe_t, int_t, sequence_t,
 )
-from atom.utils.utils import crash, flt, lst, n_cols, to_df, to_pandas
+from atom.utils.utils import (
+    crash, flt, lst, n_cols, to_df, to_pandas, wrap_fit,
+)
 
 
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
@@ -373,6 +376,11 @@ class BaseTransformer:
         to that of this instance. If `obj` is a meta-estimator, it
         also adjusts the parameters of the base estimator.
 
+        Additionally, the `fit` method of non-sklearn objects is wrapped
+        to always add the `n_features_in_` and `feature_names_in_`
+        attributes, and the `get-feature_names_out` method is added to
+        transformers that don't have it already.
+
         Parameters
         ----------
         obj: Estimator
@@ -397,6 +405,12 @@ class BaseTransformer:
                     obj.set_params(**{p: self._config.sp.sp})
                 else:
                     obj.set_params(**{p: lst(self._config.sp.sp)[0]})
+
+        if hasattr(obj, "fit") and "sklearn" not in obj.__module__:
+            obj.__class__.fit = wrap_fit(obj.__class__.fit)  # type: ignore[method-assign]
+        if hasattr(obj, "transform") and not hasattr(obj, "get_feature_names_out"):
+            # We assume here that the transformer does not create nor remove columns
+            obj.__class__.get_feature_names_out = OneToOneFeatureMixin.get_feature_names_out
 
         return obj
 

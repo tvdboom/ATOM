@@ -43,6 +43,7 @@ from pandas._libs.missing import NAType
 from pandas._typing import Axes, Dtype, DtypeArg
 from pandas.api.types import is_numeric_dtype
 from shap import Explainer, Explanation
+from sklearn.base import BaseEstimator
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
@@ -2524,6 +2525,8 @@ def transform_one(
         name=flt(getattr(transformer, "target_names_in_", None)),
     )
 
+    use_y = True
+
     kwargs: dict[str, Any] = {}
     inc = list(getattr(transformer, "_cols", getattr(Xt, "columns", [])))
     if "X" in (params := sign(getattr(transformer, method))):
@@ -2534,13 +2537,15 @@ def transform_one(
         if len(kwargs) == 0:
             if yt is not None and hasattr(transformer, "_cols"):
                 kwargs["X"] = to_df(yt)[inc]
+                use_y = False
             elif params["X"].default != Parameter.empty:
                 kwargs["X"] = params["X"].default  # Fill X with default
             else:
                 return Xt, yt  # If X is needed, skip the transformer
 
     if "y" in params:
-        if yt is not None:
+        # We skip `y` when already added to `X`
+        if yt is not None and use_y:
             kwargs["y"] = yt
         elif "X" not in params:
             return Xt, yt  # If y is None and no X in transformer, skip the transformer
@@ -2761,6 +2766,29 @@ def method_to_log(f: Callable) -> Callable:
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def wrap_fit(f: Callable) -> Callable:
+    """Wrap the fit method of estimators to add custom attributes.
+
+    Wrapper to add the `feature_names_in_` and `n_features_in_`
+    attributes to an arbitrary estimator during `fit`. Used for
+    classes that don't have these attributes (e.g., from cuml or
+    sktime).
+
+    """
+
+    @wraps(f)
+    def wrapped(self, X, *args, **kwargs):
+        out = f(self, X, *args, **kwargs)
+
+        # We add the attributes after running the function
+        # to avoid deleting them with .reset() calls
+        BaseEstimator._check_feature_names(self, X, reset=True)
+        BaseEstimator._check_n_features(self, X, reset=True)
+        return out
+
+    return wrapped
 
 
 def wrap_transformer_methods(f: Callable) -> Callable:

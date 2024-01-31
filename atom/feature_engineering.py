@@ -1540,8 +1540,7 @@ class FeatureSelector(TransformerMixin):
                     self._log(
                         f"   --> Dropping feature {column} "
                         f"(score: {self.univariate_.scores_[n]:.2f}  "
-                        f"p-value: {self.univariate_.pvalues_[n]:.2f}).",
-                        2,
+                        f"p-value: {self.univariate_.pvalues_[n]:.2f}).", 2,
                     )
                     X = X.drop(columns=column)
 
@@ -1570,8 +1569,7 @@ class FeatureSelector(TransformerMixin):
                     if hasattr(self._estimator, "ranking_"):
                         self._log(
                             f"   --> Dropping feature {column} "
-                            f"(rank {self._estimator.ranking_[n]}).",
-                            2,
+                            f"(rank {self._estimator.ranking_[n]}).", 2,
                         )
                     else:
                         self._log(f"   --> Dropping feature {column}.", 2)

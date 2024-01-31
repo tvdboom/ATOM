@@ -1699,14 +1699,15 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         Impute or remove missing values according to the selected
         strategy. Also removes rows and columns with too many missing
-        values. Use the `missing` attribute to customize what are
-        considered "missing values".
+        values.
 
         See the [Imputer][] class for a description of the parameters.
 
         !!! tip
-            Use the [nans][self-nans] attribute to check the amount of
-            missing values per column.
+            - Use the [nans][self-nans] attribute to check the amount of
+              missing values per column.
+            - Use the [`missing`][self-missing] attribute to customize
+              what are considered "missing values".
 
         """
         columns = kwargs.pop("columns", None)

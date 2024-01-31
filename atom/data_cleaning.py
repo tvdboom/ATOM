@@ -46,6 +46,7 @@ from sklearn.utils.validation import _check_feature_names_in
 from sktime.transformations.series.detrend import (
     ConditionalDeseasonalizer, Deseasonalizer, Detrender,
 )
+from sktime.transformations.series.impute import Imputer as sktimeImputer
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
@@ -53,11 +54,11 @@ from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.patches import wrap_method_output
 from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
-    Estimator, FloatLargerZero, IntLargerEqualZero, IntLargerTwo,
-    IntLargerZero, NJobs, NormalizerStrats, NumericalStrats, Pandas, Predictor,
-    PrunerStrats, Scalar, ScalerStrats, SeasonalityModels, Sequence, Series,
-    Transformer, Verbose, XSelector, YSelector, dataframe_t, sequence_t,
-    series_t,
+    EngineTuple, Estimator, FloatLargerZero, Int, IntLargerEqualZero,
+    IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats, NumericalStrats,
+    Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels,
+    Sequence, Series, Transformer, Verbose, XSelector, YSelector, dataframe_t,
+    sequence_t, series_t,
 )
 from atom.utils.utils import (
     Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
@@ -91,6 +92,17 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         # Patch to avoid errors for transformers that allow passing only y
         with patch("sklearn.utils._set_output._wrap_method_output", wrap_method_output):
             super().__init_subclass__(**kwargs)
+
+    def __repr__(self, N_CHAR_MAX: Int = 700) -> str:
+        """Drop named tuples if default parameters from string representation."""
+        out = super().__repr__(N_CHAR_MAX)
+
+        # Remove default engine for cleaner representation
+        if hasattr(self, "engine") and self.engine == EngineTuple():
+            out = re.sub(r"engine=EngineTuple\(data='numpy', estimator='sklearn'\)", "", out)
+            out = re.sub(r"((?<=\(),\s|,\s(?=\))|,\s(?=,\s))", "", out)  # Drop comma-spaces
+
+        return out
 
     def __sklearn_clone__(self: T) -> T:
         """Wrap cloning method to attach internal attributes."""
@@ -1521,10 +1533,6 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
             return labels
 
-        Xt, yt = self._check_input(X, y)
-        self._check_feature_names(Xt, reset=True)
-        self._check_n_features(Xt, reset=True)
-
         self._estimators: dict[str, Estimator] = {}
         self._labels: dict[str, Sequence[str]] = {}
 
@@ -1548,7 +1556,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                         raise ValueError(
                             "Invalid value for the bins parameter. The length of the "
                             "bins does not match the length of the columns, got len"
-                            f"(bins)={len(bins_c)} and len(columns)={Xt.shape[1]}."
+                            f"(bins)={len(bins_c)} and len(columns)={X.shape[1]}."
                         ) from None
                 else:
                     bins_x = bins_c
@@ -1566,7 +1574,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                     encode="ordinal",
                     strategy=self.strategy,
                     **kwargs,
-                ).fit(Xt[[col]])
+                ).fit(X[[col]])
 
                 # Save labels for transform method
                 self._labels[col] = get_labels(
@@ -1592,7 +1600,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                 self._estimators[col] = FunctionTransformer(
                     func=bk.cut,
                     kw_args={"bins": bins_c, "labels": get_labels(col, bins_c)},
-                ).fit(Xt[[col]])
+                ).fit(X[[col]])
 
         return self
 
@@ -2021,7 +2029,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
     Impute or remove missing values according to the selected strategy.
     Also removes rows and columns with too many missing values. Use
-    the `missing` attribute to customize what are considered "missing
+    the `missing_` attribute to customize what are considered "missing
     values".
 
     This class can be accessed from atom through the [impute]
@@ -2036,9 +2044,18 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         - "drop": Drop rows containing missing values.
         - "mean": Impute with mean of column.
         - "median": Impute with median of column.
+        - "most_frequent": Impute with the most frequent value.
         - "knn": Impute using a K-Nearest Neighbors approach.
         - "iterative": Impute using a multivariate imputer.
-        - "most_frequent": Impute with the most frequent value.
+        - "drift": Impute values using a [PolynomialTrend][] model.
+        - "linear": Impute using linear interpolation.
+        - "nearest": Impute with nearest value.
+        - "bfill": Impute by using the next valid observation to fill
+           the gap.
+        - "ffill": Impute by propagating the last valid observation
+          to next valid.
+        - "random": Impute with random values between the min and max
+           of column.
         - int or float: Impute with provided numerical value.
 
     strat_cat: str, default="drop"
@@ -2263,6 +2280,15 @@ class Imputer(TransformerMixin, _SetOutputMixin):
                 num_imputer = IterativeImputer(random_state=self.random_state)
             elif self.strat_num == "drop":
                 num_imputer = "passthrough"
+            else:
+                # Inherit sklearn's attributes and methods
+                num_imputer = self._inherit(
+                    sktimeImputer(
+                        method=self.strat_num,
+                        missing_values=[pd.NA],
+                        random_state=self.random_state,
+                    )
+                )
         else:
             num_imputer = SimpleImputer(
                 missing_values=pd.NA,
@@ -2401,8 +2427,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
                 if name not in self._estimator.feature_names_in_:
                     self._log(
                         f" --> Dropping feature {name}. Contains {nans} "
-                        f"({nans * 100 // len(X)}%) missing values.",
-                        2,
+                        f"({nans * 100 // len(X)}%) missing values.", 2,
                     )
                     X = X.drop(columns=name)
                     continue
@@ -2411,34 +2436,34 @@ class Imputer(TransformerMixin, _SetOutputMixin):
                     if not isinstance(self.strat_num, str):
                         self._log(
                             f" --> Imputing {nans} missing values with "
-                            f"number '{self.strat_num}' in feature {name}.",
-                            2,
+                            f"number '{self.strat_num}' in column {name}.", 2,
                         )
                     elif self.strat_num in ("knn", "iterative"):
                         self._log(
                             f" --> Imputing {nans} missing values using "
-                            f"the {self.strat_num} imputer in feature {name}.",
-                            2,
+                            f"the {self.strat_num} imputer in column {name}.", 2,
                         )
-                    elif self.strat_num != "drop":  # mean, median or most_frequent
+                    elif self.strat_num in ("mean", "median", "most_frequent"):
                         self._log(
                             f" --> Imputing {nans} missing values with {self.strat_num} "
-                            f"({np.round(get_stat(num_imputer, name), 2)}) in feature "
-                            f"{name}.",
-                            2,
+                            f"({np.round(get_stat(num_imputer, name), 2)}) in column "
+                            f"{name}.", 2,
+                        )
+                    else:
+                        self._log(
+                            f" --> Imputing {nans} missing values with {self.strat_num} "
+                            f"in column {name}.", 2,
                         )
                 elif self.strat_cat != "drop" and name in cat_imputer.feature_names_in_:
                     if self.strat_cat == "most_frequent":
                         self._log(
                             f" --> Imputing {nans} missing values with most_frequent "
-                            f"({get_stat(cat_imputer, name)}) in feature {name}.",
-                            2,
+                            f"({get_stat(cat_imputer, name)}) in column {name}.", 2,
                         )
                     elif self.strat_cat != "drop":
                         self._log(
                             f" --> Imputing {nans} missing values with value "
-                            f"'{self.strat_cat}' in feature {name}.",
-                            2,
+                            f"'{self.strat_cat}' in column {name}.", 2,
                         )
 
         Xt = self._estimator.transform(X)
@@ -2969,8 +2994,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                     cond = np.abs(z_scores) > self.max_sigma
                     objective = objective.mask(cond, self.method)
                     self._log(
-                        f" --> Replacing {cond.sum()} outlier values with {self.method}.",
-                        2,
+                        f" --> Replacing {cond.sum()} outlier values with {self.method}.", 2,
                     )
 
                 elif self.method.lower() == "minmax":
@@ -2992,8 +3016,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
                     self._log(
                         f" --> Replacing {counts} outlier values "
-                        "with the min or max of the column.",
-                        2,
+                        "with the min or max of the column.", 2,
                     )
 
                 elif self.method.lower() == "drop":
@@ -3002,8 +3025,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                     if len(lst(self.strategy)) > 1:
                         self._log(
                             f" --> The zscore strategy detected "
-                            f"{len(mask) - sum(mask)} outliers.",
-                            2,
+                            f"{len(mask) - sum(mask)} outliers.", 2,
                         )
 
             else:
@@ -3013,8 +3035,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                 if len(lst(self.strategy)) > 1:
                     self._log(
                         f" --> The {estimator.__class__.__name__} "
-                        f"detected {len(mask) - sum(mask)} outliers.",
-                        2,
+                        f"detected {len(mask) - sum(mask)} outliers.", 2,
                     )
 
                 # Add the estimator as attribute to the instance

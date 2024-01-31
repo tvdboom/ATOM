@@ -19,6 +19,7 @@ from atom.data_cleaning import (
     Balancer, Cleaner, Decomposer, Discretizer, Encoder, Imputer, Normalizer,
     Pruner, Scaler,
 )
+from atom.utils.types import NumericalStrats
 from atom.utils.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
@@ -28,6 +29,15 @@ from .conftest import (
 
 
 # Test TransformerMixin ============================================ >>
+
+def test_repr():
+    """Assert that __repr__ hides the default engine."""
+    assert str(Cleaner(engine="pyarrow")).startswith("Cleaner(engine=EngineTuple")
+    assert str(Cleaner()) == "Cleaner()"
+    assert str(Cleaner(device="gpu")) == "Cleaner(device='gpu')"
+    assert str(Cleaner(verbose=2)) == "Cleaner(verbose=2)"
+    assert str(Cleaner(device="gpu", verbose=2)) == "Cleaner(device='gpu', verbose=2)"
+
 
 def test_clone():
     """Assert that cloning the transformer keeps internal attributes."""
@@ -474,7 +484,7 @@ def test_imputing_all_missing_values_categorical(missing):
     X = [[missing, "a", "a"], ["b", "c", missing], ["b", "a", "c"], ["c", "a", "a"]]
     y = [1, 1, 0, 0]
     imputer = Imputer(strat_cat="most_frequent")
-    X, y = imputer.fit_transform(X, y)
+    X, _ = imputer.fit_transform(X, y)
     assert X.isna().sum().sum() == 0
 
 
@@ -491,7 +501,7 @@ def test_rows_too_many_nans(max_nan_rows, random):
         max_nan_rows=max_nan_rows,
     )
     X, y = imputer.fit_transform(X, y)
-    assert len(X) == 569  # Original size
+    assert len(X) == len(y) == 569  # Original size
     assert X.isna().sum().sum() == 0
 
 
@@ -515,7 +525,7 @@ def test_cols_too_many_nans(max_nan_cols):
 def test_imputing_numeric_drop():
     """Assert that imputing drop for numerical values works."""
     imputer = Imputer(strat_num="drop")
-    X, y = imputer.fit_transform(X10_nan, y10)
+    X, _ = imputer.fit_transform(X10_nan, y10)
     assert len(X) == 8
     assert X.isna().sum().sum() == 0
 
@@ -523,55 +533,23 @@ def test_imputing_numeric_drop():
 def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
     imputer = Imputer(strat_num=3.2)
-    X, y = imputer.fit_transform(X10_nan, y10)
+    X, _ = imputer.fit_transform(X10_nan, y10)
     assert X.iloc[0, 0] == 3.2
     assert X.isna().sum().sum() == 0
 
 
-def test_imputing_numeric_mean():
-    """Assert that imputing the mean for numerical values works."""
-    imputer = Imputer(strat_num="mean")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_median():
-    """Assert that imputing the median for numerical values works."""
-    imputer = Imputer(strat_num="median")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_knn():
-    """Assert that imputing numerical values with KNNImputer works."""
-    imputer = Imputer(strat_num="knn", random_state=1)
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3.04
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_iterative():
-    """Assert that imputing numerical values with IterativeImputer works."""
-    imputer = Imputer(strat_num="iterative")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == pytest.approx(2.577836, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_most_frequent():
-    """Assert that imputing the most_frequent for numerical values works."""
-    imputer = Imputer(strat_num="most_frequent")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3
+@pytest.mark.parametrize("strat_num", NumericalStrats.__args__)
+def test_imputing_numeric(strat_num):
+    """Assert that imputing numerical columns works."""
+    imputer = Imputer(strat_num=strat_num)
+    X, _ = imputer.fit_transform(X10_nan, y10)
     assert X.isna().sum().sum() == 0
 
 
 def test_imputing_non_numeric_string():
     """Assert that imputing a string for non-numerical values works."""
     imputer = Imputer(strat_cat="missing")
-    X, y = imputer.fit_transform(X10_sn, y10)
+    X, _ = imputer.fit_transform(X10_sn, y10)
     assert X.iloc[0, 2] == "missing"
     assert X.isna().sum().sum() == 0
 
@@ -579,7 +557,7 @@ def test_imputing_non_numeric_string():
 def test_imputing_non_numeric_drop():
     """Assert that the drop strategy for non-numerical works."""
     imputer = Imputer(strat_cat="drop")
-    X, y = imputer.fit_transform(X10_sn, y10)
+    X, _ = imputer.fit_transform(X10_sn, y10)
     assert len(X) == 9
     assert X.isna().sum().sum() == 0
 
@@ -587,7 +565,7 @@ def test_imputing_non_numeric_drop():
 def test_imputing_non_numeric_most_frequent():
     """Assert that the most_frequent strategy for non-numerical works."""
     imputer = Imputer(strat_cat="most_frequent")
-    X, y = imputer.fit_transform(X10_sn, y10)
+    X, _ = imputer.fit_transform(X10_sn, y10)
     assert X.iloc[0, 2] == "d"
     assert X.isna().sum().sum() == 0
 

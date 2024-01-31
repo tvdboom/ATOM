@@ -54,8 +54,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     def plot_acf(
         self,
         columns: ColumnSelector | None = None,
-        nlags: IntLargerZero | None = None,
         *,
+        nlags: IntLargerZero | None = None,
+        plot_interval: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
         figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
@@ -82,6 +83,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
             returned value includes lag 0 (i.e., 1), so the size of the
             vector is `(nlags + 1,)`.
+
+        plot_interval: bool, default=True
+            Whether to plot the 95% confidence interval.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -174,35 +178,35 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
-            # Add error bands
-            fig.add_traces(
-                [
-                    go.Scatter(
-                        x=x,
-                        y=np.subtract(conf[:, 1], corr),
-                        mode="lines",
-                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
-                        hovertemplate="%{y}<extra>upper bound</extra>",
-                        legendgroup=col,
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    ),
-                    go.Scatter(
-                        x=x,
-                        y=np.subtract(conf[:, 0], corr),
-                        mode="lines",
-                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
-                        fill="tonexty",
-                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
-                        hovertemplate="%{y}<extra>lower bound</extra>",
-                        legendgroup=col,
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    ),
-                ]
-            )
+            if plot_interval:
+                fig.add_traces(
+                    [
+                        go.Scatter(
+                            x=x,
+                            y=conf[:, 1] - corr,
+                            mode="lines",
+                            line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                            hovertemplate="%{y}<extra>upper bound</extra>",
+                            legendgroup=col,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                        go.Scatter(
+                            x=x,
+                            y=conf[:, 0] - corr,
+                            mode="lines",
+                            line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                            fill="tonexty",
+                            fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                            hovertemplate="%{y}<extra>lower bound</extra>",
+                            legendgroup=col,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                    ]
+                )
 
         fig.update_yaxes(zerolinecolor="black")
         fig.update_layout({"hovermode": "x unified"})
@@ -227,8 +231,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         self,
         columns: ColumnSelector = 0,
         target: TargetSelector = 0,
-        nlags: IntLargerZero | None = None,
         *,
+        nlags: IntLargerZero | None = None,
+        plot_interval: Bool = False,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
@@ -260,6 +265,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             uses `min(10 * np.log10(len(y)), len(y) // 2 - 1)`. The
             returned value includes lag 0 (i.e., 1), so the size of the
             vector is `(nlags + 1,)`.
+
+        plot_interval: bool, default=False
+            Whether to plot the 95% confidence interval.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -360,35 +368,35 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
-            # Add error bands
-            fig.add_traces(
-                [
-                    go.Scatter(
-                        x=x,
-                        y=conf[:, 1],
-                        mode="lines",
-                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
-                        hovertemplate="%{y}<extra>upper bound</extra>",
-                        legendgroup=col,
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    ),
-                    go.Scatter(
-                        x=x,
-                        y=conf[:, 0],
-                        mode="lines",
-                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
-                        fill="tonexty",
-                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
-                        hovertemplate="%{y}<extra>lower bound</extra>",
-                        legendgroup=col,
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    ),
-                ]
-            )
+            if plot_interval:
+                fig.add_traces(
+                    [
+                        go.Scatter(
+                            x=x,
+                            y=conf[:, 1] - corr,
+                            mode="lines",
+                            line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                            hovertemplate="%{y}<extra>upper bound</extra>",
+                            legendgroup=col,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                        go.Scatter(
+                            x=x,
+                            y=conf[:, 0] - corr,
+                            mode="lines",
+                            line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                            fill="tonexty",
+                            fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                            hovertemplate="%{y}<extra>lower bound</extra>",
+                            legendgroup=col,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                    ]
+                )
 
         fig.update_yaxes(zerolinecolor="black")
         fig.update_layout({"hovermode": "x unified"})
@@ -1292,9 +1300,10 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     def plot_pacf(
         self,
         columns: ColumnSelector | None = None,
+        *,
         nlags: IntLargerZero | None = None,
         method: PACFMethods = "ywadjusted",
-        *,
+        plot_interval: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
         figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
@@ -1306,9 +1315,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         The partial autocorrelation function (PACF) measures the
         correlation between a time series and lagged versions of
         itself. It's useful, for example, to identify the order of
-        an autoregressive model. The transparent band represents
-        the 95% confidence interval.This plot is only available
-        for [forecast][time-series] tasks.
+        an autoregressive model. This plot is only available for
+        [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -1327,8 +1335,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
             - "yw" or "ywadjusted": Yule-Walker with sample-size
               adjustment in denominator for acovf.
-            - "ywm" or "ywmle": Yule-Walker without adjustment.
-            - "ols" : Regression of time series on lags of it and on
+            - "ywm" or "ywmle": Yule-Walker without an adjustment.
+            - "ols": Regression of time series on lags of it and on
               constant.
             - "ols-inefficient": Regression of time series on lags using
               a single common sample to estimate all pacf coefficients.
@@ -1338,7 +1346,10 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
               correction.
             - "ldb" or "ldbiased": Levinson-Durbin recursion without bias
               correction.
-            - "burg":  Burg"s partial autocorrelation estimator.
+            - "burg": Burg"s partial autocorrelation estimator.
+
+        plot_interval: bool, default=True
+            Whether to plot the 95% confidence interval.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -1431,35 +1442,35 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
-            # Add error bands
-            fig.add_traces(
-                [
-                    go.Scatter(
-                        x=x,
-                        y=np.subtract(conf[:, 1], corr),
-                        mode="lines",
-                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
-                        hovertemplate="%{y}<extra>upper bound</extra>",
-                        legendgroup=col,
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    ),
-                    go.Scatter(
-                        x=x,
-                        y=np.subtract(conf[:, 0], corr),
-                        mode="lines",
-                        line={"width": 1, "color": BasePlot._fig.get_elem(col)},
-                        fill="tonexty",
-                        fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
-                        hovertemplate="%{y}<extra>lower bound</extra>",
-                        legendgroup=col,
-                        showlegend=False,
-                        xaxis=xaxis,
-                        yaxis=yaxis,
-                    ),
-                ]
-            )
+            if plot_interval:
+                fig.add_traces(
+                    [
+                        go.Scatter(
+                            x=x,
+                            y=conf[:, 1] - corr,
+                            mode="lines",
+                            line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                            hovertemplate="%{y}<extra>upper bound</extra>",
+                            legendgroup=col,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                        go.Scatter(
+                            x=x,
+                            y=conf[:, 0] - corr,
+                            mode="lines",
+                            line={"width": 1, "color": BasePlot._fig.get_elem(col)},
+                            fill="tonexty",
+                            fillcolor=f"rgba({BasePlot._fig.get_elem(col)[4:-1]}, 0.2)",
+                            hovertemplate="%{y}<extra>lower bound</extra>",
+                            legendgroup=col,
+                            showlegend=False,
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        ),
+                    ]
+                )
 
         fig.update_yaxes(zerolinecolor="black")
         fig.update_layout({"hovermode": "x unified"})
@@ -2005,6 +2016,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     def plot_rfecv(
         self,
         *,
+        plot_interval: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
@@ -2019,6 +2031,9 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Parameters
         ----------
+        plot_interval: bool, default=True
+            Whether to plot the 1-sigma confidence interval.
+
         title: str, dict or None, default=None
             Title for the plot.
 
@@ -2112,35 +2127,35 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             yaxis=yaxis,
         )
 
-        # Add error bands
-        fig.add_traces(
-            [
-                go.Scatter(
-                    x=x,
-                    y=np.add(mean, std),
-                    mode="lines",
-                    line={"width": 1, "color": BasePlot._fig.get_elem(ylabel)},
-                    hovertemplate="%{y}<extra>upper bound</extra>",
-                    legendgroup=ylabel,
-                    showlegend=False,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                ),
-                go.Scatter(
-                    x=x,
-                    y=np.subtract(mean, std),
-                    mode="lines",
-                    line={"width": 1, "color": BasePlot._fig.get_elem(ylabel)},
-                    fill="tonexty",
-                    fillcolor=f"rgba{BasePlot._fig.get_elem(ylabel)[3:-1]}, 0.2)",
-                    hovertemplate="%{y}<extra>lower bound</extra>",
-                    legendgroup=ylabel,
-                    showlegend=False,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                ),
-            ]
-        )
+        if plot_interval:
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=x,
+                        y=mean + std,
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(ylabel)},
+                        hovertemplate="%{y}<extra>upper bound</extra>",
+                        legendgroup=ylabel,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                    go.Scatter(
+                        x=x,
+                        y=mean - std,
+                        mode="lines",
+                        line={"width": 1, "color": BasePlot._fig.get_elem(ylabel)},
+                        fill="tonexty",
+                        fillcolor=f"rgba{BasePlot._fig.get_elem(ylabel)[3:-1]}, 0.2)",
+                        hovertemplate="%{y}<extra>lower bound</extra>",
+                        legendgroup=ylabel,
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    ),
+                ]
+            )
 
         fig.update_layout({"hovermode": "x unified"})
 

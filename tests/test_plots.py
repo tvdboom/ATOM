@@ -23,7 +23,7 @@ from atom.utils.utils import NotFittedError
 
 from .conftest import (
     X10, X10_str, X_bin, X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10,
-    y_bin, y_class, y_fc, y_label, y_multiclass, y_reg,
+    y_bin, y_class, y_ex, y_fc, y_label, y_multiclass, y_reg,
 )
 
 
@@ -282,6 +282,16 @@ def test_plot_acf(columns):
     atom.plot_acf(columns=columns, display=False)
 
 
+def test_plot_ccf():
+    """Assert that the plot_ccf method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    with pytest.raises(ValueError, match=".*requires at least two columns.*"):
+        atom.plot_ccf(display=False)
+
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.plot_ccf(plot_interval=True, display=False)
+
+
 @pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
     """Assert that the plot_components method works."""
@@ -316,6 +326,13 @@ def test_plot_distribution():
     atom.plot_distribution(columns=[0, 1], distributions="pearson3", display=False)
 
 
+@pytest.mark.parametrize("columns", [None, -1])
+def test_plot_fft(columns):
+    """Assert that the plot_fft method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_fft(columns=columns, display=False)
+
+
 @pytest.mark.parametrize("ngram", [1, 2, 3, 4])
 def test_plot_ngrams(ngram):
     """Assert that the plot_ngrams method works."""
@@ -343,6 +360,13 @@ def test_plot_pca(X):
 
     atom.feature_selection(strategy="pca", n_features=2)
     atom.plot_pca(display=False)
+
+
+@pytest.mark.parametrize("columns", [None, -1])
+def test_plot_periodogram(columns):
+    """Assert that the plot_periodogram method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_periodogram(columns=columns, display=False)
 
 
 def test_plot_qq():

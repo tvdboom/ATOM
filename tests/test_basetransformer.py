@@ -21,6 +21,7 @@ from sklearn.multioutput import ClassifierChain
 from sklearn.naive_bayes import GaussianNB
 from sklearnex import get_config
 from sklearnex.svm import SVC
+from sktime.transformations.series.impute import Imputer
 
 from atom import ATOMClassifier, ATOMForecaster
 from atom.basetransformer import BaseTransformer
@@ -212,6 +213,20 @@ def test_inherit_sp():
     )
     assert atom.bats.estimator.get_params()["sp"] == 12  # Single seasonality
     assert atom.tbats.estimator.get_params()["sp"] == [12, 24]  # Multiple seasonality
+
+
+def test_inherit_attributes_and_methods():
+    """Assert that sklearn attributes and methods are added to the estimator."""
+    imputer = Imputer().fit(y_fc)
+    assert not hasattr(imputer, "feature_names_in_")
+    assert not hasattr(imputer, "n_features_in_")
+    assert not hasattr(imputer, "get_feature_names_out")
+
+    imputer = BaseTransformer(random_state=1)._inherit(imputer)
+    imputer.fit(pd.DataFrame(y_fc))
+    assert hasattr(imputer, "feature_names_in_")
+    assert hasattr(imputer, "n_features_in_")
+    assert hasattr(imputer, "get_feature_names_out")
 
 
 # Test _get_est_class ============================================== >>
