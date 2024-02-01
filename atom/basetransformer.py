@@ -457,9 +457,11 @@ class BaseTransformer:
 
         """
         try:
-            return getattr(import_module(f"{self.engine.estimator}.{module}"), name)
+            mod = import_module(f"{self.engine.estimator}.{module}")
         except (ModuleNotFoundError, AttributeError):
-            return getattr(import_module(f"sklearn.{module}"), name)
+            mod = import_module(f"sklearn.{module}")
+
+        return self._inherit(getattr(mod, name))
 
     @staticmethod
     @overload

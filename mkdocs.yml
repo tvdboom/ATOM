@@ -315,6 +315,7 @@ nav:
         - Regression: examples/regression.ipynb
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb
+        - Univariate forecast: examples/univariate_forecast.ipynb
         - Utilities: examples/utilities.ipynb
     - Changelog:
         - v6.x.x: changelog/v6.x.x.md
