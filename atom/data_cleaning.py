@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import sklearn
 from beartype import beartype
 from category_encoders import (
     BackwardDifferenceEncoder, BaseNEncoder, BinaryEncoder, CatBoostEncoder,
@@ -98,7 +99,11 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         out = super().__repr__(N_CHAR_MAX)
 
         # Remove default engine for cleaner representation
-        if hasattr(self, "engine") and self.engine == EngineTuple():
+        if (
+            hasattr(self, "engine")
+            and self.engine == EngineTuple()
+            and sklearn.get_config()["print_changed_only"]
+        ):
             out = re.sub(r"engine=EngineTuple\(data='numpy', estimator='sklearn'\)", "", out)
             out = re.sub(r"((?<=\(),\s|,\s(?=\))|,\s(?=,\s))", "", out)  # Drop comma-spaces
 
@@ -817,7 +822,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
 
         return self
 
-    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
         """Get output feature names for transformation.
 
         Parameters
@@ -841,7 +846,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             # Drop prohibited chars from column names
             columns = [re.sub(self.drop_chars, "", str(c)) for c in columns]
 
-        return columns
+        return np.array(columns)
 
     @composed(crash, method_to_log)
     def transform(
@@ -889,7 +894,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
                 if name in self._drop_cols:
                     self._log(
                         f" --> Dropping feature {name} for "
-                        f"having type: {column.dtype.name}.", 2
+                        f"having type: {column.dtype.name}.", 2,
                     )
                     X = X.drop(columns=name)
 
@@ -1950,7 +1955,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
 
         return self
 
-    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
         """Get output feature names for transformation.
 
         Parameters
@@ -2006,8 +2011,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
 
             self._log(
                 f" --> {estimator.__class__.__name__[:-7]}-encoding feature "
-                f"{name}. Contains {X[name].nunique()} classes.",
-                2,
+                f"{name}. Contains {X[name].nunique()} classes.", 2,
             )
 
             # Count the propagated missing values
@@ -2322,7 +2326,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
         return self
 
-    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
         """Get output feature names for transformation.
 
         Parameters
@@ -2339,7 +2343,10 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         """
         check_is_fitted(self, attributes="feature_names_in_")
         _check_feature_names_in(self, input_features)
-        return [c for c in self.feature_names_in_ if c in self._estimator.get_feature_names_out()]
+
+        return np.array(
+            [c for c in self.feature_names_in_ if c in self._estimator.get_feature_names_out()]
+        )
 
     @composed(crash, method_to_log)
     def transform(

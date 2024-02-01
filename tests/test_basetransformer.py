@@ -215,18 +215,45 @@ def test_inherit_sp():
     assert atom.tbats.estimator.get_params()["sp"] == [12, 24]  # Multiple seasonality
 
 
-def test_inherit_attributes_and_methods():
-    """Assert that sklearn attributes and methods are added to the estimator."""
+def test_inherit_attributes():
+    """Assert that sklearn attributes are added to the estimator."""
     imputer = Imputer().fit(y_fc)
     assert not hasattr(imputer, "feature_names_in_")
     assert not hasattr(imputer, "n_features_in_")
-    assert not hasattr(imputer, "get_feature_names_out")
 
     imputer = BaseTransformer(random_state=1)._inherit(imputer)
     imputer.fit(pd.DataFrame(y_fc))
     assert hasattr(imputer, "feature_names_in_")
     assert hasattr(imputer, "n_features_in_")
-    assert hasattr(imputer, "get_feature_names_out")
+
+
+def test_inherit_get_feature_names_out_one_to_one():
+    """Assert that get_feature_names_out is added to the estimator."""
+    # Delete method since attached to class in previous test
+    if hasattr(Imputer, "get_feature_names_out"):
+        delattr(Imputer, "get_feature_names_out")
+    imputer = Imputer().fit(pd.DataFrame(y_fc))
+
+    base = BaseTransformer(random_state=1)
+    imputer = base._inherit(imputer, names_out=False)
+    imputer.fit(pd.DataFrame(y_fc))
+    assert not hasattr(imputer, "get_feature_names_out")
+
+    imputer = base._inherit(imputer, names_out="one-to-one")
+    imputer.fit(pd.DataFrame(y_fc))
+    assert list(imputer.get_feature_names_out()) == [y_fc.name]
+
+
+def test_inherit_get_feature_names_out_callable():
+    """Assert that get_feature_names_out is added to the estimator."""
+    # Delete method since attached to class in previous test
+    if hasattr(Imputer, "get_feature_names_out"):
+        delattr(Imputer, "get_feature_names_out")
+    imputer = Imputer().fit(pd.DataFrame(y_fc))
+
+    base = BaseTransformer(random_state=1)
+    imputer = base._inherit(imputer, names_out=lambda _: ["test"])
+    assert list(imputer.get_feature_names_out()) == ["test"]
 
 
 # Test _get_est_class ============================================== >>

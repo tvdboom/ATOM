@@ -11,7 +11,7 @@ from collections.abc import Hashable
 from logging import Logger
 from pathlib import Path
 from random import sample
-from typing import Literal
+from typing import Any, Literal
 
 import featuretools as ft
 import joblib
@@ -26,6 +26,7 @@ from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
 )
 from sklearn.model_selection import cross_val_score
+from sklearn.utils.validation import _check_feature_names_in
 from typing_extensions import Self
 from zoofs import (
     DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
@@ -41,8 +42,8 @@ from atom.utils.types import (
     Pandas, Scalar, Sequence, Series, Verbose, series_t,
 )
 from atom.utils.utils import (
-    Goal, Task, bk, check_scaling, composed, crash, get_custom_scorer,
-    is_sparse, lst, merge, method_to_log, sign,
+    Goal, Task, bk, check_is_fitted, check_scaling, composed, crash,
+    get_custom_scorer, is_sparse, lst, merge, method_to_log, sign,
 )
 
 
@@ -238,7 +239,7 @@ class FeatureExtractor(TransformerMixin):
                 if not isinstance(series, series_t):
                     self._log(
                         f"   --> Extracting feature {fx} "
-                        "failed. Result is not a Series.dt.", 2
+                        "failed. Result is not a Series.dt.", 2,
                     )
                     continue  # Skip if the information is not present in the format
                 elif (series == series[0]).all():
@@ -1124,6 +1125,7 @@ class FeatureSelector(TransformerMixin):
         kwargs = self.kwargs.copy()
         self._high_variance: dict[Hashable, tuple[Hashable, int]] = {}
         self._low_variance: dict[Hashable, tuple[Hashable, float]] = {}
+        self._estimator: Any = None
         self._n_features = None
 
         strategies = {
@@ -1478,6 +1480,50 @@ class FeatureSelector(TransformerMixin):
 
         return self
 
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
+        """Get output feature names for transformation.
+
+        Parameters
+        ----------
+        input_features: sequence or None, default=None
+            Only used to validate feature names with the names seen in
+            `fit`.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed feature names.
+
+        """
+        check_is_fitted(self, attributes="feature_names_in_")
+        _check_feature_names_in(self, input_features)
+
+        if self._estimator:
+            if hasattr(self._estimator, "get_feature_names_out"):
+                if self.strategy == "rfecv":
+                    return self._estimator.get_feature_names_out()
+                else:
+                    # _n_features is the minimum number of features with rfecv
+                    return self._estimator.get_feature_names_out()[:self._n_features]
+            else:
+                raise NotImplementedError(
+                    "The get_feature_names_out method is not implemented "
+                    f"for any of the advanced strategies, got {self.strategy}. "
+                    "Use a sklearn strategy (e.g., SFS, SFM or RFE) instead."
+                )
+        else:
+            return np.array(
+                [
+                    c
+                    for c in self.feature_names_in_
+                    if (
+                        c not in self._high_variance
+                        and c not in self._low_variance
+                        and c not in self.collinear_["drop"].to_numpy()
+                    )
+                ]
+            )
+
     @composed(crash, method_to_log)
     def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Transform the data.
@@ -1503,8 +1549,7 @@ class FeatureSelector(TransformerMixin):
             self._log(
                 f" --> Feature {fx} was removed due to high variance. "
                 f"Value {h_variance[0]} was the most repeated value with "
-                f"{h_variance[1]} ({h_variance[1] / len(X):.1f}%) occurrences.",
-                2,
+                f"{h_variance[1]} ({h_variance[1] / len(X):.1f}%) occurrences.", 2,
             )
             X = X.drop(columns=fx)
 
@@ -1512,8 +1557,7 @@ class FeatureSelector(TransformerMixin):
         for fx, l_variance in self._low_variance.items():
             self._log(
                 f" --> Feature {fx} was removed due to low variance. Value "
-                f"{l_variance[0]} repeated in {l_variance[1]:.1f}% of the rows.",
-                2,
+                f"{l_variance[0]} repeated in {l_variance[1]:.1f}% of the rows.", 2,
             )
             X = X.drop(columns=fx)
 
@@ -1521,7 +1565,7 @@ class FeatureSelector(TransformerMixin):
         for col in self.collinear_["drop"]:
             self._log(
                 f" --> Feature {col} was removed due to "
-                "collinearity with another feature.", 2
+                "collinearity with another feature.", 2,
             )
             X = X.drop(columns=col)
 
@@ -1532,8 +1576,7 @@ class FeatureSelector(TransformerMixin):
         elif self.strategy == "univariate":
             self._log(
                 f" --> The univariate test selected "
-                f"{self._n_features} features from the dataset.",
-                2,
+                f"{self._n_features} features from the dataset.", 2,
             )
             for n, column in enumerate(X):
                 if not self.univariate_.get_support()[n]:
@@ -1551,18 +1594,15 @@ class FeatureSelector(TransformerMixin):
                 self._log("   --> Scaling features...", 2)
                 X = self.scaler_.transform(X)
 
-            X = self.pca_.transform(X).iloc[:, : self.pca_._comps]
+            X = self._estimator.transform(X).iloc[:, :self._estimator._comps]
 
-            var = np.array(self.pca_.explained_variance_ratio_[: self._n_features])
-            self._log(f"   --> Keeping {self.pca_._comps} components.", 2)
+            var = np.array(self._estimator.explained_variance_ratio_[:self._n_features])
+            self._log(f"   --> Keeping {self._estimator._comps} components.", 2)
             self._log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy in ("sfm", "sfs", "rfe", "rfecv"):
             mask = self._estimator.get_support()
-            self._log(
-                f" --> {self.strategy} selected {sum(mask)} features from the dataset.",
-                2,
-            )
+            self._log(f" --> {self.strategy} selected {sum(mask)} features from the dataset.", 2)
 
             for n, column in enumerate(X):
                 if not mask[n]:
@@ -1578,8 +1618,7 @@ class FeatureSelector(TransformerMixin):
         else:  # Advanced strategies
             self._log(
                 f" --> {self.strategy} selected {len(self._estimator.best_feature_list)} "
-                "features from the dataset.",
-                2,
+                "features from the dataset.", 2,
             )
 
             for column in X:

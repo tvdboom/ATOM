@@ -237,6 +237,7 @@ def test_RNN():
 @patch("sktime.forecasting.statsforecast.StatsForecastMSTL")
 def test_MSTL(cls):
     """Assert that the MSTL model works when providing stl_kwargs params."""
+    cls.return_value.fit = Mock()
     cls.return_value.set_params.return_value.predict.__name__ = "predict"
 
     atom = ATOMForecaster(y_fc, random_state=1)

@@ -2244,7 +2244,7 @@ def get_col_order(
     new_columns: list[str],
     og_columns: list[str],
     col_names: list[str],
-) -> list[str]:
+) -> np.ndarray:
     """Determine column order for a dataframe.
 
     The column order is determined by the order in the original
@@ -2264,7 +2264,7 @@ def get_col_order(
 
     Returns
     -------
-    list of str
+    np.ndarray
         New column order.
 
     """
@@ -2280,7 +2280,7 @@ def get_col_order(
     # Add remaining new columns (non-derivatives)
     columns.extend([col for col in new_columns if col not in columns])
 
-    return columns
+    return np.array(columns)
 
 
 def reorder_cols(
@@ -2779,13 +2779,19 @@ def wrap_fit(f: Callable) -> Callable:
     """
 
     @wraps(f)
-    def wrapped(self, X, *args, **kwargs):
-        out = f(self, X, *args, **kwargs)
+    def wrapped(self, *args, **kwargs):
+        out = f(self, *args, **kwargs)
+
+        # For sktime estimators, we are interested in y, not X
+        X = args[0] if len(args) > 0 else kwargs["X"]
 
         # We add the attributes after running the function
         # to avoid deleting them with .reset() calls
-        BaseEstimator._check_feature_names(self, X, reset=True)
-        BaseEstimator._check_n_features(self, X, reset=True)
+        if not hasattr(self, "feature_names_in_"):
+            BaseEstimator._check_feature_names(self, X, reset=True)
+        if not hasattr(self, "n_features_in_"):
+            BaseEstimator._check_n_features(self, X, reset=True)
+
         return out
 
     return wrapped

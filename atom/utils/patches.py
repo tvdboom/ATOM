@@ -184,6 +184,12 @@ class VotingClassifier(BaseVoting, VC):
 
     """
 
+    __module__ = VC.__module__
+    __name__ = VC.__name__
+    __qualname__ = VC.__qualname__
+    __doc__ = VC.__doc__
+    __annotations__ = VC.__annotations__
+
     def __init__(
         self,
         estimators: list[tuple[str, Predictor]],
@@ -293,6 +299,12 @@ class VotingRegressor(BaseVoting, VR):
 
     """
 
+    __module__ = VR.__module__
+    __name__ = VR.__name__
+    __qualname__ = VR.__qualname__
+    __doc__ = VR.__doc__
+    __annotations__ = VR.__annotations__
+
     def __init__(
         self,
         estimators: list[tuple[str, Predictor]],
@@ -357,6 +369,12 @@ class EnsembleForecaster(BaseForecaster, EF):
 
     """
 
+    __module__ = EF.__module__
+    __name__ = EF.__name__
+    __qualname__ = EF.__qualname__
+    __doc__ = EF.__doc__
+    __annotations__ = EF.__annotations__
+
 
 class StackingForecaster(BaseForecaster, SF):
     """Ensemble of stacking forecasters.
@@ -370,3 +388,9 @@ class StackingForecaster(BaseForecaster, SF):
     parameters and attributes.
 
     """
+
+    __module__ = SF.__module__
+    __name__ = SF.__name__
+    __qualname__ = SF.__qualname__
+    __doc__ = SF.__doc__
+    __annotations__ = SF.__annotations__

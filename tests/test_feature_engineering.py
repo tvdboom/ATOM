@@ -288,6 +288,7 @@ def test_remove_high_variance(min_repeated):
     selector = FeatureSelector(min_repeated=min_repeated, max_repeated=None)
     X = selector.fit_transform(X)
     assert X.shape[1] == X_bin.shape[1]
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 @pytest.mark.parametrize("max_repeated", [400, 0.9])
@@ -298,6 +299,7 @@ def test_remove_low_variance(max_repeated):
     selector = FeatureSelector(min_repeated=None, max_repeated=max_repeated)
     X = selector.fit_transform(X)
     assert X.shape[1] == X_bin.shape[1]
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_remove_collinear_without_y():
@@ -309,7 +311,8 @@ def test_remove_collinear_without_y():
     X = selector.fit_transform(X)
     assert "valid" in X
     assert "invalid" not in X
-    assert hasattr(selector, "collinear")
+    assert hasattr(selector, "collinear_")
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_remove_collinear_with_y():
@@ -317,7 +320,8 @@ def test_remove_collinear_with_y():
     selector = FeatureSelector(max_correlation=0.9)
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] < X_bin.shape[1]
-    assert hasattr(selector, "collinear")
+    assert hasattr(selector, "collinear_")
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_solver_parameter_empty_univariate():
@@ -339,6 +343,7 @@ def test_univariate_strategy_custom_solver():
     selector = FeatureSelector("univariate", solver=f_regression, n_features=9)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 9
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_pca_strategy():
@@ -347,6 +352,7 @@ def test_pca_strategy():
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 21
     assert selector.pca_.get_params()["svd_solver"] == "auto"
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_pca_components():
@@ -387,6 +393,7 @@ def test_sfm_strategy_not_threshold():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 16
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_sfm_strategy_fitted_solver():
@@ -424,6 +431,7 @@ def test_sfs_strategy():
     )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 6
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_rfe_strategy():
@@ -449,6 +457,7 @@ def test_rfecv_strategy_before_pipeline_classification():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 3
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_rfecv_strategy_before_pipeline_regression():
@@ -462,6 +471,7 @@ def test_rfecv_strategy_before_pipeline_regression():
     )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_kwargs_parameter_threshold():
@@ -490,6 +500,18 @@ def test_kwargs_parameter_pca():
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 12
+
+
+def test_advanced_no_get_feature_names_out():
+    """Assert that get_feature_names_out is not implemented for advanced strats."""
+    selector = FeatureSelector(
+        strategy="pso",
+        solver="tree_class",
+        n_iteration=1,
+        population_size=1,
+    ).fit(X_bin, y_bin)
+    with pytest.raises(NotImplementedError, match=".*get_feature_names_out.*"):
+        selector.get_feature_names_out()
 
 
 def test_advanced_provided_validation_sets():

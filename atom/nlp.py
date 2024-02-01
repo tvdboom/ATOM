@@ -14,6 +14,7 @@ from pathlib import Path
 from string import punctuation
 
 import nltk
+import numpy as np
 import pandas as pd
 from beartype import beartype
 from nltk.collocations import (
@@ -998,7 +999,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
 
         return self
 
-    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> list[str]:
+    def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
         """Get output feature names for transformation.
 
         Parameters
@@ -1017,7 +1018,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         _check_feature_names_in(self, input_features)
 
         og_columns = [c for c in self.feature_names_in_ if c != self._corpus]
-        return og_columns + self._get_corpus_columns()
+        return np.array(og_columns + self._get_corpus_columns())
 
     @composed(crash, method_to_log)
     def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:

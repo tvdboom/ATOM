@@ -37,9 +37,9 @@ from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, EngineDataOptions,
-    EngineEstimatorOptions, EngineTuple, Estimator, Int, IntLargerEqualZero,
-    Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
-    bool_t, dataframe_t, int_t, sequence_t,
+    EngineEstimatorOptions, EngineTuple, Estimator, FeatureNamesOut, Int,
+    IntLargerEqualZero, Pandas, Sequence, Severity, Verbose, Warnings,
+    XSelector, YSelector, bool_t, dataframe_t, int_t, sequence_t,
 )
 from atom.utils.utils import (
     crash, flt, lst, n_cols, to_df, to_pandas, wrap_fit,
@@ -368,7 +368,12 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _inherit(self, obj: T_Estimator, fixed: tuple[str, ...] = ()) -> T_Estimator:
+    def _inherit(
+        self,
+        obj: T_Estimator,
+        fixed: tuple[str, ...] = (),
+        names_out: FeatureNamesOut = "one-to-one",
+    ) -> T_Estimator:
         """Inherit parameters from parent.
 
         Utility method to set the sp (seasonal period), n_jobs and
@@ -389,6 +394,16 @@ class BaseTransformer:
         fixed: tuple of str, default=()
             Fixed parameters that should not be overriden.
 
+        names_out: False, "one-to-one" or callable, default="one-to-one"
+            Function to extract the names of the output features from the
+            `transformer` after fit (see sklearn's API). This parameter
+            is ignored if the `transformer` already has a
+            `get_feature_names_out` method.
+
+            - If False: There's no `get_feature_names_out` method.
+            - If "one-to-one": The output and input names are the same.
+            - If func: Method with signature `func(self) -> sequence[str]`.
+
         Returns
         -------
         Estimator
@@ -406,11 +421,18 @@ class BaseTransformer:
                 else:
                     obj.set_params(**{p: lst(self._config.sp.sp)[0]})
 
-        if hasattr(obj, "fit") and "sklearn" not in obj.__module__:
+        # Wrap fit method to add feature_names_in_ and n_features_in_ attributes
+        if hasattr(type(obj), "fit") and "sklearn" not in obj.__module__:
             obj.__class__.fit = wrap_fit(obj.__class__.fit)  # type: ignore[method-assign]
+
         if hasattr(obj, "transform") and not hasattr(obj, "get_feature_names_out"):
-            # We assume here that the transformer does not create nor remove columns
-            obj.__class__.get_feature_names_out = OneToOneFeatureMixin.get_feature_names_out
+            # Pass method to class not instance (could be done with the
+            # descriptor protocol) because, some estimators like sktime's,
+            # delete all attributes during fit
+            if names_out == "one-to-one":
+                obj.__class__.get_feature_names_out = OneToOneFeatureMixin.get_feature_names_out
+            elif callable(names_out):
+                obj.__class__.get_feature_names_out = names_out
 
         return obj
 

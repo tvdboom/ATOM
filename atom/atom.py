@@ -51,14 +51,15 @@ from atom.training import (
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING, __version__
 from atom.utils.types import (
     Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DataFrame,
-    DiscretizerStrats, Engine, Estimator, FeatureSelectionSolvers,
-    FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
-    FloatZeroToOneInc, Index, IndexSelector, Int, IntLargerEqualZero,
-    IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
-    NJobs, NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
-    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
-    Series, SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose,
-    Warnings, XSelector, YSelector, sequence_t,
+    DiscretizerStrats, Engine, Estimator, FeatureNamesOut,
+    FeatureSelectionSolvers, FeatureSelectionStrats, FloatLargerEqualZero,
+    FloatLargerZero, FloatZeroToOneInc, Index, IndexSelector, Int,
+    IntLargerEqualZero, IntLargerTwo, IntLargerZero, MetricConstructor,
+    ModelsConstructor, NItems, NJobs, NormalizerStrats, NumericalStrats,
+    Operators, Pandas, Predictor, PrunerStrats, RowSelector, Scalar,
+    ScalerStrats, Seasonality, Sequence, Series, SPDict, TargetSelector,
+    Transformer, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
+    sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
@@ -1184,6 +1185,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         columns: ColumnSelector | None = None,
         train_only: Bool = False,
+        get_feature_names_out: FeatureNamesOut = "one-to-one",
         **fit_params,
     ) -> T_Transformer:
         """Add a transformer to the pipeline.
@@ -1209,6 +1211,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Whether to apply the transformer only on the train set or
             on the complete dataset.
 
+        get_feature_names_out: False, "one-to-one" or callable, default="one-to-one"
+            Function to extract the names of the output features from the
+            `transformer` after fit (see sklearn's API). This parameter
+            is ignored if the `transformer` already has a
+            `get_feature_names_out` method.
+
+            - If False: There's no `get_feature_names_out` method.
+            - If "one-to-one": The output and input names are the same.
+            - If func: Method with signature `func(self) -> sequence[str]`.
+
         **fit_params
             Additional keyword arguments for the transformer's fit method.
 
@@ -1219,7 +1231,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         if callable(transformer):
-            transformer_c = self._inherit(transformer())
+            transformer_c = self._inherit(transformer(), names_out=get_feature_names_out)
         else:
             transformer_c = transformer
 

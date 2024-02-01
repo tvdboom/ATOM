@@ -118,8 +118,8 @@ transform the column in place.
 ## Imputing missing values
 
 For various reasons, many real world datasets contain missing values,
-often encoded as blanks, NaNs or other placeholders. Such datasets
-however are incompatible with ATOM's models which assume that all
+often encoded as blanks, NaNs or other placeholders. Such datasets,
+however, are incompatible with ATOM's models, which assume that all
 values in an array are numerical, and that all have and hold meaning.
 The [Imputer][] class handles missing values in the dataset by either
 dropping or imputing the value. It can be accessed from atom through

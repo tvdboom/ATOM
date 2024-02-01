@@ -170,15 +170,16 @@ ignore = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports
+"baserunner.py" = ["ERA001"]  # Commented-out code
+"patches.py" = ["A003"]  # Class attribute is shadowing a Python builtin
+"types.py" = [
+    "D105",  # Missing docstring in magic method
+    "D102",  # Missing docstring in public method
+]
 "tests/*" = [
     "T20",  # print found
     "S101",  # assert called
     "PT011",  # error is too broad
-]
-"baserunner.py" = ["ERA001"]  # Commented-out code
-"types.py" = [
-    "D105",  # Missing docstring in magic method
-    "D102",  # Missing docstring in public method
 ]
 
 [tool.ruff.pydocstyle]

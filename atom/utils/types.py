@@ -329,6 +329,7 @@ Legend: TypeAlias = Literal[
 # Others
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
 SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
+FeatureNamesOut: TypeAlias = Callable[[], Sequence[str]] | Literal["one-to-one", False]
 HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
 Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]
 PACFMethods: TypeAlias = Literal[
