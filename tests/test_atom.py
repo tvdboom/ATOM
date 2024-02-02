@@ -629,15 +629,15 @@ def test_add_keep_column_names():
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer keeps rows equal
-    atom.add(DummyTransformer(strategy="equal"))
+    atom.add(DummyTransformer(strategy="equal"), get_feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer drops rows
-    atom.add(DummyTransformer(strategy="drop"))
+    atom.add(DummyTransformer(strategy="drop"), get_feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x2", "x3"]
 
     # Transformer adds a new column
-    atom.add(DummyTransformer(strategy="add"), columns="!x2")
+    atom.add(DummyTransformer(strategy="add"), columns="!x2", get_feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x2", "x3", "x4"]
 
 

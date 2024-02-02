@@ -251,15 +251,7 @@ class BaseTransformer:
     @logger.setter
     @beartype
     def logger(self, value: str | Path | Logger | None):
-        external_loggers = [
-            "dagshub",
-            "mlflow",
-            "optuna",
-            "ray",
-            "modin",
-            "featuretools",
-            "prophet",
-        ]
+        external_loggers = ["dagshub", "mlflow", "optuna", "ray", "modin", "featuretools"]
 
         # Clear existing handlers for external loggers
         for name in external_loggers:
@@ -368,23 +360,58 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _inherit(
-        self,
-        obj: T_Estimator,
-        fixed: tuple[str, ...] = (),
-        names_out: FeatureNamesOut = "one-to-one",
-    ) -> T_Estimator:
+    @staticmethod
+    def _wrap_class(cls: T_Estimator, names_out: FeatureNamesOut = "one-to-one") -> T_Estimator:
+        """Add functionality to a class to adhere to sklearn's API.
+
+        The `fit` method of non-sklearn objects is wrapped to always add
+        the `n_features_in_` and `feature_names_in_` attributes, and the
+        `get-feature_names_out` method is added to transformers that
+        don't have it already.
+
+        Parameters
+        ----------
+        cls: Estimator class
+            Class to wrap.
+
+        names_out: False, "one-to-one" or callable, default="one-to-one"
+            Function to extract the names of the output features from the
+            `transformer` after fit (see sklearn's API). This parameter
+            is ignored if the `transformer` already has a
+            `get_feature_names_out` method.
+
+            - If None: There's no `get_feature_names_out` method.
+            - If "one-to-one": The output and input names are the same.
+            - If func: Method with signature `func(self, ...) -> sequence[str]`.
+
+        Returns
+        -------
+        Estimator class
+            Class with wrapped fit method.
+
+        """
+        # Only apply changes to non-sklearn classes
+        if not cls.__module__.startswith("sklearn."):
+            if hasattr(cls, "fit"):
+                cls.fit = wrap_fit(cls.fit)  # type: ignore[method-assign]
+
+            if hasattr(cls, "transform") and not hasattr(cls, "get_feature_names_out"):
+                # Pass method to class not instance because some estimators,
+                # like sktime's, delete all attributes during fit
+                if names_out == "one-to-one":
+                    cls.get_feature_names_out = OneToOneFeatureMixin.get_feature_names_out
+                elif callable(names_out):
+                    cls.get_feature_names_out = names_out
+
+        return cls
+
+    def _inherit(self, obj: T_Estimator, fixed: tuple[str, ...] = ()) -> T_Estimator:
         """Inherit parameters from parent.
 
         Utility method to set the sp (seasonal period), n_jobs and
         random_state parameters of an estimator (if available) equal
         to that of this instance. If `obj` is a meta-estimator, it
         also adjusts the parameters of the base estimator.
-
-        Additionally, the `fit` method of non-sklearn objects is wrapped
-        to always add the `n_features_in_` and `feature_names_in_`
-        attributes, and the `get-feature_names_out` method is added to
-        transformers that don't have it already.
 
         Parameters
         ----------
@@ -393,16 +420,6 @@ class BaseTransformer:
 
         fixed: tuple of str, default=()
             Fixed parameters that should not be overriden.
-
-        names_out: False, "one-to-one" or callable, default="one-to-one"
-            Function to extract the names of the output features from the
-            `transformer` after fit (see sklearn's API). This parameter
-            is ignored if the `transformer` already has a
-            `get_feature_names_out` method.
-
-            - If False: There's no `get_feature_names_out` method.
-            - If "one-to-one": The output and input names are the same.
-            - If func: Method with signature `func(self) -> sequence[str]`.
 
         Returns
         -------
@@ -420,19 +437,6 @@ class BaseTransformer:
                     obj.set_params(**{p: self._config.sp.sp})
                 else:
                     obj.set_params(**{p: lst(self._config.sp.sp)[0]})
-
-        # Wrap fit method to add feature_names_in_ and n_features_in_ attributes
-        if hasattr(type(obj), "fit") and "sklearn" not in obj.__module__:
-            obj.__class__.fit = wrap_fit(obj.__class__.fit)  # type: ignore[method-assign]
-
-        if hasattr(obj, "transform") and not hasattr(obj, "get_feature_names_out"):
-            # Pass method to class not instance (could be done with the
-            # descriptor protocol) because, some estimators like sktime's,
-            # delete all attributes during fit
-            if names_out == "one-to-one":
-                obj.__class__.get_feature_names_out = OneToOneFeatureMixin.get_feature_names_out
-            elif callable(names_out):
-                obj.__class__.get_feature_names_out = names_out
 
         return obj
 
@@ -461,7 +465,7 @@ class BaseTransformer:
         except (ModuleNotFoundError, AttributeError):
             mod = import_module(f"sklearn.{module}")
 
-        return self._inherit(getattr(mod, name))
+        return self._wrap_class(getattr(mod, name))
 
     @staticmethod
     @overload
@@ -656,6 +660,6 @@ class BaseTransformer:
         elif severity == "info" and self.verbose >= level:
             print(msg)  # noqa: T201
 
-        if self.logger:
+        if getattr(self, "logger", None):
             for text in str(msg).split("\n"):
                 getattr(self.logger, severity)(str(text))

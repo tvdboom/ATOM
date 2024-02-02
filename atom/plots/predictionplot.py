@@ -369,7 +369,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis2,
                 )
 
-        self._draw_straight_line((pred, frac_pos), y="diagonal", xaxis=xaxis2, yaxis=yaxis)
+        self._draw_diagonal_line((pred, frac_pos), xaxis=xaxis2, yaxis=yaxis)
 
         fig.update_layout(
             {
@@ -845,7 +845,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line((y_true, y_pred), y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_diagonal_line((y_true, y_pred), xaxis=xaxis, yaxis=yaxis)
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
@@ -1326,15 +1326,20 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             yaxis=yaxis,
         )
 
-        # Draw horizontal reference line for residuals
-        self._draw_straight_line((x, y_true), y=0, xaxis=xaxis2, yaxis=yaxis2)
-
-        fig.update_layout({f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}"})
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}",
+                f"yaxis{yaxis2[1:]}": {
+                    "zerolinecolor": "rgba(255, 255, 255, 0.5)",
+                    "zerolinewidth": 1,
+                },
+            }
+        )
 
         self._plot(
             ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
             xlabel=self.branch.dataset.index.name or "index",
-            ylabel="Residuals",
+            ylabel="Residual",
         )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -1458,7 +1463,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_diagonal_line((x, y), xaxis=xaxis, yaxis=yaxis)
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
@@ -1715,7 +1720,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        self._get_figure()
+        fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -1726,7 +1731,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
                 self._draw_line(
                     x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
-                    y=(y := np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum() / x),
+                    y=np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum() / x,
                     parent=m.name,
                     child=child,
                     legend=legend,
@@ -1734,7 +1739,17 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line((x, y), y=1, xaxis=xaxis, yaxis=yaxis)
+        fig.add_shape(
+            type="line",
+            x0=0,
+            x1=1,
+            y0=1,
+            y1=1,
+            xref=xaxis,
+            yref=yaxis,
+            line={"width": 1, "color": "black"},
+            opacity=0.5,
+        )
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
@@ -1930,7 +1945,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
-        self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_diagonal_line((x, y), xaxis=xaxis, yaxis=yaxis)
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(
@@ -2770,7 +2785,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         """
         models_c = self._get_plot_models(models)
 
-        self._get_figure()
+        fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         for m in models_c:
@@ -2792,11 +2807,16 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line(
-            values=(rec, prec),
-            y=sum(m.branch.y_test) / len(m.branch.y_test),
-            xaxis=xaxis,
-            yaxis=yaxis,
+        fig.add_shape(
+            type="line",
+            x0=0,
+            x1=1,
+            y0=(y := sum(m.branch.y_test) / len(m.branch.y_test)),
+            y1=y,
+            xref=xaxis,
+            yref=yaxis,
+            line={"width": 1, "color": "black"},
+            opacity=0.5,
         )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -3084,9 +3104,16 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line((y_true, res), y=0, xaxis=xaxis, yaxis=yaxis)
-
-        fig.update_layout({f"yaxis{xaxis[1:]}_showgrid": True, "barmode": "overlay"})
+        fig.update_layout(
+            {
+                f"yaxis{xaxis[1:]}_showgrid": True,
+                f"yaxis{yaxis2[1:]}": {
+                    "zerolinecolor": "rgba(255, 255, 255, 0.5)",
+                    "zerolinewidth": 1,
+                },
+                "barmode": "overlay",
+            }
+        )
 
         self._plot(
             ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
@@ -3098,7 +3125,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
-            ylabel="Residuals",
+            ylabel="Residual",
             xlabel="True value",
             title=title,
             legend=legend,
@@ -3390,7 +3417,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line((fpr, tpr), y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_diagonal_line((fpr, tpr), xaxis=xaxis, yaxis=yaxis)
 
         BasePlot._fig.used_models.extend(models_c)
         return self._plot(

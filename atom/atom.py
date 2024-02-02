@@ -1211,15 +1211,15 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Whether to apply the transformer only on the train set or
             on the complete dataset.
 
-        get_feature_names_out: False, "one-to-one" or callable, default="one-to-one"
+        get_feature_names_out: "one-to-one", callable or None, default="one-to-one"
             Function to extract the names of the output features from the
             `transformer` after fit (see sklearn's API). This parameter
             is ignored if the `transformer` already has a
             `get_feature_names_out` method.
 
-            - If False: There's no `get_feature_names_out` method.
+            - If None: There's no `get_feature_names_out` method.
             - If "one-to-one": The output and input names are the same.
-            - If func: Method with signature `func(self) -> sequence[str]`.
+            - If func: Method with signature `func(self, ...) -> sequence[str]`.
 
         **fit_params
             Additional keyword arguments for the transformer's fit method.
@@ -1231,8 +1231,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         if callable(transformer):
-            transformer_c = self._inherit(transformer(), names_out=get_feature_names_out)
+            est_class = self._wrap_class(transformer, names_out=get_feature_names_out)
+            transformer_c = self._inherit(est_class())
         else:
+            self._wrap_class(transformer.__class__, names_out=get_feature_names_out)
             transformer_c = transformer
 
         if any(m.branch is self.branch for m in self._models):
@@ -1356,6 +1358,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         columns: ColumnSelector | None = None,
         train_only: Bool = False,
+        get_feature_names_out: FeatureNamesOut = "one-to-one",
         **fit_params,
     ):
         """Add a transformer to the pipeline.
@@ -1411,6 +1414,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             on the complete dataset. Note that if True, the transformation
             is skipped when making predictions on new data.
 
+        get_feature_names_out: "one-to-one", callable or None, default="one-to-one"
+            Function to extract the names of the output features from the
+            `transformer` after fit (see sklearn's API). This parameter
+            is ignored if the `transformer` already has a
+            `get_feature_names_out` method.
+
+            - If None: There's no `get_feature_names_out` method.
+            - If "one-to-one": The output and input names are the same.
+            - If func: Method with signature `func(self, ...) -> sequence[str]`.
+
         **fit_params
             Additional keyword arguments for the transformer's fit method.
 
@@ -1423,6 +1436,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     transformer=est,
                     columns=columns,
                     train_only=train_only,
+                    get_feature_names_out=get_feature_names_out,
                     **fit_params,
                 )
         else:
@@ -1431,6 +1445,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 transformer=transformer,
                 columns=columns,
                 train_only=train_only,
+                get_feature_names_out=get_feature_names_out,
                 **fit_params,
             )
 

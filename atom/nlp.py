@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from logging import Logger
-from pathlib import Path
 from string import punctuation
 
 import nltk
@@ -110,11 +108,6 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     See Also
     --------
     atom.nlp:TextNormalizer
@@ -184,9 +177,8 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         regex_number: str | None = None,
         drop_punctuation: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(verbose=verbose)
         self.decode = decode
         self.lower_case = lower_case
         self.drop_email = drop_email
@@ -370,11 +362,6 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     Attributes
     ----------
     feature_names_in_: np.ndarray
@@ -450,9 +437,8 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         stem: Bool | str = False,
         lemmatize: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(verbose=verbose)
         self.stopwords = stopwords
         self.custom_stopwords = custom_stopwords
         self.stem = stem
@@ -593,11 +579,6 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     Attributes
     ----------
     bigrams_: pd.DataFrame
@@ -677,9 +658,8 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         quadgram_freq: FloatLargerZero | None = None,
         *,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(verbose=verbose)
         self.bigram_freq = bigram_freq
         self.trigram_freq = trigram_freq
         self.quadgram_freq = quadgram_freq
@@ -838,11 +818,6 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     **kwargs
         Additional keyword arguments for the `strategy` estimator.
 
@@ -922,10 +897,9 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
-        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs

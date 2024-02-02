@@ -17,10 +17,10 @@ class CustomModel(BaseModel):
     def __init__(self, **kwargs):
         # Assign the estimator and store the provided parameters
         if callable(est := kwargs.pop("estimator")):
-            self._est = est
+            self._est = self._wrap_class(est)
             self._params = {}
         else:
-            self._est = est.__class__
+            self._est = self._wrap_class(est.__class__)
             self._params = est.get_params()
 
         if hasattr(est, "name"):

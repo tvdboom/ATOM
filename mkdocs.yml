@@ -305,10 +305,11 @@ nav:
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - In-training validation: examples/in_training_validation.ipynb
         - Memory considerations: examples/memory_considerations.ipynb
+        - Multi-metric runs: examples/multi_metric.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multilabel classification: examples/multilabel_classification.ipynb
         - Multioutput regression: examples/multioutput_regression.ipynb
-        - Multi-metric runs: examples/multi_metric.ipynb
+        - Multivariate forecast: examples/multivariate_forecast.ipynb
         - NLP: examples/nlp.ipynb
         - Pruning: examples/pruning.ipynb
         - Ray backend: examples/ray_backend.ipynb

@@ -185,6 +185,52 @@ def test_device_id_invalid():
 
 # Test _inherit ==================================================== >>
 
+def test_wrap_class_fit():
+    """Assert that sklearn attributes are added to the estimator."""
+    base = BaseTransformer(random_state=1)
+
+    imputer = base._wrap_class(Imputer)()
+    assert not hasattr(imputer, "feature_names_in_")
+    assert not hasattr(imputer, "n_features_in_")
+
+    imputer.fit(pd.DataFrame(y_fc))
+    assert hasattr(imputer, "feature_names_in_")
+    assert hasattr(imputer, "n_features_in_")
+
+    # Check there is no double wrapping of the fit method
+    imputer = base._wrap_class(Imputer)()
+    assert hasattr(imputer.fit, "__wrapped__")
+    assert not hasattr(imputer.fit.__wrapped__, "__wrapped__")
+
+
+def test_wrap_get_feature_names_out_one_to_one():
+    """Assert that get_feature_names_out is added to the estimator."""
+    # Delete method since attached to class in previous test
+    if hasattr(Imputer, "get_feature_names_out"):
+        delattr(Imputer, "get_feature_names_out")
+
+    base = BaseTransformer(random_state=1)
+
+    base._wrap_class(Imputer, names_out=False)()
+    assert not hasattr(Imputer, "get_feature_names_out")
+
+    imputer = base._wrap_class(Imputer, names_out="one-to-one")()
+    imputer.fit(pd.DataFrame(y_fc))
+    assert list(imputer.get_feature_names_out()) == [y_fc.name]
+
+
+def test_inherit_get_feature_names_out_callable():
+    """Assert that get_feature_names_out is added to the estimator."""
+    # Delete method since attached to class in previous test
+    if hasattr(Imputer, "get_feature_names_out"):
+        delattr(Imputer, "get_feature_names_out")
+
+    base = BaseTransformer(random_state=1)
+
+    imputer = base._wrap_class(Imputer, names_out=lambda _: ["test"])()
+    assert list(imputer.get_feature_names_out()) == ["test"]
+
+
 def test_inherit():
     """Assert that the inherit method passes the parameters correctly."""
     base = BaseTransformer(n_jobs=2, random_state=2)
@@ -213,47 +259,6 @@ def test_inherit_sp():
     )
     assert atom.bats.estimator.get_params()["sp"] == 12  # Single seasonality
     assert atom.tbats.estimator.get_params()["sp"] == [12, 24]  # Multiple seasonality
-
-
-def test_inherit_attributes():
-    """Assert that sklearn attributes are added to the estimator."""
-    imputer = Imputer().fit(y_fc)
-    assert not hasattr(imputer, "feature_names_in_")
-    assert not hasattr(imputer, "n_features_in_")
-
-    imputer = BaseTransformer(random_state=1)._inherit(imputer)
-    imputer.fit(pd.DataFrame(y_fc))
-    assert hasattr(imputer, "feature_names_in_")
-    assert hasattr(imputer, "n_features_in_")
-
-
-def test_inherit_get_feature_names_out_one_to_one():
-    """Assert that get_feature_names_out is added to the estimator."""
-    # Delete method since attached to class in previous test
-    if hasattr(Imputer, "get_feature_names_out"):
-        delattr(Imputer, "get_feature_names_out")
-    imputer = Imputer().fit(pd.DataFrame(y_fc))
-
-    base = BaseTransformer(random_state=1)
-    imputer = base._inherit(imputer, names_out=False)
-    imputer.fit(pd.DataFrame(y_fc))
-    assert not hasattr(imputer, "get_feature_names_out")
-
-    imputer = base._inherit(imputer, names_out="one-to-one")
-    imputer.fit(pd.DataFrame(y_fc))
-    assert list(imputer.get_feature_names_out()) == [y_fc.name]
-
-
-def test_inherit_get_feature_names_out_callable():
-    """Assert that get_feature_names_out is added to the estimator."""
-    # Delete method since attached to class in previous test
-    if hasattr(Imputer, "get_feature_names_out"):
-        delattr(Imputer, "get_feature_names_out")
-    imputer = Imputer().fit(pd.DataFrame(y_fc))
-
-    base = BaseTransformer(random_state=1)
-    imputer = base._inherit(imputer, names_out=lambda _: ["test"])
-    assert list(imputer.get_feature_names_out()) == ["test"]
 
 
 # Test _get_est_class ============================================== >>

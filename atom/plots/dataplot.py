@@ -66,11 +66,10 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         """Plot the autocorrelation function.
 
         The autocorrelation function (ACF) measures the correlation
-        between a time series and lagged versions of itself. It's
-        useful, for example, to identify the order of an autoregressive
-        model. The transparent band represents the 95% confidence
-        interval. This plot is only available for [forecast][time-series]
-        tasks.
+        between a time series and lagged versions of itself. ACF can
+        help to identify the order of the moving average (MA) process
+        in a time series model. This plot is only available for
+        [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -215,7 +214,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
             xlabel="Lag",
-            ylabel="Autocorrelation",
+            ylabel="Correlation",
             xlim=(-1, nlags + 1),
             title=title,
             legend=legend,
@@ -778,7 +777,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         self._plot(ax=(f"xaxis{xaxis3[1:]}", f"yaxis{yaxis3[1:]}"), ylabel="Seasonal")
         self._plot(
             ax=(f"xaxis{xaxis4[1:]}", f"yaxis{yaxis4[1:]}"),
-            ylabel="Residuals",
+            ylabel="Residual",
             xlabel=self.branch.dataset.index.name or "index",
         )
 
@@ -1314,9 +1313,12 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         The partial autocorrelation function (PACF) measures the
         correlation between a time series and lagged versions of
-        itself. It's useful, for example, to identify the order of
-        an autoregressive model. This plot is only available for
-        [forecast][time-series] tasks.
+        itself, after removing the effects of shorter lagged values.
+        In other words, it represents the correlation between two
+        variables while controlling for the influence of other
+        variables. PACF can help to identify the order of the
+        autoregressive (AR) process in a time series model. This
+        plot is only available for [forecast][time-series] tasks.
 
         Parameters
         ----------
@@ -1479,7 +1481,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
             xlabel="Lag",
-            ylabel="Partial autocorrelation",
+            ylabel="Correlation",
             xlim=(-1, nlags + 1),
             title=title,
             legend=legend,
@@ -1841,7 +1843,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        self._draw_straight_line((x, y), y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_diagonal_line((x, y), xaxis=xaxis, yaxis=yaxis)
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),

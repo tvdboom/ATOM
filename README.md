@@ -94,7 +94,7 @@ Example steps taken by ATOM's pipeline:
 -------------------------
 
 * [Multiple data cleaning and feature engineering classes](https://tvdboom.github.io/ATOM/latest/user_guide/data_cleaning/)
-* [55+ classification, regression and forecast models](https://tvdboom.github.io/ATOM/latest/user_guide/models/) to choose from
+* [55+ classification, regression and forecast models to choose from](https://tvdboom.github.io/ATOM/latest/user_guide/models/)
 * [Possibility to train multiple models with one line of code](https://tvdboom.github.io/ATOM/latest/getting_started/#usage)
 * [Fast implementation of hyperparameter tuning](https://tvdboom.github.io/ATOM/latest/user_guide/training/#hyperparameter-tuning)
 * [Easy way to compare the results from different models](https://tvdboom.github.io/ATOM/latest/user_guide/training/)

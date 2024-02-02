@@ -8,8 +8,6 @@ Description: Module containing the feature engineering transformers.
 from __future__ import annotations
 
 from collections.abc import Hashable
-from logging import Logger
-from pathlib import Path
 from random import sample
 from typing import Any, Literal
 
@@ -104,11 +102,6 @@ class FeatureExtractor(TransformerMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     Attributes
     ----------
     feature_names_in_: np.ndarray
@@ -172,9 +165,8 @@ class FeatureExtractor(TransformerMixin):
         drop_columns: Bool = True,
         from_index: Bool = False,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(verbose=verbose)
         self.fmt = fmt
         self.features = features
         self.encoding_type = encoding_type
@@ -345,11 +337,6 @@ class FeatureGenerator(TransformerMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -424,16 +411,10 @@ class FeatureGenerator(TransformerMixin):
         operators: Operators | Sequence[Operators] | None = None,
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            logger=logger,
-            random_state=random_state,
-        )
+        super().__init__(n_jobs=n_jobs, verbose=verbose, random_state=random_state)
         self.strategy = strategy
         self.n_features = n_features
         self.operators = operators
@@ -643,11 +624,6 @@ class FeatureGrouper(TransformerMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     Attributes
     ----------
     feature_names_in_: np.ndarray
@@ -699,9 +675,8 @@ class FeatureGrouper(TransformerMixin):
         operators: str | Sequence[str] | None = None,
         drop_columns: Bool = True,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(verbose=verbose)
         self.groups = groups
         self.operators = operators
         self.drop_columns = drop_columns
@@ -963,11 +938,6 @@ class FeatureSelector(TransformerMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -1047,7 +1017,6 @@ class FeatureSelector(TransformerMixin):
         engine: Engine = None,
         backend: Backend = "loky",
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
@@ -1057,7 +1026,6 @@ class FeatureSelector(TransformerMixin):
             engine=engine,
             backend=backend,
             verbose=verbose,
-            logger=logger,
             random_state=random_state,
         )
         self.strategy = strategy
@@ -1462,7 +1430,6 @@ class FeatureSelector(TransformerMixin):
             self._estimator = strategies[self.strategy](
                 objective_function=kwargs.pop("objective_function", objective_function),
                 minimize=kwargs.pop("minimize", False),
-                logger=self.logger,
                 **kwargs,
             )
 

@@ -10,8 +10,6 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime as dt
-from datetime import timedelta
 from pathlib import Path
 from typing import Any, ClassVar, Literal, overload
 
@@ -450,27 +448,17 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         )
 
     @staticmethod
-    def _draw_straight_line(
-        values: tuple,
-        y: Scalar | Literal["diagonal"],
-        xaxis: str,
-        yaxis: str,
-    ):
-        """Draw a line across the axis.
+    def _draw_diagonal_line(values: tuple, xaxis: str, yaxis: str):
+        """Draw a diagonal line across the axis.
 
-        The line can be either horizontal or diagonal. The line should
-        be used as a reference. It's not added to the legend and doesn't
-        show any information on hover.
+        The line should be used as a reference. It's not added to the
+        legend and doesn't show any information on hover.
 
         Parameters
         ----------
         values: tuple of sequence
             Values of the data points required to determine the ranges in
             format (x, y).
-
-        y: int, float or str, default = "diagonal"
-            Coordinates on the y-axis. If a value, draw a horizontal line
-            at that value. If "diagonal", draw a diagonal line from x.
 
         xaxis: str
             Name of the x-axis to draw in.
@@ -480,28 +468,21 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
         """
         # Get the ranges with a 5% margin
-        x_min, x_max = min(values[0]), max(values[0])
         y_min, y_max = min(values[1]), max(values[1])
-        if np.issubdtype(type(x_min), np.number):
-            x_min *= 0.95
-            x_max *= 1.05
+        if np.issubdtype(type(y_min), np.number):
             y_min *= 0.95
             y_max *= 1.05
-        elif isinstance(x_min, dt):
-            x_min -= timedelta(seconds=(x_max - x_min).total_seconds() * 0.05)
-            x_max += timedelta(seconds=(x_max - x_min).total_seconds() * 0.05)
 
         BasePlot._fig.figure.add_shape(
             type="line",
-            x0=y_min if y == "diagonal" else x_min,
-            x1=y_max if y == "diagonal" else x_max,
-            y0=y_min if y == "diagonal" else y,
-            y1=y_max if y == "diagonal" else y,
+            x0=y_min,
+            x1=y_max,
+            y0=y_min,
+            y1=y_max,
             xref=xaxis,
             yref=yaxis,
-            line={"width": 1 if y != 0 else 2, "color": "black", "dash": "dash"},
-            opacity=0.6,
-            layer="below" if y != 0 else "above",
+            line={"width": 1, "color": "black"},
+            opacity=0.5,
         )
 
     def _plot(

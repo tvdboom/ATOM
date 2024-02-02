@@ -2744,7 +2744,7 @@ def crash(
 
         except Exception as ex:
             # If exception is not the same as last, write to log
-            if ex is not cache["last_exception"] and args[0].logger:
+            if ex is not cache["last_exception"] and getattr(args[0], "logger", None):
                 cache["last_exception"] = ex
                 args[0].logger.exception("Exception encountered:")
 
@@ -2758,7 +2758,7 @@ def method_to_log(f: Callable) -> Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs) -> Any:
-        if args[0].logger:
+        if getattr(args[0], "logger", None):
             if f.__name__ != "__init__":
                 args[0].logger.info("")
             args[0].logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
@@ -2783,16 +2783,23 @@ def wrap_fit(f: Callable) -> Callable:
         out = f(self, *args, **kwargs)
 
         # For sktime estimators, we are interested in y, not X
-        X = args[0] if len(args) > 0 else kwargs["X"]
+        X = args[0] if len(args) > 0 else kwargs.get("X")
 
         # We add the attributes after running the function
         # to avoid deleting them with .reset() calls
-        if not hasattr(self, "feature_names_in_"):
-            BaseEstimator._check_feature_names(self, X, reset=True)
-        if not hasattr(self, "n_features_in_"):
-            BaseEstimator._check_n_features(self, X, reset=True)
+        if X is not None:
+            if not hasattr(self, "feature_names_in_"):
+                BaseEstimator._check_feature_names(self, X, reset=True)
+            if not hasattr(self, "n_features_in_"):
+                BaseEstimator._check_n_features(self, X, reset=True)
 
         return out
+
+    # Avoid double wrapping
+    if getattr(f, "_fit_wrapped", False):
+        return f
+    else:
+        wrapped._fit_wrapped = True
 
     return wrapped
 

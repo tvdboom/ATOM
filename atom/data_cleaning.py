@@ -10,8 +10,6 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from collections.abc import Hashable
-from logging import Logger
-from pathlib import Path
 from typing import Any, Literal, TypeVar
 from unittest.mock import patch
 
@@ -285,11 +283,6 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -364,16 +357,10 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         *,
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            logger=logger,
-            random_state=random_state,
-        )
+        super().__init__(n_jobs=n_jobs, verbose=verbose, random_state=random_state)
         self.strategy = strategy
         self.kwargs = kwargs
 
@@ -662,11 +649,6 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     Attributes
     ----------
     missing_: list
@@ -741,9 +723,8 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
     ):
-        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose)
         self.convert_dtypes = convert_dtypes
         self.drop_dtypes = drop_dtypes
         self.drop_chars = drop_chars
@@ -1105,11 +1086,6 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -1170,15 +1146,9 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         seasonal_model: SeasonalityModels = "additive",
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
     ):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            logger=logger,
-            random_state=random_state,
-        )
+        super().__init__(n_jobs=n_jobs, verbose=verbose, random_state=random_state)
         self.model = model
         self.trend_model = trend_model
         self.test_seasonality = test_seasonality
@@ -1390,11 +1360,6 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`. Only
@@ -1467,14 +1432,12 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
             device=device,
             engine=engine,
             verbose=verbose,
-            logger=logger,
             random_state=random_state,
         )
         self.strategy = strategy
@@ -1714,11 +1677,6 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     **kwargs
         Additional keyword arguments for the `strategy` estimator.
 
@@ -1793,10 +1751,9 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         value: str = "infrequent",
         n_jobs: NJobs = 1,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
-        super().__init__(n_jobs=n_jobs, verbose=verbose, logger=logger)
+        super().__init__(n_jobs=n_jobs, verbose=verbose)
         self.strategy = strategy
         self.max_onehot = max_onehot
         self.ordinal = ordinal
@@ -2116,11 +2073,6 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`. Only
@@ -2202,7 +2154,6 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
     ):
         super().__init__(
@@ -2210,7 +2161,6 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             device=device,
             engine=engine,
             verbose=verbose,
-            logger=logger,
             random_state=random_state,
         )
         self.strat_num = strat_num
@@ -2286,12 +2236,10 @@ class Imputer(TransformerMixin, _SetOutputMixin):
                 num_imputer = "passthrough"
             else:
                 # Inherit sklearn's attributes and methods
-                num_imputer = self._inherit(
-                    sktimeImputer(
-                        method=self.strat_num,
-                        missing_values=[pd.NA],
-                        random_state=self.random_state,
-                    )
+                num_imputer = self._wrap_class(sktimeImputer)(
+                    method=self.strat_num,
+                    missing_values=[pd.NA],
+                    random_state=self.random_state,
                 )
         else:
             num_imputer = SimpleImputer(
@@ -2548,11 +2496,6 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 0 to not print anything.
         - 1 to print basic information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     random_state: int or None, default=None
         Seed used by the quantile strategy. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -2621,7 +2564,6 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
     ):
@@ -2629,7 +2571,6 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             device=device,
             engine=engine,
             verbose=verbose,
-            logger=logger,
             random_state=random_state,
         )
         self.strategy = strategy
@@ -2830,11 +2771,6 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     **kwargs
         Additional keyword arguments for the `strategy` estimator. If
         sequence of strategies, the params should be provided in a dict
@@ -2906,10 +2842,9 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
-        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose)
         self.strategy = strategy
         self.method = method
         self.max_sigma = max_sigma
@@ -3124,11 +3059,6 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         - 0 to not print anything.
         - 1 to print basic information.
 
-    logger: str, Logger or None, default=None
-        - If None: Logging isn't used.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
     **kwargs
         Additional keyword arguments for the `strategy` estimator.
 
@@ -3192,10 +3122,9 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         device: str = "cpu",
         engine: Engine = None,
         verbose: Verbose = 0,
-        logger: str | Path | Logger | None = None,
         **kwargs,
     ):
-        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose)
         self.strategy = strategy
         self.include_binary = include_binary
         self.kwargs = kwargs
