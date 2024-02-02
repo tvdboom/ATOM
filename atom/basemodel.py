@@ -322,11 +322,11 @@ class BaseModel(RunnerPlot):
 
         # Try engine, else import from the default module
         try:
-            module = import_module(f"{self.engine.estimator}.{module.split('.', 1)[1:]}")
+            mod = import_module(f"{self.engine.estimator}.{module.split('.', 1)[1]}")
         except (ModuleNotFoundError, AttributeError):
-            module = import_module(module)
+            mod = import_module(module)
 
-        return getattr(module, est_name)
+        return self._wrap_class(getattr(mod, est_name))
 
     @property
     def _shap(self) -> ShapExplanation:

@@ -864,8 +864,15 @@ def test_evaluate(metric):
     """Assert that the evaluate method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.evaluate)
-    atom.run(["Tree", "SVM"])
-    assert isinstance(atom.evaluate(metric), pd.DataFrame)
+    atom.run("Tree")
+    assert isinstance(atom.evaluate(metric, as_frame=True), pd.DataFrame)
+
+
+def test_evaluate_returns_styler():
+    """Assert that the evaluate method returns a pandas styler."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["Tree", "LR"])
+    assert isinstance(atom.evaluate(), pd.io.formats.style.Styler)
 
 
 def test_export_pipeline_same_transformer():

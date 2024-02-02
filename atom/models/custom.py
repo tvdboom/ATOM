@@ -5,6 +5,7 @@ Description: Module containing the create_custom_model function.
 
 """
 
+from functools import cached_property
 from typing import Any
 
 from atom.basemodel import BaseModel
@@ -17,10 +18,10 @@ class CustomModel(BaseModel):
     def __init__(self, **kwargs):
         # Assign the estimator and store the provided parameters
         if callable(est := kwargs.pop("estimator")):
-            self._est = self._wrap_class(est)
+            self._est = est
             self._params = {}
         else:
-            self._est = self._wrap_class(est.__class__)
+            self._est = est.__class__
             self._params = est.get_params()
 
         if hasattr(est, "name"):
@@ -55,10 +56,10 @@ class CustomModel(BaseModel):
         """Return the estimator's class name."""
         return self._est_class.__name__
 
-    @property
+    @cached_property
     def _est_class(self) -> type[Predictor]:
         """Return the estimator's class."""
-        return self._est
+        return self._wrap_class(self._est)
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.

@@ -46,7 +46,7 @@ regardless of the engine parameter.
     one to use, the first one is used by default.
 
 !!! example
-    [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)
+    [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1gbTMqTt5sDuP3kBLy1-_U6Z2uZaSm43O?authuser=0#scrollTo=FEB9_7R7Wq4h&forceEdit=true&sandboxMode=true)
     
     Train a model on a GPU yourself using Google Colab. Just click on the
     badge above and run the notebook! Make sure to choose the GPU runtime

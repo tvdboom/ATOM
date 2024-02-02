@@ -1022,7 +1022,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         rows: RowSelector = "test",
         *,
         threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-    ) -> pd.DataFrame:
+        as_frame: Bool = False,
+    ) -> Any | pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
         Parameters
@@ -1048,15 +1049,27 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             The same threshold per target column is applied to all
             models.
 
+        as_frame: bool, default=False
+            Whether to return the scores as a pd.DataFrame. If False, a
+            `pandas.io.formats.style.Styler` object is returned, which
+            has a `_repr_html_` method defined, so it is rendered
+            automatically in a notebook. The highest score per metric
+            is highlighted.
+
         Returns
         -------
-        pd.DataFrame
+        [Styler][] or pd.DataFrame
             Scores of the models.
 
         """
         check_is_fitted(self)
 
-        return pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
+        df = pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
+
+        if len(self._models) == 1 or as_frame:
+            return df
+        else:
+            return df.style.highlight_max(props="background-color: lightgreen")
 
     @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:

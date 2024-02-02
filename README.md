@@ -127,7 +127,7 @@ or via `conda`:
 ⚡ Usage
 -------
 
-[![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/getting_started.ipynb)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1H8pL-iAICeaKqWQxWsb6fN9zPNZK722s#scrollTo=LrtjgDQFvU2z&forceEdit=true&sandboxMode=true)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD)
 
 ATOM contains a variety of classes and functions to perform data cleaning,
@@ -186,9 +186,9 @@ atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
 And lastly, analyze the results.
 
 ```python
-atom.evaluate()
+print(atom.evaluate())
 
-atom.plot_lift()
+atom.plot_roc()
 ```
 
 <br><br>

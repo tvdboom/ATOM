@@ -235,7 +235,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         plot_interval: Bool = False,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper right",
-        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        figsize: tuple[IntLargerZero, IntLargerZero] | None = None,
         filename: str | Path | None = None,
         display: Bool | None = True,
     ) -> go.Figure | None:
@@ -1010,20 +1010,21 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     ) -> go.Figure | None:
         """Plot the fourier transformation of a time series.
 
-        A Fast Fourier Transformper (FFT) plot visualizes the frequency
+        A Fast Fourier Transformer (FFT) plot visualizes the frequency
         domain representation of a signal by transforming it from the
         time domain to the frequency domain using the FFT algorithm.
         The x-axis shows the frequencies, normalized to the
-        [Nyquist frequency][], and the y-axis shows the power spectral
-        density or squared amplitude per frequency unit on a logarithmic
-        scale. This plot is only available for [forecast][time-series]
-        tasks.
+        [Nyquist frequency][nyquist], and the y-axis shows the power
+        spectral density or squared amplitude per frequency unit on a
+        logarithmic scale. This plot is only available for
+        [forecast][time-series] tasks.
 
         !!! tip
             - If the plot peaks at f~0, it can indicate the wandering
-              behavior characteristic of a [random walk][] that needs
-              to be differentiated. It could also be indicative of a
-              stationary [ARMA][] process with a high positive phi value.
+              behavior characteristic of a [random walk][random_walk]
+              that needs to be differentiated. It could also be indicative
+              of a stationary [ARMA][] process with a high positive phi
+              value.
             - Peaking at a frequency and its multiples is indicative of
               seasonality. The lowest frequency in this case is called
               the fundamental frequency, and the inverse of this
@@ -1631,16 +1632,17 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         series analysis for identifying dominant frequencies, periodic
         patterns, and overall spectral characteristics of the data.
         The x-axis shows the frequencies, normalized to the
-        [Nyquist frequency][], and the y-axis shows the power spectral
-        density or squared amplitude per frequency unit on a logarithmic
-        scale. This plot is only available for [forecast][time-series]
-        tasks.
+        [Nyquist frequency][nyquist], and the y-axis shows the power
+        spectral density or squared amplitude per frequency unit on a
+        logarithmic scale. This plot is only available for
+        [forecast][time-series] tasks.
 
         !!! tip
             - If the plot peaks at f~0, it can indicate the wandering
-              behavior characteristic of a [random walk][] that needs
-              to be differentiated. It could also be indicative of a
-              stationary [ARMA][] process with a high positive phi value.
+              behavior characteristic of a [random walk][random_walk]
+              that needs to be differentiated. It could also be indicative
+              of a stationary [ARMA][] process with a high positive phi
+              value.
             - Peaking at a frequency and its multiples is indicative of
               seasonality. The lowest frequency in this case is called
               the fundamental frequency, and the inverse of this

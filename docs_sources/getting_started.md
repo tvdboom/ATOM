@@ -62,7 +62,7 @@ package files for all versions published on PyPI.
 
 ## Usage
 
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tvdboom/ATOM/blob/master/examples/getting_started.ipynb)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1H8pL-iAICeaKqWQxWsb6fN9zPNZK722s#scrollTo=LrtjgDQFvU2z&forceEdit=true&sandboxMode=true)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD)
 
 ATOM contains a variety of classes and functions to perform data cleaning,
@@ -152,5 +152,5 @@ atom.run(models=["LR", "LDA"], metric="auc", n_trials=6)  # hide
 
 print(atom.evaluate())
 
-atom.plot_lift()
+atom.plot_roc()
 ```

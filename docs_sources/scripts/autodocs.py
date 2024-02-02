@@ -77,6 +77,7 @@ CUSTOM_URLS = dict(
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
     ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
     # BaseRunner
+    styler="https://pandas.pydata.org/docs/reference/api/pandas.io.formats.style.Styler.html",
     stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
     stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
     stackingforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.StackingForecaster.html",
@@ -254,7 +255,7 @@ CUSTOM_URLS = dict(
     update_traces="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html#plotly.graph_objects.Figure.update_traces",
     fanova="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.importance.FanovaImportanceEvaluator.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
-    nyquist_frequency="https://en.wikipedia.org/wiki/Nyquist_frequency",
+    nyquist="https://en.wikipedia.org/wiki/Nyquist_frequency",
     random_walk="https://en.wikipedia.org/wiki/Random_walk",
     arma="https://en.wikipedia.org/wiki/Autoregressive_moving-average_model",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",

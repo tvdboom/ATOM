@@ -145,6 +145,7 @@ def test_models_sklearnex_classification():
         n_trials=2,
         est_params={"LR": {"max_iter": 5}, "RF": {"n_estimators": 5}},
     )
+    assert all(m.estimator.__module__.startswith(("daal4py", "sklearnex")) for m in atom._models)
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support.")
@@ -156,6 +157,7 @@ def test_models_sklearnex_regression():
         n_trials=2,
         est_params={"RF": {"n_estimators": 5}},
     )
+    assert all(m.estimator.__module__.startswith(("daal4py", "sklearnex")) for m in atom._models)
 
 
 @patch.dict(
