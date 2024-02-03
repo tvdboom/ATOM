@@ -10,6 +10,7 @@ from typing import Any
 
 from atom.basemodel import BaseModel
 from atom.utils.types import Predictor
+from atom.utils.utils import make_sklearn
 
 
 class CustomModel(BaseModel):
@@ -59,7 +60,7 @@ class CustomModel(BaseModel):
     @cached_property
     def _est_class(self) -> type[Predictor]:
         """Return the estimator's class."""
-        return self._wrap_class(self._est)
+        return make_sklearn(self._est)
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.

@@ -22,6 +22,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
     LabelEncoder, MultiLabelBinarizer, OneHotEncoder, StandardScaler,
 )
+from sktime.transformations.series.impute import Imputer
 from sktime.transformations.series.summarize import WindowSummarizer
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
@@ -31,9 +32,9 @@ from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_label, X_reg, X_sparse, X_text, y10, y10_label, y10_label2,
-    y10_sn, y10_str, y_bin, y_class, y_fc, y_label, y_multiclass, y_multireg,
-    y_reg,
+    X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10, y10_label,
+    y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc, y_label,
+    y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -650,7 +651,7 @@ def test_raise_length_mismatch():
 
 def test_add_pyarrow_columns():
     """Assert that columns keep the pyarrow dtype."""
-    atom = ATOMClassifier(X_bin, y_bin, engine={"data": "pyarrow"}, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
     assert isinstance(atom.dtypes[0], pd.ArrowDtype)
     atom.scale()
     assert isinstance(atom.dtypes[0], pd.ArrowDtype)
@@ -695,6 +696,35 @@ def test_add_params_to_method():
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale()
     assert atom.pipeline[0].verbose == 1
+
+
+def test_add_wrap_fit():
+    """Assert that sklearn attributes are added to the estimator."""
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.add(Imputer())
+    assert hasattr(atom.pipeline[0], "feature_names_in_")
+    assert hasattr(atom.pipeline[0], "n_features_in_")
+
+    # Check there's no double wrapping
+    atom.add(Imputer())
+    assert hasattr(atom.pipeline[1].fit, "__wrapped__")
+    assert not hasattr(atom.pipeline[1].fit.__wrapped__, "__wrapped__")
+
+
+def test_add_wrap_get_feature_names_out_one_to_one():
+    """Assert that get_feature_names_out is added to the estimator."""
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.add(Imputer(), feature_names_out="one-to-one")
+    assert hasattr(atom.pipeline[0], "get_feature_names_out")
+    assert list(atom.pipeline[0].get_feature_names_out()) == list(X_ex.columns)
+
+
+def test_add_wrap_get_feature_names_out_callable():
+    """Assert that get_feature_names_out is added to the estimator."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.add(Imputer(), columns=-1, feature_names_out=lambda _: ["test"])
+    assert hasattr(atom.pipeline[0], "get_feature_names_out")
+    assert list(atom.pipeline[0].get_feature_names_out()) == ["test"]
 
 
 def test_add_pipeline():

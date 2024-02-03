@@ -110,8 +110,14 @@ class EngineTuple(NamedTuple):
 
     """
 
-    data: EngineDataOptions = "numpy"
+    data: EngineDataOptions = "pandas"
     estimator: EngineEstimatorOptions = "sklearn"
+
+    def __repr__(self) -> str:
+        """Hide default values and change the name of the class."""
+        data = f"data={self[0]}" if self[0] != EngineTuple().data else ""
+        estimator = f"estimator={self[1]}" if self[1] != EngineTuple().estimator else ""
+        return f"Engine({data}{', ' if data else ''}{estimator})"
 
 
 class SPTuple(NamedTuple):
@@ -244,7 +250,7 @@ MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZe
 
 # BaseTransformer parameters
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
-EngineDataOptions: TypeAlias = Literal["numpy", "pyarrow", "modin"]
+EngineDataOptions: TypeAlias = Literal["pandas", "pyarrow", "modin"]
 EngineEstimatorOptions: TypeAlias = Literal["sklearn", "sklearnex", "cuml"]
 Engine: TypeAlias = EngineDataOptions | EngineEstimatorOptions | EngineDict | EngineTuple | None
 Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray"]
@@ -329,7 +335,11 @@ Legend: TypeAlias = Literal[
 # Others
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
 SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
-FeatureNamesOut: TypeAlias = Callable[..., Sequence[str]] | Literal["one-to-one"] | None
+FeatureNamesOut: TypeAlias = (
+    Callable[[Any, Sequence[str]], Sequence[str]]
+    | Literal["one-to-one"]
+    | None
+)
 HarmonicsSelector: TypeAlias = Literal["drop", "raw_strength", "harmonic_strength"]
 Stages: TypeAlias = Literal["None", "Staging", "Production", "Archived"]
 PACFMethods: TypeAlias = Literal[

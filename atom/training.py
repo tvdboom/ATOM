@@ -352,7 +352,7 @@ class DirectClassifier(Direct):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -586,7 +586,7 @@ class DirectForecaster(Direct):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -816,7 +816,7 @@ class DirectRegressor(Direct):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -1056,7 +1056,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -1293,7 +1293,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -1527,7 +1527,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -1773,7 +1773,7 @@ class TrainSizingClassifier(TrainSizing):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -2016,7 +2016,7 @@ class TrainSizingForecaster(TrainSizing):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -2255,7 +2255,7 @@ class TrainSizingRegressor(TrainSizing):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 

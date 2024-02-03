@@ -21,7 +21,6 @@ from sklearn.multioutput import ClassifierChain
 from sklearn.naive_bayes import GaussianNB
 from sklearnex import get_config
 from sklearnex.svm import SVC
-from sktime.transformations.series.impute import Imputer
 
 from atom import ATOMClassifier, ATOMForecaster
 from atom.basetransformer import BaseTransformer
@@ -73,7 +72,7 @@ def test_engine_parameter_env_var():
     assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
 
     base = BaseTransformer(device="cpu", engine="sklearnex")
-    assert base.engine == EngineTuple(data="numpy", estimator="sklearnex")
+    assert base.engine == EngineTuple(data="pandas", estimator="sklearnex")
     assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
 
 
@@ -184,52 +183,6 @@ def test_device_id_invalid():
 
 
 # Test _inherit ==================================================== >>
-
-def test_wrap_class_fit():
-    """Assert that sklearn attributes are added to the estimator."""
-    base = BaseTransformer(random_state=1)
-
-    imputer = base._wrap_class(Imputer)()
-    assert not hasattr(imputer, "feature_names_in_")
-    assert not hasattr(imputer, "n_features_in_")
-
-    imputer.fit(pd.DataFrame(y_fc))
-    assert hasattr(imputer, "feature_names_in_")
-    assert hasattr(imputer, "n_features_in_")
-
-    # Check there is no double wrapping of the fit method
-    imputer = base._wrap_class(Imputer)()
-    assert hasattr(imputer.fit, "__wrapped__")
-    assert not hasattr(imputer.fit.__wrapped__, "__wrapped__")
-
-
-def test_wrap_get_feature_names_out_one_to_one():
-    """Assert that get_feature_names_out is added to the estimator."""
-    # Delete method since attached to class in previous test
-    if hasattr(Imputer, "get_feature_names_out"):
-        delattr(Imputer, "get_feature_names_out")
-
-    base = BaseTransformer(random_state=1)
-
-    base._wrap_class(Imputer, names_out=False)()
-    assert not hasattr(Imputer, "get_feature_names_out")
-
-    imputer = base._wrap_class(Imputer, names_out="one-to-one")()
-    imputer.fit(pd.DataFrame(y_fc))
-    assert list(imputer.get_feature_names_out()) == [y_fc.name]
-
-
-def test_inherit_get_feature_names_out_callable():
-    """Assert that get_feature_names_out is added to the estimator."""
-    # Delete method since attached to class in previous test
-    if hasattr(Imputer, "get_feature_names_out"):
-        delattr(Imputer, "get_feature_names_out")
-
-    base = BaseTransformer(random_state=1)
-
-    imputer = base._wrap_class(Imputer, names_out=lambda _: ["test"])()
-    assert list(imputer.get_feature_names_out()) == ["test"]
-
 
 def test_inherit():
     """Assert that the inherit method passes the parameters correctly."""

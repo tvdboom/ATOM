@@ -32,7 +32,7 @@ from .conftest import (
 
 def test_repr():
     """Assert that __repr__ hides the default engine."""
-    assert str(Cleaner(engine="pyarrow")).startswith("Cleaner(engine=EngineTuple")
+    assert str(Cleaner(engine="pyarrow")).startswith("Cleaner(engine=Engine")
     assert str(Cleaner()) == "Cleaner()"
     assert str(Cleaner(device="gpu")) == "Cleaner(device='gpu')"
     assert str(Cleaner(verbose=2)) == "Cleaner(verbose=2)"

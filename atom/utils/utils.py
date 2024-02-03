@@ -44,6 +44,7 @@ from pandas._typing import Axes, Dtype, DtypeArg
 from pandas.api.types import is_numeric_dtype
 from shap import Explainer, Explanation
 from sklearn.base import BaseEstimator
+from sklearn.base import OneToOneFeatureMixin as FMixin
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
@@ -53,8 +54,8 @@ from sklearn.utils.validation import _is_fitted
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, Float, Index, IndexSelector, Int,
-    IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
+    Bool, DataFrame, Estimator, FeatureNamesOut, Float, Index, IndexSelector,
+    Int, IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
     Scorer, Segment, Sequence, Series, SPTuple, Transformer, TReturn, TReturns,
     Verbose, XConstructor, XSelector, YConstructor, YSelector, dataframe_t,
     int_t, pandas_t, segment_t, sequence_t, series_t,
@@ -70,6 +71,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 T_Pandas = TypeVar("T_Pandas", Series, DataFrame)
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
+T_Estimator = TypeVar("T_Estimator", bound=Estimator)
 
 
 # Classes ========================================================== >>
@@ -2768,42 +2770,6 @@ def method_to_log(f: Callable) -> Callable:
     return wrapper
 
 
-def wrap_fit(f: Callable) -> Callable:
-    """Wrap the fit method of estimators to add custom attributes.
-
-    Wrapper to add the `feature_names_in_` and `n_features_in_`
-    attributes to an arbitrary estimator during `fit`. Used for
-    classes that don't have these attributes (e.g., from cuml or
-    sktime).
-
-    """
-
-    @wraps(f)
-    def wrapped(self, *args, **kwargs):
-        out = f(self, *args, **kwargs)
-
-        # For sktime estimators, we are interested in y, not X
-        X = args[0] if len(args) > 0 else kwargs.get("X")
-
-        # We add the attributes after running the function
-        # to avoid deleting them with .reset() calls
-        if X is not None:
-            if not hasattr(self, "feature_names_in_"):
-                BaseEstimator._check_feature_names(self, X, reset=True)
-            if not hasattr(self, "n_features_in_"):
-                BaseEstimator._check_n_features(self, X, reset=True)
-
-        return out
-
-    # Avoid double wrapping
-    if getattr(f, "_fit_wrapped", False):
-        return f
-    else:
-        wrapped._fit_wrapped = True
-
-    return wrapped
-
-
 def wrap_transformer_methods(f: Callable) -> Callable:
     """Wrap transformer methods with shared code.
 
@@ -2846,6 +2812,79 @@ def wrap_transformer_methods(f: Callable) -> Callable:
                 return f(self, Xt, **kwargs)
 
     return wrapper
+
+
+def make_sklearn(
+    cls: T_Estimator,
+    feature_names_out: FeatureNamesOut = "one-to-one",
+) -> T_Estimator:
+    """Add functionality to a class to adhere to sklearn's API.
+
+    The `fit` method of non-sklearn objects is wrapped to always add
+    the `n_features_in_` and `feature_names_in_` attributes, and the
+    `get-feature_names_out` method is added to transformers that
+    don't have it already.
+
+    Parameters
+    ----------
+    cls: Estimator class
+        Class to wrap.
+
+    feature_names_out: "one-to-one", callable or None, default="one-to-one"
+        Determines the list of feature names that will be returned
+        by the `get_feature_names_out` method.
+
+        - If None: The `get_feature_names_out` method is not defined.
+        - If "one-to-one": The output feature names will be equal to
+          the input feature names.
+        - If callable: Function that takes positional arguments self
+          and a sequence of input feature names. It must return a
+          sequence of output feature names.
+
+    Returns
+    -------
+    Estimator class
+        Class with wrapped fit method.
+
+    """
+
+    def wrap_fit(f: Callable) -> Callable:
+
+        @wraps(f)
+        def wrapper(self, *args, **kwargs):
+            out = f(self, *args, **kwargs)
+
+            # For sktime estimators, we are interested in y, not X
+            X = args[0] if len(args) > 0 else kwargs.get("X")
+
+            # We add the attributes and methods after running fit
+            # to avoid deleting them with .reset() calls
+            if X is not None:
+                if not hasattr(self, "feature_names_in_"):
+                    BaseEstimator._check_feature_names(self, X, reset=True)
+                if not hasattr(self, "n_features_in_"):
+                    BaseEstimator._check_n_features(self, X, reset=True)
+
+                if hasattr(self, "transform") and not hasattr(self, "get_feature_names_out"):
+                    if feature_names_out == "one-to-one":
+                        self.get_feature_names_out = FMixin.get_feature_names_out.__get__(self)
+                    elif callable(feature_names_out):
+                        self.get_feature_names_out = feature_names_out.__get__(self)
+
+            return out
+
+        # Avoid double wrapping
+        if getattr(f, "_fit_wrapped", False):
+            return f
+        else:
+            wrapper._fit_wrapped = True
+
+        return wrapper
+
+    if not cls.__module__.startswith(("atom.", "sklearn.")) and hasattr(cls, "fit"):
+        cls.fit = wrap_fit(cls.fit)  # type: ignore[method-assign]
+
+    return cls
 
 
 # Custom scorers =================================================== >>

@@ -61,8 +61,8 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
-    lst, merge, method_to_log, n_cols, replace_missing, sign, to_df, to_series,
-    variable_return, wrap_transformer_methods,
+    lst, make_sklearn, merge, method_to_log, n_cols, replace_missing, sign,
+    to_df, to_series, variable_return, wrap_transformer_methods,
 )
 
 
@@ -102,7 +102,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             and self.engine == EngineTuple()
             and sklearn.get_config()["print_changed_only"]
         ):
-            out = re.sub(r"engine=EngineTuple\(data='numpy', estimator='sklearn'\)", "", out)
+            out = re.sub(r"engine=Engine\(\)", "", out)
             out = re.sub(r"((?<=\(),\s|,\s(?=\))|,\s(?=,\s))", "", out)  # Drop comma-spaces
 
         return out
@@ -633,7 +633,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -1344,7 +1344,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -2057,7 +2057,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -2235,8 +2235,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             elif self.strat_num == "drop":
                 num_imputer = "passthrough"
             else:
-                # Inherit sklearn's attributes and methods
-                num_imputer = self._wrap_class(sktimeImputer)(
+                num_imputer = make_sklearn(sktimeImputer)(
                     method=self.strat_num,
                     missing_values=[pd.NA],
                     random_state=self.random_state,
@@ -2481,7 +2480,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -2754,7 +2753,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -3044,7 +3043,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 

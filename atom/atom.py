@@ -64,8 +64,8 @@ from atom.utils.types import (
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
     check_dependency, check_scaling, composed, crash, fit_one, flt, get_cols,
-    get_custom_scorer, has_task, is_sparse, lst, merge, method_to_log,
-    replace_missing, sign, to_pyarrow,
+    get_custom_scorer, has_task, is_sparse, lst, make_sklearn, merge,
+    method_to_log, replace_missing, sign, to_pyarrow,
 )
 
 
@@ -163,7 +163,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             )
         if "cpu" not in self.device.lower():
             self._log(f"Device: {self.device}", 1)
-        if self.engine.data != "numpy":
+        if self.engine.data != "pandas":
             self._log(f"Data engine: {self.engine.data}", 1)
         if self.engine.estimator != "sklearn":
             self._log(f"Estimator engine: {self.engine.estimator}", 1)
@@ -1185,7 +1185,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         columns: ColumnSelector | None = None,
         train_only: Bool = False,
-        get_feature_names_out: FeatureNamesOut = "one-to-one",
+        feature_names_out: FeatureNamesOut = None,
         **fit_params,
     ) -> T_Transformer:
         """Add a transformer to the pipeline.
@@ -1211,15 +1211,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Whether to apply the transformer only on the train set or
             on the complete dataset.
 
-        get_feature_names_out: "one-to-one", callable or None, default="one-to-one"
-            Function to extract the names of the output features from the
-            `transformer` after fit (see sklearn's API). This parameter
-            is ignored if the `transformer` already has a
-            `get_feature_names_out` method.
+        feature_names_out: "one-to-one", callable or None, default=None
+            Determines the list of feature names that will be returned
+            by the `get_feature_names_out` method.
 
-            - If None: There's no `get_feature_names_out` method.
-            - If "one-to-one": The output and input names are the same.
-            - If func: Method with signature `func(self, ...) -> sequence[str]`.
+            - If None: The `get_feature_names_out` method is not defined.
+            - If "one-to-one": The output feature names will be equal to
+              the input feature names.
+            - If callable: Function that takes positional arguments self
+              and a sequence of input feature names. It must return a
+              sequence of output feature names.
 
         **fit_params
             Additional keyword arguments for the transformer's fit method.
@@ -1231,10 +1232,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         if callable(transformer):
-            est_class = self._wrap_class(transformer, names_out=get_feature_names_out)
+            est_class = make_sklearn(transformer, feature_names_out=feature_names_out)
             transformer_c = self._inherit(est_class())
         else:
-            self._wrap_class(transformer.__class__, names_out=get_feature_names_out)
+            make_sklearn(transformer.__class__, feature_names_out=feature_names_out)
             transformer_c = transformer
 
         if any(m.branch is self.branch for m in self._models):
@@ -1358,7 +1359,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         columns: ColumnSelector | None = None,
         train_only: Bool = False,
-        get_feature_names_out: FeatureNamesOut = "one-to-one",
+        feature_names_out: FeatureNamesOut = None,
         **fit_params,
     ):
         """Add a transformer to the pipeline.
@@ -1414,15 +1415,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             on the complete dataset. Note that if True, the transformation
             is skipped when making predictions on new data.
 
-        get_feature_names_out: "one-to-one", callable or None, default="one-to-one"
-            Function to extract the names of the output features from the
-            `transformer` after fit (see sklearn's API). This parameter
-            is ignored if the `transformer` already has a
-            `get_feature_names_out` method.
+        feature_names_out: "one-to-one", callable or None, default=None
+            Determines the list of feature names that will be returned
+            by the `get_feature_names_out` method.
 
-            - If None: There's no `get_feature_names_out` method.
-            - If "one-to-one": The output and input names are the same.
-            - If func: Method with signature `func(self, ...) -> sequence[str]`.
+            - If None: The `get_feature_names_out` method is not defined.
+            - If "one-to-one": The output feature names will be equal to
+              the input feature names.
+            - If callable: Function that takes positional arguments self
+              and a sequence of input feature names. It must return a
+              sequence of output feature names.
 
         **fit_params
             Additional keyword arguments for the transformer's fit method.
@@ -1436,7 +1438,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     transformer=est,
                     columns=columns,
                     train_only=train_only,
-                    get_feature_names_out=get_feature_names_out,
+                    feature_names_out=feature_names_out,
                     **fit_params,
                 )
         else:
@@ -1445,7 +1447,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 transformer=transformer,
                 columns=columns,
                 train_only=train_only,
-                get_feature_names_out=get_feature_names_out,
+                feature_names_out=feature_names_out,
                 **fit_params,
             )
 
@@ -1455,6 +1457,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         func: Callable[..., DataFrame],
         inverse_func: Callable[..., DataFrame] | None = None,
         *,
+        feature_names_out: FeatureNamesOut = None,
         kw_args: dict[str, Any] | None = None,
         inv_kw_args: dict[str, Any] | None = None,
         **kwargs,
@@ -1483,6 +1486,18 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Inverse function of `func`. If None, the inverse_transform
             method returns the input unchanged.
 
+        feature_names_out: "one-to-one", callable or None, default=None
+            Determines the list of feature names that will be returned
+            by the `get_feature_names_out` method.
+
+            - If None: The `get_feature_names_out` method is not defined.
+            - If "one-to-one": The output feature names will be equal to
+              the input feature names.
+            - If callable: Function that takes positional arguments self
+              and a sequence of input feature names. It must return a
+              sequence of output feature names.
+
+
         kw_args: dict or None, default=None
             Additional keyword arguments for the function.
 
@@ -1496,6 +1511,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         transformer = FunctionTransformer(
             func=func,
             inverse_func=inverse_func,
+            feature_names_out=feature_names_out,
             kw_args=kw_args,
             inv_kw_args=inv_kw_args,
         )

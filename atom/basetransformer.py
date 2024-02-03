@@ -32,17 +32,16 @@ from dagshub.auth.token_auth import HTTPBearerAuth
 from joblib.memory import Memory
 from pandas._typing import Axes
 from ray.util.joblib import register_ray
-from sklearn.base import OneToOneFeatureMixin
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, EngineDataOptions,
-    EngineEstimatorOptions, EngineTuple, Estimator, FeatureNamesOut, Int,
-    IntLargerEqualZero, Pandas, Sequence, Severity, Verbose, Warnings,
-    XSelector, YSelector, bool_t, dataframe_t, int_t, sequence_t,
+    EngineEstimatorOptions, EngineTuple, Estimator, Int, IntLargerEqualZero,
+    Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
+    bool_t, dataframe_t, int_t, sequence_t,
 )
 from atom.utils.utils import (
-    crash, flt, lst, n_cols, to_df, to_pandas, wrap_fit,
+    crash, flt, lst, make_sklearn, n_cols, to_df, to_pandas,
 )
 
 
@@ -360,51 +359,6 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    @staticmethod
-    def _wrap_class(cls: T_Estimator, names_out: FeatureNamesOut = "one-to-one") -> T_Estimator:
-        """Add functionality to a class to adhere to sklearn's API.
-
-        The `fit` method of non-sklearn objects is wrapped to always add
-        the `n_features_in_` and `feature_names_in_` attributes, and the
-        `get-feature_names_out` method is added to transformers that
-        don't have it already.
-
-        Parameters
-        ----------
-        cls: Estimator class
-            Class to wrap.
-
-        names_out: False, "one-to-one" or callable, default="one-to-one"
-            Function to extract the names of the output features from the
-            `transformer` after fit (see sklearn's API). This parameter
-            is ignored if the `transformer` already has a
-            `get_feature_names_out` method.
-
-            - If None: There's no `get_feature_names_out` method.
-            - If "one-to-one": The output and input names are the same.
-            - If func: Method with signature `func(self, ...) -> sequence[str]`.
-
-        Returns
-        -------
-        Estimator class
-            Class with wrapped fit method.
-
-        """
-        # Only apply changes to non-sklearn classes
-        if not cls.__module__.startswith("sklearn."):
-            if hasattr(cls, "fit"):
-                cls.fit = wrap_fit(cls.fit)  # type: ignore[method-assign]
-
-            if hasattr(cls, "transform") and not hasattr(cls, "get_feature_names_out"):
-                # Pass method to class not instance because some estimators,
-                # like sktime's, delete all attributes during fit
-                if names_out == "one-to-one":
-                    cls.get_feature_names_out = OneToOneFeatureMixin.get_feature_names_out
-                elif callable(names_out):
-                    cls.get_feature_names_out = names_out
-
-        return cls
-
     def _inherit(self, obj: T_Estimator, fixed: tuple[str, ...] = ()) -> T_Estimator:
         """Inherit parameters from parent.
 
@@ -465,7 +419,7 @@ class BaseTransformer:
         except (ModuleNotFoundError, AttributeError):
             mod = import_module(f"sklearn.{module}")
 
-        return self._wrap_class(getattr(mod, name))
+        return make_sklearn(getattr(mod, name))
 
     @staticmethod
     @overload

@@ -802,7 +802,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 

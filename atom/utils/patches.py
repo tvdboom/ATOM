@@ -45,13 +45,13 @@ def wrap_method_output(f: Callable, method: str) -> Callable:
     """
 
     @wraps(f)
-    def wrapped(self, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         try:
             return _wrap_method_output(f, method)(self, *args, **kwargs)
         except TypeError:
             return f(self, *args, **kwargs)
 
-    return wrapped
+    return wrapper
 
 
 def fit_and_score(*args, **kwargs) -> dict[str, Any]:

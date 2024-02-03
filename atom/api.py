@@ -257,7 +257,7 @@ class ATOMClassifier(ATOM):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -526,7 +526,7 @@ class ATOMForecaster(ATOM):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
@@ -775,7 +775,7 @@ class ATOMRegressor(ATOM):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 

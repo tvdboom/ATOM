@@ -19,7 +19,7 @@ pipeline:
 
 Graphics Processing Units (GPUs) can significantly accelerate
 calculations for preprocessing steps or training machine learning
-models. Training models involves compute-intensive matrix
+models. Training models involve compute-intensive matrix
 multiplications and other operations that can take advantage of a
 GPU's massively parallel architecture. Training on large datasets can
 take hours to run on a single processor. However, if you offload those
@@ -56,40 +56,31 @@ regardless of the engine parameter.
 ## Data acceleration
 
 The data engine can be specified through the [`engine`][atomclassifier-engine]
-parameter, which takes a dict with a key `data` that accepts three values:
-[numpy][], [pyarrow][] and [modin][].
+parameter, e.g. `#!python engine="pyarrow"` or
+`#!python engine={"data": "pyarrow", "estimator": "sklearnex"}` to combine it
+with an [estimator engine][estimator acceleration]. ATOM integrates the following
+data engines:
 
+- **pandas**: This is the default data engine. It uses the [`pandas`](https://pandas.pydata.org/docs/index.html)
+  library with [`numpy`](https://numpy.org/) as backend.
+- **pyarrow**: This engine also uses [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html), but with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
+  backend, instead of `numpy`. PyArrow is a cross-language, platform-independent,
+  in-memory data format, that provides an efficient and fast way to serialize and
+  deserialize data.
+- **modin**: The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement
+  for pandas, that uses [Ray](https://www.ray.io/) as backend.
 
-### numpy
-
-ATOM uses [`pandas`](https://pandas.pydata.org/docs/index.html) as the
-default library for data handling, which in turn, uses [`numpy`](https://numpy.org/)
-for all data processing.
-
-
-### pyarrow
-
-[PyArrow](https://arrow.apache.org/docs/python/index.html) is a library
-that provides a way to work with Apache Arrow memory structures. Apache
-Arrow is a cross-language, platform-independent, in-memory data format
-that provides an efficient and fast way to serialize and deserialize
-data. Pandas offers [native integration](https://pandas.pydata.org/docs/user_guide/pyarrow.html)
-with pyarrow, which atom uses when specifying the pyarrow data engine.
-
-!!! warning
-    - The pyarrow backend doesn't work for [sparse datasets][]. If the
-      dataset has any sparse columns, an exception is raised.
-    - The [LightGBM][] and [XGBoost][] models don't support pyarrow
-      dtypes.
-
-
-### modin
-
-The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement for
-pandas, that uses [Ray](https://www.ray.io/) as backend.
+!!! note
+    Although atom accepts a numpy array or a list of lists as input, it
+    converts the data internally to the specified data engine since its API
+    requires column names and indices.
 
 !!! warning
-    The modin backend is not compatible with [forecast][time-series] tasks.
+    Depending on the data engine, the following limitations apply:
+
+    - The `pyarrow` engine doesn't support [sparse datasets][].
+    - The [LightGBM][] and [XGBoost][] models don't support the `pyarrow` engine.
+    - The `modin` engine is not compatible with [forecast][time-series] tasks.
 
 
 ## Estimator acceleration

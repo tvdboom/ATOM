@@ -911,7 +911,7 @@ class FeatureSelector(TransformerMixin):
 
         - "data":
 
-            - "numpy" (default)
+            - "pandas" (default)
             - "pyarrow"
             - "modin"
 
