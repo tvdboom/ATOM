@@ -102,7 +102,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             and self.engine == EngineTuple()
             and sklearn.get_config()["print_changed_only"]
         ):
-            out = re.sub(r"engine=Engine\(\)", "", out)
+            out = re.sub(r"engine={data='numpy', estimator='sklearn'}", "", out)
             out = re.sub(r"((?<=\(),\s|,\s(?=\))|,\s(?=,\s))", "", out)  # Drop comma-spaces
 
         return out
@@ -3033,24 +3033,12 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str, default="sklearn"
+        Execution engine for [estimators][estimator-acceleration].
+        Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "cuml"
+        - "sklearn"
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -3119,7 +3107,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         *,
         include_binary: Bool = False,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: Engine = "sklearn",
         verbose: Verbose = 0,
         **kwargs,
     ):

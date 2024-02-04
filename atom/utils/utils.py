@@ -2857,8 +2857,8 @@ def make_sklearn(
             # For sktime estimators, we are interested in y, not X
             X = args[0] if len(args) > 0 else kwargs.get("X")
 
-            # We add the attributes and methods after running fit
-            # to avoid deleting them with .reset() calls
+            # We add the attributes and methods after running
+            # fit to avoid deleting them with .reset() calls
             if X is not None:
                 if not hasattr(self, "feature_names_in_"):
                     BaseEstimator._check_feature_names(self, X, reset=True)

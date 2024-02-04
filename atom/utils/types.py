@@ -114,10 +114,8 @@ class EngineTuple(NamedTuple):
     estimator: EngineEstimatorOptions = "sklearn"
 
     def __repr__(self) -> str:
-        """Hide default values and change the name of the class."""
-        data = f"data={self[0]}" if self[0] != EngineTuple().data else ""
-        estimator = f"estimator={self[1]}" if self[1] != EngineTuple().estimator else ""
-        return f"Engine({data}{', ' if data else ''}{estimator})"
+        """Print representation as dictionary."""
+        return self._asdict().__repr__()
 
 
 class SPTuple(NamedTuple):
