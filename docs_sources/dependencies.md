@@ -29,7 +29,7 @@ packages are necessary for its correct functioning.
 * **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
-* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.11.0)
+* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.12.0)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
 * **[ipywidgets](https://pypi.org/project/ipywidgets/)** (>=8.1.1)
 * **[featuretools](https://www.featuretools.com/)** (>=1.28.0)

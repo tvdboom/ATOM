@@ -1301,7 +1301,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         xaxis, yaxis = BasePlot._fig.get_axes()
 
         _cm = {
-            "COMPLETE": BasePlot._fig._palette[0],  # Main color
+            "COMPLETE": "rgb(173, 116, 230)",  # Blue
             "FAIL": "rgb(255, 0, 0)",  # Red
             "PRUNED": "rgb(255, 165, 0)",  # Orange
             "RUNNING": "rgb(124, 252, 0)",  # Green

@@ -57,7 +57,7 @@ from atom.utils.types import (
     IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats, NumericalStrats,
     Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels,
     Sequence, Series, Transformer, Verbose, XSelector, YSelector, dataframe_t,
-    sequence_t, series_t,
+    sequence_t, series_t, EngineDataOptions, XConstructor, YConstructor
 )
 from atom.utils.utils import (
     Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
@@ -77,33 +77,22 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
     - Accounts for the transformation of y.
     - Always add a fit method.
-    - Wraps the fit method with a data check.
-    - Wraps transforming methods with fit and data check.
     - Maintains internal attributes when cloned.
 
     """
-
-    def __init_subclass__(cls, **kwargs):
-        """Wrap transformer methods to apply data and fit check."""
-        for k in ("fit", "transform", "inverse_transform"):
-            setattr(cls, k, wrap_transformer_methods(getattr(cls, k)))
-
-        # Patch to avoid errors for transformers that allow passing only y
-        with patch("sklearn.utils._set_output._wrap_method_output", wrap_method_output):
-            super().__init_subclass__(**kwargs)
 
     def __repr__(self, N_CHAR_MAX: Int = 700) -> str:
         """Drop named tuples if default parameters from string representation."""
         out = super().__repr__(N_CHAR_MAX)
 
         # Remove default engine for cleaner representation
-        if (
-            hasattr(self, "engine")
-            and self.engine == EngineTuple()
-            and sklearn.get_config()["print_changed_only"]
-        ):
-            out = re.sub(r"engine={data='numpy', estimator='sklearn'}", "", out)
-            out = re.sub(r"((?<=\(),\s|,\s(?=\))|,\s(?=,\s))", "", out)  # Drop comma-spaces
+        if hasattr(self, "engine") and sklearn.get_config()["print_changed_only"]:
+            if self.engine.data == EngineTuple().data:
+                out = re.sub(f"'data': '{self.engine.data}'", "", out)
+            if self.engine.estimator == EngineTuple().estimator:
+                out = re.sub(f", 'estimator': '{self.engine.estimator}'", "", out)
+            out = re.sub("engine={}", "", out)
+            out = re.sub(r"((?<=[{(]),\s|,\s(?=[})])|,\s(?=,\s))", "", out)  # Drop comma-spaces
 
         return out
 
@@ -120,8 +109,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     @composed(crash, method_to_log)
     def fit(
         self,
-        X: DataFrame | None = None,
-        y: Pandas | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params,
     ) -> Self:
         """Do nothing.
@@ -132,20 +121,10 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
+            Target column corresponding to `X`. If None: y is ignored.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -156,6 +135,10 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Estimator instance.
 
         """
+        X, y = check_input(X, y, engine=getattr(self, "_output_config", None))
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
+
         self._log(f"Fitting {self.__class__.__name__}...", 1)
 
         return self
@@ -163,8 +146,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     @composed(crash, method_to_log)
     def fit_transform(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Fit to data, then transform it.
@@ -173,20 +156,10 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
+            Target column corresponding to `X`. If None: y is ignored.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -205,8 +178,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: DataFrame | None = None,
-        y: Pandas | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Do nothing.
 
@@ -217,20 +190,10 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
+            Target column corresponding to `X`. If None: y is ignored.
 
         Returns
         -------
@@ -242,6 +205,32 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
         """
         return variable_return(X, y)
+
+    def set_output(self, *, transform: EngineDataOptions | None = None) -> Self:
+        """Set output container.
+
+        Parameters
+        ----------
+        transform : str or None, default=None
+            Configure the output of the `transform`, `fit_transform`
+            and `inverse_transform` methods. If None, the configuration
+            is unchanged. Choose from:
+
+            - "pandas": Pandas output with numpy dtypes.
+            - "pyarrow": Pandas output with pyarrow dtypes.
+            - "modin": Modin output.
+            - "polars": Polars output.
+
+        Returns
+        -------
+        self
+            Estimator instance.
+
+        """
+        if transform is not None:
+            self._output_config = transform
+
+        return self
 
 
 @beartype
@@ -741,7 +730,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
             Target column corresponding to `X`.
@@ -841,7 +830,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
             Target column corresponding to `X`.

@@ -1115,7 +1115,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. If None,
+            `X` is ignored. If None,
             X is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None

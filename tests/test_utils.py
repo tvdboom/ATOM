@@ -160,7 +160,7 @@ def test_time_to_string():
     assert time_to_str(timedelta(hours=3, minutes=8).total_seconds()) == "03h:08m:00s"
 
 
-def test_to_pandas_with_cuml():
-    """Assert that cuML objects use the to_pandas method."""
-    to_df(Mock(spec=["to_pandas"]), columns=[0, 1])
-    to_series(Mock(spec=["to_pandas"]))
+def test_to_tabular_with_cuml():
+    """Assert that cuML objects use the to_tabular method."""
+    to_df(Mock(spec=["to_tabular"]), columns=[0, 1])
+    to_series(Mock(spec=["to_tabular"]))

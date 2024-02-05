@@ -248,7 +248,7 @@ MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZe
 
 # BaseTransformer parameters
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
-EngineDataOptions: TypeAlias = Literal["pandas", "pyarrow", "modin"]
+EngineDataOptions: TypeAlias = Literal["pandas", "pyarrow", "modin", "polars"]
 EngineEstimatorOptions: TypeAlias = Literal["sklearn", "sklearnex", "cuml"]
 Engine: TypeAlias = EngineDataOptions | EngineEstimatorOptions | EngineDict | EngineTuple | None
 Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray"]
@@ -374,4 +374,3 @@ index_t = (pd.Index, md.Index)
 series_t = (pd.Series, md.Series)
 sequence_t = (range, list, tuple, np.ndarray, *index_t, *series_t)
 dataframe_t = (pd.DataFrame, md.DataFrame)
-pandas_t = (*series_t, *dataframe_t)

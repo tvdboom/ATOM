@@ -90,12 +90,10 @@ class BaseFigure:
         self.hspace = hspace
         self.vspace = vspace
         if isinstance(palette, str):
-            self._palette = getattr(px.colors.qualitative, palette)
-            self.palette = cycle(self._palette)
+            self.palette = cycle(getattr(px.colors.qualitative, palette))
         elif isinstance(palette, sequence_t):
             # Convert color names or hex to rgb
-            self._palette = list(map(to_rgb, palette))
-            self.palette = cycle(self._palette)
+            self.palette = cycle(list(map(to_rgb, palette)))
         self.is_canvas = is_canvas
         self.backend = backend
         self.create_figure = create_figure

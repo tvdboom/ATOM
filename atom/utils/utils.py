@@ -58,7 +58,7 @@ from atom.utils.types import (
     Int, IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
     Scorer, Segment, Sequence, Series, SPTuple, Transformer, TReturn, TReturns,
     Verbose, XConstructor, XSelector, YConstructor, YSelector, dataframe_t,
-    int_t, pandas_t, segment_t, sequence_t, series_t,
+    int_t, segment_t, sequence_t, series_t,
 )
 
 
@@ -1187,6 +1187,35 @@ class ClassMap:
             return self.__data.index(self._get_data(key))
 
 
+class PandasContainer:
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return self._data
+
+    def create(self, data, index, columns) -> pd.DataFrame:
+        """Create a pandas dataframe.
+
+        Parameters
+        ----------
+        data: sequence
+            Data to create the dataframe.
+
+        index: sequence
+            Index to use for the dataframe.
+
+        columns: sequence
+            Columns to use for the dataframe.
+
+        Returns
+        -------
+        dataframe
+            New dataframe.
+
+        """
+        return pd.DataFrame(data, index=index, columns=columns)
+
+
 # Functions ======================================================== >>
 
 def flt(x: Any) -> Any:
@@ -1477,6 +1506,48 @@ def get_segment(obj: list[T], segment: Segment) -> list[T]:
         return obj[segment]
     else:
         return obj[slice(segment.start, segment.stop, segment.step)]
+
+
+def is_df(obj: Any) -> bool:
+    """Check if an object is a dataframe.
+
+    This function accepts any kind of dataframe (pandas, polars, modin,
+    etc...), as long as the class is named `DataFrame` and it has a
+    `columns` attribute.
+
+    Parameters
+    ----------
+    obj: any
+        Object to check.
+
+    Returns
+    -------
+    bool
+        Whether the object is a dataframe.
+
+    """
+    return obj.__class__.__name__ == "DataFrame" and hasattr(obj, "columns")
+
+
+def is_series(obj: Any) -> bool:
+    """Check if an object is a series.
+
+    This function accepts any kind of series (pandas, polars, modin,
+    etc...), as long as the class is named `Series` and it has a
+    `name` attribute.
+
+    Parameters
+    ----------
+    obj: any
+        Object to check.
+
+    Returns
+    -------
+    bool
+        Whether the object is a series.
+
+    """
+    return obj.__class__.__name__ == "Series" and hasattr(obj, "name")
 
 
 def is_sparse(obj: Pandas) -> bool:
@@ -1814,7 +1885,6 @@ def to_df(
     data: Literal[None],
     index: Axes | None = ...,
     columns: Axes | None = ...,
-    dtype: DtypeArg | None = ...,
 ) -> None: ...
 
 
@@ -1823,7 +1893,6 @@ def to_df(
     data: XSelector,
     index: Axes | None = ...,
     columns: Axes | None = ...,
-    dtype: DtypeArg | None = ...,
 ) -> DataFrame: ...
 
 
@@ -1831,14 +1900,13 @@ def to_df(
     data: XSelector | None,
     index: Axes | None = None,
     columns: Axes | None = None,
-    dtype: DtypeArg | None = None,
 ) -> DataFrame | None:
     """Convert a dataset to a dataframe.
 
     Parameters
     ----------
     data: dataframe-like or None
-        Dataset to convert to a dataframe.  If None or already a
+        Dataset to convert to a dataframe. If None or already a
         dataframe, return unchanged.
 
     index: sequence, index or None, default=None
@@ -1847,43 +1915,29 @@ def to_df(
     columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    dtype: str, dict, np.dtype or None, default=None
-        Data types for the output columns. If None, the types are
-        inferred from the data.
-
     Returns
     -------
     dataframe or None
         Dataset as dataframe of a type given by the backend.
 
     """
-    if data is not None:
-        if not isinstance(data, bk.DataFrame):
-            # Assign default column names (dict already has column names)
-            if not isinstance(data, dict | Pandas) and columns is None:
-                columns = [f"x{i}" for i in range(n_cols(data))]
+    if data is not None and not is_df(data):
 
-            if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-                # Convert cuML to pandas
-                data_c = data.to_pandas()  # type: ignore[operator]
-            elif sps.issparse(data):
-                data_c = pd.DataFrame.sparse.from_spmatrix(
-                    data=data,
-                    index=index,
-                    columns=columns,
-                )
-            else:
-                data_c = pd.DataFrame(data, index, columns)  # type: ignore[arg-type, misc]
+        # Assign default column names (dict already has column names)
+        if not isinstance(data, dict) and columns is None:
+            columns = [f"x{i}" for i in range(n_cols(data))]
+
+        if hasattr(data, "to_tabular") and bk.__name__ == "pandas":
+            # Convert cuML to pandas
+            data = data.to_tabular()  # type: ignore[operator]
+        elif sps.issparse(data):
+            data = pd.DataFrame.sparse.from_spmatrix(
+                data=data,
+                index=index,
+                columns=columns,
+            )
         else:
-            data_c = data
-
-            if dtype is not None:
-                data_c = data_c.astype(dtype)
-
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
-            data_c = data_c.astype({n: to_pyarrow(col) for n, col in data_c.items()})
-
-        return data_c
+            data = pd.DataFrame(data, index, columns)  # type: ignore[arg-type, misc]
 
     return data
 
@@ -1937,8 +1991,8 @@ def to_series(
     """
     if data is not None:
         if not isinstance(data, bk.Series):
-            if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-                data_c = data.to_pandas()  # Convert cuML to pandas
+            if hasattr(data, "to_tabular") and bk.__name__ == "pandas":
+                data_c = data.to_tabular()  # Convert cuML to pandas
             else:
                 # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
                 data_c = pd.Series(  # type: ignore[misc]
@@ -1959,31 +2013,28 @@ def to_series(
 
 
 @overload
-def to_pandas(
+def to_tabular(
     data: Literal[None],
     index: Axes | None = ...,
     columns: Axes | None = ...,
     name: str | None = ...,
-    dtype: DtypeArg | None = ...,
 ) -> None: ...
 
 
 @overload
-def to_pandas(
+def to_tabular(
     data: YConstructor,
     index: Axes | None = ...,
     columns: Axes | None = ...,
     name: str | None = ...,
-    dtype: DtypeArg | None = ...,
 ) -> Pandas: ...
 
 
-def to_pandas(
+def to_tabular(
     data: YConstructor | None,
     index: Axes | None = None,
     columns: Axes | None = None,
     name: str | None = None,
-    dtype: DtypeArg | None = None,
 ) -> Pandas | None:
     """Convert a sequence or dataset to a dataframe or series object.
 
@@ -2004,10 +2055,6 @@ def to_pandas(
     name: str or None, default=None
         Name of the series.
 
-    dtype: str, dict, np.dtype or None, default=None
-        Data type for the output series. If None, the type is
-        inferred from the data.
-
     Returns
     -------
     series, dataframe or None
@@ -2015,9 +2062,22 @@ def to_pandas(
 
     """
     if n_cols(data) == 1:
-        return to_series(data, index=index, name=name, dtype=dtype)  # type: ignore[misc, arg-type]
+        return to_series(data, index=index, name=name)  # type: ignore[misc, arg-type]
     else:
-        return to_df(data, index=index, columns=columns, dtype=dtype)
+        return to_df(data, index=index, columns=columns)
+
+
+def check_input(
+    X: XConstructor | None,
+    y: YConstructor | None,
+    columns: Axes | None = None,
+    target: str | Axes | None = None,
+    engine: EngineDataOptions | None = None,
+) -> tuple[DataFrame | None, Series | None]:
+    """Check input and return as dataframe and series."""
+    X = to_df(X, index=getattr(y, "index", None), columns=columns, engine=engine)
+    y = to_tabular(y, index=getattr(X, "index", None), columns=target, engine=engine)
+    return X, y
 
 
 def check_is_fitted(
@@ -2030,8 +2090,8 @@ def check_is_fitted(
 
     Checks if the estimator is fitted by verifying the presence of
     fitted attributes (not None or empty). Otherwise, it raises a
-    NotFittedError. Extension on sklearn's function that accounts
-    for empty dataframes and series and returns a boolean.
+    NotFittedError. Extension on sklearn's function that does not
+    require the object to have a `fit` method.
 
     Parameters
     ----------
@@ -2053,26 +2113,6 @@ def check_is_fitted(
         Whether the estimator is fitted.
 
     """
-
-    def check_attr(attr: str) -> bool:
-        """Return whether an attribute is False or empty.
-
-        Parameters
-        ----------
-        attr: str
-            Name of the attribute to check.
-
-        Returns
-        -------
-        bool
-            Whether the attribute's value is False or empty.
-
-        """
-        if isinstance(value := getattr(obj, attr), pandas_t):
-            return value.empty
-        else:
-            return not value
-
     if hasattr(obj, "_is_fitted"):
         is_fitted = obj._is_fitted
     else:
@@ -2367,7 +2407,7 @@ def fit_one(
 
     X: dataframe-like or None, default=None
         Feature set with shape=(n_samples, n_features). If None,
-        X is ignored.
+        `X` is ignored.
 
     y: int, str, dict, sequence, dataframe or None, default=None
         Target column corresponding to `X`.
@@ -2392,7 +2432,7 @@ def fit_one(
 
     """
     Xt = to_df(X, index=getattr(y, "index", None))
-    yt = to_pandas(y, index=getattr(Xt, "index", None))
+    yt = to_tabular(y, index=getattr(Xt, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
@@ -2442,6 +2482,8 @@ def transform_one(
 ) -> tuple[DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
 
+    The returned values are always tabular.
+
     Parameters
     ----------
     transformer: Transformer
@@ -2449,7 +2491,7 @@ def transform_one(
 
     X: dataframe-like or None, default=None
         Feature set with shape=(n_samples, n_features). If None,
-        X is ignored.
+        `X` is ignored.
 
     y: int, str, dict, sequence, dataframe or None, default=None
         Target column corresponding to `X`.
@@ -2520,7 +2562,7 @@ def transform_one(
         index=getattr(y, "index", None),
         columns=getattr(transformer, "feature_names_in_", None),
     )
-    yt = to_pandas(
+    yt = to_tabular(
         y,
         index=getattr(Xt, "index", None),
         columns=getattr(transformer, "target_names_in_", None),
@@ -2557,7 +2599,7 @@ def transform_one(
     # Transform can return X, y or both
     if isinstance(out, tuple):
         X_new = prepare_df(out[0], Xt)
-        y_new = to_pandas(
+        y_new = to_tabular(
             data=out[1],
             index=Xt.index,
             name=getattr(yt, "name", None),
@@ -2570,7 +2612,7 @@ def transform_one(
         X_new = prepare_df(out, Xt)
         y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
     elif y is not None:
-        y_new = to_pandas(
+        y_new = to_tabular(
             data=out,
             index=yt.index,
             name=getattr(yt, "name", None),
@@ -2601,7 +2643,7 @@ def fit_transform_one(
 
     X: dataframe-like or None
         Feature set with shape=(n_samples, n_features). If None,
-        X is ignored.
+        `X` is ignored.
 
     y: int, str, dict, sequence, dataframe or None
         Target column corresponding to `X`.
@@ -2881,7 +2923,7 @@ def make_sklearn(
 
         return wrapper
 
-    if not cls.__module__.startswith(("atom.", "sklearn.")) and hasattr(cls, "fit"):
+    if not cls.__module__.startswith(("atom.", "sklearn.", "imblearn.")) and hasattr(cls, "fit"):
         cls.fit = wrap_fit(cls.fit)  # type: ignore[method-assign]
 
     return cls

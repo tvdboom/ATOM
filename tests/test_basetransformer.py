@@ -250,7 +250,7 @@ def test_X_is_callable():
     assert isinstance(X, pd.DataFrame)
 
 
-def test_to_pandas():
+def test_to_tabular():
     """Assert that the data provided is converted to pandas objects."""
     X, y = BaseTransformer._check_input(X_bin_array, y_bin_array)
     assert isinstance(X, pd.DataFrame)

@@ -55,6 +55,8 @@ class Pipeline(SkPipeline):
         and additionally:
 
         - Can initialize with an empty pipeline.
+        - Converts input and output to tabular format (dataframes and
+          series).
         - Accepts transformers that drop rows.
         - Accepts transformers that only are fitted on a subset of the
           provided dataset.
@@ -280,7 +282,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None if the pipeline only uses y.
+            `X` is ignored. None if the pipeline only uses y.
 
         y: dict, sequence, dataframe or None, default=None
             Target column corresponding to `X`.
@@ -428,7 +430,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: dict, sequence, dataframe or None, default=None
             Target column corresponding to `X`.
@@ -479,7 +481,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
+            `X` is ignored. None
             if the estimator only uses y.
 
         y: dict, sequence, dataframe or None, default=None
@@ -538,7 +540,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None if the pipeline only uses y.
+            `X` is ignored. None if the pipeline only uses y.
 
         y: dict, sequence, dataframe or None, default=None
             Target column corresponding to `X`.
@@ -596,7 +598,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None if the pipeline only uses y.
+            `X` is ignored. None if the pipeline only uses y.
 
         y: dict, sequence, dataframe or None, default=None
             Target column corresponding to `X`.

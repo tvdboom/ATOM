@@ -27,7 +27,7 @@ from atom.utils.types import (
     YSelector, dataframe_t, index_t, int_t, segment_t, series_t,
 )
 from atom.utils.utils import (
-    DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
+    DataContainer, bk, flt, get_cols, lst, merge, to_tabular,
 )
 
 
@@ -226,7 +226,7 @@ class Branch:
         if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-        obj = to_pandas(
+        obj = to_tabular(
             data=value,
             index=side.index if side_name else None,
             name=getattr(under, "name", "target") if under_name else "target",

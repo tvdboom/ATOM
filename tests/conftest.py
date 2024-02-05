@@ -23,7 +23,7 @@ from sktime.datasets import load_airline, load_longley
 from sktime.split import temporal_train_test_split
 
 from atom.data_cleaning import TransformerMixin
-from atom.utils.utils import merge, n_cols, to_df, to_pandas
+from atom.utils.utils import merge, n_cols, to_df, to_tabular
 
 
 if TYPE_CHECKING:
@@ -138,7 +138,7 @@ def get_train_test(
     """
     if X is not None:
         return train_test_split(
-            merge(to_df(X), to_pandas(y, columns=[f"y{i}" for i in range(n_cols(y))])),
+            merge(to_df(X), to_tabular(y, columns=[f"y{i}" for i in range(n_cols(y))])),
             test_size=0.3,
             random_state=1,
         )

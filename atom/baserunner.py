@@ -15,7 +15,7 @@ from collections.abc import Hashable
 from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, overload
 
 import dill as pickle
 import numpy as np
@@ -375,6 +375,175 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 return get_single_sp(self.dataset.index.freqstr)
         else:
             return flt([get_single_sp(x) for x in lst(sp)])
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: XSelector,
+        y: Literal[None],
+        columns: Axes,
+        name: Literal[None],
+    ) -> tuple[DataFrame, None]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: Literal[None],
+        y: YSelector,
+        columns: Literal[None],
+        name: str | Sequence[str],
+    ) -> tuple[None, Pandas]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: XSelector,
+        y: YSelector,
+        columns: Axes | None = ...,
+        name: str | Sequence[str] | None = ...,
+    ) -> tuple[DataFrame, Pandas]: ...
+
+    @staticmethod
+    def _check_input(
+        X: XSelector | None = None,
+        y: YSelector | None = None,
+        columns: Axes | None = None,
+        name: str | Sequence[str] | None = None,
+    ) -> tuple[DataFrame | None, Pandas | None]:
+        """Prepare the input data.
+
+        Convert X and y to pandas (if not already) and perform standard
+        compatibility checks (dimensions, length, indices, etc...).
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            `X` is ignored.
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to `X`.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        columns: sequence or None, default=None
+            Names of the features corresponding to `X`. If X already is a
+            dataframe, force feature order. If None and X is not a
+            dataframe, assign default feature names.
+
+        name: str, sequence or None, default=None
+            Name of the target column(s) corresponding to y. If None and
+            y is not a pandas object, assign default target name.
+
+        Returns
+        -------
+        dataframe or None
+            Feature dataset. Only returned if provided.
+
+        series, dataframe or None
+            Target column corresponding to `X`.
+
+        """
+        Xt: DataFrame | None = None
+        yt: Pandas | None = None
+
+        if X is None and y is None:
+            raise ValueError("X and y can't be both None!")
+        elif X is not None:
+            Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
+
+            # If text dataset, change the name of the column to corpus
+            if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
+                Xt = Xt.rename(columns={Xt.columns[0]: "corpus"})
+            else:
+                # Convert all column names to str
+                Xt.columns = Xt.columns.astype(str)
+
+                # No duplicate rows nor column names are allowed
+                if Xt.columns.duplicated().any():
+                    raise ValueError("Duplicate column names found in X.")
+
+                # Reorder columns to original order
+                if columns is not None:
+                    try:
+                        Xt = Xt[list(columns)]  # Force order determined by columns
+                    except KeyError:
+                        raise ValueError(
+                            f"The features are different than seen at fit time. "
+                            f"Features {set(Xt.columns) - set(columns)} are missing in X."
+                        ) from None
+
+        # Prepare target column
+        if isinstance(y, (dict, *sequence_t, *dataframe_t)):
+            if isinstance(y, dict):
+                yt = to_df(deepcopy(y), index=getattr(Xt, "index", None))
+                if n_cols(yt) == 1:
+                    yt = yt.iloc[:, 0]  # If y is one-dimensional, get series
+
+            else:
+                # If X and y have different number of rows, try multioutput
+                if Xt is not None and len(Xt) != len(y):
+                    try:
+                        targets: list[Hashable] = []
+                        for col in y:
+                            if col in Xt.columns:
+                                targets.append(col)
+                            elif isinstance(col, int_t):
+                                if -Xt.shape[1] <= col < Xt.shape[1]:
+                                    targets.append(Xt.columns[int(col)])
+                                else:
+                                    raise IndexError(
+                                        "Invalid value for the y parameter. Value "
+                                        f"{col} is out of range for data with "
+                                        f"{Xt.shape[1]} columns."
+                                    )
+
+                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
+
+                    except (TypeError, IndexError, KeyError):
+                        raise ValueError(
+                            "X and y don't have the same number of rows,"
+                            f" got len(X)={len(Xt)} and len(y)={len(y)}."
+                        ) from None
+                else:
+                    yt = y
+
+                default_cols = [f"y{i}" for i in range(n_cols(y))]
+                yt = to_tabular(
+                    data=deepcopy(yt),
+                    index=getattr(Xt, "index", None),
+                    name=flt(name) if name is not None else "target",
+                    columns=name if isinstance(name, sequence_t) else default_cols,
+                )
+
+            # Check X and y have the same indices
+            if Xt is not None and not Xt.index.equals(yt.index):
+                raise ValueError("X and y don't have the same indices!")
+
+        elif isinstance(y, str):
+            if Xt is not None:
+                if y not in Xt.columns:
+                    raise ValueError(f"Column {y} not found in X!")
+
+                Xt, yt = Xt.drop(columns=y), Xt[y]
+
+            else:
+                raise ValueError("X can't be None when y is a string.")
+
+        elif isinstance(y, int_t):
+            if Xt is None:
+                raise ValueError("X can't be None when y is an int.")
+
+            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
+
+        return Xt, yt
 
     def _set_index(self, df: DataFrame, y: Pandas | None) -> DataFrame:
         """Assign an index to the dataframe.

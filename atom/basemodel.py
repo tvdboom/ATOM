@@ -77,7 +77,7 @@ from atom.utils.utils import (
     TrialsCallback, adjust_verbosity, bk, cache, check_dependency, check_empty,
     check_scaling, composed, crash, estimator_has_attr, flt, get_cols,
     get_custom_scorer, has_task, it, lst, make_sklearn, merge, method_to_log,
-    rnd, sign, time_to_str, to_pandas,
+    rnd, sign, time_to_str, to_tabular,
 )
 
 
@@ -754,7 +754,7 @@ class BaseModel(RunnerPlot):
         if self.task.is_forecast:
             y_pred = estimator.predict(fh=y.index, X=check_empty(X))
         else:
-            y_pred = to_pandas(
+            y_pred = to_tabular(
                 data=estimator.predict(X),
                 index=y.index,
                 columns=getattr(y, "columns", None),
@@ -2447,7 +2447,7 @@ class BaseModel(RunnerPlot):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. If None,
+            `X` is ignored. If None,
             X is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
@@ -2646,7 +2646,7 @@ class ClassRegModel:
             pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt[self.features]))
 
             if pred.ndim < 3:
-                data = to_pandas(
+                data = to_tabular(
                     data=pred,
                     index=Xt.index,
                     name=self.target,
