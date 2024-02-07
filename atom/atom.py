@@ -51,7 +51,7 @@ from atom.training import (
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING, __version__
 from atom.utils.types import (
     Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DataFrame,
-    DiscretizerStrats, Engine, Estimator, FeatureNamesOut,
+    DiscretizerStrats, Engine, EngineTuple, Estimator, FeatureNamesOut,
     FeatureSelectionSolvers, FeatureSelectionStrats, FloatLargerEqualZero,
     FloatLargerZero, FloatZeroToOneInc, Index, IndexSelector, Int,
     IntLargerEqualZero, IntLargerTwo, IntLargerZero, MetricConstructor,
@@ -129,7 +129,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         )
 
         self._config = DataConfig(
-            index=index,
+            index=index is not False,
             shuffle=shuffle,
             stratify=stratify,
             n_rows=n_rows,
@@ -139,7 +139,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         # Initialize the branch system and fill with data
         self._branches = BranchManager(memory=self.memory)
-        self._branches.fill(*self._get_data(arrays, y=y))
+        self._branches.fill(*self._get_data(arrays, y=y, index=index))
 
         self.ignore = ignore  # type: ignore[assignment]
         self.sp = sp  # type: ignore[assignment]
@@ -163,9 +163,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             )
         if "cpu" not in self.device.lower():
             self._log(f"Device: {self.device}", 1)
-        if self.engine.data != "pandas":
+        if self.engine.data != EngineTuple().data:
             self._log(f"Data engine: {self.engine.data}", 1)
-        if self.engine.estimator != "sklearn":
+        if self.engine.estimator != EngineTuple().estimator:
             self._log(f"Estimator engine: {self.engine.estimator}", 1)
         if self.backend == "ray" or self.n_jobs > 1:
             self._log(f"Parallelization backend: {self.backend}", 1)
@@ -1232,11 +1232,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         if callable(transformer):
-            est_class = make_sklearn(transformer, feature_names_out=feature_names_out)
-            transformer_c = self._inherit(est_class())
+            transformer_c = self._inherit(transformer(), feature_names_out=feature_names_out)
         else:
-            make_sklearn(transformer.__class__, feature_names_out=feature_names_out)
-            transformer_c = transformer
+            transformer_c = make_sklearn(transformer, feature_names_out=feature_names_out)
 
         if any(m.branch is self.branch for m in self._models):
             raise PermissionError(

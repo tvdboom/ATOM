@@ -36,9 +36,9 @@ from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, DataFrame, Engine, EngineDataOptions,
-    EngineEstimatorOptions, EngineTuple, Estimator, Int, IntLargerEqualZero,
-    Pandas, Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
-    bool_t, dataframe_t, int_t, sequence_t,
+    EngineEstimatorOptions, EngineTuple, Estimator, FeatureNamesOut, Int,
+    IntLargerEqualZero, Pandas, Sequence, Severity, Verbose, Warnings,
+    XSelector, YSelector, bool_t, dataframe_t, int_t, sequence_t,
 )
 from atom.utils.utils import (
     crash, flt, lst, make_sklearn, n_cols, to_df, to_pandas,
@@ -359,7 +359,11 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _inherit(self, obj: T_Estimator, fixed: tuple[str, ...] = ()) -> T_Estimator:
+    def _inherit(
+        self,
+        obj: T_Estimator, fixed: tuple[str, ...] = (),
+        feature_names_out: FeatureNamesOut = "one-to-one",
+    ) -> T_Estimator:
         """Inherit parameters from parent.
 
         Utility method to set the sp (seasonal period), n_jobs and
@@ -374,6 +378,17 @@ class BaseTransformer:
 
         fixed: tuple of str, default=()
             Fixed parameters that should not be overriden.
+
+        feature_names_out: "one-to-one", callable or None, default="one-to-one"
+            Determines the list of feature names that will be returned
+            by the `get_feature_names_out` method.
+
+            - If None: The `get_feature_names_out` method is not defined.
+            - If "one-to-one": The output feature names will be equal to
+              the input feature names.
+            - If callable: Function that takes positional arguments self
+              and a sequence of input feature names. It must return a
+              sequence of output feature names.
 
         Returns
         -------
@@ -392,7 +407,7 @@ class BaseTransformer:
                 else:
                     obj.set_params(**{p: lst(self._config.sp.sp)[0]})
 
-        return obj
+        return make_sklearn(obj, feature_names_out=feature_names_out)
 
     def _get_est_class(self, name: str, module: str) -> type[Estimator]:
         """Import a class from a module.

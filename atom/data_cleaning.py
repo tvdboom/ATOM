@@ -56,8 +56,8 @@ from atom.utils.types import (
     EngineTuple, Estimator, FloatLargerZero, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats, NumericalStrats,
     Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels,
-    Sequence, Series, Transformer, Verbose, XSelector, YSelector, dataframe_t,
-    sequence_t, series_t,
+    Sequence, Series, Transformer, Verbose, XConstructor, YConstructor,
+    dataframe_t, sequence_t, series_t,
 )
 from atom.utils.utils import (
     Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
@@ -97,13 +97,13 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         out = super().__repr__(N_CHAR_MAX)
 
         # Remove default engine for cleaner representation
-        if (
-            hasattr(self, "engine")
-            and self.engine == EngineTuple()
-            and sklearn.get_config()["print_changed_only"]
-        ):
-            out = re.sub(r"engine=Engine\(\)", "", out)
-            out = re.sub(r"((?<=\(),\s|,\s(?=\))|,\s(?=,\s))", "", out)  # Drop comma-spaces
+        if hasattr(self, "engine") and sklearn.get_config()["print_changed_only"]:
+            if self.engine.data == EngineTuple().data:
+                out = re.sub(f"'data': '{self.engine.data}'", "", out)
+            if self.engine.estimator == EngineTuple().estimator:
+                out = re.sub(f", 'estimator': '{self.engine.estimator}'", "", out)
+            out = re.sub("engine={}", "", out)
+            out = re.sub(r"((?<=[{(]),\s|,\s(?=[})])|,\s(?=,\s))", "", out)  # Drop comma-spaces
 
         return out
 
@@ -120,8 +120,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     @composed(crash, method_to_log)
     def fit(
         self,
-        X: DataFrame | None = None,
-        y: Pandas | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params,
     ) -> Self:
         """Do nothing.
@@ -163,8 +163,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     @composed(crash, method_to_log)
     def fit_transform(
         self,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
         **fit_params,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Fit to data, then transform it.
@@ -205,8 +205,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
     @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: DataFrame | None = None,
-        y: Pandas | None = None,
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
     ) -> Pandas | tuple[DataFrame, Pandas]:
         """Do nothing.
 

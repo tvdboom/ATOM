@@ -76,8 +76,8 @@ from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust_verbosity, bk, cache, check_dependency, check_empty,
     check_scaling, composed, crash, estimator_has_attr, flt, get_cols,
-    get_custom_scorer, has_task, it, lst, make_sklearn, merge, method_to_log,
-    rnd, sign, time_to_str, to_pandas,
+    get_custom_scorer, has_task, it, lst, merge, method_to_log, rnd, sign,
+    time_to_str, to_pandas,
 )
 
 
@@ -326,7 +326,7 @@ class BaseModel(RunnerPlot):
         except (ModuleNotFoundError, AttributeError, IndexError):
             mod = import_module(module)
 
-        return make_sklearn(getattr(mod, est_name))
+        return getattr(mod, est_name)
 
     @property
     def _shap(self) -> ShapExplanation:

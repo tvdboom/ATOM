@@ -245,7 +245,7 @@ class DataConfig:
 
     """
 
-    index: IndexSelector = True
+    index: bool = True
     ignore: tuple[str, ...] = ()
     sp: SPTuple = SPTuple()  # noqa: RUF009
     shuffle: Bool = False
@@ -2815,7 +2815,7 @@ def wrap_transformer_methods(f: Callable) -> Callable:
 
 
 def make_sklearn(
-    cls: T_Estimator,
+    obj: T_Estimator,
     feature_names_out: FeatureNamesOut = "one-to-one",
 ) -> T_Estimator:
     """Add functionality to a class to adhere to sklearn's API.
@@ -2827,8 +2827,8 @@ def make_sklearn(
 
     Parameters
     ----------
-    cls: Estimator class
-        Class to wrap.
+    obj: Estimator
+        Object to wrap.
 
     feature_names_out: "one-to-one", callable or None, default="one-to-one"
         Determines the list of feature names that will be returned
@@ -2843,8 +2843,8 @@ def make_sklearn(
 
     Returns
     -------
-    Estimator class
-        Class with wrapped fit method.
+    Estimator
+        Object with wrapped fit method.
 
     """
 
@@ -2881,10 +2881,13 @@ def make_sklearn(
 
         return wrapper
 
-    if not cls.__module__.startswith(("atom.", "sklearn.")) and hasattr(cls, "fit"):
-        cls.fit = wrap_fit(cls.fit)  # type: ignore[method-assign]
+    if not obj.__module__.startswith(("atom.", "sklearn.", "imblearn.")) and hasattr(obj, "fit"):
+        if isinstance(obj, type):
+            obj.fit = wrap_fit(obj.fit)
+        else:
+            obj.fit = wrap_fit(obj.__class__.fit).__get__(obj)  # type: ignore[method-assign]
 
-    return cls
+    return obj
 
 
 # Custom scorers =================================================== >>

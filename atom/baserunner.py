@@ -37,10 +37,10 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int, IntLargerOne,
-    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Seasonality, Segment, Sequence, Series, SPDict, SPTuple,
-    TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
+    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
+    IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
+    Pandas, RowSelector, Seasonality, Segment, Sequence, Series, SPDict,
+    SPTuple, TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
     sequence_t,
 )
 from atom.utils.utils import (
@@ -376,64 +376,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         else:
             return flt([get_single_sp(x) for x in lst(sp)])
 
-    def _set_index(self, df: DataFrame, y: Pandas | None) -> DataFrame:
-        """Assign an index to the dataframe.
-
-        Parameters
-        ----------
-        df: dataframe
-            Dataset.
-
-        y: series, dataframe or None
-            Target column(s). Used to check that the provided index
-            is not one of the target columns. If None, the check is
-            skipped.
-
-        Returns
-        -------
-        dataframe
-            Dataset with updated indices.
-
-        """
-        if self._config.index is True:  # True gets caught by isinstance(int)
-            pass
-        elif self._config.index is False:
-            df = df.reset_index(drop=True)
-        elif isinstance(self._config.index, int_t):
-            if -df.shape[1] <= self._config.index <= df.shape[1]:
-                df = df.set_index(df.columns[int(self._config.index)], drop=True)
-            else:
-                raise IndexError(
-                    f"Invalid value for the index parameter. Value {self._config.index} "
-                    f"is out of range for a dataset with {df.shape[1]} columns."
-                )
-        elif isinstance(self._config.index, str):
-            if self._config.index in df:
-                df = df.set_index(self._config.index, drop=True)
-            else:
-                raise ValueError(
-                    "Invalid value for the index parameter. "
-                    f"Column {self._config.index} not found in the dataset."
-                )
-
-        if y is not None and df.index.name in (c.name for c in get_cols(y)):
-            raise ValueError(
-                "Invalid value for the index parameter. The index column "
-                f"can not be the same as the target column, got {df.index.name}."
-            )
-
-        if df.index.duplicated().any():
-            raise ValueError(
-                "Invalid value for the index parameter. There are duplicate indices "
-                "in the dataset. Use index=False to reset the index to RangeIndex."
-            )
-
-        return df
-
     def _get_data(
         self,
         arrays: tuple,
         y: YSelector = -1,
+        *,
+        index: IndexSelector = False,
     ) -> tuple[DataContainer, DataFrame | None]:
         """Get data sets from a sequence of indexables.
 
@@ -447,6 +395,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         y: int, str or sequence, default=-1
             Transformed target column.
+
+        index: bool, int, str or sequence, default=False
+            Index parameter as provided in constructor.
 
         Returns
         -------
@@ -488,6 +439,60 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
+        def _set_index(df: DataFrame, y: Pandas | None) -> DataFrame:
+            """Assign an index to the dataframe.
+
+            Parameters
+            ----------
+            df: dataframe
+                Dataset.
+
+            y: series, dataframe or None
+                Target column(s). Used to check that the provided index
+                is not one of the target columns. If None, the check is
+                skipped.
+
+            Returns
+            -------
+            dataframe
+                Dataset with updated indices.
+
+            """
+            if index is True:  # True gets caught by isinstance(int)
+                pass
+            elif index is False:
+                df = df.reset_index(drop=True)
+            elif isinstance(index, int_t):
+                if -df.shape[1] <= index <= df.shape[1]:
+                    df = df.set_index(df.columns[int(index)], drop=True)
+                else:
+                    raise IndexError(
+                        f"Invalid value for the index parameter. Value {index} "
+                        f"is out of range for a dataset with {df.shape[1]} columns."
+                    )
+            elif isinstance(index, str):
+                if index in df:
+                    df = df.set_index(index, drop=True)
+                else:
+                    raise ValueError(
+                        "Invalid value for the index parameter. "
+                        f"Column {index} not found in the dataset."
+                    )
+
+            if y is not None and df.index.name in (c.name for c in get_cols(y)):
+                raise ValueError(
+                    "Invalid value for the index parameter. The index column "
+                    f"can not be the same as the target column, got {df.index.name}."
+                )
+
+            if df.index.duplicated().any():
+                raise ValueError(
+                    "Invalid value for the index parameter. There are duplicate indices "
+                    "in the dataset. Use index=False to reset the index to RangeIndex."
+                )
+
+            return df
+
         def _no_data_sets(
             X: DataFrame,
             y: Pandas,
@@ -525,14 +530,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             data = _subsample(data)
 
-            if isinstance(self._config.index, sequence_t):
-                if len(self._config.index) != len(data):
+            if isinstance(index, sequence_t):
+                if len(index) != len(data):
                     raise IndexError(
-                        "Invalid value for the index parameter. Length of "
-                        f"index ({len(self._config.index)}) doesn't match "
-                        f"that of the dataset ({len(data)})."
+                        "Invalid value for the index parameter. Length of index "
+                        f"({len(index)}) doesn't match that of the dataset ({len(data)})."
                     )
-                data.index = self._config.index
+                data.index = index
 
             if len(data) < 5:
                 raise ValueError(
@@ -585,7 +589,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     stratify=self._config.get_stratify_columns(data, y),
                 )
 
-                complete_set = self._set_index(bk.concat([train, test, holdout]), y)
+                complete_set = _set_index(bk.concat([train, test, holdout]), y)
 
                 container = DataContainer(
                     data=(data := complete_set.iloc[: len(data)]),
@@ -682,23 +686,22 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self._config.index, sequence_t):
+            if isinstance(index, sequence_t):
                 len_data = len(train) + len(test)
                 if holdout is not None:
                     len_data += len(holdout)
 
-                if len(self._config.index) != len_data:
+                if len(index) != len_data:
                     raise IndexError(
-                        "Invalid value for the index parameter. Length of "
-                        f"index ({len(self._config.index)}) doesn't match "
-                        f"that of the data sets ({len_data})."
+                        "Invalid value for the index parameter. Length of index "
+                        f"({len(index)}) doesn't match that of the data sets ({len_data})."
                     )
-                train.index = self._config.index[: len(train)]
-                test.index = self._config.index[len(train): len(train) + len(test)]
+                train.index = index[: len(train)]
+                test.index = index[len(train): len(train) + len(test)]
                 if holdout is not None:
-                    holdout.index = self._config.index[-len(holdout):]
+                    holdout.index = index[-len(holdout):]
 
-            complete_set = self._set_index(bk.concat([train, test, holdout]), y_test)
+            complete_set = _set_index(bk.concat([train, test, holdout]), y_test)
 
             container = DataContainer(
                 data=(data := complete_set.iloc[:len(train) + len(test)]),
