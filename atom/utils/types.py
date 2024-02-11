@@ -16,6 +16,8 @@ from typing import (
 import modin.pandas as md
 import numpy as np
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import Protocol
@@ -25,7 +27,8 @@ from sktime.forecasting.base import ForecastingHorizon
 
 
 if TYPE_CHECKING:
-    from atom.utils.utils import ClassMap, Goal
+    from atom.branch.dataengines import DataEngine
+    from atom.utils.utils import Goal
 
 
 # Classes for type hinting ========================================= >>
@@ -117,6 +120,13 @@ class EngineTuple(NamedTuple):
         """Print representation as dictionary."""
         return self._asdict().__repr__()
 
+    @property
+    def data_engine(self) -> DataEngine:
+        """Return the data engine."""
+        from atom.branch.dataengines import DATA_ENGINES
+
+        return DATA_ENGINES[self.data]()
+
 
 class SPTuple(NamedTuple):
     """Return type of the `sp` parameter."""
@@ -124,6 +134,11 @@ class SPTuple(NamedTuple):
     sp: int | list[int] | None = None
     seasonal_model: SeasonalityModels = "additive"
     trend_model: SeasonalityModels = "additive"
+
+
+@runtime_checkable
+class DataFrame(Protocol):
+    def __dataframe__(self, *args, **kwargs): ...
 
 
 @runtime_checkable
@@ -177,10 +192,10 @@ class Model(Protocol):
     """Protocol for all models."""
 
     _goal: Goal
-    _metric: ClassMap
-    _ht: dict[str, Any]
+    # _metric: ClassMap
+    # _ht: dict[str, Any]
 
-    def predict(self, *args, **kwargs) -> Pandas: ...
+    def predict(self, *args, **kwargs) -> Tabular: ...
 
 
 # Variable types for type hinting ================================== >>
@@ -190,11 +205,10 @@ Bool: TypeAlias = bool | np.bool_
 Int: TypeAlias = int | np.integer
 Float: TypeAlias = float | np.floating
 Scalar: TypeAlias = Int | Float
-Segment: TypeAlias = range | slice
-Index: TypeAlias = pd.Index | md.Index
-Series: TypeAlias = pd.Series | md.Series
-DataFrame: TypeAlias = pd.DataFrame | md.DataFrame
-Pandas: TypeAlias = Series | DataFrame
+Segment: TypeAlias = slice | range
+Series: TypeAlias = pd.Series | md.Series | pl.Series | pa.Array
+Pandas: TypeAlias = pd.Series | pd.DataFrame
+Tabular: TypeAlias = Series | DataFrame
 
 # Numerical types
 IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
@@ -222,7 +236,7 @@ YSelector: TypeAlias = Int | str | YConstructor
 FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
 
 # Return types for transform methods
-TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame
+TReturn: TypeAlias = np.ndarray | sps.spmatrix | Sequence[Any] | DataFrame
 TReturns: TypeAlias = TReturn | tuple[TReturn, TReturn]
 
 # Selection of rows or columns by name or position
@@ -248,10 +262,21 @@ MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZe
 
 # BaseTransformer parameters
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
-EngineDataOptions: TypeAlias = Literal["pandas", "pyarrow", "modin"]
+EngineDataOptions: TypeAlias = Literal[
+    "numpy",
+    "pandas",
+    "pandas-pyarrow",
+    "polars",
+    "polars-lazy",
+    "pyarrow",
+    "modin",
+    "dask",
+    "pyspark",
+    "pyspark-pandas",
+]
 EngineEstimatorOptions: TypeAlias = Literal["sklearn", "sklearnex", "cuml"]
 Engine: TypeAlias = EngineDataOptions | EngineEstimatorOptions | EngineDict | EngineTuple | None
-Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray"]
+Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray", "dask"]
 Warnings: TypeAlias = Literal["default", "error", "ignore", "always", "module", "once"]
 Severity: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]
 Verbose: TypeAlias = Literal[0, 1, 2]
@@ -370,8 +395,5 @@ bool_t = (bool, np.bool_)
 int_t = (int, np.integer)
 float_t = (float, np.floating)
 segment_t = (slice, range)
-index_t = (pd.Index, md.Index)
-series_t = (pd.Series, md.Series)
-sequence_t = (range, list, tuple, np.ndarray, *index_t, *series_t)
-dataframe_t = (pd.DataFrame, md.DataFrame)
-pandas_t = (*series_t, *dataframe_t)
+sequence_t = (range, list, tuple, np.ndarray, pd.Index, pd.Series)
+pandas_t = (pd.Series, pd.DataFrame)

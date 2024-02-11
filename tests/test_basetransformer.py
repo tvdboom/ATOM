@@ -57,23 +57,11 @@ def test_device_parameter():
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
 
 
-@patch("ray.init")
-def test_engine_parameter_modin(ray):
-    """Assert that ray is initialized when modin is data backend."""
-    base = BaseTransformer(device="cpu", engine="modin")
-    assert base.engine.data == "modin"
-    assert ray.is_called_once
-
-
-def test_engine_parameter_env_var():
-    """Assert that the environment variable is set."""
-    base = BaseTransformer(device="cpu", engine="pyarrow")
-    assert base.engine == EngineTuple(data="pyarrow", estimator="sklearn")
-    assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
-
-    base = BaseTransformer(device="cpu", engine="sklearnex")
-    assert base.engine == EngineTuple(data="pandas", estimator="sklearnex")
-    assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
+@pytest.mark.parametrize("engine", [None, "pandas", "sklearn", {}, EngineTuple()])
+def test_engine_parameter(engine):
+    """Assert that the engine parameter can be initialized."""
+    base = BaseTransformer(engine=engine)
+    assert base.engine == EngineTuple()
 
 
 @patch.dict("sys.modules", {"sklearnex": None})
@@ -101,6 +89,13 @@ def test_backend_parameter_ray(ray):
     """Assert that ray is initialized when selected."""
     BaseTransformer(backend="ray")
     assert ray.is_called_once
+
+
+@patch("dask.distributed.Client")
+def test_backend_parameter_dask(dask):
+    """Assert that dask is initialized when selected."""
+    BaseTransformer(backend="dask")
+    assert dask.is_called_once
 
 
 def test_backend_parameter():

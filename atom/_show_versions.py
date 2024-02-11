@@ -35,6 +35,8 @@ DEFAULT_DEPS = [
     "optuna",
     "pandas",
     "plotly",
+    "polars",
+    "pyarrow",
     "ray",
     "requests",
     "sklearn",
@@ -42,6 +44,7 @@ DEFAULT_DEPS = [
     "scipy",
     "shap",
     "sktime",
+    "statsmodels",
     "zoofs",  # Has no __version__ attribute
 ]
 

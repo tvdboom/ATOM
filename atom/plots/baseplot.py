@@ -15,6 +15,7 @@ from typing import Any, ClassVar, Literal, overload
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from beartype import beartype
@@ -25,9 +26,9 @@ from atom.basetransformer import BaseTransformer
 from atom.plots.basefigure import BaseFigure
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, DataFrame, FloatLargerZero, FloatZeroToOneExc, Index, Int,
-    IntLargerZero, Legend, MetricSelector, Model, ModelsSelector, PlotBackend,
-    RowSelector, Scalar, Sequence, int_t, sequence_t,
+    Bool, FloatLargerZero, FloatZeroToOneExc, Int, IntLargerZero, Legend,
+    MetricSelector, Model, ModelsSelector, PlotBackend, RowSelector, Scalar,
+    Sequence, int_t, sequence_t,
 )
 from atom.utils.utils import (
     Aesthetics, check_is_fitted, composed, crash, get_custom_scorer, lst,
@@ -139,7 +140,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     # Methods ====================================================== >>
 
     @staticmethod
-    def _get_plot_index(df: DataFrame) -> Index:
+    def _get_plot_index(df: pd.DataFrame) -> pd.Index:
         """Return the dataset's index in a plottable format.
 
         Plotly does not accept all index formats (e.g., pd.Period),

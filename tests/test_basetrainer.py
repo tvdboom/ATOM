@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import mlflow
 import pytest
-import ray
 from mlflow.tracking.fluent import ActiveRun
 from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import MedianPruner
@@ -383,14 +382,25 @@ def test_parallel_with_ray():
     trainer = DirectClassifier(
         models=["LR", "LDA"],
         parallel=True,
-        n_jobs=1,
+        n_jobs=2,
         backend="ray",
         random_state=1,
     )
-    # Fails because Mock returns empty list
+    # Fails because MagicMock returns empty list
     with pytest.raises(RuntimeError, match=".*All models failed.*"):
         trainer.run(bin_train, bin_test)
-    ray.shutdown()
+
+
+def test_parallel_with_dask():
+    """Assert that parallel runs successfully with dask backend."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        parallel=True,
+        n_jobs=2,
+        backend="dask",
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
 
 
 @patch("atom.basetrainer.Parallel", MagicMock())

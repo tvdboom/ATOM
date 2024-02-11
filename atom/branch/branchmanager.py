@@ -11,12 +11,13 @@ import shutil
 from collections.abc import Iterator
 from copy import copy, deepcopy
 
+import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 
 from atom.branch.branch import Branch
-from atom.utils.types import Bool, DataFrame, Int
+from atom.utils.types import Bool, Int
 from atom.utils.utils import ClassMap, DataContainer
 
 
@@ -99,7 +100,7 @@ class BranchManager:
         """Print containing branches."""
         return f"BranchManager([{', '.join(self.branches.keys())}], og={self.og.name})"
 
-    def __len__(self) -> Int:
+    def __len__(self) -> int:
         """Get the number of branches in the manager."""
         return len(self.branches)
 
@@ -212,7 +213,7 @@ class BranchManager:
             if parent:
                 self._copy_from_parent(self.current, parent)
 
-    def fill(self, data: DataContainer, holdout: DataFrame | None = None):
+    def fill(self, data: DataContainer, holdout: pd.DataFrame | None = None):
         """Fill the current branch with data.
 
         Parameters

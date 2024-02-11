@@ -28,7 +28,7 @@ from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, DataFrame, Engine, FloatLargerZero, Pandas, Sequence,
+    Bool, DataFrame, Engine, FloatLargerZero, Sequence, Tabular,
     VectorizerStarts, Verbose, bool_t,
 )
 from atom.utils.utils import (
@@ -194,7 +194,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.drop_punctuation = drop_punctuation
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -445,7 +445,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.lemmatize = lemmatize
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Normalize the text.
 
         Parameters
@@ -665,7 +665,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.quadgram_freq = quadgram_freq
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Tokenize the text.
 
         Parameters
@@ -924,7 +924,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             )
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -995,7 +995,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         return np.array(og_columns + self._get_corpus_columns())
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Vectorize the text.
 
         Parameters

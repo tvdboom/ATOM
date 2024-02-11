@@ -12,7 +12,6 @@ from random import sample
 from typing import Any, Literal
 
 import featuretools as ft
-import joblib
 import numpy as np
 import pandas as pd
 from beartype import beartype
@@ -34,13 +33,13 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.utils.types import (
-    Backend, Bool, DataFrame, Engine, FeatureSelectionSolvers,
-    FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
-    FloatZeroToOneInc, IntLargerEqualZero, IntLargerZero, NJobs, Operators,
-    Pandas, Scalar, Sequence, Series, Verbose, series_t,
+    Bool, DataFrame, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
+    FloatLargerEqualZero, FloatLargerZero, FloatZeroToOneInc,
+    IntLargerEqualZero, IntLargerZero, NJobs, Operators, Scalar, Sequence,
+    Series, Tabular, Verbose,
 )
 from atom.utils.utils import (
-    Goal, Task, bk, check_is_fitted, check_scaling, composed, crash,
+    Goal, Task, check_is_fitted, check_scaling, composed, crash,
     get_custom_scorer, is_sparse, lst, merge, method_to_log, sign,
 )
 
@@ -174,7 +173,7 @@ class FeatureExtractor(TransformerMixin):
         self.from_index = from_index
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Extract the new features.
 
         Parameters
@@ -195,7 +194,7 @@ class FeatureExtractor(TransformerMixin):
 
         if self.from_index:
             if hasattr(X.index, "to_timestamp"):
-                Xc = bk.DataFrame(X.index.to_timestamp())
+                Xc = pd.DataFrame(X.index.to_timestamp())
                 order = Xc.columns.tolist() + X.columns.tolist()
             else:
                 raise ValueError("Unable to convert the index to a timestamp format.")
@@ -203,7 +202,7 @@ class FeatureExtractor(TransformerMixin):
             Xc = X.select_dtypes(exclude="number")
             order = X.columns.tolist()
 
-        Xt = bk.DataFrame(index=X.index)
+        Xt = pd.DataFrame(index=X.index)
         for name, column in Xc.items():
             col_dt = pd.to_datetime(
                 arg=column,
@@ -228,7 +227,7 @@ class FeatureExtractor(TransformerMixin):
                         f"{fx.lower()} is not an attribute of pd.Series.dt."
                     )
 
-                if not isinstance(series, series_t):
+                if not isinstance(series, pd.Series):
                     self._log(
                         f"   --> Extracting feature {fx} "
                         "failed. Result is not a Series.dt.", 2,
@@ -421,7 +420,7 @@ class FeatureGenerator(TransformerMixin):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -430,11 +429,11 @@ class FeatureGenerator(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -510,7 +509,7 @@ class FeatureGenerator(TransformerMixin):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Generate new features.
 
         Parameters
@@ -682,7 +681,7 @@ class FeatureGrouper(TransformerMixin):
         self.drop_columns = drop_columns
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Group features.
 
         Parameters
@@ -921,16 +920,6 @@ class FeatureSelector(TransformerMixin):
             - "sklearnex"
             - "cuml"
 
-    backend: str, default="loky"
-        Parallelization backend. Read more in the
-        [user guide][parallel-execution]. Choose from:
-
-        - "loky": Single-node, process-based parallelism.
-        - "multiprocessing": Legacy single-node, process-based
-          parallelism. Less robust than `loky`.
-        - "threading": Single-node, thread-based parallelism.
-        - "ray": Multi-node, process-based parallelism.
-
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1015,7 +1004,6 @@ class FeatureSelector(TransformerMixin):
         n_jobs: NJobs = 1,
         device: str = "cpu",
         engine: Engine = None,
-        backend: Backend = "loky",
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
@@ -1024,7 +1012,6 @@ class FeatureSelector(TransformerMixin):
             n_jobs=n_jobs,
             device=device,
             engine=engine,
-            backend=backend,
             verbose=verbose,
             random_state=random_state,
         )
@@ -1037,7 +1024,7 @@ class FeatureSelector(TransformerMixin):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit the feature selector to the data.
 
         The univariate, sfm (when model is not fitted), sfs, rfe and
@@ -1050,11 +1037,11 @@ class FeatureSelector(TransformerMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -1393,7 +1380,6 @@ class FeatureSelector(TransformerMixin):
                     **kwargs,
                 )
 
-            with joblib.parallel_backend(backend=self.backend):
                 self._estimator.fit(X, y)
 
         else:
@@ -1492,7 +1478,7 @@ class FeatureSelector(TransformerMixin):
             )
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Transform the data.
 
         Parameters

@@ -8,21 +8,19 @@ Description: Module containing utility classes.
 from __future__ import annotations
 
 import functools
-import os
 import sys
 import warnings
 from collections import deque
-from collections.abc import Callable, Hashable, Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from copy import copy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property, wraps
 from importlib import import_module
-from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from types import GeneratorType, MappingProxyType
+from types import GeneratorType, MappingProxyType, ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import mlflow
@@ -31,6 +29,8 @@ import nltk
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import polars as pl
+import pyarrow as pa
 import scipy.sparse as sps
 from beartype import beartype
 from beartype.door import is_bearable
@@ -40,7 +40,7 @@ from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from pandas._libs.missing import NAType
-from pandas._typing import Axes, Dtype, DtypeArg
+from pandas._typing import Axes, Dtype
 from pandas.api.types import is_numeric_dtype
 from shap import Explainer, Explanation
 from sklearn.base import BaseEstimator
@@ -54,11 +54,11 @@ from sklearn.utils.validation import _is_fitted
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, FeatureNamesOut, Float, Index, IndexSelector,
-    Int, IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Sequence, Series, SPTuple, Transformer, TReturn, TReturns,
-    Verbose, XConstructor, XSelector, YConstructor, YSelector, dataframe_t,
-    int_t, pandas_t, segment_t, sequence_t, series_t,
+    Bool, DataFrame, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
+    IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
+    Scorer, Segment, Sequence, SPTuple, Tabular, Transformer, TReturn,
+    TReturns, Verbose, XConstructor, XSelector, YConstructor, YSelector, int_t,
+    segment_t, sequence_t,
 )
 
 
@@ -69,13 +69,12 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-T_Pandas = TypeVar("T_Pandas", Series, DataFrame)
+T_Pandas = TypeVar("T_Pandas", pd.Series, pd.DataFrame)
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
 
 
 # Classes ========================================================== >>
-
 
 class NotFittedError(ValueError, AttributeError):
     """Exception called when the instance is not yet fitted.
@@ -93,7 +92,7 @@ class Goal(Enum):
     regression = 1
     forecast = 2
 
-    def infer_task(self, y: Pandas) -> Task:
+    def infer_task(self, y: Tabular) -> Task:
         """Infer the task corresponding to a target column.
 
         Parameters
@@ -108,17 +107,17 @@ class Goal(Enum):
 
         """
         if self.value == 1:
-            if isinstance(y, series_t):
+            if isinstance(y, pd.Series):
                 return Task.regression
             else:
                 return Task.multioutput_regression
         elif self.value == 2:
-            if isinstance(y, series_t):
+            if isinstance(y, pd.Series):
                 return Task.univariate_forecast
             else:
                 return Task.multivariate_forecast
 
-        if isinstance(y, dataframe_t):
+        if isinstance(y, pd.DataFrame):
             if all(y[col].nunique() == 2 for col in y.columns):
                 return Task.multilabel_classification
             else:
@@ -207,10 +206,10 @@ class SeasonalPeriod(IntEnum):
 class DataContainer:
     """Stores a branch's data."""
 
-    data: DataFrame  # Complete dataset
-    train_idx: Index  # Indices in the train set
-    test_idx: Index  # Indices in the test
-    n_cols: Int  # Number of target columns
+    data: pd.DataFrame  # Complete dataset
+    train_idx: pd.Index  # Indices in the train set
+    test_idx: pd.Index  # Indices in the test
+    n_targets: int  # Number of target columns
 
 
 @dataclass
@@ -254,7 +253,7 @@ class DataConfig:
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
 
-    def get_stratify_columns(self, df: DataFrame, y: Pandas) -> DataFrame | None:
+    def get_stratify_columns(self, df: DataFrame, y: Tabular) -> DataFrame | None:
         """Get columns to stratify by.
 
         Parameters
@@ -263,7 +262,7 @@ class DataConfig:
             Dataset from which to get the columns.
 
         y: series or dataframe
-            Target column.
+            Target column(s).
 
         Returns
         -------
@@ -300,26 +299,6 @@ class DataConfig:
                         )
 
             return df[inc]
-
-
-class PandasModin:
-    """Utility class to select the right data engine.
-
-    Returns pandas or modin depending on the env variable
-    ATOM_DATA_ENGINE, which is set in BaseTransformer.py.
-
-    """
-
-    def __getattr__(self, item: str) -> Any:
-        """Return the backend engine."""
-        if os.environ.get("ATOM_DATA_ENGINE") == "modin":
-            return getattr(md, item)
-        else:
-            return getattr(pd, item)
-
-
-# ATOM uses this instance to access the data engine
-bk = PandasModin()
 
 
 class CatBMetric:
@@ -1009,10 +988,10 @@ class ShapExplanation:
                     ) from None
 
             # Remember shap values in the _shap_values attribute
-            self._shap_values = bk.concat(
+            self._shap_values = pd.concat(
                 [
                     self._shap_values,
-                    bk.Series(list(self._explanation.values), index=calculate.index),
+                    pd.Series(list(self._explanation.values), index=calculate.index),
                 ]
             )
 
@@ -1347,9 +1326,9 @@ def merge(*args) -> DataFrame:
 
     """
     if len(args_c := [x for x in args if x is not None and not x.empty]) == 1:
-        return bk.DataFrame(args_c[0])
+        return pd.DataFrame(args_c[0])
     else:
-        return bk.DataFrame(bk.concat(args_c, axis=1))
+        return pd.DataFrame(pd.concat(args_c, axis=1))
 
 
 def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_Pandas:
@@ -1393,7 +1372,7 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
 
-    if isinstance(X, series_t):
+    if isinstance(X, pd.Series):
         return X.replace(
             to_replace=(missing_values or []) + default_values,
             value=get_nan(X.dtype),
@@ -1405,30 +1384,76 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         )
 
 
-def get_cols(elem: Pandas) -> list[Series]:
+def n_cols(obj: XSelector | YSelector) -> int:
+    """Get the number of columns in a dataset.
+
+    Parameters
+    ----------
+    obj: dict, sequence or dataframe-like
+        Dataset to check.
+
+    Returns
+    -------
+    int or None
+        Number of columns.
+
+    """
+    if hasattr(obj, "shape"):
+        return obj.shape[1] if len(obj.shape) > 1 else 1
+    elif isinstance(obj, dict):
+        return len(obj)
+    elif (array := np.asarray(obj)).ndim > 1:
+        return array.shape[1]
+    else:
+        return array.ndim
+
+
+def get_cols(obj: Pandas) -> list[pd.Series]:
     """Get a list of columns in dataframe / series.
 
     Parameters
     ----------
-    elem: series or dataframe
+    obj: series or dataframe
         Element to get the columns from.
 
     Returns
     -------
     list of series
-        Columns in elem.
+        Columns.
 
     """
-    if isinstance(elem, series_t):
-        return [elem]
+    if isinstance(obj, pd.Series):
+        return [obj]
     else:
-        return [elem[col] for col in elem.columns]
+        return [obj[col] for col in obj.columns]
+
+
+def get_col_names(obj: Tabular | None) -> list[str] | None:
+    """Get a list of column names in tabular objects.
+
+    Parameters
+    ----------
+    obj: series, dataframe or None
+        Element to get the column names from.
+
+    Returns
+    -------
+    list of str
+        Names of the columns.
+
+    """
+    if isinstance(obj, pd.DataFrame):
+        return list(obj.columns)
+    elif isinstance(obj, pd.Series):
+        return [obj.name]
+    else:
+        return None
 
 
 def variable_return(
     X: DataFrame | None,
     y: Series | None,
-) -> DataFrame | Series | tuple[DataFrame, Pandas]:
+) -> DataFrame | Series | tuple[DataFrame, Tabular]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1440,7 +1465,7 @@ def variable_return(
         Feature set.
 
     y: series, dataframe or None
-        Target column.
+        Target column(s).
 
     Returns
     -------
@@ -1479,7 +1504,7 @@ def get_segment(obj: list[T], segment: Segment) -> list[T]:
         return obj[slice(segment.start, segment.stop, segment.step)]
 
 
-def is_sparse(obj: Pandas) -> bool:
+def is_sparse(obj: Tabular) -> bool:
     """Check if the dataframe is sparse.
 
     A data set is considered sparse if any of its columns is sparse.
@@ -1498,13 +1523,13 @@ def is_sparse(obj: Pandas) -> bool:
     return any(isinstance(col.dtype, pd.SparseDtype) for col in get_cols(obj))
 
 
-def check_empty(obj: Pandas) -> Pandas | None:
+def check_empty(obj: Tabular) -> Tabular | None:
     """Check if a pandas object is empty.
 
     Parameters
     ----------
     obj: series or dataframe
-        Pandas object to check.
+        Tabular object to check.
 
     Returns
     -------
@@ -1512,24 +1537,34 @@ def check_empty(obj: Pandas) -> Pandas | None:
         Same object or None if empty.
 
     """
-    return obj if isinstance(obj, dataframe_t) and not obj.empty else None
+    return obj if isinstance(obj, pd.DataFrame) and not obj.empty else None
 
 
-def check_dependency(name: str):
-    """Raise an error if a package is not installed.
+def check_dependency(name: str) -> ModuleType:
+    """Check an optional dependency.
+
+    Import the module or raise an error if the package is not
+    installed.
 
     Parameters
     ----------
     name: str
         Name of the package to check.
 
+    Returns
+    -------
+    module
+        Imported module.
+
     """
-    if not find_spec(name.replace("-", "_")):
+    try:
+        return import_module(name)
+    except ModuleNotFoundError as ex:
         raise ModuleNotFoundError(
             f"Unable to import the {name} package. Install it using "
             f"`pip install {name}` or install all of atom's optional "
             "dependencies with `pip install atom-ml[full]`."
-        )
+        ) from ex
 
 
 def check_nltk_module(module: str, *, quiet: bool):
@@ -1591,25 +1626,18 @@ def check_predict_proba(models: Model | Sequence[Model], method: str):
             )
 
 
-def check_scaling(X: Pandas, pipeline: Any | None = None) -> bool:
+def check_scaling(X: Tabular) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
     all columns lies between -0.05 and 0.05 and the mean of the
     standard deviation of all columns lies between 0.85 and 1.15.
-    Binary columns are excluded from the calculation.
-
-    Additionally, if a pipeline is provided and there's a scaler in
-    the pipeline, it also returns False.
+    Categorical and binary columns are excluded from the calculation.
 
     Parameters
     ----------
     X: series or dataframe
         Data set to check.
-
-    pipeline: Pipeline or None, default=None
-        Pipeline in which to check for a scaler (any estimator whose
-        name contains the word scaler).
 
     Returns
     -------
@@ -1617,19 +1645,10 @@ def check_scaling(X: Pandas, pipeline: Any | None = None) -> bool:
         Whether the data set is scaled.
 
     """
-    has_scaler = False
-    if pipeline is not None:
-        has_scaler = any("scaler" in name.lower() for name in pipeline.named_steps)
-
-    df = to_df(X)  # Convert to dataframe
-    df = df.loc[:, (~df.isin([0, 1])).any(axis=0)]  # Remove binary columns
-
-    if df.empty:  # All columns are binary -> no scaling needed
-        return True
-    else:
-        mean = df.mean(numeric_only=True).mean()
-        std = df.std(numeric_only=True).mean()
-        return has_scaler or bool(-0.05 < mean < 0.05 and 0.85 < std < 1.15)
+    df = to_df(X)
+    mean = df.mean(numeric_only=True).mean()
+    std = df.std(numeric_only=True).mean()
+    return bool(-0.05 < mean < 0.05 and 0.85 < std < 1.15)
 
 
 @contextmanager
@@ -1760,61 +1779,11 @@ def time_to_str(t: Scalar) -> str:
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
-def n_cols(data: XSelector | YSelector) -> int:
-    """Get the number of columns in a dataset.
-
-    Parameters
-    ----------
-    data: sequence or dataframe-like
-        Dataset to check.
-
-    Returns
-    -------
-    int or None
-        Number of columns.
-
-    """
-    if (array := np.array(data, dtype="object")).ndim > 1:
-        return array.shape[1]
-    else:
-        return array.ndim  # Can be zero when input is a dict
-
-
-def to_pyarrow(column: Series, *, inverse: bool = False) -> Dtype:
-    """Get the pyarrow dtype corresponding to a series.
-
-    Parameters
-    ----------
-    column: series
-        Column to get the dtype from. If it already has a pyarrow
-        dtype, return the original dtype.
-
-    inverse: bool, default=False
-        Whether to convert to pyarrow or back from pyarrow.
-
-    Returns
-    -------
-    str
-        Name of the converted dtype.
-
-    """
-    if not inverse and not column.dtype.name.endswith("[pyarrow]"):
-        if column.dtype.name == "object":
-            return "string[pyarrow]"  # pyarrow doesn't support 'object'
-        else:
-            return f"{column.dtype.name}[pyarrow]"
-    elif inverse and column.dtype.name.endswith("[pyarrow]"):
-        return column.dtype.name[:-9]
-
-    return column.dtype.name
-
-
 @overload
 def to_df(
     data: Literal[None],
     index: Axes | None = ...,
     columns: Axes | None = ...,
-    dtype: DtypeArg | None = ...,
 ) -> None: ...
 
 
@@ -1823,23 +1792,21 @@ def to_df(
     data: XSelector,
     index: Axes | None = ...,
     columns: Axes | None = ...,
-    dtype: DtypeArg | None = ...,
-) -> DataFrame: ...
+) -> pd.DataFrame: ...
 
 
 def to_df(
     data: XSelector | None,
     index: Axes | None = None,
     columns: Axes | None = None,
-    dtype: DtypeArg | None = None,
-) -> DataFrame | None:
-    """Convert a dataset to a dataframe.
+) -> pd.DataFrame | None:
+    """Convert a dataset to a pandas dataframe.
 
     Parameters
     ----------
     data: dataframe-like or None
-        Dataset to convert to a dataframe.  If None or already a
-        dataframe, return unchanged.
+        Dataset to convert to a dataframe. If None or already a
+        pandas dataframe, return unchanged.
 
     index: sequence, index or None, default=None
         Values for the index.
@@ -1847,53 +1814,46 @@ def to_df(
     columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    dtype: str, dict, np.dtype or None, default=None
-        Data types for the output columns. If None, the types are
-        inferred from the data.
-
     Returns
     -------
     dataframe or None
-        Dataset as dataframe of a type given by the backend.
+        Dataset as dataframe.
 
     """
-    if data is not None:
-        if not isinstance(data, bk.DataFrame):
-            # Assign default column names (dict already has column names)
-            if not isinstance(data, dict | Pandas) and columns is None:
+    if not isinstance(data, pd.DataFrame | None):
+        if hasattr(data, "__dataframe__"):
+            # Transform from dataframe interchange protocol
+            data_c = pd.api.interchange.from_dataframe(data.__dataframe__())
+        else:
+            # Assign default column names (dict and series already have names)
+            if columns is None and not isinstance(data, dict | pd.Series):
                 columns = [f"x{i}" for i in range(n_cols(data))]
 
-            if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-                # Convert cuML to pandas
-                data_c = data.to_pandas()  # type: ignore[operator]
-            elif sps.issparse(data):
-                data_c = pd.DataFrame.sparse.from_spmatrix(
-                    data=data,
-                    index=index,
-                    columns=columns,
-                )
+            if sps.issparse(data):
+                data_c = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
             else:
-                data_c = pd.DataFrame(data, index, columns)  # type: ignore[arg-type, misc]
-        else:
-            data_c = data
+                data_c = pd.DataFrame(data, index, columns)
+    else:
+        data_c = data
 
-            if dtype is not None:
-                data_c = data_c.astype(dtype)
+    if data_c is not None and columns is not None:
+        # Reorder columns to the provided order
+        try:
+            data_c = data_c[list(columns)]  # Force order determined by columns
+        except KeyError:
+            raise ValueError(
+                f"The columns are different than seen at fit time. "
+                f"Features {set(data_c.columns) - set(columns)} are missing in X."
+            ) from None
 
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
-            data_c = data_c.astype({n: to_pyarrow(col) for n, col in data_c.items()})
-
-        return data_c
-
-    return data
+    return data_c
 
 
 @overload
 def to_series(
     data: Literal[None],
     index: Axes | None = ...,
-    name: Hashable | None = ...,
-    dtype: Dtype | None = ...,
+    name: str | None = ...,
 ) -> None: ...
 
 
@@ -1901,23 +1861,22 @@ def to_series(
 def to_series(
     data: dict[str, Any] | Sequence[Any],
     index: Axes | None = ...,
-    name: Hashable | None = ...,
-    dtype: Dtype | None = ...,
-) -> Series: ...
+    name: str | None = ...,
+) -> pd.Series: ...
 
 
 def to_series(
     data: dict[str, Any] | Sequence[Any] | None,
     index: Axes | None = None,
-    name: Hashable | None = None,
-    dtype: Dtype | None = None,
-) -> Series | None:
-    """Convert a sequence to a series.
+    name: str | None = None,
+) -> pd.Series | None:
+    """Convert a sequence to a pandas series.
 
     Parameters
     ----------
     data: dict, sequence or None
-        Data to convert. If None, return unchanged.
+        Data to convert. If None or already a pandas series, return
+        unchanged.
 
     index: sequence, index or None, default=None
         Values for the index.
@@ -1925,67 +1884,54 @@ def to_series(
     name: str or None, default=None
         Name of the series.
 
-    dtype: str, np.dtype or None, default=None
-        Data type for the output series. If None, the type is
-        inferred from the data.
-
     Returns
     -------
     series or None
         Sequence as series of a type given by the backend.
 
     """
-    if data is not None:
-        if not isinstance(data, bk.Series):
-            if hasattr(data, "to_pandas") and bk.__name__ == "pandas":
-                data_c = data.to_pandas()  # Convert cuML to pandas
-            else:
-                # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
-                data_c = pd.Series(  # type: ignore[misc]
-                    data=np.array(data, dtype="object").ravel().tolist(),
-                    index=index,
-                    name=getattr(data, "name", name),
-                    dtype=dtype,  # type: ignore[arg-type]
-                )
-        else:
+    if not isinstance(data, pd.Series | None):
+        if isinstance(data, md.Series):
             data_c = data
+        elif isinstance(data, pl.Series):
+            data_c = data.to_pandas(use_pyarrow_extension_array=True)
+        elif isinstance(data, pa.Array | pa.ChunkedArray):
+            data_c = data.to_pandas(types_mapper=pd.ArrowDtype)
+        else:
+            # Flatten for arrays with shape=(n_samples, 1)
+            data_c = pd.Series(
+                data=np.asarray(data).ravel().tolist(),
+                index=index,
+                name=name or "target",
+            )
+    else:
+        data_c = data
 
-        if os.environ.get("ATOM_DATA_ENGINE") == "pyarrow":
-            data_c = data_c.astype(to_pyarrow(data_c))
-
-        return data_c
-
-    return data
+    return data_c
 
 
 @overload
-def to_pandas(
+def to_tabular(
     data: Literal[None],
     index: Axes | None = ...,
     columns: Axes | None = ...,
-    name: str | None = ...,
-    dtype: DtypeArg | None = ...,
 ) -> None: ...
 
 
 @overload
-def to_pandas(
+def to_tabular(
     data: YConstructor,
     index: Axes | None = ...,
     columns: Axes | None = ...,
-    name: str | None = ...,
-    dtype: DtypeArg | None = ...,
-) -> Pandas: ...
+) -> Tabular: ...
 
 
-def to_pandas(
+def to_tabular(
     data: YConstructor | None,
     index: Axes | None = None,
     columns: Axes | None = None,
-    name: str | None = None,
-    dtype: DtypeArg | None = None,
-) -> Pandas | None:
-    """Convert a sequence or dataset to a dataframe or series object.
+) -> Tabular | None:
+    """Convert to a tabular pandas type.
 
     If the data is one-dimensional, convert to series, else to a
     dataframe.
@@ -2001,23 +1947,19 @@ def to_pandas(
     columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    name: str or None, default=None
-        Name of the series.
-
-    dtype: str, dict, np.dtype or None, default=None
-        Data type for the output series. If None, the type is
-        inferred from the data.
-
     Returns
     -------
     series, dataframe or None
-        Data as a Pandas object.
+        Data as a Tabular object.
 
     """
-    if n_cols(data) == 1:
-        return to_series(data, index=index, name=name, dtype=dtype)  # type: ignore[misc, arg-type]
+    if (n_targets := n_cols(data)) == 1:
+        return to_series(data, index=index, name=flt(columns))
     else:
-        return to_df(data, index=index, columns=columns, dtype=dtype)
+        if columns is None:
+            columns = [f"y{i}" for i in range(n_targets)]
+
+        return to_df(data, index=index, columns=columns)
 
 
 def check_is_fitted(
@@ -2053,26 +1995,6 @@ def check_is_fitted(
         Whether the estimator is fitted.
 
     """
-
-    def check_attr(attr: str) -> bool:
-        """Return whether an attribute is False or empty.
-
-        Parameters
-        ----------
-        attr: str
-            Name of the attribute to check.
-
-        Returns
-        -------
-        bool
-            Whether the attribute's value is False or empty.
-
-        """
-        if isinstance(value := getattr(obj, attr), pandas_t):
-            return value.empty
-        else:
-            return not value
-
     if hasattr(obj, "_is_fitted"):
         is_fitted = obj._is_fitted
     else:
@@ -2369,15 +2291,8 @@ def fit_one(
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence, dataframe or None, default=None
-        Target column corresponding to `X`.
-
-        - If None: y is ignored.
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
-        - If sequence: Target column with shape=(n_samples,) or
-          sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+    y: dict, sequence, dataframe-like or None, default=None
+        Target column(s) corresponding to `X`.
 
     message: str or None
         Short message. If None, nothing will be printed.
@@ -2392,7 +2307,7 @@ def fit_one(
 
     """
     Xt = to_df(X, index=getattr(y, "index", None))
-    yt = to_pandas(y, index=getattr(Xt, "index", None))
+    yt = to_tabular(y, index=getattr(Xt, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
@@ -2439,7 +2354,7 @@ def transform_one(
     y: YConstructor | None = None,
     method: Literal["transform", "inverse_transform"] = "transform",
     **transform_params,
-) -> tuple[DataFrame | None, Pandas | None]:
+) -> tuple[pd.DataFrame | None, Pandas | None]:
     """Transform the data using one estimator.
 
     Parameters
@@ -2451,15 +2366,8 @@ def transform_one(
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence, dataframe or None, default=None
-        Target column corresponding to `X`.
-
-        - If None: y is ignored.
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
-        - If sequence: Target column with shape=(n_samples,) or
-          sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+    y: dict, sequence, dataframe-like or None, default=None
+        Target column(s) corresponding to `X`.
 
     method: str, default="transform"
         Method to apply: transform or inverse_transform.
@@ -2473,33 +2381,31 @@ def transform_one(
         Feature set. Returns None if not provided.
 
     series, dataframe or None
-        Target column. Returns None if not provided.
+        Target column(s). Returns None if not provided.
 
     """
 
-    def prepare_df(out: TReturn, og: DataFrame) -> DataFrame:
-        """Convert to df and set correct column names and order.
-
-        If ATOM's data backend="pyarrow", convert the dtypes.
+    def prepare_df(out: TReturn, og: pd.DataFrame) -> pd.DataFrame:
+        """Convert to df and set the correct column names.
 
         Parameters
         ----------
-        out: np.ndarray, sps.matrix, series or dataframe
+        out: np.ndarray, sps.matrix or dataframe
             Data returned by the transformation.
 
-        og: dataframe
+        og: pd.DataFrame
             Original dataframe, prior to transformations.
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Transformed dataset.
 
         """
         use_cols = [c for c in inc if c in og.columns]
 
         # Convert to pandas and assign proper column names
-        if not isinstance(out, dataframe_t):
+        if not isinstance(out, pd.DataFrame):
             if hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
             else:
@@ -2520,11 +2426,10 @@ def transform_one(
         index=getattr(y, "index", None),
         columns=getattr(transformer, "feature_names_in_", None),
     )
-    yt = to_pandas(
+    yt = to_tabular(
         y,
         index=getattr(Xt, "index", None),
         columns=getattr(transformer, "target_names_in_", None),
-        name=flt(getattr(transformer, "target_names_in_", None)),
     )
 
     use_y = True
@@ -2557,27 +2462,25 @@ def transform_one(
     # Transform can return X, y or both
     if isinstance(out, tuple):
         X_new = prepare_df(out[0], Xt)
-        y_new = to_pandas(
+        y_new = to_tabular(
             data=out[1],
             index=Xt.index,
-            name=getattr(yt, "name", None),
-            columns=getattr(yt, "columns", None),
+            columns=get_col_names(yt),
         )
-        if isinstance(yt, dataframe_t):
+        if isinstance(yt, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
     elif "X" in params and X is not None and any(c in Xt for c in inc):
         # X in -> X out
         X_new = prepare_df(out, Xt)
         y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
     elif y is not None:
-        y_new = to_pandas(
+        y_new = to_tabular(
             data=out,
             index=yt.index,
-            name=getattr(yt, "name", None),
-            columns=getattr(yt, "columns", None),
+            columns=get_col_names(yt),
         )
         X_new = Xt if Xt is None else Xt.set_index(y_new.index)
-        if isinstance(yt, dataframe_t):
+        if isinstance(yt, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
 
     return X_new, y_new
@@ -2589,7 +2492,7 @@ def fit_transform_one(
     y: YConstructor | None,
     message: str | None = None,
     **fit_params,
-) -> tuple[DataFrame | None, Series | None, Transformer]:
+) -> tuple[pd.DataFrame | None, Pandas | None, Transformer]:
     """Fit and transform the data using one estimator.
 
     Estimators without a `transform` method aren't transformed.
@@ -2603,15 +2506,8 @@ def fit_transform_one(
         Feature set with shape=(n_samples, n_features). If None,
         X is ignored.
 
-    y: int, str, dict, sequence, dataframe or None
-        Target column corresponding to `X`.
-
-        - If None: y is ignored.
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
-        - If sequence: Target column with shape=(n_samples,) or
-          sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+    y: dict, sequence, dataframe-like or None
+        Target column(s) corresponding to `X`.
 
     message: str or None, default=None
         Short message. If None, nothing will be printed.
@@ -2621,11 +2517,11 @@ def fit_transform_one(
 
     Returns
     -------
-    dataframe or None
+    pd.DataFrame or None
         Feature set. Returns None if not provided.
 
-    series or None
-        Target column. Returns None if not provided.
+    pd.Series, pd.DataFrame or None
+        Target column(s). Returns None if not provided.
 
     Transformer
         Fitted transformer.
@@ -2788,28 +2684,37 @@ def wrap_transformer_methods(f: Callable) -> Callable:
         X: XSelector | None = None,
         y: YSelector | None = None,
         **kwargs,
-    ) -> T_Transformer | Pandas | tuple[DataFrame, Pandas]:
+    ) -> T_Transformer | Tabular | tuple[DataFrame, Tabular]:
         if f.__name__ == "fit":
-            Xt, yt = self._check_input(X, y)
+            Xt = to_df(X, index=getattr(y, "index", None))
+            yt = to_tabular(y, index=getattr(Xt, "index", None))
+
             self._check_feature_names(Xt, reset=True)
             self._check_n_features(Xt, reset=True)
+
             return f(self, Xt, yt, **kwargs)
 
         else:
             if "TransformerMixin" not in str(self.fit):
                 check_is_fitted(self)
 
-            Xt, yt = self._check_input(
-                X=X,
-                y=y,
+            Xt = to_df(
+                data=X,
+                index=getattr(y, "index", None),
                 columns=getattr(self, "feature_names_in_", None),
-                name=getattr(self, "target_names_in_", None),
+            )
+            yt = to_tabular(
+                y,
+                index=getattr(Xt, "index", None),
+                columns=getattr(self, "target_names_in_", None),
             )
 
             if "y" in sign(f):
-                return f(self, Xt, yt, **kwargs)
+                Xt, yt = f(self, Xt, yt, **kwargs)
+                return self._convert(Xt), self._convert(yt)
             else:
-                return f(self, Xt, **kwargs)
+                Xt = f(self, Xt, **kwargs)
+                return self._convert(Xt)
 
     return wrapper
 

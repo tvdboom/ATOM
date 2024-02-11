@@ -53,19 +53,18 @@ from atom.utils.types import (
     Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DataFrame,
     DiscretizerStrats, Engine, EngineTuple, Estimator, FeatureNamesOut,
     FeatureSelectionSolvers, FeatureSelectionStrats, FloatLargerEqualZero,
-    FloatLargerZero, FloatZeroToOneInc, Index, IndexSelector, Int,
-    IntLargerEqualZero, IntLargerTwo, IntLargerZero, MetricConstructor,
-    ModelsConstructor, NItems, NJobs, NormalizerStrats, NumericalStrats,
-    Operators, Pandas, Predictor, PrunerStrats, RowSelector, Scalar,
-    ScalerStrats, Seasonality, Sequence, Series, SPDict, TargetSelector,
-    Transformer, VectorizerStarts, Verbose, Warnings, XSelector, YSelector,
-    sequence_t,
+    FloatLargerZero, FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero,
+    IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
+    SPDict, Tabular, TargetSelector, Transformer, VectorizerStarts, Verbose,
+    Warnings, XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity, bk,
-    check_dependency, check_scaling, composed, crash, fit_one, flt, get_cols,
+    ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity,
+    check_dependency, composed, crash, fit_one, flt, get_cols,
     get_custom_scorer, has_task, is_sparse, lst, make_sklearn, merge,
-    method_to_log, replace_missing, sign, to_pyarrow,
+    method_to_log, n_cols, replace_missing, sign,
 )
 
 
@@ -156,9 +155,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             self._log(f"Parallel processing with {self.n_jobs} cores.", 1)
         elif self.backend != "loky":
             self._log(
-                "Leaving n_jobs=1 ignores all parallelization. Set n_jobs>1 to make use "
-                f"of the {self.backend} parallelization backend.",
-                1,
+                "Leaving n_jobs=1 ignores all parallelization. Set n_jobs>1 to "
+                f"make use of the {self.backend} parallelization backend.", 1,
                 severity="warning",
             )
         if "cpu" not in self.device.lower():
@@ -315,27 +313,28 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     def scaled(self) -> bool:
         """Whether the feature set is scaled.
 
-        A data set is considered scaled when it has mean=0 and std=1,
-        or when there is a scaler in the pipeline. Binary columns (only
-        zeros and ones) are excluded from the calculation.
+        A data set is considered scaled when it has mean~0 and std~1,
+        or when there is a scaler in the pipeline. Categorical and
+        binary columns (only zeros and ones) are excluded from the
+        calculation.
 
         """
-        return check_scaling(self.X, pipeline=self.pipeline)
+        return self.branch.check_scaling()
 
     @property
-    def duplicates(self) -> Int:
+    def duplicates(self) -> int:
         """Number of duplicate rows in the dataset."""
-        return self.branch.dataset.duplicated().sum()
+        return int(self.branch.dataset.duplicated().sum())
 
     @property
-    def nans(self) -> Series:
+    def nans(self) -> pd.Series:
         """Columns with the number of missing values in them.
 
         This property is unavailable for [sparse datasets][].
 
         """
-        if not is_sparse(self.X):
-            return replace_missing(self.X, self.missing).isna().sum()
+        if not is_sparse(self.branch.X):
+            return replace_missing(self.branch.X, self.missing).isna().sum()
 
         raise AttributeError("This property is unavailable for sparse datasets.")
 
@@ -346,16 +345,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         This property is unavailable for [sparse datasets][].
 
         """
-        if not is_sparse(self.X):
-            nans = replace_missing(self.X, self.missing).isna().sum(axis=1)
+        if not is_sparse(self.branch.X):
+            nans = replace_missing(self.branch.X, self.missing).isna().sum(axis=1)
             return len(nans[nans > 0])
 
         raise AttributeError("This property is unavailable for sparse datasets.")
 
     @property
-    def numerical(self) -> Index:
+    def numerical(self) -> list[str]:
         """Names of the numerical features in the dataset."""
-        return self.X.select_dtypes(include=["number"]).columns
+        return list(self.branch.X.select_dtypes(include=["number"]).columns)
 
     @property
     def n_numerical(self) -> int:
@@ -363,9 +362,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         return len(self.numerical)
 
     @property
-    def categorical(self) -> Index:
+    def categorical(self) -> list[str]:
         """Names of the categorical features in the dataset."""
-        return self.X.select_dtypes(include=CAT_TYPES).columns
+        return list(self.branch.X.select_dtypes(include=CAT_TYPES).columns)
 
     @property
     def n_categorical(self) -> int:
@@ -379,7 +378,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         This property is unavailable for [sparse datasets][].
 
         """
-        if not is_sparse(self.X):
+        if not is_sparse(self.branch.X):
             data = self.branch.train.select_dtypes(include=["number"])
             z_scores = np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3
             z_scores = pd.Series(z_scores.sum(axis=0), index=data.columns)
@@ -388,16 +387,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         raise AttributeError("This property is unavailable for sparse datasets.")
 
     @property
-    def n_outliers(self) -> Int:
+    def n_outliers(self) -> int:
         """Number of samples in the training set containing outliers.
 
         This property is unavailable for [sparse datasets][].
 
         """
-        if not is_sparse(self.X):
+        if not is_sparse(self.branch.X):
             data = self.branch.train.select_dtypes(include=["number"])
             z_scores = np.abs(stats.zscore(data.to_numpy(float, na_value=np.nan))) > 3
-            return z_scores.any(axis=1).sum()
+            return int(z_scores.any(axis=1).sum())
 
         raise AttributeError("This property is unavailable for sparse datasets.")
 
@@ -429,14 +428,14 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         raise AttributeError("This property is unavailable for regression tasks.")
 
     @property
-    def n_classes(self) -> Int | Series:
+    def n_classes(self) -> Int | pd.Series:
         """Number of classes in the target column(s).
 
         This property is only available for classification tasks.
 
         """
         if self.task.is_classification:
-            return self.y.nunique(dropna=False)
+            return self.branch.y.nunique(dropna=False)
 
         raise AttributeError("This property is unavailable for regression tasks.")
 
@@ -671,7 +670,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -684,14 +683,14 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         ----------
         X: dataframe-like or None, default=None
             Transformed feature set with shape=(n_samples, n_features).
-            If None, X is ignored in the transformers.
+            If None, `X` is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
+            Transformed target column corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
@@ -713,7 +712,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         X, y = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
 
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return pipeline.inverse_transform(X, y)
+            return self._convert(pipeline.inverse_transform(X, y))
 
     @classmethod
     def load(cls, filename: str | Path, data: tuple[Any, ...] | None = None) -> ATOM:
@@ -749,11 +748,11 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             **X, train, test: dataframe-like**<br>
             Feature set with shape=(n_samples, n_features).
 
-            **y: int, str or sequence**<br>
-            Target column corresponding to `X`.
+            **y: int, str, dict, sequence or dataframe**<br>
+            Target column(s) corresponding to `X`.
 
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -815,7 +814,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 X_test, y_test = branch.pipeline.transform(branch.X_test, branch.y_test)
 
                 # Update complete dataset
-                branch._container.data = bk.concat(
+                branch._container.data = pd.concat(
                     [merge(X_train, y_train), merge(X_test, y_test)]
                 )
 
@@ -824,7 +823,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                         data=(dataset := branch._container.data.reset_index(drop=True)),
                         train_idx=dataset.index[:len(branch._container.train_idx)],
                         test_idx=dataset.index[-len(branch._container.test_idx):],
-                        n_cols=branch._container.n_cols,
+                        n_targets=branch._container.n_targets,
                     )
 
                 # Store inactive branches in memory
@@ -929,7 +928,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
 
-        def get_data(new_t: DtypeObj) -> Series:
+        def get_data(new_t: DtypeObj) -> pd.Series:
             """Get the series with the right data format.
 
             Also converts to sparse format if `dense2sparse=True`.
@@ -941,7 +940,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             Returns
             -------
-            series
+            pd.Series
                 Object with the new data type.
 
             """
@@ -974,9 +973,6 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         }
 
         data = self.branch.dataset[self.branch._get_columns(columns)]
-
-        # Convert back since convert_dtypes doesn't work properly for pyarrow dtypes
-        data = data.astype({n: to_pyarrow(c, inverse=True) for n, c in data.items()})
 
         # Convert to the best nullable dtype
         data = data.convert_dtypes()
@@ -1012,11 +1008,6 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 get_data(r[0]) for r in t if r[1] <= column.min() and r[2] >= column.max()
             )
 
-        if self.engine.data == "pyarrow":
-            self.branch.dataset = self.dataset.astype(
-                {name: to_pyarrow(col) for name, col in self.dataset.items()}
-            )
-
         self._log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
@@ -1030,7 +1021,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         """
         self._log("Dataset stats " + "=" * 20 + " >>", _vb)
-        self._log(f"Shape: {self.shape}", _vb)
+        self._log(f"Shape: {self.branch.shape}", _vb)
         if self.task.is_forecast and self.sp.sp:
             self._log(f"Seasonal period: {self.sp.sp}", _vb)
 
@@ -1041,15 +1032,15 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
 
         self._log("-" * 37, _vb)
-        if (memory := self.dataset.memory_usage().sum()) < 1e6:
+        if (memory := self.branch.dataset.memory_usage().sum()) < 1e6:
             self._log(f"Memory: {memory / 1e3:.2f} kB", _vb)
         else:
             self._log(f"Memory: {memory / 1e6:.2f} MB", _vb)
 
-        if is_sparse(self.X):
+        if is_sparse(self.branch.X):
             self._log("Sparse: True", _vb)
-            if hasattr(self.X, "sparse"):  # All columns are sparse
-                self._log(f"Density: {100. * self.X.sparse.density:.2f}%", _vb)
+            if hasattr(self.branch.X, "sparse"):  # All columns are sparse
+                self._log(f"Density: {100. * self.branch.X.sparse.density:.2f}%", _vb)
             else:  # Not all columns are sparse
                 n_sparse = sum(isinstance(self[c].dtype, pd.SparseDtype) for c in self.features)
                 n_dense = self.n_features - n_sparse
@@ -1062,7 +1053,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
             try:  # Can fail for unhashable columns (e.g., multilabel with lists)
-                duplicates = self.dataset.duplicated().sum()
+                duplicates = self.branch.dataset.duplicated().sum()
             except TypeError:
                 duplicates = None
                 self._log(
@@ -1071,7 +1062,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     3,
                 )
 
-            if not self.X.empty:
+            if not self.branch.X.empty:
                 self._log(f"Scaled: {self.scaled}", _vb)
             if nans:
                 p_nans = round(100 * nans / self.branch.dataset.size, 1)
@@ -1103,27 +1094,26 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
         skipped. If only `X` or only `y` is provided, it ignores
         transformers that require the other parameter. This can be
-         of use to, for example, transform only the target column.
+        of use to, for example, transform only the target column.
 
         Parameters
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. If None,
-            X is ignored in the transformers.
+            `X` is ignored.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
@@ -1145,7 +1135,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         X, y = self._check_input(X, y, columns=self.og.features, name=self.og.target)
 
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return pipeline.transform(X, y)
+            return self._convert(pipeline.transform(X, y))
 
     # Base transformers ============================================ >>
 
@@ -1276,7 +1266,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             fit = self._memory.cache(fit_one)
             kwargs = {
                 "estimator": transformer_c,
-                "X": self.X_train,
+                "X": self.branch.X_train,
                 "y": self.y_train,
                 **fit_params,
             }
@@ -1296,35 +1286,41 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             self._branches.add("og")
 
         if transformer_c._train_only:
-            X, y = self.pipeline._mem_transform(transformer_c, self.X_train, self.y_train)
-            self.train = merge(
-                self.X_train if X is None else X,
-                self.y_train if y is None else y,
+            X, y = self.pipeline._mem_transform(
+                transformer=transformer_c,
+                X=self.branch.X_train,
+                y=self.branch.y_train,
             )
+
+            self.branch.train = merge(
+                self.branch.X_train if X is None else X,
+                self.branch.y_train if y is None else y,
+            )
+
         else:
-            X, y = self.pipeline._mem_transform(transformer_c, self.X, self.y)
-            data = merge(self.X if X is None else X, self.y if y is None else y)
+            X, y = self.pipeline._mem_transform(transformer_c, self.branch.X, self.branch.y)
+            data = merge(self.branch.X if X is None else X, self.branch.y if y is None else y)
 
             # y can change the number of columns or remove rows -> reassign index
             self.branch._container = DataContainer(
                 data=data,
                 train_idx=self.branch._data.train_idx.intersection(data.index),
                 test_idx=self.branch._data.test_idx.intersection(data.index),
-                n_cols=self.branch._data.n_cols if y is None else len(get_cols(y)),
+                n_targets=self.branch._data.n_targets if y is None else n_cols(y),
             )
 
         if self._config.index is False:
             self.branch._container = DataContainer(
-                data=(data := self.dataset.reset_index(drop=True)),
+                data=(data := self.branch.dataset.reset_index(drop=True)),
                 train_idx=data.index[: len(self.branch._data.train_idx)],
                 test_idx=data.index[-len(self.branch._data.test_idx):],
-                n_cols=self.branch._data.n_cols,
+                n_targets=self.branch._data.n_targets,
             )
             if self.branch._holdout is not None:
                 self.branch._holdout.index = range(
                     len(data), len(data) + len(self.branch._holdout)
                 )
-        elif self.dataset.index.duplicated().any():
+        elif self.branch.dataset.index.duplicated().any():
             raise ValueError(
                 "Duplicate indices found in the dataset. "
                 "Try initializing atom using `index=False`."
@@ -1477,8 +1473,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         Parameters
         ----------
         func: callable
-            Function to apply with signature `func(dataset, **kw_args) ->
-            dataset`.
+            Function to apply with signature `func(dataframe, **kw_args)
+            -> dataframe-like`.
 
         inverse_func: callable or None, default=None
             Inverse function of `func`. If None, the inverse_transform
@@ -1729,8 +1725,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @composed(crash, method_to_log)
     def impute(
         self,
-        strat_num: Scalar | NumericalStrats = "drop",
-        strat_cat: str | CategoricalStrats = "drop",
+        strat_num: Scalar | NumericalStrats = "mean",
+        strat_cat: str | CategoricalStrats = "most_frequent",
         *,
         max_nan_rows: FloatLargerZero | None = None,
         max_nan_cols: FloatLargerZero | None = None,

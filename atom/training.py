@@ -371,6 +371,7 @@ class DirectClassifier(Direct):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -605,6 +606,7 @@ class DirectForecaster(Direct):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -835,6 +837,7 @@ class DirectRegressor(Direct):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -1075,6 +1078,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -1312,6 +1316,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -1546,6 +1551,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -1792,6 +1798,7 @@ class TrainSizingClassifier(TrainSizing):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -2035,6 +2042,7 @@ class TrainSizingForecaster(TrainSizing):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -2274,6 +2282,7 @@ class TrainSizingRegressor(TrainSizing):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the

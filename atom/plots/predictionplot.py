@@ -39,10 +39,10 @@ from atom.utils.types import (
     Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
     MetricSelector, ModelsSelector, RowSelector, Sequence, TargetSelector,
-    TargetsSelector, XSelector, index_t,
+    TargetsSelector, XSelector,
 )
 from atom.utils.utils import (
-    Task, bk, check_canvas, check_dependency, check_empty, check_predict_proba,
+    Task, check_canvas, check_dependency, check_empty, check_predict_proba,
     crash, divide, get_custom_scorer, has_task, lst, rnd,
 )
 
@@ -832,7 +832,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 from atom.models import OrdinaryLeastSquares
 
                 model = OrdinaryLeastSquares(goal=self._goal)
-                estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
+                estimator = model._get_est({}).fit(pd.DataFrame(y_true), y_pred)
 
                 self._draw_line(
                     x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
@@ -1233,7 +1233,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             if X is not None:
                 X = m.transform(X)
-            elif isinstance(fh, index_t):
+            elif isinstance(fh, pd.Index):
                 X = m.branch._all.loc[fh]
 
             # Draw predictions and interval
@@ -1887,7 +1887,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     data = data.sample(500, random_state=self.random_state)
 
                 explanation = m._shap.get_explanation(data, target_c)
-                shap = bk.DataFrame(explanation.values, columns=m.branch.features)
+                shap = pd.DataFrame(explanation.values, columns=m.branch.features)
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
@@ -2134,7 +2134,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+            predictions = Parallel(n_jobs=self.n_jobs)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.branch.X_test,

@@ -55,18 +55,17 @@ from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
     EngineTuple, Estimator, FloatLargerZero, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats, NumericalStrats,
-    Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels,
-    Sequence, Series, Transformer, Verbose, XConstructor, YConstructor,
-    dataframe_t, sequence_t, series_t,
+    Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels, Sequence,
+    Tabular, Transformer, Verbose, XConstructor, YConstructor, sequence_t,
 )
 from atom.utils.utils import (
-    Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
-    lst, make_sklearn, merge, method_to_log, n_cols, replace_missing, sign,
-    to_df, to_series, variable_return, wrap_transformer_methods,
+    Goal, check_is_fitted, composed, crash, get_col_order, get_cols, it, lst,
+    make_sklearn, merge, method_to_log, n_cols, replace_missing, sign, to_df,
+    to_series, variable_return, wrap_transformer_methods,
 )
 
 
-T = TypeVar("T", bound=Transformer)
+T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 
 
 @beartype
@@ -107,7 +106,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
         return out
 
-    def __sklearn_clone__(self: T) -> T:
+    def __sklearn_clone__(self: T_Transformer) -> T_Transformer:
         """Wrap cloning method to attach internal attributes."""
         cloned = _clone_parametrized(self)
 
@@ -135,17 +134,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
+            Target column(s) corresponding to `X`.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -166,7 +155,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         X: XConstructor | None = None,
         y: YConstructor | None = None,
         **fit_params,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Fit to data, then transform it.
 
         Parameters
@@ -176,17 +165,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
+            Target column(s) corresponding to `X`.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -207,7 +186,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         self,
         X: XConstructor | None = None,
         y: YConstructor | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Do nothing.
 
         Returns the input unchanged. Implemented for continuity of the
@@ -220,11 +199,11 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -238,7 +217,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set. Only returned if provided.
 
         series or dataframe
-            Target column. Only returned if provided.
+            Target column(s). Only returned if provided.
 
         """
         return variable_return(X, y)
@@ -365,7 +344,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas = -1) -> Self:
+    def fit(self, X: DataFrame, y: Tabular = -1) -> Self:
         """Fit to data.
 
         Parameters
@@ -374,11 +353,11 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict or sequence, default=-1
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -391,7 +370,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Estimator instance.
 
         """
-        if isinstance(y, series_t):
+        if isinstance(y, pd.Series):
             self.target_names_in_ = np.array([y.name])
         else:
             raise ValueError("The Balancer class does not support multioutput tasks.")
@@ -454,7 +433,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas = -1) -> tuple[DataFrame, Series]:
+    def transform(self, X: DataFrame, y: Tabular = -1) -> tuple[DataFrame, Series]:
         """Balance the data.
 
         Parameters
@@ -463,10 +442,10 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence, default=-1
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
@@ -563,7 +542,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                     self._log(f" --> Removing {diff} samples from class: {key}.", 2)
 
             # Add the new samples to the old dataframe
-            X, y = bk.concat([X, X_new]), bk.concat([y, y_new])
+            X, y = pd.concat([X, X_new]), pd.concat([y, y_new])
 
         return X, y
 
@@ -734,7 +713,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         self.encode_target = encode_target
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame | None = None, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame | None = None, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -744,11 +723,11 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             X is ignored.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -774,13 +753,13 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             self._drop_cols = list(X.select_dtypes(include=lst(self.drop_dtypes)).columns)
 
         if y is not None:
-            if isinstance(y, series_t):
+            if isinstance(y, pd.Series):
                 self.target_names_in_ = np.array([y.name])
             else:
                 self.target_names_in_ = y.columns.to_numpy()
 
             if self.drop_chars:
-                if isinstance(y, series_t):
+                if isinstance(y, pd.Series):
                     y.name = re.sub(self.drop_chars, "", str(y.name))
                 else:
                     y = y.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
@@ -833,8 +812,8 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
     def transform(
         self,
         X: DataFrame | None = None,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        y: Tabular | None = None,
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Apply the data cleaning steps to the data.
 
         Parameters
@@ -844,11 +823,11 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             X is ignored.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -899,7 +878,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
 
         if y is not None:
             if self.drop_chars:
-                if isinstance(y, series_t):
+                if isinstance(y, pd.Series):
                     y.name = re.sub(self.drop_chars, "", str(y.name))
                 else:
                     y = y.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
@@ -932,7 +911,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
                             )
 
                         # Replace target with encoded column(s)
-                        if isinstance(y, series_t):
+                        if isinstance(y, pd.Series):
                             yt = out
                         else:
                             yt = merge(yt, out)
@@ -951,8 +930,8 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
     def inverse_transform(
         self,
         X: DataFrame | None = None,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        y: Tabular | None = None,
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Inversely transform the label encoding.
 
         This method only inversely transforms the target encoding.
@@ -965,11 +944,11 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             Do nothing. Implemented for continuity of the API.
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -993,22 +972,22 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
                 if est := self._estimators.get(col):
                     if est.__class__.__name__ == "LabelEncoder":
                         self._log(f" --> Inversely label-encoding column {col}.", 2)
-                        out = est.inverse_transform(bk.DataFrame(y)[col])
+                        out = est.inverse_transform(pd.DataFrame(y)[col])
 
-                    elif isinstance(y, dataframe_t):
+                    elif isinstance(y, pd.DataFrame):
                         self._log(f" --> Inversely label-binarizing column {col}.", 2)
                         out = est.inverse_transform(
                             y.loc[:, y.columns.str.startswith(f"{col}_")].to_numpy()
                         )
 
                     # Replace encoded columns with target column
-                    if isinstance(y, series_t):
+                    if isinstance(y, pd.Series):
                         yt = to_series(out, y.index, col)
                     else:
                         yt = merge(yt, to_series(out, y.index, col))
 
                 else:  # Add unchanged column
-                    yt = merge(yt, bk.DataFrame(y)[col])
+                    yt = merge(yt, pd.DataFrame(y)[col])
 
             y = yt
 
@@ -1156,7 +1135,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.seasonal_model = seasonal_model
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -1225,7 +1204,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Decompose the data.
 
         Parameters
@@ -1250,7 +1229,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return X
 
     @composed(crash, method_to_log)
-    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def inverse_transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Inversely transform the data.
 
         Parameters
@@ -1445,7 +1424,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.labels = labels
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -1566,14 +1545,14 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
                 # Make of cut a transformer
                 self._estimators[col] = FunctionTransformer(
-                    func=bk.cut,
+                    func=pd.cut,
                     kw_args={"bins": bins_c, "labels": get_labels(col, bins_c)},
                 ).fit(X[[col]])
 
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Bin the data into intervals.
 
         Parameters
@@ -1762,7 +1741,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
@@ -1775,11 +1754,11 @@ class Encoder(TransformerMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence or dataframe-like
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -1936,7 +1915,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         return get_col_order(cols, self.feature_names_in_, self._estimator.feature_names_in_)
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Encode the data.
 
         Parameters
@@ -1999,7 +1978,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
     Parameters
     ----------
-    strat_num: str, int or float, default="drop"
+    strat_num: str, int or float, default="mean"
         Imputing strategy for numerical columns. Choose from:
 
         - "drop": Drop rows containing missing values.
@@ -2019,7 +1998,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
            of column.
         - int or float: Impute with provided numerical value.
 
-    strat_cat: str, default="drop"
+    strat_cat: str, default="most_frequent"
         Imputing strategy for categorical columns. Choose from:
 
         - "drop": Drop rows containing missing values.
@@ -2145,8 +2124,8 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
     def __init__(
         self,
-        strat_num: Scalar | NumericalStrats = "drop",
-        strat_cat: str | CategoricalStrats = "drop",
+        strat_num: Scalar | NumericalStrats = "mean",
+        strat_cat: str | CategoricalStrats = "most_frequent",
         *,
         max_nan_rows: FloatLargerZero | None = None,
         max_nan_cols: FloatLargerZero | None = None,
@@ -2169,7 +2148,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         self.max_nan_cols = max_nan_cols
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -2299,8 +2278,8 @@ class Imputer(TransformerMixin, _SetOutputMixin):
     def transform(
         self,
         X: DataFrame,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        y: Tabular | None = None,
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Impute the missing values.
 
         Note that leaving y=None can lead to inconsistencies in
@@ -2313,11 +2292,11 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -2576,7 +2555,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -2636,7 +2615,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -2661,7 +2640,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return X[self.feature_names_in_]
 
     @composed(crash, method_to_log)
-    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def inverse_transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Apply the inverse transformation to the data.
 
         Parameters
@@ -2854,8 +2833,8 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
     def transform(
         self,
         X: DataFrame,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        y: Tabular | None = None,
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Apply the outlier strategy on the data.
 
         Parameters
@@ -2864,11 +2843,11 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -2995,9 +2974,9 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         else:
             # Replace the columns in X and y with the new values from objective
             X.update(objective)
-            if isinstance(y, series_t) and y.name in objective:
+            if isinstance(y, pd.Series) and y.name in objective:
                 y.update(objective[str(y.name)])
-            elif isinstance(y, dataframe_t):
+            elif isinstance(y, pd.DataFrame):
                 y.update(objective)
 
         return variable_return(X, y)
@@ -3129,7 +3108,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.kwargs = kwargs
 
     @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -3177,7 +3156,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return self
 
     @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Perform standardization by centering and scaling.
 
         Parameters
@@ -3202,7 +3181,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         return X
 
     @composed(crash, method_to_log)
-    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def inverse_transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
         """Apply the inverse transformation to the data.
 
         Parameters

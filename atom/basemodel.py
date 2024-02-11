@@ -67,17 +67,17 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.patches import fit_and_score
 from atom.utils.types import (
     HT, Backend, Bool, DataFrame, Engine, FHConstructor, Float,
-    FloatZeroToOneExc, Index, Int, IntLargerEqualZero, MetricConstructor,
+    FloatZeroToOneExc, Int, IntLargerEqualZero, MetricConstructor,
     MetricFunction, NJobs, Pandas, PredictionMethods, PredictionMethodsTS,
-    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, TargetSelector,
-    Verbose, Warnings, XSelector, YSelector, dataframe_t, float_t, int_t,
+    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Tabular,
+    TargetSelector, Verbose, Warnings, XSelector, YSelector, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
-    TrialsCallback, adjust_verbosity, bk, cache, check_dependency, check_empty,
-    check_scaling, composed, crash, estimator_has_attr, flt, get_cols,
-    get_custom_scorer, has_task, it, lst, merge, method_to_log, rnd, sign,
-    time_to_str, to_pandas,
+    TrialsCallback, adjust_verbosity, cache, check_dependency, check_empty,
+    composed, crash, estimator_has_attr, flt, get_cols, get_custom_scorer,
+    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
+    to_series, to_tabular,
 )
 
 
@@ -148,6 +148,7 @@ class BaseModel(RunnerPlot):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -264,9 +265,8 @@ class BaseModel(RunnerPlot):
             self._branch = branches.current
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
-            if hasattr(self, "needs_scaling"):
-                if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
-                    self.scaler = Scaler().fit(self.X_train)
+            if getattr(self, "needs_scaling", None) and not self.branch.check_scaling():
+                self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""
@@ -274,17 +274,25 @@ class BaseModel(RunnerPlot):
 
     def __dir__(self) -> list[str]:
         """Add additional attrs from __getattr__ to the dir."""
-        attrs = list(super().__dir__())
+        # Exclude from _available_if conditions
+        attrs = [x for x in super().__dir__() if hasattr(self, x)]
+
         if "_branch" in self.__dict__:
-            attrs += [x for x in dir(self.branch) if not x.startswith("_")]
-            attrs += list(DF_ATTRS)
+            # Add additional attrs from the branch
+            attrs += Branch._get_data_attrs()
+
+            # Add additional attrs from the dataset
+            attrs += [x for x in DF_ATTRS if hasattr(self.dataset, x)]
+
+            # Add column names (excluding those with spaces)
             attrs += [c for c in self.columns if re.fullmatch(r"\w+$", c)]
+
         return attrs
 
     def __getattr__(self, item: str) -> Any:
         """Get attributes from branch or data."""
         if "_branch" in self.__dict__:
-            if item in dir(self.branch) and not item.startswith("_"):
+            if item in Branch._get_data_attrs():
                 return getattr(self.branch, item)  # Get attr from branch
             elif item in self.branch.columns:
                 return self.branch.dataset[item]  # Get column
@@ -297,7 +305,7 @@ class BaseModel(RunnerPlot):
         """Whether the item is a column in the dataset."""
         return item in self.dataset
 
-    def __getitem__(self, item: Int | str | list) -> Pandas:
+    def __getitem__(self, item: Int | str | list) -> Tabular:
         """Get a subset from the dataset."""
         if isinstance(item, int_t):
             return self.dataset[self.columns[int(item)]]
@@ -485,8 +493,8 @@ class BaseModel(RunnerPlot):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ) -> Predictor:
         """Fit the estimator and perform in-training validation.
@@ -641,7 +649,7 @@ class BaseModel(RunnerPlot):
         rows: RowSelector,
         target: TargetSelector | None = None,
         method: PredictionMethods | Sequence[PredictionMethods] = "predict",
-    ) -> tuple[Pandas, Pandas]:
+    ) -> tuple[Tabular, Tabular]:
         """Get the true and predicted values for a column.
 
         Predictions are made using the `decision_function` or
@@ -688,7 +696,7 @@ class BaseModel(RunnerPlot):
                     # Statsmodels models such as SARIMAX and DF require all
                     # exogenous data after the last row of the train set
                     # Other models accept this format
-                    Xe = bk.concat([self.test, self.holdout])  # type: ignore[list-item]
+                    Xe = pd.concat([self.test, self.holdout])  # type: ignore[list-item]
                     exog = Xe.loc[Xe.index <= X.index.max(), self.features]  # type: ignore[index]
 
                 y_pred = self._prediction(
@@ -704,7 +712,7 @@ class BaseModel(RunnerPlot):
                     f"Failed to get predictions for model {self.name} "
                     f"on rows {rows}. Returning NaN. Exception: {ex}.", 3
                 )
-                y_pred = bk.Series([np.NaN] * len(X), index=X.index)
+                y_pred = pd.Series([np.NaN] * len(X), index=X.index)
 
         else:
             y_pred = self._prediction(X.index, verbose=0, method=method_caller)
@@ -722,7 +730,7 @@ class BaseModel(RunnerPlot):
         self,
         scorer: Scorer,
         estimator: Predictor,
-        X: DataFrame,
+        X: pd.DataFrame,
         y: Pandas,
         **kwargs,
     ) -> Float:
@@ -736,11 +744,11 @@ class BaseModel(RunnerPlot):
         estimator: Predictor
             Estimator instance to get the score from.
 
-        X: dataframe
+        X: pd.DataFrame
             Feature set.
 
-        y: series or dataframe
-            Target column corresponding to `X`.
+        y: pd.Series or pd.DataFrame
+            Target column(s) corresponding to `X`.
 
         **kwargs
             Additional keyword arguments for the `scorer`.
@@ -754,7 +762,7 @@ class BaseModel(RunnerPlot):
         if self.task.is_forecast:
             y_pred = estimator.predict(fh=y.index, X=check_empty(X))
         else:
-            y_pred = to_pandas(
+            y_pred = to_tabular(
                 data=estimator.predict(X),
                 index=y.index,
                 columns=getattr(y, "columns", None),
@@ -766,8 +774,8 @@ class BaseModel(RunnerPlot):
     def _score_from_pred(
         self,
         scorer: Scorer,
-        y_true: Pandas,
-        y_pred: Pandas,
+        y_true: Tabular,
+        y_pred: Tabular,
         **kwargs,
     ) -> Float:
         """Calculate the metric score from predicted values.
@@ -854,7 +862,7 @@ class BaseModel(RunnerPlot):
             and hasattr(self.estimator, "predict_proba")
         ):
             y_true, y_pred = self._get_pred(rows, method="predict_proba")
-            if isinstance(y_pred, dataframe_t):
+            if isinstance(y_pred, pd.DataFrame):
                 # Update every target column with its corresponding threshold
                 for i, value in enumerate(threshold):
                     y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
@@ -1025,7 +1033,7 @@ class BaseModel(RunnerPlot):
                     args.append(cols)
 
                 # Parallel loop over fit_model
-                results = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                results = Parallel(n_jobs=self.n_jobs)(
                     delayed(fit_model)(estimator, i, j) for i, j in splitter.split(*args)
                 )
 
@@ -1150,7 +1158,7 @@ class BaseModel(RunnerPlot):
         self._log(f"Time elapsed: {time_to_str(self.trials.iat[-1, -2])}", 1)
 
     @composed(crash, method_to_log, beartype)
-    def fit(self, X: DataFrame | None = None, y: Pandas | None = None):
+    def fit(self, X: pd.DataFrame | None = None, y: Pandas | None = None):
         """Fit and validate the model.
 
         The estimator is fitted using the best hyperparameters found
@@ -1160,12 +1168,12 @@ class BaseModel(RunnerPlot):
 
         Parameters
         ----------
-        X: dataframe or None
+        X: pd.DataFrame or None
             Feature set with shape=(n_samples, n_features). If None,
             `self.X_train` is used.
 
-        y: series, dataframe or None
-            Target column corresponding to `X`. If None, `self.y_train`
+        y: pd.Series, pd.DataFrame or None
+            Target column(s) corresponding to `X`. If None, `self.y_train`
             is used.
 
         """
@@ -1233,28 +1241,25 @@ class BaseModel(RunnerPlot):
                     sk_model=self.estimator,
                     artifact_path=self._est_class.__name__,
                     signature=infer_signature(
-                        model_input=pd.DataFrame(self.X),
+                        model_input=self.X,
                         model_output=self.estimator.predict(self.X_test.iloc[[0]]),
                     ),
-                    input_example=pd.DataFrame(self.X.iloc[[0]]),
+                    input_example=self.X.iloc[[0]],
                 )
 
                 if self.log_data:
                     for ds in ("train", "test"):
-                        mlflow.log_input(
-                            dataset=from_pandas(pd.DataFrame(getattr(self, ds))),
-                            context=ds,
-                        )
+                        mlflow.log_input(dataset=from_pandas(getattr(self, ds)), context=ds)
 
                 if self.log_pipeline:
                     mlflow.sklearn.log_model(
                         sk_model=self.export_pipeline(),
                         artifact_path=f"{self._est_class.__name__}_pipeline",
                         signature=infer_signature(
-                            model_input=pd.DataFrame(self.X),
+                            model_input=self.X,
                             model_output=self.estimator.predict(self.X_test.iloc[[0]]),
                         ),
-                        input_example=pd.DataFrame(self.X.iloc[[0]]),
+                        input_example=self.X.iloc[[0]],
                     )
 
     @composed(crash, method_to_log, beartype)
@@ -1629,22 +1634,22 @@ class BaseModel(RunnerPlot):
             return self.branch.pipeline
 
     @property
-    def dataset(self) -> DataFrame:
+    def dataset(self) -> pd.DataFrame:
         """Complete data set."""
         return merge(self.X, self.y)
 
     @property
-    def train(self) -> DataFrame:
+    def train(self) -> pd.DataFrame:
         """Training set."""
         return merge(self.X_train, self.y_train)
 
     @property
-    def test(self) -> DataFrame:
+    def test(self) -> pd.DataFrame:
         """Test set."""
         return merge(self.X_test, self.y_test)
 
     @property
-    def holdout(self) -> DataFrame | None:
+    def holdout(self) -> pd.DataFrame | None:
         """Holdout set."""
         if (holdout := self.branch.holdout) is not None:
             if self.scaler:
@@ -1655,17 +1660,17 @@ class BaseModel(RunnerPlot):
             return None
 
     @property
-    def X(self) -> DataFrame:
+    def X(self) -> pd.DataFrame:
         """Feature set."""
-        return bk.concat([self.X_train, self.X_test])
+        return pd.concat([self.X_train, self.X_test])
 
     @property
     def y(self) -> Pandas:
-        """Target column."""
-        return bk.concat([self.y_train, self.y_test])
+        """Target column(s)."""
+        return pd.concat([self.y_train, self.y_test])
 
     @property
-    def X_train(self) -> DataFrame:
+    def X_train(self) -> pd.DataFrame:
         """Features of the training set."""
         features = self.branch.features.isin(self._config.ignore)
         if self.scaler:
@@ -1679,7 +1684,7 @@ class BaseModel(RunnerPlot):
         return self.branch.y_train[-self._train_idx:]
 
     @property
-    def X_test(self) -> DataFrame:
+    def X_test(self) -> pd.DataFrame:
         """Features of the test set."""
         features = self.branch.features.isin(self._config.ignore)
         if self.scaler:
@@ -1688,7 +1693,7 @@ class BaseModel(RunnerPlot):
             return self.branch.X_test.iloc[:, ~features]
 
     @property
-    def X_holdout(self) -> DataFrame | None:
+    def X_holdout(self) -> pd.DataFrame | None:
         """Features of the holdout set."""
         if self.holdout is not None:
             return self.holdout[self.features]
@@ -1709,34 +1714,34 @@ class BaseModel(RunnerPlot):
         return self.dataset.shape
 
     @property
-    def columns(self) -> Index:
+    def columns(self) -> list[str]:
         """Name of all the columns."""
-        return self.dataset.columns
+        return list(self.dataset.columns)
 
     @property
-    def n_columns(self) -> Int:
+    def n_columns(self) -> int:
         """Number of columns."""
         return len(self.columns)
 
     @property
-    def features(self) -> Index:
+    def features(self) -> list[str]:
         """Name of the features."""
-        return self.columns[:-self.branch._data.n_cols]
+        return list(self.columns[:-self.branch._data.n_targets])
 
     @property
-    def n_features(self) -> Int:
+    def n_features(self) -> int:
         """Number of features."""
         return len(self.features)
 
     @property
-    def _all(self) -> DataFrame:
+    def _all(self) -> pd.DataFrame:
         """Dataset + holdout.
 
         Note that calling this property triggers the holdout set
         calculation.
 
         """
-        return bk.concat([self.dataset, self.holdout])
+        return pd.concat([self.dataset, self.holdout])
 
     # Utility methods ============================================== >>
 
@@ -1837,8 +1842,7 @@ class BaseModel(RunnerPlot):
             """
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
-            y_pred = self.inverse_transform(y=self.predict([X], verbose=0), verbose=0)
-            if isinstance(y_pred, dataframe_t):
+            if isinstance(y_pred := self.predict([X], verbose=0), pd.DataFrame):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])
@@ -1859,7 +1863,7 @@ class BaseModel(RunnerPlot):
         self.app = Interface(
             fn=inference,
             inputs=inputs,
-            outputs=["label"] * self.branch._data.n_cols,
+            outputs=["label"] * self.branch._data.n_targets,
             allow_flagging=kwargs.pop("allow_flagging", "never"),
             **{k: v for k, v in kwargs.items() if k in sign(Interface)},
         )
@@ -2082,12 +2086,12 @@ class BaseModel(RunnerPlot):
 
         """
         if isinstance(threshold, float_t):
-            threshold_c = [threshold] * self.branch._data.n_cols  # Length=n_targets
-        elif len(threshold) != self.branch._data.n_cols:
+            threshold_c = [threshold] * self.branch._data.n_targets  # Length=n_targets
+        elif len(threshold) != self.branch._data.n_targets:
             raise ValueError(
                 "Invalid value for the threshold parameter. The length of the list "
                 f"list should be equal to the number of target columns, got len(target)"
-                f"={self.branch._data.n_cols} and len(threshold)={len(threshold)}."
+                f"={self.branch._data.n_targets} and len(threshold)={len(threshold)}."
             )
         else:
             threshold_c = list(threshold)
@@ -2185,8 +2189,8 @@ class BaseModel(RunnerPlot):
             raise ValueError("No holdout data set available.")
 
         if include_holdout and self.holdout is not None:
-            X = bk.concat([self.X, self.X_holdout])
-            y = bk.concat([self.y, self.y_holdout])
+            X = pd.concat([self.X, self.X_holdout])
+            y = pd.concat([self.y, self.y_holdout])
         else:
             X, y = self.X, self.y
 
@@ -2234,7 +2238,7 @@ class BaseModel(RunnerPlot):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2249,14 +2253,14 @@ class BaseModel(RunnerPlot):
         ----------
         X: dataframe-like or None, default=None
             Transformed feature set with shape=(n_samples, n_features).
-            If None, X is ignored in the transformers.
+            If None, `X` is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
@@ -2413,7 +2417,7 @@ class BaseModel(RunnerPlot):
 
                 """
                 payload = await request.json()
-                return getattr(self.pipeline, self.method)(bk.read_json(payload))
+                return getattr(self.pipeline, self.method)(pd.read_json(payload))
 
         if not ray.is_initialized():
             ray.init(log_to_driver=False)
@@ -2433,7 +2437,7 @@ class BaseModel(RunnerPlot):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> Tabular | tuple[DataFrame, Tabular]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2448,14 +2452,14 @@ class BaseModel(RunnerPlot):
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored. If None,
-            X is ignored in the transformers.
+            `X` is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
@@ -2530,7 +2534,7 @@ class ClassRegModel:
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: PredictionMethods = ...,
-    ) -> Pandas: ...
+    ) -> Tabular: ...
 
     def _prediction(
         self,
@@ -2540,7 +2544,7 @@ class ClassRegModel:
         sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
         method: PredictionMethods = "predict",
-    ) -> Float | Pandas:
+    ) -> Float | Tabular:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2555,11 +2559,11 @@ class ClassRegModel:
             on.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -2590,7 +2594,7 @@ class ClassRegModel:
 
         """
 
-        def get_transform_X_y(X: XSelector, y: YSelector) -> tuple[DataFrame, Pandas]:
+        def get_transform_X_y(X: XSelector, y: YSelector) -> tuple[DataFrame, Tabular]:
             """Get X and y from the pipeline transformation.
 
             Parameters
@@ -2599,7 +2603,7 @@ class ClassRegModel:
                 Feature set.
 
             y: int, str or sequence
-                Target column.
+                Target column(s).
 
             Returns
             -------
@@ -2630,7 +2634,7 @@ class ClassRegModel:
                 return self.mapping.get(self.target, np.unique(self.y).astype(str))
 
         try:
-            if isinstance(X, dataframe_t):
+            if isinstance(X, pd.DataFrame):
                 # Dataframe must go first since we can expect
                 # prediction calls from dataframes with reset indices
                 Xt, yt = get_transform_X_y(X, y)
@@ -2645,25 +2649,22 @@ class ClassRegModel:
         if method != "score":
             pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt[self.features]))
 
-            if pred.ndim < 3:
-                data = to_pandas(
-                    data=pred,
-                    index=Xt.index,
-                    name=self.target,
-                    columns=assign_prediction_columns(),
-                )
+            if pred.ndim == 1:
+                data = to_series(pred, index=Xt.index, name=self.target)
+            elif pred.ndim < 3:
+                data = to_df(pred, index=Xt.index, columns=assign_prediction_columns())
             elif self.task is Task.multilabel_classification:
                 # Convert to (n_samples, n_targets)
-                data = bk.DataFrame(
+                data = pd.DataFrame(
                     data=np.array([d[:, 1] for d in pred]).T,
                     index=Xt.index,
                     columns=assign_prediction_columns(),
                 )
             else:
                 # Convert to (n_samples * n_classes, n_targets)
-                data = bk.DataFrame(
+                data = pd.DataFrame(
                     data=pred.reshape(-1, pred.shape[2]),
-                    index=bk.MultiIndex.from_tuples(
+                    index=pd.MultiIndex.from_tuples(
                         [(col, idx) for col in np.unique(self.y) for idx in Xt.index]
                     ),
                     columns=assign_prediction_columns(),
@@ -2692,7 +2693,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> Tabular:
         """Get confidence scores on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2731,7 +2732,7 @@ class ClassRegModel:
         *,
         inverse: Bool = True,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> Tabular:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2877,11 +2878,11 @@ class ClassRegModel:
             on.
 
         y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
+            Target column(s) corresponding to `X`.
 
             - If None: `X` must be a selection of rows in the dataset.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
             - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
@@ -2966,7 +2967,7 @@ class ForecastModel:
         verbose: Int | None = None,
         method: PredictionMethodsTS = ...,
         **kwargs,
-    ) -> Pandas: ...
+    ) -> Tabular: ...
 
     def _prediction(
         self,
@@ -2977,7 +2978,7 @@ class ForecastModel:
         verbose: Int | None = None,
         method: PredictionMethodsTS = "predict",
         **kwargs,
-    ) -> Float | Pandas:
+    ) -> Float | Tabular:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3051,8 +3052,9 @@ class ForecastModel:
         fh: RowSelector | FHConstructor,
         X: XSelector | None = None,
         *,
+        inverse: Bool = True,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> Tabular:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3070,6 +3072,12 @@ class ForecastModel:
         X: hashable, segment, sequence, dataframe-like or None, default=None
             Exogenous time series corresponding to `fh`.
 
+        inverse: bool, default=True
+            Whether to inversely transform the output through the
+            pipeline. This doesn't affect the predictions if there are
+            no transformers in the pipeline or if the transformers have
+            no `inverse_transform` method or don't apply to `y`.
+
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
             None, it uses the pipeline's verbosity.
@@ -3081,7 +3089,12 @@ class ForecastModel:
             n_targets) for [multivariate][] tasks.
 
         """
-        return self._prediction(fh=fh, X=X, verbose=verbose, method="predict")
+        pred = self._prediction(fh=fh, X=X, verbose=verbose, method="predict")
+
+        if inverse:
+            return self.inverse_transform(y=pred)
+        else:
+            return pred
 
     @available_if(estimator_has_attr("predict_interval"))
     @composed(crash, method_to_log, beartype)
@@ -3236,7 +3249,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> Tabular:
         """Get residuals of forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.

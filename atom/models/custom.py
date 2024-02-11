@@ -5,7 +5,6 @@ Description: Module containing the create_custom_model function.
 
 """
 
-from functools import cached_property
 from typing import Any
 
 from atom.basemodel import BaseModel
@@ -56,7 +55,7 @@ class CustomModel(BaseModel):
         """Return the estimator's class name."""
         return self._est_class.__name__
 
-    @cached_property
+    @property
     def _est_class(self) -> type[Predictor]:
         """Return the estimator's class."""
         return self._est

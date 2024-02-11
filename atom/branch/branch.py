@@ -15,6 +15,7 @@ from typing import Literal, overload
 from warnings import filterwarnings
 
 import dill as pickle
+import pandas as pd
 from beartype import beartype
 from beartype.roar import BeartypeDecorHintPep585DeprecationWarning
 from joblib.memory import Memory
@@ -22,12 +23,13 @@ from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, Index, Int, IntLargerEqualZero, Pandas,
-    RowSelector, Scalar, Sequence, TargetSelector, TargetsSelector, XSelector,
-    YSelector, dataframe_t, index_t, int_t, segment_t, series_t,
+    Bool, ColumnSelector, DataFrame, Int, IntLargerEqualZero, Pandas,
+    RowSelector, Scalar, Sequence, TargetSelector, TargetsSelector,
+    XConstructor, XSelector, YSelector, int_t, segment_t,
 )
 from atom.utils.utils import (
-    DataContainer, bk, flt, get_cols, lst, merge, to_pandas,
+    DataContainer, check_scaling, flt, get_col_names, get_cols, lst, merge,
+    to_tabular,
 )
 
 
@@ -58,15 +60,15 @@ class Branch:
     name: str
         Name of the branch.
 
-    memory: str, [Memory][joblibmemory] or None, default=None
-        Memory object for pipeline caching and to store the data when
-        the branch is inactive.
-
     data: DataContainer or None, default=None
         Data for the branch.
 
-    holdout: dataframe or None, default=None
+    holdout: pd.DataFrame or None, default=None
         Holdout data set.
+
+    memory: str, [Memory][joblibmemory] or None, default=None
+        Memory object for pipeline caching and to store the data when
+        the branch is inactive.
 
     See Also
     --------
@@ -101,9 +103,10 @@ class Branch:
     def __init__(
         self,
         name: str,
-        memory: str | Memory | None = None,
         data: DataContainer | None = None,
-        holdout: DataFrame | None = None,
+        holdout: pd.DataFrame | None = None,
+        *,
+        memory: str | Memory | None = None,
     ):
         self.name = name
         self.memory = check_memory(memory)
@@ -164,11 +167,11 @@ class Branch:
     def _check_setter(
         self,
         name: str,
-        value: Sequence[Scalar | str] | XSelector,
+        value: Sequence[Scalar | str] | XConstructor,
     ) -> Pandas:
         """Check the data set's setter property.
 
-        Convert the property to a pandas object and compare with the
+        Convert the property to a 'pandas' object and compare with the
         rest of the dataset, to check if it has the right indices and
         dimensions.
 
@@ -182,7 +185,7 @@ class Branch:
 
         Returns
         -------
-        series or dataframe
+        pd.Series or pd.DataFrame
             Data set.
 
         """
@@ -226,11 +229,10 @@ class Branch:
         if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-        obj = to_pandas(
+        obj = to_tabular(
             data=value,
             index=side.index if side_name else None,
-            name=getattr(under, "name", "target") if under_name else "target",
-            columns=getattr(under, "columns", None) if under_name else None,
+            columns=get_col_names(under) if under_name else None,
         )
 
         if side_name:  # Check for equal rows
@@ -246,7 +248,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(obj, series_t):
+            if isinstance(obj, pd.Series):
                 if obj.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -292,7 +294,7 @@ class Branch:
         return self._mapping
 
     @property
-    def dataset(self) -> DataFrame:
+    def dataset(self) -> pd.DataFrame:
         """Complete data set."""
         return self._data.data
 
@@ -301,29 +303,29 @@ class Branch:
         self._data.data = self._check_setter("dataset", value)
 
     @property
-    def train(self) -> DataFrame:
+    def train(self) -> pd.DataFrame:
         """Training set."""
         return self._data.data.loc[self._data.train_idx]
 
     @train.setter
     def train(self, value: XSelector):
         df = self._check_setter("train", value)
-        self._data.data = bk.concat([df, self.test])
+        self._data.data = pd.concat([df, self.test])
         self._data.train_idx = df.index
 
     @property
-    def test(self) -> DataFrame:
+    def test(self) -> pd.DataFrame:
         """Test set."""
         return self._data.data.loc[self._data.test_idx]
 
     @test.setter
     def test(self, value: XSelector):
         df = self._check_setter("test", value)
-        self._data.data = bk.concat([self.train, df])
+        self._data.data = pd.concat([self.train, df])
         self._data.test_idx = df.index
 
     @cached_property
-    def holdout(self) -> DataFrame | None:
+    def holdout(self) -> pd.DataFrame | None:
         """Holdout set."""
         if self._holdout is not None:
             return merge(
@@ -336,7 +338,7 @@ class Branch:
             return None
 
     @property
-    def X(self) -> DataFrame:
+    def X(self) -> pd.DataFrame:
         """Feature set."""
         return self._data.data[self.features]
 
@@ -356,14 +358,14 @@ class Branch:
         self._data.data = merge(self.X, series)
 
     @property
-    def X_train(self) -> DataFrame:
+    def X_train(self) -> pd.DataFrame:
         """Features of the training set."""
         return self.train[self.features]
 
     @X_train.setter
     def X_train(self, value: XSelector):
         df = self._check_setter("X_train", value)
-        self._data.data = bk.concat([merge(df, self.y_train), self.test])
+        self._data.data = pd.concat([merge(df, self.y_train), self.test])
 
     @property
     def y_train(self) -> Pandas:
@@ -373,17 +375,17 @@ class Branch:
     @y_train.setter
     def y_train(self, value: YSelector):
         series = self._check_setter("y_train", value)
-        self._data.data = bk.concat([merge(self.X_train, series), self.test])
+        self._data.data = pd.concat([merge(self.X_train, series), self.test])
 
     @property
-    def X_test(self) -> DataFrame:
+    def X_test(self) -> pd.DataFrame:
         """Features of the test set."""
         return self.test[self.features]
 
     @X_test.setter
     def X_test(self, value: XSelector):
         df = self._check_setter("X_test", value)
-        self._data.data = bk.concat([self.train, merge(df, self.y_test)])
+        self._data.data = pd.concat([self.train, merge(df, self.y_test)])
 
     @property
     def y_test(self) -> Pandas:
@@ -393,7 +395,7 @@ class Branch:
     @y_test.setter
     def y_test(self, value: YSelector):
         series = self._check_setter("y_test", value)
-        self._data.data = bk.concat([self.train, merge(self.X_test, series)])
+        self._data.data = pd.concat([self.train, merge(self.X_test, series)])
 
     @property
     def shape(self) -> tuple[Int, Int]:
@@ -401,41 +403,57 @@ class Branch:
         return self.dataset.shape
 
     @property
-    def columns(self) -> Index:
+    def columns(self) -> pd.Index:
         """Name of all the columns."""
         return self.dataset.columns
 
     @property
-    def n_columns(self) -> Int:
+    def n_columns(self) -> int:
         """Number of columns."""
         return len(self.columns)
 
     @property
-    def features(self) -> Index:
+    def features(self) -> pd.Index:
         """Name of the features."""
-        return self.columns[:-self._data.n_cols]
+        return self.columns[:-self._data.n_targets]
 
     @property
-    def n_features(self) -> Int:
+    def n_features(self) -> int:
         """Number of features."""
         return len(self.features)
 
     @property
     def target(self) -> str | list[str]:
         """Name of the target column(s)."""
-        return flt(list(self.columns[-self._data.n_cols:]))
+        return flt(list(self.columns[-self._data.n_targets:]))
 
     @property
-    def _all(self) -> DataFrame:
+    def _all(self) -> pd.DataFrame:
         """Dataset + holdout.
 
         Note that calling this property triggers the holdout set
         calculation.
 
         """
-        return bk.concat([self.dataset, self.holdout])
+        return pd.concat([self.dataset, self.holdout])
 
     # Utility methods ============================================== >>
+
+    @classmethod
+    def _get_data_attrs(cls) -> list[str]:
+        """Get the data attributes of the class.
+
+        Returns
+        -------
+        list of str
+            Data properties.
+
+        """
+        return [
+            x
+            for x in dir(cls)
+            if isinstance(getattr(cls, x), property) and not x.startswith("_")
+        ]
 
     @overload
     def _get_rows(
@@ -451,14 +469,14 @@ class Branch:
         rows: RowSelector,
         *,
         return_X_y: Literal[True],
-    ) -> tuple[DataFrame, Pandas]: ...
+    ) -> tuple[pd.DataFrame, Pandas]: ...
 
     def _get_rows(
         self,
         rows: RowSelector,
         *,
         return_X_y: Bool = False,
-    ) -> DataFrame | tuple[DataFrame, Pandas]:
+    ) -> pd.DataFrame | tuple[pd.DataFrame, Pandas]:
         """Get a subset of the rows.
 
         Rows can be selected by name, index, data set or regex pattern.
@@ -479,10 +497,10 @@ class Branch:
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Subset of rows.
 
-        series or dataframe
+        pd.Series or pd.Dataframe
             Subset of target column. Only returned if return_X_y=True.
 
         """
@@ -490,9 +508,9 @@ class Branch:
 
         inc: list[Hashable] = []
         exc: list[Hashable] = []
-        if isinstance(rows, dataframe_t):
+        if isinstance(rows, pd.DataFrame):
             inc.extend(rows.index)
-        elif isinstance(rows, index_t):
+        elif isinstance(rows, pd.Index):
             inc.extend(rows)
         elif isinstance(rows, segment_t):
             inc.extend(_all.index[rows])
@@ -590,7 +608,7 @@ class Branch:
                 return list(df.select_dtypes(include=["number"]).columns)
             else:
                 return list(df.columns)
-        elif isinstance(columns, dataframe_t):
+        elif isinstance(columns, pd.DataFrame):
             inc.extend(list(columns.columns))
         elif isinstance(columns, segment_t):
             inc.extend(list(df.columns[columns]))
@@ -755,7 +773,7 @@ class Branch:
         if only_columns and not isinstance(target, tuple):
             return get_column(target)
         elif isinstance(target, tuple):
-            if not isinstance(self.y, dataframe_t):
+            if not isinstance(self.y, pd.DataFrame):
                 raise ValueError(
                     f"Invalid value for the target parameter, got {target}. "
                     "A tuple is only accepted for multioutput tasks."
@@ -831,3 +849,27 @@ class Branch:
 
             if assign:
                 self._container = None
+
+    def check_scaling(self) -> bool:
+        """Whether the feature set is scaled.
+
+        A data set is considered scaled when it has mean~0 and std~1,
+        or when there is a scaler in the pipeline. Categorical and
+        binary columns (only zeros and ones) are excluded from the
+        calculation.
+
+        Returns
+        -------
+        bool
+            Whether the feature set is scaled.
+
+        """
+        if any("scaler" in name.lower() for name in self.pipeline.named_steps):
+            return True
+
+        df = self.X.loc[:, (~self.X.isin([0, 1])).any(axis=0)]  # Remove binary columns
+
+        if df.empty:  # All columns are binary -> no scaling needed
+            return True
+        else:
+            return check_scaling(df)

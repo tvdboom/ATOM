@@ -158,20 +158,22 @@ class ATOMClassifier(ATOM):
         **X, train, test: dataframe-like**<br>
         Feature set with shape=(n_samples, n_features).
 
-        **y: int, str or sequence**<br>
-        Target column corresponding to `X`.
+        **y: int, str, dict, sequence or dataframe**<br>
+        Target column(s) corresponding to `X`.
 
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
+        - If int: Position of the target column in `X`.
+        - If str: Name of the target column in `X`.
+        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
     y: int, str, dict, sequence or dataframe, default=-1
-        Target column corresponding to `X`.
+        Target column(s) corresponding to `X`.
 
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
+        - If int: Position of the target column in `X`.
+        - If str: Name of the target column in `X`.
+        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
@@ -276,6 +278,7 @@ class ATOMClassifier(ATOM):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -428,11 +431,12 @@ class ATOMForecaster(ATOM):
         Exogenous feature set corresponding to y, with shape=(n_samples,
         n_features).
 
-        **y: int, str or sequence**<br>
+        **y: int, str, dict, sequence or dataframe**<br>
         Time series.
 
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
+        - If int: Position of the target column in `X`.
+        - If str: Name of the target column in `X`.
+        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
@@ -440,9 +444,10 @@ class ATOMForecaster(ATOM):
     y: int, str, dict, sequence or dataframe, default=-1
         Time series.
 
-        - If None: y is ignored.
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
+        - If None: `y` is ignored.
+        - If int: Position of the target column in `X`.
+        - If str: Name of the target column in `X`.
+        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
@@ -545,6 +550,7 @@ class ATOMForecaster(ATOM):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the
@@ -689,21 +695,23 @@ class ATOMRegressor(ATOM):
         **X, train, test: dataframe-like**<br>
         Feature set with shape=(n_samples, n_features).
 
-        **y: int, str or sequence**<br>
-        Target column corresponding to `X`.
+        **y: int, str, dict, sequence or dataframe**<br>
+        Target column(s) corresponding to `X`.
 
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
+        - If int: Position of the target column in `X`.
+        - If str: Name of the target column in `X`.
+        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
     y: int, str, dict, sequence or dataframe, default=-1
-        Target column corresponding to `X`.
+        Target column(s) corresponding to `X`.
 
-        - If None: y is ignored.
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
+        - If None: `y` is ignored.
+        - If int: Position of the target column in `X`.
+        - If str: Name of the target column in `X`.
+        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
@@ -775,9 +783,16 @@ class ATOMRegressor(ATOM):
 
         - "data":
 
+            - "numpy"
             - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
             - "pyarrow"
             - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
 
         - "estimator":
 
@@ -794,6 +809,7 @@ class ATOMRegressor(ATOM):
           parallelism. Less robust than `loky`.
         - "threading": Single-node, thread-based parallelism.
         - "ray": Multi-node, process-based parallelism.
+        - "dask": Multi-node, process-based parallelism.
 
     memory: bool, str, Path or Memory, default=False
         Enables caching for memory optimization. Read more in the

@@ -15,7 +15,7 @@ from collections.abc import Hashable
 from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, overload, Literal
 
 import dill as pickle
 import numpy as np
@@ -39,14 +39,14 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
     IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
-    Pandas, RowSelector, Seasonality, Segment, Sequence, Series, SPDict,
-    SPTuple, TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
-    sequence_t,
+    RowSelector, Seasonality, Segment, Sequence, Series, SPDict, SPTuple,
+    Tabular, TargetSelector, XSelector, YSelector, bool_t, int_t, pandas_t,
+    segment_t, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataContainer, Goal, SeasonalPeriod, Task, bk, check_is_fitted,
+    ClassMap, DataContainer, Goal, SeasonalPeriod, Task, check_is_fitted,
     composed, crash, divide, flt, get_cols, get_segment, get_versions,
-    has_task, lst, merge, method_to_log, n_cols,
+    has_task, lst, merge, method_to_log, n_cols, to_df, to_tabular,
 )
 
 
@@ -80,27 +80,42 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     def __dir__(self) -> list[str]:
         """Add additional attrs from __getattr__ to the dir."""
-        attrs = list(super().__dir__())
-        attrs += [x for x in dir(self.branch) if not x.startswith("_")]
-        attrs += list(DF_ATTRS)
+        # Exclude from _available_if conditions
+        attrs = [x for x in super().__dir__() if hasattr(self, x)]
+
+        # Add additional attrs from the branch
+        attrs += Branch._get_data_attrs()
+
+        # Add additional attrs from the dataset
+        attrs += [x for x in DF_ATTRS if hasattr(self.dataset, x)]
+
+        # Add branch names in lower-case
         attrs += [b.name.lower() for b in self._branches]
+
+        # Add column names (excluding those with spaces)
         attrs += [c for c in self.columns if re.fullmatch(r"\w+$", c)]
+
+        # Add model names in lower-case
         if isinstance(self._models, ClassMap):
             attrs += [m.name.lower() for m in self._models]
+
         return attrs
 
     def __getattr__(self, item: str) -> Any:
         """Get branch, attr from branch, model, column or attr from dataset."""
         if item in self.__dict__["_branches"]:
             return self._branches[item]  # Get branch
-        elif item in dir(self.branch) and not item.startswith("_"):
-            return getattr(self.branch, item)  # Get attr from branch
+        elif item in Branch._get_data_attrs():
+            if isinstance(attr := getattr(self.branch, item), pandas_t):
+                return self._convert(attr)  # Transform data through data engine
+            else:
+                return attr
         elif item in self.__dict__["_models"]:
             return self._models[item]  # Get model
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column from dataset
-        elif item in DF_ATTRS:
-            return getattr(self.branch.dataset, item)  # Get attr from dataset
+        elif item in DF_ATTRS and hasattr(self.dataset, item):
+            return getattr(self.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'.")
 
@@ -120,7 +135,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     def __len__(self) -> int:
         """Return length of dataset."""
-        return len(self.dataset)
+        return len(self.branch.dataset)
 
     def __contains__(self, item: str) -> bool:
         """Whether the item is a column in the dataset."""
@@ -159,7 +174,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     @cached_property
     def task(self) -> Task:
         """Dataset's [task][] type."""
-        return self._goal.infer_task(self.y)
+        return self._goal.infer_task(self.branch.y)
 
     @property
     def sp(self) -> SPTuple:
@@ -316,6 +331,130 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     # Utility methods ============================================== >>
 
+    @staticmethod
+    @overload
+    def _check_input(X: XSelector, y: Literal[None]) -> tuple[DataFrame, None]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(X: Literal[None], y: YSelector) -> tuple[None, Tabular]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(X: XSelector, y: YSelector) -> tuple[DataFrame, Tabular]: ...
+
+    @staticmethod
+    def _check_input(
+        X: XSelector | None = None,
+        y: YSelector | None = None,
+    ) -> tuple[DataFrame | None, Tabular | None]:
+        """Prepare the input data.
+
+        Convert X and y to pandas (if not already) and perform standard
+        compatibility checks (dimensions, length, indices, etc...).
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column(s) corresponding to `X`.
+
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        Returns
+        -------
+        dataframe or None
+            Feature dataset. Only returned if provided.
+
+        series, dataframe or None
+            Target column(s) corresponding to `X`.
+
+        """
+        Xt: pd.DataFrame | None = None
+        yt: Pandas | None = None
+
+        if X is None and y is None:
+            raise ValueError("X and y can't be both None!")
+        elif X is not None:
+            Xt = to_df(deepcopy(X() if callable(X) else X))
+
+            # If text dataset, change the name of the column to corpus
+            if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
+                Xt = Xt.rename(columns={Xt.columns[0]: "corpus"})
+            else:
+                # Convert all column names to str
+                Xt.columns = Xt.columns.astype(str)
+
+                # No duplicate rows nor column names are allowed
+                if Xt.columns.duplicated().any():
+                    raise ValueError("Duplicate column names found in X.")
+
+        # Prepare target column
+        if isinstance(y, (dict, *sequence_t, DataFrame)):
+            if isinstance(y, dict):
+                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None))
+            else:
+                # If X and y have different number of rows, try multioutput
+                if Xt is not None and len(Xt) != len(y):
+                    try:
+                        targets: list[Hashable] = []
+                        for col in y:
+                            if col in Xt.columns:
+                                targets.append(col)
+                            elif isinstance(col, int_t):
+                                if -Xt.shape[1] <= col < Xt.shape[1]:
+                                    targets.append(Xt.columns[int(col)])
+                                else:
+                                    raise IndexError(
+                                        "Invalid value for the y parameter. Value "
+                                        f"{col} is out of range for data with "
+                                        f"{Xt.shape[1]} columns."
+                                    )
+
+                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
+
+                    except (TypeError, IndexError, KeyError):
+                        raise ValueError(
+                            "X and y don't have the same number of rows,"
+                            f" got len(X)={len(Xt)} and len(y)={len(y)}."
+                        ) from None
+                else:
+                    yt = y
+
+                yt = to_tabular(deepcopy(yt), index=getattr(Xt, "index", None))
+
+            # Check X and y have the same indices
+            if Xt is not None and not Xt.index.equals(yt.index):
+                raise ValueError("X and y don't have the same indices!")
+
+        elif isinstance(y, str):
+            if Xt is not None:
+                if y not in Xt.columns:
+                    raise ValueError(f"Column {y} not found in X!")
+
+                Xt, yt = Xt.drop(columns=y), Xt[y]
+
+            else:
+                raise ValueError("X can't be None when y is a string.")
+
+        elif isinstance(y, int_t):
+            if Xt is None:
+                raise ValueError("X can't be None when y is an int.")
+
+            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
+
+        return Xt, yt
+
     def _get_sp(self, sp: Seasonality) -> int | list[int] | None:
         """Get the seasonal period.
 
@@ -378,11 +517,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     def _get_data(
         self,
-        arrays: tuple,
+        arrays: tuple[Any, ...],
         y: YSelector = -1,
         *,
         index: IndexSelector = False,
-    ) -> tuple[DataContainer, DataFrame | None]:
+    ) -> tuple[DataContainer, pd.DataFrame | None]:
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -404,7 +543,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         DataContainer
             Train and test sets.
 
-        dataframe or None
+        pd.DataFrame or None
             Holdout data set. Returns None if not specified.
 
         """
@@ -439,7 +578,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
-        def _set_index(df: DataFrame, y: Pandas | None) -> DataFrame:
+        def _set_index(df: DataFrame, y: Tabular | None) -> DataFrame:
             """Assign an index to the dataframe.
 
             Parameters
@@ -495,7 +634,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         def _no_data_sets(
             X: DataFrame,
-            y: Pandas,
+            y: Tabular,
         ) -> tuple[DataContainer, DataFrame | None]:
             """Generate data sets from one dataset.
 
@@ -589,18 +728,18 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     stratify=self._config.get_stratify_columns(data, y),
                 )
 
-                complete_set = _set_index(bk.concat([train, test, holdout]), y)
+                complete_set = _set_index(pd.concat([train, test, holdout]), y)
 
                 container = DataContainer(
                     data=(data := complete_set.iloc[: len(data)]),
                     train_idx=data.index[:-len(test)],
                     test_idx=data.index[-len(test):],
-                    n_cols=len(get_cols(y)),
+                    n_targets=n_cols(y),
                 )
 
             except ValueError as ex:
                 # Clarify common error with stratification for multioutput tasks
-                if "least populated class" in str(ex) and isinstance(y, dataframe_t):
+                if "least populated class" in str(ex) and isinstance(y, pd.DataFrame):
                     raise ValueError(
                         "Stratification for multioutput tasks is applied over all target "
                         "columns, which results in a least populated class that has only "
@@ -617,11 +756,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         def _has_data_sets(
             X_train: DataFrame,
-            y_train: Pandas,
+            y_train: Tabular,
             X_test: DataFrame,
-            y_test: Pandas,
+            y_test: Tabular,
             X_holdout: DataFrame | None = None,
-            y_holdout: Pandas | None = None,
+            y_holdout: Tabular | None = None,
         ) -> tuple[DataContainer, DataFrame | None]:
             """Generate data sets from provided sets.
 
@@ -701,13 +840,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 if holdout is not None:
                     holdout.index = index[-len(holdout):]
 
-            complete_set = _set_index(bk.concat([train, test, holdout]), y_test)
+            complete_set = _set_index(pd.concat([train, test, holdout]), y_test)
 
             container = DataContainer(
                 data=(data := complete_set.iloc[:len(train) + len(test)]),
                 train_idx=data.index[: len(train)],
                 test_idx=data.index[-len(test):],
-                n_cols=len(get_cols(y_train)),
+                n_targets=n_cols(y_train),
             )
 
             if holdout is not None:
@@ -787,7 +926,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         if self._goal.name == "forecast":
             # For forecasting, check if index complies with sktime's standard
             valid, msg, _ = check_is_mtype(
-                obj=pd.DataFrame(bk.concat([sets[0].data, sets[1]])),
+                obj=pd.DataFrame(pd.concat([sets[0].data, sets[1]])),
                 mtype="pd.DataFrame",
                 return_metadata=True,
                 var_name="the dataset",
@@ -797,7 +936,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 raise ValueError(msg)
         else:
             # Else check for duplicate indices
-            if bk.concat([sets[0].data, sets[1]]).index.duplicated().any():
+            if pd.concat([sets[0].data, sets[1]]).index.duplicated().any():
                 raise ValueError(
                     "Duplicate indices found in the dataset. "
                     "Try initializing atom using `index=False`."
@@ -1175,7 +1314,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         _, y = self.branch._get_rows(rows, return_X_y=True)
         weights = compute_sample_weight("balanced", y=y)
-        return bk.Series(weights, name="sample_weight").round(3)
+        return pd.Series(weights, name="sample_weight").round(3)
 
     @available_if(has_task("forecast"))
     @composed(crash, beartype)

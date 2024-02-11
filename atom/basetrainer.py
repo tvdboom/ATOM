@@ -12,7 +12,7 @@ from abc import ABCMeta
 from datetime import datetime as dt
 from typing import Any
 
-import joblib
+import dask
 import mlflow
 import numpy as np
 import ray
@@ -380,8 +380,10 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 # each run the function
                 execute_remote = ray.remote(num_cpus=self.n_jobs)(execute_model)
                 models = ray.get([execute_remote.remote(m) for m in self._models])
+            elif self.backend == "dask":
+                models = dask.compute(*[dask.delayed(execute_model)(m) for m in self._models])
             else:
-                models = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                models = Parallel(n_jobs=self.n_jobs)(
                     delayed(execute_model)(m) for m in self._models
                 )
 
@@ -391,8 +393,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 m.verbose = vb
 
         else:
-            with joblib.parallel_backend(backend=self.backend):
-                models = [model for m in self._models if (model := execute_model(m))]
+            models = [model for m in self._models if (model := execute_model(m))]
 
         self._models = ClassMap(m for m in models if m)
 

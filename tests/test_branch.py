@@ -8,9 +8,11 @@ import glob
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch, BranchManager
@@ -276,14 +278,14 @@ def test_data_properties_to_df():
     """Assert that the data attributes are converted to a df at setter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.X = X_bin_array
-    assert isinstance(atom.X, pd.DataFrame)
+    assert isinstance(atom.branch.X, pd.DataFrame)
 
 
 def test_data_properties_to_series():
     """Assert that the data attributes are converted to a series at setter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.y = y_bin_array
-    assert isinstance(atom.y, pd.Series)
+    assert isinstance(atom.branch.y, pd.Series)
 
 
 def test_setter_error_unequal_rows():
@@ -561,6 +563,30 @@ def test_load_no_dir():
         atom.branch = "main"
 
 
+def test_check_scaling_scaler_in_pipeline():
+    """Assert that check_scaling returns True when there's a scaler in the pipeline."""
+    atom = ATOMClassifier(X_bin, y=y_bin, random_state=1)
+    assert not atom.branch.check_scaling()
+    atom.add(MinMaxScaler())
+    assert atom.branch.check_scaling()
+
+
+def test_check_scaling():
+    """Assert that the check_scaling method returns whether the data is scaled."""
+    scaler = StandardScaler()
+    scaler.__class__.__name__ = "OtherName"
+
+    atom = ATOMClassifier(X_bin, y=y_bin, random_state=1)
+    atom.add(scaler)
+    assert atom.branch.check_scaling()
+
+
+def test_check_scaling_drop_binary():
+    """Assert that binary rows are dropped to check scaling."""
+    atom = ATOMClassifier(np.tile(y10, (10, 1)), y=y10, random_state=1)
+    assert atom.branch.check_scaling()
+
+
 # Test BranchManager =============================================== >>
 
 def test_branchmanager_repr():
@@ -665,3 +691,27 @@ def test_reset():
     assert len(atom._branches) == 1
     assert not glob.glob("joblib/atom/Branch(main).pkl")
     assert atom.og is atom.branch
+
+
+# Test data engines ================================================ >>
+
+def test_numpy_engine():
+    """Assert that the numpy engine returns a numpy array."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="numpy", random_state=1)
+    assert isinstance(atom.dataset, np.ndarray)
+
+
+def test_pandas_numpy_engine():
+    """Assert that the pandas numpy engine returns a pandas dataframe."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pandas", random_state=1)
+    assert all(isinstance(dtype, np.dtype) for dtype in atom.dataset.dtypes)
+    assert isinstance(atom.y.dtype, np.dtype)
+
+
+def test_pandas_pyarrow_engine():
+    """Assert that the pandas pyarrow engine returns pyarrow dtypes."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pandas-pyarrow", random_state=1)
+    assert all(isinstance(dtype, pd.ArrowDtype) for dtype in atom.dataset.dtypes)
+    assert isinstance(atom.y.dtype, pd.ArrowDtype)
+
+

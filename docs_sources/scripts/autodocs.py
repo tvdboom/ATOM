@@ -626,7 +626,7 @@ class AutoDocs:
                     elif obj.__class__.__name__ == "cached_property":
                         obj = obj.func
 
-                    # Get the return type. Sometimes it returns a string 'Pandas'
+                    # Get the return type. Sometimes it returns a string 'Tabular'
                     # and sometimes a class pandas.DataFrame. Unclear why
                     output = str(signature(obj).return_annotation)
 
@@ -926,7 +926,7 @@ def types_conversion(dtype: str) -> str:
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",
-        "Pandas": "Series | DataFrame",
+        "Tabular": "Series | DataFrame",
         "int | numpy.integer": "int",
         "float | numpy.floating": "float",
         "Series | modin.pandas.series.Series": "Series",

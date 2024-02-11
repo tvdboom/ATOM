@@ -22,7 +22,7 @@ from optuna.integration import (
 from optuna.trial import Trial
 
 from atom.basemodel import BaseModel
-from atom.utils.types import DataFrame, Pandas, Predictor
+from atom.utils.types import Pandas, Predictor
 from atom.utils.utils import CatBMetric, Goal, LGBMetric, XGBMetric
 
 
@@ -485,8 +485,8 @@ class CatBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -1675,8 +1675,8 @@ class LightGBM(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -3082,7 +3082,7 @@ class XGBoost(BaseModel):
     }
 
     @property
-    def trials(self) -> pd.DataFrame:
+    def trials(self) -> pd.pd.DataFrame:
         """Overview of the trials' results.
 
         This property is only available for models that ran
@@ -3132,8 +3132,8 @@ class XGBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
