@@ -24,12 +24,9 @@ import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
 from pandas._typing import DtypeObj
-from scipy import stats
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.utils.metaestimators import available_if
-from statsmodels.stats.diagnostic import acorr_ljungbox
-from statsmodels.tsa.stattools import adfuller, kpss
-
+from polars.dependencies import _lazy_import
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch, BranchManager
@@ -66,6 +63,11 @@ from atom.utils.utils import (
     get_custom_scorer, has_task, is_sparse, lst, make_sklearn, merge,
     method_to_log, n_cols, replace_missing, sign,
 )
+
+
+stats, _ = _lazy_import("scipy.stats")
+diagnostic, _ = _lazy_import("statsmodels.stats.diagnostic")
+stattools, _ = _lazy_import("statsmodels.tsa.stattools")
 
 
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
@@ -497,11 +499,11 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             for test in ("adf", "kpss", "lb"):
                 if test == "adf":
-                    stat = adfuller(X, maxlag=None, autolag="AIC")
+                    stat = stattools.adfuller(X, maxlag=None, autolag="AIC")
                 elif test == "kpss":
-                    stat = kpss(X, regression="ct", nlags="auto")  # ct is trend stationarity
+                    stat = stattools.kpss(X, regression="ct", nlags="auto")  # ct is trend stationarity
                 elif test == "lb":
-                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
+                    l_jung = diagnostic.acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
                     stat = l_jung.loc[l_jung["lb_pvalue"].idxmin()]
 
                 # Add as column to the dataframe
@@ -1026,7 +1028,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             self._log(f"Seasonal period: {self.sp.sp}", _vb)
 
         for ds in ("train", "test", "holdout"):
-            if (data := getattr(self, ds)) is not None:
+            if (data := getattr(self.branch, ds)) is not None:
                 self._log(f"{ds.capitalize()} set size: {len(data)}", _vb)
                 if self.task.is_forecast:
                     self._log(f" --> From: {min(data.index)}  To: {max(data.index)}", _vb)
@@ -1267,7 +1269,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             kwargs = {
                 "estimator": transformer_c,
                 "X": self.branch.X_train,
-                "y": self.y_train,
+                "y": self.branch.y_train,
                 **fit_params,
             }
 
@@ -1302,19 +1304,23 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             data = merge(self.branch.X if X is None else X, self.branch.y if y is None else y)
 
             # y can change the number of columns or remove rows -> reassign index
-            self.branch._container = DataContainer(
-                data=data,
-                train_idx=self.branch._data.train_idx.intersection(data.index),
-                test_idx=self.branch._data.test_idx.intersection(data.index),
-                n_targets=self.branch._data.n_targets if y is None else n_cols(y),
+            self._branches.fill(
+                DataContainer(
+                    data=data,
+                    train_idx=self.branch._data.train_idx.intersection(data.index),
+                    test_idx=self.branch._data.test_idx.intersection(data.index),
+                    n_targets=self.branch._data.n_targets if y is None else n_cols(y),
+                )
             )
 
         if self._config.index is False:
-            self.branch._container = DataContainer(
-                data=(data := self.branch.dataset.reset_index(drop=True)),
-                train_idx=data.index[: len(self.branch._data.train_idx)],
-                test_idx=data.index[-len(self.branch._data.test_idx):],
-                n_targets=self.branch._data.n_targets,
+            self._branches.fill(
+                DataContainer(
+                    data=(data := self.branch.dataset.reset_index(drop=True)),
+                    train_idx=data.index[: len(self.branch._data.train_idx)],
+                    test_idx=data.index[-len(self.branch._data.test_idx):],
+                    n_targets=self.branch._data.n_targets,
+                )
             )
             if self.branch._holdout is not None:
                 self.branch._holdout.index = range(

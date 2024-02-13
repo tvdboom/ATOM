@@ -259,9 +259,16 @@ class ATOMClassifier(ATOM):
 
         - "data":
 
+            - "numpy"
             - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
             - "pyarrow"
             - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
 
         - "estimator":
 
@@ -531,9 +538,16 @@ class ATOMForecaster(ATOM):
 
         - "data":
 
+            - "numpy"
             - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
             - "pyarrow"
             - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
 
         - "estimator":
 

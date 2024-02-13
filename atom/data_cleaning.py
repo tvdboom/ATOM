@@ -56,7 +56,7 @@ from atom.utils.types import (
     EngineTuple, Estimator, FloatLargerZero, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats, NumericalStrats,
     Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels, Sequence,
-    Tabular, Transformer, Verbose, XConstructor, YConstructor, sequence_t,
+    Tabular, Transformer, Verbose, XConstructor, YConstructor, sequence_t, EngineDataOptions
 )
 from atom.utils.utils import (
     Goal, check_is_fitted, composed, crash, get_col_order, get_cols, it, lst,
@@ -221,6 +221,44 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
         """
         return variable_return(X, y)
+
+    @composed(crash, method_to_log)
+    def set_output(self, *, transform: EngineDataOptions | None = None):
+        """Set output container.
+
+        See sklearn's [user guide][set_output] on how to use the
+        `set_output` API. See [here][data-acceleration] a description
+        of the choices.
+
+        Parameters
+        ----------
+        transform: str or None, default=None
+            Configure the output of the `transform`, `fit_transform`,
+            and `inverse_transform` method. If None, the configuration
+            is not changed. Choose from:
+
+            - "numpy"
+            - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
+            - "pyarrow"
+            - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
+
+        Returns
+        -------
+        Self
+            Estimator instance.
+
+        """
+        if transform is None:
+            return self
+
+        self.engine = getattr(self, "engine", EngineTuple()).data = transform
+        return self
 
 
 @beartype

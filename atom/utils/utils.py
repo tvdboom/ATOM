@@ -1402,10 +1402,15 @@ def n_cols(obj: XSelector | YSelector) -> int:
         return obj.shape[1] if len(obj.shape) > 1 else 1
     elif isinstance(obj, dict):
         return len(obj)
-    elif (array := np.asarray(obj)).ndim > 1:
-        return array.shape[1]
-    else:
-        return array.ndim
+
+    try:
+        if (array := np.asarray(obj)).ndim > 1:
+            return array.shape[1]
+        else:
+            return array.ndim
+    except ValueError:
+        # Fails for inhomogeneous data, return series
+        return 1
 
 
 def get_cols(obj: Pandas) -> list[pd.Series]:
@@ -1428,18 +1433,19 @@ def get_cols(obj: Pandas) -> list[pd.Series]:
         return [obj[col] for col in obj.columns]
 
 
-def get_col_names(obj: Tabular | None) -> list[str] | None:
+def get_col_names(obj: Any) -> list[str] | None:
     """Get a list of column names in tabular objects.
 
     Parameters
     ----------
-    obj: series, dataframe or None
+    obj: object
         Element to get the column names from.
 
     Returns
     -------
     list of str
-        Names of the columns.
+        Names of the columns. Returns None when the object passed is
+        no pandas object.
 
     """
     if isinstance(obj, pd.DataFrame):
@@ -1451,9 +1457,9 @@ def get_col_names(obj: Tabular | None) -> list[str] | None:
 
 
 def variable_return(
-    X: DataFrame | None,
-    y: Series | None,
-) -> DataFrame | Series | tuple[DataFrame, Tabular]:
+    X: pd.DataFrame | None,
+    y: pd.Series | None,
+) -> pd.DataFrame | pd.Series | tuple[pd.DataFrame, Pandas]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1461,15 +1467,15 @@ def variable_return(
 
     Parameters
     ----------
-    X: dataframe or None
+    X: pd.DataFrame or None
         Feature set.
 
-    y: series, dataframe or None
+    y: pd.Series, pd.DataFrame or None
         Target column(s).
 
     Returns
     -------
-    dataframe, series or tuple
+    pd.Series, pd.DataFrame or tuple
         Data sets that are not None.
 
     """
@@ -1821,7 +1827,9 @@ def to_df(
 
     """
     if not isinstance(data, pd.DataFrame | None):
-        if hasattr(data, "__dataframe__"):
+        if hasattr(data, "to_pandas"):
+            data_c = data.to_pandas()
+        elif hasattr(data, "__dataframe__"):
             # Transform from dataframe interchange protocol
             data_c = pd.api.interchange.from_dataframe(data.__dataframe__())
         else:
@@ -1842,8 +1850,8 @@ def to_df(
             data_c = data_c[list(columns)]  # Force order determined by columns
         except KeyError:
             raise ValueError(
-                f"The columns are different than seen at fit time. "
-                f"Features {set(data_c.columns) - set(columns)} are missing in X."
+                f"The columns are different than seen at fit time. Features "
+                f"{set(data_c.columns) - set(columns)} are missing in X."
             ) from None
 
     return data_c
@@ -1891,16 +1899,18 @@ def to_series(
 
     """
     if not isinstance(data, pd.Series | None):
-        if isinstance(data, md.Series):
-            data_c = data
-        elif isinstance(data, pl.Series):
-            data_c = data.to_pandas(use_pyarrow_extension_array=True)
-        elif isinstance(data, pa.Array | pa.ChunkedArray):
-            data_c = data.to_pandas(types_mapper=pd.ArrowDtype)
+        if hasattr(data, "to_pandas"):
+            data_c = data.to_pandas()
         else:
-            # Flatten for arrays with shape=(n_samples, 1)
+            try:
+                # Flatten for arrays with shape=(n_samples, 1)
+                array = np.asarray(data).ravel().tolist()
+            except ValueError:
+                # Fails for inhomogeneous data
+                array = data
+
             data_c = pd.Series(
-                data=np.asarray(data).ravel().tolist(),
+                data=array,
                 index=index,
                 name=name or "target",
             )
@@ -1914,7 +1924,7 @@ def to_series(
 def to_tabular(
     data: Literal[None],
     index: Axes | None = ...,
-    columns: Axes | None = ...,
+    columns: str | Axes | None = ...,
 ) -> None: ...
 
 
@@ -1922,14 +1932,14 @@ def to_tabular(
 def to_tabular(
     data: YConstructor,
     index: Axes | None = ...,
-    columns: Axes | None = ...,
+    columns: str | Axes | None = ...,
 ) -> Tabular: ...
 
 
 def to_tabular(
     data: YConstructor | None,
     index: Axes | None = None,
-    columns: Axes | None = None,
+    columns: str | Axes | None = None,
 ) -> Tabular | None:
     """Convert to a tabular pandas type.
 
@@ -1956,7 +1966,7 @@ def to_tabular(
     if (n_targets := n_cols(data)) == 1:
         return to_series(data, index=index, name=flt(columns))
     else:
-        if columns is None:
+        if columns is None and not hasattr(data, "__dataframe__"):
             columns = [f"y{i}" for i in range(n_targets)]
 
         return to_df(data, index=index, columns=columns)
@@ -2710,11 +2720,14 @@ def wrap_transformer_methods(f: Callable) -> Callable:
             )
 
             if "y" in sign(f):
-                Xt, yt = f(self, Xt, yt, **kwargs)
-                return self._convert(Xt), self._convert(yt)
+                out = f(self, Xt, yt, **kwargs)
             else:
-                Xt = f(self, Xt, **kwargs)
-                return self._convert(Xt)
+                out = f(self, Xt, **kwargs)
+
+            if isinstance(out, tuple):
+                return tuple(self._convert(x) for x in out)
+            else:
+                return self._convert(out)
 
     return wrapper
 

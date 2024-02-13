@@ -7,18 +7,20 @@ Description: Unit tests for the branch module.
 import glob
 import os
 from pathlib import Path
-
+import polars as pl
 import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-
+import pyarrow as pa
+from unittest.mock import patch, MagicMock
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch, BranchManager
 from atom.training import DirectClassifier
 from atom.utils.utils import merge
-
+import modin.pandas as md
+import dask.dataframe as dd
 from .conftest import (
     X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,
     y_bin_array, y_idx, y_multiclass,
@@ -306,7 +308,7 @@ def test_setter_error_unequal_columns():
     """Assert that an error is raised when the setter has unequal columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X = atom.train
-    new_X.insert(0, "new_column", 1)
+    new_X["new_column"] = 1
     with pytest.raises(ValueError, match="number of columns"):
         atom.train = new_X
 
@@ -702,16 +704,66 @@ def test_numpy_engine():
 
 
 def test_pandas_numpy_engine():
-    """Assert that the pandas numpy engine returns a pandas dataframe."""
+    """Assert that the pandas engine returns numpy dtypes."""
     atom = ATOMClassifier(X_bin, y_bin, engine="pandas", random_state=1)
     assert all(isinstance(dtype, np.dtype) for dtype in atom.dataset.dtypes)
     assert isinstance(atom.y.dtype, np.dtype)
 
 
 def test_pandas_pyarrow_engine():
-    """Assert that the pandas pyarrow engine returns pyarrow dtypes."""
+    """Assert that the pandas-pyarrow engine returns pyarrow dtypes."""
     atom = ATOMClassifier(X_bin, y_bin, engine="pandas-pyarrow", random_state=1)
     assert all(isinstance(dtype, pd.ArrowDtype) for dtype in atom.dataset.dtypes)
     assert isinstance(atom.y.dtype, pd.ArrowDtype)
 
 
+def test_polars_engine():
+    """Assert that the polars engine returns polars types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="polars", random_state=1)
+    assert isinstance(atom.X, pl.DataFrame)
+    assert isinstance(atom.y, pl.Series)
+
+
+def test_polars_lazy_engine():
+    """Assert that the polars-lazy engine returns polars types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="polars-lazy", random_state=1)
+    assert isinstance(atom.X, pl.LazyFrame)
+    assert isinstance(atom.y, pl.Series)
+
+
+def test_pyarrow_engine():
+    """Assert that the pyarrow engine returns pyarrow types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    assert isinstance(atom.X, pa.Table)
+    assert isinstance(atom.y, pa.Array)
+
+
+def test_modin_engine():
+    """Assert that the modin engine returns modin types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="modin", random_state=1)
+    assert isinstance(atom.X, md.DataFrame)
+    assert isinstance(atom.y, md.Series)
+
+
+def test_dask_engine():
+    """Assert that the dask engine returns dask types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="dask", random_state=1)
+    assert isinstance(atom.X, dd.DataFrame)
+    assert isinstance(atom.y, dd.Series)
+
+
+@patch.dict("sys.modules", {"pyspark": MagicMock(spec=["__spec__", "sql"])})
+def test_pyspark_engine():
+    """Assert that the pyspark engine returns pyspark types."""
+    import sys
+    print(sys.modules)
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyspark", random_state=1)
+    assert "createDataFrame" in str(atom.X)
+
+
+@patch.dict("sys.modules", {"pyspark": MagicMock(spec=["__spec__", "pandas"])})
+def test_pyspark_pandas_engine():
+    """Assert that the pyspark-pandas engine returns pyspark pandas types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyspark-pandas", random_state=1)
+    assert "DataFrame" in str(atom.X)
+    assert "Series" in str(atom.y)

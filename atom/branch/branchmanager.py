@@ -216,6 +216,8 @@ class BranchManager:
     def fill(self, data: DataContainer, holdout: pd.DataFrame | None = None):
         """Fill the current branch with data.
 
+        This call resets the cached holdout calculation.
+
         Parameters
         ----------
         data: DataContainer
@@ -226,7 +228,10 @@ class BranchManager:
 
         """
         self.current._container = data
-        self.current._holdout = holdout
+        if holdout is not None:
+            self.current._holdout = holdout
+
+        self.current.__dict__.pop("holdout", None)
 
     def reset(self, *, hard: Bool = False):
         """Reset this instance to its initial state.

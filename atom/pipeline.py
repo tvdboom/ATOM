@@ -27,7 +27,7 @@ from typing_extensions import Self
 
 from atom.utils.types import (
     Bool, DataFrame, Estimator, FHConstructor, Float, Scalar, Sequence,
-    Tabular, Verbose, XConstructor, YConstructor,
+    Tabular, Verbose, XConstructor, YConstructor, EngineDataOptions
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
@@ -953,6 +953,45 @@ class Pipeline(SkPipeline):
                 X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][1].predict_var(fh=fh, X=X, cov=cov)
+
+    @composed(crash, method_to_log)
+    def set_output(self, *, transform: EngineDataOptions | None = None):
+        """Set output container.
+
+        See sklearn's [user guide][set_output] on how to use the
+        `set_output` API. See [here][data-acceleration] a description
+        of the choices.
+
+        Parameters
+        ----------
+        transform: str or None, default=None
+            Configure the output of the `transform`, `fit_transform`,
+            and `inverse_transform` method. If None, the configuration
+            is not changed. Choose from:
+
+            - "numpy"
+            - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
+            - "pyarrow"
+            - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
+
+        Returns
+        -------
+        Self
+            Estimator instance.
+
+        """
+        if transform is None:
+            return self
+
+        super().set_output(transform=transform)
+        self.engine = getattr(self, "engine", EngineTuple()).data = transform
+        return self
 
     @available_if(_final_estimator_has("score"))
     def score(

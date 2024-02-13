@@ -84,7 +84,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         attrs = [x for x in super().__dir__() if hasattr(self, x)]
 
         # Add additional attrs from the branch
-        attrs += Branch._get_data_attrs()
+        attrs += self.branch._get_shared_attrs()
 
         # Add additional attrs from the dataset
         attrs += [x for x in DF_ATTRS if hasattr(self.dataset, x)]
@@ -105,7 +105,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """Get branch, attr from branch, model, column or attr from dataset."""
         if item in self.__dict__["_branches"]:
             return self._branches[item]  # Get branch
-        elif item in Branch._get_data_attrs():
+        elif item in self.branch._get_shared_attrs():
             if isinstance(attr := getattr(self.branch, item), pandas_t):
                 return self._convert(attr)  # Transform data through data engine
             else:
@@ -224,7 +224,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         the [user guide][data-sets].
 
         """
-        return self.branch._holdout
+        return self._convert(self.branch._holdout)
 
     @property
     def models(self) -> str | list[str] | None:
@@ -347,6 +347,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def _check_input(
         X: XSelector | None = None,
         y: YSelector | None = None,
+        *,
+        columns: list[str] | None = None,
+        name: str | list[str] | None = None,
     ) -> tuple[DataFrame | None, Tabular | None]:
         """Prepare the input data.
 
@@ -371,6 +374,14 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
               tasks.
             - If dataframe: Target columns for multioutput tasks.
 
+        columns: list, default=None
+            Column names for the feature set. If None, default names
+            are used.
+
+        name: str, default=None
+            Name of the target column(s). If None, a default name is
+            used.
+
         Returns
         -------
         dataframe or None
@@ -386,7 +397,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         if X is None and y is None:
             raise ValueError("X and y can't be both None!")
         elif X is not None:
-            Xt = to_df(deepcopy(X() if callable(X) else X))
+            Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
 
             # If text dataset, change the name of the column to corpus
             if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
@@ -402,7 +413,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         # Prepare target column
         if isinstance(y, (dict, *sequence_t, DataFrame)):
             if isinstance(y, dict):
-                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None))
+                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None), columns=name)
             else:
                 # If X and y have different number of rows, try multioutput
                 if Xt is not None and len(Xt) != len(y):
@@ -431,7 +442,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 else:
                     yt = y
 
-                yt = to_tabular(deepcopy(yt), index=getattr(Xt, "index", None))
+                yt = to_tabular(deepcopy(yt), index=getattr(Xt, "index", None), columns=name)
 
             # Check X and y have the same indices
             if Xt is not None and not Xt.index.equals(yt.index):

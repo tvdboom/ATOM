@@ -8,7 +8,6 @@ Description: Module containing classification and regression models.
 from __future__ import annotations
 
 from typing import Any, ClassVar, cast
-
 import numpy as np
 import pandas as pd
 from optuna.distributions import BaseDistribution

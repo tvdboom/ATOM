@@ -13,8 +13,8 @@ from functools import cached_property
 from pathlib import Path
 from typing import Literal, overload
 from warnings import filterwarnings
+from polars.dependencies import _lazy_import
 
-import dill as pickle
 import pandas as pd
 from beartype import beartype
 from beartype.roar import BeartypeDecorHintPep585DeprecationWarning
@@ -31,6 +31,9 @@ from atom.utils.utils import (
     DataContainer, check_scaling, flt, get_col_names, get_cols, lst, merge,
     to_tabular,
 )
+
+
+pickle = _lazy_import("dill")
 
 
 filterwarnings("ignore", category=BeartypeDecorHintPep585DeprecationWarning)
@@ -99,6 +102,26 @@ class Branch:
     ```
 
     """
+
+    _shared_attrs = [
+        "pipeline",
+        "mapping",
+        "dataset",
+        "train",
+        "test",
+        "X",
+        "y",
+        "X_train",
+        "y_train",
+        "X_test",
+        "y_test",
+        "shape",
+        "columns",
+        "n_columns",
+        "features",
+        "n_features",
+        "target",
+    ]
 
     def __init__(
         self,
@@ -229,10 +252,13 @@ class Branch:
         if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
+        if (columns := get_col_names(value)) is None:
+            columns = get_col_names(under) if under_name else None
+
         obj = to_tabular(
             data=value,
             index=side.index if side_name else None,
-            columns=get_col_names(under) if under_name else None,
+            columns=columns,
         )
 
         if side_name:  # Check for equal rows
@@ -439,21 +465,17 @@ class Branch:
 
     # Utility methods ============================================== >>
 
-    @classmethod
-    def _get_data_attrs(cls) -> list[str]:
-        """Get the data attributes of the class.
+    def _get_shared_attrs(self) -> list[str]:
+        """Get the attributes that can be accessed from a runner.
 
         Returns
         -------
         list of str
-            Data properties.
+            Instance attributes.
 
         """
-        return [
-            x
-            for x in dir(cls)
-            if isinstance(getattr(cls, x), property) and not x.startswith("_")
-        ]
+        instance_vars = [x for x in vars(self) if not x.startswith("_") and x.endswith("_")]
+        return self._shared_attrs + instance_vars
 
     @overload
     def _get_rows(

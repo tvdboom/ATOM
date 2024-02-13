@@ -40,7 +40,7 @@ packages are necessary for its correct functioning.
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
 * **[numpy](https://numpy.org/)** (>=1.23.0)
 * **[optuna](https://optuna.org/)** (>=3.4.0)
-* **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.1.2)
+* **[pandas](https://pandas.pydata.org/)** (>=2.1.2)
 * **[plotly](https://plotly.com/python/)** (>=5.18.0)
 * **[polars](https://pola.rs/)** (>=0.20.7)
 * **[pyarrow](https://arrow.apache.org/docs/python/)** (>=15.0.0)

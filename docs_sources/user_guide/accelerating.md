@@ -60,7 +60,7 @@ tasks), and both these libraries use numpy as their computation backend. Since
 `atom` relies heavily on column names, it uses pandas (which in turn uses numpy)
 as its data backend. However, for the convenience of the user, it implements
 several data engines, that wraps the data in a different type when called by the
-user. This is very similar to sklearn's [set_output](https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_set_output.html) behaviour, but ATOM
+user. This is very similar to sklearn's [set_output][] behaviour, but ATOM
 extends this to many more data types. For example, selecting the `polars` data
 engine, makes `atom.dataset` return a polars dataframe and `atom.winner.predict(X)`
 return a polars series.

@@ -279,7 +279,7 @@ class BaseModel(RunnerPlot):
 
         if "_branch" in self.__dict__:
             # Add additional attrs from the branch
-            attrs += Branch._get_data_attrs()
+            attrs += self.branch._get_shared_attrs()
 
             # Add additional attrs from the dataset
             attrs += [x for x in DF_ATTRS if hasattr(self.dataset, x)]
@@ -292,7 +292,7 @@ class BaseModel(RunnerPlot):
     def __getattr__(self, item: str) -> Any:
         """Get attributes from branch or data."""
         if "_branch" in self.__dict__:
-            if item in Branch._get_data_attrs():
+            if item in self.branch._get_shared_attrs():
                 return getattr(self.branch, item)  # Get attr from branch
             elif item in self.branch.columns:
                 return self.branch.dataset[item]  # Get column
