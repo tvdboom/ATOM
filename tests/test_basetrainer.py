@@ -14,7 +14,6 @@ from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import MedianPruner
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, make_scorer
-
 from atom import ATOMClassifier
 from atom.training import DirectClassifier, DirectRegressor
 
@@ -377,7 +376,7 @@ def test_errors_keep():
 
 @patch("atom.basetransformer.ray", MagicMock())
 @patch("atom.basetrainer.ray", MagicMock())
-def test_parallel_with_ray():
+def test_parallel_with_ray(ray):
     """Assert that parallel runs successfully with ray backend."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],
@@ -386,7 +385,7 @@ def test_parallel_with_ray():
         backend="ray",
         random_state=1,
     )
-    # Fails because MagicMock returns empty list
+    # Fails because MagicMock returns an empty list
     with pytest.raises(RuntimeError, match=".*All models failed.*"):
         trainer.run(bin_train, bin_test)
 

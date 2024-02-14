@@ -137,11 +137,6 @@ class SPTuple(NamedTuple):
 
 
 @runtime_checkable
-class DataFrame(Protocol):
-    def __dataframe__(self, *args, **kwargs): ...
-
-
-@runtime_checkable
 class SkScorer(Protocol):
     """Protocol for sklearn's scorers."""
 
@@ -195,7 +190,7 @@ class Model(Protocol):
     # _metric: ClassMap
     # _ht: dict[str, Any]
 
-    def predict(self, *args, **kwargs) -> Tabular: ...
+    def predict(self, *args, **kwargs) -> Pandas: ...
 
 
 # Variable types for type hinting ================================== >>
@@ -206,9 +201,7 @@ Int: TypeAlias = int | np.integer
 Float: TypeAlias = float | np.floating
 Scalar: TypeAlias = Int | Float
 Segment: TypeAlias = slice | range
-Series: TypeAlias = pd.Series | md.Series | pl.Series | pa.Array
 Pandas: TypeAlias = pd.Series | pd.DataFrame
-Tabular: TypeAlias = Series | DataFrame
 
 # Numerical types
 IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
@@ -228,7 +221,7 @@ XConstructor: TypeAlias = (
     | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
     | np.ndarray
     | sps.spmatrix
-    | DataFrame
+    | pd.DataFrame
 )
 XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
 YConstructor: TypeAlias = dict[str, Any] | Sequence[Any] | XConstructor
@@ -236,11 +229,11 @@ YSelector: TypeAlias = Int | str | YConstructor
 FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
 
 # Return types for transform methods
-TReturn: TypeAlias = np.ndarray | sps.spmatrix | Sequence[Any] | DataFrame
+TReturn: TypeAlias = np.ndarray | sps.spmatrix | Sequence[Any] | pd.DataFrame
 TReturns: TypeAlias = TReturn | tuple[TReturn, TReturn]
 
 # Selection of rows or columns by name or position
-ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | DataFrame
+ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | pd.DataFrame
 RowSelector: TypeAlias = Hashable | Sequence[Hashable] | ColumnSelector
 
 # Assignment of index or stratify parameter

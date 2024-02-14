@@ -70,7 +70,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
         self._models = lst(models) if models is not None else ClassMap()
         self._metric = lst(metric) if metric is not None else ClassMap()
 
-        self._config = DataConfig()
+        self._config = DataConfig(index=self._goal is Goal.forecast)
         self._branches = BranchManager(memory=self.memory)
 
         self._n_trials = {}

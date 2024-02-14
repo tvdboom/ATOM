@@ -33,10 +33,10 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.utils.types import (
-    Bool, DataFrame, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
+    Bool, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
     FloatLargerEqualZero, FloatLargerZero, FloatZeroToOneInc,
     IntLargerEqualZero, IntLargerZero, NJobs, Operators, Scalar, Sequence,
-    Series, Tabular, Verbose,
+    Pandas, Verbose,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, composed, crash,
@@ -172,8 +172,7 @@ class FeatureExtractor(TransformerMixin):
         self.drop_columns = drop_columns
         self.from_index = from_index
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Extract the new features.
 
         Parameters
@@ -237,7 +236,7 @@ class FeatureExtractor(TransformerMixin):
                     continue  # Skip if the resulting feature has zero variance
 
                 min_val: int = 0
-                max_val: Scalar | Series | None = None  # None if isn't cyclic
+                max_val: Scalar | pd.Series | None = None  # None if isn't cyclic
                 if self.encoding_type == "cyclic":
                     if fx == "microsecond":
                         min_val, max_val = 0, 1e6 - 1
@@ -419,8 +418,7 @@ class FeatureGenerator(TransformerMixin):
         self.operators = operators
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -508,8 +506,7 @@ class FeatureGenerator(TransformerMixin):
 
         return self
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Generate new features.
 
         Parameters
@@ -680,8 +677,7 @@ class FeatureGrouper(TransformerMixin):
         self.operators = operators
         self.drop_columns = drop_columns
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Group features.
 
         Parameters
@@ -1023,8 +1019,7 @@ class FeatureSelector(TransformerMixin):
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
         """Fit the feature selector to the data.
 
         The univariate, sfm (when model is not fitted), sfs, rfe and
@@ -1380,7 +1375,7 @@ class FeatureSelector(TransformerMixin):
                     **kwargs,
                 )
 
-                self._estimator.fit(X, y)
+            self._estimator.fit(X, y)
 
         else:
             check_y()
@@ -1477,8 +1472,7 @@ class FeatureSelector(TransformerMixin):
                 ]
             )
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Transform the data.
 
         Parameters

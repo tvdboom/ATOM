@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+from ray.util.joblib import register_ray
+import pyarrow as pa
 import pytest
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
 
     from _pytest.monkeypatch import MonkeyPatch
 
-    from atom.utils.types import DataFrame, Sequence, Tabular, XSelector
+    from atom.utils.types import DataFrame, Sequence, Pandas, XSelector
 
 
 class DummyTransformer(TransformerMixin, BaseEstimator):
@@ -113,10 +115,22 @@ def random():
     return np.random.default_rng()
 
 
+@pytest.fixture()
+def ray():
+    """Register ray as joblib backend.
+
+    Although atom does this internally, it's skipped when ray is
+    mocked. Not registering it fails the call to joblib.parallel_config
+    in basetransformer.py.
+
+    """
+    register_ray()
+
+
 def get_train_test(
     X: XSelector | None,
-    y: Sequence[Any] | DataFrame,
-) -> Tabular | tuple[Tabular, Tabular]:
+    y: Sequence[Any] | pd.DataFrame,
+) -> Pandas | tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.
 
     Parameters
@@ -139,6 +153,7 @@ def get_train_test(
     if X is not None:
         return train_test_split(
             merge(to_df(X), to_tabular(y, columns=[f"y{i}" for i in range(n_cols(y))])),
+            shuffle=False,
             test_size=0.3,
             random_state=1,
         )
@@ -153,6 +168,9 @@ X_bin_array, y_bin_array = load_breast_cancer(return_X_y=True)
 X_bin, y_bin = load_breast_cancer(return_X_y=True, as_frame=True)
 X_class, y_class = load_wine(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
+
+# Pyarrow dtypes
+X_pa = X_bin.astype(pd.ArrowDtype(pa.float64()))
 
 # Multilabel classification data
 X_label, y_label = make_multilabel_classification(n_samples=200, n_classes=4)

@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-from atom.utils.types import Any, DataFrame, Pandas, Sequence
+from atom.utils.types import Any, Pandas, Sequence
 from atom.utils.utils import get_cols
 
 import os
@@ -38,7 +38,7 @@ class DataEngine(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def convert(obj: Pandas) -> np.ndarray | Sequence[Any] | DataFrame: ...
+    def convert(obj: Pandas) -> np.ndarray | Sequence[Any] | pd.DataFrame: ...
 
 
 class NumpyEngine(DataEngine):
@@ -52,15 +52,15 @@ class NumpyEngine(DataEngine):
         return obj.to_numpy()
 
 
-class PandasNumpyEngine(DataEngine):
+class PandasEngine(DataEngine):
     """Pandas numpy data engine."""
 
     library = "pandas"
 
     @staticmethod
     def convert(obj: Pandas) -> Pandas:
-        """Convert to numpy dtypes."""
-        return obj.astype({c.name: getattr(c.dtype, "numpy_dtype", None) for c in get_cols(obj)})
+        """Leave as is."""
+        return obj
 
 
 class PandasPyarrowEngine(DataEngine):
@@ -73,8 +73,9 @@ class PandasPyarrowEngine(DataEngine):
         """Convert to pyarrow dtypes."""
         return obj.astype(
             {
-                col.name: pd.ArrowDtype(pa.from_numpy_dtype(col.dtype))
-                if isinstance(col.dtype, np.dtype) else None
+                col.name: pd.ArrowDtype(
+                    pa.from_numpy_dtype(getattr(col.dtype, "numpy_dtype", col.dtype))
+                )
                 for col in get_cols(obj)
             }
         )
@@ -175,7 +176,7 @@ class PySparkPandasEngine(DataEngine):
 
 DATA_ENGINES = {
     "numpy": NumpyEngine,
-    "pandas": PandasNumpyEngine,
+    "pandas": PandasEngine,
     "pandas-pyarrow": PandasPyarrowEngine,
     "polars": PolarsEngine,
     "polars-lazy": PolarsLazyEngine,

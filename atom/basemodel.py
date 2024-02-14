@@ -66,10 +66,10 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.patches import fit_and_score
 from atom.utils.types import (
-    HT, Backend, Bool, DataFrame, Engine, FHConstructor, Float,
+    HT, Backend, Bool, Engine, FHConstructor, Float,
     FloatZeroToOneExc, Int, IntLargerEqualZero, MetricConstructor,
     MetricFunction, NJobs, Pandas, PredictionMethods, PredictionMethodsTS,
-    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Tabular,
+    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Pandas,
     TargetSelector, Verbose, Warnings, XSelector, YSelector, float_t, int_t,
 )
 from atom.utils.utils import (
@@ -77,7 +77,7 @@ from atom.utils.utils import (
     TrialsCallback, adjust_verbosity, cache, check_dependency, check_empty,
     composed, crash, estimator_has_attr, flt, get_cols, get_custom_scorer,
     has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
-    to_series, to_tabular,
+    to_series, to_tabular, get_col_names
 )
 
 
@@ -305,7 +305,7 @@ class BaseModel(RunnerPlot):
         """Whether the item is a column in the dataset."""
         return item in self.dataset
 
-    def __getitem__(self, item: Int | str | list) -> Tabular:
+    def __getitem__(self, item: Int | str | list) -> Pandas:
         """Get a subset from the dataset."""
         if isinstance(item, int_t):
             return self.dataset[self.columns[int(item)]]
@@ -649,7 +649,7 @@ class BaseModel(RunnerPlot):
         rows: RowSelector,
         target: TargetSelector | None = None,
         method: PredictionMethods | Sequence[PredictionMethods] = "predict",
-    ) -> tuple[Tabular, Tabular]:
+    ) -> tuple[Pandas, Pandas]:
         """Get the true and predicted values for a column.
 
         Predictions are made using the `decision_function` or
@@ -765,8 +765,7 @@ class BaseModel(RunnerPlot):
             y_pred = to_tabular(
                 data=estimator.predict(X),
                 index=y.index,
-                columns=getattr(y, "columns", None),
-                name=getattr(y, "name", None),
+                columns=get_col_names(y),
             )
 
         return self._score_from_pred(scorer, y, y_pred, **kwargs)
@@ -774,8 +773,8 @@ class BaseModel(RunnerPlot):
     def _score_from_pred(
         self,
         scorer: Scorer,
-        y_true: Tabular,
-        y_pred: Tabular,
+        y_true: Pandas,
+        y_pred: Pandas,
         **kwargs,
     ) -> Float:
         """Calculate the metric score from predicted values.
@@ -2238,11 +2237,11 @@ class BaseModel(RunnerPlot):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
-        skipped. The rest should all implement a `inverse_transform`
+        skipped. The rest should all implement an `inverse_transform`
         method. If only `X` or only `y` is provided, it ignores
         transformers that require the other parameter. This can be
         of use to, for example, inversely transform only the target
@@ -2437,7 +2436,7 @@ class BaseModel(RunnerPlot):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2451,7 +2450,7 @@ class BaseModel(RunnerPlot):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. If None,
+            `X` is ignored. If None,
             `X` is ignored in the transformers.
 
         y: int, str, dict, sequence, dataframe or None, default=None
@@ -2534,7 +2533,7 @@ class ClassRegModel:
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Int | None = ...,
         method: PredictionMethods = ...,
-    ) -> Tabular: ...
+    ) -> Pandas: ...
 
     def _prediction(
         self,
@@ -2544,7 +2543,7 @@ class ClassRegModel:
         sample_weight: Sequence[Scalar] | None = None,
         verbose: Int | None = None,
         method: PredictionMethods = "predict",
-    ) -> Float | Tabular:
+    ) -> Float | Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2594,7 +2593,7 @@ class ClassRegModel:
 
         """
 
-        def get_transform_X_y(X: XSelector, y: YSelector) -> tuple[DataFrame, Tabular]:
+        def get_transform_X_y(X: XSelector, y: YSelector) -> tuple[pd.DataFrame, Pandas]:
             """Get X and y from the pipeline transformation.
 
             Parameters
@@ -2693,7 +2692,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> Tabular:
+    ) -> Pandas:
         """Get confidence scores on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2732,7 +2731,7 @@ class ClassRegModel:
         *,
         inverse: Bool = True,
         verbose: Int | None = None,
-    ) -> Tabular:
+    ) -> Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2779,7 +2778,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> DataFrame:
+    ) -> pd.DataFrame:
         """Get class log-probabilities on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2801,7 +2800,7 @@ class ClassRegModel:
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Predicted class log-probabilities with shape=(n_samples,
             n_classes) or shape=(n_samples * n_classes, n_targets) with
             a multiindex format for [multioutput tasks][].
@@ -2816,7 +2815,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> DataFrame:
+    ) -> pd.DataFrame:
         """Get class probabilities on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2838,7 +2837,7 @@ class ClassRegModel:
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Predicted class probabilities with shape=(n_samples,
             n_classes) or shape=(n_samples * n_classes, n_targets) with
             a multiindex format for [multioutput tasks][].
@@ -2967,7 +2966,7 @@ class ForecastModel:
         verbose: Int | None = None,
         method: PredictionMethodsTS = ...,
         **kwargs,
-    ) -> Tabular: ...
+    ) -> Pandas: ...
 
     def _prediction(
         self,
@@ -2978,7 +2977,7 @@ class ForecastModel:
         verbose: Int | None = None,
         method: PredictionMethodsTS = "predict",
         **kwargs,
-    ) -> Float | Tabular:
+    ) -> Float | Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3054,7 +3053,7 @@ class ForecastModel:
         *,
         inverse: Bool = True,
         verbose: Int | None = None,
-    ) -> Tabular:
+    ) -> Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3105,7 +3104,7 @@ class ForecastModel:
         *,
         coverage: Float | Sequence[Float] = 0.9,
         verbose: Int | None = None,
-    ) -> DataFrame:
+    ) -> pd.DataFrame:
         """Get prediction intervals on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3132,7 +3131,7 @@ class ForecastModel:
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Computed interval forecasts.
 
         """
@@ -3201,7 +3200,7 @@ class ForecastModel:
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
         verbose: Int | None = None,
-    ) -> DataFrame:
+    ) -> pd.DataFrame:
         """Get quantile forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3229,7 +3228,7 @@ class ForecastModel:
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Computed quantile forecasts.
 
         """
@@ -3249,7 +3248,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
-    ) -> Tabular:
+    ) -> Pandas:
         """Get residuals of forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3288,7 +3287,7 @@ class ForecastModel:
         *,
         cov: Bool = False,
         verbose: Int | None = None,
-    ) -> DataFrame:
+    ) -> pd.DataFrame:
         """Get variance forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3316,7 +3315,7 @@ class ForecastModel:
 
         Returns
         -------
-        dataframe
+        pd.DataFrame
             Computed variance forecasts.
 
         """

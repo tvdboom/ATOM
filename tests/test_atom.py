@@ -9,6 +9,7 @@ import glob
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pyarrow as pa
 import pandas as pd
 import pytest
 from category_encoders.target_encoder import TargetEncoder
@@ -34,7 +35,7 @@ from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
     X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10, y10_label,
     y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc, y_label,
-    y_multiclass, y_multireg, y_reg,
+    y_multiclass, y_multireg, y_reg, X_pa
 )
 
 
@@ -442,8 +443,8 @@ def test_shrink_dense2sparse():
 
 
 def test_shrink_pyarrow():
-    """Assert that it works with the pyarrow data backend."""
-    atom = ATOMClassifier(X_bin, y_bin, engine={"data": "pyarrow"}, random_state=1)
+    """Assert that it works with pyarrow dtypes."""
+    atom = ATOMClassifier(X_pa, y_bin, engine="pandas-pyarrow", random_state=1)
     assert atom.dtypes[0].name == "double[pyarrow]"
     atom.shrink()
     assert atom.dtypes[0].name == "float[pyarrow]"
@@ -630,15 +631,15 @@ def test_add_keep_column_names():
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer keeps rows equal
-    atom.add(DummyTransformer(strategy="equal"), get_feature_names_out=None)
+    atom.add(DummyTransformer(strategy="equal"), feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer drops rows
-    atom.add(DummyTransformer(strategy="drop"), get_feature_names_out=None)
+    atom.add(DummyTransformer(strategy="drop"), feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x2", "x3"]
 
     # Transformer adds a new column
-    atom.add(DummyTransformer(strategy="add"), columns="!x2", get_feature_names_out=None)
+    atom.add(DummyTransformer(strategy="add"), columns="!x2", feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x2", "x3", "x4"]
 
 
@@ -649,9 +650,9 @@ def test_raise_length_mismatch():
         atom.prune(columns=[2, 4])
 
 
-def test_add_pyarrow_columns():
+def test_keep_pyarrow_dtypes():
     """Assert that columns keep the pyarrow dtype."""
-    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    atom = ATOMClassifier(X_pa, y_bin, random_state=1)
     assert isinstance(atom.dtypes[0], pd.ArrowDtype)
     atom.scale()
     assert isinstance(atom.dtypes[0], pd.ArrowDtype)

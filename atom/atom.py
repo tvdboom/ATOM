@@ -47,14 +47,14 @@ from atom.training import (
 )
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING, __version__
 from atom.utils.types import (
-    Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DataFrame,
+    Backend, Bins, Bool, CategoricalStrats, ColumnSelector,
     DiscretizerStrats, Engine, EngineTuple, Estimator, FeatureNamesOut,
     FeatureSelectionSolvers, FeatureSelectionStrats, FloatLargerEqualZero,
     FloatLargerZero, FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero,
     IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
     NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
     PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
-    SPDict, Tabular, TargetSelector, Transformer, VectorizerStarts, Verbose,
+    SPDict, Pandas, TargetSelector, Transformer, VectorizerStarts, Verbose,
     Warnings, XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
@@ -672,7 +672,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -1096,7 +1096,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -1454,8 +1454,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @composed(crash, method_to_log)
     def apply(
         self,
-        func: Callable[..., DataFrame],
-        inverse_func: Callable[..., DataFrame] | None = None,
+        func: Callable[..., pd.DataFrame],
+        inverse_func: Callable[..., pd.DataFrame] | None = None,
         *,
         feature_names_out: FeatureNamesOut = None,
         kw_args: dict[str, Any] | None = None,

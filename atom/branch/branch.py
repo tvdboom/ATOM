@@ -23,7 +23,7 @@ from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, Int, IntLargerEqualZero, Pandas,
+    Bool, ColumnSelector, Int, IntLargerEqualZero, Pandas,
     RowSelector, Scalar, Sequence, TargetSelector, TargetsSelector,
     XConstructor, XSelector, YSelector, int_t, segment_t,
 )

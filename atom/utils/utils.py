@@ -54,9 +54,9 @@ from sklearn.utils.validation import _is_fitted
 
 from atom.utils.constants import __version__
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
+    Bool, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
     IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Sequence, SPTuple, Tabular, Transformer, TReturn,
+    Scorer, Segment, Sequence, SPTuple, Pandas, Transformer, TReturn,
     TReturns, Verbose, XConstructor, XSelector, YConstructor, YSelector, int_t,
     segment_t, sequence_t,
 )
@@ -92,7 +92,7 @@ class Goal(Enum):
     regression = 1
     forecast = 2
 
-    def infer_task(self, y: Tabular) -> Task:
+    def infer_task(self, y: Pandas) -> Task:
         """Infer the task corresponding to a target column.
 
         Parameters
@@ -244,7 +244,7 @@ class DataConfig:
 
     """
 
-    index: bool = True
+    index: bool = False
     ignore: tuple[str, ...] = ()
     sp: SPTuple = SPTuple()  # noqa: RUF009
     shuffle: Bool = False
@@ -253,7 +253,7 @@ class DataConfig:
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
 
-    def get_stratify_columns(self, df: DataFrame, y: Tabular) -> DataFrame | None:
+    def get_stratify_columns(self, df: DataFrame, y: Pandas) -> DataFrame | None:
         """Get columns to stratify by.
 
         Parameters
@@ -1510,7 +1510,7 @@ def get_segment(obj: list[T], segment: Segment) -> list[T]:
         return obj[slice(segment.start, segment.stop, segment.step)]
 
 
-def is_sparse(obj: Tabular) -> bool:
+def is_sparse(obj: Pandas) -> bool:
     """Check if the dataframe is sparse.
 
     A data set is considered sparse if any of its columns is sparse.
@@ -1529,13 +1529,13 @@ def is_sparse(obj: Tabular) -> bool:
     return any(isinstance(col.dtype, pd.SparseDtype) for col in get_cols(obj))
 
 
-def check_empty(obj: Tabular) -> Tabular | None:
+def check_empty(obj: Pandas) -> Pandas | None:
     """Check if a pandas object is empty.
 
     Parameters
     ----------
     obj: series or dataframe
-        Tabular object to check.
+        Pandas object to check.
 
     Returns
     -------
@@ -1632,7 +1632,7 @@ def check_predict_proba(models: Model | Sequence[Model], method: str):
             )
 
 
-def check_scaling(X: Tabular) -> bool:
+def check_scaling(X: Pandas) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
@@ -1933,14 +1933,14 @@ def to_tabular(
     data: YConstructor,
     index: Axes | None = ...,
     columns: str | Axes | None = ...,
-) -> Tabular: ...
+) -> Pandas: ...
 
 
 def to_tabular(
     data: YConstructor | None,
     index: Axes | None = None,
     columns: str | Axes | None = None,
-) -> Tabular | None:
+) -> Pandas | None:
     """Convert to a tabular pandas type.
 
     If the data is one-dimensional, convert to series, else to a
@@ -1954,13 +1954,13 @@ def to_tabular(
     index: sequence, index or None, default=None
         Values for the index.
 
-    columns: sequence or None, default=None
+    columns: str, sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
     Returns
     -------
     series, dataframe or None
-        Data as a Tabular object.
+        Data as a Pandas object.
 
     """
     if (n_targets := n_cols(data)) == 1:
@@ -2299,7 +2299,7 @@ def fit_one(
 
     X: dataframe-like or None, default=None
         Feature set with shape=(n_samples, n_features). If None,
-        X is ignored.
+        `X` is ignored.
 
     y: dict, sequence, dataframe-like or None, default=None
         Target column(s) corresponding to `X`.
@@ -2374,7 +2374,7 @@ def transform_one(
 
     X: dataframe-like or None, default=None
         Feature set with shape=(n_samples, n_features). If None,
-        X is ignored.
+        `X` is ignored.
 
     y: dict, sequence, dataframe-like or None, default=None
         Target column(s) corresponding to `X`.
@@ -2431,16 +2431,8 @@ def transform_one(
         else:
             return out
 
-    Xt = to_df(
-        data=X,
-        index=getattr(y, "index", None),
-        columns=getattr(transformer, "feature_names_in_", None),
-    )
-    yt = to_tabular(
-        y,
-        index=getattr(Xt, "index", None),
-        columns=getattr(transformer, "target_names_in_", None),
-    )
+    Xt = to_df(X, index=getattr(y, "index", None))
+    yt = to_tabular(y, index=getattr(Xt, "index", None))
 
     use_y = True
 
@@ -2474,12 +2466,11 @@ def transform_one(
         X_new = prepare_df(out[0], Xt)
         y_new = to_tabular(
             data=out[1],
-            index=Xt.index,
-            columns=get_col_names(yt),
+            index=yt.index,
         )
         if isinstance(yt, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
-    elif "X" in params and X is not None and any(c in Xt for c in inc):
+    elif "X" in params and Xt is not None and any(c in Xt for c in inc):
         # X in -> X out
         X_new = prepare_df(out, Xt)
         y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
@@ -2487,7 +2478,6 @@ def transform_one(
         y_new = to_tabular(
             data=out,
             index=yt.index,
-            columns=get_col_names(yt),
         )
         X_new = Xt if Xt is None else Xt.set_index(y_new.index)
         if isinstance(yt, pd.DataFrame):
@@ -2514,7 +2504,7 @@ def fit_transform_one(
 
     X: dataframe-like or None
         Feature set with shape=(n_samples, n_features). If None,
-        X is ignored.
+        `X` is ignored.
 
     y: dict, sequence, dataframe-like or None
         Target column(s) corresponding to `X`.
@@ -2694,7 +2684,7 @@ def wrap_transformer_methods(f: Callable) -> Callable:
         X: XSelector | None = None,
         y: YSelector | None = None,
         **kwargs,
-    ) -> T_Transformer | Tabular | tuple[DataFrame, Tabular]:
+    ) -> T_Transformer | Pandas | tuple[pd.DataFrame, Pandas]:
         if f.__name__ == "fit":
             Xt = to_df(X, index=getattr(y, "index", None))
             yt = to_tabular(y, index=getattr(Xt, "index", None))

@@ -28,7 +28,7 @@ from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, DataFrame, Engine, FloatLargerZero, Sequence, Tabular,
+    Bool, Engine, FloatLargerZero, Sequence, Pandas,
     VectorizerStarts, Verbose, bool_t,
 )
 from atom.utils.utils import (
@@ -193,8 +193,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.regex_number = regex_number
         self.drop_punctuation = drop_punctuation
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -444,8 +443,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Normalize the text.
 
         Parameters
@@ -664,8 +662,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.trigram_freq = trigram_freq
         self.quadgram_freq = quadgram_freq
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Tokenize the text.
 
         Parameters
@@ -923,8 +920,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
                 "The get_feature_names_out method is not available for strategy='hashing'."
             )
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Tabular | None = None) -> Self:
+    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -994,8 +990,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         og_columns = [c for c in self.feature_names_in_ if c != self._corpus]
         return np.array(og_columns + self._get_corpus_columns())
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Tabular | None = None) -> DataFrame:
+    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
         """Vectorize the text.
 
         Parameters

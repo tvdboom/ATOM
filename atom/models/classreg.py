@@ -3081,7 +3081,7 @@ class XGBoost(BaseModel):
     }
 
     @property
-    def trials(self) -> pd.pd.DataFrame:
+    def trials(self) -> pd.DataFrame:
         """Overview of the trials' results.
 
         This property is only available for models that ran

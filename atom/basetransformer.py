@@ -18,28 +18,30 @@ from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, TypeVar
-
-import dagshub
-import joblib
-import mlflow
+from typing import Any, TypeVar, overload
+from copy import deepcopy
 import numpy as np
 import pandas as pd
-import ray
 import requests
+from polars.dependencies import _lazy_import
 from beartype import beartype
-from dagshub.auth.token_auth import HTTPBearerAuth
-from dask.distributed import Client
+import joblib
 from joblib.memory import Memory
-from ray.util.joblib import register_ray
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
     EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Severity,
-    Verbose, Warnings, bool_t,
+    Verbose, Warnings, bool_t, Sequence, int_t
 )
-from atom.utils.utils import check_dependency, crash, lst, make_sklearn
+from atom.utils.utils import check_dependency, crash, lst, make_sklearn, to_df, to_tabular
+
+
+mlflow, _ = _lazy_import("mlflow")
+dagshub, _ = _lazy_import("dagshub")
+ray, _ = _lazy_import("ray")
+ray_joblib, _ = _lazy_import("ray.util.joblib")
+dask, _ = _lazy_import("dask")
 
 
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
@@ -177,14 +179,14 @@ class BaseTransformer:
     @beartype
     def backend(self, value: Backend):
         if value == "ray":
-            register_ray()  # Register ray as joblib backend
+            ray_joblib.register_ray()  # Register ray as joblib backend
             if not ray.is_initialized():
                 ray.init(log_to_driver=False)
         elif value == "dask":
             try:
-                Client.current()
+                dask.distributed.Client.current()
             except ValueError:
-                Client(processes=False)
+                dask.distributed.Client(processes=False)
 
         joblib.parallel_config(backend=value)
 
@@ -306,7 +308,7 @@ class BaseTransformer:
                 # Fetch username from dagshub api
                 username = requests.get(
                     url="https://dagshub.com/api/v1/user",
-                    auth=HTTPBearerAuth(token),
+                    auth=dagshub.auth.token_auth.HTTPBearerAuth(token),
                     timeout=5,
                 ).json()["username"]
 
@@ -356,6 +358,159 @@ class BaseTransformer:
                 ) from None
 
     # Methods ====================================================== >>
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: XSelector,
+        y: Literal[None],
+        *,
+        columns: Sequence[str] | None = None,
+        name: str | Sequence[str] | None = None,
+    ) -> tuple[pd.DataFrame, None]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: Literal[None],
+        y: YSelector,
+        *,
+        columns: Sequence[str] | None = None,
+        name: str | Sequence[str] | None = None,
+    ) -> tuple[None, Pandas]: ...
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: XSelector,
+        y: YSelector,
+        *,
+        columns: Sequence[str] | None = None,
+        name: str | Sequence[str] | None = None,
+    ) -> tuple[pd.DataFrame, Pandas]: ...
+
+    @staticmethod
+    def _check_input(
+        X: XSelector | None = None,
+        y: YSelector | None = None,
+        *,
+        columns: Sequence[str] | None = None,
+        name: str | Sequence[str] | None = None,
+    ) -> tuple[pd.DataFrame | None, Pandas | None]:
+        """Prepare the input data.
+
+        Convert X and y to pandas (if not already) and perform standard
+        compatibility checks (dimensions, length, indices, etc...).
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            `X` is ignored.
+
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column(s) corresponding to `X`.
+
+            - If None: `y` is ignored.
+            - If int: Position of the target column in `X`.
+            - If str: Name of the target column in `X`.
+            - If dict: Name of the target column and sequence of values.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        columns: sequence of str or None, default=None
+            Column names for the feature set. If None, default names
+            are used.
+
+        name: str, sequence or None, default=None
+            Name of the target column(s). If None, a default name is
+            used.
+
+        Returns
+        -------
+        dataframe or None
+            Feature dataset. Only returned if provided.
+
+        series, dataframe or None
+            Target column(s) corresponding to `X`.
+
+        """
+        Xt: pd.DataFrame | None = None
+        yt: Pandas | None = None
+
+        if X is None and y is None:
+            raise ValueError("X and y can't be both None!")
+        elif X is not None:
+            Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
+
+            # If text dataset, change the name of the column to corpus
+            if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
+                Xt = Xt.rename(columns={Xt.columns[0]: "corpus"})
+            else:
+                # Convert all column names to str
+                Xt.columns = Xt.columns.astype(str)
+
+                # No duplicate rows nor column names are allowed
+                if Xt.columns.duplicated().any():
+                    raise ValueError("Duplicate column names found in X.")
+
+        # Prepare target column
+        if not isinstance(y, Int | str | None):
+            if isinstance(y, dict):
+                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None), columns=name)
+            else:
+                # If X and y have different number of rows, try multioutput
+                if Xt is not None and len(Xt) != len(y):
+                    try:
+                        targets: list[Hashable] = []
+                        for col in y:
+                            if col in Xt.columns:
+                                targets.append(col)
+                            elif isinstance(col, int_t):
+                                if -Xt.shape[1] <= col < Xt.shape[1]:
+                                    targets.append(Xt.columns[int(col)])
+                                else:
+                                    raise IndexError(
+                                        "Invalid value for the y parameter. Value "
+                                        f"{col} is out of range for data with "
+                                        f"{Xt.shape[1]} columns."
+                                    )
+
+                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
+
+                    except (TypeError, IndexError, KeyError):
+                        raise ValueError(
+                            "X and y don't have the same number of rows,"
+                            f" got len(X)={len(Xt)} and len(y)={len(y)}."
+                        ) from None
+                else:
+                    yt = y
+
+                yt = to_tabular(deepcopy(yt), index=getattr(Xt, "index", None), columns=name)
+
+            # Check X and y have the same indices
+            if Xt is not None and not Xt.index.equals(yt.index):
+                raise ValueError("X and y don't have the same indices!")
+
+        elif isinstance(y, str):
+            if Xt is not None:
+                if y not in Xt.columns:
+                    raise ValueError(f"Column {y} not found in X!")
+
+                Xt, yt = Xt.drop(columns=y), Xt[y]
+
+            else:
+                raise ValueError("X can't be None when y is a string.")
+
+        elif isinstance(y, int_t):
+            if Xt is None:
+                raise ValueError("X can't be None when y is an int.")
+
+            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
+
+        return Xt, yt
 
     def _convert(self, obj: Any) -> Any:
         """Convert data to the type set in the data engine.

@@ -26,8 +26,8 @@ from sktime.proba.normal import Normal
 from typing_extensions import Self
 
 from atom.utils.types import (
-    Bool, DataFrame, Estimator, FHConstructor, Float, Scalar, Sequence,
-    Tabular, Verbose, XConstructor, YConstructor, EngineDataOptions
+    Bool, Estimator, FHConstructor, Float, Scalar, Sequence,
+    Pandas, Verbose, XConstructor, YConstructor, EngineDataOptions
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
@@ -274,14 +274,14 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         y: YConstructor | None = None,
         routed_params: dict[str, Bunch] | None = None,
-    ) -> tuple[DataFrame | None, Tabular | None]:
+    ) -> tuple[pd.DataFrame | None, Pandas | None]:
         """Get data transformed through the pipeline.
 
         Parameters
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None if the pipeline only uses y.
+            `X` is ignored. None if the pipeline only uses y.
 
         y: dict, sequence, dataframe or None, default=None
             Target column(s) corresponding to `X`.
@@ -429,7 +429,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
+            `X` is ignored.
 
         y: dict, sequence, dataframe or None, default=None
             Target column(s) corresponding to `X`.
@@ -466,7 +466,7 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         y: YConstructor | None = None,
         **params,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Fit the pipeline and transform the data.
 
         Call `fit` followed by `transform` on each transformer in the
@@ -480,7 +480,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
+            `X` is ignored. None
             if the estimator only uses y.
 
         y: dict, sequence, dataframe or None, default=None
@@ -525,7 +525,7 @@ class Pipeline(SkPipeline):
         *,
         filter_train_only: Bool = True,
         **params,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Transform the data.
 
         Call `transform` on each transformer in the pipeline. The
@@ -539,7 +539,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None if the pipeline only uses y.
+            `X` is ignored. None if the pipeline only uses y.
 
         y: dict, sequence, dataframe or None, default=None
             Target column(s) corresponding to `X`.
@@ -587,7 +587,7 @@ class Pipeline(SkPipeline):
         *,
         filter_train_only: Bool = True,
         **params,
-    ) -> Tabular | tuple[DataFrame, Tabular]:
+    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the
@@ -597,7 +597,7 @@ class Pipeline(SkPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None if the pipeline only uses y.
+            `X` is ignored. None if the pipeline only uses y.
 
         y: dict, sequence, dataframe or None, default=None
             Target column(s) corresponding to `X`.
@@ -684,7 +684,7 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         fh: FHConstructor | None = None,
         **params,
-    ) -> np.ndarray | Tabular:
+    ) -> np.ndarray | Pandas:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -737,7 +737,7 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
-    ) -> Tabular:
+    ) -> Pandas:
         """Transform, then predict_quantiles of the final estimator.
 
         Parameters
@@ -862,7 +862,7 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
-    ) -> Tabular:
+    ) -> Pandas:
         """Transform, then predict_quantiles of the final estimator.
 
         Parameters
@@ -895,7 +895,7 @@ class Pipeline(SkPipeline):
         self,
         y: YConstructor,
         X: XConstructor | None = None,
-    ) -> Tabular:
+    ) -> Pandas:
         """Transform, then predict_residuals of the final estimator.
 
         Parameters
@@ -954,7 +954,6 @@ class Pipeline(SkPipeline):
 
         return self.steps[-1][1].predict_var(fh=fh, X=X, cov=cov)
 
-    @composed(crash, method_to_log)
     def set_output(self, *, transform: EngineDataOptions | None = None):
         """Set output container.
 
@@ -989,7 +988,6 @@ class Pipeline(SkPipeline):
         if transform is None:
             return self
 
-        super().set_output(transform=transform)
         self.engine = getattr(self, "engine", EngineTuple()).data = transform
         return self
 

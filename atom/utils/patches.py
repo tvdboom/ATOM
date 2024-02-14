@@ -36,24 +36,6 @@ from atom.utils.utils import check_is_fitted
 
 # Functions ======================================================== >>
 
-def wrap_method_output(f: Callable, method: str) -> Callable:
-    """Wrap sklearn's _wrap_method_output function.
-
-    Custom implementation to avoid errors for transformers that allow
-    only providing `y`. Is used internally by _SetOutputMixin.
-
-    """
-
-    @wraps(f)
-    def wrapper(self, *args, **kwargs):
-        try:
-            return _wrap_method_output(f, method)(self, *args, **kwargs)
-        except TypeError:
-            return f(self, *args, **kwargs)
-
-    return wrapper
-
-
 def fit_and_score(*args, **kwargs) -> dict[str, Any]:
     """Wrap sklearn's _fit_and_score function.
 

@@ -37,10 +37,10 @@ from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
+    Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
     IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
-    RowSelector, Seasonality, Segment, Sequence, Series, SPDict, SPTuple,
-    Tabular, TargetSelector, XSelector, YSelector, bool_t, int_t, pandas_t,
+    RowSelector, Seasonality, Segment, Sequence, SPDict, SPTuple,
+    Pandas, TargetSelector, XSelector, YSelector, bool_t, int_t, pandas_t,
     segment_t, sequence_t,
 )
 from atom.utils.utils import (
@@ -217,7 +217,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._branches.current
 
     @property
-    def holdout(self) -> DataFrame | None:
+    def holdout(self) -> pd.DataFrame | None:
         """Holdout set.
 
         This data set is untransformed by the pipeline. Read more in
@@ -331,141 +331,6 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     # Utility methods ============================================== >>
 
-    @staticmethod
-    @overload
-    def _check_input(X: XSelector, y: Literal[None]) -> tuple[DataFrame, None]: ...
-
-    @staticmethod
-    @overload
-    def _check_input(X: Literal[None], y: YSelector) -> tuple[None, Tabular]: ...
-
-    @staticmethod
-    @overload
-    def _check_input(X: XSelector, y: YSelector) -> tuple[DataFrame, Tabular]: ...
-
-    @staticmethod
-    def _check_input(
-        X: XSelector | None = None,
-        y: YSelector | None = None,
-        *,
-        columns: list[str] | None = None,
-        name: str | list[str] | None = None,
-    ) -> tuple[DataFrame | None, Tabular | None]:
-        """Prepare the input data.
-
-        Convert X and y to pandas (if not already) and perform standard
-        compatibility checks (dimensions, length, indices, etc...).
-
-        Parameters
-        ----------
-        X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). If None,
-            X is ignored.
-
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column(s) corresponding to `X`.
-
-            - If None: `y` is ignored.
-            - If int: Position of the target column in `X`.
-            - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
-
-        columns: list, default=None
-            Column names for the feature set. If None, default names
-            are used.
-
-        name: str, default=None
-            Name of the target column(s). If None, a default name is
-            used.
-
-        Returns
-        -------
-        dataframe or None
-            Feature dataset. Only returned if provided.
-
-        series, dataframe or None
-            Target column(s) corresponding to `X`.
-
-        """
-        Xt: pd.DataFrame | None = None
-        yt: Pandas | None = None
-
-        if X is None and y is None:
-            raise ValueError("X and y can't be both None!")
-        elif X is not None:
-            Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
-
-            # If text dataset, change the name of the column to corpus
-            if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
-                Xt = Xt.rename(columns={Xt.columns[0]: "corpus"})
-            else:
-                # Convert all column names to str
-                Xt.columns = Xt.columns.astype(str)
-
-                # No duplicate rows nor column names are allowed
-                if Xt.columns.duplicated().any():
-                    raise ValueError("Duplicate column names found in X.")
-
-        # Prepare target column
-        if isinstance(y, (dict, *sequence_t, DataFrame)):
-            if isinstance(y, dict):
-                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None), columns=name)
-            else:
-                # If X and y have different number of rows, try multioutput
-                if Xt is not None and len(Xt) != len(y):
-                    try:
-                        targets: list[Hashable] = []
-                        for col in y:
-                            if col in Xt.columns:
-                                targets.append(col)
-                            elif isinstance(col, int_t):
-                                if -Xt.shape[1] <= col < Xt.shape[1]:
-                                    targets.append(Xt.columns[int(col)])
-                                else:
-                                    raise IndexError(
-                                        "Invalid value for the y parameter. Value "
-                                        f"{col} is out of range for data with "
-                                        f"{Xt.shape[1]} columns."
-                                    )
-
-                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
-
-                    except (TypeError, IndexError, KeyError):
-                        raise ValueError(
-                            "X and y don't have the same number of rows,"
-                            f" got len(X)={len(Xt)} and len(y)={len(y)}."
-                        ) from None
-                else:
-                    yt = y
-
-                yt = to_tabular(deepcopy(yt), index=getattr(Xt, "index", None), columns=name)
-
-            # Check X and y have the same indices
-            if Xt is not None and not Xt.index.equals(yt.index):
-                raise ValueError("X and y don't have the same indices!")
-
-        elif isinstance(y, str):
-            if Xt is not None:
-                if y not in Xt.columns:
-                    raise ValueError(f"Column {y} not found in X!")
-
-                Xt, yt = Xt.drop(columns=y), Xt[y]
-
-            else:
-                raise ValueError("X can't be None when y is a string.")
-
-        elif isinstance(y, int_t):
-            if Xt is None:
-                raise ValueError("X can't be None when y is an int.")
-
-            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
-
-        return Xt, yt
-
     def _get_sp(self, sp: Seasonality) -> int | list[int] | None:
         """Get the seasonal period.
 
@@ -531,7 +396,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         arrays: tuple[Any, ...],
         y: YSelector = -1,
         *,
-        index: IndexSelector = False,
+        index: IndexSelector | None = None,
     ) -> tuple[DataContainer, pd.DataFrame | None]:
         """Get data sets from a sequence of indexables.
 
@@ -546,8 +411,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         y: int, str or sequence, default=-1
             Transformed target column.
 
-        index: bool, int, str or sequence, default=False
-            Index parameter as provided in constructor.
+        index: bool, int, str, sequence or None, default=None
+            Index parameter as provided in constructor. If None, the
+            index is retrieved from `self._config`.
 
         Returns
         -------
@@ -559,7 +425,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         """
 
-        def _subsample(df: DataFrame) -> DataFrame:
+        def _subsample(df: pd.DataFrame) -> pd.DataFrame:
             """Select a random subset of a dataframe.
 
             If shuffle=True, the subset is shuffled, else row order
@@ -568,12 +434,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             Parameters
             ----------
-            df: dataframe
+            df: pd.DataFrame
                 Dataset.
 
             Returns
             -------
-            dataframe
+            pd.DataFrame
                 Subset of df.
 
             """
@@ -589,25 +455,36 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
-        def _set_index(df: DataFrame, y: Tabular | None) -> DataFrame:
+        def _set_index(
+            df: DataFrame,
+            y: Pandas | None,
+            index: IndexSelector | None = None,
+        ) -> pd.DataFrame:
             """Assign an index to the dataframe.
 
             Parameters
             ----------
-            df: dataframe
+            df: pd.DataFrame
                 Dataset.
 
-            y: series, dataframe or None
+            y: pd.Series, pd.DataFrame or None
                 Target column(s). Used to check that the provided index
                 is not one of the target columns. If None, the check is
                 skipped.
 
+            index: bool, int, str or sequence or None, default=None
+                Index parameter as provided in constructor. If None, the
+                index is retrieved from `self._config`.
+
             Returns
             -------
-            dataframe
+            pd.DataFrame
                 Dataset with updated indices.
 
             """
+            if index is None:
+                index = self._config.index
+
             if index is True:  # True gets caught by isinstance(int)
                 pass
             elif index is False:
@@ -644,9 +521,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             return df
 
         def _no_data_sets(
-            X: DataFrame,
-            y: Tabular,
-        ) -> tuple[DataContainer, DataFrame | None]:
+            X: pd.DataFrame,
+            y: Pandas,
+        ) -> tuple[DataContainer, pd.DataFrame | None]:
             """Generate data sets from one dataset.
 
             Additionally, assigns an index, shuffles the data, selects
@@ -655,10 +532,10 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             Parameters
             ----------
-            X: dataframe
+            X: pd.DataFrame
                 Feature set with shape=(n_samples, n_features).
 
-            y: series or dataframe
+            y: pd.Series or pd.DataFrame
                 Target column(s) corresponding to `X`.
 
             Returns
@@ -666,7 +543,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             DataContainer
                 Train and test sets.
 
-            dataframe or None
+            pd.DataFrame or None
                 Holdout data set. Returns None if not specified.
 
             """
@@ -739,7 +616,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     stratify=self._config.get_stratify_columns(data, y),
                 )
 
-                complete_set = _set_index(pd.concat([train, test, holdout]), y)
+                complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
 
                 container = DataContainer(
                     data=(data := complete_set.iloc[: len(data)]),
@@ -766,13 +643,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             return container, holdout
 
         def _has_data_sets(
-            X_train: DataFrame,
-            y_train: Tabular,
-            X_test: DataFrame,
-            y_test: Tabular,
-            X_holdout: DataFrame | None = None,
-            y_holdout: Tabular | None = None,
-        ) -> tuple[DataContainer, DataFrame | None]:
+            X_train: pd.DataFrame,
+            y_train: Pandas,
+            X_test: pd.DataFrame,
+            y_test: Pandas,
+            X_holdout: pd.DataFrame | None = None,
+            y_holdout: Pandas | None = None,
+        ) -> tuple[DataContainer, pd.DataFrame | None]:
             """Generate data sets from provided sets.
 
             Additionally, assigns an index, shuffles the data and
@@ -780,22 +657,22 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             Parameters
             ----------
-            X_train: dataframe
+            X_train: pd.DataFrame
                 Training set.
 
-            y_train: series or dataframe
+            y_train: pd.Series or pd.DataFrame
                 Target column(s) corresponding to `X`_train.
 
-            X_test: dataframe
+            X_test: pd.DataFrame
                 Test set.
 
-            y_test: series or dataframe
+            y_test: pd.Series or pd.DataFrame
                 Target column(s) corresponding to `X`_test.
 
-            X_holdout: dataframe or None
-                Holdout set. Is None if not provided by the user.
+            X_holdout: pd.DataFrame or None, default=None
+                Holdout set. Can be None if not provided by the user.
 
-            y_holdout: series, dataframe or None
+            y_holdout: pd.Series, pd.DataFrame or None, default=None
                 Target column(s) corresponding to `X`_holdout.
 
             Returns
@@ -803,7 +680,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             DataContainer
                 Train and test sets.
 
-            dataframe or None
+            pd.DataFrame or None
                 Holdout data set. Returns None if not specified.
 
             """
@@ -851,7 +728,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 if holdout is not None:
                     holdout.index = index[-len(holdout):]
 
-            complete_set = _set_index(pd.concat([train, test, holdout]), y_test)
+            complete_set = _set_index(pd.concat([train, test, holdout]), y_test, index)
 
             container = DataContainer(
                 data=(data := complete_set.iloc[:len(train) + len(test)]),
@@ -868,16 +745,16 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self._goal.name == "forecast" and not isinstance(y, (*int_t, str)):
+            if self.branch._container:
+                return self.branch._data, self.branch._holdout
+            elif self._goal is Goal.forecast and not isinstance(y, Int | str):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._check_input(y=y))
-            elif not self.branch._container:
+            else:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
                     "successfully. See the documentation for the allowed formats."
                 )
-            else:
-                return self.branch._data, self.branch._holdout
 
         elif len(arrays) == 1:
             # X or y for forecasting
@@ -1278,12 +1155,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         """
 
-        def get_weights(col: Series) -> dict[Hashable, float]:
+        def get_weights(col: pd.Series) -> dict[Hashable, float]:
             """Get the class weights for one column.
 
             Parameters
             ----------
-            col: series
+            col: pd.Series
                 Column to get the weights from.
 
             Returns
@@ -1304,7 +1181,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     @available_if(has_task("classification"))
     @composed(crash, beartype)
-    def get_sample_weight(self, rows: RowSelector = "train") -> Series:
+    def get_sample_weight(self, rows: RowSelector = "train") -> pd.Series:
         """Return sample weights for a balanced data set.
 
         The returned weights are inversely proportional to the class
@@ -1319,7 +1196,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         Returns
         -------
-        series
+        pd.Series
             Sequence of weights with shape=(n_samples,).
 
         """

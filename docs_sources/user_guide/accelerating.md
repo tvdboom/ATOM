@@ -71,15 +71,15 @@ parameter, e.g. `#!python engine="pyarrow"` or `#!python engine={"data": "pyarro
 ATOM integrates the following data engines:
 
 - **numpy**: Transform the data to a [`numpy`](https://numpy.org/) array.
-- **pandas**: Transform the data to [`pandas`](https://pandas.pydata.org/docs/index.html) with `numpy` backend. This
-  is the default engine and, in almost all cases, leaves the data unchanged.
+- **pandas**: Leave the dataset as a [`pandas`](https://pandas.pydata.org/docs/index.html) object. This is the default
+  engine, that leaves the data unchanged.
 - **pandas-pyarrow**: Transform the data to [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html) with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
   backend. Read more in pandas' [user guide](https://pandas.pydata.org/docs/user_guide/pyarrow.html).
 - **polars**: The [polars](https://docs.pola.rs/) library is a blazingly fast dataframe library
   implemented in Rust and based on Apache Arrow. Transforms the data to a polars
   dataframe or series.
 - **polars-lazy**: This engine is similar to the `polars` engine, but it returns
-  a [pl.LazyFrame](https://docs.pola.rs/py-polars/html/reference/lazyframe/index.html) instead of a [pl.DataFrame](https://docs.pola.rs/py-polars/html/reference/dataframe/index.html).
+  a [pl.LazyFrame](https://docs.pola.rs/py-polars/html/reference/lazyframe/index.html) instead of a [pl.pd.DataFrame](https://docs.pola.rs/py-polars/html/reference/dataframe/index.html).
 - **pyarrow**: PyArrow is a cross-language, platform-independent, in-memory data
   format, that provides an efficient and fast way to serialize and deserialize data.
   the data is transformed to a [pa.Table](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html) or [pa.Array](https://arrow.apache.org/docs/python/generated/pyarrow.Array.html).
