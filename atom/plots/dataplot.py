@@ -30,8 +30,8 @@ from statsmodels.tsa.stattools import acf, ccf, pacf
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, ColumnSelector, Int, IntLargerZero, Legend, PACFMethods,
-    RowSelector, Segment, Sequence, TargetSelector,
+    Bool, ColumnSelector, Int, IntLargerZero, Legend, PACFMethods, RowSelector,
+    Segment, Sequence, TargetSelector,
 )
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, has_task, lst,
@@ -1223,7 +1223,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         """
 
-        def get_text(column: Series) -> Series:
+        def get_text(column: pd.Series) -> pd.Series:
             """Get the complete corpus as sequence of tokens.
 
             Parameters

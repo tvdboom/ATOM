@@ -214,7 +214,7 @@ def test_column_order_is_retained():
 
 def test_incorrect_columns():
     """Assert that an error is raised when the provided columns do not match."""
-    with pytest.raises(ValueError, match=".*features are different.*"):
+    with pytest.raises(ValueError, match=".*columns are different.*"):
         BaseTransformer._check_input(X_bin, columns=["1", "2"])
 
 
@@ -269,12 +269,6 @@ def test_sparse_matrices_2_tuples():
     assert isinstance(atom.X, pd.DataFrame)
     assert atom.shape == (20, 4)
     assert atom[atom.columns[0]].dtype.name == "Sparse[int64, 0]"
-
-
-def test_target_is_dict():
-    """Assert that the target column is assigned correctly for a dict."""
-    _, y = BaseTransformer._check_input(X10, {"a": [0] * 10})
-    assert isinstance(y, pd.Series)
 
 
 def test_multioutput_str():

@@ -24,15 +24,11 @@ from types import GeneratorType, MappingProxyType, ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import mlflow
-import modin.pandas as md
 import nltk
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import polars as pl
-import pyarrow as pa
 import scipy.sparse as sps
-from beartype import beartype
 from beartype.door import is_bearable
 from IPython.display import display
 from matplotlib.colors import to_rgba
@@ -52,12 +48,12 @@ from sklearn.metrics import (
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.validation import _is_fitted
 
-from atom.utils.constants import __version__
+from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
     IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Sequence, SPTuple, Pandas, Transformer, TReturn,
-    TReturns, Verbose, XConstructor, XSelector, YConstructor, YSelector, int_t,
+    Scorer, Segment, Sequence, SPTuple, Transformer, TReturn, TReturns,
+    Verbose, XConstructor, XSelector, YConstructor, YSelector, int_t,
     segment_t, sequence_t,
 )
 
@@ -253,12 +249,12 @@ class DataConfig:
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
 
-    def get_stratify_columns(self, df: DataFrame, y: Pandas) -> DataFrame | None:
+    def get_stratify_columns(self, df: pd.DataFrame, y: Pandas) -> pd.DataFrame | None:
         """Get columns to stratify by.
 
         Parameters
         ----------
-        df: dataframe
+        df: pd.DataFrame
             Dataset from which to get the columns.
 
         y: series or dataframe
@@ -940,7 +936,7 @@ class ShapExplanation:
 
     def get_explanation(
         self,
-        df: DataFrame,
+        df: pd.DataFrame,
         target: tuple[Int, ...],
     ) -> Explanation:
         """Get an Explanation object.
@@ -949,7 +945,7 @@ class ShapExplanation:
 
         Parameters
         ----------
-        df: dataframe
+        df: pd.DataFrame
             Data set to look at (subset of the complete dataset).
 
         target: tuple
@@ -1309,7 +1305,7 @@ def sign(obj: Callable) -> MappingProxyType:
     return signature(obj).parameters
 
 
-def merge(*args) -> DataFrame:
+def merge(*args) -> pd.DataFrame:
     """Concatenate pandas objects column-wise.
 
     None and empty objects are ignored.
@@ -1401,7 +1397,7 @@ def n_cols(obj: XSelector | YSelector) -> int:
     if hasattr(obj, "shape"):
         return obj.shape[1] if len(obj.shape) > 1 else 1
     elif isinstance(obj, dict):
-        return len(obj)
+        return 2  # Dict always goes to dataframe
 
     try:
         if (array := np.asarray(obj)).ndim > 1:
@@ -1729,7 +1725,7 @@ def get_versions(models: ClassMap) -> dict[str, str]:
     return versions
 
 
-def get_corpus(df: DataFrame) -> str:
+def get_corpus(df: pd.DataFrame) -> str:
     """Get text column from a dataframe.
 
     The text column should be called `corpus` (case-insensitive). Also
@@ -1737,7 +1733,7 @@ def get_corpus(df: DataFrame) -> str:
 
     Parameters
     ----------
-    df: dataframe
+    df: pd.DataFrame
         Data set from which to get the corpus.
 
     Returns
@@ -1844,15 +1840,27 @@ def to_df(
     else:
         data_c = data
 
-    if data_c is not None and columns is not None:
-        # Reorder columns to the provided order
-        try:
-            data_c = data_c[list(columns)]  # Force order determined by columns
-        except KeyError:
-            raise ValueError(
-                f"The columns are different than seen at fit time. Features "
-                f"{set(data_c.columns) - set(columns)} are missing in X."
-            ) from None
+    if data_c is not None:
+        # If text dataset, change the name of the column to corpus
+        if list(data_c.columns) == ["x0"] and data_c.dtypes[0].name in CAT_TYPES:
+            data_c = data_c.rename(columns={data_c.columns[0]: "corpus"})
+        else:
+            # Convert all column names to str
+            data_c.columns = data_c.columns.astype(str)
+
+            # No duplicate rows nor column names are allowed
+            if data_c.columns.duplicated().any():
+                raise ValueError("Duplicate column names found in X.")
+
+            if columns is not None:
+                # Reorder columns to the provided order
+                try:
+                    data_c = data_c[list(columns)]  # Force order determined by columns
+                except KeyError:
+                    raise ValueError(
+                        f"The columns are different than seen at fit time. Features "
+                        f"{set(data_c.columns) - set(columns)} are missing in X."
+                    ) from None
 
     return data_c
 
@@ -2115,7 +2123,7 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
 
 def name_cols(
     array: TReturn,
-    original_df: DataFrame,
+    original_df: pd.DataFrame,
     col_names: list[str],
 ) -> list[str]:
     """Get the column names after a transformation.
@@ -2129,7 +2137,7 @@ def name_cols(
     array: np.ndarray, sps.matrix, series or dataframe
         Transformed dataset.
 
-    original_df: dataframe
+    original_df: pd.DataFrame
         Original dataset.
 
     col_names: list of str
@@ -2219,10 +2227,10 @@ def get_col_order(
 
 def reorder_cols(
     transformer: Transformer,
-    df: DataFrame,
-    original_df: DataFrame,
+    df: pd.DataFrame,
+    original_df: pd.DataFrame,
     col_names: list[str],
-) -> DataFrame:
+) -> pd.DataFrame:
     """Reorder the columns to their original order.
 
     This function is necessary in case only a subset of the
@@ -2234,10 +2242,10 @@ def reorder_cols(
     transformer: Transformer
         Instance that transformed `df`.
 
-    df: dataframe
+    df: pd.DataFrame
         Dataset to reorder.
 
-    original_df: dataframe
+    original_df: pd.DataFrame
         Original dataset (states the order).
 
     col_names: list of str
@@ -2316,8 +2324,8 @@ def fit_one(
         Fitted estimator.
 
     """
-    Xt = to_df(X, index=getattr(y, "index", None))
-    yt = to_tabular(y, index=getattr(Xt, "index", None))
+    Xt = to_df(X)
+    yt = to_tabular(y, index=Xt.index)
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
@@ -2431,8 +2439,8 @@ def transform_one(
         else:
             return out
 
-    Xt = to_df(X, index=getattr(y, "index", None))
-    yt = to_tabular(y, index=getattr(Xt, "index", None))
+    Xt = to_df(X)
+    yt = to_tabular(y, index=Xt.index)
 
     use_y = True
 
@@ -2464,10 +2472,7 @@ def transform_one(
     # Transform can return X, y or both
     if isinstance(out, tuple):
         X_new = prepare_df(out[0], Xt)
-        y_new = to_tabular(
-            data=out[1],
-            index=yt.index,
-        )
+        y_new = to_tabular(out[1], index=X_new.index)
         if isinstance(yt, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
     elif "X" in params and Xt is not None and any(c in Xt for c in inc):
@@ -2475,10 +2480,7 @@ def transform_one(
         X_new = prepare_df(out, Xt)
         y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
     elif y is not None:
-        y_new = to_tabular(
-            data=out,
-            index=yt.index,
-        )
+        y_new = to_tabular(out)
         X_new = Xt if Xt is None else Xt.set_index(y_new.index)
         if isinstance(yt, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
@@ -2664,63 +2666,6 @@ def method_to_log(f: Callable) -> Callable:
         return f(*args, **kwargs)
 
     return wrapper
-
-
-def wrap_transformer_methods(f: Callable) -> Callable:
-    """Wrap transformer methods with shared code.
-
-    The following operations are always performed:
-
-    - Transform the input to pandas types.
-    - Add the `feature_names_in_` and `n_features_in_` attributes.
-    - Check if the instance is fitted before transforming.
-
-    """
-
-    @wraps(f)
-    @beartype
-    def wrapper(
-        self: T_Transformer,
-        X: XSelector | None = None,
-        y: YSelector | None = None,
-        **kwargs,
-    ) -> T_Transformer | Pandas | tuple[pd.DataFrame, Pandas]:
-        if f.__name__ == "fit":
-            Xt = to_df(X, index=getattr(y, "index", None))
-            yt = to_tabular(y, index=getattr(Xt, "index", None))
-
-            self._check_feature_names(Xt, reset=True)
-            self._check_n_features(Xt, reset=True)
-
-            return f(self, Xt, yt, **kwargs)
-
-        else:
-            if "TransformerMixin" not in str(self.fit):
-                check_is_fitted(self)
-
-            Xt = to_df(
-                data=X,
-                index=getattr(y, "index", None),
-                columns=getattr(self, "feature_names_in_", None),
-            )
-            yt = to_tabular(
-                y,
-                index=getattr(Xt, "index", None),
-                columns=getattr(self, "target_names_in_", None),
-            )
-
-            if "y" in sign(f):
-                out = f(self, Xt, yt, **kwargs)
-            else:
-                out = f(self, Xt, **kwargs)
-
-            if isinstance(out, tuple):
-                return tuple(self._convert(x) for x in out)
-            else:
-                return self._convert(out)
-
-    return wrapper
-
 
 def make_sklearn(
     obj: T_Estimator,

@@ -602,8 +602,8 @@ def test_input_is_3_tuples():
     """Assert that the 3 tuples input works."""
     X_train = bin_train.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
-    X_test = bin_test.iloc[100:-20, :-1]
-    y_test = bin_test.iloc[100:-20, -1]
+    X_test = bin_test.iloc[:-20, :-1]
+    y_test = bin_test.iloc[:-20, -1]
     X_holdout = bin_test.iloc[-20:, :-1]
     y_holdout = bin_test.iloc[-20:, -1]
 
@@ -622,7 +622,7 @@ def test_input_is_train_test_holdout():
 
 
 def test_4_data_provided():
-    """Assert that the 4 elements input works."""
+    """Assert that the four-element input works."""
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -634,11 +634,11 @@ def test_4_data_provided():
 
 
 def test_6_data_provided():
-    """Assert that the 6 elements input works."""
+    """Assert that the six-element input works."""
     X_train = bin_train.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
-    X_test = bin_test.iloc[100:-20, :-1]
-    y_test = bin_test.iloc[100:-20, -1]
+    X_test = bin_test.iloc[:-20, :-1]
+    y_test = bin_test.iloc[:-20, -1]
     X_holdout = bin_test.iloc[-20:, :-1]
     y_holdout = bin_test.iloc[-20:, -1]
 

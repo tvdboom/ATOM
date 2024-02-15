@@ -158,22 +158,20 @@ class ATOMClassifier(ATOM):
         **X, train, test: dataframe-like**<br>
         Feature set with shape=(n_samples, n_features).
 
-        **y: int, str, dict, sequence or dataframe**<br>
+        **y: int, str, sequence or dataframe-like**<br>
         Target column(s) corresponding to `X`.
 
         - If int: Position of the target column in `X`.
         - If str: Name of the target column in `X`.
-        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+        - If dataframe-like: Target columns for multioutput tasks.
 
-    y: int, str, dict, sequence or dataframe, default=-1
+    y: int, str, sequence or dataframe-like, default=-1
         Target column(s) corresponding to `X`.
 
         - If int: Position of the target column in `X`.
         - If str: Name of the target column in `X`.
-        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
@@ -438,26 +436,24 @@ class ATOMForecaster(ATOM):
         Exogenous feature set corresponding to y, with shape=(n_samples,
         n_features).
 
-        **y: int, str, dict, sequence or dataframe**<br>
+        **y: int, str, sequence or dataframe-like**<br>
         Time series.
 
         - If int: Position of the target column in `X`.
         - If str: Name of the target column in `X`.
-        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+        - If dataframe-like: Target columns for multioutput tasks.
 
-    y: int, str, dict, sequence or dataframe, default=-1
+    y: int, str, sequence or dataframe-like, default=-1
         Time series.
 
         - If None: `y` is ignored.
         - If int: Position of the target column in `X`.
         - If str: Name of the target column in `X`.
-        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+        - If dataframe-like: Target columns for multioutput tasks.
 
         This parameter is ignored if the time series is provided
         through `arrays`.
@@ -709,26 +705,24 @@ class ATOMRegressor(ATOM):
         **X, train, test: dataframe-like**<br>
         Feature set with shape=(n_samples, n_features).
 
-        **y: int, str, dict, sequence or dataframe**<br>
+        **y: int, str, sequence or dataframe-like**<br>
         Target column(s) corresponding to `X`.
 
         - If int: Position of the target column in `X`.
         - If str: Name of the target column in `X`.
-        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
-    y: int, str, dict, sequence or dataframe, default=-1
+    y: int, str, sequence or dataframe-like, default=-1
         Target column(s) corresponding to `X`.
 
         - If None: `y` is ignored.
         - If int: Position of the target column in `X`.
         - If str: Name of the target column in `X`.
-        - If dict: Name of the target column and sequence of values.
         - If sequence: Target column with shape=(n_samples,) or
           sequence of column names or positions for multioutput tasks.
-        - If dataframe: Target columns for multioutput tasks.
+        - If dataframe-like: Target columns for multioutput tasks.
 
         This parameter is ignored if the target column is provided
         through `arrays`.

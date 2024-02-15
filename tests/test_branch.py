@@ -7,20 +7,23 @@ Description: Unit tests for the branch module.
 import glob
 import os
 from pathlib import Path
-import polars as pl
+from unittest.mock import MagicMock, patch
+
+import dask.dataframe as dd
+import modin.pandas as md
 import numpy as np
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 import pytest
 from pandas.testing import assert_frame_equal
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-import pyarrow as pa
-from unittest.mock import patch, MagicMock
+
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch, BranchManager
 from atom.training import DirectClassifier
 from atom.utils.utils import merge
-import modin.pandas as md
-import dask.dataframe as dd
+
 from .conftest import (
     X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,
     y_bin_array, y_idx, y_multiclass,
@@ -755,8 +758,6 @@ def test_dask_engine():
 @patch.dict("sys.modules", {"pyspark": MagicMock(spec=["__spec__", "sql"])})
 def test_pyspark_engine():
     """Assert that the pyspark engine returns pyspark types."""
-    import sys
-    print(sys.modules)
     atom = ATOMClassifier(X_bin, y_bin, engine="pyspark", random_state=1)
     assert "createDataFrame" in str(atom.X)
 

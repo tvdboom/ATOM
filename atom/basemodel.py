@@ -66,18 +66,18 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.patches import fit_and_score
 from atom.utils.types import (
-    HT, Backend, Bool, Engine, FHConstructor, Float,
-    FloatZeroToOneExc, Int, IntLargerEqualZero, MetricConstructor,
-    MetricFunction, NJobs, Pandas, PredictionMethods, PredictionMethodsTS,
-    Predictor, RowSelector, Scalar, Scorer, Sequence, Stages, Pandas,
-    TargetSelector, Verbose, Warnings, XSelector, YSelector, float_t, int_t,
+    HT, Backend, Bool, Engine, FHConstructor, Float, FloatZeroToOneExc, Int,
+    IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
+    PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
+    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector,
+    YSelector, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust_verbosity, cache, check_dependency, check_empty,
-    composed, crash, estimator_has_attr, flt, get_cols, get_custom_scorer,
-    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
-    to_series, to_tabular, get_col_names
+    composed, crash, estimator_has_attr, flt, get_col_names, get_cols,
+    get_custom_scorer, has_task, it, lst, merge, method_to_log, rnd, sign,
+    time_to_str, to_df, to_series, to_tabular,
 )
 
 
@@ -2254,16 +2254,15 @@ class BaseModel(RunnerPlot):
             Transformed feature set with shape=(n_samples, n_features).
             If None, `X` is ignored in the transformers.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `y` is ignored.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
+            - If dataframe-like: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
@@ -2278,10 +2277,10 @@ class BaseModel(RunnerPlot):
             Original target column. Only returned if provided.
 
         """
-        X, y = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
+        Xt, yt = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
 
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return pipeline.inverse_transform(X, y)
+            return pipeline.inverse_transform(Xt, yt)
 
     @composed(crash, method_to_log, beartype)
     def register(
@@ -2453,16 +2452,15 @@ class BaseModel(RunnerPlot):
             `X` is ignored. If None,
             `X` is ignored in the transformers.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `y` is ignored.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
+            - If dataframe-like: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
@@ -2477,10 +2475,10 @@ class BaseModel(RunnerPlot):
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._check_input(X, y, columns=self.og.features, name=self.og.target)
+        Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
 
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return pipeline.transform(X, y)
+            return pipeline.transform(Xt, yt)
 
 
 class ClassRegModel:

@@ -15,7 +15,7 @@ from collections.abc import Hashable
 from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
-from typing import Any, overload, Literal
+from typing import Any
 
 import dill as pickle
 import numpy as np
@@ -39,14 +39,13 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
     IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
-    RowSelector, Seasonality, Segment, Sequence, SPDict, SPTuple,
-    Pandas, TargetSelector, XSelector, YSelector, bool_t, int_t, pandas_t,
-    segment_t, sequence_t,
+    Pandas, RowSelector, Seasonality, Segment, Sequence, SPDict, SPTuple,
+    TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Goal, SeasonalPeriod, Task, check_is_fitted,
     composed, crash, divide, flt, get_cols, get_segment, get_versions,
-    has_task, lst, merge, method_to_log, n_cols, to_df, to_tabular,
+    has_task, lst, merge, method_to_log, n_cols,
 )
 
 

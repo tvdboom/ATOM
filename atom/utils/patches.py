@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
-from functools import wraps
 from typing import Any
 from unittest.mock import patch
 
@@ -22,7 +21,6 @@ from sklearn.ensemble import VotingRegressor as VR
 from sklearn.ensemble._base import _fit_single_estimator
 from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.utils import Bunch
-from sklearn.utils._set_output import _wrap_method_output
 from sklearn.utils.multiclass import check_classification_targets
 from sktime.forecasting.compose import EnsembleForecaster as EF
 from sktime.forecasting.compose import StackingForecaster as SF

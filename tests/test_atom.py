@@ -9,7 +9,6 @@ import glob
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-import pyarrow as pa
 import pandas as pd
 import pytest
 from category_encoders.target_encoder import TargetEncoder
@@ -33,9 +32,9 @@ from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10, y10_label,
+    X_class, X_ex, X_label, X_pa, X_reg, X_sparse, X_text, y10, y10_label,
     y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc, y_label,
-    y_multiclass, y_multireg, y_reg, X_pa
+    y_multiclass, y_multireg, y_reg,
 )
 
 

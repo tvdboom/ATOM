@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from beartype import beartype
 from gplearn.genetic import SymbolicTransformer
+from polars.dependencies import _lazy_import
 from scipy import stats
 from sklearn.base import is_classifier
 from sklearn.feature_selection import (
@@ -25,23 +26,22 @@ from sklearn.feature_selection import (
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import _check_feature_names_in
 from typing_extensions import Self
-from zoofs import (
-    DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
-    HarrisHawkOptimization, ParticleSwarmOptimization,
-)
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.utils.types import (
     Bool, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
     FloatLargerEqualZero, FloatLargerZero, FloatZeroToOneInc,
-    IntLargerEqualZero, IntLargerZero, NJobs, Operators, Scalar, Sequence,
-    Pandas, Verbose,
+    IntLargerEqualZero, IntLargerZero, NJobs, Operators, Pandas, Scalar,
+    Sequence, Verbose, XConstructor, YConstructor,
 )
 from atom.utils.utils import (
-    Goal, Task, check_is_fitted, check_scaling, composed, crash,
-    get_custom_scorer, is_sparse, lst, merge, method_to_log, sign,
+    Goal, Task, check_is_fitted, check_scaling, get_custom_scorer, is_sparse,
+    lst, merge, sign, to_df, to_tabular,
 )
+
+
+zoofs, _ = _lazy_import("zoofs")
 
 
 @beartype
@@ -172,7 +172,7 @@ class FeatureExtractor(TransformerMixin):
         self.drop_columns = drop_columns
         self.from_index = from_index
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Extract the new features.
 
         Parameters
@@ -180,7 +180,7 @@ class FeatureExtractor(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -189,19 +189,21 @@ class FeatureExtractor(TransformerMixin):
             Transformed feature set.
 
         """
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+
         self._log("Extracting datetime features...", 1)
 
         if self.from_index:
-            if hasattr(X.index, "to_timestamp"):
-                Xc = pd.DataFrame(X.index.to_timestamp())
-                order = Xc.columns.tolist() + X.columns.tolist()
+            if hasattr(Xt.index, "to_timestamp"):
+                Xc = pd.DataFrame(Xt.index.to_timestamp())
+                order = Xc.columns.tolist() + Xt.columns.tolist()
             else:
                 raise ValueError("Unable to convert the index to a timestamp format.")
         else:
-            Xc = X.select_dtypes(exclude="number")
-            order = X.columns.tolist()
+            Xc = Xt.select_dtypes(exclude="number")
+            order = Xt.columns.tolist()
 
-        Xt = pd.DataFrame(index=X.index)
+        X_new = pd.DataFrame(index=Xt.index)
         for name, column in Xc.items():
             col_dt = pd.to_datetime(
                 arg=column,
@@ -259,13 +261,13 @@ class FeatureExtractor(TransformerMixin):
                 new_name = f"{name}_{fx}"
                 if self.encoding_type == "ordinal" or max_val is None:
                     self._log(f"   --> Creating feature {new_name}.", 2)
-                    Xt[new_name] = series.to_numpy()
+                    X_new[new_name] = series.to_numpy()
                     order.insert(order.index(name) + 1, new_name)
                 elif self.encoding_type == "cyclic":
                     self._log(f"   --> Creating cyclic feature {new_name}.", 2)
                     pos = 2 * np.pi * (series.to_numpy() - min_val) / np.array(max_val)
-                    Xt[f"{new_name}_sin"] = np.sin(pos)
-                    Xt[f"{new_name}_cos"] = np.cos(pos)
+                    X_new[f"{new_name}_sin"] = np.sin(pos)
+                    X_new[f"{new_name}_cos"] = np.cos(pos)
                     order.insert(order.index(name) + 1, f"{new_name}_sin")
                     order.insert(order.index(name) + 2, f"{new_name}_cos")
 
@@ -273,7 +275,7 @@ class FeatureExtractor(TransformerMixin):
             if self.drop_columns or self.from_index:
                 order.remove(name)
 
-        return merge(Xt, X)[order]
+        return self._convert(merge(X_new, Xt)[order])
 
 
 @beartype
@@ -418,7 +420,7 @@ class FeatureGenerator(TransformerMixin):
         self.operators = operators
         self.kwargs = kwargs
 
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -426,18 +428,8 @@ class FeatureGenerator(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
-
-            - If None: `y` is ignored.
-            - If int: Position of the target column in `X`.
-            - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
 
         Returns
         -------
@@ -445,6 +437,12 @@ class FeatureGenerator(TransformerMixin):
             Estimator instance.
 
         """
+        Xt = to_df(X)
+        yt = to_tabular(y, index=getattr(Xt, "index", None))
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
         all_operators = {
             "add": "add_numeric",
             "sub": "subtract_numeric",
@@ -467,7 +465,7 @@ class FeatureGenerator(TransformerMixin):
 
         if self.strategy == "dfs":
             # Run deep feature synthesis with transformation primitives
-            es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
+            es = ft.EntitySet(dataframes={"X": (Xt, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
@@ -478,7 +476,7 @@ class FeatureGenerator(TransformerMixin):
             )
 
             # Select the new features (dfs also returns originals)
-            self._dfs = self._dfs[X.shape[1] - 1:]
+            self._dfs = self._dfs[Xt.shape[1] - 1:]
 
             # Get a random selection of features
             if self.n_features and self.n_features < len(self._dfs):
@@ -502,11 +500,11 @@ class FeatureGenerator(TransformerMixin):
                 n_jobs=kwargs.pop("n_jobs", self.n_jobs),
                 random_state=kwargs.pop("random_state", self.random_state),
                 **kwargs,
-            ).fit(X, y)
+            ).fit(Xt, yt)
 
         return self
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Generate new features.
 
         Parameters
@@ -514,7 +512,7 @@ class FeatureGenerator(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -523,10 +521,14 @@ class FeatureGenerator(TransformerMixin):
             Transformed feature set.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Generating new features...", 1)
 
         if self.strategy == "dfs":
-            es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
+            es = ft.EntitySet(dataframes={"X": (Xt, "index", None, None, None, True)})
             dfs = ft.calculate_feature_matrix(
                 features=self._dfs,
                 entityset=es,
@@ -534,7 +536,7 @@ class FeatureGenerator(TransformerMixin):
             )
 
             # Add the new features to the feature set
-            X = pd.concat([X, dfs], axis=1).set_index("index")
+            Xt = pd.concat([Xt, dfs], axis=1).set_index("index")
 
             self._log(f" --> {len(self._dfs)} new features were added.", 2)
 
@@ -544,7 +546,7 @@ class FeatureGenerator(TransformerMixin):
                 data=[
                     ["", str(fx), fx.fitness_]
                     for i, fx in enumerate(self.gfg_)
-                    if str(fx) not in X.columns
+                    if str(fx) not in Xt.columns
                 ],
                 columns=["name", "description", "fitness"],
             )
@@ -552,7 +554,7 @@ class FeatureGenerator(TransformerMixin):
             # Check if any new features remain
             if len(df) == 0:
                 self._log(" --> The genetic algorithm didn't find any improving features.", 2)
-                return X
+                return Xt
 
             # Select the n_features with the highest fitness
             df = df.drop_duplicates()
@@ -562,17 +564,16 @@ class FeatureGenerator(TransformerMixin):
             if len(df) != self.n_features:
                 self._log(
                     f" --> Dropping {(self.n_features or len(self.gfg_)) - len(df)} "
-                    "features due to repetition.",
-                    2,
+                    "features due to repetition.", 2,
                 )
 
-            for i, array in enumerate(self.gfg_.transform(X)[:, df.index].T):
+            for i, array in enumerate(self.gfg_.transform(Xt)[:, df.index].T):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
-                    name = f"x{X.shape[1] + counter}"
+                    name = f"x{Xt.shape[1] + counter}"
                     if name not in X:
-                        X[name] = array  # Add new feature to X
+                        Xt[name] = array  # Add new feature to X
                         df.iloc[i, 0] = name
                         break
                     else:
@@ -581,7 +582,7 @@ class FeatureGenerator(TransformerMixin):
             self._log(f" --> {len(df)} new features were added.", 2)
             self.genetic_features_ = df.reset_index(drop=True)
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
@@ -677,7 +678,7 @@ class FeatureGrouper(TransformerMixin):
         self.operators = operators
         self.drop_columns = drop_columns
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Group features.
 
         Parameters
@@ -685,7 +686,7 @@ class FeatureGrouper(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -694,6 +695,8 @@ class FeatureGrouper(TransformerMixin):
             Transformed feature set.
 
         """
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+
         self._log("Grouping features...", 1)
 
         if self.operators is None:
@@ -705,10 +708,10 @@ class FeatureGrouper(TransformerMixin):
         for name, group in self.groups.items():
             for operator in operators:
                 try:
-                    result = X[group].apply(getattr(np, operator), axis=1)
+                    result = Xt[group].apply(getattr(np, operator), axis=1)
                 except AttributeError:
                     try:
-                        result = getattr(stats, operator)(X[group], axis=1)[0]
+                        result = getattr(stats, operator)(Xt[group], axis=1)[0]
                     except AttributeError:
                         raise ValueError(
                             "Invalid value for the operators parameter. Value "
@@ -716,7 +719,7 @@ class FeatureGrouper(TransformerMixin):
                         ) from None
 
                 try:
-                    X[f"{operator}({name})"] = result
+                    Xt[f"{operator}({name})"] = result
                 except ValueError:
                     raise ValueError(
                         "Invalid value for the operators parameter. Value "
@@ -727,9 +730,9 @@ class FeatureGrouper(TransformerMixin):
             self._log(f" --> Group {name} successfully created.", 2)
 
         if self.drop_columns:
-            X = X.drop(columns=to_drop)
+            Xt = Xt.drop(columns=to_drop)
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
@@ -896,25 +899,12 @@ class FeatureSelector(TransformerMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "sklearnex"
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1019,7 +1009,7 @@ class FeatureSelector(TransformerMixin):
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit the feature selector to the data.
 
         The univariate, sfm (when model is not fitted), sfs, rfe and
@@ -1031,18 +1021,8 @@ class FeatureSelector(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
-
-            - If None: `y` is ignored.
-            - If int: Position of the target column in `X`.
-            - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe-like: Target columns with shape=(n_samples,
-              n_targets) for multioutput tasks.
 
         Returns
         -------
@@ -1069,6 +1049,12 @@ class FeatureSelector(TransformerMixin):
                 model.fit(X_train, y_train)
                 return scoring(model, X_valid, y_valid)
 
+        Xt = to_df(X)
+        tt = to_tabular(y, index=Xt.index)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
         self.collinear_ = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
         self.scaler_ = None
 
@@ -1085,11 +1071,11 @@ class FeatureSelector(TransformerMixin):
             "sfs": "SequentialFeatureSelector",
             "rfe": "RFE",
             "rfecv": "RFECV",
-            "pso": ParticleSwarmOptimization,
-            "hho": HarrisHawkOptimization,
-            "gwo": GreyWolfOptimization,
-            "dfo": DragonFlyOptimization,
-            "go": GeneticOptimization,
+            "pso": zoofs.ParticleSwarmOptimization,
+            "hho": zoofs.HarrisHawkOptimization,
+            "gwo": zoofs.GreyWolfOptimization,
+            "dfo": zoofs.DragonFlyOptimization,
+            "go": zoofs.GeneticOptimization,
         }
 
         if isinstance(self.strategy, str):
@@ -1153,9 +1139,9 @@ class FeatureSelector(TransformerMixin):
             )
 
         if self.n_features is None:
-            self._n_features = X.shape[1]
+            self._n_features = Xt.shape[1]
         elif self.n_features < 1:
-            self._n_features = int(self.n_features * X.shape[1])
+            self._n_features = int(self.n_features * Xt.shape[1])
         else:
             self._n_features = self.n_features
 
@@ -1169,9 +1155,9 @@ class FeatureSelector(TransformerMixin):
 
         max_repeated: Scalar
         if self.max_repeated is None:
-            max_repeated = len(X)
+            max_repeated = len(Xt)
         elif self.max_repeated <= 1:
-            max_repeated = self.max_repeated * len(X)
+            max_repeated = self.max_repeated * len(Xt)
         else:
             max_repeated = int(self.max_repeated)
 
@@ -1185,30 +1171,30 @@ class FeatureSelector(TransformerMixin):
 
         # Remove features with too high variance
         if self.min_repeated is not None:
-            for name, column in X.select_dtypes(exclude="number").items():
+            for name, column in Xt.select_dtypes(exclude="number").items():
                 max_counts = column.value_counts()
                 if min_repeated > max_counts.max():
                     self._high_variance[name] = (max_counts.idxmax(), max_counts.max())
-                    X = X.drop(columns=name)
+                    Xt = Xt.drop(columns=name)
                     break
 
         # Remove features with too low variance
         if self.max_repeated is not None:
-            for name, column in X.select_dtypes(exclude="number").items():
+            for name, column in Xt.select_dtypes(exclude="number").items():
                 for category, count in column.value_counts().items():
                     if count >= max_repeated:
-                        self._low_variance[name] = (category, 100.0 * count / len(X))
-                        X = X.drop(columns=name)
+                        self._low_variance[name] = (category, 100.0 * count / len(Xt))
+                        Xt = Xt.drop(columns=name)
                         break
 
         # Remove features with too high correlation
         self.collinear = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
         if self.max_correlation:
             # Get the Pearson correlation coefficient matrix
-            if y is None:
-                corr_X = X.corr()
+            if yt is None:
+                corr_X = Xt.corr()
             else:
-                corr_matrix = merge(X, y).corr()
+                corr_matrix = merge(Xt, yt).corr()
                 corr_X, corr_y = corr_matrix.iloc[:-1, :-1], corr_matrix.iloc[:-1, -1]
 
             corr = {}
@@ -1219,7 +1205,7 @@ class FeatureSelector(TransformerMixin):
 
                 # Always finds himself with correlation 1
                 if len(corr[col]) > 1:
-                    if y is None:
+                    if yt is None:
                         # Drop all but the first one
                         to_drop.extend(list(corr[col][1:].index))
                     else:
@@ -1244,7 +1230,7 @@ class FeatureSelector(TransformerMixin):
                     ignore_index=True,
                 )
 
-            X = X.drop(columns=self.collinear_["drop"].tolist())
+            Xt = Xt.drop(columns=self.collinear_["drop"].tolist())
 
         if self.strategy is None:
             return self  # Exit feature_engineering
@@ -1275,14 +1261,14 @@ class FeatureSelector(TransformerMixin):
                 solver = self.solver
 
             check_y()
-            self._estimator = SelectKBest(solver, k=self._n_features).fit(X, y)
+            self._estimator = SelectKBest(solver, k=self._n_features).fit(Xt, yt)
 
         elif self.strategy == "pca":
-            if not is_sparse(X):
+            if not is_sparse(Xt):
                 # PCA requires the features to be scaled
-                if not check_scaling(X):
+                if not check_scaling(Xt):
                     self.scaler_ = Scaler()
-                    X = self.scaler_.fit_transform(X)
+                    Xt = self.scaler_.fit_transform(Xt)
 
                 estimator = self._get_est_class("PCA", "decomposition")
                 solver_param = "svd_solver"
@@ -1298,11 +1284,11 @@ class FeatureSelector(TransformerMixin):
             # The PCA and TruncatedSVD both get all possible components to use
             # for the plots (n_components must be < n_features and <= n_rows)
             self._estimator = estimator(
-                n_components=min(len(X), X.shape[1] - 1),
+                n_components=min(len(Xt), Xt.shape[1] - 1),
                 **{solver_param: solver},
                 random_state=self.random_state,
                 **self.kwargs,
-            ).fit(X)
+            ).fit(Xt)
 
             self._estimator._comps = min(self._estimator.components_.shape[0], self._n_features)
 
@@ -1324,7 +1310,7 @@ class FeatureSelector(TransformerMixin):
                 **kwargs,
             )
             if prefit:
-                if list(getattr(solver, "feature_names_in_", [])) != list(X.columns):
+                if list(getattr(solver, "feature_names_in_", [])) != list(Xt.columns):
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
                         f"{solver.__class__.__name__} estimator "
@@ -1333,7 +1319,7 @@ class FeatureSelector(TransformerMixin):
                 self._estimator.estimator_ = solver
             else:
                 check_y()
-                self._estimator.fit(X, y)
+                self._estimator.fit(Xt, yt)
 
         elif self.strategy in ("sfs", "rfe", "rfecv"):
             if self.strategy == "sfs":
@@ -1375,7 +1361,7 @@ class FeatureSelector(TransformerMixin):
                     **kwargs,
                 )
 
-            self._estimator.fit(X, y)
+            self._estimator.fit(Xt, yt)
 
         else:
             check_y()
@@ -1392,7 +1378,7 @@ class FeatureSelector(TransformerMixin):
                         "cannot be absent when X_valid is provided."
                     )
             else:
-                X_valid, y_valid = X, y
+                X_valid, y_valid = Xt, yt
 
             # Get scoring for default objective_function
             if "objective_function" not in kwargs:
@@ -1400,7 +1386,7 @@ class FeatureSelector(TransformerMixin):
                     kwargs["scoring"] = get_custom_scorer(kwargs["scoring"])
                 else:
                     goal = Goal(0) if is_classifier(solver) else Goal(1)
-                    task = goal.infer_task(y)
+                    task = goal.infer_task(yt)
                     if task is Task.binary_classification:
                         kwargs["scoring"] = get_custom_scorer("f1")
                     elif task.is_multiclass:
@@ -1416,8 +1402,8 @@ class FeatureSelector(TransformerMixin):
 
             self._estimator.fit(
                 model=solver,
-                X_train=X,
-                y_train=y,
+                X_train=Xt,
+                y_train=yt,
                 X_valid=X_valid,
                 y_valid=y_valid,
                 verbose=self.verbose >= 2,
@@ -1472,7 +1458,7 @@ class FeatureSelector(TransformerMixin):
                 ]
             )
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Transform the data.
 
         Parameters
@@ -1480,7 +1466,7 @@ class FeatureSelector(TransformerMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1489,6 +1475,10 @@ class FeatureSelector(TransformerMixin):
             Transformed feature set.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Performing feature selection ...", 1)
 
         # Remove features with too high variance
@@ -1498,7 +1488,7 @@ class FeatureSelector(TransformerMixin):
                 f"Value {h_variance[0]} was the most repeated value with "
                 f"{h_variance[1]} ({h_variance[1] / len(X):.1f}%) occurrences.", 2,
             )
-            X = X.drop(columns=fx)
+            Xt = Xt.drop(columns=fx)
 
         # Remove features with too low variance
         for fx, l_variance in self._low_variance.items():
@@ -1506,7 +1496,7 @@ class FeatureSelector(TransformerMixin):
                 f" --> Feature {fx} was removed due to low variance. Value "
                 f"{l_variance[0]} repeated in {l_variance[1]:.1f}% of the rows.", 2,
             )
-            X = X.drop(columns=fx)
+            Xt = Xt.drop(columns=fx)
 
         # Remove features with too high correlation
         for col in self.collinear_["drop"]:
@@ -1514,11 +1504,11 @@ class FeatureSelector(TransformerMixin):
                 f" --> Feature {col} was removed due to "
                 "collinearity with another feature.", 2,
             )
-            X = X.drop(columns=col)
+            Xt = Xt.drop(columns=col)
 
         # Perform selection based on strategy
         if self.strategy is None:
-            return X
+            return self._convert(Xt)
 
         elif self.strategy == "univariate":
             self._log(
@@ -1532,16 +1522,16 @@ class FeatureSelector(TransformerMixin):
                         f"(score: {self.univariate_.scores_[n]:.2f}  "
                         f"p-value: {self.univariate_.pvalues_[n]:.2f}).", 2,
                     )
-                    X = X.drop(columns=column)
+                    Xt = Xt.drop(columns=column)
 
         elif self.strategy == "pca":
             self._log(" --> Applying Principal Component Analysis...", 2)
 
             if self.scaler_:
                 self._log("   --> Scaling features...", 2)
-                X = self.scaler_.transform(X)
+                Xt = self.scaler_.transform(Xt)
 
-            X = self._estimator.transform(X).iloc[:, :self._estimator._comps]
+            Xt = self._estimator.transform(Xt).iloc[:, :self._estimator._comps]
 
             var = np.array(self._estimator.explained_variance_ratio_[:self._n_features])
             self._log(f"   --> Keeping {self._estimator._comps} components.", 2)
@@ -1560,7 +1550,7 @@ class FeatureSelector(TransformerMixin):
                         )
                     else:
                         self._log(f"   --> Dropping feature {column}.", 2)
-                    X = X.drop(columns=column)
+                    Xt = Xt.drop(columns=column)
 
         else:  # Advanced strategies
             self._log(
@@ -1571,6 +1561,6 @@ class FeatureSelector(TransformerMixin):
             for column in X:
                 if column not in self._estimator.best_feature_list:
                     self._log(f"   --> Dropping feature {column}.", 2)
-                    X = X.drop(columns=column)
+                    Xt = Xt.drop(columns=column)
 
-        return X
+        return self._convert(Xt)

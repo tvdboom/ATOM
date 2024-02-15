@@ -12,6 +12,7 @@ from itertools import islice
 from typing import Any, Literal
 
 import numpy as np
+import pandas as pd
 from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
@@ -26,8 +27,8 @@ from sktime.proba.normal import Normal
 from typing_extensions import Self
 
 from atom.utils.types import (
-    Bool, Estimator, FHConstructor, Float, Scalar, Sequence,
-    Pandas, Verbose, XConstructor, YConstructor, EngineDataOptions
+    Bool, EngineDataOptions, EngineTuple, Estimator, FHConstructor, Float,
+    Pandas, Scalar, Sequence, Verbose, XConstructor, YConstructor,
 )
 from atom.utils.utils import (
     NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
@@ -926,7 +927,7 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         *,
         cov: Bool = False,
-    ) -> DataFrame:
+    ) -> pd.DataFrame:
         """Transform, then predict_var of the final estimator.
 
         Parameters

@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from ray.util.joblib import register_ray
 import pyarrow as pa
 import pytest
+from ray.util.joblib import register_ray
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from _pytest.monkeypatch import MonkeyPatch
 
-    from atom.utils.types import DataFrame, Sequence, Pandas, XSelector
+    from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
 
 
 class DummyTransformer(TransformerMixin, BaseEstimator):
@@ -109,14 +109,8 @@ def _mock_mlflow_log_model(mocker):
     mocker.patch("mlflow.sklearn.log_model")
 
 
-@pytest.fixture()
-def random():
-    """Return numpy's default random number generator."""
-    return np.random.default_rng()
-
-
-@pytest.fixture()
-def ray():
+@pytest.fixture(autouse=True)
+def _register_ray():
     """Register ray as joblib backend.
 
     Although atom does this internally, it's skipped when ray is
@@ -125,6 +119,12 @@ def ray():
 
     """
     register_ray()
+
+
+@pytest.fixture()
+def random():
+    """Return numpy's default random number generator."""
+    return np.random.default_rng()
 
 
 def get_train_test(

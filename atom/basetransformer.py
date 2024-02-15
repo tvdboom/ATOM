@@ -12,6 +12,7 @@ import random
 import re
 import tempfile
 import warnings
+from copy import deepcopy
 from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
@@ -19,22 +20,24 @@ from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any, TypeVar, overload
-from copy import deepcopy
+
+import joblib
 import numpy as np
 import pandas as pd
 import requests
-from polars.dependencies import _lazy_import
 from beartype import beartype
-import joblib
 from joblib.memory import Memory
+from polars.dependencies import _lazy_import
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
-    EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Severity,
-    Verbose, Warnings, bool_t, Sequence, int_t
+    EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Sequence,
+    Severity, Verbose, Warnings, bool_t, int_t,
 )
-from atom.utils.utils import check_dependency, crash, lst, make_sklearn, to_df, to_tabular
+from atom.utils.utils import (
+    check_dependency, crash, lst, make_sklearn, to_df, to_tabular,
+)
 
 
 mlflow, _ = _lazy_import("mlflow")
@@ -399,8 +402,8 @@ class BaseTransformer:
     ) -> tuple[pd.DataFrame | None, Pandas | None]:
         """Prepare the input data.
 
-        Convert X and y to pandas (if not already) and perform standard
-        compatibility checks (dimensions, length, indices, etc...).
+        Convert X and y to pandas and perform standard compatibility
+        checks (dimensions, length, indices, etc...).
 
         Parameters
         ----------
@@ -408,17 +411,16 @@ class BaseTransformer:
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `y` is ignored.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
-            - If dataframe: Target columns for multioutput tasks.
+            - If dataframe-like: Target columns for multioutput tasks.
 
         columns: sequence of str or None, default=None
             Column names for the feature set. If None, default names
@@ -430,65 +432,46 @@ class BaseTransformer:
 
         Returns
         -------
-        dataframe or None
-            Feature dataset. Only returned if provided.
+        pd.DataFrame or None
+            Feature set.
 
-        series, dataframe or None
+        pd.Series, pd.DataFrame or None
             Target column(s) corresponding to `X`.
 
         """
-        Xt: pd.DataFrame | None = None
-        yt: Pandas | None = None
-
         if X is None and y is None:
             raise ValueError("X and y can't be both None!")
-        elif X is not None:
+        else:
             Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
-
-            # If text dataset, change the name of the column to corpus
-            if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
-                Xt = Xt.rename(columns={Xt.columns[0]: "corpus"})
-            else:
-                # Convert all column names to str
-                Xt.columns = Xt.columns.astype(str)
-
-                # No duplicate rows nor column names are allowed
-                if Xt.columns.duplicated().any():
-                    raise ValueError("Duplicate column names found in X.")
 
         # Prepare target column
         if not isinstance(y, Int | str | None):
-            if isinstance(y, dict):
-                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None), columns=name)
+            # If X and y have different number of rows, try multioutput
+            if Xt is not None and not isinstance(y, dict) and len(Xt) != len(y):
+                try:
+                    targets: list[Hashable] = []
+                    for col in y:
+                        if col in Xt.columns:
+                            targets.append(col)
+                        elif isinstance(col, int_t):
+                            if -Xt.shape[1] <= col < Xt.shape[1]:
+                                targets.append(Xt.columns[int(col)])
+                            else:
+                                raise IndexError(
+                                    "Invalid value for the y parameter. Value "
+                                    f"{col} is out of range for data with "
+                                    f"{Xt.shape[1]} columns."
+                                )
+
+                    Xt, yt = Xt.drop(columns=targets), Xt[targets]
+
+                except (TypeError, IndexError, KeyError):
+                    raise ValueError(
+                        "X and y don't have the same number of rows,"
+                        f" got len(X)={len(Xt)} and len(y)={len(y)}."
+                    ) from None
             else:
-                # If X and y have different number of rows, try multioutput
-                if Xt is not None and len(Xt) != len(y):
-                    try:
-                        targets: list[Hashable] = []
-                        for col in y:
-                            if col in Xt.columns:
-                                targets.append(col)
-                            elif isinstance(col, int_t):
-                                if -Xt.shape[1] <= col < Xt.shape[1]:
-                                    targets.append(Xt.columns[int(col)])
-                                else:
-                                    raise IndexError(
-                                        "Invalid value for the y parameter. Value "
-                                        f"{col} is out of range for data with "
-                                        f"{Xt.shape[1]} columns."
-                                    )
-
-                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
-
-                    except (TypeError, IndexError, KeyError):
-                        raise ValueError(
-                            "X and y don't have the same number of rows,"
-                            f" got len(X)={len(Xt)} and len(y)={len(y)}."
-                        ) from None
-                else:
-                    yt = y
-
-                yt = to_tabular(deepcopy(yt), index=getattr(Xt, "index", None), columns=name)
+                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None), columns=name)
 
             # Check X and y have the same indices
             if Xt is not None and not Xt.index.equals(yt.index):
@@ -509,6 +492,8 @@ class BaseTransformer:
                 raise ValueError("X can't be None when y is an int.")
 
             Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
+        else:
+            yt = y
 
         return Xt, yt
 

@@ -24,9 +24,10 @@ import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
 from pandas._typing import DtypeObj
+from polars.dependencies import _lazy_import
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.utils.metaestimators import available_if
-from polars.dependencies import _lazy_import
+
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch, BranchManager
@@ -47,15 +48,15 @@ from atom.training import (
 )
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING, __version__
 from atom.utils.types import (
-    Backend, Bins, Bool, CategoricalStrats, ColumnSelector,
-    DiscretizerStrats, Engine, EngineTuple, Estimator, FeatureNamesOut,
-    FeatureSelectionSolvers, FeatureSelectionStrats, FloatLargerEqualZero,
-    FloatLargerZero, FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero,
-    IntLargerTwo, IntLargerZero, MetricConstructor, ModelsConstructor, NItems,
-    NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
+    Backend, Bins, Bool, CategoricalStrats, ColumnSelector, DiscretizerStrats,
+    Engine, EngineTuple, Estimator, FeatureNamesOut, FeatureSelectionSolvers,
+    FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
+    FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
+    IntLargerZero, MetricConstructor, ModelsConstructor, NItems, NJobs,
+    NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
     PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
-    SPDict, Pandas, TargetSelector, Transformer, VectorizerStarts, Verbose,
-    Warnings, XSelector, YSelector, sequence_t,
+    SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
+    XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity,
@@ -683,20 +684,18 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         Parameters
         ----------
-        X: dataframe-like or None, default=None
             Transformed feature set with shape=(n_samples, n_features).
             If None, `X` is ignored in the transformers.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Transformed target column corresponding to `X`.
 
             - If None: `y` is ignored.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
+            - If dataframe-like: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
@@ -711,10 +710,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Original target column. Only returned if provided.
 
         """
-        X, y = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
+        Xt, yt = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
 
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return self._convert(pipeline.inverse_transform(X, y))
+            return self._convert(pipeline.inverse_transform(Xt, yt))
 
     @classmethod
     def load(cls, filename: str | Path, data: tuple[Any, ...] | None = None) -> ATOM:
@@ -1110,16 +1109,15 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `y` is ignored.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput tasks.
-            - If dataframe: Target columns for multioutput tasks.
+            - If dataframe-like: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
@@ -1134,10 +1132,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._check_input(X, y, columns=self.og.features, name=self.og.target)
+        Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
 
         with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return self._convert(pipeline.transform(X, y))
+            return self._convert(pipeline.transform(Xt, yt))
 
     # Base transformers ============================================ >>
 

@@ -7,17 +7,16 @@ Description: Module containing the data engines.
 
 from __future__ import annotations
 
+import os
 from abc import ABCMeta, abstractmethod
-from polars.dependencies import _lazy_import
 
 import numpy as np
 import pandas as pd
 import polars as pl
+from polars.dependencies import _lazy_import
 
 from atom.utils.types import Any, Pandas, Sequence
 from atom.utils.utils import get_cols
-
-import os
 
 
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"

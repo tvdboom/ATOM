@@ -13,11 +13,8 @@ from typing import (
     TypeAlias, TypedDict, TypeVar, overload, runtime_checkable,
 )
 
-import modin.pandas as md
 import numpy as np
 import pandas as pd
-import polars as pl
-import pyarrow as pa
 import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import Protocol
@@ -187,8 +184,8 @@ class Model(Protocol):
     """Protocol for all models."""
 
     _goal: Goal
-    # _metric: ClassMap
-    # _ht: dict[str, Any]
+    _metric: ClassMap
+    _ht: dict[str, Any]
 
     def predict(self, *args, **kwargs) -> Pandas: ...
 
@@ -224,7 +221,7 @@ XConstructor: TypeAlias = (
     | pd.DataFrame
 )
 XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
-YConstructor: TypeAlias = dict[str, Any] | Sequence[Any] | XConstructor
+YConstructor: TypeAlias = Sequence[Any] | XConstructor
 YSelector: TypeAlias = Int | str | YConstructor
 FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
 

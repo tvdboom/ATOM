@@ -11,34 +11,29 @@ import re
 import unicodedata
 from string import punctuation
 
-import nltk
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from nltk.collocations import (
-    BigramCollocationFinder, QuadgramCollocationFinder,
-    TrigramCollocationFinder,
-)
-from nltk.corpus import wordnet
-from nltk.stem import SnowballStemmer, WordNetLemmatizer
+from polars.dependencies import _lazy_import
 from sklearn.base import OneToOneFeatureMixin
-from sklearn.utils._set_output import _SetOutputMixin
 from sklearn.utils.validation import _check_feature_names_in
 from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, Engine, FloatLargerZero, Sequence, Pandas,
-    VectorizerStarts, Verbose, bool_t,
+    Bool, Engine, FloatLargerZero, Sequence, VectorizerStarts, Verbose,
+    XConstructor, YConstructor, bool_t,
 )
 from atom.utils.utils import (
-    check_is_fitted, check_nltk_module, composed, crash, get_corpus, is_sparse,
-    merge, method_to_log, to_df,
+    check_is_fitted, check_nltk_module, get_corpus, is_sparse, merge, to_df,
 )
+
+
+nltk, _ = _lazy_import("nltk")
 
 
 @beartype
-class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class TextCleaner(TransformerMixin, OneToOneFeatureMixin):
     r"""Applies standard text cleaning to the corpus.
 
     Transformations include normalizing characters and dropping
@@ -193,7 +188,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.regex_number = regex_number
         self.drop_punctuation = drop_punctuation
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -203,7 +198,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -244,28 +239,29 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                 Regex pattern to replace.
 
             """
-            if isinstance(X[corpus].iloc[0], str):
-                X[corpus] = X[corpus].str.replace(regex, "", regex=True)
+            if isinstance(Xt[corpus].iloc[0], str):
+                Xt[corpus] = Xt[corpus].str.replace(regex, "", regex=True)
             else:
-                X[corpus] = X[corpus].apply(lambda x: [re.sub(regex, "", w) for w in x])
+                Xt[corpus] = Xt[corpus].apply(lambda x: [re.sub(regex, "", w) for w in x])
 
-        corpus = get_corpus(X)
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+        corpus = get_corpus(Xt)
 
         self._log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus].iloc[0], str):
-                X[corpus] = X[corpus].apply(lambda x: to_ascii(x))
+            if isinstance(Xt[corpus].iloc[0], str):
+                Xt[corpus] = Xt[corpus].apply(lambda x: to_ascii(x))
             else:
-                X[corpus] = X[corpus].apply(lambda doc: [to_ascii(str(w)) for w in doc])
+                Xt[corpus] = Xt[corpus].apply(lambda doc: [to_ascii(str(w)) for w in doc])
         self._log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
             self._log(" --> Converting text to lower case.", 2)
-            if isinstance(X[corpus].iloc[0], str):
-                X[corpus] = X[corpus].str.lower()
+            if isinstance(Xt[corpus].iloc[0], str):
+                Xt[corpus] = Xt[corpus].str.lower()
             else:
-                X[corpus] = X[corpus].apply(lambda doc: [str(w).lower() for w in doc])
+                Xt[corpus] = Xt[corpus].apply(lambda doc: [str(w).lower() for w in doc])
 
         if self.drop_email:
             if not self.regex_email:
@@ -305,21 +301,21 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         if self.drop_punctuation:
             self._log(" --> Dropping punctuation from the text.", 2)
             trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(Xt[corpus].iloc[0], str):
                 func = lambda doc: doc.translate(trans_table)
             else:
                 func = lambda doc: [str(w).translate(trans_table) for w in doc]
-            X[corpus] = X[corpus].apply(func)
+            Xt[corpus] = Xt[corpus].apply(func)
 
         # Drop empty tokens from every document
-        if not isinstance(X[corpus].iloc[0], str):
-            X[corpus] = X[corpus].apply(lambda doc: [w for w in doc if w])
+        if not isinstance(Xt[corpus].iloc[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda doc: [w for w in doc if w])
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
-class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
     """Normalize the corpus.
 
     Convert words to a more uniform standard. The transformations
@@ -443,7 +439,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Normalize the text.
 
         Parameters
@@ -453,7 +449,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -463,7 +459,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         """
 
-        def pos(tag: str) -> wordnet.ADJ | wordnet.ADV | wordnet.VERB | wordnet.NOUN:
+        def pos(tag: str) -> nltk.corpus.wordnet:
             """Get part of speech from a tag.
 
             Parameters
@@ -478,21 +474,22 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
             """
             if tag in ("JJ", "JJR", "JJS"):
-                return wordnet.ADJ
+                return nltk.corpus.wordnet.ADJ
             elif tag in ("RB", "RBR", "RBS"):
-                return wordnet.ADV
+                return nltk.corpus.wordnet.ADV
             elif tag in ("VB", "VBD", "VBG", "VBN", "VBP", "VBZ"):
-                return wordnet.VERB
+                return nltk.corpus.wordnet.VERB
             else:  # "NN", "NNS", "NNP", "NNPS"
-                return wordnet.NOUN
+                return nltk.corpus.wordnet.NOUN
 
-        corpus = get_corpus(X)
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+        corpus = get_corpus(Xt)
 
         self._log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus].iloc[0], str):
-            X[corpus] = X[corpus].apply(lambda row: row.split())
+        if isinstance(Xt[corpus].iloc[0], str):
+            Xt[corpus] = Xt[corpus].apply(lambda row: row.split())
 
         stopwords = set()
         if self.stopwords:
@@ -510,15 +507,15 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         if stopwords:
             self._log(" --> Dropping stopwords.", 2)
             f = lambda row: [word for word in row if word not in stopwords]
-            X[corpus] = X[corpus].apply(f)
+            Xt[corpus] = Xt[corpus].apply(f)
 
         if self.stem:
             if isinstance(self.stem, bool_t):
                 self.stem = "english"
 
             self._log(" --> Applying stemming.", 2)
-            ss = SnowballStemmer(language=self.stem.lower())
-            X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
+            ss = nltk.stem.SnowballStemmer(language=self.stem.lower())
+            Xt[corpus] = Xt[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
             self._log(" --> Applying lemmatization.", 2)
@@ -526,15 +523,15 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             check_nltk_module("taggers/averaged_perceptron_tagger", quiet=self.verbose < 2)
             check_nltk_module("corpora/omw-1.4", quiet=self.verbose < 2)
 
-            wnl = WordNetLemmatizer()
+            wnl = nltk.stem.WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
-            X[corpus] = X[corpus].apply(f)
+            Xt[corpus] = Xt[corpus].apply(f)
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
-class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Tokenizer(TransformerMixin, OneToOneFeatureMixin):
     """Tokenize the corpus.
 
     Convert documents into sequences of words. Additionally,
@@ -662,7 +659,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.trigram_freq = trigram_freq
         self.quadgram_freq = quadgram_freq
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Tokenize the text.
 
         Parameters
@@ -672,7 +669,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -709,24 +706,25 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
             return row_c[2:-2].split(sep)
 
-        corpus = get_corpus(X)
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+        corpus = get_corpus(Xt)
 
         self._log("Tokenizing the corpus...", 1)
 
-        if isinstance(X[corpus].iloc[0], str):
+        if isinstance(Xt[corpus].iloc[0], str):
             check_nltk_module("tokenizers/punkt", quiet=self.verbose < 2)
-            X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
+            Xt[corpus] = Xt[corpus].apply(lambda row: nltk.word_tokenize(row))
 
         ngrams = {
-            "bigrams": BigramCollocationFinder,
-            "trigrams": TrigramCollocationFinder,
-            "quadgrams": QuadgramCollocationFinder,
+            "bigrams": nltk.collocations.BigramCollocationFinder,
+            "trigrams": nltk.collocations.TrigramCollocationFinder,
+            "quadgrams": nltk.collocations.QuadgramCollocationFinder,
         }
 
         for attr, finder in ngrams.items():
             if frequency := getattr(self, f"{attr[:-1]}_freq"):
                 # Search for all n-grams in the corpus
-                ngram_fd = finder.from_documents(X[corpus]).ngram_fd
+                ngram_fd = finder.from_documents(Xt[corpus]).ngram_fd
 
                 if frequency < 1:
                     frequency = int(frequency * len(ngram_fd))
@@ -737,7 +735,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                     if freq >= frequency:
                         occur += 1
                         counts += freq
-                        X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
+                        Xt[corpus] = Xt[corpus].apply(replace_ngrams, args=(ngram,))
                         rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
 
                 if rows:
@@ -749,11 +747,11 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                 else:
                     self._log(f" --> No {attr} found in the corpus.", 2)
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
-class Vectorizer(TransformerMixin, _SetOutputMixin):
+class Vectorizer(TransformerMixin):
     """Vectorize text data.
 
     Transform the corpus into meaningful vectors of numbers. The
@@ -789,24 +787,12 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -920,7 +906,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
                 "The get_feature_names_out method is not available for strategy='hashing'."
             )
 
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -930,7 +916,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -939,11 +925,15 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             Estimator instance.
 
         """
-        self._corpus = get_corpus(X)
+        Xt = to_df(X)
+        self._corpus = get_corpus(Xt)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
 
         # Convert a sequence of tokens to space separated string
-        if not isinstance(X[self._corpus].iloc[0], str):
-            X[self._corpus] = X[self._corpus].apply(lambda row: " ".join(row))
+        if not isinstance(Xt[self._corpus].iloc[0], str):
+            Xt[self._corpus] = Xt[self._corpus].apply(lambda row: " ".join(row))
 
         strategies = {
             "bow": "CountVectorizer",
@@ -962,7 +952,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             self._estimator.set_output(transform="default")
 
         self._log("Fitting Vectorizer...", 1)
-        self._estimator.fit(X[self._corpus])
+        self._estimator.fit(Xt[self._corpus])
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)
@@ -990,7 +980,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         og_columns = [c for c in self.feature_names_in_ if c != self._corpus]
         return np.array(og_columns + self._get_corpus_columns())
 
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
         """Vectorize the text.
 
         Parameters
@@ -1000,7 +990,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             not a dataframe, it should be composed of a single feature
             containing the text documents.
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1009,14 +999,18 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             Transformed corpus.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Vectorizing the corpus...", 1)
 
         # Convert a sequence of tokens to space-separated string
-        if not isinstance(X[self._corpus].iloc[0], str):
-            X[self._corpus] = X[self._corpus].apply(lambda row: " ".join(row))
+        if not isinstance(Xt[self._corpus].iloc[0], str):
+            Xt[self._corpus] = Xt[self._corpus].apply(lambda row: " ".join(row))
 
-        matrix = self._estimator.transform(X[self._corpus])
-        X = X.drop(columns=self._corpus)  # Drop original corpus column
+        matrix = self._estimator.transform(Xt[self._corpus])
+        Xt = Xt.drop(columns=self._corpus)  # Drop original corpus column
 
         if "sklearn" not in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy
@@ -1024,7 +1018,7 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
         if not self.return_sparse:
             self._log(" --> Converting the output to a full array.", 2)
             matrix = matrix.toarray()
-        elif not X.empty and not is_sparse(X):
+        elif not Xt.empty and not is_sparse(X):
             # Raise if there are other columns that are non-sparse
             raise ValueError(
                 "Invalid value for the return_sparse parameter. The value must "
@@ -1037,4 +1031,4 @@ class Vectorizer(TransformerMixin, _SetOutputMixin):
             # Hashing has no words to put as column names
             columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
 
-        return merge(X, to_df(matrix, index=X.index, columns=columns))
+        return self._convert(merge(Xt, to_df(matrix, index=Xt.index, columns=columns)))

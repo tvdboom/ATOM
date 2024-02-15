@@ -13,19 +13,19 @@ from functools import cached_property
 from pathlib import Path
 from typing import Literal, overload
 from warnings import filterwarnings
-from polars.dependencies import _lazy_import
 
 import pandas as pd
 from beartype import beartype
 from beartype.roar import BeartypeDecorHintPep585DeprecationWarning
 from joblib.memory import Memory
+from polars.dependencies import _lazy_import
 from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
-    Bool, ColumnSelector, Int, IntLargerEqualZero, Pandas,
-    RowSelector, Scalar, Sequence, TargetSelector, TargetsSelector,
-    XConstructor, XSelector, YSelector, int_t, segment_t,
+    Bool, ColumnSelector, Int, IntLargerEqualZero, Pandas, RowSelector, Scalar,
+    Sequence, TargetSelector, TargetsSelector, XConstructor, XSelector,
+    YSelector, int_t, segment_t,
 )
 from atom.utils.utils import (
     DataContainer, check_scaling, flt, get_col_names, get_cols, lst, merge,
@@ -33,7 +33,7 @@ from atom.utils.utils import (
 )
 
 
-pickle = _lazy_import("dill")
+pickle, _ = _lazy_import("dill")
 
 
 filterwarnings("ignore", category=BeartypeDecorHintPep585DeprecationWarning)
