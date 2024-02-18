@@ -375,8 +375,8 @@ def test_errors_keep():
     assert trainer._models == [trainer.lda]
 
 
-@patch("atom.basetransformer.ray", MagicMock())
-@patch("atom.basetrainer.ray", MagicMock())
+# @patch("atom.basetransformer.ray", MagicMock())
+# @patch("atom.basetrainer.ray", MagicMock())
 def test_parallel_with_ray():
     """Assert that parallel runs successfully with ray backend."""
     trainer = DirectClassifier(

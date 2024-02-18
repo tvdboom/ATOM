@@ -28,7 +28,7 @@ from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, FloatLargerZero, FloatZeroToOneExc, Int, IntLargerZero, Legend,
     MetricSelector, Model, ModelsSelector, PlotBackend, RowSelector, Scalar,
-    Sequence, int_t, sequence_t,
+    Sequence, int_t, sequence_t, Pandas
 )
 from atom.utils.utils import (
     Aesthetics, check_is_fitted, composed, crash, get_custom_scorer, lst,
@@ -140,7 +140,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     # Methods ====================================================== >>
 
     @staticmethod
-    def _get_plot_index(df: pd.DataFrame) -> pd.Index:
+    def _get_plot_index(obj: Pandas) -> pd.Index:
         """Return the dataset's index in a plottable format.
 
         Plotly does not accept all index formats (e.g., pd.Period),
@@ -149,19 +149,19 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
 
         Parameters
         ----------
-        df: dataframe
+        obj: pd.Series or pd.DataFrame
             Data set to get the index from.
 
         Returns
         -------
-        index
+        pd.Index
             Index in an acceptable format.
 
         """
-        if hasattr(df.index, "to_timestamp"):
-            return df.index.to_timestamp()
+        if hasattr(obj.index, "to_timestamp"):
+            return obj.index.to_timestamp()
         else:
-            return df.index
+            return obj.index
 
     @staticmethod
     def _get_show(show: IntLargerZero | None, maximum: IntLargerZero = 200) -> Int:

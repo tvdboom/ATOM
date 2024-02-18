@@ -64,13 +64,6 @@ def test_engine_parameter(engine):
     assert base.engine == EngineTuple()
 
 
-@patch.dict("sys.modules", {"sklearnex": None})
-def test_engine_parameter_no_sklearnex():
-    """Assert that an error is raised when sklearnex is not installed."""
-    with pytest.raises(ModuleNotFoundError, match=".*import scikit-learn-intelex.*"):
-        BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
-
-
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""

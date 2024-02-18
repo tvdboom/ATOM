@@ -18,27 +18,20 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property, wraps
 from importlib import import_module
+from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from types import GeneratorType, MappingProxyType, ModuleType
+from types import GeneratorType, MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
-import mlflow
-import nltk
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
 import scipy.sparse as sps
 from beartype.door import is_bearable
 from IPython.display import display
-from matplotlib.colors import to_rgba
-from mlflow.models.signature import infer_signature
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from pandas._libs.missing import NAType
 from pandas._typing import Axes, Dtype
 from pandas.api.types import is_numeric_dtype
-from shap import Explainer, Explanation
 from sklearn.base import BaseEstimator
 from sklearn.base import OneToOneFeatureMixin as FMixin
 from sklearn.metrics import (
@@ -53,15 +46,19 @@ from atom.utils.types import (
     Bool, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
     IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
     Scorer, Segment, Sequence, SPTuple, Transformer, TReturn, TReturns,
-    Verbose, XConstructor, XSelector, YConstructor, YSelector, int_t,
-    segment_t, sequence_t,
+    Verbose, XConstructor, XSelector, YConstructor, int_t, segment_t,
+    sequence_t, EngineTuple
 )
 
 
 if TYPE_CHECKING:
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
+    from shap import Explainer, Explanation
+
     from atom.basemodel import BaseModel
     from atom.baserunner import BaseRunner
-    from atom.branch import Branch
+    from atom.data import Branch
 
 
 T = TypeVar("T")
@@ -93,7 +90,7 @@ class Goal(Enum):
 
         Parameters
         ----------
-        y: series or dataframe
+        y: pd.Series or pd.DataFrame
             Target column(s).
 
         Returns
@@ -257,12 +254,12 @@ class DataConfig:
         df: pd.DataFrame
             Dataset from which to get the columns.
 
-        y: series or dataframe
+        y: pd.Series or pd.DataFrame
             Target column(s).
 
         Returns
         -------
-        dataframe or None
+        pd.DataFrame or None
             Dataset with subselection of columns. Returns None if
             there's no stratification.
 
@@ -634,6 +631,8 @@ class TrialsCallback:
 
         # Save trials to mlflow experiment as nested runs
         if self.T.experiment and self.T.log_ht:
+            import mlflow
+
             with mlflow.start_run(run_id=self.T.run.info.run_id):
                 run_name = f"{self.T.name} - {trial.number}"
                 with mlflow.start_run(run_name=run_name, nested=True):
@@ -660,7 +659,7 @@ class TrialsCallback:
                         mlflow.sklearn.log_model(
                             sk_model=estimator,
                             artifact_path=estimator.__class__.__name__,
-                            signature=infer_signature(
+                            signature=mlflow.models.signature.infer_signature(
                                 model_input=pd.DataFrame(self.T.branch.X),
                                 model_output=estimator.predict(self.T.branch.X.iloc[[0]]),
                             ),
@@ -733,10 +732,12 @@ class PlotCallback:
     max_len = 15  # Maximum trials to show at once in the plot
 
     def __init__(self, name: str, metric: list[str], aesthetics: Aesthetics):
+        import plotly.graph_objects as go
+
         self.y1: dict[int, deque] = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
         self.y2: dict[int, deque] = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
 
-        traces: list[go.Scatter] = []
+        traces = []
         colors = cycle(aesthetics.palette)
         for met in metric:
             color = next(colors)
@@ -918,16 +919,18 @@ class ShapExplanation:
 
         Returns
         -------
-        Explainer
+        shap.Explainer
             Get the initialized explainer object.
 
         """
-        # Pass masker as np.array and feature names separately for modin frames
+        from shap import Explainer
+
         kwargs = {
-            "masker": self.branch.X_train.to_numpy(),
+            "masker": self.branch.X_train,
             "feature_names": list(self.branch.features),
             "seed": self.random_state,
         }
+
         try:  # Fails when model does not fit standard explainers (e.g., ensembles)
             return Explainer(self.estimator, **kwargs)
         except TypeError:
@@ -1281,6 +1284,8 @@ def to_rgb(c: str) -> str:
         Color's RGB representation.
 
     """
+    from matplotlib.colors import to_rgba
+
     if not c.startswith("rgb"):
         colors = to_rgba(c)[:3]
         return f"rgb({colors[0]}, {colors[1]}, {colors[2]})"
@@ -1317,7 +1322,7 @@ def merge(*args) -> pd.DataFrame:
 
     Returns
     -------
-    dataframe
+    pd.DataFrame
         Concatenated dataframe.
 
     """
@@ -1335,7 +1340,7 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
 
     Parameters
     ----------
-    X: series or dataframe
+    X: pd.Series or pd.DataFrame
         Data set to replace.
 
     missing_values: list or None, default=None
@@ -1344,7 +1349,7 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
 
     Returns
     -------
-    series or dataframe
+    pd.Series or pd.DataFrame
         Data set without missing values.
 
     """
@@ -1380,7 +1385,7 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         )
 
 
-def n_cols(obj: XSelector | YSelector) -> int:
+def n_cols(obj: XConstructor | YConstructor) -> int:
     """Get the number of columns in a dataset.
 
     Parameters
@@ -1414,12 +1419,12 @@ def get_cols(obj: Pandas) -> list[pd.Series]:
 
     Parameters
     ----------
-    obj: series or dataframe
+    obj: pd.Series or pd.DataFrame
         Element to get the columns from.
 
     Returns
     -------
-    list of series
+    list of pd.Series
         Columns.
 
     """
@@ -1447,15 +1452,15 @@ def get_col_names(obj: Any) -> list[str] | None:
     if isinstance(obj, pd.DataFrame):
         return list(obj.columns)
     elif isinstance(obj, pd.Series):
-        return [obj.name]
+        return [str(obj.name)]
     else:
         return None
 
 
 def variable_return(
     X: pd.DataFrame | None,
-    y: pd.Series | None,
-) -> pd.DataFrame | pd.Series | tuple[pd.DataFrame, Pandas]:
+    y: Pandas | None,
+) -> Pandas | tuple[pd.DataFrame, Pandas]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1475,12 +1480,14 @@ def variable_return(
         Data sets that are not None.
 
     """
-    if y is None:
+    if y is None and X is not None:
         return X
-    elif X is None:
+    elif X is None and y is not None:
         return y
-    else:
+    elif X is not None and y is not None:
         return X, y
+    else:
+        raise ValueError("Both X and y can't be None.")
 
 
 def get_segment(obj: list[T], segment: Segment) -> list[T]:
@@ -1513,7 +1520,7 @@ def is_sparse(obj: Pandas) -> bool:
 
     Parameters
     ----------
-    obj: series or dataframe
+    obj: pd.Series or pd.DataFrame
         Data set to check.
 
     Returns
@@ -1525,48 +1532,40 @@ def is_sparse(obj: Pandas) -> bool:
     return any(isinstance(col.dtype, pd.SparseDtype) for col in get_cols(obj))
 
 
-def check_empty(obj: Pandas) -> Pandas | None:
+def check_empty(obj: Pandas | None) -> Pandas | None:
     """Check if a pandas object is empty.
 
     Parameters
     ----------
-    obj: series or dataframe
+    obj: pd.Series, pd.DataFrame or None
         Pandas object to check.
 
     Returns
     -------
-    series, dataframe or None
-        Same object or None if empty.
+    pd.Series, pd.DataFrame or None
+        Same object or None if empty or obj is None.
 
     """
     return obj if isinstance(obj, pd.DataFrame) and not obj.empty else None
 
 
-def check_dependency(name: str) -> ModuleType:
+def check_dependency(name: str):
     """Check an optional dependency.
 
-    Import the module or raise an error if the package is not
-    installed.
+    Raise an error if the package is not installed.
 
     Parameters
     ----------
     name: str
         Name of the package to check.
 
-    Returns
-    -------
-    module
-        Imported module.
-
     """
-    try:
-        return import_module(name)
-    except ModuleNotFoundError as ex:
+    if not find_spec(name):
         raise ModuleNotFoundError(
             f"Unable to import the {name} package. Install it using "
             f"`pip install {name}` or install all of atom's optional "
             "dependencies with `pip install atom-ml[full]`."
-        ) from ex
+        )
 
 
 def check_nltk_module(module: str, *, quiet: bool):
@@ -1583,6 +1582,8 @@ def check_nltk_module(module: str, *, quiet: bool):
         Whether to show logs when downloading.
 
     """
+    import nltk
+
     try:
         nltk.data.find(module)
     except LookupError:
@@ -1628,7 +1629,7 @@ def check_predict_proba(models: Model | Sequence[Model], method: str):
             )
 
 
-def check_scaling(X: Pandas) -> bool:
+def check_scaling(obj: Pandas) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
@@ -1638,7 +1639,7 @@ def check_scaling(X: Pandas) -> bool:
 
     Parameters
     ----------
-    X: series or dataframe
+    obj: pd.Series or pd.DataFrame
         Data set to check.
 
     Returns
@@ -1647,15 +1648,19 @@ def check_scaling(X: Pandas) -> bool:
         Whether the data set is scaled.
 
     """
-    df = to_df(X)
-    mean = df.mean(numeric_only=True).mean()
-    std = df.std(numeric_only=True).mean()
+    if isinstance(obj, pd.DataFrame):
+        mean = obj.mean(numeric_only=True).mean()
+        std = obj.std(numeric_only=True).mean()
+    else:
+        mean = obj.mean()
+        std = obj.std()
+
     return bool(-0.05 < mean < 0.05 and 0.85 < std < 1.15)
 
 
 @contextmanager
 def keep_attrs(estimator: Estimator):
-    """Contextmanager to save an estimator's custom attributes.
+    """Temporarily save an estimator's custom attributes.
 
     ATOM's pipeline uses two custom attributes for its transformers:
     _train_only, and _cols. Since some transformers reset their
@@ -1675,30 +1680,42 @@ def keep_attrs(estimator: Estimator):
 
 
 @contextmanager
-def adjust_verbosity(estimator: Estimator, verbose: Verbose | None):
-    """Contextmanager to save an estimator's custom attributes.
+def adjust(
+    estimator: Estimator,
+    *,
+    transform: EngineDataOptions | None = None,
+    verbose: Verbose | None = None,
+):
+    """Temporarily adjust output parameters of an estimator.
 
-    ATOM's pipeline uses two custom attributes for its transformers:
-    _train_only, and _cols. Since some transformers reset their
-    attributes during fit (like those from sktime), we wrap the fit
-    method in a contextmanager that saves and restores the attrs.
+    The estimator's data engine and verbosity are temporarily changed
+    to the provided values.
 
     Parameters
     ----------
     estimator: Estimator
         Temporarily change the verbosity of this estimator.
 
+    transform: str or None, default=None
+        Data engine for the estimator. If None, it leaves it to
+        its original engine.
+
     verbose: int or None, default=None
-        Verbosity level of the transformers in the pipeline. If
-        None, it leaves them to their original verbosity.
+        Verbosity level for the estimator. If None, it leaves it to
+        its original verbosity.
 
     """
     try:
+        if transform is not None and hasattr(estimator, "set_output"):
+            output = getattr(estimator, "_engine", EngineTuple())
+            estimator.set_output(transform=transform)
         if verbose is not None and hasattr(estimator, "verbose"):
             verbosity = estimator.verbose
             estimator.verbose = verbose
         yield estimator
     finally:
+        if transform is not None and hasattr(estimator, "set_output"):
+            estimator._engine = output
         if verbose is not None and hasattr(estimator, "verbose"):
             estimator.verbose = verbosity
 
@@ -1791,14 +1808,14 @@ def to_df(
 
 @overload
 def to_df(
-    data: XSelector,
-    index: Axes | None = ...,
-    columns: Axes | None = ...,
+    data: XConstructor,
+    index: Axes | None,
+    columns: Axes | None,
 ) -> pd.DataFrame: ...
 
 
 def to_df(
-    data: XSelector | None,
+    data: XConstructor | None,
     index: Axes | None = None,
     columns: Axes | None = None,
 ) -> pd.DataFrame | None:
@@ -1810,20 +1827,22 @@ def to_df(
         Dataset to convert to a dataframe. If None or already a
         pandas dataframe, return unchanged.
 
-    index: sequence, index or None, default=None
+    index: sequence or None, default=None
         Values for the index.
 
     columns: sequence or None, default=None
-        Name of the columns. Use None for automatic naming.
+        Names of the columns. Use None for automatic naming.
 
     Returns
     -------
-    dataframe or None
-        Dataset as dataframe.
+    pd.DataFrame or None
+        Data as dataframe. Returns None if data is None.
 
     """
-    if not isinstance(data, pd.DataFrame | None):
-        if hasattr(data, "to_pandas"):
+    if data is not None:
+        if isinstance(data, pd.DataFrame):
+            data_c = data.copy()
+        elif hasattr(data, "to_pandas"):
             data_c = data.to_pandas()
         elif hasattr(data, "__dataframe__"):
             # Transform from dataframe interchange protocol
@@ -1834,13 +1853,14 @@ def to_df(
                 columns = [f"x{i}" for i in range(n_cols(data))]
 
             if sps.issparse(data):
-                data_c = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+                data_c = pd.DataFrame.sparse.from_spmatrix(
+                    data=data,
+                    index=index,
+                    columns=columns,
+                )
             else:
-                data_c = pd.DataFrame(data, index, columns)
-    else:
-        data_c = data
+                data_c = pd.DataFrame(data, index=index, columns=columns, copy=True)
 
-    if data_c is not None:
         # If text dataset, change the name of the column to corpus
         if list(data_c.columns) == ["x0"] and data_c.dtypes[0].name in CAT_TYPES:
             data_c = data_c.rename(columns={data_c.columns[0]: "corpus"})
@@ -1862,7 +1882,9 @@ def to_df(
                         f"{set(data_c.columns) - set(columns)} are missing in X."
                     ) from None
 
-    return data_c
+        return data_c
+    else:
+        return None
 
 
 @overload
@@ -1875,14 +1897,14 @@ def to_series(
 
 @overload
 def to_series(
-    data: dict[str, Any] | Sequence[Any],
+    data: dict[str, Any] | Sequence[Any] | pd.DataFrame,
     index: Axes | None = ...,
     name: str | None = ...,
 ) -> pd.Series: ...
 
 
 def to_series(
-    data: dict[str, Any] | Sequence[Any] | None,
+    data: dict[str, Any] | Sequence[Any] | pd.DataFrame | None,
     index: Axes | None = None,
     name: str | None = None,
 ) -> pd.Series | None:
@@ -1890,7 +1912,7 @@ def to_series(
 
     Parameters
     ----------
-    data: dict, sequence or None
+    data: dict, sequence, pd.DataFrame or None
         Data to convert. If None or already a pandas series, return
         unchanged.
 
@@ -1902,12 +1924,16 @@ def to_series(
 
     Returns
     -------
-    series or None
-        Sequence as series of a type given by the backend.
+    pd.Series or None
+        Data as series. Returns None if data is None.
 
     """
-    if not isinstance(data, pd.Series | None):
-        if hasattr(data, "to_pandas"):
+    if data is not None:
+        if isinstance(data, pd.Series):
+            data_c = data.copy()
+        elif isinstance(data, pd.DataFrame):
+            data_c = data.iloc[:, 0].copy()
+        elif hasattr(data, "to_pandas"):
             data_c = data.to_pandas()
         else:
             try:
@@ -1917,15 +1943,11 @@ def to_series(
                 # Fails for inhomogeneous data
                 array = data
 
-            data_c = pd.Series(
-                data=array,
-                index=index,
-                name=name or "target",
-            )
-    else:
-        data_c = data
+            data_c = pd.Series(array, index=index, name=name or "target", copy=True)
 
-    return data_c
+        return data_c
+    else:
+        return None
 
 
 @overload
@@ -1956,7 +1978,7 @@ def to_tabular(
 
     Parameters
     ----------
-    data: dict, sequence, dataframe or None
+    data: dict, sequence, pd.DataFrame or None
         Data to convert. If None, return unchanged.
 
     index: sequence, index or None, default=None
@@ -1967,8 +1989,8 @@ def to_tabular(
 
     Returns
     -------
-    series, dataframe or None
-        Data as a Pandas object.
+    pd.Series, pd.DataFrame or None
+        Data as a pandas object.
 
     """
     if (n_targets := n_cols(data)) == 1:
@@ -2134,7 +2156,7 @@ def name_cols(
 
     Parameters
     ----------
-    array: np.ndarray, sps.matrix, series or dataframe
+    array: np.ndarray, sps.matrix, pd.Series or pd.DataFrame
         Transformed dataset.
 
     original_df: pd.DataFrame
@@ -2253,7 +2275,7 @@ def reorder_cols(
 
     Returns
     -------
-    dataframe
+    pd.DataFrame
         Dataset with reordered columns.
 
     """
@@ -2309,7 +2331,7 @@ def fit_one(
         Feature set with shape=(n_samples, n_features). If None,
         `X` is ignored.
 
-    y: dict, sequence, dataframe-like or None, default=None
+    y: sequence, pd.DataFrame-like or None, default=None
         Target column(s) corresponding to `X`.
 
     message: str or None
@@ -2325,7 +2347,7 @@ def fit_one(
 
     """
     Xt = to_df(X)
-    yt = to_tabular(y, index=Xt.index)
+    yt = to_tabular(y, index=getattr(Xt, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
@@ -2384,7 +2406,7 @@ def transform_one(
         Feature set with shape=(n_samples, n_features). If None,
         `X` is ignored.
 
-    y: dict, sequence, dataframe-like or None, default=None
+    y: sequence, pd.DataFrame-like or None, default=None
         Target column(s) corresponding to `X`.
 
     method: str, default="transform"
@@ -2395,10 +2417,10 @@ def transform_one(
 
     Returns
     -------
-    dataframe or None
+    pd.DataFrame or None
         Feature set. Returns None if not provided.
 
-    series, dataframe or None
+    pd.Series, pd.DataFrame or None
         Target column(s). Returns None if not provided.
 
     """
@@ -2408,7 +2430,7 @@ def transform_one(
 
         Parameters
         ----------
-        out: np.ndarray, sps.matrix or dataframe
+        out: np.ndarray, sps.matrix or pd.DataFrame
             Data returned by the transformation.
 
         og: pd.DataFrame
@@ -2440,7 +2462,7 @@ def transform_one(
             return out
 
     Xt = to_df(X)
-    yt = to_tabular(y, index=Xt.index)
+    yt = to_tabular(y, index=getattr(Xt, "index", None))
 
     use_y = True
 
@@ -2508,7 +2530,7 @@ def fit_transform_one(
         Feature set with shape=(n_samples, n_features). If None,
         `X` is ignored.
 
-    y: dict, sequence, dataframe-like or None
+    y: sequence, pd.DataFrame-like or None
         Target column(s) corresponding to `X`.
 
     message: str or None, default=None
@@ -2667,6 +2689,7 @@ def method_to_log(f: Callable) -> Callable:
 
     return wrapper
 
+
 def make_sklearn(
     obj: T_Estimator,
     feature_names_out: FeatureNamesOut = "one-to-one",
@@ -2734,10 +2757,10 @@ def make_sklearn(
 
         return wrapper
 
-    if not obj.__module__.startswith(("atom.", "sklearn.", "imblearn.")) and hasattr(obj, "fit"):
-        if isinstance(obj, type):
+    if not obj.__module__.startswith(("atom.", "sklearn.", "imblearn.")):
+        if isinstance(obj, type) and hasattr(obj, "fit"):
             obj.fit = wrap_fit(obj.fit)
-        else:
+        elif hasattr(obj.__class__, "fit"):
             obj.fit = wrap_fit(obj.__class__.fit).__get__(obj)  # type: ignore[method-assign]
 
     return obj

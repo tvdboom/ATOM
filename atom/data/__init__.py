@@ -5,5 +5,6 @@ Description: Module for branches.
 
 """
 
-from atom.branch.branch import Branch
-from atom.branch.branchmanager import BranchManager
+from atom.data.branch import Branch
+from atom.data.branchmanager import BranchManager
+from atom.data.dataengines import DATA_ENGINES

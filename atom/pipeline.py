@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from itertools import islice
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,6 @@ from sklearn.utils.metadata_routing import _raise_for_params, process_routing
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 from sktime.forecasting.base import BaseForecaster
-from sktime.proba.normal import Normal
 from typing_extensions import Self
 
 from atom.utils.types import (
@@ -31,9 +30,13 @@ from atom.utils.types import (
     Pandas, Scalar, Sequence, Verbose, XConstructor, YConstructor,
 )
 from atom.utils.utils import (
-    NotFittedError, adjust_verbosity, check_is_fitted, fit_one,
+    NotFittedError, adjust, check_is_fitted, fit_one,
     fit_transform_one, transform_one, variable_return,
 )
+
+
+if TYPE_CHECKING:
+    from sktime.proba.normal import Normal
 
 
 class Pipeline(SkPipeline):
@@ -223,6 +226,26 @@ class Pipeline(SkPipeline):
             for _, _, est in self._iter()
         )
 
+    def _convert(self, obj: Pandas | None) -> Any:
+        """Convert data to the type set in the data engine.
+
+        Parameters
+        ----------
+        obj: pd.Series, pd.DataFrame or None
+            Object to convert. If None, return as is.
+
+        Returns
+        -------
+        object
+            Converted data.
+
+        """
+        # Only apply transformations when the engine is defined
+        if hasattr(self, "_engine") and isinstance(obj, pd.Series | pd.DataFrame):
+            return self._engine.data_engine.convert(obj)
+        else:
+            return obj
+
     def _iter(
         self,
         *,
@@ -284,7 +307,7 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored. None if the pipeline only uses y.
 
-        y: dict, sequence, dataframe or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
         routed_params: dict or None, default=None
@@ -320,7 +343,7 @@ class Pipeline(SkPipeline):
                     if hasattr(transformer, attr):
                         setattr(cloned, attr, getattr(transformer, attr))
 
-            with adjust_verbosity(cloned, self._verbose):
+            with adjust(cloned, verbose=self._verbose):
                 # Fit or load the current estimator from cache
                 # Type ignore because routed_params is never None but
                 # the signature of _fit needs to comply with sklearn's
@@ -432,7 +455,7 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: dict, sequence, dataframe or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
         **params
@@ -451,7 +474,7 @@ class Pipeline(SkPipeline):
 
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator is not None and self._final_estimator != "passthrough":
-                with adjust_verbosity(self._final_estimator, self._verbose):
+                with adjust(self._final_estimator, self._verbose):
                     self._mem_fit(
                         estimator=self._final_estimator,
                         X=X,
@@ -484,7 +507,7 @@ class Pipeline(SkPipeline):
             `X` is ignored. None
             if the estimator only uses y.
 
-        y: dict, sequence, dataframe or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
         **params
@@ -508,7 +531,7 @@ class Pipeline(SkPipeline):
             if self._final_estimator is None or self._final_estimator == "passthrough":
                 return variable_return(X, y)
 
-            with adjust_verbosity(self._final_estimator, self._verbose):
+            with adjust(self._final_estimator, verbose=self._verbose):
                 X, y, _ = self._mem_fit_transform(
                     transformer=self._final_estimator,
                     X=X,
@@ -516,7 +539,7 @@ class Pipeline(SkPipeline):
                     **routed_params[self.steps[-1][0]].fit_transform,
                 )
 
-        return variable_return(X, y)
+        return variable_return(self._convert(X), self._convert(y))
 
     @available_if(_can_transform)
     def transform(
@@ -542,7 +565,7 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored. None if the pipeline only uses y.
 
-        y: dict, sequence, dataframe or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
         filter_train_only: bool, default=True
@@ -570,7 +593,7 @@ class Pipeline(SkPipeline):
 
         routed_params = process_routing(self, "transform", **params)
         for _, name, transformer in self._iter(filter_train_only=filter_train_only):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, y = self._mem_transform(
                     transformer=transformer,
                     X=X,
@@ -578,7 +601,7 @@ class Pipeline(SkPipeline):
                     **routed_params[name].transform,
                 )
 
-        return variable_return(X, y)
+        return variable_return(self._convert(X), self._convert(y))
 
     @available_if(_can_inverse_transform)
     def inverse_transform(
@@ -600,7 +623,7 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored. None if the pipeline only uses y.
 
-        y: dict, sequence, dataframe or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
         filter_train_only: bool, default=True
@@ -629,7 +652,7 @@ class Pipeline(SkPipeline):
         routed_params = process_routing(self, "inverse_transform", **params)
         reverse_iter = reversed(list(self._iter(filter_train_only=filter_train_only)))
         for _, name, transformer in reverse_iter:
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, y = self._mem_transform(
                     transformer=transformer,
                     X=X,
@@ -638,7 +661,7 @@ class Pipeline(SkPipeline):
                     **routed_params[name].inverse_transform,
                 )
 
-        return variable_return(X, y)
+        return variable_return(self._convert(X), self._convert(y))
 
     @available_if(_final_estimator_has("decision_function"))
     def decision_function(self, X: XConstructor, **params) -> np.ndarray:
@@ -668,7 +691,7 @@ class Pipeline(SkPipeline):
         routed_params = process_routing(self, "decision_function", **params)
 
         for _, name, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, _ = self._mem_transform(
                     transformer=transformer,
                     X=X,
@@ -720,7 +743,7 @@ class Pipeline(SkPipeline):
         routed_params = process_routing(self, "predict", **params)
 
         for _, name, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
         if isinstance(self._final_estimator, BaseForecaster):
@@ -738,7 +761,7 @@ class Pipeline(SkPipeline):
         X: XConstructor | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
-    ) -> Pandas:
+    ) -> pd.DataFrame:
         """Transform, then predict_quantiles of the final estimator.
 
         Parameters
@@ -760,7 +783,7 @@ class Pipeline(SkPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, y = self._mem_transform(transformer, X)
 
         return self.steps[-1][1].predict_interval(fh=fh, X=X, coverage=coverage)
@@ -789,7 +812,7 @@ class Pipeline(SkPipeline):
         routed_params = process_routing(self, "predict_log_proba", **params)
 
         for _, name, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
         return self.steps[-1][1].predict_log_proba(
@@ -843,7 +866,7 @@ class Pipeline(SkPipeline):
         routed_params = process_routing(self, "predict_proba", **params)
 
         for _, name, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, _ = self._mem_transform(transformer, X, **routed_params[name].transform)
 
         if isinstance(self._final_estimator, BaseForecaster):
@@ -886,7 +909,7 @@ class Pipeline(SkPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, y = self._mem_transform(transformer, X)
 
         return self.steps[-1][1].predict_quantiles(fh=fh, X=X, alpha=alpha)
@@ -915,7 +938,7 @@ class Pipeline(SkPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, y = self._mem_transform(transformer, X, y)
 
         return self.steps[-1][1].predict_residuals(y=y, X=X)
@@ -950,12 +973,12 @@ class Pipeline(SkPipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, _ = self._mem_transform(transformer, X)
 
         return self.steps[-1][1].predict_var(fh=fh, X=X, cov=cov)
 
-    def set_output(self, *, transform: EngineDataOptions | None = None):
+    def set_output(self, *, transform: EngineDataOptions | None = None) -> Self:
         """Set output container.
 
         See sklearn's [user guide][set_output] on how to use the
@@ -986,10 +1009,9 @@ class Pipeline(SkPipeline):
             Estimator instance.
 
         """
-        if transform is None:
-            return self
+        if transform is not None:
+            self._engine = EngineTuple(data=transform)
 
-        self.engine = getattr(self, "engine", EngineTuple()).data = transform
         return self
 
     @available_if(_final_estimator_has("score"))
@@ -1010,7 +1032,7 @@ class Pipeline(SkPipeline):
             Feature set with shape=(n_samples, n_features). Can only
             be `None` for [forecast][time-series] tasks.
 
-        y: dict, sequence, dataframe or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Target values corresponding to `X`.
 
         fh: int, sequence, [ForecastingHorizon][] or None, default=None
@@ -1038,7 +1060,7 @@ class Pipeline(SkPipeline):
         routed_params = process_routing(self, "score", **params)
 
         for _, name, transformer in self._iter(with_final=False):
-            with adjust_verbosity(transformer, self._verbose):
+            with adjust(transformer, verbose=self._verbose):
                 X, y = self._mem_transform(transformer, X, y, **routed_params[name].transform)
 
         if isinstance(self._final_estimator, BaseForecaster):

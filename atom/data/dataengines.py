@@ -9,22 +9,24 @@ from __future__ import annotations
 
 import os
 from abc import ABCMeta, abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-import polars as pl
-from polars.dependencies import _lazy_import
 
-from atom.utils.types import Any, Pandas, Sequence
-from atom.utils.utils import get_cols
+from atom.utils.types import Any, Pandas
 
 
+if TYPE_CHECKING:
+    import dask.dataframe as dd
+    import modin.pandas as md
+    import polars as pl
+    import pyarrow as pa
+    import pyspark.pandas as ps
+
+
+# Avoid warning about pyarrow timezones not set
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
-
-dd, _ = _lazy_import("dask.dataframe")
-md, _ = _lazy_import("modin.pandas")
-pa, _ = _lazy_import("pyarrow")
-ps, _ = _lazy_import("pyspark")
 
 
 class DataEngine(metaclass=ABCMeta):
@@ -37,7 +39,9 @@ class DataEngine(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def convert(obj: Pandas) -> np.ndarray | Sequence[Any] | pd.DataFrame: ...
+    def convert(obj: Pandas) -> Any:
+        """Convert to data engine output types."""
+        pass
 
 
 class NumpyEngine(DataEngine):
@@ -70,14 +74,20 @@ class PandasPyarrowEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> Pandas:
         """Convert to pyarrow dtypes."""
-        return obj.astype(
-            {
-                col.name: pd.ArrowDtype(
-                    pa.from_numpy_dtype(getattr(col.dtype, "numpy_dtype", col.dtype))
-                )
-                for col in get_cols(obj)
-            }
-        )
+        from pyarrow import from_numpy_dtype
+
+        if isinstance(obj, pd.DataFrame):
+            return obj.astype(
+                {
+                    c: pd.ArrowDtype(from_numpy_dtype(d)) if isinstance(d, np.dtype) else d
+                    for c, d in obj.dtypes.items()
+                }
+            )
+        else:
+            return obj.astype(
+                pd.ArrowDtype(from_numpy_dtype(obj.dtype))
+                if isinstance(obj.dtype, np.dtype) else obj.dtype
+            )
 
 
 class PolarsEngine(DataEngine):
@@ -88,9 +98,11 @@ class PolarsEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> pl.Series | pl.DataFrame:
         """Convert to polars objects."""
+        import polars as pl
+
         if isinstance(obj, pd.DataFrame):
             return pl.DataFrame(obj)
-        elif isinstance(obj, pd.Series):
+        else:
             return pl.Series(obj)
 
 
@@ -100,11 +112,13 @@ class PolarsLazyEngine(DataEngine):
     library = "polars"
 
     @staticmethod
-    def convert(obj: Pandas) -> pl.Series | pl.DataFrame:
+    def convert(obj: Pandas) -> pl.Series | pl.LazyFrame:
         """Convert to lazy polars objects."""
+        import polars as pl
+
         if isinstance(obj, pd.DataFrame):
             return pl.LazyFrame(obj)
-        elif isinstance(obj, pd.Series):
+        else:
             return pl.Series(obj)
 
 
@@ -116,9 +130,11 @@ class PyArrowEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> pa.Array | pa.Table:
         """Convert to pyarrow objects."""
+        import pyarrow as pa
+
         if isinstance(obj, pd.DataFrame):
             return pa.Table.from_pandas(obj)
-        elif isinstance(obj, pd.Series):
+        else:
             return pa.Array.from_pandas(obj)
 
 
@@ -130,9 +146,11 @@ class ModinEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> md.Series | md.DataFrame:
         """Convert to modin objects."""
+        import modin.pandas as md
+
         if isinstance(obj, pd.DataFrame):
             return md.DataFrame(obj)
-        elif isinstance(obj, pd.Series):
+        else:
             return md.Series(obj)
 
 
@@ -144,7 +162,9 @@ class DaskEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> dd.Series | dd.DataFrame:
         """Convert to dask objects."""
-        return dd.from_pandas(obj, npartitions=max(1, len(obj) // 1e6))
+        import dask.dataframe as dd
+
+        return dd.from_pandas(obj, npartitions=int(max(1, len(obj) // 1e6)))
 
 
 class PySparkEngine(DataEngine):
@@ -155,7 +175,9 @@ class PySparkEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> ps.sql.DataFrame:
         """Convert to pyspark objects."""
-        spark = ps.sql.SparkSession.builder.appName("atom-ml").getOrCreate()
+        from pyspark.sql import SparkSession
+
+        spark = SparkSession.builder.appName("atom-ml").getOrCreate()
         return spark.createDataFrame(obj)
 
 
@@ -167,9 +189,11 @@ class PySparkPandasEngine(DataEngine):
     @staticmethod
     def convert(obj: Pandas) -> ps.pandas.Series | ps.pandas.DataFrame:
         """Convert to pyspark objects."""
+        import pyspark.pandas as ps
+
         if isinstance(obj, pd.DataFrame):
             return ps.pandas.DataFrame(obj)
-        elif isinstance(obj, pd.Series):
+        else:
             return ps.pandas.Series(obj)
 
 

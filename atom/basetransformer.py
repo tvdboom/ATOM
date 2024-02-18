@@ -12,39 +12,31 @@ import random
 import re
 import tempfile
 import warnings
-from copy import deepcopy
+from collections.abc import Hashable
 from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, TypeVar, overload
+from typing import Any, Literal, TypeVar, overload
 
 import joblib
+import mlflow
 import numpy as np
 import pandas as pd
-import requests
 from beartype import beartype
 from joblib.memory import Memory
-from polars.dependencies import _lazy_import
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
-    EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Sequence,
-    Severity, Verbose, Warnings, bool_t, int_t,
+    EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Pandas,
+    Sequence, Severity, Verbose, Warnings, XSelector, YSelector, bool_t, int_t,
 )
 from atom.utils.utils import (
     check_dependency, crash, lst, make_sklearn, to_df, to_tabular,
 )
-
-
-mlflow, _ = _lazy_import("mlflow")
-dagshub, _ = _lazy_import("dagshub")
-ray, _ = _lazy_import("ray")
-ray_joblib, _ = _lazy_import("ray.util.joblib")
-dask, _ = _lazy_import("dask")
 
 
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
@@ -145,16 +137,11 @@ class BaseTransformer:
         check_dependency(engine.data_engine.library)
 
         if engine.estimator == "sklearnex":
-            if not find_spec("sklearnex"):
-                raise ModuleNotFoundError(
-                    "Failed to import scikit-learn-intelex. The library is "
-                    "not installed. Note that the library only supports CPUs "
-                    "with a x86 architecture."
-                )
-            else:
-                import sklearnex
+            check_dependency("sklearnex")
+            import sklearnex
 
-                sklearnex.set_config(self.device.lower() if self._gpu else "auto")
+            sklearnex.set_config(self.device.lower() if self._gpu else "auto")
+
         elif engine.estimator == "cuml":
             if not find_spec("cuml"):
                 raise ModuleNotFoundError(
@@ -182,10 +169,18 @@ class BaseTransformer:
     @beartype
     def backend(self, value: Backend):
         if value == "ray":
-            ray_joblib.register_ray()  # Register ray as joblib backend
+            check_dependency("ray")
+            import ray
+            from ray.util.joblib import register_ray
+
+            register_ray()  # Register ray as joblib backend
             if not ray.is_initialized():
                 ray.init(log_to_driver=False)
+
         elif value == "dask":
+            check_dependency("dask")
+            import dask
+
             try:
                 dask.distributed.Client.current()
             except ValueError:
@@ -302,6 +297,12 @@ class BaseTransformer:
         self._experiment = value
         if value:
             if value.lower().startswith("dagshub:"):
+                check_dependency("dagshub")
+                check_dependency("requests")
+                import dagshub
+                import requests
+                from dagshub.auth.token_auth import HTTPBearerAuth
+
                 value = value[8:]  # Drop dagshub:
 
                 token = dagshub.auth.get_token()
@@ -311,7 +312,7 @@ class BaseTransformer:
                 # Fetch username from dagshub api
                 username = requests.get(
                     url="https://dagshub.com/api/v1/user",
-                    auth=dagshub.auth.token_auth.HTTPBearerAuth(token),
+                    auth=HTTPBearerAuth(token),
                     timeout=5,
                 ).json()["username"]
 
@@ -442,7 +443,7 @@ class BaseTransformer:
         if X is None and y is None:
             raise ValueError("X and y can't be both None!")
         else:
-            Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
+            Xt = to_df(X() if callable(X) else X, columns=columns)
 
         # Prepare target column
         if not isinstance(y, Int | str | None):
@@ -471,7 +472,7 @@ class BaseTransformer:
                         f" got len(X)={len(Xt)} and len(y)={len(y)}."
                     ) from None
             else:
-                yt = to_tabular(deepcopy(y), index=getattr(Xt, "index", None), columns=name)
+                yt = to_tabular(y, index=getattr(Xt, "index", None), columns=name)
 
             # Check X and y have the same indices
             if Xt is not None and not Xt.index.equals(yt.index):
@@ -514,8 +515,8 @@ class BaseTransformer:
 
         """
         # Only apply transformations when the engine is defined
-        if hasattr(self, "engine") and isinstance(obj, pd.Series | pd.DataFrame):
-            return self.engine.data_engine.convert(obj)
+        if hasattr(self, "_engine") and isinstance(obj, pd.Series | pd.DataFrame):
+            return self._engine.data_engine.convert(obj)
         else:
             return obj
 

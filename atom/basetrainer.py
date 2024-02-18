@@ -12,15 +12,13 @@ from abc import ABCMeta
 from datetime import datetime as dt
 from typing import Any
 
-import dask
 import mlflow
 import numpy as np
-import ray
 from joblib import Parallel, delayed
 from optuna import Study, create_study
 
 from atom.baserunner import BaseRunner
-from atom.branch import BranchManager
+from atom.data import BranchManager
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import RunnerPlot
@@ -374,6 +372,8 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 m.verbose = self.verbose
 
             if self.backend == "ray":
+                import ray
+
                 # This implementation is more efficient than through joblib's
                 # ray backend. The difference is that in this one you start N
                 # tasks, and in the other, you start N actors and then have them
@@ -381,6 +381,8 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 execute_remote = ray.remote(num_cpus=self.n_jobs)(execute_model)
                 models = ray.get([execute_remote.remote(m) for m in self._models])
             elif self.backend == "dask":
+                import dask
+
                 models = dask.compute(*[dask.delayed(execute_model)(m) for m in self._models])
             else:
                 models = Parallel(n_jobs=self.n_jobs)(

@@ -32,7 +32,7 @@ from sktime.transformations.series.difference import Differencer
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
-from atom.branch import Branch
+from atom.data import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
@@ -455,7 +455,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
         def _set_index(
-            df: DataFrame,
+            df: pd.DataFrame,
             y: Pandas | None,
             index: IndexSelector | None = None,
         ) -> pd.DataFrame:

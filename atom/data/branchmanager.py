@@ -16,7 +16,7 @@ from beartype import beartype
 from joblib.memory import Memory
 from sklearn.utils.validation import check_memory
 
-from atom.branch.branch import Branch
+from atom.data.branch import Branch
 from atom.utils.types import Bool, Int
 from atom.utils.utils import ClassMap, DataContainer
 

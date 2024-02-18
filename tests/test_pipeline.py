@@ -8,6 +8,7 @@ Description: Unit tests for pipeline.py
 import numpy as np
 import pandas as pd
 import pytest
+import pyarrow as pa
 from pandas.testing import assert_frame_equal
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sktime.proba.normal import Normal
@@ -214,6 +215,18 @@ def test_predict_residuals(pipeline_ts):
 def test_predict_var(pipeline_ts):
     """Assert that the pipeline uses predict_var normally."""
     assert isinstance(pipeline_ts.predict_var(fh=range(3)), pd.DataFrame)
+
+
+def test_set_output(pipeline):
+    """Assert that the set_output method determines the data engine."""
+    pl = pipeline(model=False)
+    assert isinstance(pl.transform(X_bin), pd.DataFrame)
+
+    pl.set_output(transform="numpy")
+    assert isinstance(pl.fit_transform(X_bin, y_bin)[0], np.ndarray)
+
+    pl.set_output(transform="pyarrow")
+    assert isinstance(pl.inverse_transform(X_bin), pa.Table)
 
 
 def test_score_no_parameters(pipeline_ts):

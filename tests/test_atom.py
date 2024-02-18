@@ -22,6 +22,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
     LabelEncoder, MultiLabelBinarizer, OneHotEncoder, StandardScaler,
 )
+import pyarrow as pa
 from sktime.transformations.series.impute import Imputer
 from sktime.transformations.series.summarize import WindowSummarizer
 
@@ -313,6 +314,13 @@ def test_inverse_transform():
     assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
+def test_inverse_transform_output():
+    """Assert that the output type is determined by the data engine."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    atom.scale()
+    assert isinstance(atom.inverse_transform(X_bin), pa.Table)
+
+
 def test_load_no_atom():
     """Assert that an error is raised when the instance is not atom."""
     trainer = DirectClassifier("LR", random_state=1)
@@ -486,6 +494,13 @@ def test_transform_not_train_only():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.prune(max_sigma=2)
     assert len(atom.transform(X_bin)) == len(X_bin)
+
+
+def test_transform_output():
+    """Assert that the output type is determined by the data engine."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    atom.scale()
+    assert isinstance(atom.transform(X_bin), pa.Table)
 
 
 # Test base transformers =========================================== >>

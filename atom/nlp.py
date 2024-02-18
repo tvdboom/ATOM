@@ -10,11 +10,11 @@ from __future__ import annotations
 import re
 import unicodedata
 from string import punctuation
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from polars.dependencies import _lazy_import
 from sklearn.base import OneToOneFeatureMixin
 from sklearn.utils.validation import _check_feature_names_in
 from typing_extensions import Self
@@ -22,14 +22,15 @@ from typing_extensions import Self
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
     Bool, Engine, FloatLargerZero, Sequence, VectorizerStarts, Verbose,
-    XConstructor, YConstructor, bool_t,
+    XConstructor, YConstructor, bool_t, EngineEstimatorOptions
 )
 from atom.utils.utils import (
     check_is_fitted, check_nltk_module, get_corpus, is_sparse, merge, to_df,
 )
 
 
-nltk, _ = _lazy_import("nltk")
+if TYPE_CHECKING:
+    from nltk.corpus import wordnet
 
 
 @beartype
@@ -459,7 +460,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
 
         """
 
-        def pos(tag: str) -> nltk.corpus.wordnet:
+        def pos(tag: str) -> wordnet.ADJ | wordnet.ADV | wordnet.VERB | wordnet.NOUN:
             """Get part of speech from a tag.
 
             Parameters
@@ -474,13 +475,17 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
 
             """
             if tag in ("JJ", "JJR", "JJS"):
-                return nltk.corpus.wordnet.ADJ
+                return wordnet.ADJ
             elif tag in ("RB", "RBR", "RBS"):
-                return nltk.corpus.wordnet.ADV
+                return wordnet.ADV
             elif tag in ("VB", "VBD", "VBG", "VBN", "VBP", "VBZ"):
-                return nltk.corpus.wordnet.VERB
+                return wordnet.VERB
             else:  # "NN", "NNS", "NNP", "NNPS"
-                return nltk.corpus.wordnet.NOUN
+                return wordnet.NOUN
+
+        from nltk import pos_tag
+        from nltk.corpus import stopwords, wordnet
+        from nltk.stem import SnowballStemmer, WordNetLemmatizer
 
         Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(Xt)
@@ -491,22 +496,22 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
         if isinstance(Xt[corpus].iloc[0], str):
             Xt[corpus] = Xt[corpus].apply(lambda row: row.split())
 
-        stopwords = set()
+        stop_words = set()
         if self.stopwords:
             if isinstance(self.stopwords, bool_t):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
             check_nltk_module("corpora/stopwords", quiet=self.verbose < 2)
-            stopwords = set(nltk.corpus.stopwords.words(self.stopwords.lower()))
+            stop_words = set(stopwords.words(self.stopwords.lower()))
 
         # Join predefined with customs stopwords
         if self.custom_stopwords is not None:
-            stopwords = stopwords | set(self.custom_stopwords)
+            stop_words = stop_words | set(self.custom_stopwords)
 
-        if stopwords:
+        if stop_words:
             self._log(" --> Dropping stopwords.", 2)
-            f = lambda row: [word for word in row if word not in stopwords]
+            f = lambda row: [word for word in row if word not in stop_words]
             Xt[corpus] = Xt[corpus].apply(f)
 
         if self.stem:
@@ -514,7 +519,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
                 self.stem = "english"
 
             self._log(" --> Applying stemming.", 2)
-            ss = nltk.stem.SnowballStemmer(language=self.stem.lower())
+            ss = SnowballStemmer(language=self.stem.lower())
             Xt[corpus] = Xt[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
@@ -523,8 +528,8 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
             check_nltk_module("taggers/averaged_perceptron_tagger", quiet=self.verbose < 2)
             check_nltk_module("corpora/omw-1.4", quiet=self.verbose < 2)
 
-            wnl = nltk.stem.WordNetLemmatizer()
-            f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
+            wnl = WordNetLemmatizer()
+            f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in pos_tag(row)]
             Xt[corpus] = Xt[corpus].apply(f)
 
         return self._convert(Xt)
@@ -706,6 +711,9 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin):
 
             return row_c[2:-2].split(sep)
 
+        import nltk.collocations as collocations
+        from nltk import word_tokenize
+
         Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(Xt)
 
@@ -713,12 +721,12 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin):
 
         if isinstance(Xt[corpus].iloc[0], str):
             check_nltk_module("tokenizers/punkt", quiet=self.verbose < 2)
-            Xt[corpus] = Xt[corpus].apply(lambda row: nltk.word_tokenize(row))
+            Xt[corpus] = Xt[corpus].apply(lambda row: word_tokenize(row))
 
         ngrams = {
-            "bigrams": nltk.collocations.BigramCollocationFinder,
-            "trigrams": nltk.collocations.TrigramCollocationFinder,
-            "quadgrams": nltk.collocations.QuadgramCollocationFinder,
+            "bigrams": collocations.BigramCollocationFinder,
+            "trigrams": collocations.TrigramCollocationFinder,
+            "quadgrams": collocations.QuadgramCollocationFinder,
         }
 
         for attr, finder in ngrams.items():
@@ -878,7 +886,7 @@ class Vectorizer(TransformerMixin):
         *,
         return_sparse: Bool = True,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         **kwargs,
     ):

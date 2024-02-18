@@ -24,7 +24,7 @@ from sktime.forecasting.base import ForecastingHorizon
 
 
 if TYPE_CHECKING:
-    from atom.branch.dataengines import DataEngine
+    from atom.data.dataengines import DataEngine
     from atom.utils.utils import Goal
 
 
@@ -120,7 +120,7 @@ class EngineTuple(NamedTuple):
     @property
     def data_engine(self) -> DataEngine:
         """Return the data engine."""
-        from atom.branch.dataengines import DATA_ENGINES
+        from atom.data import DATA_ENGINES
 
         return DATA_ENGINES[self.data]()
 
@@ -184,7 +184,6 @@ class Model(Protocol):
     """Protocol for all models."""
 
     _goal: Goal
-    _metric: ClassMap
     _ht: dict[str, Any]
 
     def predict(self, *args, **kwargs) -> Pandas: ...
@@ -217,7 +216,7 @@ XConstructor: TypeAlias = (
     | Sequence[Sequence[Any]]
     | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
     | np.ndarray
-    | sps.spmatrix
+    | sps.spmatrix  # scipy has no stubs, thus this becomes Any
     | pd.DataFrame
 )
 XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
@@ -346,6 +345,10 @@ Legend: TypeAlias = Literal[
 ]
 
 # Others
+XDatasets: TypeAlias = Literal[
+    "dataset", "train", "test", "holdout", "X", "X_train", "X_test", "X_holdout"
+]
+YDatasets: TypeAlias = Literal["y", "y_train", "y_test", "y_holdout"]
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
 SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
 FeatureNamesOut: TypeAlias = (

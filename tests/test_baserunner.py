@@ -18,7 +18,7 @@ from pandas.testing import (
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
-from atom.branch import Branch
+from atom.data import Branch
 from atom.training import DirectClassifier, DirectForecaster
 from atom.utils.types import SPTuple
 from atom.utils.utils import NotFittedError, merge

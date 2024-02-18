@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 from beartype import beartype
 from gplearn.genetic import SymbolicTransformer
-from polars.dependencies import _lazy_import
 from scipy import stats
 from sklearn.base import is_classifier
 from sklearn.feature_selection import (
@@ -26,22 +25,23 @@ from sklearn.feature_selection import (
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import _check_feature_names_in
 from typing_extensions import Self
+from zoofs import (
+    DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
+    HarrisHawkOptimization, ParticleSwarmOptimization,
+)
 
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.utils.types import (
     Bool, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
     FloatLargerEqualZero, FloatLargerZero, FloatZeroToOneInc,
-    IntLargerEqualZero, IntLargerZero, NJobs, Operators, Pandas, Scalar,
-    Sequence, Verbose, XConstructor, YConstructor,
+    IntLargerEqualZero, IntLargerZero, NJobs, Operators, Scalar, Sequence,
+    Verbose, XConstructor, YConstructor, EngineEstimatorOptions
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, get_custom_scorer, is_sparse,
     lst, merge, sign, to_df, to_tabular,
 )
-
-
-zoofs, _ = _lazy_import("zoofs")
 
 
 @beartype
@@ -438,7 +438,7 @@ class FeatureGenerator(TransformerMixin):
 
         """
         Xt = to_df(X)
-        yt = to_tabular(y, index=getattr(Xt, "index", None))
+        yt = to_tabular(y, index=Xt.index)
 
         self._check_feature_names(Xt, reset=True)
         self._check_n_features(Xt, reset=True)
@@ -529,11 +529,7 @@ class FeatureGenerator(TransformerMixin):
 
         if self.strategy == "dfs":
             es = ft.EntitySet(dataframes={"X": (Xt, "index", None, None, None, True)})
-            dfs = ft.calculate_feature_matrix(
-                features=self._dfs,
-                entityset=es,
-                n_jobs=self.n_jobs,
-            )
+            dfs = ft.calculate_feature_matrix(self._dfs, entityset=es, n_jobs=self.n_jobs)
 
             # Add the new features to the feature set
             Xt = pd.concat([Xt, dfs], axis=1).set_index("index")
@@ -989,7 +985,7 @@ class FeatureSelector(TransformerMixin):
         max_correlation: FloatZeroToOneInc | None = 1.0,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
@@ -1050,7 +1046,7 @@ class FeatureSelector(TransformerMixin):
                 return scoring(model, X_valid, y_valid)
 
         Xt = to_df(X)
-        tt = to_tabular(y, index=Xt.index)
+        yt = to_tabular(y, index=Xt.index)
 
         self._check_feature_names(Xt, reset=True)
         self._check_n_features(Xt, reset=True)
@@ -1063,20 +1059,6 @@ class FeatureSelector(TransformerMixin):
         self._low_variance: dict[Hashable, tuple[Hashable, float]] = {}
         self._estimator: Any = None
         self._n_features = None
-
-        strategies = {
-            "univariate": "SelectKBest",
-            "pca": "PCA",
-            "sfm": "SelectFromModel",
-            "sfs": "SequentialFeatureSelector",
-            "rfe": "RFE",
-            "rfecv": "RFECV",
-            "pso": zoofs.ParticleSwarmOptimization,
-            "hho": zoofs.HarrisHawkOptimization,
-            "gwo": zoofs.GreyWolfOptimization,
-            "dfo": zoofs.DragonFlyOptimization,
-            "go": zoofs.GeneticOptimization,
-        }
 
         if isinstance(self.strategy, str):
             if self.strategy not in ("univariate", "pca"):
@@ -1365,6 +1347,13 @@ class FeatureSelector(TransformerMixin):
 
         else:
             check_y()
+            strategies = {
+                "pso": ParticleSwarmOptimization,
+                "hho": HarrisHawkOptimization,
+                "gwo": GreyWolfOptimization,
+                "dfo": DragonFlyOptimization,
+                "go": GeneticOptimization,
+            }
 
             # Either use a provided validation set or cross-validation over X
             if "X_valid" in kwargs:

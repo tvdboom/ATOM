@@ -24,13 +24,13 @@ import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
 from pandas._typing import DtypeObj
-from polars.dependencies import _lazy_import
+from scipy import stats
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.utils.metaestimators import available_if
 
 from atom.baserunner import BaseRunner
 from atom.basetransformer import BaseTransformer
-from atom.branch import Branch, BranchManager
+from atom.data import Branch, BranchManager
 from atom.data_cleaning import (
     Balancer, Cleaner, Decomposer, Discretizer, Encoder, Imputer, Normalizer,
     Pruner, Scaler, TransformerMixin,
@@ -59,16 +59,11 @@ from atom.utils.types import (
     XSelector, YSelector, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, Goal, adjust_verbosity,
+    ClassMap, DataConfig, DataContainer, Goal, adjust,
     check_dependency, composed, crash, fit_one, flt, get_cols,
     get_custom_scorer, has_task, is_sparse, lst, make_sklearn, merge,
     method_to_log, n_cols, replace_missing, sign,
 )
-
-
-stats, _ = _lazy_import("scipy.stats")
-diagnostic, _ = _lazy_import("statsmodels.stats.diagnostic")
-stattools, _ = _lazy_import("statsmodels.tsa.stattools")
 
 
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
@@ -484,6 +479,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 - **p_value:** Corresponding p-value.
 
         """
+        from statsmodels.stats.diagnostic import acorr_ljungbox
+        from statsmodels.tsa.stattools import adfuller, kpss
+
         columns_c = self.branch._get_columns(columns, only_numerical=True)
 
         df = pd.DataFrame(
@@ -500,11 +498,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             for test in ("adf", "kpss", "lb"):
                 if test == "adf":
-                    stat = stattools.adfuller(X, maxlag=None, autolag="AIC")
+                    stat = adfuller(X, maxlag=None, autolag="AIC")
                 elif test == "kpss":
-                    stat = stattools.kpss(X, regression="ct", nlags="auto")  # ct is trend stationarity
+                    # regression='ct' is trend stationarity
+                    stat = kpss(X, regression="ct", nlags="auto")
                 elif test == "lb":
-                    l_jung = diagnostic.acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
+                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
                     stat = l_jung.loc[l_jung["lb_pvalue"].idxmin()]
 
                 # Add as column to the dataframe
@@ -684,7 +683,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         Parameters
         ----------
-            Transformed feature set with shape=(n_samples, n_features).
+        X: Transformed feature set with shape=(n_samples, n_features).
             If None, `X` is ignored in the transformers.
 
         y: int, str, sequence, dataframe-like or None, default=None
@@ -712,8 +711,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         Xt, yt = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
 
-        with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return self._convert(pipeline.inverse_transform(Xt, yt))
+        with adjust(self.pipeline, transform=self.engine.data, verbose=verbose) as pl:
+            return pl.inverse_transform(Xt, yt)
 
     @classmethod
     def load(cls, filename: str | Path, data: tuple[Any, ...] | None = None) -> ATOM:
@@ -1134,8 +1133,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
 
-        with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return self._convert(pipeline.transform(Xt, yt))
+        with adjust(self.pipeline, transform=self.engine.data, verbose=verbose) as pl:
+            return pl.transform(Xt, yt)
 
     # Base transformers ============================================ >>
 
@@ -1143,11 +1142,15 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self,
         kwargs: dict[str, Any],
         params: MappingProxyType | None = None,
+        *,
+        is_runner: Bool = False,
     ) -> dict[str, Any]:
         """Return kwargs with atom's values if not specified.
 
         This method is used for all transformers and runners to pass
-        atom's BaseTransformer's properties to the classes.
+        atom's BaseTransformer's properties to the classes. The engine
+        parameter is the only one that is modified for non-runners
+        since ATOM's transformers only accept the estimator engine.
 
         Parameters
         ----------
@@ -1157,6 +1160,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         params: mappingproxy or None, default=None
             Parameters in the class' signature.
 
+        is_runner: bool, default=False
+            Whether the params are passed to a runner.
+
         Returns
         -------
         dict
@@ -1165,7 +1171,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         for attr in BaseTransformer.attrs:
             if (not params or attr in params) and attr not in kwargs:
-                kwargs[attr] = getattr(self, attr)
+                if attr == "engine" and not is_runner:
+                    # Engine parameter is special since we don't
+                    # want to change data engines in the pipeline
+                    kwargs[attr] = getattr(self, attr).estimator
+                else:
+                    kwargs[attr] = getattr(self, attr)
 
         return kwargs
 
@@ -2215,7 +2226,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             Instance that does the actual model training.
 
         """
-        if any(col.dtype.kind not in "ifu" for col in get_cols(self.y)):
+        if any(col.dtype.kind not in "ifu" for col in get_cols(self.branch.y)):
             raise ValueError(
                 "The target column is not numerical. Use atom.clean() "
                 "to encode the target column to numerical values."
@@ -2289,7 +2300,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 n_bootstrap=n_bootstrap,
                 parallel=parallel,
                 errors=errors,
-                **self._prepare_kwargs(kwargs),
+                **self._prepare_kwargs(kwargs, is_runner=True),
             )
         )
 
@@ -2351,7 +2362,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 n_bootstrap=n_bootstrap,
                 parallel=parallel,
                 errors=errors,
-                **self._prepare_kwargs(kwargs),
+                **self._prepare_kwargs(kwargs, is_runner=True),
             )
         )
 
@@ -2411,6 +2422,6 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 n_bootstrap=n_bootstrap,
                 parallel=parallel,
                 errors=errors,
-                **self._prepare_kwargs(kwargs),
+                **self._prepare_kwargs(kwargs, is_runner=True),
             )
         )

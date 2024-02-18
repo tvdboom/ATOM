@@ -14,26 +14,23 @@ from pathlib import Path
 from typing import Literal, overload
 from warnings import filterwarnings
 
+import dill as pickle
 import pandas as pd
 from beartype import beartype
 from beartype.roar import BeartypeDecorHintPep585DeprecationWarning
 from joblib.memory import Memory
-from polars.dependencies import _lazy_import
 from sklearn.utils.validation import check_memory
 
 from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, Int, IntLargerEqualZero, Pandas, RowSelector, Scalar,
-    Sequence, TargetSelector, TargetsSelector, XConstructor, XSelector,
-    YSelector, int_t, segment_t,
+    TargetSelector, TargetsSelector, XConstructor, XDatasets, YConstructor,
+    YDatasets, int_t, segment_t,
 )
 from atom.utils.utils import (
     DataContainer, check_scaling, flt, get_col_names, get_cols, lst, merge,
     to_tabular,
 )
-
-
-pickle, _ = _lazy_import("dill")
 
 
 filterwarnings("ignore", category=BeartypeDecorHintPep585DeprecationWarning)
@@ -103,7 +100,7 @@ class Branch:
 
     """
 
-    _shared_attrs = [
+    _shared_attrs = (
         "pipeline",
         "mapping",
         "dataset",
@@ -121,7 +118,7 @@ class Branch:
         "features",
         "n_features",
         "target",
-    ]
+    )
 
     def __init__(
         self,
@@ -187,11 +184,13 @@ class Branch:
 
     # Data properties ============================================== >>
 
-    def _check_setter(
-        self,
-        name: str,
-        value: Sequence[Scalar | str] | XConstructor,
-    ) -> Pandas:
+    @overload
+    def _check_setter(self, name: XDatasets, value: YConstructor) -> pd.DataFrame: ...
+
+    @overload
+    def _check_setter(self, name: YDatasets, value: YConstructor) -> pd.Series: ...
+
+    def _check_setter(self, name: XDatasets | YDatasets, value: YConstructor) -> Pandas:
         """Check the data set's setter property.
 
         Convert the property to a 'pandas' object and compare with the
@@ -325,7 +324,7 @@ class Branch:
         return self._data.data
 
     @dataset.setter
-    def dataset(self, value: XSelector):
+    def dataset(self, value: XConstructor):
         self._data.data = self._check_setter("dataset", value)
 
     @property
@@ -334,7 +333,7 @@ class Branch:
         return self._data.data.loc[self._data.train_idx]
 
     @train.setter
-    def train(self, value: XSelector):
+    def train(self, value: XConstructor):
         df = self._check_setter("train", value)
         self._data.data = pd.concat([df, self.test])
         self._data.train_idx = df.index
@@ -345,7 +344,7 @@ class Branch:
         return self._data.data.loc[self._data.test_idx]
 
     @test.setter
-    def test(self, value: XSelector):
+    def test(self, value: XConstructor):
         df = self._check_setter("test", value)
         self._data.data = pd.concat([self.train, df])
         self._data.test_idx = df.index
@@ -369,7 +368,7 @@ class Branch:
         return self._data.data[self.features]
 
     @X.setter
-    def X(self, value: XSelector):
+    def X(self, value: XConstructor):
         df = self._check_setter("X", value)
         self._data.data = merge(df, self.y)
 
@@ -379,7 +378,7 @@ class Branch:
         return self._data.data[self.target]
 
     @y.setter
-    def y(self, value: YSelector):
+    def y(self, value: YConstructor):
         series = self._check_setter("y", value)
         self._data.data = merge(self.X, series)
 
@@ -389,7 +388,7 @@ class Branch:
         return self.train[self.features]
 
     @X_train.setter
-    def X_train(self, value: XSelector):
+    def X_train(self, value: XConstructor):
         df = self._check_setter("X_train", value)
         self._data.data = pd.concat([merge(df, self.y_train), self.test])
 
@@ -399,7 +398,7 @@ class Branch:
         return self.train[self.target]
 
     @y_train.setter
-    def y_train(self, value: YSelector):
+    def y_train(self, value: YConstructor):
         series = self._check_setter("y_train", value)
         self._data.data = pd.concat([merge(self.X_train, series), self.test])
 
@@ -409,7 +408,7 @@ class Branch:
         return self.test[self.features]
 
     @X_test.setter
-    def X_test(self, value: XSelector):
+    def X_test(self, value: XConstructor):
         df = self._check_setter("X_test", value)
         self._data.data = pd.concat([self.train, merge(df, self.y_test)])
 
@@ -419,7 +418,7 @@ class Branch:
         return self.test[self.target]
 
     @y_test.setter
-    def y_test(self, value: YSelector):
+    def y_test(self, value: YConstructor):
         series = self._check_setter("y_test", value)
         self._data.data = pd.concat([self.train, merge(self.X_test, series)])
 
@@ -461,7 +460,7 @@ class Branch:
         calculation.
 
         """
-        return pd.concat([self.dataset, self.holdout])
+        return pd.concat([self.dataset, self.holdout])  # type: ignore[list-item]
 
     # Utility methods ============================================== >>
 
@@ -475,7 +474,7 @@ class Branch:
 
         """
         instance_vars = [x for x in vars(self) if not x.startswith("_") and x.endswith("_")]
-        return self._shared_attrs + instance_vars
+        return list(self._shared_attrs) + instance_vars
 
     @overload
     def _get_rows(
@@ -483,7 +482,7 @@ class Branch:
         rows: RowSelector,
         *,
         return_X_y: Literal[False] = ...,
-    ) -> DataFrame: ...
+    ) -> pd.DataFrame: ...
 
     @overload
     def _get_rows(

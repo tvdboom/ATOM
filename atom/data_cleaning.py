@@ -16,7 +16,22 @@ import numpy as np
 import pandas as pd
 import sklearn
 from beartype import beartype
-from polars.dependencies import _lazy_import
+from category_encoders import (
+    BackwardDifferenceEncoder, BaseNEncoder, BinaryEncoder, CatBoostEncoder,
+    HelmertEncoder, JamesSteinEncoder, MEstimateEncoder, OneHotEncoder,
+    OrdinalEncoder, PolynomialEncoder, SumEncoder, TargetEncoder, WOEEncoder,
+)
+from imblearn.combine import SMOTEENN, SMOTETomek
+from imblearn.over_sampling import (
+    ADASYN, SMOTE, SMOTEN, SMOTENC, SVMSMOTE, BorderlineSMOTE, KMeansSMOTE,
+    RandomOverSampler,
+)
+from imblearn.under_sampling import (
+    AllKNN, CondensedNearestNeighbour, EditedNearestNeighbours,
+    InstanceHardnessThreshold, NearMiss, NeighbourhoodCleaningRule,
+    OneSidedSelection, RandomUnderSampler, RepeatedEditedNearestNeighbours,
+    TomekLinks,
+)
 from scipy.stats import zscore
 from sklearn.base import (
     BaseEstimator, OneToOneFeatureMixin, _clone_parametrized,
@@ -25,6 +40,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
 from sklearn.utils.validation import _check_feature_names_in
+from sktime.transformations.series.impute import Imputer
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
@@ -35,18 +51,13 @@ from atom.utils.types import (
     IntLargerEqualZero, IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats,
     NumericalStrats, Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats,
     SeasonalityModels, Sequence, Transformer, Verbose, XConstructor,
-    YConstructor, sequence_t,
+    YConstructor, sequence_t, EngineEstimatorOptions
 )
 from atom.utils.utils import (
     Goal, check_is_fitted, get_col_names, get_col_order, get_cols, it, lst,
     make_sklearn, merge, n_cols, replace_missing, sign, to_df, to_series,
     to_tabular, variable_return,
 )
-
-
-category_encoders, _ = _lazy_import("category_encoders")
-imblearn, _ = _lazy_import("imblearn")
-sktime, _ = _lazy_import("sktime")
 
 
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
@@ -189,7 +200,11 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         check_is_fitted(self)
 
         Xt = to_df(X, columns=self.feature_names_in_)
-        yt = to_tabular(y, index=Xt.index, columns=getattr(y, "target_names_in_", None))
+        yt = to_tabular(
+            data=y,
+            index=getattr(Xt, "index", None),
+            columns=getattr(y, "target_names_in_", None),
+        )
 
         return variable_return(self._convert(Xt), self._convert(yt))
 
@@ -224,10 +239,9 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Estimator instance.
 
         """
-        if transform is None:
-            return self
+        if transform is not None:
+            self._engine = getattr(self, "_engine", EngineTuple()).data = transform
 
-        self.engine = getattr(self, "engine", EngineTuple()).data = transform
         return self
 
 
@@ -395,28 +409,28 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
         else:
             raise ValueError("The Balancer class does not support multioutput tasks.")
 
+        # ClusterCentroids is unavailable since it has no sample_indices_
         strategies = {
-            # clustercentroids=imblearn.under_sampling.ClusterCentroids,  #  noqa: ERA001 (has no sample_indices_)
-            "condensednearestneighbour": imblearn.under_sampling.CondensedNearestNeighbour,
-            "editednearestneighborus": imblearn.under_sampling.EditedNearestNeighbours,
-            "repeatededitednearestneighbours": imblearn.under_sampling.RepeatedEditedNearestNeighbours,
-            "allknn": imblearn.under_sampling.AllKNN,
-            "instancehardnessthreshold": imblearn.under_sampling.InstanceHardnessThreshold,
-            "nearmiss": imblearn.under_sampling.NearMiss,
-            "neighbourhoodcleaningrule": imblearn.under_sampling.NeighbourhoodCleaningRule,
-            "onesidedselection": imblearn.under_sampling.OneSidedSelection,
-            "randomundersampler": imblearn.under_sampling.RandomUnderSampler,
-            "tomeklinks": imblearn.under_sampling.TomekLinks,
-            "randomoversampler": imblearn.over_sampling.RandomOverSampler,
-            "smote": imblearn.over_sampling.SMOTE,
-            "smotenc": imblearn.over_sampling.SMOTENC,
-            "smoten": imblearn.over_sampling.SMOTEN,
-            "adasyn": imblearn.over_sampling.ADASYN,
-            "borderlinesmote": imblearn.over_sampling.BorderlineSMOTE,
-            "kmeanssmote": imblearn.over_sampling.KMeansSMOTE,
-            "svmsmote": imblearn.over_sampling.SVMSMOTE,
-            "smoteenn": imblearn.combine.SMOTEENN,
-            "smotetomek": imblearn.combine.SMOTETomek,
+            "condensednearestneighbour": CondensedNearestNeighbour,
+            "editednearestneighborus": EditedNearestNeighbours,
+            "repeatededitednearestneighbours": RepeatedEditedNearestNeighbours,
+            "allknn": AllKNN,
+            "instancehardnessthreshold": InstanceHardnessThreshold,
+            "nearmiss": NearMiss,
+            "neighbourhoodcleaningrule": NeighbourhoodCleaningRule,
+            "onesidedselection": OneSidedSelection,
+            "randomundersampler": RandomUnderSampler,
+            "tomeklinks": TomekLinks,
+            "randomoversampler": RandomOverSampler,
+            "smote": SMOTE,
+            "smotenc": SMOTENC,
+            "smoten": SMOTEN,
+            "adasyn": ADASYN,
+            "borderlinesmote": BorderlineSMOTE,
+            "kmeanssmote": KMeansSMOTE,
+            "svmsmote": SVMSMOTE,
+            "smoteenn": SMOTEENN,
+            "smotetomek": SMOTETomek,
         }
 
         if isinstance(self.strategy, str):
@@ -698,7 +712,7 @@ class Cleaner(TransformerMixin):
         drop_missing_target: Bool = True,
         encode_target: Bool = True,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose)
@@ -1172,18 +1186,18 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin):
 
         self._estimators: dict[Hashable, tuple[Transformer, Transformer]] = {}
         for name, column in Xt.select_dtypes(include="number").items():
-            trend = sktime.transformations.series.detrend.Detrender(
+            trend = Detrender(
                 forecaster=forecaster,
                 model=self.trend_model,
             ).fit(column)
 
             if self.test_seasonality:
-                season = sktime.transformations.series.detrend.ConditionalDeseasonalizer(
+                season = ConditionalDeseasonalizer(
                     sp=self.sp or 1,
                     model=self.seasonal_model,
                 ).fit(trend.transform(column))
             else:
-                season = sktime.transformations.series.detrend.Deseasonalizer(
+                season = Deseasonalizer(
                     sp=self.sp or 1,
                     model=self.seasonal_model,
                 ).fit(trend.transform(column))
@@ -1392,7 +1406,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin):
         bins: Bins = 5,
         labels: Sequence[str] | dict[str, Sequence[str]] | None = None,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
     ):
@@ -1756,18 +1770,18 @@ class Encoder(TransformerMixin):
         self._categories = {}
 
         strategies = {
-            "backwarddifference": category_encoders.BackwardDifferenceEncoder,
-            "basen": category_encoders.BaseNEncoder,
-            "binary": category_encoders.BinaryEncoder,
-            "catboost": category_encoders.CatBoostEncoder,
-            "helmert": category_encoders.HelmertEncoder,
-            "jamesstein": category_encoders.JamesSteinEncoder,
-            "mestimate": category_encoders.MEstimateEncoder,
-            "ordinal": category_encoders.OrdinalEncoder,
-            "polynomial": category_encoders.PolynomialEncoder,
-            "sum": category_encoders.SumEncoder,
-            "target": category_encoders.TargetEncoder,
-            "woe": category_encoders.WOEEncoder,
+            "backwarddifference": BackwardDifferenceEncoder,
+            "basen": BaseNEncoder,
+            "binary": BinaryEncoder,
+            "catboost": CatBoostEncoder,
+            "helmert": HelmertEncoder,
+            "jamesstein": JamesSteinEncoder,
+            "mestimate": MEstimateEncoder,
+            "ordinal": OrdinalEncoder,
+            "polynomial": PolynomialEncoder,
+            "sum": SumEncoder,
+            "target": TargetEncoder,
+            "woe": WOEEncoder,
         }
 
         Xt = to_df(X)
@@ -2107,7 +2121,7 @@ class Imputer(TransformerMixin):
         max_nan_cols: FloatLargerZero | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
     ):
@@ -2194,8 +2208,7 @@ class Imputer(TransformerMixin):
             elif self.strat_num == "drop":
                 num_imputer = "passthrough"
             else:
-                sktimeImputer = make_sklearn(sktime.transformations.series.impute.Imputer)
-                num_imputer = sktimeImputer(
+                num_imputer = make_sklearn(Imputer)(
                     method=self.strat_num,
                     missing_values=[pd.NA],
                     random_state=self.random_state,
@@ -2500,7 +2513,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin):
         strategy: NormalizerStrats = "yeojohnson",
         *,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
@@ -2778,7 +2791,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
         max_sigma: FloatLargerZero = 3,
         include_target: Bool = False,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         **kwargs,
     ):
@@ -3039,7 +3052,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         *,
         include_binary: Bool = False,
         device: str = "cpu",
-        engine: Engine = None,
+        engine: EngineEstimatorOptions = None,
         verbose: Verbose = 0,
         **kwargs,
     ):

@@ -15,15 +15,13 @@ from functools import cached_property
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
-from typing import Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from unittest.mock import patch
 
 import dill as pickle
 import mlflow
 import numpy as np
-import optuna
 import pandas as pd
-import ray
 from beartype import beartype
 from joblib.memory import Memory
 from joblib.parallel import Parallel, delayed
@@ -37,7 +35,6 @@ from optuna.storages import InMemoryStorage
 from optuna.study import Study
 from optuna.terminator import report_cross_validation_scores
 from optuna.trial import FrozenTrial, Trial, TrialState
-from ray import serve
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_curve
@@ -57,9 +54,8 @@ from sktime.forecasting.model_evaluation import evaluate
 from sktime.performance_metrics.forecasting import make_forecasting_scorer
 from sktime.proba.normal import Normal
 from sktime.split import ExpandingWindowSplitter, SingleWindowSplitter
-from starlette.requests import Request
-
-from atom.branch import Branch, BranchManager
+import optuna
+from atom.data import Branch, BranchManager
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
@@ -74,11 +70,15 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
-    TrialsCallback, adjust_verbosity, cache, check_dependency, check_empty,
+    TrialsCallback, adjust, cache, check_dependency, check_empty,
     composed, crash, estimator_has_attr, flt, get_col_names, get_cols,
     get_custom_scorer, has_task, it, lst, merge, method_to_log, rnd, sign,
     time_to_str, to_df, to_series, to_tabular,
 )
+
+
+if TYPE_CHECKING:
+    from starlette.requests import Request
 
 
 # Disable optuna info logs (ATOM already displays the same info)
@@ -129,9 +129,16 @@ class BaseModel(RunnerPlot):
 
         - "data":
 
+            - "numpy"
             - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
             - "pyarrow"
             - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
 
         - "estimator":
 
@@ -2279,8 +2286,8 @@ class BaseModel(RunnerPlot):
         """
         Xt, yt = self._check_input(X, y, columns=self.branch.features, name=self.branch.target)
 
-        with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return pipeline.inverse_transform(Xt, yt)
+        with adjust(self.pipeline, transform=self.engine.data, verbose=verbose) as pl:
+            return pl.inverse_transform(Xt, yt)
 
     @composed(crash, method_to_log, beartype)
     def register(
@@ -2380,8 +2387,11 @@ class BaseModel(RunnerPlot):
             Port for HTTP server.
 
         """
+        check_dependency("ray")
+        import ray
+        from ray.serve import deployment, run
 
-        @serve.deployment
+        @deployment
         class ServeModel:
             """Model deployment class.
 
@@ -2420,11 +2430,7 @@ class BaseModel(RunnerPlot):
         if not ray.is_initialized():
             ray.init(log_to_driver=False)
 
-        server = ServeModel.bind(
-            pipeline=self.export_pipeline(),
-            method=method,
-        )
-        serve.run(server, host=host, port=port)
+        run(ServeModel.bind(pipeline=self.export_pipeline(), method=method), host=host, port=port)
 
         self._log(f"Serving model {self.fullname} on {host}:{port}...", 1)
 
@@ -2477,8 +2483,8 @@ class BaseModel(RunnerPlot):
         """
         Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
 
-        with adjust_verbosity(self.pipeline, verbose) as pipeline:
-            return pipeline.transform(Xt, yt)
+        with adjust(self.pipeline, transform=self.engine.data, verbose=verbose) as pl:
+            return pl.transform(Xt, yt)
 
 
 class ClassRegModel:
@@ -2646,7 +2652,7 @@ class ClassRegModel:
         if method != "score":
             pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt[self.features]))
 
-            if pred.ndim == 1:
+            if pred.ndim == 1 or pred.shape[1] == 1:
                 data = to_series(pred, index=Xt.index, name=self.target)
             elif pred.ndim < 3:
                 data = to_df(pred, index=Xt.index, columns=assign_prediction_columns())
