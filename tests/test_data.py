@@ -20,7 +20,7 @@ from pandas.testing import assert_frame_equal
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.branch import Branch, BranchManager
+from atom.data import Branch, BranchManager
 from atom.training import DirectClassifier
 from atom.utils.utils import merge
 
