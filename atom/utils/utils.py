@@ -22,7 +22,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload, Hashable
 
 import numpy as np
 import pandas as pd
@@ -43,11 +43,11 @@ from sklearn.utils.validation import _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
-    Bool, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
+    Bool, EngineTuple, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
     IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Sequence, SPTuple, Transformer, TReturn, TReturns,
-    Verbose, XConstructor, XSelector, YConstructor, int_t, segment_t,
-    sequence_t, EngineTuple
+    Scorer, Segment, Sequence, SPTuple, Transformer, Verbose,
+    XConstructor, XReturn, YConstructor, int_t, segment_t,
+    sequence_t, EngineDataOptions
 )
 
 
@@ -1385,21 +1385,21 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         )
 
 
-def n_cols(obj: XConstructor | YConstructor) -> int:
+def n_cols(obj: YConstructor | None) -> int:
     """Get the number of columns in a dataset.
 
     Parameters
     ----------
-    obj: dict, sequence or dataframe-like
+    obj: dict, sequence, dataframe-like or None
         Dataset to check.
 
     Returns
     -------
-    int or None
+    int
         Number of columns.
 
     """
-    if hasattr(obj, "shape"):
+    if obj is not None and hasattr(obj, "shape"):
         return obj.shape[1] if len(obj.shape) > 1 else 1
     elif isinstance(obj, dict):
         return 2  # Dict always goes to dataframe
@@ -1809,8 +1809,8 @@ def to_df(
 @overload
 def to_df(
     data: XConstructor,
-    index: Axes | None,
-    columns: Axes | None,
+    index: Axes | None = ...,
+    columns: Axes | None = ...,
 ) -> pd.DataFrame: ...
 
 
@@ -1853,13 +1853,14 @@ def to_df(
                 columns = [f"x{i}" for i in range(n_cols(data))]
 
             if sps.issparse(data):
-                data_c = pd.DataFrame.sparse.from_spmatrix(
-                    data=data,
+                data_c = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+            else:
+                data_c = pd.DataFrame(
+                    data=data,  # type: ignore[misc, arg-type]
                     index=index,
                     columns=columns,
+                    copy=True,
                 )
-            else:
-                data_c = pd.DataFrame(data, index=index, columns=columns, copy=True)
 
         # If text dataset, change the name of the column to corpus
         if list(data_c.columns) == ["x0"] and data_c.dtypes[0].name in CAT_TYPES:
@@ -1879,7 +1880,8 @@ def to_df(
                 except KeyError:
                     raise ValueError(
                         f"The columns are different than seen at fit time. Features "
-                        f"{set(data_c.columns) - set(columns)} are missing in X."
+                        f"{set(data_c.columns) - set(columns)} "  # type: ignore[arg-type]
+                        "are missing in X."
                     ) from None
 
         return data_c
@@ -1994,12 +1996,12 @@ def to_tabular(
 
     """
     if (n_targets := n_cols(data)) == 1:
-        return to_series(data, index=index, name=flt(columns))
+        return to_series(data, index=index, name=flt(columns))  # type: ignore[misc, arg-type]
     else:
         if columns is None and not hasattr(data, "__dataframe__"):
             columns = [f"y{i}" for i in range(n_targets)]
 
-        return to_df(data, index=index, columns=columns)
+        return to_df(data, index=index, columns=columns)  # type: ignore[misc, arg-type]
 
 
 def check_is_fitted(
@@ -2144,10 +2146,10 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
 # Pipeline functions =============================================== >>
 
 def name_cols(
-    array: TReturn,
+    df: pd.DataFrame,
     original_df: pd.DataFrame,
     col_names: list[str],
-) -> list[str]:
+) -> pd.Index:
     """Get the column names after a transformation.
 
     If the number of columns is unchanged, the original
@@ -2156,7 +2158,7 @@ def name_cols(
 
     Parameters
     ----------
-    array: np.ndarray, sps.matrix, pd.Series or pd.DataFrame
+    df: pd.DataFrame
         Transformed dataset.
 
     original_df: pd.DataFrame
@@ -2167,23 +2169,23 @@ def name_cols(
 
     Returns
     -------
-    list of str
+    pd.Index
         Column names.
 
     """
     # If columns were only transformed, return og names
-    if array.shape[1] == len(col_names):
-        return col_names
+    if df.shape[1] == len(col_names):
+        return pd.Index(col_names)
 
     # If columns were added or removed
     temp_cols = []
-    for i, col in enumerate(array.T):
+    for i, (name, column) in enumerate(df.items()):
         # equal_nan=True fails for non-numeric dtypes
-        mask = original_df.apply(
+        mask = original_df.apply(  # type: ignore[type-var]
             lambda c: np.array_equal(
                 a1=c,
-                a2=col,
-                equal_nan=is_numeric_dtype(c) and np.issubdtype(col.dtype, np.number),
+                a2=str(name),
+                equal_nan=is_numeric_dtype(c) and np.issubdtype(column.dtype, np.number),
             ),
         )
 
@@ -2201,7 +2203,7 @@ def name_cols(
                 else:
                     counter += 1
 
-    return temp_cols
+    return pd.Index(temp_cols)
 
 
 def get_col_order(
@@ -2351,7 +2353,7 @@ def fit_one(
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
-            kwargs = {}
+            kwargs: dict[str, Pandas] = {}
             inc = getattr(estimator, "_cols", getattr(Xt, "columns", []))
             if "X" in (params := sign(estimator.fit)):
                 if Xt is not None and (cols := [c for c in inc if c in Xt]):
@@ -2425,12 +2427,12 @@ def transform_one(
 
     """
 
-    def prepare_df(out: TReturn, og: pd.DataFrame) -> pd.DataFrame:
+    def prepare_df(out: XConstructor, og: pd.DataFrame) -> pd.DataFrame:
         """Convert to df and set the correct column names.
 
         Parameters
         ----------
-        out: np.ndarray, sps.matrix or pd.DataFrame
+        out: dataframe-like
             Data returned by the transformation.
 
         og: pd.DataFrame
@@ -2442,24 +2444,21 @@ def transform_one(
             Transformed dataset.
 
         """
-        use_cols = [c for c in inc if c in og.columns]
+        out_c = to_df(out, index=og.index)
 
-        # Convert to pandas and assign proper column names
+        # Assign proper column names
+        use_cols = [c for c in inc if c in og.columns]
         if not isinstance(out, pd.DataFrame):
             if hasattr(transformer, "get_feature_names_out"):
-                columns = transformer.get_feature_names_out()
+                out_c.columns = transformer.get_feature_names_out()
             else:
-                columns = name_cols(out, og, use_cols)
-        else:
-            columns = out.columns
-
-        out = to_df(out, index=og.index, columns=columns)
+                out_c.columns = name_cols(out_c, og, use_cols)
 
         # Reorder columns if only a subset was used
         if len(use_cols) != og.shape[1]:
-            return reorder_cols(transformer, out, og, use_cols)
+            return reorder_cols(transformer, out_c, og, use_cols)
         else:
-            return out
+            return out_c
 
     Xt = to_df(X)
     yt = to_tabular(y, index=getattr(Xt, "index", None))
@@ -2489,22 +2488,24 @@ def transform_one(
         elif "X" not in params:
             return Xt, yt  # If y is None and no X in transformer, skip the transformer
 
-    out: TReturns = getattr(transformer, method)(**kwargs, **transform_params)
+    out: YConstructor | tuple[XConstructor, YConstructor] = getattr(transformer, method)(**kwargs, **transform_params)
 
     # Transform can return X, y or both
-    if isinstance(out, tuple):
+    X_new: pd.DataFrame | None
+    y_new: Pandas | None
+    if isinstance(out, tuple) and Xt is not None:
         X_new = prepare_df(out[0], Xt)
         y_new = to_tabular(out[1], index=X_new.index)
-        if isinstance(yt, pd.DataFrame):
+        if isinstance(yt, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
     elif "X" in params and Xt is not None and any(c in Xt for c in inc):
         # X in -> X out
-        X_new = prepare_df(out, Xt)
+        X_new = prepare_df(out, Xt)  # type: ignore[arg-type]
         y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
     elif y is not None:
         y_new = to_tabular(out)
         X_new = Xt if Xt is None else Xt.set_index(y_new.index)
-        if isinstance(yt, pd.DataFrame):
+        if isinstance(yt, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
             y_new = prepare_df(y_new, yt)
 
     return X_new, y_new

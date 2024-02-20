@@ -39,7 +39,7 @@ from atom.utils.types import (
     Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
     MetricSelector, ModelsSelector, RowSelector, Sequence, TargetSelector,
-    TargetsSelector, XSelector, XConstructor
+    TargetsSelector, XConstructor,
 )
 from atom.utils.utils import (
     Task, check_canvas, check_dependency, check_empty, check_predict_proba,

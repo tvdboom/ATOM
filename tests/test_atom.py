@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pytest
 from category_encoders.target_encoder import TargetEncoder
 from pandas.testing import assert_frame_equal, assert_index_equal
@@ -22,7 +23,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
     LabelEncoder, MultiLabelBinarizer, OneHotEncoder, StandardScaler,
 )
-import pyarrow as pa
 from sktime.transformations.series.impute import Imputer
 from sktime.transformations.series.summarize import WindowSummarizer
 
@@ -454,6 +454,7 @@ def test_shrink_pyarrow():
     atom = ATOMClassifier(X_pa, y_bin, engine="pandas-pyarrow", random_state=1)
     assert atom.dtypes[0].name == "double[pyarrow]"
     atom.shrink()
+    print(atom.branch.dataset.dtypes[0])
     assert atom.dtypes[0].name == "float[pyarrow]"
 
 

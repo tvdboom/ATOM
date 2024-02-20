@@ -10,9 +10,9 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 import requests
-import polars as pl
 from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler

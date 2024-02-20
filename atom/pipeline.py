@@ -27,11 +27,11 @@ from typing_extensions import Self
 
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FHConstructor, Float,
-    Pandas, Scalar, Sequence, Verbose, XConstructor, YConstructor,
+    Pandas, Scalar, Sequence, Verbose, XConstructor, YConstructor, YReturn,
 )
 from atom.utils.utils import (
-    NotFittedError, adjust, check_is_fitted, fit_one,
-    fit_transform_one, transform_one, variable_return,
+    NotFittedError, adjust, check_is_fitted, fit_one, fit_transform_one,
+    transform_one, variable_return,
 )
 
 
@@ -226,7 +226,7 @@ class Pipeline(SkPipeline):
             for _, _, est in self._iter()
         )
 
-    def _convert(self, obj: Pandas | None) -> Any:
+    def _convert(self, obj: Pandas | None) -> YReturn | None:
         """Convert data to the type set in the data engine.
 
         Parameters

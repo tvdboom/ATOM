@@ -33,10 +33,10 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.utils.types import (
-    Bool, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
-    FloatLargerEqualZero, FloatLargerZero, FloatZeroToOneInc,
-    IntLargerEqualZero, IntLargerZero, NJobs, Operators, Scalar, Sequence,
-    Verbose, XConstructor, YConstructor, EngineEstimatorOptions
+    Bool, EngineEstimatorOptions, FeatureSelectionSolvers,
+    FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
+    FloatZeroToOneInc, IntLargerEqualZero, IntLargerZero, NJobs, Operators,
+    Scalar, Sequence, Verbose, XConstructor, YConstructor,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, get_custom_scorer, is_sparse,

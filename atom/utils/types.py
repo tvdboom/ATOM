@@ -7,7 +7,9 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Hashable, Iterable, Iterator
+from importlib.util import find_spec
 from typing import (
     TYPE_CHECKING, Annotated, Any, Literal, NamedTuple, SupportsIndex,
     TypeAlias, TypedDict, TypeVar, overload, runtime_checkable,
@@ -15,7 +17,6 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import Protocol
 from beartype.vale import Is
@@ -26,6 +27,10 @@ from sktime.forecasting.base import ForecastingHorizon
 if TYPE_CHECKING:
     from atom.data.dataengines import DataEngine
     from atom.utils.utils import Goal
+
+
+# Avoid warning about pyarrow timezones not set
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
 
 # Classes for type hinting ========================================= >>
@@ -134,6 +139,23 @@ class SPTuple(NamedTuple):
 
 
 @runtime_checkable
+class SparseMatrix(Protocol):
+    """Protocol for sparse matrices.
+
+    Required since scipy doesn't have stubs.
+
+    """
+
+    def _bsr_container(self): ...
+    def _coo_container(self): ...
+    def _csc_container(self): ...
+    def _csr_container(self): ...
+    def _dia_container(self): ...
+    def _dok_container(self): ...
+    def _lil_container(self): ...
+
+
+@runtime_checkable
 class SkScorer(Protocol):
     """Protocol for sklearn's scorers."""
 
@@ -216,17 +238,14 @@ XConstructor: TypeAlias = (
     | Sequence[Sequence[Any]]
     | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
     | np.ndarray
-    | sps.spmatrix  # scipy has no stubs, thus this becomes Any
+    | SparseMatrix
+    | pd.Series
     | pd.DataFrame
 )
 XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
 YConstructor: TypeAlias = Sequence[Any] | XConstructor
 YSelector: TypeAlias = Int | str | YConstructor
 FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
-
-# Return types for transform methods
-TReturn: TypeAlias = np.ndarray | sps.spmatrix | Sequence[Any] | pd.DataFrame
-TReturns: TypeAlias = TReturn | tuple[TReturn, TReturn]
 
 # Selection of rows or columns by name or position
 ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | pd.DataFrame
@@ -377,6 +396,74 @@ NItems: TypeAlias = (
     | dict[str, IntLargerEqualZero]
     | Sequence[IntLargerEqualZero]
 )
+
+# Return types for transform methods
+if TYPE_CHECKING:
+    import polars as pl
+    import pyarrow as pa
+    import modin.pandas as md
+    import dask.dataframe as dd
+    import pyspark.pandas as ps
+    from pyspark.sql import DataFrame as SparkDataFrame
+
+    XReturn: TypeAlias = (
+        Sequence[Sequence[Any]]
+        | np.ndarray
+        | SparseMatrix
+        | pd.DataFrame
+        | pl.DataFrame
+        | pl.LazyFrame
+        | pa.Table
+        | md.DataFrame
+        | dd.DataFrame
+        | SparkDataFrame
+    )
+    YReturn: TypeAlias = (
+        Sequence[Any]
+        | np.ndarray
+        | pd.Series
+        | pl.Series
+        | pa.Array
+        | md.Series
+        | dd.Series
+        | ps.Series
+    )
+else:
+    XReturn: TypeAlias = Sequence[Sequence[Any]] | np.ndarray | SparseMatrix | pd.DataFrame
+    YReturn: TypeAlias = Sequence[Any] | np.ndarray | pd.Series
+
+    if find_spec("polars"):
+        import polars as pl
+
+        XReturn = XReturn | pl.DataFrame | pl.LazyFrame
+        YReturn = YReturn | pl.Series
+
+    if find_spec("pyarrow"):
+        import pyarrow as pa
+
+        XReturn = XReturn | pa.Table
+        YReturn = YReturn | pa.Array
+
+    if find_spec("modin"):
+        import modin.pandas as md
+
+        XReturn = XReturn | md.DataFrame
+        YReturn = YReturn | md.Series
+
+    if find_spec("dask"):
+        import dask.dataframe as dd
+
+        XReturn = XReturn | dd.DataFrame
+        YReturn = YReturn | dd.Series
+
+    if find_spec("pyspark"):
+        import pyspark.pandas as ps
+        from pyspark.sql import DataFrame as SparkDataFrame
+
+        XReturn = XReturn | SparkDataFrame | ps.DataFrame
+        YReturn = YReturn | SparkDataFrame | ps.Series
+
+    YReturn = YReturn | XReturn
 
 
 # Variable types for isinstance ================================== >>

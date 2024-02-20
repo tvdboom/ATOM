@@ -21,6 +21,7 @@ from unittest.mock import patch
 import dill as pickle
 import mlflow
 import numpy as np
+import optuna
 import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
@@ -54,7 +55,7 @@ from sktime.forecasting.model_evaluation import evaluate
 from sktime.performance_metrics.forecasting import make_forecasting_scorer
 from sktime.proba.normal import Normal
 from sktime.split import ExpandingWindowSplitter, SingleWindowSplitter
-import optuna
+
 from atom.data import Branch, BranchManager
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
@@ -65,15 +66,15 @@ from atom.utils.types import (
     HT, Backend, Bool, Engine, FHConstructor, Float, FloatZeroToOneExc, Int,
     IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
     PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
-    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XSelector,
-    YSelector, float_t, int_t,
+    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XReturn,
+    XSelector, YReturn, YSelector, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
-    TrialsCallback, adjust, cache, check_dependency, check_empty,
-    composed, crash, estimator_has_attr, flt, get_col_names, get_cols,
-    get_custom_scorer, has_task, it, lst, merge, method_to_log, rnd, sign,
-    time_to_str, to_df, to_series, to_tabular,
+    TrialsCallback, adjust, cache, check_dependency, check_empty, composed,
+    crash, estimator_has_attr, flt, get_col_names, get_cols, get_custom_scorer,
+    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
+    to_series, to_tabular,
 )
 
 
@@ -2244,7 +2245,7 @@ class BaseModel(RunnerPlot):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2441,7 +2442,7 @@ class BaseModel(RunnerPlot):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2561,7 +2562,7 @@ class ClassRegModel:
             set with shape=(n_samples, n_features) to make predictions
             on.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, dict, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `y` is ignored.
@@ -2617,10 +2618,15 @@ class ClassRegModel:
                 Transformed target column.
 
             """
-            if isinstance(out := self.transform(X, y, verbose=verbose), tuple):
+            Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
+
+            with adjust(self.pipeline, verbose=verbose) as pl:
+                out = pl.transform(Xt, yt)
+
+            if isinstance(out, tuple):
                 return out
             else:
-                return out, y
+                return out, yt
 
         def assign_prediction_columns() -> list[str]:
             """Assign column names for the prediction methods.
@@ -2696,7 +2702,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> YReturn:
         """Get confidence scores on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2725,7 +2731,7 @@ class ClassRegModel:
             multiclass classification tasks.
 
         """
-        return self._prediction(X, verbose=verbose, method="decision_function")
+        return self._convert(self._prediction(X, verbose=verbose, method="decision_function"))
 
     @available_if(estimator_has_attr("predict"))
     @composed(crash, method_to_log, beartype)
@@ -2735,7 +2741,7 @@ class ClassRegModel:
         *,
         inverse: Bool = True,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> YReturn:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2773,7 +2779,7 @@ class ClassRegModel:
         if inverse:
             return self.inverse_transform(y=pred)
         else:
-            return pred
+            return self._convert(pred)
 
     @available_if(estimator_has_attr("predict_log_proba"))
     @composed(crash, method_to_log, beartype)
@@ -2782,7 +2788,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> pd.DataFrame:
+    ) -> XReturn:
         """Get class log-probabilities on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2804,13 +2810,13 @@ class ClassRegModel:
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Predicted class log-probabilities with shape=(n_samples,
             n_classes) or shape=(n_samples * n_classes, n_targets) with
             a multiindex format for [multioutput tasks][].
 
         """
-        return self._prediction(X, verbose=verbose, method="predict_log_proba")
+        return self._convert(self._prediction(X, verbose=verbose, method="predict_log_proba"))
 
     @available_if(estimator_has_attr("predict_proba"))
     @composed(crash, method_to_log, beartype)
@@ -2819,7 +2825,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         verbose: Int | None = None,
-    ) -> pd.DataFrame:
+    ) -> XReturn:
         """Get class probabilities on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2841,13 +2847,13 @@ class ClassRegModel:
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Predicted class probabilities with shape=(n_samples,
             n_classes) or shape=(n_samples * n_classes, n_targets) with
             a multiindex format for [multioutput tasks][].
 
         """
-        return self._prediction(X, verbose=verbose, method="predict_proba")
+        return self._convert(self._prediction(X, verbose=verbose, method="predict_proba"))
 
     @available_if(estimator_has_attr("score"))
     @composed(crash, method_to_log, beartype)
@@ -2880,7 +2886,7 @@ class ClassRegModel:
             set with shape=(n_samples, n_features) to make predictions
             on.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, dict, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `X` must be a selection of rows in the dataset.
@@ -2981,7 +2987,7 @@ class ForecastModel:
         verbose: Int | None = None,
         method: PredictionMethodsTS = "predict",
         **kwargs,
-    ) -> Float | Pandas:
+    ) -> Float | Normal | Pandas:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -2994,7 +3000,7 @@ class ForecastModel:
             The [forecasting horizon][row-and-column-selection] encoding
             the time stamps to forecast at.
 
-        y: int, str, dict, sequence, dataframe or None, default=None
+        y: int, str, dict, sequence, dataframe-like or None, default=None
             Ground truth observations.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
@@ -3018,18 +3024,23 @@ class ForecastModel:
 
         Returns
         -------
-        float, series or dataframe
+        float, sktime.proba.[Normal][], series or dataframe
             Calculated predictions. The return type depends on the method
             called.
 
         """
         if y is not None or X is not None:
-            if isinstance(out := self.transform(X, y, verbose=verbose), tuple):
+            Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
+
+            with adjust(self.pipeline, verbose=verbose) as pl:
+                out = pl.transform(Xt, yt)
+
+            if isinstance(out, tuple):
                 Xt, yt = out
             elif X is not None:
-                Xt, yt = out, y
+                Xt, yt = out, yt
             else:
-                Xt, yt = X, out
+                Xt, yt = Xt, out
         else:
             Xt, yt = X, y
 
@@ -3057,7 +3068,7 @@ class ForecastModel:
         *,
         inverse: Bool = True,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> YReturn:
         """Get predictions on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3097,7 +3108,7 @@ class ForecastModel:
         if inverse:
             return self.inverse_transform(y=pred)
         else:
-            return pred
+            return self._convert(pred)
 
     @available_if(estimator_has_attr("predict_interval"))
     @composed(crash, method_to_log, beartype)
@@ -3108,7 +3119,7 @@ class ForecastModel:
         *,
         coverage: Float | Sequence[Float] = 0.9,
         verbose: Int | None = None,
-    ) -> pd.DataFrame:
+    ) -> XReturn:
         """Get prediction intervals on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3135,16 +3146,18 @@ class ForecastModel:
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Computed interval forecasts.
 
         """
-        return self._prediction(
-            fh=fh,
-            X=X,
-            coverage=coverage,
-            verbose=verbose,
-            method="predict_interval",
+        return self._convert(
+            self._prediction(
+                fh=fh,
+                X=X,
+                coverage=coverage,
+                verbose=verbose,
+                method="predict_interval",
+            )
         )
 
     @available_if(estimator_has_attr("predict_proba"))
@@ -3204,7 +3217,7 @@ class ForecastModel:
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
         verbose: Int | None = None,
-    ) -> pd.DataFrame:
+    ) -> XReturn:
         """Get quantile forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3232,16 +3245,18 @@ class ForecastModel:
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Computed quantile forecasts.
 
         """
-        return self._prediction(
-            fh=fh,
-            X=X,
-            alpha=alpha,
-            verbose=verbose,
-            method="predict_quantiles",
+        return self._convert(
+            self._prediction(
+                fh=fh,
+                X=X,
+                alpha=alpha,
+                verbose=verbose,
+                method="predict_quantiles",
+            )
         )
 
     @available_if(estimator_has_attr("predict_residuals"))
@@ -3252,7 +3267,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         verbose: Int | None = None,
-    ) -> Pandas:
+    ) -> YReturn:
         """Get residuals of forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3280,7 +3295,9 @@ class ForecastModel:
             n_targets) for [multivariate][] tasks.
 
         """
-        return self._prediction(y=y, X=X, verbose=verbose, method="predict_residuals")
+        return self._convert(
+            self._prediction(y=y, X=X, verbose=verbose, method="predict_residuals")
+        )
 
     @available_if(estimator_has_attr("predict_var"))
     @composed(crash, method_to_log, beartype)
@@ -3291,7 +3308,7 @@ class ForecastModel:
         *,
         cov: Bool = False,
         verbose: Int | None = None,
-    ) -> pd.DataFrame:
+    ) -> XReturn:
         """Get variance forecasts on new data or existing rows.
 
         New data is first transformed through the model's pipeline.
@@ -3319,16 +3336,18 @@ class ForecastModel:
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Computed variance forecasts.
 
         """
-        return self._prediction(
-            fh=fh,
-            X=X,
-            cov=cov,
-            verbose=verbose,
-            method="predict_var",
+        return self._convert(
+            self._prediction(
+                fh=fh,
+                X=X,
+                cov=cov,
+                verbose=verbose,
+                method="predict_var",
+            )
         )
 
     @available_if(estimator_has_attr("score"))
@@ -3357,7 +3376,7 @@ class ForecastModel:
 
         Parameters
         ----------
-        y: int, str, dict, sequence or dataframe
+        y: int, str, dict, sequence or dataframe-like
             Ground truth observations.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None

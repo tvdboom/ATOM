@@ -7,7 +7,6 @@ Description: Module containing the data engines.
 
 from __future__ import annotations
 
-import os
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
@@ -25,10 +24,6 @@ if TYPE_CHECKING:
     import pyspark.pandas as ps
 
 
-# Avoid warning about pyarrow timezones not set
-os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
-
-
 class DataEngine(metaclass=ABCMeta):
     """Abstract class for data engines.
 
@@ -41,7 +36,6 @@ class DataEngine(metaclass=ABCMeta):
     @abstractmethod
     def convert(obj: Pandas) -> Any:
         """Convert to data engine output types."""
-        pass
 
 
 class NumpyEngine(DataEngine):
@@ -70,6 +64,11 @@ class PandasPyarrowEngine(DataEngine):
     """Pandas pyarrow data engine."""
 
     library = "pandas"
+
+    def _to_numpy_dtype(self, dtype: np.dtype) -> pa.DataType:
+        """Convert numpy dtype to pyarrow dtype."""
+        if isinstance(dtype, np.dtype):
+            return pa.from_numpy_dtype(dtype)  # TODO: Handle numpy nullable types
 
     @staticmethod
     def convert(obj: Pandas) -> Pandas:

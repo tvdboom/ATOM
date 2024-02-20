@@ -53,16 +53,16 @@ from atom.utils.types import (
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
     IntLargerZero, MetricConstructor, ModelsConstructor, NItems, NJobs,
-    NormalizerStrats, NumericalStrats, Operators, Pandas, Predictor,
+    NormalizerStrats, NumericalStrats, Operators, Predictor,
     PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
     SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
-    XSelector, YSelector, sequence_t,
+    XReturn, XSelector, YReturn, YSelector, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, Goal, adjust,
-    check_dependency, composed, crash, fit_one, flt, get_cols,
-    get_custom_scorer, has_task, is_sparse, lst, make_sklearn, merge,
-    method_to_log, n_cols, replace_missing, sign,
+    ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,
+    composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
+    is_sparse, lst, make_sklearn, merge, method_to_log, n_cols,
+    replace_missing, sign,
 )
 
 
@@ -163,7 +163,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             self._log(f"Data engine: {self.engine.data}", 1)
         if self.engine.estimator != EngineTuple().estimator:
             self._log(f"Estimator engine: {self.engine.estimator}", 1)
-        if self.backend == "ray" or self.n_jobs > 1:
+        if self.backend != "loky" and self.n_jobs > 1:
             self._log(f"Parallelization backend: {self.backend}", 1)
         if self.memory.location is not None:
             self._log(f"Cache storage: {os.path.join(self.memory.location, 'joblib')}", 1)
@@ -672,7 +672,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -1094,7 +1094,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         y: YSelector | None = None,
         *,
         verbose: Verbose | None = None,
-    ) -> Pandas | tuple[pd.DataFrame, Pandas]:
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are

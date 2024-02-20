@@ -46,12 +46,11 @@ from typing_extensions import Self
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.types import (
-    Bins, Bool, CategoricalStrats, DiscretizerStrats, Engine,
-    EngineDataOptions, EngineTuple, Estimator, FloatLargerZero, Int,
-    IntLargerEqualZero, IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats,
-    NumericalStrats, Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats,
-    SeasonalityModels, Sequence, Transformer, Verbose, XConstructor,
-    YConstructor, sequence_t, EngineEstimatorOptions
+    Bins, Bool, CategoricalStrats, DiscretizerStrats, EngineDataOptions, EngineEstimatorOptions, EngineTuple, Estimator,
+    FloatLargerZero, Int, IntLargerEqualZero, IntLargerTwo, IntLargerZero,
+    NJobs, NormalizerStrats, NumericalStrats, Pandas, Predictor, PrunerStrats,
+    Scalar, ScalerStrats, SeasonalityModels, Sequence, Transformer, Verbose,
+    XConstructor, YConstructor, sequence_t,
 )
 from atom.utils.utils import (
     Goal, check_is_fitted, get_col_names, get_col_order, get_cols, it, lst,

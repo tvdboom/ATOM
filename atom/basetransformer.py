@@ -32,7 +32,8 @@ from sklearn.utils.validation import check_memory
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
     EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Pandas,
-    Sequence, Severity, Verbose, Warnings, XSelector, YSelector, bool_t, int_t,
+    Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
+    bool_t, int_t,
 )
 from atom.utils.utils import (
     check_dependency, crash, lst, make_sklearn, to_df, to_tabular,

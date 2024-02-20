@@ -7,8 +7,8 @@ Description: Unit tests for pipeline.py
 
 import numpy as np
 import pandas as pd
-import pytest
 import pyarrow as pa
+import pytest
 from pandas.testing import assert_frame_equal
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sktime.proba.normal import Normal

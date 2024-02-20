@@ -27,8 +27,8 @@ from atom.plots.basefigure import BaseFigure
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
     Bool, FloatLargerZero, FloatZeroToOneExc, Int, IntLargerZero, Legend,
-    MetricSelector, Model, ModelsSelector, PlotBackend, RowSelector, Scalar,
-    Sequence, int_t, sequence_t, Pandas
+    MetricSelector, Model, ModelsSelector, Pandas, PlotBackend, RowSelector,
+    Scalar, Sequence, int_t, sequence_t,
 )
 from atom.utils.utils import (
     Aesthetics, check_is_fitted, composed, crash, get_custom_scorer, lst,
