@@ -65,11 +65,6 @@ class PandasPyarrowEngine(DataEngine):
 
     library = "pandas"
 
-    def _to_numpy_dtype(self, dtype: np.dtype) -> pa.DataType:
-        """Convert numpy dtype to pyarrow dtype."""
-        if isinstance(dtype, np.dtype):
-            return pa.from_numpy_dtype(dtype)  # TODO: Handle numpy nullable types
-
     @staticmethod
     def convert(obj: Pandas) -> Pandas:
         """Convert to pyarrow dtypes."""
@@ -78,7 +73,7 @@ class PandasPyarrowEngine(DataEngine):
         if isinstance(obj, pd.DataFrame):
             return obj.astype(
                 {
-                    c: pd.ArrowDtype(from_numpy_dtype(d)) if isinstance(d, np.dtype) else d
+                    c: pd.ArrowDtype(from_numpy_dtype(getattr(d, "numpy_dtype", d)))
                     for c, d in obj.dtypes.items()
                 }
             )

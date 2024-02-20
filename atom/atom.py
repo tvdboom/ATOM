@@ -1332,8 +1332,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 )
             )
             if self.branch._holdout is not None:
-                self.branch._holdout.index = range(
-                    len(data), len(data) + len(self.branch._holdout)
+                self.branch._holdout.index = pd.Index(
+                    range(len(data), len(data) + len(self.branch._holdout))
                 )
         elif self.branch.dataset.index.duplicated().any():
             raise ValueError(

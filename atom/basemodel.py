@@ -2525,7 +2525,7 @@ class ClassRegModel:
         y: YSelector | None = ...,
         metric: str | MetricFunction | Scorer | None = ...,
         sample_weight: Sequence[Scalar] | None = ...,
-        verbose: Int | None = ...,
+        verbose: Verbose | None = ...,
         method: Literal["score"] = ...,
     ) -> Float: ...
 
@@ -2536,8 +2536,13 @@ class ClassRegModel:
         y: YSelector | None = ...,
         metric: str | MetricFunction | Scorer | None = ...,
         sample_weight: Sequence[Scalar] | None = ...,
-        verbose: Int | None = ...,
-        method: PredictionMethods = ...,
+        verbose: Verbose | None = ...,
+        method: Literal[
+            "decision_function",
+            "predict",
+            "predict_log_proba",
+            "predict_proba",
+        ] = ...,
     ) -> Pandas: ...
 
     def _prediction(
@@ -2546,7 +2551,7 @@ class ClassRegModel:
         y: YSelector | None = None,
         metric: str | MetricFunction | Scorer | None = None,
         sample_weight: Sequence[Scalar] | None = None,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
         method: PredictionMethods = "predict",
     ) -> Float | Pandas:
         """Get predictions on new data or existing rows.
@@ -2701,7 +2706,7 @@ class ClassRegModel:
         self,
         X: RowSelector | XSelector,
         *,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> YReturn:
         """Get confidence scores on new data or existing rows.
 
@@ -2740,7 +2745,7 @@ class ClassRegModel:
         X: RowSelector | XSelector,
         *,
         inverse: Bool = True,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> YReturn:
         """Get predictions on new data or existing rows.
 
@@ -2787,7 +2792,7 @@ class ClassRegModel:
         self,
         X: RowSelector | XSelector,
         *,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> XReturn:
         """Get class log-probabilities on new data or existing rows.
 
@@ -2824,7 +2829,7 @@ class ClassRegModel:
         self,
         X: RowSelector | XSelector,
         *,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> XReturn:
         """Get class probabilities on new data or existing rows.
 
@@ -2864,7 +2869,7 @@ class ClassRegModel:
         *,
         metric: str | MetricFunction | Scorer | None = None,
         sample_weight: Sequence[Scalar] | None = None,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> Float:
         """Get a metric score on new data.
 
@@ -2957,11 +2962,11 @@ class ForecastModel:
     @overload
     def _prediction(
         self,
-        fh: RowSelector | FHConstructor | None = None,
-        y: RowSelector | YSelector | None = None,
-        X: XSelector | None = None,
-        metric: str | MetricFunction | Scorer | None = None,
-        verbose: Int | None = None,
+        fh: RowSelector | FHConstructor | None = ...,
+        y: RowSelector | YSelector | None = ...,
+        X: XSelector | None = ...,
+        metric: str | MetricFunction | Scorer | None = ...,
+        verbose: Verbose | None = ...,
         method: Literal["score"] = ...,
         **kwargs,
     ) -> Float: ...
@@ -2969,14 +2974,21 @@ class ForecastModel:
     @overload
     def _prediction(
         self,
-        fh: RowSelector | FHConstructor | None = None,
-        y: RowSelector | YSelector | None = None,
-        X: XSelector | None = None,
-        metric: str | MetricFunction | Scorer | None = None,
-        verbose: Int | None = None,
-        method: PredictionMethodsTS = ...,
+        fh: RowSelector | FHConstructor | None = ...,
+        y: RowSelector | YSelector | None = ...,
+        X: XSelector | None = ...,
+        metric: str | MetricFunction | Scorer | None = ...,
+        verbose: Verbose | None = ...,
+        method: Literal[
+            "predict",
+            "predict_interval",
+            "predict_proba",
+            "predict_quantiles",
+            "predict_residuals",
+            "predict_var",
+        ] = ...,
         **kwargs,
-    ) -> Pandas: ...
+    ) -> Normal | Pandas: ...
 
     def _prediction(
         self,
@@ -2984,7 +2996,7 @@ class ForecastModel:
         y: RowSelector | YSelector | None = None,
         X: XSelector | None = None,
         metric: str | MetricFunction | Scorer | None = None,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
         method: PredictionMethodsTS = "predict",
         **kwargs,
     ) -> Float | Normal | Pandas:
@@ -3067,7 +3079,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         inverse: Bool = True,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> YReturn:
         """Get predictions on new data or existing rows.
 
@@ -3118,7 +3130,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> XReturn:
         """Get prediction intervals on new data or existing rows.
 
@@ -3168,7 +3180,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         marginal: Bool = True,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> Normal:
         """Get probabilistic forecasts on new data or existing rows.
 
@@ -3216,7 +3228,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> XReturn:
         """Get quantile forecasts on new data or existing rows.
 
@@ -3266,7 +3278,7 @@ class ForecastModel:
         y: RowSelector | YSelector,
         X: XSelector | None = None,
         *,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> YReturn:
         """Get residuals of forecasts on new data or existing rows.
 
@@ -3307,7 +3319,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         cov: Bool = False,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> XReturn:
         """Get variance forecasts on new data or existing rows.
 
@@ -3359,7 +3371,7 @@ class ForecastModel:
         fh: RowSelector | FHConstructor | None = None,
         *,
         metric: str | MetricFunction | Scorer | None = None,
-        verbose: Int | None = None,
+        verbose: Verbose | None = None,
     ) -> Float:
         """Get a metric score on new data.
 

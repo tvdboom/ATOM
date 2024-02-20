@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import random
 import re
+from pandas._typing import Axes
 import tempfile
 import warnings
 from collections.abc import Hashable
@@ -367,21 +368,21 @@ class BaseTransformer:
     @staticmethod
     @overload
     def _check_input(
-        X: XSelector,
+        X: XSelector | None,
         y: Literal[None],
         *,
-        columns: Sequence[str] | None = None,
-        name: str | Sequence[str] | None = None,
+        columns: Axes | None = ...,
+        name: str | Axes | None = ...,
     ) -> tuple[pd.DataFrame, None]: ...
 
     @staticmethod
     @overload
     def _check_input(
         X: Literal[None],
-        y: YSelector,
+        y: YSelector | None = ...,
         *,
-        columns: Sequence[str] | None = None,
-        name: str | Sequence[str] | None = None,
+        columns: Axes | None = ...,
+        name: str | Axes | None = ...,
     ) -> tuple[None, Pandas]: ...
 
     @staticmethod
@@ -390,8 +391,8 @@ class BaseTransformer:
         X: XSelector,
         y: YSelector,
         *,
-        columns: Sequence[str] | None = None,
-        name: str | Sequence[str] | None = None,
+        columns: Axes | None = ...,
+        name: str | Axes | None = ...,
     ) -> tuple[pd.DataFrame, Pandas]: ...
 
     @staticmethod
@@ -399,8 +400,8 @@ class BaseTransformer:
         X: XSelector | None = None,
         y: YSelector | None = None,
         *,
-        columns: Sequence[str] | None = None,
-        name: str | Sequence[str] | None = None,
+        columns: Axes | None = None,
+        name: str | Axes | None = None,
     ) -> tuple[pd.DataFrame | None, Pandas | None]:
         """Prepare the input data.
 
