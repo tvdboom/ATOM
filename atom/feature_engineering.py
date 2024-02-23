@@ -33,7 +33,7 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.utils.types import (
-    Bool, EngineEstimatorOptions, FeatureSelectionSolvers,
+    Bool, Engine, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IntLargerEqualZero, IntLargerZero, NJobs, Operators,
     Scalar, Sequence, Verbose, XConstructor, YConstructor,
@@ -985,7 +985,7 @@ class FeatureSelector(TransformerMixin):
         max_correlation: FloatZeroToOneInc | None = 1.0,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,

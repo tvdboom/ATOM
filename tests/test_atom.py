@@ -454,7 +454,6 @@ def test_shrink_pyarrow():
     atom = ATOMClassifier(X_pa, y_bin, engine="pandas-pyarrow", random_state=1)
     assert atom.dtypes[0].name == "double[pyarrow]"
     atom.shrink()
-    print(atom.branch.dataset.dtypes[0])
     assert atom.dtypes[0].name == "float[pyarrow]"
 
 

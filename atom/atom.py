@@ -53,10 +53,10 @@ from atom.utils.types import (
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
     IntLargerZero, MetricConstructor, ModelsConstructor, NItems, NJobs,
-    NormalizerStrats, NumericalStrats, Operators, Predictor,
-    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
-    SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
-    XReturn, XSelector, YReturn, YSelector, sequence_t,
+    NormalizerStrats, NumericalStrats, Operators, Predictor, PrunerStrats,
+    RowSelector, Scalar, ScalerStrats, Seasonality, Sequence, SPDict,
+    TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings, XReturn,
+    XSelector, YReturn, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,

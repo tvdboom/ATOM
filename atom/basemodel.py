@@ -274,7 +274,7 @@ class BaseModel(RunnerPlot):
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             if getattr(self, "needs_scaling", None) and not self.branch.check_scaling():
-                self.scaler = Scaler().fit(self.X_train)
+                self.scaler = Scaler(engine=self.engine).fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""

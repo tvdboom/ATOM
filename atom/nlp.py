@@ -21,7 +21,7 @@ from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, EngineEstimatorOptions, FloatLargerZero, Sequence,
+    Bool, Engine, FloatLargerZero, Sequence,
     VectorizerStarts, Verbose, XConstructor, YConstructor, bool_t,
 )
 from atom.utils.utils import (
@@ -886,7 +886,7 @@ class Vectorizer(TransformerMixin):
         *,
         return_sparse: Bool = True,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         **kwargs,
     ):

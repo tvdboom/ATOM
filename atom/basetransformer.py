@@ -10,7 +10,6 @@ from __future__ import annotations
 import os
 import random
 import re
-from pandas._typing import Axes
 import tempfile
 import warnings
 from collections.abc import Hashable
@@ -28,13 +27,13 @@ import numpy as np
 import pandas as pd
 from beartype import beartype
 from joblib.memory import Memory
+from pandas._typing import Axes
 from sklearn.utils.validation import check_memory
 
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
     EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Pandas,
-    Sequence, Severity, Verbose, Warnings, XSelector, YSelector,
-    bool_t, int_t,
+    Severity, Verbose, Warnings, XSelector, YSelector, bool_t, int_t,
 )
 from atom.utils.utils import (
     check_dependency, crash, lst, make_sklearn, to_df, to_tabular,

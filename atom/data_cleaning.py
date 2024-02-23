@@ -40,13 +40,17 @@ from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
 from sklearn.utils.validation import _check_feature_names_in
+from sktime.transformations.series.detrend import (
+    ConditionalDeseasonalizer, Deseasonalizer, Detrender,
+)
 from sktime.transformations.series.impute import Imputer
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
 from atom.utils.types import (
-    Bins, Bool, CategoricalStrats, DiscretizerStrats, EngineDataOptions, EngineEstimatorOptions, EngineTuple, Estimator,
+    Bins, Bool, CategoricalStrats, DiscretizerStrats, Engine,
+    EngineDataOptions, EngineTuple, Estimator,
     FloatLargerZero, Int, IntLargerEqualZero, IntLargerTwo, IntLargerZero,
     NJobs, NormalizerStrats, NumericalStrats, Pandas, Predictor, PrunerStrats,
     Scalar, ScalerStrats, SeasonalityModels, Sequence, Transformer, Verbose,
@@ -711,7 +715,7 @@ class Cleaner(TransformerMixin):
         drop_missing_target: Bool = True,
         encode_target: Bool = True,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose)
@@ -1405,7 +1409,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin):
         bins: Bins = 5,
         labels: Sequence[str] | dict[str, Sequence[str]] | None = None,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
     ):
@@ -2120,7 +2124,7 @@ class Imputer(TransformerMixin):
         max_nan_cols: FloatLargerZero | None = None,
         n_jobs: NJobs = 1,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
     ):
@@ -2512,7 +2516,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin):
         strategy: NormalizerStrats = "yeojohnson",
         *,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         random_state: IntLargerEqualZero | None = None,
         **kwargs,
@@ -2790,7 +2794,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
         max_sigma: FloatLargerZero = 3,
         include_target: Bool = False,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         **kwargs,
     ):
@@ -3051,7 +3055,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         *,
         include_binary: Bool = False,
         device: str = "cpu",
-        engine: EngineEstimatorOptions = None,
+        engine: Engine = None,
         verbose: Verbose = 0,
         **kwargs,
     ):

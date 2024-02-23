@@ -22,7 +22,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload, Hashable
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import numpy as np
 import pandas as pd
@@ -43,11 +43,10 @@ from sklearn.utils.validation import _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
-    Bool, EngineTuple, Estimator, FeatureNamesOut, Float, IndexSelector, Int,
-    IntLargerEqualZero, MetricFunction, Model, Pandas, Predictor, Scalar,
-    Scorer, Segment, Sequence, SPTuple, Transformer, Verbose,
-    XConstructor, XReturn, YConstructor, int_t, segment_t,
-    sequence_t, EngineDataOptions
+    Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
+    IndexSelector, Int, IntLargerEqualZero, MetricFunction, Model, Pandas,
+    Predictor, Scalar, Scorer, Segment, Sequence, SPTuple, Transformer,
+    Verbose, XConstructor, YConstructor, int_t, segment_t, sequence_t,
 )
 
 
@@ -2184,9 +2183,9 @@ def name_cols(
         mask = original_df.apply(  # type: ignore[type-var]
             lambda c: np.array_equal(
                 a1=c,
-                a2=str(name),
+                a2=column,
                 equal_nan=is_numeric_dtype(c) and np.issubdtype(column.dtype, np.number),
-            ),
+            )
         )
 
         if any(mask) and mask[mask].index[0] not in temp_cols:

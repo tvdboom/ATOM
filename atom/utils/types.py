@@ -399,10 +399,10 @@ NItems: TypeAlias = (
 
 # Return types for transform methods
 if TYPE_CHECKING:
+    import dask.dataframe as dd
+    import modin.pandas as md
     import polars as pl
     import pyarrow as pa
-    import modin.pandas as md
-    import dask.dataframe as dd
     import pyspark.pandas as ps
     from pyspark.sql import DataFrame as SparkDataFrame
 
