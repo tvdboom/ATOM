@@ -22,7 +22,7 @@ from typing_extensions import Self
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
     Bool, Engine, FloatLargerZero, Sequence, VectorizerStarts, Verbose,
-    XConstructor, YConstructor, bool_t, XReturn
+    XConstructor, XReturn, YConstructor, bool_t,
 )
 from atom.utils.utils import (
     check_is_fitted, check_nltk_module, get_corpus, is_sparse, merge, to_df,

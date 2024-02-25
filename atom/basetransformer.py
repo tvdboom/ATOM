@@ -19,7 +19,7 @@ from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Literal, TypeVar, overload
+from typing import Literal, TypeVar, overload
 
 import joblib
 import mlflow
@@ -33,7 +33,8 @@ from sklearn.utils.validation import check_memory
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
     EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Pandas,
-    Severity, Verbose, Warnings, XSelector, YSelector, bool_t, int_t, YReturn, XReturn
+    Severity, Verbose, Warnings, XReturn, XSelector, YReturn, YSelector,
+    bool_t, int_t,
 )
 from atom.utils.utils import (
     check_dependency, crash, lst, make_sklearn, to_df, to_tabular,

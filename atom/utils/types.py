@@ -8,7 +8,7 @@ Description: Module containing utilities for typing analysis.
 from __future__ import annotations
 
 import os
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterator
 from importlib.util import find_spec
 from typing import (
     TYPE_CHECKING, Annotated, Any, Literal, NamedTuple, SupportsIndex,

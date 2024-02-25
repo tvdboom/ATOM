@@ -423,8 +423,8 @@ def test_missing_values_are_propagated():
 def test_unknown_classes_are_imputed():
     """Assert that unknown classes are imputed."""
     encoder = Encoder()
-    encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).iloc[0, 0] == -1.0
+    encoder.fit([["a"], ["b"], ["b"], ["a"]])
+    assert encoder.transform([["c"]]).iloc[0, 0] == -1.0
 
 
 def test_ordinal_encoder():

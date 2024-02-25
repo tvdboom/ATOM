@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from random import sample
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import featuretools as ft
 import numpy as np
@@ -36,7 +36,7 @@ from atom.utils.types import (
     Bool, Engine, FeatureSelectionSolvers, FeatureSelectionStrats,
     FloatLargerEqualZero, FloatLargerZero, FloatZeroToOneInc,
     IntLargerEqualZero, IntLargerZero, NJobs, Operators, Scalar, Sequence,
-    Verbose, XConstructor, YConstructor, XReturn
+    Verbose, XConstructor, XReturn, YConstructor,
 )
 from atom.utils.utils import (
     Goal, Task, check_is_fitted, check_scaling, get_custom_scorer, is_sparse,
@@ -1040,7 +1040,7 @@ class FeatureSelector(TransformerMixin):
         Xt = to_df(X)
         yt = to_tabular(y, index=Xt.index)
 
-        if yt is None and self.strategy != "pca":
+        if yt is None and self.strategy not in ("pca", "sfm", None):
             raise ValueError(
                 "Invalid value for the y parameter. Value cannot "
                 f"be None for strategy='{self.strategy}'."
@@ -1248,7 +1248,7 @@ class FeatureSelector(TransformerMixin):
                 # PCA requires the features to be scaled
                 if not check_scaling(Xt):
                     self.scaler_ = Scaler(device=self.device, engine=self.engine)
-                    Xt = self.scaler_.fit_transform(Xt)
+                    Xt = cast(pd.DataFrame, self.scaler_.fit_transform(Xt))
 
                 estimator = self._get_est_class("PCA", "decomposition")
                 solver_param = "svd_solver"
@@ -1509,7 +1509,7 @@ class FeatureSelector(TransformerMixin):
 
             if self.scaler_:
                 self._log("   --> Scaling features...", 2)
-                Xt = self.scaler_.transform(Xt)
+                Xt = cast(pd.DataFrame, self.scaler_.transform(Xt))
 
             Xt = self._estimator.transform(Xt).iloc[:, :self._estimator._comps]
 

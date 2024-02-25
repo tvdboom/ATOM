@@ -22,7 +22,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -32,6 +32,7 @@ from IPython.display import display
 from pandas._libs.missing import NAType
 from pandas._typing import Axes, Dtype
 from pandas.api.types import is_numeric_dtype
+from pandas.core.generic import NDFrame
 from sklearn.base import BaseEstimator
 from sklearn.base import OneToOneFeatureMixin as FMixin
 from sklearn.metrics import (
@@ -46,9 +47,9 @@ from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
     IndexSelector, Int, IntLargerEqualZero, MetricFunction, Model, Pandas,
     Predictor, Scalar, Scorer, Segment, Sequence, SPTuple, Transformer,
-    Verbose, XConstructor, YConstructor, int_t, segment_t, sequence_t, XReturn, YReturn
+    Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t, segment_t,
+    sequence_t,
 )
-from pandas.core.generic import NDFrame
 
 
 if TYPE_CHECKING:
@@ -2180,7 +2181,7 @@ def name_cols(
 
     # If columns were added or removed
     temp_cols = []
-    for i, (name, column) in enumerate(df.items()):
+    for i, column in enumerate(get_cols(df)):
         # equal_nan=True fails for non-numeric dtypes
         mask = original_df.apply(  # type: ignore[type-var]
             lambda c: np.array_equal(
@@ -2483,7 +2484,8 @@ def transform_one(
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
-    out: YConstructor | tuple[XConstructor, YConstructor] = getattr(transformer, method)(**kwargs, **transform_params)
+    caller = getattr(transformer, method)
+    out: YConstructor | tuple[XConstructor, YConstructor] = caller(**kwargs, **transform_params)
 
     # Transform can return X, y or both
     X_new: pd.DataFrame | None

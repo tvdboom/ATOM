@@ -27,11 +27,12 @@ from typing_extensions import Self
 
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FHConstructor, Float,
-    Pandas, Scalar, Sequence, Verbose, XConstructor, YConstructor, YReturn, XReturn
+    Pandas, Scalar, Sequence, Verbose, XConstructor, XReturn, YConstructor,
+    YReturn,
 )
 from atom.utils.utils import (
-    NotFittedError, adjust, check_is_fitted, fit_one, fit_transform_one,
-    transform_one, variable_return, to_df, to_tabular
+    NotFittedError, adjust, check_is_fitted, fit_one, fit_transform_one, to_df,
+    to_tabular, transform_one, variable_return,
 )
 
 

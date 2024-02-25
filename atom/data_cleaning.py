@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from collections.abc import Hashable
-from typing import Any, Literal, TypeVar, cast, overload
+from typing import Any, Literal, TypeVar, overload
 
 import numpy as np
 import pandas as pd
@@ -52,9 +52,9 @@ from atom.utils.types import (
     Bins, Bool, CategoricalStrats, DiscretizerStrats, Engine,
     EngineDataOptions, EngineTuple, Estimator, FloatLargerZero, Int,
     IntLargerEqualZero, IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats,
-    NumericalStrats, Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats,
-    SeasonalityModels, Sequence, Transformer, Verbose, XConstructor,
-    YConstructor, sequence_t, XReturn, YReturn,
+    NumericalStrats, Predictor, PrunerStrats, Scalar, ScalerStrats,
+    SeasonalityModels, Sequence, Transformer, Verbose, XConstructor, XReturn,
+    YConstructor, YReturn, sequence_t,
 )
 from atom.utils.utils import (
     Goal, check_is_fitted, get_col_names, get_col_order, get_cols, it, lst,

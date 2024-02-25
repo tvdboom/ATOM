@@ -626,12 +626,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             except ValueError as ex:
                 # Clarify common error with stratification for multioutput tasks
-                if "least populated class" in str(ex) and isinstance(y, pd.DataFrame):
+                if isinstance(y, pd.DataFrame):
                     raise ValueError(
                         "Stratification for multioutput tasks is applied over all target "
-                        "columns, which results in a least populated class that has only "
-                        "one member. Either select only one column to stratify over, or "
-                        "set the parameter stratify=False."
+                        "columns. Either select only one column to stratify over, or set "
+                        "the parameter stratify=False."
                     ) from ex
                 else:
                     raise ex

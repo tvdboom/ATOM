@@ -21,8 +21,8 @@ if TYPE_CHECKING:
     import modin.pandas as md
     import polars as pl
     import pyarrow as pa
-    import pyspark.sql as psql
     import pyspark.pandas as ps
+    import pyspark.sql as psql
 
 
 class DataEngine(metaclass=ABCMeta):

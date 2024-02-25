@@ -10,7 +10,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import dask.dataframe as dd
-import modin.pandas as md
 import numpy as np
 import pandas as pd
 import polars as pl
