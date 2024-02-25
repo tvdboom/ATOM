@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from _pytest.monkeypatch import MonkeyPatch
 
-    from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
+    from atom.utils.types import DataFrame, Pandas, Sequence, XSelector, XConstructor
 
 
 class DummyTransformer(TransformerMixin, BaseEstimator):
@@ -128,7 +128,7 @@ def random():
 
 
 def get_train_test(
-    X: XSelector | None,
+    X: XConstructor | None,
     y: Sequence[Any] | pd.DataFrame,
 ) -> Pandas | tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.

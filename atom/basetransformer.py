@@ -33,7 +33,7 @@ from sklearn.utils.validation import check_memory
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
     EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Pandas,
-    Severity, Verbose, Warnings, XSelector, YSelector, bool_t, int_t,
+    Severity, Verbose, Warnings, XSelector, YSelector, bool_t, int_t, YReturn, XReturn
 )
 from atom.utils.utils import (
     check_dependency, crash, lst, make_sklearn, to_df, to_tabular,
@@ -367,8 +367,8 @@ class BaseTransformer:
     @staticmethod
     @overload
     def _check_input(
-        X: XSelector | None,
-        y: Literal[None],
+        X: XSelector,
+        y: Literal[None] = ...,
         *,
         columns: Axes | None = ...,
         name: str | Axes | None = ...,
@@ -378,7 +378,7 @@ class BaseTransformer:
     @overload
     def _check_input(
         X: Literal[None],
-        y: YSelector | None = ...,
+        y: YSelector,
         *,
         columns: Axes | None = ...,
         name: str | Axes | None = ...,
@@ -447,13 +447,30 @@ class BaseTransformer:
             Xt = to_df(X() if callable(X) else X, columns=columns)
 
         # Prepare target column
-        if not isinstance(y, Int | str | None):
+        yt: Pandas | None
+        if y is None:
+            yt = None
+        elif isinstance(y, int_t):
+            if Xt is None:
+                raise ValueError("X can't be None when y is an int.")
+
+            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
+        elif isinstance(y, str):
+            if Xt is not None:
+                if y not in Xt.columns:
+                    raise ValueError(f"Column {y} not found in X!")
+
+                Xt, yt = Xt.drop(columns=y), Xt[y]
+
+            else:
+                raise ValueError("X can't be None when y is a string.")
+        else:
             # If X and y have different number of rows, try multioutput
             if Xt is not None and not isinstance(y, dict) and len(Xt) != len(y):
                 try:
                     targets: list[Hashable] = []
                     for col in y:
-                        if col in Xt.columns:
+                        if isinstance(col, str) and col in Xt.columns:
                             targets.append(col)
                         elif isinstance(col, int_t):
                             if -Xt.shape[1] <= col < Xt.shape[1]:
@@ -479,27 +496,18 @@ class BaseTransformer:
             if Xt is not None and not Xt.index.equals(yt.index):
                 raise ValueError("X and y don't have the same indices!")
 
-        elif isinstance(y, str):
-            if Xt is not None:
-                if y not in Xt.columns:
-                    raise ValueError(f"Column {y} not found in X!")
-
-                Xt, yt = Xt.drop(columns=y), Xt[y]
-
-            else:
-                raise ValueError("X can't be None when y is a string.")
-
-        elif isinstance(y, int_t):
-            if Xt is None:
-                raise ValueError("X can't be None when y is an int.")
-
-            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
-        else:
-            yt = y
-
         return Xt, yt
 
-    def _convert(self, obj: Any) -> Any:
+    @overload
+    def _convert(self, obj: Literal[None]) -> None: ...
+
+    @overload
+    def _convert(self, obj: pd.DataFrame) -> XReturn: ...
+
+    @overload
+    def _convert(self, obj: pd.Series) -> YReturn: ...
+
+    def _convert(self, obj: Pandas | None) -> YReturn | None:
         """Convert data to the type set in the data engine.
 
         Non-pandas types are returned as is.

@@ -22,7 +22,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload, cast
 
 import numpy as np
 import pandas as pd
@@ -46,8 +46,9 @@ from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
     IndexSelector, Int, IntLargerEqualZero, MetricFunction, Model, Pandas,
     Predictor, Scalar, Scorer, Segment, Sequence, SPTuple, Transformer,
-    Verbose, XConstructor, YConstructor, int_t, segment_t, sequence_t,
+    Verbose, XConstructor, YConstructor, int_t, segment_t, sequence_t, XReturn, YReturn
 )
+from pandas.core.generic import NDFrame
 
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-T_Pandas = TypeVar("T_Pandas", pd.Series, pd.DataFrame)
+T_Pandas = TypeVar("T_Pandas", bound=NDFrame)
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
 
@@ -624,7 +625,8 @@ class TrialsCallback:
     def __call__(self, study: Study, trial: FrozenTrial):
         """Print trial info and store in mlflow experiment."""
         try:  # Fails when there are no successful trials
-            trial_info = self.T.trials.reset_index(names="trial").loc[trial.number]
+            trials = self.T.trials.reset_index(names="trial")
+            trial_info = cast(pd.Series, trials.loc[trial.number])  # Loc returns df or series
         except KeyError:
             return
 
@@ -1379,8 +1381,8 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         )
     else:
         return X.replace(
-            to_replace={k: (missing_values or []) + default_values for k in X},
-            value={k: get_nan(X[k].dtype) for k in X},
+            to_replace={c: (missing_values or []) + default_values for c in X.columns},
+            value={c: get_nan(d) for c, d in X.dtypes.items()},
         )
 
 
@@ -1398,8 +1400,8 @@ def n_cols(obj: YConstructor | None) -> int:
         Number of columns.
 
     """
-    if obj is not None and hasattr(obj, "shape"):
-        return obj.shape[1] if len(obj.shape) > 1 else 1
+    if hasattr(obj, "shape"):
+        return obj.shape[1] if len(obj.shape) > 1 else 1  # type: ignore[union-attr]
     elif isinstance(obj, dict):
         return 2  # Dict always goes to dataframe
 
@@ -1457,9 +1459,9 @@ def get_col_names(obj: Any) -> list[str] | None:
 
 
 def variable_return(
-    X: pd.DataFrame | None,
-    y: Pandas | None,
-) -> Pandas | tuple[pd.DataFrame, Pandas]:
+    X: XReturn | None,
+    y: YReturn | None,
+) -> XReturn | tuple[XReturn, YReturn]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1467,15 +1469,15 @@ def variable_return(
 
     Parameters
     ----------
-    X: pd.DataFrame or None
+    X: dataframe or None
         Feature set.
 
-    y: pd.Series, pd.DataFrame or None
+    y: series, dataframe or None
         Target column(s).
 
     Returns
     -------
-    pd.Series, pd.DataFrame or tuple
+    series, dataframe or tuple
         Data sets that are not None.
 
     """
@@ -2184,7 +2186,7 @@ def name_cols(
             lambda c: np.array_equal(
                 a1=c,
                 a2=column,
-                equal_nan=is_numeric_dtype(c) and np.issubdtype(column.dtype, np.number),
+                equal_nan=is_numeric_dtype(c) and np.issubdtype(column.dtype.name, np.number),
             )
         )
 
@@ -2316,8 +2318,8 @@ def reorder_cols(
 
 def fit_one(
     estimator: Estimator,
-    X: XConstructor | None = None,
-    y: YConstructor | None = None,
+    X: pd.DataFrame | None = None,
+    y: Pandas | None = None,
     message: str | None = None,
     **fit_params,
 ) -> Estimator:
@@ -2328,11 +2330,11 @@ def fit_one(
     estimator: Estimator
         Instance to fit.
 
-    X: dataframe-like or None, default=None
+    X: pd.DataFrame or None, default=None
         Feature set with shape=(n_samples, n_features). If None,
         `X` is ignored.
 
-    y: sequence, pd.DataFrame-like or None, default=None
+    y: pd.Series, pd.DataFrame or None, default=None
         Target column(s) corresponding to `X`.
 
     message: str or None
@@ -2347,30 +2349,27 @@ def fit_one(
         Fitted estimator.
 
     """
-    Xt = to_df(X)
-    yt = to_tabular(y, index=getattr(Xt, "index", None))
-
     with _print_elapsed_time("Pipeline", message):
         if hasattr(estimator, "fit"):
             kwargs: dict[str, Pandas] = {}
-            inc = getattr(estimator, "_cols", getattr(Xt, "columns", []))
+            inc = getattr(estimator, "_cols", getattr(X, "columns", []))
             if "X" in (params := sign(estimator.fit)):
-                if Xt is not None and (cols := [c for c in inc if c in Xt]):
-                    kwargs["X"] = Xt[cols]
+                if X is not None and (cols := [c for c in inc if c in X]):
+                    kwargs["X"] = X[cols]
 
                 # X is required but has not been provided
                 if len(kwargs) == 0:
-                    if yt is not None and hasattr(estimator, "_cols"):
-                        kwargs["X"] = to_df(yt)[inc]
+                    if y is not None and hasattr(estimator, "_cols"):
+                        kwargs["X"] = to_df(y)[inc]
                     elif params["X"].default != Parameter.empty:
                         kwargs["X"] = params["X"].default  # Fill X with default
-                    elif Xt is None:
+                    elif X is None:
                         raise ValueError(
                             "Exception while trying to fit transformer "
                             f"{estimator.__class__.__name__}. Parameter "
                             "X is required but has not been provided."
                         )
-                    elif Xt.empty:
+                    elif X.empty:
                         raise ValueError(
                             "Exception while trying to fit transformer "
                             f"{estimator.__class__.__name__}. Parameter X is "
@@ -2379,8 +2378,8 @@ def fit_one(
                             "target column, e.g., atom.decompose(columns=-1)."
                         )
 
-            if "y" in params and yt is not None:
-                kwargs["y"] = yt
+            if "y" in params and y is not None:
+                kwargs["y"] = y
 
             # Keep custom attrs since some transformers reset during fit
             with keep_attrs(estimator):
@@ -2391,8 +2390,8 @@ def fit_one(
 
 def transform_one(
     transformer: Transformer,
-    X: XConstructor | None = None,
-    y: YConstructor | None = None,
+    X: pd.DataFrame | None = None,
+    y: Pandas | None = None,
     method: Literal["transform", "inverse_transform"] = "transform",
     **transform_params,
 ) -> tuple[pd.DataFrame | None, Pandas | None]:
@@ -2403,11 +2402,11 @@ def transform_one(
     transformer: Transformer
         Instance to fit.
 
-    X: dataframe-like or None, default=None
+    X: pd.DataFrame or None, default=None
         Feature set with shape=(n_samples, n_features). If None,
         `X` is ignored.
 
-    y: sequence, pd.DataFrame-like or None, default=None
+    y: pd.Series, pd.DataFrame or None, default=None
         Target column(s) corresponding to `X`.
 
     method: str, default="transform"
@@ -2459,61 +2458,58 @@ def transform_one(
         else:
             return out_c
 
-    Xt = to_df(X)
-    yt = to_tabular(y, index=getattr(Xt, "index", None))
-
     use_y = True
 
     kwargs: dict[str, Any] = {}
-    inc = list(getattr(transformer, "_cols", getattr(Xt, "columns", [])))
+    inc = list(getattr(transformer, "_cols", getattr(X, "columns", [])))
     if "X" in (params := sign(getattr(transformer, method))):
-        if Xt is not None and (cols := [c for c in inc if c in Xt]):
-            kwargs["X"] = Xt[cols]
+        if X is not None and (cols := [c for c in inc if c in X]):
+            kwargs["X"] = X[cols]
 
         # X is required but has not been provided
         if len(kwargs) == 0:
-            if yt is not None and hasattr(transformer, "_cols"):
-                kwargs["X"] = to_df(yt)[inc]
+            if y is not None and hasattr(transformer, "_cols"):
+                kwargs["X"] = to_df(y)[inc]
                 use_y = False
             elif params["X"].default != Parameter.empty:
                 kwargs["X"] = params["X"].default  # Fill X with default
             else:
-                return Xt, yt  # If X is needed, skip the transformer
+                return X, y  # If X is needed, skip the transformer
 
     if "y" in params:
         # We skip `y` when already added to `X`
-        if yt is not None and use_y:
-            kwargs["y"] = yt
+        if y is not None and use_y:
+            kwargs["y"] = y
         elif "X" not in params:
-            return Xt, yt  # If y is None and no X in transformer, skip the transformer
+            return X, y  # If y is None and no X in transformer, skip the transformer
 
     out: YConstructor | tuple[XConstructor, YConstructor] = getattr(transformer, method)(**kwargs, **transform_params)
 
     # Transform can return X, y or both
     X_new: pd.DataFrame | None
     y_new: Pandas | None
-    if isinstance(out, tuple) and Xt is not None:
-        X_new = prepare_df(out[0], Xt)
+    if isinstance(out, tuple) and X is not None:
+        X_new = prepare_df(out[0], X)
         y_new = to_tabular(out[1], index=X_new.index)
-        if isinstance(yt, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
-            y_new = prepare_df(y_new, yt)
-    elif "X" in params and Xt is not None and any(c in Xt for c in inc):
+        if isinstance(y, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
+            y_new = prepare_df(y_new, y)
+    elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
-        X_new = prepare_df(out, Xt)  # type: ignore[arg-type]
-        y_new = yt if yt is None else yt.set_axis(X_new.index, axis=0)
+        X_new = prepare_df(out, X)  # type: ignore[arg-type]
+        y_new = y if y is None else y.set_axis(X_new.index, axis=0)
     elif y is not None:
         y_new = to_tabular(out)
-        X_new = Xt if Xt is None else Xt.set_index(y_new.index)
-        if isinstance(yt, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
-            y_new = prepare_df(y_new, yt)
+        X_new = X if X is None else X.set_index(y_new.index)
+        if isinstance(y, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
+            y_new = prepare_df(y_new, y)
 
     return X_new, y_new
 
 
 def fit_transform_one(
     transformer: Transformer,
-    X: XConstructor | None,
-    y: YConstructor | None,
+    X: pd.DataFrame | None,
+    y: Pandas | None,
     message: str | None = None,
     **fit_params,
 ) -> tuple[pd.DataFrame | None, Pandas | None, Transformer]:
@@ -2526,11 +2522,11 @@ def fit_transform_one(
     transformer: Transformer
         Instance to fit.
 
-    X: dataframe-like or None
+    X: pd.DataFrame or None
         Feature set with shape=(n_samples, n_features). If None,
         `X` is ignored.
 
-    y: sequence, pd.DataFrame-like or None
+    y: pd.Series, pd.DataFrame or None
         Target column(s) corresponding to `X`.
 
     message: str or None, default=None
@@ -2552,9 +2548,9 @@ def fit_transform_one(
 
     """
     fit_one(transformer, X, y, message, **fit_params)
-    X, y = transform_one(transformer, X, y)
+    Xt, yt = transform_one(transformer, X, y)
 
-    return X, y, transformer
+    return Xt, yt, transformer
 
 
 # Decorators ======================================================= >>

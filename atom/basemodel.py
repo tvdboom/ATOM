@@ -274,7 +274,7 @@ class BaseModel(RunnerPlot):
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             if getattr(self, "needs_scaling", None) and not self.branch.check_scaling():
-                self.scaler = Scaler(engine=self.engine).fit(self.X_train)
+                self.scaler = Scaler(device=self.device, engine=self.engine).fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""
@@ -2664,27 +2664,25 @@ class ClassRegModel:
             pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt[self.features]))
 
             if pred.ndim == 1 or pred.shape[1] == 1:
-                data = to_series(pred, index=Xt.index, name=self.target)
+                return to_series(pred, index=Xt.index, name=self.target)
             elif pred.ndim < 3:
-                data = to_df(pred, index=Xt.index, columns=assign_prediction_columns())
+                return to_df(pred, index=Xt.index, columns=assign_prediction_columns())
             elif self.task is Task.multilabel_classification:
                 # Convert to (n_samples, n_targets)
-                data = pd.DataFrame(
+                return pd.DataFrame(
                     data=np.array([d[:, 1] for d in pred]).T,
                     index=Xt.index,
                     columns=assign_prediction_columns(),
                 )
             else:
                 # Convert to (n_samples * n_classes, n_targets)
-                data = pd.DataFrame(
+                return pd.DataFrame(
                     data=pred.reshape(-1, pred.shape[2]),
                     index=pd.MultiIndex.from_tuples(
                         [(col, idx) for col in np.unique(self.y) for idx in Xt.index]
                     ),
                     columns=assign_prediction_columns(),
                 )
-
-            return data
 
         else:
             if metric is None:
@@ -2979,16 +2977,27 @@ class ForecastModel:
         X: XSelector | None = ...,
         metric: str | MetricFunction | Scorer | None = ...,
         verbose: Verbose | None = ...,
+        method: Literal["predict_proba"] = ...,
+        **kwargs,
+    ) -> Normal: ...
+
+    @overload
+    def _prediction(
+        self,
+        fh: RowSelector | FHConstructor | None = ...,
+        y: RowSelector | YSelector | None = ...,
+        X: XSelector | None = ...,
+        metric: str | MetricFunction | Scorer | None = ...,
+        verbose: Verbose | None = ...,
         method: Literal[
             "predict",
             "predict_interval",
-            "predict_proba",
             "predict_quantiles",
             "predict_residuals",
             "predict_var",
         ] = ...,
         **kwargs,
-    ) -> Normal | Pandas: ...
+    ) -> Pandas: ...
 
     def _prediction(
         self,

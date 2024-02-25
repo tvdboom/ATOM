@@ -146,6 +146,8 @@ class SparseMatrix(Protocol):
 
     """
 
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator: ...
     def _bsr_container(self): ...
     def _coo_container(self): ...
     def _csc_container(self): ...
@@ -153,6 +155,9 @@ class SparseMatrix(Protocol):
     def _dia_container(self): ...
     def _dok_container(self): ...
     def _lil_container(self): ...
+
+    @property
+    def shape(self) -> tuple[int, int]: ...
 
 
 @runtime_checkable
@@ -235,8 +240,7 @@ FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 # Types for X, y and fh
 XConstructor: TypeAlias = (
     dict[str, Sequence[Any]]
-    | Sequence[Sequence[Any]]
-    | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
+    | Sequence[Sequence[Any] | tuple[Hashable, Sequence[Any]]]
     | np.ndarray
     | SparseMatrix
     | pd.Series
@@ -332,7 +336,11 @@ FeatureSelectionSolvers: TypeAlias = (
 
 # Allowed values for method selection
 PredictionMethods: TypeAlias = Literal[
-    "decision_function", "predict", "predict_log_proba", "predict_proba", "score"
+    "decision_function",
+    "predict",
+    "predict_log_proba",
+    "predict_proba",
+    "score",
 ]
 PredictionMethodsTS: TypeAlias = Literal[
     "predict",
@@ -365,7 +373,14 @@ Legend: TypeAlias = Literal[
 
 # Others
 XDatasets: TypeAlias = Literal[
-    "dataset", "train", "test", "holdout", "X", "X_train", "X_test", "X_holdout"
+    "dataset",
+    "train",
+    "test",
+    "holdout",
+    "X",
+    "X_train",
+    "X_test",
+    "X_holdout",
 ]
 YDatasets: TypeAlias = Literal["y", "y_train", "y_test", "y_holdout"]
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
@@ -407,9 +422,7 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
 
     XReturn: TypeAlias = (
-        Sequence[Sequence[Any]]
-        | np.ndarray
-        | SparseMatrix
+        np.ndarray
         | pd.DataFrame
         | pl.DataFrame
         | pl.LazyFrame
@@ -419,8 +432,7 @@ if TYPE_CHECKING:
         | SparkDataFrame
     )
     YReturn: TypeAlias = (
-        Sequence[Any]
-        | np.ndarray
+        np.ndarray
         | pd.Series
         | pl.Series
         | pa.Array

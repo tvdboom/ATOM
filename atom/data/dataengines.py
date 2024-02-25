@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     import modin.pandas as md
     import polars as pl
     import pyarrow as pa
+    import pyspark.sql as psql
     import pyspark.pandas as ps
 
 
@@ -167,7 +168,7 @@ class PySparkEngine(DataEngine):
     library = "pyspark"
 
     @staticmethod
-    def convert(obj: Pandas) -> ps.sql.DataFrame:
+    def convert(obj: Pandas) -> psql.DataFrame:
         """Convert to pyspark objects."""
         from pyspark.sql import SparkSession
 
@@ -181,14 +182,14 @@ class PySparkPandasEngine(DataEngine):
     library = "pyspark"
 
     @staticmethod
-    def convert(obj: Pandas) -> ps.pandas.Series | ps.pandas.DataFrame:
+    def convert(obj: Pandas) -> ps.Series | ps.DataFrame:
         """Convert to pyspark objects."""
         import pyspark.pandas as ps
 
         if isinstance(obj, pd.DataFrame):
-            return ps.pandas.DataFrame(obj)
+            return ps.DataFrame(obj)
         else:
-            return ps.pandas.Series(obj)
+            return ps.Series(obj)
 
 
 DATA_ENGINES = {

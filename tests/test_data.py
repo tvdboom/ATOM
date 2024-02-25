@@ -741,11 +741,12 @@ def test_pyarrow_engine():
     assert isinstance(atom.y, pa.Array)
 
 
+@patch.dict("sys.modules", {"modin": MagicMock(spec=["__spec__", "pandas"])})
 def test_modin_engine():
     """Assert that the modin engine returns modin types."""
     atom = ATOMClassifier(X_bin, y_bin, engine="modin", random_state=1)
-    assert isinstance(atom.X, md.DataFrame)
-    assert isinstance(atom.y, md.Series)
+    assert "DataFrame" in str(atom.X)
+    assert "Series" in str(atom.y)
 
 
 def test_dask_engine():
@@ -755,7 +756,7 @@ def test_dask_engine():
     assert isinstance(atom.y, dd.Series)
 
 
-@patch.dict("sys.modules", {"pyspark": MagicMock(spec=["__spec__", "sql"])})
+@patch.dict("sys.modules", {"pyspark.sql": MagicMock(spec=["__spec__", "SparkSession"])})
 def test_pyspark_engine():
     """Assert that the pyspark engine returns pyspark types."""
     atom = ATOMClassifier(X_bin, y_bin, engine="pyspark", random_state=1)

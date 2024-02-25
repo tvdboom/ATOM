@@ -562,7 +562,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         "Invalid value for the index parameter. Length of index "
                         f"({len(index)}) doesn't match that of the dataset ({len(data)})."
                     )
-                data.index = index
+                data.index = pd.Index(index)
 
             if len(data) < 5:
                 raise ValueError(
@@ -722,10 +722,10 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         "Invalid value for the index parameter. Length of index "
                         f"({len(index)}) doesn't match that of the data sets ({len_data})."
                     )
-                train.index = index[: len(train)]
-                test.index = index[len(train): len(train) + len(test)]
+                train.index = pd.Index(index[: len(train)])
+                test.index = pd.Index(index[len(train): len(train) + len(test)])
                 if holdout is not None:
-                    holdout.index = index[-len(holdout):]
+                    holdout.index = pd.Index(index[-len(holdout):])
 
             complete_set = _set_index(pd.concat([train, test, holdout]), y_test, index)
 
@@ -746,7 +746,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         if len(arrays) == 0:
             if self.branch._container:
                 return self.branch._data, self.branch._holdout
-            elif self._goal is Goal.forecast and not isinstance(y, Int | str):
+            elif self._goal is Goal.forecast and not isinstance(y, (*int_t, str)):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._check_input(y=y))
             else:
@@ -1132,7 +1132,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def get_class_weight(
         self,
         rows: RowSelector = "train",
-    ) -> dict[Hashable, float] | dict[str, dict[Hashable, float]]:
+    ) -> dict[Hashable, float] | dict[Hashable, dict[Hashable, float]]:
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
@@ -1173,10 +1173,10 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         _, y = self.branch._get_rows(rows, return_X_y=True)
 
-        if self.task.is_multioutput:
-            return {str(col.name): get_weights(col) for col in get_cols(y)}
-        else:
+        if isinstance(y, pd.Series):
             return get_weights(y)
+        else:
+            return {col.name: get_weights(col) for col in get_cols(y)}
 
     @available_if(has_task("classification"))
     @composed(crash, beartype)

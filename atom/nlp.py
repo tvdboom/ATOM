@@ -21,8 +21,8 @@ from typing_extensions import Self
 
 from atom.data_cleaning import TransformerMixin
 from atom.utils.types import (
-    Bool, Engine, FloatLargerZero, Sequence,
-    VectorizerStarts, Verbose, XConstructor, YConstructor, bool_t,
+    Bool, Engine, FloatLargerZero, Sequence, VectorizerStarts, Verbose,
+    XConstructor, YConstructor, bool_t, XReturn
 )
 from atom.utils.utils import (
     check_is_fitted, check_nltk_module, get_corpus, is_sparse, merge, to_df,
@@ -189,7 +189,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin):
         self.regex_number = regex_number
         self.drop_punctuation = drop_punctuation
 
-    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Apply the transformations to the data.
 
         Parameters
@@ -440,7 +440,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Normalize the text.
 
         Parameters
@@ -664,7 +664,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin):
         self.trigram_freq = trigram_freq
         self.quadgram_freq = quadgram_freq
 
-    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Tokenize the text.
 
         Parameters
@@ -988,7 +988,7 @@ class Vectorizer(TransformerMixin):
         og_columns = [c for c in self.feature_names_in_ if c != self._corpus]
         return np.array(og_columns + self._get_corpus_columns())
 
-    def transform(self, X: XConstructor, y: YConstructor | None = None) -> pd.DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Vectorize the text.
 
         Parameters
@@ -1026,7 +1026,7 @@ class Vectorizer(TransformerMixin):
         if not self.return_sparse:
             self._log(" --> Converting the output to a full array.", 2)
             matrix = matrix.toarray()
-        elif not Xt.empty and not is_sparse(X):
+        elif not Xt.empty and not is_sparse(Xt):
             # Raise if there are other columns that are non-sparse
             raise ValueError(
                 "Invalid value for the return_sparse parameter. The value must "
