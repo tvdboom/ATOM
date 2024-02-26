@@ -428,9 +428,9 @@ class Branch:
         return self.dataset.shape
 
     @property
-    def columns(self) -> pd.Index:
+    def columns(self) -> list[str]:
         """Name of all the columns."""
-        return self.dataset.columns
+        return list(self.dataset.columns)
 
     @property
     def n_columns(self) -> int:
@@ -438,9 +438,9 @@ class Branch:
         return len(self.columns)
 
     @property
-    def features(self) -> pd.Index:
+    def features(self) -> list[str]:
         """Name of the features."""
-        return self.columns[:-self._data.n_targets]
+        return list(self.columns[:-self._data.n_targets])
 
     @property
     def n_features(self) -> int:
@@ -460,7 +460,7 @@ class Branch:
         calculation.
 
         """
-        return pd.concat([self.dataset, self.holdout])  # type: ignore[list-item]
+        return pd.concat([self.dataset, self.holdout])
 
     # Utility methods ============================================== >>
 
@@ -580,10 +580,12 @@ class Branch:
             # If rows were excluded with `!`, select all but those
             inc = list(_all.index[~_all.index.isin(exc)])
 
+        rows_c = _all.loc[inc]
+
         if return_X_y:
-            return _all.loc[inc, self.features], _all.loc[inc, self.target]  # type: ignore[index]
+            return rows_c[self.features], rows_c[self.target]
         else:
-            return self._all.loc[inc]
+            return rows_c
 
     def _get_columns(
         self,

@@ -181,12 +181,12 @@ class BaseTransformer:
 
         elif value == "dask":
             check_dependency("dask")
-            import dask
+            from dask.distributed import Client
 
             try:
-                dask.distributed.Client.current()
+                Client.current()
             except ValueError:
-                dask.distributed.Client(processes=False)
+                Client(processes=False)
 
         joblib.parallel_config(backend=value)
 
@@ -369,7 +369,7 @@ class BaseTransformer:
     @overload
     def _check_input(
         X: XSelector,
-        y: Literal[None] = ...,
+        y: Literal[None],
         *,
         columns: Axes | None = ...,
         name: str | Axes | None = ...,

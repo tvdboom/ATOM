@@ -748,12 +748,11 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             **X, train, test: dataframe-like**<br>
             Feature set with shape=(n_samples, n_features).
 
-            **y: int, str, dict, sequence or dataframe**<br>
+            **y: int, str, sequence or dataframe**<br>
             Target column(s) corresponding to `X`.
 
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.

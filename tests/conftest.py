@@ -33,9 +33,7 @@ if TYPE_CHECKING:
 
     from _pytest.monkeypatch import MonkeyPatch
 
-    from atom.utils.types import (
-        DataFrame, Pandas, Sequence, XConstructor,
-    )
+    from atom.utils.types import DataFrame, Pandas, Sequence, XConstructor
 
 
 class DummyTransformer(TransformerMixin, BaseEstimator):

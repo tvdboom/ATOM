@@ -820,10 +820,10 @@ class Cleaner(TransformerMixin):
             self.target_names_in_ = np.array(get_col_names(yt))
 
             if self.drop_chars:
-                if isinstance(yt, pd.Series):
-                    yt.name = re.sub(self.drop_chars, "", str(yt.name))
-                else:
+                if isinstance(yt, pd.DataFrame):
                     yt = yt.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
+                else:
+                    yt.name = re.sub(self.drop_chars, "", str(yt.name))
 
             if self.drop_missing_target:
                 yt = replace_missing(yt, self.missing_).dropna(axis=0)

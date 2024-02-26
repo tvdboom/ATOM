@@ -24,15 +24,19 @@ from itertools import cycle
 from types import GeneratorType, MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
+import mlflow
+import nltk
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import scipy.sparse as sps
 from beartype.door import is_bearable
 from IPython.display import display
+from matplotlib.colors import to_rgba
 from pandas._libs.missing import NAType
 from pandas._typing import Axes, Dtype
 from pandas.api.types import is_numeric_dtype
-from pandas.core.generic import NDFrame
+from shap import Explainer
 from sklearn.base import BaseEstimator
 from sklearn.base import OneToOneFeatureMixin as FMixin
 from sklearn.metrics import (
@@ -55,7 +59,7 @@ from atom.utils.types import (
 if TYPE_CHECKING:
     from optuna.study import Study
     from optuna.trial import FrozenTrial
-    from shap import Explainer, Explanation
+    from shap import Explanation
 
     from atom.basemodel import BaseModel
     from atom.baserunner import BaseRunner
@@ -63,7 +67,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-T_Pandas = TypeVar("T_Pandas", bound=NDFrame)
+T_Pandas = TypeVar("T_Pandas", pd.Series, pd.DataFrame, pd.Series | pd.DataFrame)
 T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 T_Estimator = TypeVar("T_Estimator", bound=Estimator)
 
@@ -633,8 +637,6 @@ class TrialsCallback:
 
         # Save trials to mlflow experiment as nested runs
         if self.T.experiment and self.T.log_ht:
-            import mlflow
-
             with mlflow.start_run(run_id=self.T.run.info.run_id):
                 run_name = f"{self.T.name} - {trial.number}"
                 with mlflow.start_run(run_name=run_name, nested=True):
@@ -734,8 +736,6 @@ class PlotCallback:
     max_len = 15  # Maximum trials to show at once in the plot
 
     def __init__(self, name: str, metric: list[str], aesthetics: Aesthetics):
-        import plotly.graph_objects as go
-
         self.y1: dict[int, deque] = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
         self.y2: dict[int, deque] = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
 
@@ -925,8 +925,6 @@ class ShapExplanation:
             Get the initialized explainer object.
 
         """
-        from shap import Explainer
-
         kwargs = {
             "masker": self.branch.X_train,
             "feature_names": list(self.branch.features),
@@ -1286,8 +1284,6 @@ def to_rgb(c: str) -> str:
         Color's RGB representation.
 
     """
-    from matplotlib.colors import to_rgba
-
     if not c.startswith("rgb"):
         colors = to_rgba(c)[:3]
         return f"rgb({colors[0]}, {colors[1]}, {colors[2]})"
@@ -1375,15 +1371,15 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
 
-    if isinstance(X, pd.Series):
-        return X.replace(
-            to_replace=(missing_values or []) + default_values,
-            value=get_nan(X.dtype),
-        )
-    else:
+    if isinstance(X, pd.DataFrame):
         return X.replace(
             to_replace={c: (missing_values or []) + default_values for c in X.columns},
             value={c: get_nan(d) for c, d in X.dtypes.items()},
+        )
+    else:
+        return X.replace(
+            to_replace=(missing_values or []) + default_values,
+            value=get_nan(X.dtype),
         )
 
 
@@ -1584,8 +1580,6 @@ def check_nltk_module(module: str, *, quiet: bool):
         Whether to show logs when downloading.
 
     """
-    import nltk
-
     try:
         nltk.data.find(module)
     except LookupError:

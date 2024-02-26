@@ -15,7 +15,7 @@ from functools import cached_property
 from importlib import import_module
 from logging import Logger
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from unittest.mock import patch
 
 import dill as pickle
@@ -274,7 +274,8 @@ class BaseModel(RunnerPlot):
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             if getattr(self, "needs_scaling", None) and not self.branch.check_scaling():
-                self.scaler = Scaler(device=self.device, engine=self.engine).fit(self.X_train)
+                self.scaler = Scaler(device=self.device, engine=self.engine.estimator)
+                self.scaler.fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""
@@ -704,7 +705,7 @@ class BaseModel(RunnerPlot):
                     # Statsmodels models such as SARIMAX and DF require all
                     # exogenous data after the last row of the train set
                     # Other models accept this format
-                    Xe = pd.concat([self.test, self.holdout])  # type: ignore[list-item]
+                    Xe = pd.concat([self.test, self.holdout])
                     exog = Xe.loc[Xe.index <= X.index.max(), self.features]  # type: ignore[index]
 
                 y_pred = self._prediction(
@@ -1680,10 +1681,11 @@ class BaseModel(RunnerPlot):
     def X_train(self) -> pd.DataFrame:
         """Features of the training set."""
         features = self.branch.features.isin(self._config.ignore)
+        X_train = self.branch.X_train.iloc[-self._train_idx:, ~features]
         if self.scaler:
-            return self.scaler.transform(self.branch.X_train.iloc[-self._train_idx:, ~features])
+            return cast(pd.DataFrame, self.scaler.transform(X_train))
         else:
-            return self.branch.X_train.iloc[-self._train_idx:, ~features]
+            return X_train
 
     @property
     def y_train(self) -> Pandas:
@@ -1694,10 +1696,11 @@ class BaseModel(RunnerPlot):
     def X_test(self) -> pd.DataFrame:
         """Features of the test set."""
         features = self.branch.features.isin(self._config.ignore)
+        X_test = self.branch.X_test.iloc[:, ~features]
         if self.scaler:
-            return self.scaler.transform(self.branch.X_test.iloc[:, ~features])
+            return cast(pd.DataFrame, self.scaler.transform(X_test))
         else:
-            return self.branch.X_test.iloc[:, ~features]
+            return X_test
 
     @property
     def X_holdout(self) -> pd.DataFrame | None:
@@ -2195,11 +2198,11 @@ class BaseModel(RunnerPlot):
         if include_holdout and self.holdout is None:
             raise ValueError("No holdout data set available.")
 
-        if include_holdout and self.holdout is not None:
+        if not include_holdout:
+            X, y = self.X, self.y
+        else:
             X = pd.concat([self.X, self.X_holdout])
             y = pd.concat([self.y, self.y_holdout])
-        else:
-            X, y = self.X, self.y
 
         # Assign a mlflow run to the new estimator
         if self.experiment:
@@ -2526,17 +2529,6 @@ class ClassRegModel:
         metric: str | MetricFunction | Scorer | None = ...,
         sample_weight: Sequence[Scalar] | None = ...,
         verbose: Verbose | None = ...,
-        method: Literal["score"] = ...,
-    ) -> Float: ...
-
-    @overload
-    def _prediction(
-        self,
-        X: RowSelector | XSelector,
-        y: YSelector | None = ...,
-        metric: str | MetricFunction | Scorer | None = ...,
-        sample_weight: Sequence[Scalar] | None = ...,
-        verbose: Verbose | None = ...,
         method: Literal[
             "decision_function",
             "predict",
@@ -2544,6 +2536,17 @@ class ClassRegModel:
             "predict_proba",
         ] = ...,
     ) -> Pandas: ...
+
+    @overload
+    def _prediction(
+        self,
+        X: RowSelector | XSelector,
+        y: YSelector | None,
+        metric: str | MetricFunction | Scorer | None,
+        sample_weight: Sequence[Scalar] | None,
+        verbose: Verbose | None,
+        method: Literal["score"],
+    ) -> Float: ...
 
     def _prediction(
         self,
@@ -2567,13 +2570,12 @@ class ClassRegModel:
             set with shape=(n_samples, n_features) to make predictions
             on.
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `y` is ignored.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
@@ -2603,23 +2605,26 @@ class ClassRegModel:
 
         """
 
-        def get_transform_X_y(X: XSelector, y: YSelector) -> tuple[pd.DataFrame, Pandas]:
+        def get_transform_X_y(
+            X: RowSelector | XSelector,
+            y: YSelector | None,
+        ) -> tuple[pd.DataFrame, Pandas | None]:
             """Get X and y from the pipeline transformation.
 
             Parameters
             ----------
-            X: dataframe-like
-                Feature set.
+            X: hashable, segment, sequence or dataframe-like
+                Feature set. If not dataframe-like, expected to fail.
 
-            y: int, str or sequence
-                Target column(s).
+            y: int, str, sequence, dataframe-like or None
+                Target column(s) corresponding to `X`.
 
             Returns
             -------
             dataframe
                 Transformed feature set.
 
-            series or dataframe
+            series, dataframe or None
                 Transformed target column.
 
             """
@@ -2889,13 +2894,12 @@ class ClassRegModel:
             set with shape=(n_samples, n_features) to make predictions
             on.
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
 
             - If None: `X` must be a selection of rows in the dataset.
             - If int: Position of the target column in `X`.
             - If str: Name of the target column in `X`.
-            - If dict: Name of the target column and sequence of values.
             - If sequence: Target column with shape=(n_samples,) or
               sequence of column names or positions for multioutput
               tasks.
@@ -2965,30 +2969,6 @@ class ForecastModel:
         X: XSelector | None = ...,
         metric: str | MetricFunction | Scorer | None = ...,
         verbose: Verbose | None = ...,
-        method: Literal["score"] = ...,
-        **kwargs,
-    ) -> Float: ...
-
-    @overload
-    def _prediction(
-        self,
-        fh: RowSelector | FHConstructor | None = ...,
-        y: RowSelector | YSelector | None = ...,
-        X: XSelector | None = ...,
-        metric: str | MetricFunction | Scorer | None = ...,
-        verbose: Verbose | None = ...,
-        method: Literal["predict_proba"] = ...,
-        **kwargs,
-    ) -> Normal: ...
-
-    @overload
-    def _prediction(
-        self,
-        fh: RowSelector | FHConstructor | None = ...,
-        y: RowSelector | YSelector | None = ...,
-        X: XSelector | None = ...,
-        metric: str | MetricFunction | Scorer | None = ...,
-        verbose: Verbose | None = ...,
         method: Literal[
             "predict",
             "predict_interval",
@@ -2998,6 +2978,30 @@ class ForecastModel:
         ] = ...,
         **kwargs,
     ) -> Pandas: ...
+
+    @overload
+    def _prediction(
+        self,
+        fh: RowSelector | FHConstructor | None,
+        y: RowSelector | YSelector | None,
+        X: XSelector | None,
+        metric: str | MetricFunction | Scorer | None,
+        verbose: Verbose | None,
+        method: Literal["predict_proba"],
+        **kwargs,
+    ) -> Normal: ...
+
+    @overload
+    def _prediction(
+        self,
+        fh: RowSelector | FHConstructor | None,
+        y: RowSelector | YSelector | None,
+        X: XSelector | None,
+        metric: str | MetricFunction | Scorer | None,
+        verbose: Verbose | None,
+        method: Literal["score"],
+        **kwargs,
+    ) -> Float: ...
 
     def _prediction(
         self,
@@ -3021,7 +3025,7 @@ class ForecastModel:
             The [forecasting horizon][row-and-column-selection] encoding
             the time stamps to forecast at.
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Ground truth observations.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
@@ -3299,7 +3303,7 @@ class ForecastModel:
 
         Parameters
         ----------
-        y: int, str, dict, sequence or dataframe
+        y: int, str, sequence or dataframe
             Ground truth observations.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
@@ -3397,7 +3401,7 @@ class ForecastModel:
 
         Parameters
         ----------
-        y: int, str, dict, sequence or dataframe-like
+        y: int, str, sequence or dataframe-like
             Ground truth observations.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None
