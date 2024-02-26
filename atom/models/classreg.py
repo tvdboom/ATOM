@@ -7,6 +7,7 @@ Description: Module containing classification and regression models.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any, ClassVar, cast
 
 import numpy as np
@@ -22,7 +23,7 @@ from optuna.integration import (
 from optuna.trial import Trial
 
 from atom.basemodel import BaseModel
-from atom.utils.types import DataFrame, Pandas, Predictor
+from atom.utils.types import Pandas, Predictor
 from atom.utils.utils import CatBMetric, Goal, LGBMetric, XGBMetric
 
 
@@ -76,7 +77,7 @@ class AdaBoost(BaseModel):
         "regression": "sklearn.ensemble.AdaBoostRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -485,8 +486,8 @@ class CatBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -734,7 +735,7 @@ class DecisionTree(BaseModel):
         "regression": "sklearn.tree.DecisionTreeRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -809,7 +810,7 @@ class Dummy(BaseModel):
         "regression": "sklearn.dummy.DummyRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -943,7 +944,7 @@ class ExtraTree(BaseModel):
         "regression": "sklearn.tree.ExtraTreeRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1038,7 +1039,7 @@ class ExtraTrees(BaseModel):
 
         return params
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1229,7 +1230,7 @@ class GradientBoostingMachine(BaseModel):
         "regression": "sklearn.ensemble.GradientBoostingRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1376,7 +1377,7 @@ class HistGradientBoosting(BaseModel):
         "regression": "sklearn.ensemble.HistGradientBoostingRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1452,7 +1453,7 @@ class KNearestNeighbors(BaseModel):
         "regression": "sklearn.neighbors.KNeighborsRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1675,8 +1676,8 @@ class LightGBM(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -1951,7 +1952,7 @@ class LinearSVM(BaseModel):
         else:
             return super()._get_est(params)
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -2053,7 +2054,7 @@ class LogisticRegression(BaseModel):
 
         return params
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -2161,7 +2162,7 @@ class MultiLayerPerceptron(BaseModel):
 
         return params
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -2400,7 +2401,7 @@ class PassiveAggressive(BaseModel):
         "regression": "sklearn.linear_model.PassiveAggressiveRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -2712,7 +2713,7 @@ class RandomForest(BaseModel):
 
         return params
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -2805,7 +2806,7 @@ class Ridge(BaseModel):
         "regression": "sklearn.linear_model.Ridge",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -2878,7 +2879,7 @@ class StochasticGradientDescent(BaseModel):
         "regression": "sklearn.linear_model.SGDRegressor",
     }
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -3003,7 +3004,7 @@ class SupportVectorMachine(BaseModel):
         else:
             return super()._get_est(params)
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -3132,8 +3133,8 @@ class XGBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DataFrame, Pandas],
-        validation: tuple[DataFrame, Pandas] | None = None,
+        data: tuple[pd.DataFrame, Pandas],
+        validation: tuple[pd.DataFrame, Pandas] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.

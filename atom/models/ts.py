@@ -7,6 +7,7 @@ Description: Module containing all time series models.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from logging import ERROR, WARNING, getLogger
 from typing import Any, ClassVar
 
@@ -161,7 +162,7 @@ class ARIMA(BaseModel):
         """
         return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -835,7 +836,7 @@ class MSTL(BaseModel):
 
         return {"stl_kwargs": self._est_params.get("stl_kwargs", {}) | params}
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1207,7 +1208,7 @@ class SARIMAX(BaseModel):
 
         return params
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1652,7 +1653,7 @@ class VARMAX(BaseModel):
         """
         return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns

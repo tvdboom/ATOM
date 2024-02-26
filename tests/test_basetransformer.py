@@ -57,30 +57,11 @@ def test_device_parameter():
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
 
 
-@patch("ray.init")
-def test_engine_parameter_modin(ray):
-    """Assert that ray is initialized when modin is data backend."""
-    base = BaseTransformer(device="cpu", engine="modin")
-    assert base.engine.data == "modin"
-    assert ray.is_called_once
-
-
-def test_engine_parameter_env_var():
-    """Assert that the environment variable is set."""
-    base = BaseTransformer(device="cpu", engine="pyarrow")
-    assert base.engine == EngineTuple(data="pyarrow", estimator="sklearn")
-    assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
-
-    base = BaseTransformer(device="cpu", engine="sklearnex")
-    assert base.engine == EngineTuple(data="pandas", estimator="sklearnex")
-    assert os.environ["ATOM_DATA_ENGINE"] == base.engine.data
-
-
-@patch.dict("sys.modules", {"sklearnex": None})
-def test_engine_parameter_no_sklearnex():
-    """Assert that an error is raised when sklearnex is not installed."""
-    with pytest.raises(ModuleNotFoundError, match=".*import scikit-learn-intelex.*"):
-        BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
+@pytest.mark.parametrize("engine", [None, "pandas", "sklearn", {}, EngineTuple()])
+def test_engine_parameter(engine):
+    """Assert that the engine parameter can be initialized."""
+    base = BaseTransformer(engine=engine)
+    assert base.engine == EngineTuple()
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
@@ -101,6 +82,13 @@ def test_backend_parameter_ray(ray):
     """Assert that ray is initialized when selected."""
     BaseTransformer(backend="ray")
     assert ray.is_called_once
+
+
+@patch("dask.distributed.Client")
+def test_backend_parameter_dask(dask):
+    """Assert that dask is initialized when selected."""
+    BaseTransformer(backend="dask")
+    assert dask.is_called_once
 
 
 def test_backend_parameter():
@@ -182,53 +170,6 @@ def test_device_id_invalid():
         BaseTransformer(device="gpu:2,3")
 
 
-# Test _inherit ==================================================== >>
-
-def test_inherit():
-    """Assert that the inherit method passes the parameters correctly."""
-    base = BaseTransformer(n_jobs=2, random_state=2)
-    svc = base._inherit(RandomForestClassifier())
-    assert svc.get_params()["n_jobs"] == 2
-    assert svc.get_params()["random_state"] == 2
-
-
-def test_inherit_with_fixed_params():
-    """Assert that fixed parameters aren't inherited."""
-    base = BaseTransformer(random_state=2)
-    chain = base._inherit(ClassifierChain(SVC(random_state=3)), ("base_estimator__random_state",))
-    assert chain.get_params()["random_state"] == 2
-    assert chain.base_estimator.get_params()["random_state"] == 3
-
-
-def test_inherit_sp():
-    """Assert that the seasonal periodicity is correctly inherited."""
-    atom = ATOMForecaster(y_fc, sp=[12, 24], random_state=1)
-    atom.run(
-        models=["bats", "tbats"],
-        est_params={
-            "bats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
-            "tbats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
-        },
-    )
-    assert atom.bats.estimator.get_params()["sp"] == 12  # Single seasonality
-    assert atom.tbats.estimator.get_params()["sp"] == [12, 24]  # Multiple seasonality
-
-
-# Test _get_est_class ============================================== >>
-
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
-def test_get_est_class_from_engine():
-    """Assert that the class can be retrieved from an engine."""
-    base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
-    assert base._get_est_class("SVC", "svm") == SVC
-
-
-def test_get_est_class_from_default():
-    """Assert that the class is retrieved from sklearn when import fails."""
-    base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
-    assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
-
-
 # Test _check_input ============================================== >>
 
 def test_input_is_copied():
@@ -266,7 +207,7 @@ def test_column_order_is_retained():
 
 def test_incorrect_columns():
     """Assert that an error is raised when the provided columns do not match."""
-    with pytest.raises(ValueError, match=".*features are different.*"):
+    with pytest.raises(ValueError, match=".*columns are different.*"):
         BaseTransformer._check_input(X_bin, columns=["1", "2"])
 
 
@@ -321,12 +262,6 @@ def test_sparse_matrices_2_tuples():
     assert isinstance(atom.X, pd.DataFrame)
     assert atom.shape == (20, 4)
     assert atom[atom.columns[0]].dtype.name == "Sparse[int64, 0]"
-
-
-def test_target_is_dict():
-    """Assert that the target column is assigned correctly for a dict."""
-    _, y = BaseTransformer._check_input(X10, {"a": [0] * 10})
-    assert isinstance(y, pd.Series)
 
 
 def test_multioutput_str():
@@ -395,6 +330,53 @@ def test_X_empty_df():
     X, y = BaseTransformer._check_input(y_fc, y=-1)
     assert X.empty
     assert isinstance(y, pd.Series)
+
+
+# Test _inherit ==================================================== >>
+
+def test_inherit():
+    """Assert that the inherit method passes the parameters correctly."""
+    base = BaseTransformer(n_jobs=2, random_state=2)
+    svc = base._inherit(RandomForestClassifier())
+    assert svc.get_params()["n_jobs"] == 2
+    assert svc.get_params()["random_state"] == 2
+
+
+def test_inherit_with_fixed_params():
+    """Assert that fixed parameters aren't inherited."""
+    base = BaseTransformer(random_state=2)
+    chain = base._inherit(ClassifierChain(SVC(random_state=3)), ("base_estimator__random_state",))
+    assert chain.get_params()["random_state"] == 2
+    assert chain.base_estimator.get_params()["random_state"] == 3
+
+
+def test_inherit_sp():
+    """Assert that the seasonal periodicity is correctly inherited."""
+    atom = ATOMForecaster(y_fc, sp=[12, 24], random_state=1)
+    atom.run(
+        models=["bats", "tbats"],
+        est_params={
+            "bats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
+            "tbats": {"use_box_cox": False, "use_trend": False, "use_arma_errors": False},
+        },
+    )
+    assert atom.bats.estimator.get_params()["sp"] == 12  # Single seasonality
+    assert atom.tbats.estimator.get_params()["sp"] == [12, 24]  # Multiple seasonality
+
+
+# Test _get_est_class ============================================== >>
+
+@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
+def test_get_est_class_from_engine():
+    """Assert that the class can be retrieved from an engine."""
+    base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
+    assert base._get_est_class("SVC", "svm") == SVC
+
+
+def test_get_est_class_from_default():
+    """Assert that the class is retrieved from sklearn when import fails."""
+    base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
+    assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
 
 
 # Test log ========================================================= >>

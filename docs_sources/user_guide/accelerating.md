@@ -55,32 +55,48 @@ regardless of the engine parameter.
 
 ## Data acceleration
 
-The data engine can be specified through the [`engine`][atomclassifier-engine]
-parameter, e.g. `#!python engine="pyarrow"` or
-`#!python engine={"data": "pyarrow", "estimator": "sklearnex"}` to combine it
-with an [estimator engine][estimator acceleration]. ATOM integrates the following
-data engines:
+ATOM is mostly built around [sklearn](https://scikit-learn.org/stable/) (and [sktime](https://www.sktime.net/en/stable/) for [time series][]
+tasks), and both these libraries use numpy as their computation backend. Since
+`atom` relies heavily on column names, it uses pandas (which in turn uses numpy)
+as its data backend. However, for the convenience of the user, it implements
+several data engines, that wraps the data in a different type when called by the
+user. This is very similar to sklearn's [set_output][] behaviour, but ATOM
+extends this to many more data types. For example, selecting the `polars` data
+engine, makes `atom.dataset` return a polars dataframe and `atom.winner.predict(X)`
+return a polars series.
 
-- **pandas**: This is the default data engine. It uses the [`pandas`](https://pandas.pydata.org/docs/index.html)
-  library with [`numpy`](https://numpy.org/) as backend.
-- **pyarrow**: This engine also uses [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html), but with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
-  backend, instead of `numpy`. PyArrow is a cross-language, platform-independent,
-  in-memory data format, that provides an efficient and fast way to serialize and
-  deserialize data.
+The data engine can be specified through the [`engine`][atomclassifier-engine]
+parameter, e.g. `#!python engine="pyarrow"` or `#!python engine={"data": "pyarrow",
+"estimator": "sklearnex"}` to combine it with an [estimator engine][estimator acceleration].
+ATOM integrates the following data engines:
+
+- **numpy**: Transform the data to a [`numpy`](https://numpy.org/) array.
+- **pandas**: Leave the dataset as a [`pandas`](https://pandas.pydata.org/docs/index.html) object. This is the default
+  engine, that leaves the data unchanged.
+- **pandas-pyarrow**: Transform the data to [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html) with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
+  backend. Read more in pandas' [user guide](https://pandas.pydata.org/docs/user_guide/pyarrow.html).
+- **polars**: The [polars](https://docs.pola.rs/) library is a blazingly fast dataframe library
+  implemented in Rust and based on Apache Arrow. Transforms the data to a polars
+  dataframe or series.
+- **polars-lazy**: This engine is similar to the `polars` engine, but it returns
+  a [pl.LazyFrame](https://docs.pola.rs/py-polars/html/reference/lazyframe/index.html) instead of a [pl.pd.DataFrame](https://docs.pola.rs/py-polars/html/reference/dataframe/index.html).
+- **pyarrow**: PyArrow is a cross-language, platform-independent, in-memory data
+  format, that provides an efficient and fast way to serialize and deserialize data.
+  the data is transformed to a [pa.Table](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html) or [pa.Array](https://arrow.apache.org/docs/python/generated/pyarrow.Array.html).
 - **modin**: The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement
-  for pandas, that uses [Ray](https://www.ray.io/) as backend.
+  for pandas, that uses [Ray](https://www.ray.io/) as backend. Transform the data to a modin dataframe
+  or series.
+- **dask**: The [dask](https://docs.dask.org/en/stable/) library is a powerful Python library for parallel and
+  distributed computing. Transform the data to a [dask dataframe](https://docs.dask.org/en/latest/dataframe.html) or [dask series](https://docs.dask.org/en/stable/generated/dask.dataframe.Series.html).
+- **pyspark**: The [pyspark](https://spark.apache.org/docs/latest/api/python/index.html) library is the Python API for Apache Spark.
+  Transform the data to a [pyspark dataframe](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html) or [pyspark series](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.Column.html).
+- **pyspark-pandas**: Similar to the `pyspark` engine, but it returns pyspark objects
+  with the [pandas API](https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/index.html).
 
 !!! note
-    Although atom accepts a numpy array or a list of lists as input, it
-    converts the data internally to the specified data engine since its API
-    requires column names and indices.
-
-!!! warning
-    Depending on the data engine, the following limitations apply:
-
-    - The `pyarrow` engine doesn't support [sparse datasets][].
-    - The [LightGBM][] and [XGBoost][] models don't support the `pyarrow` engine.
-    - The `modin` engine is not compatible with [forecast][time-series] tasks.
+    It's important to realize that, within atom, the data is still processed using
+    pandas (with the numpy backend). Only when the data is returned to the user, it
+    is transformed to the selected format.
 
 
 ## Estimator acceleration
@@ -238,16 +254,18 @@ parallelization backends.
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).
-* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework
-  that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
-  See [here][example-ray-backend] an example use case.
+* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework that makes it
+  easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html). See
+  [here][example-ray-backend] an example use case.
+* **dask:** [Dask](https://docs.dask.org/en/stable/) is a flexible parallel computing library for analytics.
+  Read more about Dask [here](https://docs.dask.org/en/stable/10-minutes-to-dask.html).
 
 
 The parallelization backend is applied in the following cases:
 
 * In every individual estimator that uses parallelization internally.
 * To calculate cross-validated results during [hyperparameter tuning][].
-* To train multiple models in parallel (when the trainer's `parallel` parameter is True).
+* To train multiple models in parallel (when [`parallel=True`][directclassifier-parallel]).
 * To calculate partial dependencies in [plot_partial_dependence][].
 
 !!! note

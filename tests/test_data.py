@@ -7,13 +7,19 @@ Description: Unit tests for the branch module.
 import glob
 import os
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
+import dask.dataframe as dd
+import numpy as np
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 import pytest
 from pandas.testing import assert_frame_equal
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.branch import Branch, BranchManager
+from atom.data import Branch, BranchManager
 from atom.training import DirectClassifier
 from atom.utils.utils import merge
 
@@ -276,14 +282,14 @@ def test_data_properties_to_df():
     """Assert that the data attributes are converted to a df at setter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.X = X_bin_array
-    assert isinstance(atom.X, pd.DataFrame)
+    assert isinstance(atom.branch.X, pd.DataFrame)
 
 
 def test_data_properties_to_series():
     """Assert that the data attributes are converted to a series at setter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.y = y_bin_array
-    assert isinstance(atom.y, pd.Series)
+    assert isinstance(atom.branch.y, pd.Series)
 
 
 def test_setter_error_unequal_rows():
@@ -304,7 +310,7 @@ def test_setter_error_unequal_columns():
     """Assert that an error is raised when the setter has unequal columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X = atom.train
-    new_X.insert(0, "new_column", 1)
+    new_X["new_column"] = 1
     with pytest.raises(ValueError, match="number of columns"):
         atom.train = new_X
 
@@ -561,6 +567,30 @@ def test_load_no_dir():
         atom.branch = "main"
 
 
+def test_check_scaling_scaler_in_pipeline():
+    """Assert that check_scaling returns True when there's a scaler in the pipeline."""
+    atom = ATOMClassifier(X_bin, y=y_bin, random_state=1)
+    assert not atom.branch.check_scaling()
+    atom.add(MinMaxScaler())
+    assert atom.branch.check_scaling()
+
+
+def test_check_scaling():
+    """Assert that the check_scaling method returns whether the data is scaled."""
+    scaler = StandardScaler()
+    scaler.__class__.__name__ = "OtherName"
+
+    atom = ATOMClassifier(X_bin, y=y_bin, random_state=1)
+    atom.add(scaler)
+    assert atom.branch.check_scaling()
+
+
+def test_check_scaling_drop_binary():
+    """Assert that binary rows are dropped to check scaling."""
+    atom = ATOMClassifier(np.tile(y10, (10, 1)), y=y10, random_state=1)
+    assert atom.branch.check_scaling()
+
+
 # Test BranchManager =============================================== >>
 
 def test_branchmanager_repr():
@@ -665,3 +695,76 @@ def test_reset():
     assert len(atom._branches) == 1
     assert not glob.glob("joblib/atom/Branch(main).pkl")
     assert atom.og is atom.branch
+
+
+# Test data engines ================================================ >>
+
+def test_numpy_engine():
+    """Assert that the numpy engine returns a numpy array."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="numpy", random_state=1)
+    assert isinstance(atom.dataset, np.ndarray)
+
+
+def test_pandas_numpy_engine():
+    """Assert that the pandas engine returns numpy dtypes."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pandas", random_state=1)
+    assert all(isinstance(dtype, np.dtype) for dtype in atom.dataset.dtypes)
+    assert isinstance(atom.y.dtype, np.dtype)
+
+
+def test_pandas_pyarrow_engine():
+    """Assert that the pandas-pyarrow engine returns pyarrow dtypes."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pandas-pyarrow", random_state=1)
+    assert all(isinstance(dtype, pd.ArrowDtype) for dtype in atom.dataset.dtypes)
+    assert isinstance(atom.y.dtype, pd.ArrowDtype)
+
+
+def test_polars_engine():
+    """Assert that the polars engine returns polars types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="polars", random_state=1)
+    assert isinstance(atom.X, pl.DataFrame)
+    assert isinstance(atom.y, pl.Series)
+
+
+def test_polars_lazy_engine():
+    """Assert that the polars-lazy engine returns polars types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="polars-lazy", random_state=1)
+    assert isinstance(atom.X, pl.LazyFrame)
+    assert isinstance(atom.y, pl.Series)
+
+
+def test_pyarrow_engine():
+    """Assert that the pyarrow engine returns pyarrow types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    assert isinstance(atom.X, pa.Table)
+    assert isinstance(atom.y, pa.Array)
+
+
+@patch.dict("sys.modules", {"modin": MagicMock(spec=["__spec__", "pandas"])})
+def test_modin_engine():
+    """Assert that the modin engine returns modin types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="modin", random_state=1)
+    assert "DataFrame" in str(atom.X)
+    assert "Series" in str(atom.y)
+
+
+def test_dask_engine():
+    """Assert that the dask engine returns dask types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="dask", random_state=1)
+    assert isinstance(atom.X, dd.DataFrame)
+    assert isinstance(atom.y, dd.Series)
+
+
+@patch.dict("sys.modules", {"pyspark.sql": MagicMock(spec=["__spec__", "SparkSession"])})
+def test_pyspark_engine():
+    """Assert that the pyspark engine returns pyspark types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyspark", random_state=1)
+    assert "createDataFrame" in str(atom.X)
+
+
+@patch.dict("sys.modules", {"pyspark": MagicMock(spec=["__spec__", "pandas"])})
+def test_pyspark_pandas_engine():
+    """Assert that the pyspark-pandas engine returns pyspark pandas types."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyspark-pandas", random_state=1)
+    assert "DataFrame" in str(atom.X)
+    assert "Series" in str(atom.y)

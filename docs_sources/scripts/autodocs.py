@@ -85,6 +85,7 @@ CUSTOM_URLS = dict(
     votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
     ensembleforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.EnsembleForecaster.html",
     # Data cleaning
+    set_output="https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_set_output.html",
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
     hashingencoder="https://contrib.scikit-learn.org/category_encoders/hashing.html",
@@ -926,7 +927,7 @@ def types_conversion(dtype: str) -> str:
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",
-        "Pandas": "Series | DataFrame",
+        "Pandas": "Series | pd.DataFrame",
         "int | numpy.integer": "int",
         "float | numpy.floating": "float",
         "Series | modin.pandas.series.Series": "Series",

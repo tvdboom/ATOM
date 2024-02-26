@@ -39,10 +39,10 @@ from atom.utils.types import (
     Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
     MetricSelector, ModelsSelector, RowSelector, Sequence, TargetSelector,
-    TargetsSelector, XSelector, index_t,
+    TargetsSelector, XConstructor,
 )
 from atom.utils.utils import (
-    Task, bk, check_canvas, check_dependency, check_empty, check_predict_proba,
+    Task, check_canvas, check_dependency, check_empty, check_predict_proba,
     crash, divide, get_custom_scorer, has_task, lst, rnd,
 )
 
@@ -832,7 +832,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 from atom.models import OrdinaryLeastSquares
 
                 model = OrdinaryLeastSquares(goal=self._goal)
-                estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
+                estimator = model._get_est({}).fit(pd.DataFrame(y_true), y_pred)
 
                 self._draw_line(
                     x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
@@ -1116,7 +1116,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         self,
         models: ModelsSelector = None,
         fh: RowSelector | ForecastingHorizon = "dataset",
-        X: XSelector | None = None,
+        X: XConstructor | None = None,
         target: TargetSelector = 0,
         *,
         plot_insample: Bool = False,
@@ -1232,18 +1232,20 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             if X is not None:
-                X = m.transform(X)
-            elif isinstance(fh, index_t):
-                X = m.branch._all.loc[fh]
+                Xt = m.transform(X)
+            elif isinstance(fh, pd.Index):
+                Xt = m.branch._all.loc[fh]
+            else:
+                Xt = X
 
             # Draw predictions and interval
-            y_pred = m.predict(fh=fh, X=check_empty(X))
+            y_pred = m.predict(fh=fh, X=check_empty(Xt))
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
 
             if not plot_insample:
                 idx = y_pred.index.intersection(m.branch.train.index)
-                y_pred.loc[idx] = np.NaN  # type: ignore[index]
+                y_pred.loc[idx] = np.NaN  # type: ignore[call-overload]
 
             y_true = m.branch._all.loc[y_pred.index, target_c]
 
@@ -1271,7 +1273,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             if plot_interval:
                 try:
-                    y_interval = m.predict_interval(fh=fh, X=X)
+                    y_interval = m.predict_interval(fh=fh, X=Xt)
                 except (AttributeError, NotImplementedError):
                     continue  # Fails for some models like ES
 
@@ -1887,7 +1889,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     data = data.sample(500, random_state=self.random_state)
 
                 explanation = m._shap.get_explanation(data, target_c)
-                shap = bk.DataFrame(explanation.values, columns=m.branch.features)
+                shap = pd.DataFrame(explanation.values, columns=m.branch.features)
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
@@ -2134,7 +2136,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+            predictions = Parallel(n_jobs=self.n_jobs)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.branch.X_test,

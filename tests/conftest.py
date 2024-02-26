@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pytest
+from ray.util.joblib import register_ray
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -23,7 +25,7 @@ from sktime.datasets import load_airline, load_longley
 from sktime.split import temporal_train_test_split
 
 from atom.data_cleaning import TransformerMixin
-from atom.utils.utils import merge, n_cols, to_df, to_pandas
+from atom.utils.utils import merge, n_cols, to_df, to_tabular
 
 
 if TYPE_CHECKING:
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
 
     from _pytest.monkeypatch import MonkeyPatch
 
-    from atom.utils.types import DataFrame, Pandas, Sequence, XSelector
+    from atom.utils.types import DataFrame, Pandas, Sequence, XConstructor
 
 
 class DummyTransformer(TransformerMixin, BaseEstimator):
@@ -107,6 +109,18 @@ def _mock_mlflow_log_model(mocker):
     mocker.patch("mlflow.sklearn.log_model")
 
 
+@pytest.fixture(autouse=True)
+def _register_ray():
+    """Register ray as joblib backend.
+
+    Although atom does this internally, it's skipped when ray is
+    mocked. Not registering it fails the call to joblib.parallel_config
+    in basetransformer.py.
+
+    """
+    register_ray()
+
+
 @pytest.fixture()
 def random():
     """Return numpy's default random number generator."""
@@ -114,8 +128,8 @@ def random():
 
 
 def get_train_test(
-    X: XSelector | None,
-    y: Sequence[Any] | DataFrame,
+    X: XConstructor | None,
+    y: Sequence[Any] | pd.DataFrame,
 ) -> Pandas | tuple[Pandas, Pandas]:
     """Get train and test sets from X and y.
 
@@ -125,7 +139,7 @@ def get_train_test(
         Feature set. If None, split as time series data set.
 
     y: sequence or DataFrame
-        Target column corresponding to `X`.
+        Target column(s) corresponding to `X`.
 
     Returns
     -------
@@ -138,7 +152,8 @@ def get_train_test(
     """
     if X is not None:
         return train_test_split(
-            merge(to_df(X), to_pandas(y, columns=[f"y{i}" for i in range(n_cols(y))])),
+            merge(to_df(X), to_tabular(y, columns=[f"y{i}" for i in range(n_cols(y))])),
+            shuffle=False,
             test_size=0.3,
             random_state=1,
         )
@@ -153,6 +168,9 @@ X_bin_array, y_bin_array = load_breast_cancer(return_X_y=True)
 X_bin, y_bin = load_breast_cancer(return_X_y=True, as_frame=True)
 X_class, y_class = load_wine(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
+
+# Pyarrow dtypes
+X_pa = X_bin.astype(pd.ArrowDtype(pa.float64()))
 
 # Multilabel classification data
 X_label, y_label = make_multilabel_classification(n_samples=200, n_classes=4)

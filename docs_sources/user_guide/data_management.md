@@ -38,8 +38,8 @@ or together:
 * X
 * X, y
 
-Remember to use the `y` parameter to indicate the target column in X when
-using the first option. If not specified, the last column in X is used as
+Remember to use the `y` parameter to indicate the target column in `X` when
+using the first option. If not specified, the last column in `X` is used as
 the target. In both these cases, the sizes of the sets are defined using the
 `test_size` and `holdout_size` parameters. Note that the splits are made
 after the subsample of the dataset with the `n_rows` parameter (when not

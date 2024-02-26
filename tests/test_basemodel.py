@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 import requests
 from optuna.distributions import CategoricalDistribution, IntDistribution
@@ -871,6 +872,13 @@ def test_inverse_transform():
     assert_frame_equal(atom.lr.inverse_transform(atom.lr.X), X_bin)
 
 
+def test_inverse_transform_output():
+    """Assert that the output type is determined by the data engine."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="polars", random_state=1)
+    atom.run("Tree")
+    assert isinstance(atom.tree.inverse_transform(X_bin), pl.DataFrame)
+
+
 def test_save_estimator():
     """Assert that the save_estimator saves a pickle file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -916,6 +924,13 @@ def test_transform():
     X = atom.lr.transform(X10_str)
     assert len(X.columns) > 3  # Data is one-hot encoded
     assert all(-3 <= v <= 3 for v in X.to_numpy().ravel())  # Data is scaled
+
+
+def test_transform_output():
+    """Assert that the output type is determined by the data engine."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="polars", random_state=1)
+    atom.run("Tree")
+    assert isinstance(atom.tree.transform(X_bin), pl.DataFrame)
 
 
 # Test ClassRegModel ================================================== >>
