@@ -1121,6 +1121,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         *,
         plot_insample: Bool = False,
         plot_interval: Bool = True,
+        inverse: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
@@ -1160,6 +1161,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             Whether to plot prediction intervals together with the exact
             predicted values. Models wihtout a `predict_interval` method
             are skipped silently.
+
+        inverse: bool, default=True
+            Whether to inversely transform the output through the
+            pipeline. This doesn't affect the predictions if there are
+            no transformers in the pipeline or if the transformers have
+            no `inverse_transform` method or don't apply to `y`.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -1239,15 +1246,19 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 Xt = X
 
             # Draw predictions and interval
-            y_pred = m.predict(fh=fh, X=check_empty(Xt))
+            y_pred = m.predict(fh=fh, X=check_empty(Xt), inverse=inverse)
+
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
 
             if not plot_insample:
                 idx = y_pred.index.intersection(m.branch.train.index)
-                y_pred.loc[idx] = np.NaN  # type: ignore[call-overload]
+                y_pred.loc[idx] = np.nan  # type: ignore[call-overload]
 
-            y_true = m.branch._all.loc[y_pred.index, target_c]
+            if inverse:
+                y_true = m.og._all.loc[y_pred.index, target_c]
+            else:
+                y_true = m.branch._all.loc[y_pred.index, target_c]
 
             self._draw_line(
                 x=(x := self._get_plot_index(y_pred)),
@@ -1273,7 +1284,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             if plot_interval:
                 try:
-                    y_interval = m.predict_interval(fh=fh, X=Xt)
+                    y_interval = m.predict_interval(fh=fh, X=Xt, inverse=inverse)
                 except (AttributeError, NotImplementedError):
                     continue  # Fails for some models like ES
 
@@ -1284,7 +1295,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     y = y_interval  # Univariate
 
                 if not plot_insample:
-                    y.loc[y.index.intersection(m.branch.train.index)] = np.NaN
+                    y.loc[y.index.intersection(m.branch.train.index)] = np.nan
 
                 fig.add_traces(
                     [
@@ -1319,6 +1330,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         fig.add_scatter(
             x=x,
             y=y_true,
+            name=target_c,
             mode="lines+markers",
             line={"width": 1, "color": "black", "dash": "dash"},
             opacity=0.6,

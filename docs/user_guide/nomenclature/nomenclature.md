@@ -35,22 +35,22 @@ the target column.
 
 <div id="dataframe"><strong>dataframe</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-Two-dimensional, size-mutable, potentially heterogeneous tabular data of type
-[pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
-or its [modin](https://modin.readthedocs.io/en/stable/flow/modin/pandas/dataframe.html)
-counterpart.
+Two-dimensional, size-mutable, potentially heterogeneous tabular data.
+The type is usually [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html),
+but could potentially be any of the dataframe types backed by the
+selected [data engine][data-engines].
 </div>
 
 <div id="dataframe-like"><strong>dataframe-like</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-Any type object from which a [dataframe][] can be created. This includes an
-[iterable](https://docs.python.org/3/glossary.html#term-iterable), a
-[dict](https://docs.python.org/3/library/functions.html#func-dict) whose
+Any type object from which a [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
+can be created. This includes an [iterable](https://docs.python.org/3/glossary.html#term-iterable),
+a [dict](https://docs.python.org/3/library/functions.html#func-dict) whose
 values are 1d-arrays, a two-dimensional [list](https://docs.python.org/3/library/functions.html#func-list),
 [tuple](https://docs.python.org/3/library/functions.html#func-tuple), [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html) or
 [sps.csr_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html),
-and most commonly, a [dataframe][]. This is the standard input format for
-any dataset.
+or any object that follows the [dataframe interchange protocol](https://data-apis.org/dataframe-protocol/latest/index.html).
+This is the standard input format for any dataset.
 
 Additionally, you can provide a callable whose output is any of the
 aforementioned types. This is useful when the dataset is very large and
@@ -65,13 +65,6 @@ The algorithm is estimated as a deterministic function of a set of
 parameters, a dataset and a random state. Should implement a `fit`
 method. Often used interchangeably with [predictor][] because of user
 preference.
-</div>
-
-<div id="index"><strong>index</strong></div>
-<div markdown style="margin: -1em 0 0 1.2em">
-Immutable sequence used for indexing and alignment of type [pd.Index](https://pandas.pydata.org/docs/reference/api/pandas.Index.html)
-or their [modin](https://modin.readthedocs.io/en/stable/flow/modin/pandas/dataframe.html)
-counterpart.
 </div>
 
 <div id="missing values"><strong>missing values</strong></div>
@@ -123,16 +116,16 @@ and [slice](https://docs.python.org/3/library/functions.html#slice).
 <div markdown style="margin: -1em 0 0 1.2em">
 A one-dimensional, indexable array of type [sequence](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range)
 (except string), [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html),
-[index][] or [series][]. This is the standard input format for a dataset's target
-column.
+[pd.Index](https://pandas.pydata.org/docs/reference/api/pandas.Index.html) or [series][].
+This is the standard input format for a dataset's target column.
 </div>
 
 <div id="series"><strong>series</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-One-dimensional ndarray with axis labels of type
-[pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series)
-or its [modin](https://modin.readthedocs.io/en/stable/flow/modin/pandas/series.html)
-counterpart.
+One-dimensional ndarray with axis labels. The type is usually
+[pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series),
+but could potentially be any of the series types backed by the
+selected [data engine][data-engines].
 </div>
 
 <div id="target"><strong>target</strong></div>

@@ -31,8 +31,8 @@ acronyms are:
 Although ATOM allows running all models for a given task using
 `#!python atom.run(models=None)`, it's usually smarter to select only
 a subset of models. Every model has a series of tags that indicate
-special characteristics of the model. Use a model's [`get_tags`][adaboost-get_tags]
-method to see its tags, or the [available_models][atomclassifier-available_models]
+special characteristics of the model. Use a model's `get_tags` method
+to see its tags, or the [available_models][atomclassifier-available_models]
 method to get an overview of all models and their tags. The tags differ
 per task, but can include:
 

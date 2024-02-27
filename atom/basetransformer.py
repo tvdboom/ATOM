@@ -19,7 +19,7 @@ from importlib.util import find_spec
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Literal, TypeVar, overload
+from typing import Literal, NoReturn, TypeVar, overload
 
 import joblib
 import mlflow
@@ -237,8 +237,6 @@ class BaseTransformer:
         warnings.filterwarnings("ignore", category=FutureWarning, module=".*pandas.*")
         warnings.filterwarnings("ignore", category=FutureWarning, module=".*imblearn.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*sktime.*")
-        warnings.filterwarnings("ignore", category=ResourceWarning, module=".*ray.*")
-        warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
         warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*shap.*")
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
 
@@ -250,7 +248,7 @@ class BaseTransformer:
     @logger.setter
     @beartype
     def logger(self, value: str | Path | Logger | None):
-        external_loggers = ["dagshub", "mlflow", "optuna", "ray", "modin", "featuretools"]
+        external_loggers = ["dagshub", "mlflow", "optuna", "ray", "featuretools"]
 
         # Clear existing handlers for external loggers
         for name in external_loggers:
@@ -364,6 +362,16 @@ class BaseTransformer:
                 ) from None
 
     # Methods ====================================================== >>
+
+    @staticmethod
+    @overload
+    def _check_input(
+        X: Literal[None],
+        y: Literal[None],
+        *,
+        columns: Axes | None = ...,
+        name: str | Axes | None = ...,
+    ) -> NoReturn: ...
 
     @staticmethod
     @overload

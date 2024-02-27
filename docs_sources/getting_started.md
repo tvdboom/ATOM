@@ -150,7 +150,7 @@ atom.encode(strategy="Target", max_onehot=8)  # hide
 
 atom.run(models=["LR", "LDA"], metric="auc", n_trials=6)  # hide
 
-print(atom.evaluate())
+print(atom.results)
 
 atom.plot_roc()
 ```

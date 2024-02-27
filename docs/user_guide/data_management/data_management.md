@@ -38,9 +38,9 @@ or together:
 * X
 * X, y
 
-Remember to use the `y` parameter to indicate the target column in X when
-using the first option. If not specified, the last column in X is used as
-target. In both these cases, the size of the sets are defined using the
+Remember to use the `y` parameter to indicate the target column in `X` when
+using the first option. If not specified, the last column in `X` is used as
+the target. In both these cases, the sizes of the sets are defined using the
 `test_size` and `holdout_size` parameters. Note that the splits are made
 after the subsample of the dataset with the `n_rows` parameter (when not
 left to its default value).
@@ -55,7 +55,7 @@ following formats:
 * (X_train, y_train), (X_test, y_test)
 * (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-The input data is always converted internally to a [dataframe][],
+The input data is always converted internally to a [dataframe][]
 if it isn't one already. The column names should always be strings. If
 they are not, atom changes their type at initialization. If no column
 names are provided, default names are given of the form `X[N-1]`,
@@ -206,16 +206,23 @@ for each sample.
 Multivariate is the multioutput task for forecasting. In this case, we
 try to forecast more than one time series at the same time.
 
-Although all forecasting models in ATOM support multivariate tasks, we
-differentiate two types of models:
+Although all forecasting models in ATOM support multioutput tasks (thus
+have the `native multioutput=True` flag), we still differentiate two types
+of models:
 
-* The "native multivariate" models apply forecasts where every prediction
-  of endogeneous (`y`) variables will depend on values of the other target
+* The "genuine multioutput" models apply forecasts where every prediction
+  of endogenous (`y`) variables will depend on values of the other target
   columns.
 * The rest of the models apply an estimator per column, meaning that forecasts
-  will be made per endogeneous variable, and not be affected by other variables.
+  will be made per endogenous variable, and not be affected by other variables.
   To access the column-wise estimators, use the estimator's `forecasters_`
   parameter, which stores the fitted forecasters in a dataframe.
+
+!!! tip
+    Use sktime's `get_tags()` method to check if an estimator is "genuine
+    multioutput", e.g. `atom.tbats.estimator.get_tags()`. Search for the
+    `scitype:y` key in the response. If the value is 'univariate', the
+    estimator is genuine multioutput, and if 'multivariate', it isn't.
 
 Read more about time series tasks [here][time-series].
 
@@ -223,8 +230,8 @@ Read more about time series tasks [here][time-series].
 
 Some models have native support for multioutput tasks. This means that
 the original estimator is used to make predictions directly on all the
-target columns. Examples of such models are [KNearestNeighbors][],
-[RandomForest][] and [ExtraTrees][].
+target columns. Read in the [model selection][] section how to get an
+overview of all models and their tags, including the `native_multioutput`.
 
 
 ### Non-native multioutput models
@@ -246,7 +253,7 @@ meta-estimators are respectively:
 !!! warning
     Currently, scikit-learn metrics do not support multiclass-multioutput
     classification tasks. In this case, ATOM calculates the mean of the
-    selected metric over every individual target.
+    selected metric over every target.
 
 !!! tip
     * Set the `native_multilabel` or `native_multioutput` parameter in
@@ -326,9 +333,9 @@ specified location (in a directory called `joblib`, the name of the underlying
 library managing the caching), maintaining only the current active branch in
 memory. This mechanism results in a slight drop in performance because of the
 I/O overhead, but can save a lot of memory. Additionally, the memory's location
-is also used to cache the output of the `fit` method of transformers in the
-pipeline. See [here][example-memory-considerations] an example using the memory
-parameter.
+is also used to cache the output of the `fit` and `transform` methods of steps
+in the pipeline. See [here][example-memory-considerations] an example using the
+memory parameter.
 
 Apart from the dataset itself, a model's metric scores and [shap values][shap]
 are also stored as attributes of the model to avoid having to recalculate
@@ -351,13 +358,14 @@ method) or through a function (see the [apply][atomclassifier-apply]
 method). Remember that all transformations are only applied to the
 dataset in the current branch.
 
+<br>
 
 ## Row and column selection
 
 Many methods in atom contain the `rows` or `columns` parameter to select a
 subset of the dataset. Examples are the [evaluate][atomclassifier-evaluate]
 and [save_data][atomclassifier-save_data] methods for `rows`, and the
-[distribution][atomclassifier-distribution] and [shrink][atomclassifier-shrink]
+[distributions][atomclassifier-distributions] and [shrink][atomclassifier-shrink]
 methods for `columns`. All [data cleaning][] and [feature engineering][] methods
 use the `columns` parameter to apply the transformation only to that selection
 of columns, and all [prediction methods][predicting] use the `rows` parameter
@@ -394,6 +402,16 @@ The check is performed in the order described hereunder:
    Rows and columns can only be included or excluded, and not both at the same
    time. For example, this selection raises an exception `#!python column=["col1", "!col2"]`.
 
+Additionally, the forecast horizon (parameter `fh`) in [forecasting tasks][time-series]
+can be selected much in the same way as `rows`, where the horizon is inferred
+as the index of the row selection. Note that, contrary to sktime's API but for
+consistency with the rest of ATOM's API, atom's fh starts with the training set,
+i.e., selecting `#!python atom.nf.predict(fh=range(5))` forecasts the first 5
+rows of the training set, not the test set. To get the same result as sktime, use
+`#!python atom.nf.predict(fh=range(len(atom.test), len(atom.test) + 5))` or
+`#!python atom.nf.predict(fh=atom.test.index[:5])` instead.
+
+
 !!! info
     In some [plotting methods][prediction-plots], it's possible to plot separate
     lines for different subsets of the rows. For example, to compare the results
@@ -405,3 +423,51 @@ The check is performed in the order described hereunder:
     Note that for these methods, using `#!python atom.plot_roc(rows="train+test")`,
     only plots one line with the data from both sets. See the
     [advanced plotting example][example-advanced-plotting].
+
+
+<br>
+
+## Data engines
+
+ATOM is mostly built around [sklearn](https://scikit-learn.org/stable/) (and [sktime](https://www.sktime.net/en/stable/) for [time series][]
+tasks), and both these libraries use numpy as their computation backend. Since
+`atom` relies heavily on column names, it uses pandas (which in turn uses numpy)
+as its data backend. However, for the convenience of the user, it implements
+several data engines, that wraps the data in a different type when called by the
+user. This is very similar to sklearn's [set_output][] behaviour, but ATOM
+extends this to many more data types. For example, selecting the `polars` data
+engine, makes `atom.dataset` return a polars dataframe and `atom.winner.predict(X)`
+return a polars series. See [here][example-data-engines] an example notebook.
+
+The data engine can be specified through the [`engine`][atomclassifier-engine]
+parameter, e.g. `#!python engine="pyarrow"` or `#!python engine={"data": "pyarrow",
+"estimator": "sklearnex"}` to combine it with an [estimator engine][estimator acceleration].
+ATOM integrates the following data engines:
+
+- **numpy**: Transform the data to a [`numpy`](https://numpy.org/) array.
+- **pandas**: Leave the dataset as a [`pandas`](https://pandas.pydata.org/docs/index.html) object. This is the default
+  engine, that leaves the data unchanged.
+- **pandas-pyarrow**: Transform the data to [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html) with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
+  backend. Read more in pandas' [user guide](https://pandas.pydata.org/docs/user_guide/pyarrow.html).
+- **polars**: The [polars](https://docs.pola.rs/) library is a blazingly fast dataframe library
+  implemented in Rust and based on Apache Arrow. Transforms the data to a polars
+  dataframe or series.
+- **polars-lazy**: This engine is similar to the `polars` engine, but it returns
+  a [pl.LazyFrame](https://docs.pola.rs/py-polars/html/reference/lazyframe/index.html) instead of a [pl.pd.DataFrame](https://docs.pola.rs/py-polars/html/reference/dataframe/index.html).
+- **pyarrow**: PyArrow is a cross-language, platform-independent, in-memory data
+  format, that provides an efficient and fast way to serialize and deserialize data.
+  the data is transformed to a [pa.Table](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html) or [pa.Array](https://arrow.apache.org/docs/python/generated/pyarrow.Array.html).
+- **modin**: The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement
+  for pandas, that uses [Ray](https://www.ray.io/) as backend. Transform the data to a modin dataframe
+  or series.
+- **dask**: The [dask](https://docs.dask.org/en/stable/) library is a powerful Python library for parallel and
+  distributed computing. Transform the data to a [dask dataframe](https://docs.dask.org/en/latest/dataframe.html) or [dask series](https://docs.dask.org/en/stable/generated/dask.dataframe.Series.html).
+- **pyspark**: The [pyspark](https://spark.apache.org/docs/latest/api/python/index.html) library is the Python API for Apache Spark.
+  Transform the data to a [pyspark dataframe](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html) or [pyspark series](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.Column.html).
+- **pyspark-pandas**: Similar to the `pyspark` engine, but it returns pyspark objects
+  with the [pandas API](https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/index.html).
+
+!!! note
+    It's important to realize that, within atom, the data is still processed using
+    pandas (with the numpy backend). Only when the data is returned to the user, it
+    is transformed to the selected format.

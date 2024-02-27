@@ -50,9 +50,9 @@ from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
     IndexSelector, Int, IntLargerEqualZero, MetricFunction, Model, Pandas,
-    Predictor, Scalar, Scorer, Segment, Sequence, SPTuple, Transformer,
-    Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t, segment_t,
-    sequence_t,
+    PandasConvertible, Predictor, Scalar, Scorer, Segment, Sequence, SPTuple,
+    Transformer, Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t,
+    segment_t, sequence_t,
 )
 
 
@@ -476,7 +476,7 @@ class XGBMetric:
         self.task = task
 
     @property
-    def __name__(self) -> str:  # noqa: A003
+    def __name__(self) -> str:
         """Return the scorer's name."""
         return self.scorer.name
 
@@ -1366,10 +1366,10 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
             Missing value indicator.
 
         """
-        return np.NaN if isinstance(dtype, np.dtype) else pd.NA
+        return np.nan if isinstance(dtype, np.dtype) else pd.NA
 
     # Always convert these values
-    default_values = [None, pd.NA, pd.NaT, np.NaN, np.inf, -np.inf]
+    default_values = [None, pd.NA, pd.NaT, np.nan, np.inf, -np.inf]
 
     if isinstance(X, pd.DataFrame):
         return X.replace(
@@ -1629,7 +1629,7 @@ def check_scaling(obj: Pandas) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
-    all columns lies between -0.05 and 0.05 and the mean of the
+    all columns lies between -0.25 and 0.15 and the mean of the
     standard deviation of all columns lies between 0.85 and 1.15.
     Categorical and binary columns are excluded from the calculation.
 
@@ -1651,7 +1651,7 @@ def check_scaling(obj: Pandas) -> bool:
         mean = obj.mean()
         std = obj.std()
 
-    return bool(-0.05 < mean < 0.05 and 0.85 < std < 1.15)
+    return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
 
 
 @contextmanager
@@ -1677,7 +1677,7 @@ def keep_attrs(estimator: Estimator):
 
 @contextmanager
 def adjust(
-    estimator: Estimator,
+    estimator: Estimator | Model,
     *,
     transform: EngineDataOptions | None = None,
     verbose: Verbose | None = None,
@@ -1689,7 +1689,7 @@ def adjust(
 
     Parameters
     ----------
-    estimator: Estimator
+    estimator: Estimator or Model
         Temporarily change the verbosity of this estimator.
 
     transform: str or None, default=None
@@ -1711,7 +1711,7 @@ def adjust(
         yield estimator
     finally:
         if transform is not None and hasattr(estimator, "set_output"):
-            estimator._engine = output
+            estimator._engine = output  # type: ignore[union-attr]
         if verbose is not None and hasattr(estimator, "verbose"):
             estimator.verbose = verbosity
 
@@ -1839,7 +1839,7 @@ def to_df(
         if isinstance(data, pd.DataFrame):
             data_c = data.copy()
         elif hasattr(data, "to_pandas"):
-            data_c = data.to_pandas()
+            data_c = data.to_pandas()  # type: ignore[operator]
         elif hasattr(data, "__dataframe__"):
             # Transform from dataframe interchange protocol
             data_c = pd.api.interchange.from_dataframe(data.__dataframe__())
@@ -1862,8 +1862,11 @@ def to_df(
         if list(data_c.columns) == ["x0"] and data_c.dtypes[0].name in CAT_TYPES:
             data_c = data_c.rename(columns={data_c.columns[0]: "corpus"})
         else:
-            # Convert all column names to str
-            data_c.columns = data_c.columns.astype(str)
+            if isinstance(data_c.columns, pd.MultiIndex):
+                raise ValueError("MultiIndex columns are not supported.")
+            else:
+                # Convert all column names to str
+                data_c.columns = data_c.columns.astype(str)
 
             # No duplicate rows nor column names are allowed
             if data_c.columns.duplicated().any():
@@ -1895,14 +1898,14 @@ def to_series(
 
 @overload
 def to_series(
-    data: dict[str, Any] | Sequence[Any] | pd.DataFrame,
+    data: dict[str, Any] | Sequence[Any] | pd.DataFrame | PandasConvertible,
     index: Axes | None = ...,
     name: str | None = ...,
 ) -> pd.Series: ...
 
 
 def to_series(
-    data: dict[str, Any] | Sequence[Any] | pd.DataFrame | None,
+    data: dict[str, Any] | Sequence[Any] | pd.DataFrame | PandasConvertible | None,
     index: Axes | None = None,
     name: str | None = None,
 ) -> pd.Series | None:
@@ -2487,8 +2490,6 @@ def transform_one(
     if isinstance(out, tuple) and X is not None:
         X_new = prepare_df(out[0], X)
         y_new = to_tabular(out[1], index=X_new.index)
-        if isinstance(y, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
-            y_new = prepare_df(y_new, y)
     elif "X" in params and X is not None and any(c in X for c in inc):
         # X in -> X out
         X_new = prepare_df(out, X)  # type: ignore[arg-type]
@@ -2496,7 +2497,7 @@ def transform_one(
     elif y is not None:
         y_new = to_tabular(out)
         X_new = X if X is None else X.set_index(y_new.index)
-        if isinstance(y, pd.DataFrame) and isinstance(y_new, pd.DataFrame):
+        if isinstance(y, pd.DataFrame):
             y_new = prepare_df(y_new, y)
 
     return X_new, y_new
@@ -2613,9 +2614,9 @@ def estimator_has_attr(attr: str) -> Callable:
 
     """
 
-    def check(runner: BaseRunner) -> bool:
+    def check(model: BaseModel) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
-        getattr(runner.estimator, attr)
+        getattr(model._est_class, attr)
         return True
 
     return check

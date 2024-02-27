@@ -264,7 +264,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         """Set output container.
 
         See sklearn's [user guide][set_output] on how to use the
-        `set_output` API. See [here][data-acceleration] a description
+        `set_output` API. See [here][data-engines] a description
         of the choices.
 
         Parameters
@@ -1899,7 +1899,7 @@ class Encoder(TransformerMixin):
 
                 # Create custom mapping from 0 to N - 1
                 mapping: dict[Hashable, Scalar] = {v: i for i, v in enumerate(ordinal_c)}
-                mapping.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
+                mapping.setdefault(np.nan, -1)  # Encoder always needs mapping of NaN
                 self.mapping_[str(name)] = mapping
 
                 encoders["ordinal"].append(str(name))
@@ -2440,7 +2440,7 @@ class Imputer(TransformerMixin):
 
         # Make y consistent with X
         if yt is not None:
-            yt = yt[yt.index.isin(Xt.index)]
+            yt = yt.loc[yt.index.isin(Xt.index)]
 
         # Reorder columns to original order
         Xt = Xt[self.get_feature_names_out()]
@@ -2937,13 +2937,13 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
                         # Replace outliers with NaN and after that with max,
                         # so that the max is not calculated with the outliers in it
                         cond1 = z_scores[:, i] > self.max_sigma
-                        mask = objective[col].mask(cond1, np.NaN)
-                        objective[col] = mask.replace(np.NaN, mask.max(skipna=True))
+                        mask = objective[col].mask(cond1, np.nan)
+                        objective[col] = mask.replace(np.nan, mask.max(skipna=True))
 
                         # Replace outliers with the minimum
                         cond2 = z_scores[:, i] < -self.max_sigma
-                        mask = objective[col].mask(cond2, np.NaN)
-                        objective[col] = mask.replace(np.NaN, mask.min(skipna=True))
+                        mask = objective[col].mask(cond2, np.nan)
+                        objective[col] = mask.replace(np.nan, mask.min(skipna=True))
 
                         # Sum number of replacements
                         counts += cond1.sum() + cond2.sum()

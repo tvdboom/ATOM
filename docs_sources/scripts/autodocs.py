@@ -920,18 +920,16 @@ def types_conversion(dtype: str) -> str:
         "FrozenTrial": "[FrozenTrial][]",
         "Model": "[model][models]",
         "Run": "[Run][mlflowrun]",
-        "pandas.core.indexes.base.Index": "Index",
-        "pandas.core.series.Series": "Series",
-        "pandas.core.frame.DataFrame": "DataFrame",
+        "pandas.core.indexes.base.Index": "pd.Index",
+        "pandas.core.series.Series": "pd.Series",
+        "pandas.core.frame.DataFrame": "pd.DataFrame",
         "atom.branch.branch.Branch": "[Branch][]",
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",
-        "Pandas": "Series | pd.DataFrame",
+        "Pandas": "pd.Series | pd.DataFrame",
         "int | numpy.integer": "int",
         "float | numpy.floating": "float",
-        "Series | modin.pandas.series.Series": "Series",
-        "DataFrame | modin.pandas.dataframe.DataFrame": "DataFrame",
     }
 
     for k, v in types.items():

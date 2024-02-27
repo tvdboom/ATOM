@@ -73,11 +73,11 @@ extra:
 plugins:
     - search
     - autorefs
-#    - mkdocs-jupyter:
-#          include_requirejs: true
-#          include: ["*.ipynb"]
-#          include_source: true
-#          ignore_h1_titles: true
+    - mkdocs-jupyter:
+          include_requirejs: true
+          include: ["*.ipynb"]
+          include_source: true
+          ignore_h1_titles: true
     - mkdocs-simple-hooks:
           hooks:
               on_page_markdown: docs_sources.scripts.autodocs:render
@@ -93,12 +93,12 @@ markdown_extensions:
     - pymdownx.details  # Allows for collapsible admonition blocks
     - pymdownx.magiclink  # Allows for bare links of the form <url>
     - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
-#    - pymdownx.superfences:
-#        preserve_tabs: true
-#        custom_fences:
-#            - name: pycon
-#              class: pycon
-#              format: !!python/name:docs_sources.scripts.autorun.formatter
+    - pymdownx.superfences:
+        preserve_tabs: true
+        custom_fences:
+            - name: pycon
+              class: pycon
+              format: !!python/name:docs_sources.scripts.autorun.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true
     - pymdownx.tabbed:  # Allows the usage of content tabs
@@ -296,6 +296,7 @@ nav:
         - Binary classification: examples/binary_classification.ipynb
         - Bootstrapping: examples/bootstrapping.ipynb
         - Calibration: examples/calibration.ipynb
+        - Data engines: examples/data_engines.ipynb
         - Deep learning: examples/deep_learning.ipynb
         - Ensembles: examples/ensembles.ipynb
         - Feature engineering: examples/feature_engineering.ipynb

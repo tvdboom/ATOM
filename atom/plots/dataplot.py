@@ -311,11 +311,11 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         --------
         ```pycon
         from atom import ATOMForecaster
-        from sktime.datasets import load_airline
+        from sktime.datasets import load_macroeconomic
 
-        y = load_airline()
+        X = load_macroeconomic()
 
-        atom = ATOMForecaster(y, random_state=1)
+        atom = ATOMForecaster(X, random_state=1)
         atom.plot_ccf()
         ```
 

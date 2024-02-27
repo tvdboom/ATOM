@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 import mlflow
 import pandas as pd
+import polars as pl
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import ClassifierChain
@@ -185,17 +186,24 @@ def test_input_X_and_y_None():
         BaseTransformer._check_input()
 
 
-def test_X_is_callable():
-    """Assert that the data provided can be a callable."""
-    X, _ = BaseTransformer._check_input(lambda: [[1, 2], [2, 1], [3, 1]])
-    assert isinstance(X, pd.DataFrame)
-
-
-def test_to_pandas():
+def test_input_is_numpy():
     """Assert that the data provided is converted to pandas objects."""
     X, y = BaseTransformer._check_input(X_bin_array, y_bin_array)
     assert isinstance(X, pd.DataFrame)
     assert isinstance(y, pd.Series)
+
+
+def test_input_is_polars():
+    """Assert that the data provided can be a callable."""
+    X, y = BaseTransformer._check_input(pl.from_pandas(X_bin), pl.from_pandas(y_bin))
+    assert isinstance(X, pd.DataFrame)
+    assert isinstance(y, pd.Series)
+
+
+def test_X_is_callable():
+    """Assert that the data provided can be a callable."""
+    X, _ = BaseTransformer._check_input(lambda: [[1, 2], [2, 1], [3, 1]])
+    assert isinstance(X, pd.DataFrame)
 
 
 def test_column_order_is_retained():
@@ -239,6 +247,14 @@ def test_int_columns_to_str():
     X.columns = range(X.shape[1])
     atom = ATOMClassifier(X, y_bin, random_state=1)
     assert atom.X.columns[0] == "0"
+
+
+def test_error_multiindex():
+    """Assert that an error is raised for multiindex dataframes."""
+    X = X_bin.copy()
+    X.columns = pd.MultiIndex.from_product([["dummy"], X.columns])
+    with pytest.raises(ValueError, match=".*MultiIndex columns are not supported.*"):
+        ATOMClassifier(X, y_bin, random_state=1)
 
 
 def test_duplicate_column_names_in_X():

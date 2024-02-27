@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from _pytest.monkeypatch import MonkeyPatch
 
-    from atom.utils.types import DataFrame, Pandas, Sequence, XConstructor
+    from atom.utils.types import Pandas, Sequence, XConstructor
 
 
 class DummyTransformer(TransformerMixin, BaseEstimator):
@@ -55,12 +55,12 @@ class DummyTransformer(TransformerMixin, BaseEstimator):
         super().__init__(logger=None, verbose=0)
         self.strategy = strategy
 
-    def transform(self, X: DataFrame) -> np.ndarray:
+    def transform(self, X: pd.DataFrame) -> np.ndarray:
         """Transform the data.
 
         Parameters
         ----------
-        X: dataframe
+        X: pd.DataFrame
             Feature set.
 
         Returns
@@ -218,14 +218,14 @@ X10 = [
 
 # Dataset with missing value
 X10_nan = [
-    [np.NaN, 2, 1],
+    [np.nan, 2, 1],
     [0.2, 2, 1],
     [4, 2, 2],
     [3, 2, 1],
     [3, 2, 2],
     [1, 0, 1],
     [0, 3, 2],
-    [4, np.NaN, 1],
+    [4, np.nan, 1],
     [5, 2, 1],
     [3, 2, 0],
 ]
@@ -260,7 +260,7 @@ X10_str2 = [
 
 # Dataset with missing value in categorical column
 X10_sn = [
-    [2, 0, np.NaN],
+    [2, 0, np.nan],
     [2, 3, "a"],
     [5, 2, "b"],
     [1, 2, "a"],
@@ -278,7 +278,7 @@ X10_dt = [
     [2, "12", "31/3/2020", 22],
     [5, "06", "30/3/2020", 21],
     [1, "03", "31/5/2020", 2],
-    [1, "202", np.NaN, 4],
+    [1, "202", np.nan, 4],
     [2, "11", "06/6/2000", 6],
     [2, "01", "31/3/2020", 7],
     [5, "22", "9/12/2020", 6],
@@ -312,9 +312,9 @@ X20_out = [
 
 # Target columns (int, missing, categorical and mixed)
 y10 = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
-y10_nan = [0, 1, 0, np.NaN, 1, 0, 1, 0, 1, 1]
+y10_nan = [0, 1, 0, np.nan, 1, 0, 1, 0, 1, 1]
 y10_str = ["y", "n", "y", "y", "n", "y", "n", "y", "n", "n"]
-y10_sn = ["y", "n", np.NaN, "y", "n", "y", "n", "y", "n", "n"]
+y10_sn = ["y", "n", np.nan, "y", "n", "y", "n", "y", "n", "n"]
 
 y10_label = [
     ["politics"],

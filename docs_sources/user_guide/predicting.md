@@ -15,28 +15,20 @@ in sklearn's and sktime's API.
 
 For classification and regression tasks:
 
-:: atom.models:AdaBoost
-    :: methods:
-        toc_only: True
-        include:
-            - decision_function
-            - predict
-            - predict_log_proba
-            - predict_proba
-            - score
+- decision_function
+- predict
+- predict_log_proba
+- predict_proba
+- score
 
 For forecast tasks:
 
-:: atom.models:ARIMA
-    :: methods:
-        toc_only: True
-        include:
-            - predict
-            - predict_interval
-            - predict_proba
-            - predict_quantiles
-            - predict_var
-            - score
+- predict
+- predict_interval
+- predict_proba
+- predict_quantiles
+- predict_var
+- score
 
 
 !!! warning

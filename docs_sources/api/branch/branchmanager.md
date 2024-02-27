@@ -1,7 +1,7 @@
 # BranchManager
 ---------------
 
-:: atom.branch:BranchManager
+:: atom.data:BranchManager
     :: signature
     :: head
     :: table:

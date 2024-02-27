@@ -468,7 +468,7 @@ def test_kwargs_parameters():
 
 # Test Imputer ===================================================== >>
 
-@pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
+@pytest.mark.parametrize("missing", [None, np.nan, np.inf, -np.inf, 99])
 def test_imputing_all_missing_values_numeric(missing):
     """Assert that all missing values are imputed in numeric columns."""
     X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]

@@ -612,7 +612,7 @@ def test_plot_forecast():
     """Assert that the plot_forecast method works."""
     atom = ATOMForecaster(X_ex, y=(-2, -1), holdout_size=0.1, random_state=1)
     atom.run(models=["NF", "ES"])
-    atom.plot_forecast(display=False)
+    atom.plot_forecast(inverse=False, display=False)
     atom.plot_forecast(fh=atom.holdout.index, X=atom.holdout, display=False)
 
 

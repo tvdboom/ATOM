@@ -121,7 +121,7 @@ class BaseModel(RunnerPlot):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -262,12 +262,18 @@ class BaseModel(RunnerPlot):
         self._bootstrap: pd.DataFrame | None = None
         self._time_bootstrap = 0.0
 
-        # "Inherit" task specific methods from ClassRegModel or ForecastModel
-        for n, m in vars(ForecastModel if goal is Goal.forecast else ClassRegModel).items():
+        # Inject goal-specific methods from ClassRegModel or ForecastModel
+        cls = ForecastModel if goal is Goal.forecast else ClassRegModel
+        for n, m in vars(cls).items():
             if not n.startswith("__"):
-                setattr(self.__class__, n, m)
+                try:
+                    setattr(self, n, m.__get__(self, cls))
+                except AttributeError:
+                    # available_if descriptor raises an error
+                    # if the estimator doesn't have the method
+                    pass
 
-        # Skip this part if not called for the estimator
+        # Skip this part if only initialized for the estimator
         if branches:
             self._og = branches.og
             self._branch = branches.current
@@ -721,7 +727,7 @@ class BaseModel(RunnerPlot):
                     f"Failed to get predictions for model {self.name} "
                     f"on rows {rows}. Returning NaN. Exception: {ex}.", 3
                 )
-                y_pred = pd.Series([np.NaN] * len(X), index=X.index)
+                y_pred = pd.Series([np.nan] * len(X), index=X.index)
 
         else:
             y_pred = self._prediction(X.index, verbose=0, method=method_caller)
@@ -821,7 +827,7 @@ class BaseModel(RunnerPlot):
             y_true = y_true.loc[y_pred.index]
 
         if y_pred.empty:
-            return np.NaN
+            return np.nan
 
         if self.task is Task.multiclass_multioutput_classification:
             # Get the mean of the scores over the target columns
@@ -1429,9 +1435,9 @@ class BaseModel(RunnerPlot):
                 data["estimator"].append(t.user_attrs.get("estimator"))
                 for i, met in enumerate(self._metric.keys()):
                     if len(self._metric) == 1:
-                        data[met].append(t.value or np.NaN)
+                        data[met].append(t.value or np.nan)
                     else:
-                        data[met].append(t.values[i] if t.values else np.NaN)
+                        data[met].append(t.values[i] if t.values else np.nan)
                     data[f"best_{met}"] = np.nanmax(data[met])
                 if t.datetime_complete and t.datetime_start:
                     data["time_trial"].append(
@@ -1680,8 +1686,8 @@ class BaseModel(RunnerPlot):
     @property
     def X_train(self) -> pd.DataFrame:
         """Features of the training set."""
-        features = self.branch.features.isin(self._config.ignore)
-        X_train = self.branch.X_train.iloc[-self._train_idx:, ~features]
+        exclude = self.branch.features.isin(self._config.ignore)
+        X_train = self.branch.X_train.iloc[-self._train_idx:, ~exclude]
         if self.scaler:
             return cast(pd.DataFrame, self.scaler.transform(X_train))
         else:
@@ -1695,8 +1701,8 @@ class BaseModel(RunnerPlot):
     @property
     def X_test(self) -> pd.DataFrame:
         """Features of the test set."""
-        features = self.branch.features.isin(self._config.ignore)
-        X_test = self.branch.X_test.iloc[:, ~features]
+        exclude = self.branch.features.isin(self._config.ignore)
+        X_test = self.branch.X_test.iloc[:, ~exclude]
         if self.scaler:
             return cast(pd.DataFrame, self.scaler.transform(X_test))
         else:
@@ -1724,9 +1730,9 @@ class BaseModel(RunnerPlot):
         return self.dataset.shape
 
     @property
-    def columns(self) -> list[str]:
+    def columns(self) -> pd.Index:
         """Name of all the columns."""
-        return list(self.dataset.columns)
+        return self.dataset.columns
 
     @property
     def n_columns(self) -> int:
@@ -1734,9 +1740,9 @@ class BaseModel(RunnerPlot):
         return len(self.columns)
 
     @property
-    def features(self) -> list[str]:
+    def features(self) -> pd.Index:
         """Name of the features."""
-        return list(self.columns[:-self.branch._data.n_targets])
+        return self.columns[:-self.branch._data.n_targets]
 
     @property
     def n_features(self) -> int:
@@ -2972,24 +2978,13 @@ class ForecastModel:
         method: Literal[
             "predict",
             "predict_interval",
+            "predict_proba",
             "predict_quantiles",
             "predict_residuals",
             "predict_var",
         ] = ...,
         **kwargs,
-    ) -> Pandas: ...
-
-    @overload
-    def _prediction(
-        self,
-        fh: RowSelector | FHConstructor | None,
-        y: RowSelector | YSelector | None,
-        X: XSelector | None,
-        metric: str | MetricFunction | Scorer | None,
-        verbose: Verbose | None,
-        method: Literal["predict_proba"],
-        **kwargs,
-    ) -> Normal: ...
+    ) -> Normal | Pandas: ...
 
     @overload
     def _prediction(
@@ -3143,6 +3138,7 @@ class ForecastModel:
         X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
+        inverse: Bool = True,
         verbose: Verbose | None = None,
     ) -> XReturn:
         """Get prediction intervals on new data or existing rows.
@@ -3165,6 +3161,12 @@ class ForecastModel:
         coverage: float or sequence, default=0.9
             Nominal coverage(s) of predictive interval(s).
 
+        inverse: bool, default=True
+            Whether to inversely transform the output through the
+            pipeline. This doesn't affect the predictions if there are
+            no transformers in the pipeline or if the transformers have
+            no `inverse_transform` method or don't apply to `y`.
+
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
             None, it uses the pipeline's verbosity.
@@ -3175,15 +3177,28 @@ class ForecastModel:
             Computed interval forecasts.
 
         """
-        return self._convert(
-            self._prediction(
-                fh=fh,
-                X=X,
-                coverage=coverage,
-                verbose=verbose,
-                method="predict_interval",
-            )
+        pred = self._prediction(
+            fh=fh,
+            X=X,
+            coverage=coverage,
+            verbose=verbose,
+            method="predict_interval",
         )
+
+        if inverse:
+            # We pass every level of the multiindex to inverse_transform...
+            dfs = []
+            for level in pred.columns.levels[2]:  # type: ignore[union-attr]
+                df = pred.loc[:, pred.columns.get_level_values(2) == level]
+                df.columns = df.columns.droplevel(level=(1, 2))
+                dfs.append(self.inverse_transform(y=df))
+
+            # ... and merge every level back to the original output
+            new_data = merge(*dfs)
+            new_data.columns = pred.columns
+            return self._convert(new_data)
+        else:
+            return self._convert(pred)
 
     @available_if(estimator_has_attr("predict_proba"))
     @composed(crash, method_to_log, beartype)

@@ -141,13 +141,12 @@ To avoid having to recalculate the values for every plot, ATOM stores
 the shapley values internally after the first calculation, and access
 them later when needed again.
 
-!!! note
-    Since the plot figures are not made by ATOM, note the following:
-
+!!! warning
     * It's not possible to draw multiple models in the same figure.
       Selecting more than one model will raise an exception. To avoid
       this, call the plot directly from a model, e.g., `#!python atom.lr.plot_shap_force()`.
     * The returned plot is a matplotlib figure, not plotly's.
+    * SHAP plots aren't available for [forecast][time-series] tasks.
 
 <br>
 

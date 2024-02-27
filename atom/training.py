@@ -343,7 +343,7 @@ class DirectClassifier(Direct):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -437,8 +437,6 @@ class DirectClassifier(Direct):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -578,7 +576,7 @@ class DirectForecaster(Direct):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -669,8 +667,6 @@ class DirectForecaster(Direct):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -809,7 +805,7 @@ class DirectRegressor(Direct):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -903,8 +899,6 @@ class DirectRegressor(Direct):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -1050,7 +1044,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -1144,8 +1138,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -1288,7 +1280,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -1374,13 +1366,11 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     train, test = temporal_train_test_split(y, test_size=0.2)
 
-    runner = SuccessiveHalvingForecaster(["ETS", "ES"], verbose=2)
+    runner = SuccessiveHalvingForecaster(["Croston", "PT"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -1523,7 +1513,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -1617,8 +1607,6 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -1770,7 +1758,7 @@ class TrainSizingClassifier(TrainSizing):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -1864,8 +1852,6 @@ class TrainSizingClassifier(TrainSizing):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -2014,7 +2000,7 @@ class TrainSizingForecaster(TrainSizing):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -2100,13 +2086,11 @@ class TrainSizingForecaster(TrainSizing):
 
     train, test = temporal_train_test_split(y, test_size=0.2)
 
-    runner = TrainSizingForecaster(["ETS", "ES"], verbose=2)
+    runner = TrainSizingForecaster(["Croston", "PT"], verbose=2)
     runner.run(train, test)
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """
@@ -2254,7 +2238,7 @@ class TrainSizingRegressor(TrainSizing):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -2348,8 +2332,6 @@ class TrainSizingRegressor(TrainSizing):
 
     # Analyze the results
     print(runner.results)
-
-    print(runner.evaluate())
     ```
 
     """

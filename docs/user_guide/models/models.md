@@ -13,58 +13,52 @@ can be accessed using their acronyms, e.g., `atom.LGB` to access the
 LightGBM model. The available models and their corresponding
 acronyms are:
 
-* [AdaBoost][] (AdaB)
-* [ARIMA][] (Arima)
-* [AutoARIMA][] (AutoARIMA)
-* [AutomaticRelevanceDetermination][] (ARD)
-* [Bagging][] (Bag)
-* [BayesianRidge][] (BR)
-* [BernoulliNB][] (BNB)
-* [CatBoost][] (CatB)
-* [CategoricalNB][] (CatNB)
-* [ComplementNB][] (CNB)
-* [DecisionTree][] (Tree)
-* [Dummy][] (Dummy)
-* [ElasticNet][] (EN)
-* [ETS][] (ETS)
-* [ExponentialSmoothing][] (ES)
-* [ExtraTree][] (ETree)
-* [ExtraTrees][] (ET)
-* [GaussianNB][] (GNB)
-* [GaussianProcess][] (GP)
-* [GradientBoostingMachine][] (GBM)
-* [HuberRegression][] (Huber)
-* [HistGradientBoosting][] (hGBM)
-* [KNearestNeighbors][] (KNN)
-* [Lasso][] (Lasso)
-* [LeastAngleRegression][] (Lars)
-* [LightGBM][] (LGB)
-* [LinearDiscriminantAnalysis][] (LDA)
-* [LinearSVM][] (lSVM)
-* [LogisticRegression][] (LR)
-* [MultiLayerPerceptron][] (MLP)
-* [MultinomialNB][] (MNB)
-* [NaiveForecaster][] (NF)
-* [OrdinaryLeastSquares][] (OLS)
-* [OrthogonalMatchingPursuit][] (OMP)
-* [PassiveAggressive][] (PA)
-* [Perceptron][] (Perc)
-* [PolynomialTrend][] (PT)
-* [QuadraticDiscriminantAnalysis][] (QDA)
-* [RadiusNearestNeighbors][] (RNN)
-* [RandomForest][] (RF)
-* [Ridge][] (Ridge)
-* [StochasticGradientDescent][] (SGD)
-* [SupportVectorMachine][] (SVM)
-* [XGBoost][] (XGB)
+:: atom.models:MODELS
+    :: toc
 
 !!! warning
-    The model classes can not be initialized directly by the user! Use
+    The model classes cannot be initialized directly by the user! Use
     them only through atom.
 
 !!! tip
     The acronyms are case-insensitive, e.g., `atom.lgb` also calls
     the LightGBM model.
+
+<br>
+
+## Model selection
+
+Although ATOM allows running all models for a given task using
+`#!python atom.run(models=None)`, it's usually smarter to select only
+a subset of models. Every model has a series of tags that indicate
+special characteristics of the model. Use a model's `get_tags` method
+to see its tags, or the [available_models][atomclassifier-available_models]
+method to get an overview of all models and their tags. The tags differ
+per task, but can include:
+
+- **acronym:** Model's acronym (used to call the model).
+- **fullname:** Name of the model's class.
+- **estimator:** Name of the model's underlying estimator.
+- **module:** The estimator's module.
+- **handles_missing:** Whether the model can handle missing values
+  without preprocessing. If False, consider using the [Imputer][] class
+  before training the models.
+- **needs_scaling:** Whether the model requires feature scaling. If True,
+  [automated feature scaling][] is applied.
+- **accepts_sparse:** Whether the model accepts [sparse input][sparse-datasets].
+- **uses_exogenous:** Whether the model uses [exogenous variables][].
+- **multiple_seasonality:** Whether the model can handle more than one
+  [seasonality period][seasonality].
+- **native_multilabel:** Whether the model has native support for [multilabel][] tasks.
+- **native_multioutput:** Whether the model has native support for [multioutput tasks][].
+- **validation:** Whether the model has [in-training validation][].
+- **supports_engines:** [Engines][estimator-acceleration] supported by the model.
+
+To filter for specific tags, specify the column name with the desired value
+in the arguments of `available_models`, e.g., `#!python atom.available_models(accepts_sparse=True)`
+to get all models that accept sparse input or `#!python atom.available_models(supports_engines="cuml")`
+to get all models that support the [cuML][] engine.
+
 
 <br>
 
@@ -154,9 +148,9 @@ stacking. Click [here][example-ensembles] to see an example that uses
 ensemble models.
 
 If the ensemble's underlying estimator is a model that used [automated feature scaling][],
-it's added as a Pipeline containing the `scaler` and estimator. If a
-[mlflow experiment][tracking] is active, the ensembles start their own
-run, just like the [predefined models][] do.
+it's added as a Pipeline containing the [`Scaler`][] and estimator. If
+a [mlflow experiment][tracking] is active, the ensembles start their
+own run, just like the [predefined models][] do.
 
 !!! warning
     Combining models trained on different branches into one ensemble is
@@ -189,9 +183,6 @@ resources, since the classes are always initialized with fitted estimators.
 As a consequence of this, the VotingClassifier can not use sklearn's build-in
 LabelEncoder for the target column since it can't be fitted when initializing
 the class. For the vast majority of use cases, the changes will have no effect.
-If you want to export the estimator and retrain it on different data, just make
-sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
-the underlying estimators first.
 
 
 <br>
@@ -206,13 +197,12 @@ prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 A stacking model is created from a trainer through the [stacking][atomclassifier-stacking]
 method. The stacking model is added automatically to the list of
 models in the trainer, under the `Stack` acronym. The underlying
-estimator is a custom adaptation of [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html)
-or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
-depending on the task. The only difference between ATOM's and sklearn's
-implementation is that ATOM's implementation doesn't fit estimators if
-they're already fitted. The two estimators are customized in this way to
-save time and computational resources, since the classes are always
-initialized with fitted estimators. For the vast majority of use cases,
-the changes will have no effect. If you want to export the estimator and
-retrain it on different data, just make sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
-the underlying estimators first.
+estimators are [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html) or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
+depending on the task.
+
+!!! tip
+    By default, the final estimator is trained on the training set.
+    Note that this is the same data on which the other estimators are
+    fitted, increasing the chance of overfitting. If possible, it's 
+    recommended to use `train_on_test=True` in combination with a
+    [holdout set][data-sets] for model evaluation.

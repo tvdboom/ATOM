@@ -125,7 +125,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
             if "# hide" not in line:
                 output[-1].extend([draw(code) for code in block])
 
-            # Add filename parameter to plot call to save figure
+            # Add filename parameter to plot call to save the figure
             if ".plot_" in line or ".canvas(" in line:
                 f, arguments = block[0].split("(", 1)
                 if arguments.startswith(")"):

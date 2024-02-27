@@ -1050,6 +1050,17 @@ def test_predictions_with_exogenous():
     assert isinstance(atom.nf.predict_var(fh=range(10), X=X_ex.iloc[:10]), pd.DataFrame)
 
 
+def test_ts_prediction_inverse_transform():
+    """Assert that the predict method can return the inversely transformed data."""
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.scale(columns=-1)
+    atom.run("NF")
+    assert check_scaling(atom.nf.predict(y_ex, inverse=False))
+    assert not check_scaling(atom.nf.predict(y_ex, inverse=True))
+    assert check_scaling(atom.nf.predict_interval(y_ex, inverse=False))
+    assert not check_scaling(atom.nf.predict_interval(y_ex, inverse=True))
+
+
 def test_predictions_with_y():
     """Assert that predictions can be made with y."""
     atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)

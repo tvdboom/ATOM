@@ -28,22 +28,22 @@ attributes accordingly.
     - attributes:
         from_docstring: False
         include:
-            - atom.branch:Branch.dataset
-            - atom.branch:Branch.train
-            - atom.branch:Branch.test
-            - atom.branch:Branch.X
-            - atom.branch:Branch.y
+            - atom.data:Branch.dataset
+            - atom.data:Branch.train
+            - atom.data:Branch.test
+            - atom.data:Branch.X
+            - atom.data:Branch.y
             - holdout
-            - atom.branch:Branch.X_train
-            - atom.branch:Branch.y_train
-            - atom.branch:Branch.X_test
-            - atom.branch:Branch.y_test
-            - atom.branch:Branch.shape
-            - atom.branch:Branch.columns
-            - atom.branch:Branch.n_columns
-            - atom.branch:Branch.features
-            - atom.branch:Branch.n_features
-            - atom.branch:Branch.target
+            - atom.data:Branch.X_train
+            - atom.data:Branch.y_train
+            - atom.data:Branch.X_test
+            - atom.data:Branch.y_test
+            - atom.data:Branch.shape
+            - atom.data:Branch.columns
+            - atom.data:Branch.n_columns
+            - atom.data:Branch.features
+            - atom.data:Branch.n_features
+            - atom.data:Branch.target
 
 <br>
 

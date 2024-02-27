@@ -86,11 +86,11 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 
 **Linting**
 
-* **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
-* **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
-* **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
+* **[isort](https://pycqa.github.io/isort/)** (>=5.13.2)
+* **[mypy](https://www.mypy-lang.org/)** (>=1.8.0)
+* **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.2.0.240218)
 * **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
-* **[ruff](https://docs.astral.sh/ruff/)** (>=0.1.7)
+* **[ruff](https://docs.astral.sh/ruff/)** (>=0.2.2)
 
 **Testing**
 

@@ -60,7 +60,7 @@ class BranchManager:
 
     See Also
     --------
-    atom.branch:Branch
+    atom.data:Branch
 
     Examples
     --------

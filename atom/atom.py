@@ -331,8 +331,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         This property is unavailable for [sparse datasets][].
 
         """
-        if not is_sparse(self.branch.X):
-            return replace_missing(self.branch.X, self.missing).isna().sum()
+        if not is_sparse(self.branch.dataset):
+            return replace_missing(self.branch.dataset, self.missing).isna().sum()
 
         raise AttributeError("This property is unavailable for sparse datasets.")
 
@@ -343,16 +343,16 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         This property is unavailable for [sparse datasets][].
 
         """
-        if not is_sparse(self.branch.X):
-            nans = replace_missing(self.branch.X, self.missing).isna().sum(axis=1)
+        if not is_sparse(self.branch.dataset):
+            nans = replace_missing(self.branch.dataset, self.missing).isna().sum(axis=1)
             return len(nans[nans > 0])
 
         raise AttributeError("This property is unavailable for sparse datasets.")
 
     @property
-    def numerical(self) -> list[str]:
+    def numerical(self) -> pd.Index:
         """Names of the numerical features in the dataset."""
-        return list(self.branch.X.select_dtypes(include=["number"]).columns)
+        return self.branch.X.select_dtypes(include=["number"]).columns
 
     @property
     def n_numerical(self) -> int:
@@ -360,9 +360,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         return len(self.numerical)
 
     @property
-    def categorical(self) -> list[str]:
+    def categorical(self) -> pd.Index:
         """Names of the categorical features in the dataset."""
-        return list(self.branch.X.select_dtypes(include=CAT_TYPES).columns)
+        return self.branch.X.select_dtypes(include=CAT_TYPES).columns
 
     @property
     def n_categorical(self) -> int:

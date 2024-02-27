@@ -201,7 +201,7 @@ The predefined models that support in-training validation are:
 * [XGBoost][]
 
 To apply in-training validation to a [custom model][custom-models], use the
-[`has_validation`][atommodel-has_validation] parameter when creating the
+[`validation`][atommodel-validation] parameter when creating the
 custom model.
 
 !!! warning
@@ -456,8 +456,10 @@ the test set. This way you can get a distribution of the performance of
 the model. The sets are the same for every model. The number of sets can
 be chosen through the [`n_bootstrap`][directclassifier-n_bootstrap] parameter.
 
+See [here][example-bootstrapping] a bootstrapping example.
+
 !!! tip
-    Use the [plot_results][] method to plot the boostrap scores in a boxplot.
+    Use the [plot_bootstrap][] method to plot the boostrap scores in a boxplot.
 
 
 <br>

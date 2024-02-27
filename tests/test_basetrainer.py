@@ -375,8 +375,6 @@ def test_errors_keep():
     assert trainer._models == [trainer.lda]
 
 
-# @patch("atom.basetransformer.ray", MagicMock())
-# @patch("atom.basetrainer.ray", MagicMock())
 def test_parallel_with_ray():
     """Assert that parallel runs successfully with ray backend."""
     trainer = DirectClassifier(
@@ -386,9 +384,7 @@ def test_parallel_with_ray():
         backend="ray",
         random_state=1,
     )
-    # Fails because MagicMock returns an empty list
-    with pytest.raises(RuntimeError, match=".*All models failed.*"):
-        trainer.run(bin_train, bin_test)
+    trainer.run(bin_train, bin_test)
 
 
 def test_parallel_with_dask():

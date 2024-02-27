@@ -26,28 +26,25 @@ packages are necessary for its correct functioning.
 
 * **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.16.4)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.3)
-* **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
+* **[featuretools](https://www.featuretools.com/)** (>=1.28.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.2)
-* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.11.0)
+* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.12.0)
 * **[ipython](https://ipython.readthedocs.io/en/stable/)** (>=8.11.0)
 * **[ipywidgets](https://pypi.org/project/ipywidgets/)** (>=8.1.1)
-* **[featuretools](https://www.featuretools.com/)** (>=1.28.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.3.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.7.2)
-* **[mlflow](https://mlflow.org/)** (>=2.7.1)
-* **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.25.0)
+* **[mlflow](https://mlflow.org/)** (>=2.10.2)
 * **[nltk](https://www.nltk.org/)** (>=3.8.1)
 * **[numpy](https://numpy.org/)** (>=1.23.0)
 * **[optuna](https://optuna.org/)** (>=3.4.0)
-* **[pandas[parquet]](https://pandas.pydata.org/)** (>=2.1.2)
-* **[plotly](https://plotly.com/python/)** (>=5.15.0)
-* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.7.1)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.3.1)
-* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
+* **[pandas](https://pandas.pydata.org/)** (>=2.1.2)
+* **[plotly](https://plotly.com/python/)** (>=5.18.0)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.0)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)
-* **[sktime](http://www.sktime.net/en/latest/)** (>=0.24.0)
+* **[sktime[forecasting]](http://www.sktime.net/en/latest/)** (>=0.26.0)
+* **[statsmodels](https://www.statsmodels.org/stable/index.html)** (>=0.14.1)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.26)
 
 
@@ -59,11 +56,21 @@ additional libraries. You can install all the optional dependencies using
 
 * **[botorch](https://botorch.org/docs/introduction)** (>=0.8.5)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.2)
+* **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
+* **[dask[distributed]](https://dask.org/)** (>=2024.2.0)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.3)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.44.4)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=4.1.0)
-* **[pmdarima](http://alkaline-ml.com/pmdarima/)** (>=2.0.3)
+* **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.25.0)
+* **[polars](https://pola.rs/)** (>=0.20.7)
+* **[pyarrow](https://arrow.apache.org/docs/python/)** (>=15.0.0)
+* **[pyspark](https://github.com/apache/spark/tree/master/python)** (>=3.5.0)
+* **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
+* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.9.1)
+* **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
+* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
+* **[statsforecast](https://github.com/Nixtla/statsforecast/)** (>=1.6.0)
 * **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.3.1)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.9.2)
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=2.0.0)
@@ -74,24 +81,23 @@ additional libraries. You can install all the optional dependencies using
 The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
 necessary to [contribute][contributing] to the project. Install them
-running `pdm install --dev` (don't forget to install [pdm](https://pdm-project.org/latest/)
-with `pip install -U pdm`).
+running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/latest/) first with
+`pip install -U pdm`).
 
 **Linting**
 
-* **[isort](https://pycqa.github.io/isort/)** (>=5.12.0)
-* **[flake8](https://github.com/pycqa/flake8)** (>=6.0.0)
-* **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.2.3)
-* **[pydocstyle](https://www.pydocstyle.org/en/stable/)** (>=6.3.0)
-* **[mypy](https://www.mypy-lang.org/)** (>=1.6.1)
-* **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.1.1.230928)
-* **[types-requests](https://github.com/python/typeshed)** (>=2.31.0.10)
+* **[isort](https://pycqa.github.io/isort/)** (>=5.13.2)
+* **[mypy](https://www.mypy-lang.org/)** (>=1.8.0)
+* **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.2.0.240218)
+* **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
+* **[ruff](https://docs.astral.sh/ruff/)** (>=0.2.2)
 
 **Testing**
 
 * **[nbmake](https://github.com/treebeardtech/nbmake)** (>=1.4.1)
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.2.1)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.0.0)
+* **[pytest-mock](https://github.com/pytest-dev/pytest-mock/)** (>=3.12.0)
 * **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.2.0)
 * **[scikeras](https://github.com/adriangb/scikeras)** (>=0.11.0)
 * **[tensorflow](https://www.tensorflow.org/learn)** (>=2.13.0)

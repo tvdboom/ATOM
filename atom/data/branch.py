@@ -25,7 +25,7 @@ from atom.pipeline import Pipeline
 from atom.utils.types import (
     Bool, ColumnSelector, Int, IntLargerEqualZero, Pandas, RowSelector, Scalar,
     TargetSelector, TargetsSelector, XConstructor, XDatasets, YConstructor,
-    YDatasets, int_t, segment_t,
+    YDatasets, int_t, pandas_t, segment_t,
 )
 from atom.utils.utils import (
     DataContainer, check_scaling, flt, get_col_names, get_cols, lst, merge,
@@ -72,7 +72,7 @@ class Branch:
 
     See Also
     --------
-    atom.branch:BranchManager
+    atom.data:BranchManager
 
     Examples
     --------
@@ -428,9 +428,9 @@ class Branch:
         return self.dataset.shape
 
     @property
-    def columns(self) -> list[str]:
+    def columns(self) -> pd.Index:
         """Name of all the columns."""
-        return list(self.dataset.columns)
+        return self.dataset.columns
 
     @property
     def n_columns(self) -> int:
@@ -438,9 +438,9 @@ class Branch:
         return len(self.columns)
 
     @property
-    def features(self) -> list[str]:
+    def features(self) -> pd.Index:
         """Name of the features."""
-        return list(self.columns[:-self._data.n_targets])
+        return self.columns[:-self._data.n_targets]
 
     @property
     def n_features(self) -> int:
@@ -529,7 +529,7 @@ class Branch:
 
         inc: list[Hashable] = []
         exc: list[Hashable] = []
-        if isinstance(rows, pd.DataFrame):
+        if isinstance(rows, pandas_t):
             inc.extend(rows.index)
         elif isinstance(rows, pd.Index):
             inc.extend(rows)

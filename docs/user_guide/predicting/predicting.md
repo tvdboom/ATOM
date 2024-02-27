@@ -10,38 +10,30 @@ in the model's branch before making the predictions. Transformers that
 should only be applied on the training set are excluded from this step
 (e.g., outlier pruning or class balancing).
 
-The available prediction methods are the standard methods for estimators
+The available prediction methods are the standard methods for predictors
 in sklearn's and sktime's API.
 
 For classification and regression tasks:
 
-:: atom.models:AdaBoost
-    :: methods:
-        toc_only: True
-        include:
-            - decision_function
-            - predict
-            - predict_log_proba
-            - predict_proba
-            - score
+- decision_function
+- predict
+- predict_log_proba
+- predict_proba
+- score
 
 For forecast tasks:
 
-:: atom.models:ARIMA
-    :: methods:
-        toc_only: True
-        include:
-            - predict
-            - predict_interval
-            - predict_proba
-            - predict_quantiles
-            - predict_var
-            - score
+- predict
+- predict_interval
+- predict_proba
+- predict_quantiles
+- predict_var
+- score
 
 
 !!! warning
     The `score` method return atom's metric score, not the metric returned
-    by sklearn/sktime's score method for estimators. Use the method's
+    by sklearn/sktime's score method for predictors. Use the method's
     `metric` parameter to calculate a different metric.
 
 !!! note

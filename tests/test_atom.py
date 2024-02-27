@@ -388,8 +388,10 @@ def test_reset():
 def test_save_data():
     """Assert that the dataset is saved to a csv file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save_data("auto")
-    assert glob.glob("ATOMClassifier_dataset.csv")
+    atom.save_data("auto", rows="test")
+    atom.save_data("auto", rows=range(100))
+    assert glob.glob("ATOMClassifier_test.csv")
+    assert glob.glob("ATOMClassifier.csv")
 
 
 def test_shrink_dtypes_excluded():
@@ -411,6 +413,15 @@ def test_shrink_str2cat():
 
     atom.shrink(str2cat=True)
     assert atom.dtypes[2].name == "category"
+
+
+def test_shrink_int2bool():
+    """Assert that the int2bool parameter works as intended."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.dtypes[0].name == "int64"
+
+    atom.shrink(int2bool=True)
+    assert atom.dtypes[0].name == "bool"
 
 
 def test_shrink_int2uint():

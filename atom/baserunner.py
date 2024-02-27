@@ -1289,7 +1289,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         if not (seasonal_periods := [int(sp) for sp in seasonal_periods if sp <= max_sp]):
             raise ValueError(
-                "No seasonal periods were detected. Try decreasing the max_sp parameter."
+                "No seasonal periods were detected. Try "
+                f"increasing the max_sp parameter, got {max_sp}."
             )
 
         return flt(seasonal_periods)

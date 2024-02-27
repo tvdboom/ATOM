@@ -38,7 +38,7 @@ the target column.
 Two-dimensional, size-mutable, potentially heterogeneous tabular data.
 The type is usually [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html),
 but could potentially be any of the dataframe types backed by the
-selected [data engine][data-acceleration].
+selected [data engine][data-engines].
 </div>
 
 <div id="dataframe-like"><strong>dataframe-like</strong></div>
@@ -116,8 +116,8 @@ and [slice](https://docs.python.org/3/library/functions.html#slice).
 <div markdown style="margin: -1em 0 0 1.2em">
 A one-dimensional, indexable array of type [sequence](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range)
 (except string), [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html),
-[index][] or [series][]. This is the standard input format for a dataset's target
-column.
+[pd.Index](https://pandas.pydata.org/docs/reference/api/pandas.Index.html) or [series][].
+This is the standard input format for a dataset's target column.
 </div>
 
 <div id="series"><strong>series</strong></div>
@@ -125,7 +125,7 @@ column.
 One-dimensional ndarray with axis labels. The type is usually
 [pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series),
 but could potentially be any of the series types backed by the
-selected [data engine][data-acceleration].
+selected [data engine][data-engines].
 </div>
 
 <div id="target"><strong>target</strong></div>

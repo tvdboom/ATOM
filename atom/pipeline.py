@@ -1021,7 +1021,7 @@ class Pipeline(SkPipeline):
         """Set output container.
 
         See sklearn's [user guide][set_output] on how to use the
-        `set_output` API. See [here][data-acceleration] a description
+        `set_output` API. See [here][data-engines] a description
         of the choices.
 
         Parameters

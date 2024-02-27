@@ -248,7 +248,7 @@ class ATOMClassifier(ATOM):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -349,8 +349,6 @@ class ATOMClassifier(ATOM):
 
     # Analyze the results
     print(atom.results)
-
-    print(atom.evaluate())
     ```
 
     """
@@ -525,7 +523,7 @@ class ATOMForecaster(ATOM):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -622,8 +620,6 @@ class ATOMForecaster(ATOM):
 
     # Analyze the results
     print(atom.results)
-
-    print(atom.evaluate())
     ```
 
     """
@@ -782,7 +778,7 @@ class ATOMRegressor(ATOM):
         [user guide][gpu-acceleration].
 
     engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
+        Execution engine to use for [data][data-engines] and
         [estimators][estimator-acceleration]. The value should be
         one of the possible values to change one of the two engines,
         or a dictionary with keys `data` and `estimator`, with their
@@ -883,8 +879,6 @@ class ATOMRegressor(ATOM):
 
     # Analyze the results
     print(atom.results)
-
-    print(atom.evaluate())
     ```
 
     """
