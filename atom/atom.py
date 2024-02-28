@@ -1273,7 +1273,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 self._log(f"Fitting {transformer_c.__class__.__name__}...", 1)
 
             # Memoize the fitted transformer_c for repeated instantiations of atom
-            fit = self._memory.cache(fit_one)
+            fit = self.memory.cache(fit_one)
             kwargs = {
                 "estimator": transformer_c,
                 "X": self.branch.X_train,
@@ -1283,11 +1283,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             # Check if the fitted estimator is retrieved from cache to inform
             # the user, else user might notice the lack of printed messages
-            if self.memory.location is not None:
-                if fit._is_in_cache_and_valid([*fit._get_output_identifiers(**kwargs)]):
-                    self._log(
-                        f"Retrieving cached results for {transformer_c.__class__.__name__}...", 1
-                    )
+            if fit.check_call_in_cache(**kwargs):
+                self._log(f"Loading cached results for {transformer_c.__class__.__name__}...", 1)
 
             transformer_c = fit(**kwargs)
 
@@ -1306,7 +1303,6 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 self.branch.X_train if X is None else X,
                 self.branch.y_train if y is None else y,
             )
-
         else:
             X, y = self.pipeline._mem_transform(transformer_c, self.branch.X, self.branch.y)
             data = merge(self.branch.X if X is None else X, self.branch.y if y is None else y)
@@ -1543,8 +1539,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         !!! warning
             * The balance method does not support [multioutput tasks][].
             * This transformation is only applied to the training set
-              in order to maintain the original distribution of target
-              classes in the test set.
+              to maintain the original distribution of target classes
+              in the test set.
 
         !!! tip
             Use atom's [classes][self-classes] attribute for an overview

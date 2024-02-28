@@ -14,6 +14,7 @@ import pyarrow as pa
 import pytest
 from category_encoders.target_encoder import TargetEncoder
 from pandas.testing import assert_frame_equal, assert_index_equal
+from sklearn.base import BaseEstimator
 from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
@@ -81,6 +82,13 @@ def test_backend_with_n_jobs_1():
 
 
 # Test magic methods =============================================== >>
+
+def test_init():
+    """Assert that the __init__ method works for non-standard parameters."""
+    atom = ATOMClassifier(X_bin, y_bin, device="gpu", backend="multiprocessing")
+    assert atom.device == "gpu"
+    assert atom.backend == "multiprocessing"
+
 
 def test_repr():
     """Assert that the __repr__ method visualizes the pipeline(s)."""
@@ -421,7 +429,7 @@ def test_shrink_int2bool():
     assert atom.dtypes[0].name == "int64"
 
     atom.shrink(int2bool=True)
-    assert atom.dtypes[0].name == "bool"
+    assert atom.dtypes[0].name == "boolean"
 
 
 def test_shrink_int2uint():
@@ -538,6 +546,15 @@ def test_add_basetransformer_params_are_attached():
     atom.add(PCA(random_state=2))  # When instance
     assert atom.pipeline[0].get_params()["random_state"] == 1
     assert atom.pipeline[1].get_params()["random_state"] == 2
+
+
+def test_add_results_from_cache():
+    """Assert that cached transformers are retrieved."""
+    atom = ATOMClassifier(X_bin, y_bin, memory=True, random_state=1)
+    atom.scale()
+
+    atom = ATOMClassifier(X_bin, y_bin, memory=True, random_state=1)
+    atom.scale()
 
 
 def test_add_train_only():
@@ -717,6 +734,18 @@ def test_add_reset_index():
     assert list(atom.dataset.index) == list(range(len(atom.dataset)))
 
 
+def test_add_raise_duplicate_indices():
+    """Assert that an error is raised when indices are duplicated."""
+
+    class AddRowsTransformer(BaseEstimator):
+        def transform(self, X, y):
+            return pd.concat([X, X.iloc[:5]]), pd.concat([y, y.iloc[:5]])
+
+    atom = ATOMClassifier(X_bin, y_bin, index=True, random_state=1)
+    with pytest.raises(ValueError, match=".*Duplicate indices.*"):
+        atom.add(AddRowsTransformer)
+
+
 def test_add_params_to_method():
     """Assert that atom's parameters are passed to the method."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
@@ -801,10 +830,10 @@ def test_balance_wrong_task():
 
 def test_balance():
     """Assert that the balance method balances the training set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    length = (atom.y_train == 1).sum()
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.clean()  # To have column mapping
     atom.balance(strategy="NearMiss")
-    assert (atom.y_train == 1).sum() != length
+    assert (atom.y_train == 0).sum() == (atom.y_train == 1).sum()
 
 
 def test_clean():

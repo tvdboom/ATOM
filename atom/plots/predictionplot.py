@@ -39,7 +39,7 @@ from atom.utils.types import (
     Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
     MetricSelector, ModelsSelector, RowSelector, Sequence, TargetSelector,
-    TargetsSelector, XConstructor,
+    TargetsSelector, XConstructor, int_t,
 )
 from atom.utils.utils import (
     Task, check_canvas, check_dependency, check_empty, check_predict_proba,
@@ -3152,7 +3152,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     def plot_results(
         self,
         models: ModelsSelector = None,
-        metric: MetricSelector = None,
+        metric: MetricSelector | MetricConstructor = None,
         rows: RowSelector = "test",
         *,
         title: str | dict[str, Any] | None = None,
@@ -3253,11 +3253,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         else:
             metric_c = []
             for m in lst(metric):
-                if isinstance(m, str):
+                if isinstance(m, int_t):
+                    metric_c.extend(self._get_metric(m))
+                elif isinstance(m, str):
                     metric_c.extend(m.split("+"))
                 else:
                     metric_c.append(m)
-            metric_c = [m if "time" in m else get_custom_scorer(m) for m in metric_c]
+            metric_c = [m if "time" in str(m) else get_custom_scorer(m) for m in metric_c]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()

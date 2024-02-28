@@ -262,16 +262,16 @@ class BaseModel(RunnerPlot):
         self._bootstrap: pd.DataFrame | None = None
         self._time_bootstrap = 0.0
 
-        # Inject goal-specific methods from ClassRegModel or ForecastModel
-        cls = ForecastModel if goal is Goal.forecast else ClassRegModel
-        for n, m in vars(cls).items():
-            if not n.startswith("__"):
-                try:
-                    setattr(self, n, m.__get__(self, cls))
-                except AttributeError:
-                    # available_if descriptor raises an error
-                    # if the estimator doesn't have the method
-                    pass
+        # Inject goal-specific methods from ForecastModel
+        if goal is Goal.forecast and ClassRegModel in self.__class__.__bases__:
+            for n, m in vars(ForecastModel).items():
+                if not n.startswith("__"):
+                    try:
+                        setattr(self, n, m.__get__(self, ForecastModel))
+                    except AttributeError:
+                        # available_if descriptor raises an error
+                        # if the estimator doesn't have the method
+                        pass
 
         # Skip this part if only initialized for the estimator
         if branches:
@@ -2497,7 +2497,7 @@ class BaseModel(RunnerPlot):
             return pl.transform(Xt, yt)
 
 
-class ClassRegModel:
+class ClassRegModel(BaseModel):
     """Classification and regression models."""
 
     @crash
@@ -2612,15 +2612,15 @@ class ClassRegModel:
         """
 
         def get_transform_X_y(
-            X: RowSelector | XSelector,
+            X: XSelector,
             y: YSelector | None,
         ) -> tuple[pd.DataFrame, Pandas | None]:
             """Get X and y from the pipeline transformation.
 
             Parameters
             ----------
-            X: hashable, segment, sequence or dataframe-like
-                Feature set. If not dataframe-like, expected to fail.
+            X: dataframe-like
+                Feature set.
 
             y: int, str, sequence, dataframe-like or None
                 Target column(s) corresponding to `X`.
@@ -2664,12 +2664,13 @@ class ClassRegModel:
                 # prediction calls from dataframes with reset indices
                 Xt, yt = get_transform_X_y(X, y)
             else:
-                Xt, yt = self.branch._get_rows(X, return_X_y=True)
+                Xt, yt = self.branch._get_rows(X, return_X_y=True)  # type: ignore[call-overload]
 
                 if self.scaler:
-                    Xt = self.scaler.transform(Xt)
+                    Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
+
         except Exception:  # noqa: BLE001
-            Xt, yt = get_transform_X_y(X, y)
+            Xt, yt = get_transform_X_y(X, y)  # type: ignore[arg-type]
 
         if method != "score":
             pred = np.array(self.memory.cache(getattr(self.estimator, method))(Xt[self.features]))
@@ -2705,7 +2706,7 @@ class ClassRegModel:
                 scorer=scorer,
                 estimator=self.estimator,
                 X=Xt,
-                y=yt,
+                y=yt,  # type: ignore[arg-type]
                 sample_weight=sample_weight,
             )
 
@@ -2940,7 +2941,7 @@ class ClassRegModel:
         )
 
 
-class ForecastModel:
+class ForecastModel(BaseModel):
     """Forecasting models."""
 
     @crash
@@ -3049,20 +3050,54 @@ class ForecastModel:
             called.
 
         """
-        if y is not None or X is not None:
+
+        def get_transform_X_y(
+            X: XSelector | None,
+            y: YSelector | None,
+        ) -> tuple[pd.DataFrame, Pandas | None]:
+            """Get X and y from the pipeline transformation.
+
+            Parameters
+            ----------
+            X: dataframe-like or None
+                Feature set.
+
+            y: int, str, sequence, dataframe-like or None
+                Target column(s) corresponding to `X`.
+
+            Returns
+            -------
+            dataframe
+                Transformed feature set.
+
+            series, dataframe or None
+                Transformed target column.
+
+            """
             Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
 
             with adjust(self.pipeline, verbose=verbose) as pl:
                 out = pl.transform(Xt, yt)
 
             if isinstance(out, tuple):
-                Xt, yt = out
+                return out
             elif X is not None:
-                Xt, yt = out, yt
+                return out, yt
             else:
-                Xt, yt = Xt, out
+                return Xt, out
+
+        if y is not None:
+            try:
+                Xt, yt = self.branch._get_rows(y, return_X_y=True)  # type: ignore[call-overload]
+
+                if self.scaler and not Xt.empty:
+                    Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
+
+            except Exception:  # noqa: BLE001
+                Xt, yt = get_transform_X_y(X, y)
+
         else:
-            Xt, yt = X, y
+            Xt, yt = get_transform_X_y(X, y)
 
         if method != "score":
             if "y" in sign(func := getattr(self.estimator, method)):
@@ -3186,17 +3221,24 @@ class ForecastModel:
         )
 
         if inverse:
-            # We pass every level of the multiindex to inverse_transform...
-            dfs = []
-            for level in pred.columns.levels[2]:  # type: ignore[union-attr]
-                df = pred.loc[:, pred.columns.get_level_values(2) == level]
-                df.columns = df.columns.droplevel(level=(1, 2))
-                dfs.append(self.inverse_transform(y=df))
+            new_interval = pd.DataFrame(index=pred.index, columns=pred.columns)
 
-            # ... and merge every level back to the original output
-            new_data = merge(*dfs)
-            new_data.columns = pred.columns
-            return self._convert(new_data)
+            # We pass every level of the multiindex to inverse_transform...
+            for cover in pred.columns.levels[1]:  # type: ignore[union-attr]
+                for level in pred.columns.levels[2]:  # type: ignore[union-attr]
+                    # Select only the lower or upper level columns
+                    curr_cover = pred.columns.get_level_values(1)
+                    curr_level = pred.columns.get_level_values(2)
+                    df = pred.loc[:, (curr_cover == cover) & (curr_level == level)]
+
+                    # Use original columns names
+                    df.columns = df.columns.droplevel(level=(1, 2))
+
+                    # Apply inverse transformation
+                    for name, column in self.inverse_transform(y=df).items():
+                        new_interval.loc[:, (name, cover, level)] = column
+
+            return self._convert(new_interval)
         else:
             return self._convert(pred)
 
@@ -3318,7 +3360,7 @@ class ForecastModel:
 
         Parameters
         ----------
-        y: int, str, sequence or dataframe
+        y: int, str, sequence or dataframe-like
             Ground truth observations.
 
         X: hashable, segment, sequence, dataframe-like or None, default=None

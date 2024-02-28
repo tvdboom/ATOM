@@ -33,7 +33,7 @@ from sktime.transformations.series.difference import Differencer
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
 from atom.data import Branch
-from atom.models import MODELS, Stacking, Voting
+from atom.models import MODELS, create_stacking_model, create_voting_model
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
@@ -1500,7 +1500,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
                 kwargs[regressor] = model._get_est({})
 
-        self._models.append(Stacking(models=models_c, name=name, **kw_model))
+        self._models.append(create_stacking_model(models=models_c, name=name, **kw_model))
         self[name]._est_params = kwargs if self.task.is_forecast else {"cv": "prefit"} | kwargs
 
         if train_on_test:
@@ -1568,7 +1568,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     )
 
         self._models.append(
-            Voting(
+            create_voting_model(
                 models=models_c,
                 name=name,
                 goal=self._goal,

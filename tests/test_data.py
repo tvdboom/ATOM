@@ -1,7 +1,7 @@
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
-Description: Unit tests for the branch module.
+Description: Unit tests for the data module.
 
 """
 import glob
@@ -67,8 +67,15 @@ def test_data_property_unassigned_data():
 def test_name_empty_name():
     """Assert that an error is raised when name is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*can't have an empty name!.*"):
+    with pytest.raises(ValueError, match=".*can't have an empty name.*"):
         atom.branch.name = ""
+
+
+def test_name_ensemble_name():
+    """Assert that an error is raised when name is the name of an ensemble."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=".*can't begin with 'stack'.*"):
+        atom.branch.name = "stacked"
 
 
 def test_name_model_name():

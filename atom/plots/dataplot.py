@@ -2198,7 +2198,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         Parameters
         ----------
         rows: str, sequence or dict, default=("train", "test")
-            Selection of rows on which to calculate the metric.
+            Selection of rows to plot.
 
             - If str: Name of the data set to plot.
             - If sequence: Names of the data sets to plot.

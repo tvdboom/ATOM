@@ -238,6 +238,7 @@ class BaseTransformer:
         warnings.filterwarnings("ignore", category=FutureWarning, module=".*imblearn.*")
         warnings.filterwarnings("ignore", category=UserWarning, module=".*sktime.*")
         warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*shap.*")
+        warnings.filterwarnings("ignore", category=ResourceWarning, module=".*ray.*")
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
 
     @property

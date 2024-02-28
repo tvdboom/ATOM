@@ -167,16 +167,21 @@ class Branch:
 
     @name.setter
     def name(self, value: str):
-        from atom.models import MODELS_ENSEMBLES  # Avoid circular import
+        from atom.models import MODELS
 
         if not value:
-            raise ValueError("A branch can't have an empty name!")
+            raise ValueError("A branch can't have an empty name.")
+        elif value.lower().startswith(("stack", "vote")):
+            raise ValueError(
+                "Invalid name for the branch. The name of a "
+                "branch can't begin with 'stack' or 'vote'."
+            )
         else:
-            for model in MODELS_ENSEMBLES:
+            for model in MODELS:
                 if re.match(model.acronym, value, re.I):
                     raise ValueError(
-                        "Invalid name for the branch. The name of a branch can "
-                        f"not begin with a model's acronym, and {model.acronym} "
+                        "Invalid name for the branch. The name of a branch can't "
+                        f"begin with a model's acronym, and {model.acronym} "
                         f"is the acronym of the {model.__name__} model."
                     )
 

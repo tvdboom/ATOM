@@ -1327,7 +1327,7 @@ def merge(*args) -> pd.DataFrame:
     if len(args_c := [x for x in args if x is not None and not x.empty]) == 1:
         return pd.DataFrame(args_c[0])
     else:
-        return pd.DataFrame(pd.concat(args_c, axis=1))
+        return pd.concat(args_c, axis=1)
 
 
 def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_Pandas:
@@ -2335,7 +2335,7 @@ def fit_one(
     y: pd.Series, pd.DataFrame or None, default=None
         Target column(s) corresponding to `X`.
 
-    message: str or None
+    message: str or None, default=None
         Short message. If None, nothing will be printed.
 
     **fit_params

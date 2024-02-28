@@ -22,12 +22,12 @@ from optuna.integration import (
 )
 from optuna.trial import Trial
 
-from atom.basemodel import BaseModel
+from atom.basemodel import ClassRegModel
 from atom.utils.types import Pandas, Predictor
 from atom.utils.utils import CatBMetric, Goal, LGBMetric, XGBMetric
 
 
-class AdaBoost(BaseModel):
+class AdaBoost(ClassRegModel):
     """Adaptive Boosting.
 
     AdaBoost is a meta-estimator that begins by fitting a
@@ -97,7 +97,7 @@ class AdaBoost(BaseModel):
         return dist
 
 
-class AutomaticRelevanceDetermination(BaseModel):
+class AutomaticRelevanceDetermination(ClassRegModel):
     """Automatic Relevance Determination.
 
     Automatic Relevance Determination is very similar to
@@ -163,7 +163,7 @@ class AutomaticRelevanceDetermination(BaseModel):
         }
 
 
-class Bagging(BaseModel):
+class Bagging(ClassRegModel):
     """Bagging model (with decision tree as base estimator).
 
     Bagging uses an ensemble meta-estimator that fits base predictors
@@ -234,7 +234,7 @@ class Bagging(BaseModel):
         }
 
 
-class BayesianRidge(BaseModel):
+class BayesianRidge(ClassRegModel):
     """Bayesian ridge regression.
 
     Bayesian regression techniques can be used to include regularization
@@ -299,7 +299,7 @@ class BayesianRidge(BaseModel):
         }
 
 
-class BernoulliNB(BaseModel):
+class BernoulliNB(ClassRegModel):
     """Bernoulli Naive Bayes.
 
     BernoulliNB implements the Naive Bayes algorithm for multivariate
@@ -362,7 +362,7 @@ class BernoulliNB(BaseModel):
         }
 
 
-class CatBoost(BaseModel):
+class CatBoost(ClassRegModel):
     """Cat Boosting Machine.
 
     CatBoost is a machine learning method based on gradient boosting
@@ -563,7 +563,7 @@ class CatBoost(BaseModel):
         }
 
 
-class CategoricalNB(BaseModel):
+class CategoricalNB(ClassRegModel):
     """Categorical Naive Bayes.
 
     Categorical Naive Bayes implements the Naive Bayes algorithm for
@@ -626,7 +626,7 @@ class CategoricalNB(BaseModel):
         }
 
 
-class ComplementNB(BaseModel):
+class ComplementNB(ClassRegModel):
     """Complement Naive Bayes.
 
     The Complement Naive Bayes classifier was designed to correct the
@@ -689,7 +689,7 @@ class ComplementNB(BaseModel):
         }
 
 
-class DecisionTree(BaseModel):
+class DecisionTree(ClassRegModel):
     """Single Decision Tree.
 
     A single decision tree classifier/regressor.
@@ -760,7 +760,7 @@ class DecisionTree(BaseModel):
         }
 
 
-class Dummy(BaseModel):
+class Dummy(ClassRegModel):
     """Dummy classifier/regressor.
 
     When doing supervised learning, a simple sanity check consists of
@@ -832,7 +832,7 @@ class Dummy(BaseModel):
         return dist
 
 
-class ElasticNet(BaseModel):
+class ElasticNet(ClassRegModel):
     """Linear Regression with elasticnet regularization.
 
     Linear least squares with l1 and l2 regularization.
@@ -893,7 +893,7 @@ class ElasticNet(BaseModel):
         }
 
 
-class ExtraTree(BaseModel):
+class ExtraTree(ClassRegModel):
     """Extremely Randomized Tree.
 
     Extra-trees differ from classic decision trees in the way they are
@@ -969,7 +969,7 @@ class ExtraTree(BaseModel):
         }
 
 
-class ExtraTrees(BaseModel):
+class ExtraTrees(ClassRegModel):
     """Extremely Randomized Trees.
 
     Extra-Trees use a meta estimator that fits a number of randomized
@@ -1066,7 +1066,7 @@ class ExtraTrees(BaseModel):
         }
 
 
-class GaussianNB(BaseModel):
+class GaussianNB(ClassRegModel):
     """Gaussian Naive Bayes.
 
     Gaussian Naive Bayes implements the Naive Bayes algorithm for
@@ -1113,7 +1113,7 @@ class GaussianNB(BaseModel):
     }
 
 
-class GaussianProcess(BaseModel):
+class GaussianProcess(ClassRegModel):
     """Gaussian process.
 
     Gaussian Processes are a generic supervised learning method
@@ -1175,7 +1175,7 @@ class GaussianProcess(BaseModel):
     }
 
 
-class GradientBoostingMachine(BaseModel):
+class GradientBoostingMachine(ClassRegModel):
     """Gradient Boosting Machine.
 
     A Gradient Boosting Machine builds an additive model in a forward
@@ -1262,7 +1262,7 @@ class GradientBoostingMachine(BaseModel):
         return dist
 
 
-class HuberRegression(BaseModel):
+class HuberRegression(ClassRegModel):
     """Huber regressor.
 
     Huber is a linear regression model that is robust to outliers. It
@@ -1325,7 +1325,7 @@ class HuberRegression(BaseModel):
         }
 
 
-class HistGradientBoosting(BaseModel):
+class HistGradientBoosting(ClassRegModel):
     """Histogram-based Gradient Boosting Machine.
 
     This Histogram-based Gradient Boosting Machine is much faster than
@@ -1404,7 +1404,7 @@ class HistGradientBoosting(BaseModel):
         return dist
 
 
-class KNearestNeighbors(BaseModel):
+class KNearestNeighbors(ClassRegModel):
     """K-Nearest Neighbors.
 
     K-Nearest Neighbors, as the name clearly indicates, implements the
@@ -1480,7 +1480,7 @@ class KNearestNeighbors(BaseModel):
         return dist
 
 
-class Lasso(BaseModel):
+class Lasso(ClassRegModel):
     """Linear Regression with lasso regularization.
 
     Linear least squares with l1 regularization.
@@ -1540,7 +1540,7 @@ class Lasso(BaseModel):
         }
 
 
-class LeastAngleRegression(BaseModel):
+class LeastAngleRegression(ClassRegModel):
     """Least Angle Regression.
 
     Least-Angle Regression is a regression algorithm for
@@ -1590,7 +1590,7 @@ class LeastAngleRegression(BaseModel):
     }
 
 
-class LightGBM(BaseModel):
+class LightGBM(ClassRegModel):
     """Light Gradient Boosting Machine.
 
     LightGBM is a gradient boosting model that uses tree-based learning
@@ -1766,7 +1766,7 @@ class LightGBM(BaseModel):
         }
 
 
-class LinearDiscriminantAnalysis(BaseModel):
+class LinearDiscriminantAnalysis(ClassRegModel):
     """Linear Discriminant Analysis.
 
     Linear Discriminant Analysis is a classifier with a linear
@@ -1851,7 +1851,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         }
 
 
-class LinearSVM(BaseModel):
+class LinearSVM(ClassRegModel):
     """Linear Support Vector Machine.
 
     Similar to [SupportVectorMachine][] but with a linear kernel.
@@ -1977,7 +1977,7 @@ class LinearSVM(BaseModel):
         return dist
 
 
-class LogisticRegression(BaseModel):
+class LogisticRegression(ClassRegModel):
     """Logistic Regression.
 
     Logistic regression, despite its name, is a linear model for
@@ -2084,7 +2084,7 @@ class LogisticRegression(BaseModel):
         return dist
 
 
-class MultiLayerPerceptron(BaseModel):
+class MultiLayerPerceptron(ClassRegModel):
     """Multi-layer Perceptron.
 
     Multi-layer Perceptron is a supervised learning algorithm that
@@ -2192,7 +2192,7 @@ class MultiLayerPerceptron(BaseModel):
             return dist
 
 
-class MultinomialNB(BaseModel):
+class MultinomialNB(ClassRegModel):
     """Multinomial Naive Bayes.
 
     MultinomialNB implements the Naive Bayes algorithm for multinomially
@@ -2256,7 +2256,7 @@ class MultinomialNB(BaseModel):
         }
 
 
-class OrdinaryLeastSquares(BaseModel):
+class OrdinaryLeastSquares(ClassRegModel):
     """Linear Regression.
 
     Ordinary Least Squares is just linear regression without any
@@ -2305,7 +2305,7 @@ class OrdinaryLeastSquares(BaseModel):
     }
 
 
-class OrthogonalMatchingPursuit(BaseModel):
+class OrthogonalMatchingPursuit(ClassRegModel):
     """Orthogonal Matching Pursuit.
 
     Orthogonal Matching Pursuit implements the OMP algorithm for
@@ -2352,7 +2352,7 @@ class OrthogonalMatchingPursuit(BaseModel):
     }
 
 
-class PassiveAggressive(BaseModel):
+class PassiveAggressive(ClassRegModel):
     """Passive Aggressive.
 
     The passive-aggressive algorithms are a family of algorithms for
@@ -2423,7 +2423,7 @@ class PassiveAggressive(BaseModel):
         }
 
 
-class Perceptron(BaseModel):
+class Perceptron(ClassRegModel):
     """Linear Perceptron classification.
 
     The Perceptron is a simple classification algorithm suitable for
@@ -2495,7 +2495,7 @@ class Perceptron(BaseModel):
         }
 
 
-class QuadraticDiscriminantAnalysis(BaseModel):
+class QuadraticDiscriminantAnalysis(ClassRegModel):
     """Quadratic Discriminant Analysis.
 
     Quadratic Discriminant Analysis is a classifier with a quadratic
@@ -2556,7 +2556,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
         return {"reg_param": Float(0, 1.0, step=0.1)}
 
 
-class RadiusNearestNeighbors(BaseModel):
+class RadiusNearestNeighbors(ClassRegModel):
     """Radius Nearest Neighbors.
 
     Radius Nearest Neighbors implements the nearest neighbors vote,
@@ -2635,7 +2635,7 @@ class RadiusNearestNeighbors(BaseModel):
         }
 
 
-class RandomForest(BaseModel):
+class RandomForest(ClassRegModel):
     """Random Forest.
 
     Random forests are an ensemble learning method that operate by
@@ -2755,7 +2755,7 @@ class RandomForest(BaseModel):
         return dist
 
 
-class Ridge(BaseModel):
+class Ridge(ClassRegModel):
     """Linear least squares with l2 regularization.
 
     If classifier, it first converts the target values into {-1, 1}
@@ -2829,7 +2829,7 @@ class Ridge(BaseModel):
         return dist
 
 
-class StochasticGradientDescent(BaseModel):
+class StochasticGradientDescent(ClassRegModel):
     """Stochastic Gradient Descent.
 
     Stochastic Gradient Descent is a simple yet very efficient approach
@@ -2914,7 +2914,7 @@ class StochasticGradientDescent(BaseModel):
         }
 
 
-class SupportVectorMachine(BaseModel):
+class SupportVectorMachine(ClassRegModel):
     """Support Vector Machine.
 
     The implementation of the Support Vector Machine is based on libsvm.
@@ -3023,17 +3023,16 @@ class SupportVectorMachine(BaseModel):
             "shrinking": Cat([True, False]),
         }
 
-        if self._goal is Goal.classification:
-            dist.pop("epsilon")
-
         if self.engine.estimator == "cuml":
             dist.pop("epsilon")
             dist.pop("shrinking")
+        elif self._goal is Goal.classification:
+            dist.pop("epsilon")
 
         return dist
 
 
-class XGBoost(BaseModel):
+class XGBoost(ClassRegModel):
     """Extreme Gradient Boosting.
 
     XGBoost is an optimized distributed gradient boosting model
