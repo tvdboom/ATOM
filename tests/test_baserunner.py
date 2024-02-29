@@ -18,7 +18,7 @@ from pandas.testing import (
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
-from atom.branch import Branch
+from atom.data import Branch
 from atom.training import DirectClassifier, DirectForecaster
 from atom.utils.types import SPTuple
 from atom.utils.utils import NotFittedError, merge
@@ -319,7 +319,7 @@ def test_results_property_train_sizing():
     assert list(atom.results.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
 
 
-# Test _set_index ================================================== >>
+# Test _get_data =================================================== >>
 
 def test_index_is_true():
     """Assert that the indices are left as is when index=True."""
@@ -406,8 +406,6 @@ def test_duplicate_indices():
         ATOMClassifier(X_bin, X_bin, index=True, random_state=1)
 
 
-# Test _get_stratify_columns======================================== >>
-
 @pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
@@ -436,8 +434,6 @@ def test_stratify_invalid_column_str():
     with pytest.raises(ValueError, match=".*not found in the dataset.*"):
         ATOMClassifier(X_bin, y_bin, stratify="invalid", random_state=1)
 
-
-# Test _get_data =================================================== >>
 
 def test_input_is_y_without_arrays():
     """Assert that input y through parameter works."""
@@ -597,7 +593,7 @@ def test_input_is_train_test_with_parameter_y():
 
 def test_input_is_train_test_for_forecast():
     """Assert that input train, test works for forecast tasks."""
-    trainer = DirectForecaster("ES", random_state=1)
+    trainer = DirectForecaster("Croston", random_state=1)
     trainer.run(fc_train, fc_test)
     assert_series_equal(trainer.y, pd.concat([fc_train, fc_test]))
 
@@ -606,8 +602,8 @@ def test_input_is_3_tuples():
     """Assert that the 3 tuples input works."""
     X_train = bin_train.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
-    X_test = bin_test.iloc[100:-20, :-1]
-    y_test = bin_test.iloc[100:-20, -1]
+    X_test = bin_test.iloc[:-20, :-1]
+    y_test = bin_test.iloc[:-20, -1]
     X_holdout = bin_test.iloc[-20:, :-1]
     y_holdout = bin_test.iloc[-20:, -1]
 
@@ -626,7 +622,7 @@ def test_input_is_train_test_holdout():
 
 
 def test_4_data_provided():
-    """Assert that the 4 elements input works."""
+    """Assert that the four-element input works."""
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -638,11 +634,11 @@ def test_4_data_provided():
 
 
 def test_6_data_provided():
-    """Assert that the 6 elements input works."""
+    """Assert that the six-element input works."""
     X_train = bin_train.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
-    X_test = bin_test.iloc[100:-20, :-1]
-    y_test = bin_test.iloc[100:-20, -1]
+    X_test = bin_test.iloc[:-20, :-1]
+    y_test = bin_test.iloc[:-20, -1]
     X_holdout = bin_test.iloc[-20:, :-1]
     y_holdout = bin_test.iloc[-20:, -1]
 

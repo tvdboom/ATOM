@@ -6,7 +6,7 @@ Description: Unit tests for the utils module.
 """
 
 from datetime import timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -18,9 +18,7 @@ from sklearn.preprocessing import StandardScaler
 from atom import show_versions
 from atom.pipeline import Pipeline
 from atom.utils.patches import VotingClassifier, VotingRegressor
-from atom.utils.utils import (
-    ClassMap, check_is_fitted, time_to_str, to_df, to_series,
-)
+from atom.utils.utils import ClassMap, check_is_fitted, time_to_str
 
 from .conftest import X_bin, X_reg, y_bin, y_reg
 
@@ -158,9 +156,3 @@ def test_time_to_string():
     assert time_to_str(timedelta(seconds=17).total_seconds()).startswith("17.00")
     assert time_to_str(timedelta(minutes=1, seconds=2).total_seconds()) == "01m:02s"
     assert time_to_str(timedelta(hours=3, minutes=8).total_seconds()) == "03h:08m:00s"
-
-
-def test_to_tabular_with_cuml():
-    """Assert that cuML objects use the to_tabular method."""
-    to_df(Mock(spec=["to_tabular"]), columns=[0, 1])
-    to_series(Mock(spec=["to_tabular"]))

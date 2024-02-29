@@ -106,7 +106,7 @@ def test_all_models_regression():
 
 def test_all_models_forecast():
     """Assert that all models work with forecast."""
-    atom = ATOMForecaster(y_fc, random_state=1)
+    atom = ATOMForecaster(y_fc, sp=12, random_state=1)
     atom.run(
         models=["!DF", "!MSTL", "!VAR", "!VARMAX"],
         n_trials=1,
@@ -124,7 +124,7 @@ def test_all_models_forecast():
 
 def test_all_models_forecast_multivariate():
     """Assert that all models work with multivariate forecast."""
-    atom = ATOMForecaster(X_ex, y=(-1, -2), verbose=2, random_state=1)
+    atom = ATOMForecaster(X_ex, y=(-1, -2), random_state=1)
     atom.run(
         models=["DF", "VAR", "VARMAX"],
         n_trials=1,
@@ -136,10 +136,37 @@ def test_all_models_forecast_multivariate():
     )
 
 
+def test_univariate_models_forecast_custom_seasonality():
+    """Assert that univariate models accept custom seasonality."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run(
+        models=["ARIMA", "SARIMAX"],
+        n_trials=1,
+        est_params={
+            "arima": {"maxiter": 5, "method": "nm"},
+            "order": (1, 0, 0),
+            "seasonal_order": (1, 0, 0, 12),
+        },
+        errors="raise",
+    )
+
+
+def test_multivariate_forecast_custom_seasonality():
+    """Assert that multivariate models accept custom seasonality."""
+    atom = ATOMForecaster(X_ex, y=(-1, -2), random_state=1)
+    atom.run(
+        models=["VARMAX"],
+        n_trials=1,
+        est_params={"error_cov_type": "diagonal", "method": "nm", "maxiter": 5, "order": (1, 0)},
+        errors="raise",
+    )
+
+
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
-def test_models_sklearnex_classification():
+@pytest.mark.parametrize("device", ["cpu", "gpu"])
+def test_models_sklearnex_classification(device):
     """Assert the sklearnex engine works for classification tasks."""
-    atom = ATOMClassifier(X_bin, y_bin, engine={"estimator": "sklearnex"}, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, device=device, engine="sklearnex", random_state=1)
     atom.run(
         models=["KNN", "LR", "RF", "SVM"],
         n_trials=2,
@@ -149,9 +176,10 @@ def test_models_sklearnex_classification():
 
 
 @pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support.")
-def test_models_sklearnex_regression():
+@pytest.mark.parametrize("device", ["cpu", "gpu"])
+def test_models_sklearnex_regression(device):
     """Assert the sklearnex engine works for regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, engine={"estimator": "sklearnex"}, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, device=device, engine="sklearnex", random_state=1)
     atom.run(
         models=["EN", "KNN", "Lasso", "OLS", "RF", "Ridge", "SVM"],
         n_trials=2,
@@ -170,7 +198,7 @@ def test_models_sklearnex_regression():
 )
 def test_models_cuml_classification():
     """Assert that all classification models can be called with cuml."""
-    atom = ATOMClassifier(X_bin, y_bin, engine={"estimator": "cuml"}, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, device="gpu", engine="cuml", verbose=2, random_state=1)
     atom.run(
         models=["!CatB", "!LGB", "!XGB"],
         n_trials=1,
@@ -200,7 +228,7 @@ def test_models_cuml_classification():
 )
 def test_models_cuml_regression():
     """Assert that all regression models can be called with cuml."""
-    atom = ATOMRegressor(X_reg, y_reg, engine={"estimator": "cuml"}, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, device="gpu", engine="cuml", random_state=1)
     atom.run(
         models=["!CatB", "!LGB", "!XGB"],
         n_trials=1,
@@ -237,7 +265,7 @@ def test_RNN():
 
 
 @patch("sktime.forecasting.statsforecast.StatsForecastMSTL")
-def test_MSTL(cls):
+def test_MSTL_with_stl_kwargs_params(cls):
     """Assert that the MSTL model works when providing stl_kwargs params."""
     cls.return_value.fit = Mock()
     cls.return_value.set_params.return_value.predict.__name__ = "predict"
@@ -251,6 +279,13 @@ def test_MSTL(cls):
         errors="raise",
     )
     assert atom.models == "MSTL"
+
+
+def test_Prophet_non_standard_seasonality():
+    """Assert that the Prophet model works with non-standard seasonality."""
+    atom = ATOMForecaster(y_fc, sp=3, random_state=1)
+    atom.run("Prophet")
+    assert atom.models == "Prophet"
 
 
 @pytest.mark.parametrize("model", ["CatB", "LGB", "XGB"])

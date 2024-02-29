@@ -77,7 +77,7 @@ maybe an issue for your problem already exists, and the discussion
 might inform you of workarounds readily available.
 
 We want to fix all the issues as soon as possible, but before fixing a
-bug we need to reproduce and confirm it. In order to reproduce bugs we
+bug, we need to reproduce and confirm it. In order to reproduce bugs, we
 will systematically ask you to provide a minimal reproduction scenario
 using the custom issue template.
 
@@ -90,16 +90,14 @@ and accept your changes.
 
 * Update the documentation so all of your changes are reflected there.
 * Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
-* Use a maximum of 91 characters per line. Try to keep docstrings below
-  74 characters.
+* Use a maximum of 99 characters per line. Try to keep docstrings below
+  80 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
-* Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
-* Run [flake8](https://github.com/pycqa/flake8): `flake8 --show-source --statistics atom tests`.
-* Run [pydocstyle](https://www.pydocstyle.org/en/stable/): `pydocstyle atom tests`.
-* Run [mypy](https://www.mypy-lang.org/): `mypy atom tests`.
+* Run [pre-commit](https://pre-commit.com/): `pre-commit run --all-files`
+  and make sure all tests pass.
 
 If your contribution requires a new library dependency:
 

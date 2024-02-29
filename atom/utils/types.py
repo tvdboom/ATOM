@@ -7,16 +7,16 @@ Description: Module containing utilities for typing analysis.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable, Iterable, Iterator
+import os
+from collections.abc import Callable, Hashable, Iterator
+from importlib.util import find_spec
 from typing import (
     TYPE_CHECKING, Annotated, Any, Literal, NamedTuple, SupportsIndex,
     TypeAlias, TypedDict, TypeVar, overload, runtime_checkable,
 )
 
-import modin.pandas as md
 import numpy as np
 import pandas as pd
-import scipy.sparse as sps
 from beartype.door import is_bearable
 from beartype.typing import Protocol
 from beartype.vale import Is
@@ -25,7 +25,12 @@ from sktime.forecasting.base import ForecastingHorizon
 
 
 if TYPE_CHECKING:
-    from atom.utils.utils import ClassMap, Goal
+    from atom.data.dataengines import DataEngine
+    from atom.utils.utils import Goal
+
+
+# Avoid warning about pyarrow timezones not set
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
 
 # Classes for type hinting ========================================= >>
@@ -117,6 +122,13 @@ class EngineTuple(NamedTuple):
         """Print representation as dictionary."""
         return self._asdict().__repr__()
 
+    @property
+    def data_engine(self) -> DataEngine:
+        """Return the data engine."""
+        from atom.data import DATA_ENGINES
+
+        return DATA_ENGINES[self.data]()
+
 
 class SPTuple(NamedTuple):
     """Return type of the `sp` parameter."""
@@ -124,6 +136,46 @@ class SPTuple(NamedTuple):
     sp: int | list[int] | None = None
     seasonal_model: SeasonalityModels = "additive"
     trend_model: SeasonalityModels = "additive"
+
+
+@runtime_checkable
+class SparseMatrix(Protocol):
+    """Protocol for sparse matrices.
+
+    Required since scipy doesn't have stubs.
+
+    """
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Any]: ...
+    def _bsr_container(self): ...
+    def _coo_container(self): ...
+    def _csc_container(self): ...
+    def _csr_container(self): ...
+    def _dia_container(self): ...
+    def _dok_container(self): ...
+    def _lil_container(self): ...
+
+    @property
+    def shape(self) -> tuple[int, int]: ...
+
+
+@runtime_checkable
+class PandasConvertible(Protocol):
+    """Protocol for any object that can be converted to pandas."""
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Any]: ...
+    def to_pandas(self, *args, **kwargs): ...
+
+
+@runtime_checkable
+class DataFrame(Protocol):
+    """Protocol for any object following the dataframe interchange protocol."""
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Any]: ...
+    def __dataframe__(self): ...
 
 
 @runtime_checkable
@@ -152,8 +204,6 @@ class Estimator(Protocol):
     """Protocol for sklearn-like estimators."""
 
     def __init__(self, *args, **kwargs): ...
-
-    def fit(self, *args, **kwargs): ...
     def get_params(self, *args, **kwargs): ...
     def set_params(self, *args, **kwargs): ...
 
@@ -177,7 +227,6 @@ class Model(Protocol):
     """Protocol for all models."""
 
     _goal: Goal
-    _metric: ClassMap
     _ht: dict[str, Any]
 
     def predict(self, *args, **kwargs) -> Pandas: ...
@@ -190,11 +239,8 @@ Bool: TypeAlias = bool | np.bool_
 Int: TypeAlias = int | np.integer
 Float: TypeAlias = float | np.floating
 Scalar: TypeAlias = Int | Float
-Segment: TypeAlias = range | slice
-Index: TypeAlias = pd.Index | md.Index
-Series: TypeAlias = pd.Series | md.Series
-DataFrame: TypeAlias = pd.DataFrame | md.DataFrame
-Pandas: TypeAlias = Series | DataFrame
+Segment: TypeAlias = slice | range
+Pandas: TypeAlias = pd.Series | pd.DataFrame
 
 # Numerical types
 IntLargerZero: TypeAlias = Annotated[Int, Is[lambda x: x > 0]]
@@ -210,23 +256,21 @@ FloatZeroToOneExc: TypeAlias = Annotated[Float, Is[lambda x: 0 < x < 1]]
 # Types for X, y and fh
 XConstructor: TypeAlias = (
     dict[str, Sequence[Any]]
-    | Sequence[Sequence[Any]]
-    | Iterable[Sequence[Any] | tuple[Hashable, Sequence[Any]] | dict[str, Sequence[Any]]]
+    | Sequence[Sequence[Any] | tuple[Hashable, Sequence[Any]]]
     | np.ndarray
-    | sps.spmatrix
+    | SparseMatrix
+    | pd.Series
+    | pd.DataFrame
+    | PandasConvertible
     | DataFrame
 )
 XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
-YConstructor: TypeAlias = dict[str, Any] | Sequence[Any] | XConstructor
+YConstructor: TypeAlias = Sequence[Any] | XConstructor
 YSelector: TypeAlias = Int | str | YConstructor
 FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
 
-# Return types for transform methods
-TReturn: TypeAlias = np.ndarray | sps.spmatrix | Series | DataFrame
-TReturns: TypeAlias = TReturn | tuple[TReturn, TReturn]
-
 # Selection of rows or columns by name or position
-ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | DataFrame
+ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | pd.DataFrame
 RowSelector: TypeAlias = Hashable | Sequence[Hashable] | ColumnSelector
 
 # Assignment of index or stratify parameter
@@ -248,10 +292,21 @@ MetricSelector: TypeAlias = IntLargerEqualZero | str | Sequence[IntLargerEqualZe
 
 # BaseTransformer parameters
 NJobs: TypeAlias = Annotated[Int, Is[lambda x: x != 0]]
-EngineDataOptions: TypeAlias = Literal["pandas", "pyarrow", "modin", "polars"]
+EngineDataOptions: TypeAlias = Literal[
+    "numpy",
+    "pandas",
+    "pandas-pyarrow",
+    "polars",
+    "polars-lazy",
+    "pyarrow",
+    "modin",
+    "dask",
+    "pyspark",
+    "pyspark-pandas",
+]
 EngineEstimatorOptions: TypeAlias = Literal["sklearn", "sklearnex", "cuml"]
 Engine: TypeAlias = EngineDataOptions | EngineEstimatorOptions | EngineDict | EngineTuple | None
-Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray"]
+Backend: TypeAlias = Literal["loky", "multiprocessing", "threading", "ray", "dask"]
 Warnings: TypeAlias = Literal["default", "error", "ignore", "always", "module", "once"]
 Severity: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]
 Verbose: TypeAlias = Literal[0, 1, 2]
@@ -299,7 +354,11 @@ FeatureSelectionSolvers: TypeAlias = (
 
 # Allowed values for method selection
 PredictionMethods: TypeAlias = Literal[
-    "decision_function", "predict", "predict_log_proba", "predict_proba", "score"
+    "decision_function",
+    "predict",
+    "predict_log_proba",
+    "predict_proba",
+    "score",
 ]
 PredictionMethodsTS: TypeAlias = Literal[
     "predict",
@@ -331,6 +390,17 @@ Legend: TypeAlias = Literal[
 ]
 
 # Others
+XDatasets: TypeAlias = Literal[
+    "dataset",
+    "train",
+    "test",
+    "holdout",
+    "X",
+    "X_train",
+    "X_test",
+    "X_holdout",
+]
+YDatasets: TypeAlias = Literal["y", "y_train", "y_test", "y_holdout"]
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
 SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
 FeatureNamesOut: TypeAlias = (
@@ -360,6 +430,71 @@ NItems: TypeAlias = (
     | Sequence[IntLargerEqualZero]
 )
 
+# Return types for transform methods
+if TYPE_CHECKING:
+    import dask.dataframe as dd
+    import modin.pandas as md
+    import polars as pl
+    import pyarrow as pa
+    import pyspark.pandas as ps
+    from pyspark.sql import DataFrame as SparkDataFrame
+
+    XReturn: TypeAlias = (
+        np.ndarray
+        | pd.DataFrame
+        | pl.DataFrame
+        | pl.LazyFrame
+        | pa.Table
+        | md.DataFrame
+        | dd.DataFrame
+        | SparkDataFrame
+    )
+    YReturn: TypeAlias = (
+        np.ndarray
+        | pd.Series
+        | pl.Series
+        | pa.Array
+        | md.Series
+        | dd.Series
+        | ps.Series
+    )
+else:
+    XReturn: TypeAlias = Sequence[Sequence[Any]] | np.ndarray | SparseMatrix | pd.DataFrame
+    YReturn: TypeAlias = Sequence[Any] | np.ndarray | pd.Series
+
+    if find_spec("polars"):
+        import polars as pl
+
+        XReturn = XReturn | pl.DataFrame | pl.LazyFrame
+        YReturn = YReturn | pl.Series
+
+    if find_spec("pyarrow"):
+        import pyarrow as pa
+
+        XReturn = XReturn | pa.Table
+        YReturn = YReturn | pa.Array
+
+    if find_spec("modin"):
+        import modin.pandas as md
+
+        XReturn = XReturn | md.DataFrame
+        YReturn = YReturn | md.Series
+
+    if find_spec("dask"):
+        import dask.dataframe as dd
+
+        XReturn = XReturn | dd.DataFrame
+        YReturn = YReturn | dd.Series
+
+    if find_spec("pyspark"):
+        import pyspark.pandas as ps
+        from pyspark.sql import DataFrame as SparkDataFrame
+
+        XReturn = XReturn | SparkDataFrame | ps.DataFrame
+        YReturn = YReturn | SparkDataFrame | ps.Series
+
+    YReturn = YReturn | XReturn
+
 
 # Variable types for isinstance ================================== >>
 
@@ -370,7 +505,5 @@ bool_t = (bool, np.bool_)
 int_t = (int, np.integer)
 float_t = (float, np.floating)
 segment_t = (slice, range)
-index_t = (pd.Index, md.Index)
-series_t = (pd.Series, md.Series)
-sequence_t = (range, list, tuple, np.ndarray, *index_t, *series_t)
-dataframe_t = (pd.DataFrame, md.DataFrame)
+sequence_t = (range, list, tuple, np.ndarray, pd.Index, pd.Series)
+pandas_t = (pd.Series, pd.DataFrame)

@@ -5,7 +5,6 @@ For very large datasets, ATOM offers various ways to accelerate its
 pipeline:
 
  - [Run estimators on GPU][gpu-acceleration]
- - [Use a faster data engine][data-acceleration]
  - [Use a faster estimator engine][estimator-acceleration]
  - [Run processes in parallel][parallel-execution]
 
@@ -19,7 +18,7 @@ pipeline:
 
 Graphics Processing Units (GPUs) can significantly accelerate
 calculations for preprocessing steps or training machine learning
-models. Training models involves compute-intensive matrix
+models. Training models involve compute-intensive matrix
 multiplications and other operations that can take advantage of a
 GPU's massively parallel architecture. Training on large datasets can
 take hours to run on a single processor. However, if you offload those
@@ -46,54 +45,21 @@ regardless of the engine parameter.
     one to use, the first one is used by default.
 
 !!! example
-    [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://studiolab.sagemaker.aws/import/github/tvdboom/ATOM/blob/master/examples/accelerating_cuml.ipynb)<br><br>
-    Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
-    the badge above and run the notebook! Make sure to choose the GPU compute
+    [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1gbTMqTt5sDuP3kBLy1-_U6Z2uZaSm43O?authuser=0#scrollTo=FEB9_7R7Wq4h&forceEdit=true&sandboxMode=true)
+    
+    Train a model on a GPU yourself using Google Colab. Just click on the
+    badge above and run the notebook! Make sure to choose the GPU runtime
     type.
-
-
-## Data acceleration
-
-The data engine can be specified through the [`engine`][atomclassifier-engine]
-parameter, which takes a dict with a key `data` that accepts three values:
-[numpy][], [pyarrow][] and [modin][].
-
-
-### numpy
-
-ATOM uses [`pandas`](https://pandas.pydata.org/docs/index.html) as the
-default library for data handling, which in turn, uses [`numpy`](https://numpy.org/)
-for all data processing.
-
-
-### pyarrow
-
-[PyArrow](https://arrow.apache.org/docs/python/index.html) is a library
-that provides a way to work with Apache Arrow memory structures. Apache
-Arrow is a cross-language, platform-independent, in-memory data format
-that provides an efficient and fast way to serialize and deserialize
-data. Pandas offers [native integration](https://pandas.pydata.org/docs/user_guide/pyarrow.html)
-with pyarrow, which atom uses when specifying the pyarrow data engine.
-
-!!! warning
-    - The pyarrow backend doesn't work for [sparse datasets][]. If the
-      dataset has any sparse columns, an exception is raised.
-    - The [LightGBM][] and [XGBoost][] models don't support pyarrow
-      dtypes.
-
-
-### modin
-
-The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement for
-pandas, that uses [Ray](https://www.ray.io/) as backend.
 
 
 ## Estimator acceleration
 
 The estimator engine can be specified through the [`engine`][atomclassifier-engine]
-parameter, which takes a dict with a key `estimator` that accepts three
-values: [sklearn][], [sklearnex][] and [cuml][]. Read [here][gpu-acceleration]
-how to run the estimators on GPU instead of CPU.
+parameter, e.g. `#!python engine="sklearnex"` or `#!python engine={"data": "pyarrow",
+"estimator": "sklearnex"}` to combine it with a [data engine][data-engines].
+ATOM integrates the following estimator engines: [sklearn][], [sklearnex][] and
+[cuml][]. Read [here][gpu-acceleration] how to run the estimators on GPU instead
+of CPU.
 
 !!! warning
     Estimators accelerated with sklearnex or cuML sometimes use slightly
@@ -166,8 +132,7 @@ CUDA programming. For large datasets, these GPU-based implementations can
 complete 10-50x faster than their CPU equivalents.
 
 !!! warning
-    * cuML estimators don't support [multioutput tasks][] nor the [pyarrow][]
-      data engine.
+    * cuML estimators don't support [multioutput tasks][].
     * Install cuML using `pip install --extra-index-url=https://pypi.nvidia.com
       cuml-cu11` or `pip install --extra-index-url=https://pypi.nvidia.com
       cuml-cu12` depending on your CUDA version. Read more about RAPIDS'
@@ -243,16 +208,18 @@ parallelization backends.
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).
-* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework
-  that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
-  See [here][example-ray-backend] an example use case.
+* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework that makes it
+  easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html). See
+  [here][example-ray-backend] an example use case.
+* **dask:** [Dask](https://docs.dask.org/en/stable/) is a flexible parallel computing library for analytics.
+  Read more about Dask [here](https://docs.dask.org/en/stable/10-minutes-to-dask.html).
 
 
 The parallelization backend is applied in the following cases:
 
 * In every individual estimator that uses parallelization internally.
 * To calculate cross-validated results during [hyperparameter tuning][].
-* To train multiple models in parallel (when the trainer's `parallel` parameter is True).
+* To train multiple models in parallel (when [`parallel=True`][directclassifier-parallel]).
 * To calculate partial dependencies in [plot_partial_dependence][].
 
 !!! note

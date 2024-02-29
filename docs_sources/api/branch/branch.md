@@ -1,7 +1,7 @@
 # Branch
 --------
 
-:: atom.branch:Branch
+:: atom.data:Branch
     :: signature
     :: head
     :: table:

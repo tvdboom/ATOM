@@ -7,6 +7,7 @@ Description: Module containing all time series models.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from logging import ERROR, WARNING, getLogger
 from typing import Any, ClassVar
 
@@ -14,14 +15,13 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
-from optuna.trial import Trial
 
-from atom.basemodel import BaseModel
+from atom.basemodel import ForecastModel
 from atom.utils.types import Predictor
 from atom.utils.utils import SeasonalPeriod
 
 
-class ARIMA(BaseModel):
+class ARIMA(ForecastModel):
     """Autoregressive Integrated Moving Average.
 
     Seasonal ARIMA models and exogenous input is supported, hence this
@@ -44,6 +44,10 @@ class ARIMA(BaseModel):
     Corresponding estimators are:
 
     - [ARIMA][arimaclass] for forecasting tasks.
+
+    !!! note
+        The seasonal components ar removed from [hyperparameter tuning][]
+        if no [seasonality][] is specified.
 
     !!! warning
         ARIMA often runs into numerical errors when optimizing the
@@ -91,30 +95,6 @@ class ARIMA(BaseModel):
     _order = ("p", "d", "q")
     _s_order = ("P", "D", "Q")
 
-    def _get_parameters(self, trial: Trial) -> dict[str, BaseDistribution]:
-        """Get the trial's hyperparameters.
-
-        Parameters
-        ----------
-        trial: [Trial][]
-            Current trial.
-
-        Returns
-        -------
-        dict
-            Trial's hyperparameters.
-
-        """
-        params = super()._get_parameters(trial)
-
-        # If no seasonal periodicity, set seasonal components to zero
-        if not self._config.sp.sp:
-            for p in self._s_order:
-                if p in params:
-                    params[p] = 0
-
-        return params
-
     def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
 
@@ -161,7 +141,7 @@ class ARIMA(BaseModel):
         """
         return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -184,18 +164,19 @@ class ARIMA(BaseModel):
             "with_intercept": Cat([True, False]),
         }
 
-        # Drop order and seasonal_order params if specified by user
+        # Drop order params if specified by user
         if "order" in self._est_params:
             for p in self._order:
                 dist.pop(p)
-        if "seasonal_order" in self._est_params:
+        if "seasonal_order" in self._est_params or not self._config.sp.sp:
+            # Drop seasonal order params if specified by user or no seasonal periodicity
             for p in self._s_order:
                 dist.pop(p)
 
         return dist
 
 
-class AutoARIMA(BaseModel):
+class AutoARIMA(ForecastModel):
     """Automatic Autoregressive Integrated Moving Average.
 
     [ARIMA][] implementation that includes automated fitting of
@@ -288,7 +269,7 @@ class AutoARIMA(BaseModel):
         }
 
 
-class AutoETS(BaseModel):
+class AutoETS(ForecastModel):
     """ETS model with automatic fitting capabilities.
 
     The [ETS][] models are a family of time series models with an
@@ -366,7 +347,7 @@ class AutoETS(BaseModel):
         }
 
 
-class BATS(BaseModel):
+class BATS(ForecastModel):
     """BATS forecaster with multiple seasonality.
 
     BATS is acronym for:
@@ -457,7 +438,7 @@ class BATS(BaseModel):
         }
 
 
-class Croston(BaseModel):
+class Croston(ForecastModel):
     """Croston's method for forecasting.
 
     Croston's method is a modification of (vanilla) exponential
@@ -517,7 +498,7 @@ class Croston(BaseModel):
         return {"smoothing": Float(0, 1, step=0.1)}
 
 
-class DynamicFactor(BaseModel):
+class DynamicFactor(ForecastModel):
     """Dynamic Factor.
 
     The DynamicFactor model incorporates dynamic factors to predict
@@ -586,7 +567,7 @@ class DynamicFactor(BaseModel):
         }
 
 
-class ExponentialSmoothing(BaseModel):
+class ExponentialSmoothing(ForecastModel):
     """Holt-Winters Exponential Smoothing forecaster.
 
     ExponentialSmoothing is a forecasting model that extends simple
@@ -645,8 +626,8 @@ class ExponentialSmoothing(BaseModel):
         """
         return super()._get_est(
             {
-                "trend": self._config.sp.trend_model,
-                "seasonal": self._config.sp.seasonal_model,
+                "trend": self._config.sp.trend_model if self._config.sp.sp else None,
+                "seasonal": self._config.sp.seasonal_model if self._config.sp.sp else None,
             } | params
         )
 
@@ -669,7 +650,7 @@ class ExponentialSmoothing(BaseModel):
         }
 
 
-class ETS(BaseModel):
+class ETS(ForecastModel):
     """Error-Trend-Seasonality model.
 
     The ETS models are a family of time series models with an
@@ -728,8 +709,8 @@ class ETS(BaseModel):
         """
         return super()._get_est(
             {
-                "trend": self._config.sp.trend_model,
-                "seasonal": self._config.sp.seasonal_model,
+                "trend": self._config.sp.trend_model if self._config.sp.sp else None,
+                "seasonal": self._config.sp.seasonal_model if self._config.sp.sp else None,
             } | params
         )
 
@@ -751,7 +732,7 @@ class ETS(BaseModel):
         }
 
 
-class MSTL(BaseModel):
+class MSTL(ForecastModel):
     """Multiple Seasonal-Trend decomposition using LOESS.
 
     The MSTL model (Multiple Seasonal-Trend decomposition using LOESS)
@@ -835,7 +816,7 @@ class MSTL(BaseModel):
 
         return {"stl_kwargs": self._est_params.get("stl_kwargs", {}) | params}
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -858,7 +839,7 @@ class MSTL(BaseModel):
         return dist
 
 
-class NaiveForecaster(BaseModel):
+class NaiveForecaster(ForecastModel):
     """Naive Forecaster.
 
     NaiveForecaster is a dummy forecaster that makes forecasts using
@@ -930,7 +911,7 @@ class NaiveForecaster(BaseModel):
         return {"strategy": Cat(["last", "mean", "drift"])}
 
 
-class PolynomialTrend(BaseModel):
+class PolynomialTrend(ForecastModel):
     """Polynomial Trend forecaster.
 
     Forecast time series data with a polynomial trend, using a sklearn
@@ -988,7 +969,7 @@ class PolynomialTrend(BaseModel):
         }
 
 
-class Prophet(BaseModel):
+class Prophet(ForecastModel):
     """Prophet forecaster by Facebook.
 
     Prophet is designed to handle time series data with strong seasonal
@@ -1059,6 +1040,7 @@ class Prophet(BaseModel):
 
         """
         # Prophet expects a DateTime index frequency
+        freq = None
         if self._config.sp.sp:
             try:
                 freq = next(
@@ -1069,10 +1051,6 @@ class Prophet(BaseModel):
                 # If not in mapping table, get from index
                 if hasattr(self.X_train.index, "freq"):
                     freq = self.X_train.index.freq.name
-                else:
-                    freq = None
-        else:
-            freq = None
 
         return super()._get_est(
             {"freq": freq, "seasonality_mode": self._config.sp.seasonal_model} | params
@@ -1095,7 +1073,7 @@ class Prophet(BaseModel):
         }
 
 
-class SARIMAX(BaseModel):
+class SARIMAX(ForecastModel):
     """Seasonal Autoregressive Integrated Moving Average.
 
     SARIMAX stands for Seasonal Autoregressive Integrated Moving Average
@@ -1106,6 +1084,10 @@ class SARIMAX(BaseModel):
     Corresponding estimators are:
 
     - [SARIMAX][sarimaxclass] for forecasting tasks.
+
+    !!! note
+        The seasonal components ar removed from [hyperparameter tuning][]
+        if no [seasonality][] is specified.
 
     !!! warning
         SARIMAX often runs into numerical errors when optimizing the
@@ -1153,30 +1135,6 @@ class SARIMAX(BaseModel):
     _order = ("p", "d", "q")
     _s_order = ("P", "D", "Q")
 
-    def _get_parameters(self, trial: Trial) -> dict[str, BaseDistribution]:
-        """Get the trial's hyperparameters.
-
-        Parameters
-        ----------
-        trial: [Trial][]
-            Current trial.
-
-        Returns
-        -------
-        dict
-            Trial's hyperparameters.
-
-        """
-        params = super()._get_parameters(trial)
-
-        # If no seasonal periodicity, set seasonal components to zero
-        if not self._config.sp.sp:
-            for p in self._s_order:
-                if p in params:
-                    params[p] = 0
-
-        return params
-
     def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
 
@@ -1207,7 +1165,7 @@ class SARIMAX(BaseModel):
 
         return params
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns
@@ -1235,18 +1193,19 @@ class SARIMAX(BaseModel):
             "use_exact_diffuse": Cat([True, False]),
         }
 
-        # Drop order and seasonal_order params if specified by user
+        # Drop order params if specified by user
         if "order" in self._est_params:
             for p in self._order:
                 dist.pop(p)
-        if "seasonal_order" in self._est_params:
+        if "seasonal_order" in self._est_params or not self._config.sp.sp:
+            # Drop seasonal order params if specified by user or no seasonal periodicity
             for p in self._s_order:
                 dist.pop(p)
 
         return dist
 
 
-class STL(BaseModel):
+class STL(ForecastModel):
     """Seasonal-Trend decomposition using LOESS.
 
     STL is a technique commonly used for decomposing time series data
@@ -1323,7 +1282,7 @@ class STL(BaseModel):
         }
 
 
-class TBATS(BaseModel):
+class TBATS(ForecastModel):
     """TBATS forecaster with multiple seasonality.
 
     TBATS is acronym for:
@@ -1416,7 +1375,7 @@ class TBATS(BaseModel):
         }
 
 
-class Theta(BaseModel):
+class Theta(ForecastModel):
     """Theta method for forecasting.
 
     The theta method is equivalent to simple [ExponentialSmoothing][]
@@ -1496,7 +1455,7 @@ class Theta(BaseModel):
         return {"deseasonalize": Cat([False, True])}
 
 
-class VAR(BaseModel):
+class VAR(ForecastModel):
     """Vector Autoregressive.
 
     The Vector Autoregressive (VAR) model is a type of multivariate
@@ -1561,7 +1520,7 @@ class VAR(BaseModel):
         }
 
 
-class VARMAX(BaseModel):
+class VARMAX(ForecastModel):
     """Vector Autoregressive Moving-Average.
 
     VARMAX is an extension of the [VAR][] model that incorporates not
@@ -1652,7 +1611,7 @@ class VARMAX(BaseModel):
         """
         return super()._get_est({"suppress_warnings": self.warnings == "ignore"} | params)
 
-    def _get_distributions(self) -> dict[str, BaseDistribution]:
+    def _get_distributions(self) -> Mapping[str, BaseDistribution]:
         """Get the predefined hyperparameter distributions.
 
         Returns

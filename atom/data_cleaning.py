@@ -10,8 +10,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from collections.abc import Hashable
-from typing import Any, Literal, TypeVar
-from unittest.mock import patch
+from typing import Any, Literal, TypeVar, overload
 
 import numpy as np
 import pandas as pd
@@ -40,33 +39,31 @@ from sklearn.base import (
 from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
-from sklearn.utils._set_output import _SetOutputMixin
 from sklearn.utils.validation import _check_feature_names_in
 from sktime.transformations.series.detrend import (
     ConditionalDeseasonalizer, Deseasonalizer, Detrender,
 )
-from sktime.transformations.series.impute import Imputer as sktimeImputer
+from sktime.transformations.series.impute import Imputer as SktimeImputer
 from typing_extensions import Self
 
 from atom.basetransformer import BaseTransformer
 from atom.utils.constants import CAT_TYPES, DEFAULT_MISSING
-from atom.utils.patches import wrap_method_output
 from atom.utils.types import (
-    Bins, Bool, CategoricalStrats, DataFrame, DiscretizerStrats, Engine,
-    EngineTuple, Estimator, FloatLargerZero, Int, IntLargerEqualZero,
-    IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats, NumericalStrats,
-    Pandas, Predictor, PrunerStrats, Scalar, ScalerStrats, SeasonalityModels,
-    Sequence, Series, Transformer, Verbose, XSelector, YSelector, dataframe_t,
-    sequence_t, series_t, EngineDataOptions, XConstructor, YConstructor
+    Bins, Bool, CategoricalStrats, DiscretizerStrats, Engine,
+    EngineDataOptions, EngineTuple, Estimator, FloatLargerZero, Int,
+    IntLargerEqualZero, IntLargerTwo, IntLargerZero, NJobs, NormalizerStrats,
+    NumericalStrats, Predictor, PrunerStrats, Scalar, ScalerStrats,
+    SeasonalityModels, Sequence, Transformer, Verbose, XConstructor, XReturn,
+    YConstructor, YReturn, sequence_t,
 )
 from atom.utils.utils import (
-    Goal, bk, check_is_fitted, composed, crash, get_col_order, get_cols, it,
-    lst, make_sklearn, merge, method_to_log, n_cols, replace_missing, sign,
-    to_df, to_series, variable_return, wrap_transformer_methods,
+    Goal, check_is_fitted, get_col_names, get_col_order, get_cols, it, lst,
+    make_sklearn, merge, n_cols, replace_missing, sign, to_df, to_series,
+    to_tabular, variable_return,
 )
 
 
-T = TypeVar("T", bound=Transformer)
+T_Transformer = TypeVar("T_Transformer", bound=Transformer)
 
 
 @beartype
@@ -77,6 +74,8 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
     - Accounts for the transformation of y.
     - Always add a fit method.
+    - Wraps the fit method with attributes and a data check.
+    - Wraps transforming methods a data check.
     - Maintains internal attributes when cloned.
 
     """
@@ -96,7 +95,7 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
         return out
 
-    def __sklearn_clone__(self: T) -> T:
+    def __sklearn_clone__(self: T_Transformer) -> T_Transformer:
         """Wrap cloning method to attach internal attributes."""
         cloned = _clone_parametrized(self)
 
@@ -106,7 +105,6 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
 
         return cloned
 
-    @composed(crash, method_to_log)
     def fit(
         self,
         X: XConstructor | None = None,
@@ -123,8 +121,9 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`. If None: y is ignored.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`. If None, `y` is
+            ignored.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -135,21 +134,45 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Estimator instance.
 
         """
-        X, y = check_input(X, y, engine=getattr(self, "_output_config", None))
-        self._check_feature_names(X, reset=True)
-        self._check_n_features(X, reset=True)
+        Xt = to_df(X)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
 
         self._log(f"Fitting {self.__class__.__name__}...", 1)
 
         return self
 
-    @composed(crash, method_to_log)
+    @overload
+    def fit_transform(
+        self,
+        X: Literal[None],
+        y: YConstructor,
+        **fit_params,
+    ) -> YReturn: ...
+
+    @overload
+    def fit_transform(
+        self,
+        X: XConstructor,
+        y: Literal[None] = ...,
+        **fit_params,
+    ) -> XReturn: ...
+
+    @overload
+    def fit_transform(
+        self,
+        X: XConstructor,
+        y: YConstructor,
+        **fit_params,
+    ) -> tuple[XReturn, YReturn]: ...
+
     def fit_transform(
         self,
         X: XConstructor | None = None,
         y: YConstructor | None = None,
         **fit_params,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Fit to data, then transform it.
 
         Parameters
@@ -158,8 +181,9 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`. If None: y is ignored.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`. If None, `y` is
+            ignored.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -175,12 +199,36 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
         """
         return self.fit(X, y, **fit_params).transform(X, y)
 
-    @composed(crash, method_to_log)
+    @overload
+    def inverse_transform(
+        self,
+        X: Literal[None],
+        y: YConstructor,
+        **fit_params,
+    ) -> YReturn: ...
+
+    @overload
+    def inverse_transform(
+        self,
+        X: XConstructor,
+        y: Literal[None] = ...,
+        **fit_params,
+    ) -> XReturn: ...
+
+    @overload
+    def inverse_transform(
+        self,
+        X: XConstructor,
+        y: YConstructor,
+        **fit_params,
+    ) -> tuple[XReturn, YReturn]: ...
+
     def inverse_transform(
         self,
         X: XConstructor | None = None,
         y: YConstructor | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        **fit_params,
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Do nothing.
 
         Returns the input unchanged. Implemented for continuity of the
@@ -192,8 +240,9 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`. If None: y is ignored.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`. If None, `y` is
+            ignored.
 
         Returns
         -------
@@ -201,40 +250,58 @@ class TransformerMixin(BaseEstimator, BaseTransformer):
             Feature set. Only returned if provided.
 
         series or dataframe
-            Target column. Only returned if provided.
+            Target column(s). Only returned if provided.
 
         """
-        return variable_return(X, y)
+        check_is_fitted(self)
+
+        Xt = to_df(X)
+        yt = to_tabular(y, index=getattr(Xt, "index", None))
+
+        return variable_return(self._convert(Xt), self._convert(yt))
 
     def set_output(self, *, transform: EngineDataOptions | None = None) -> Self:
         """Set output container.
 
+        See sklearn's [user guide][set_output] on how to use the
+        `set_output` API. See [here][data-engines] a description
+        of the choices.
+
         Parameters
         ----------
-        transform : str or None, default=None
-            Configure the output of the `transform`, `fit_transform`
-            and `inverse_transform` methods. If None, the configuration
-            is unchanged. Choose from:
+        transform: str or None, default=None
+            Configure the output of the `transform`, `fit_transform`,
+            and `inverse_transform` method. If None, the configuration
+            is not changed. Choose from:
 
-            - "pandas": Pandas output with numpy dtypes.
-            - "pyarrow": Pandas output with pyarrow dtypes.
-            - "modin": Modin output.
-            - "polars": Polars output.
+            - "numpy"
+            - "pandas" (default)
+            - "pandas-pyarrow"
+            - "polars"
+            - "polars-lazy"
+            - "pyarrow"
+            - "modin"
+            - "dask"
+            - "pyspark"
+            - "pyspark-pandas"
 
         Returns
         -------
-        self
+        Self
             Estimator instance.
 
         """
+        if not hasattr(self, "_engine"):
+            self.engine = EngineTuple()
+
         if transform is not None:
-            self._output_config = transform
+            self.engine = EngineTuple(estimator=self.engine.estimator, data=transform)
 
         return self
 
 
 @beartype
-class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Balancer(TransformerMixin, OneToOneFeatureMixin):
     """Balance the number of samples per class in the target column.
 
     When oversampling, the newly created samples have an increasing
@@ -353,8 +420,23 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.strategy = strategy
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas = -1) -> Self:
+    def _log_changes(self, y: pd.Series):
+        """Print the changes per target class.
+
+        Parameters
+        ----------
+        y: pd.Series
+            Target column.
+
+        """
+        for key, value in self.mapping_.items():
+            diff = self._counts[key] - np.sum(y == value)
+            if diff > 0:
+                self._log(f" --> Removing {diff} samples from class {key}.", 2)
+            elif diff < 0:
+                self._log(f" --> Adding {-diff} samples to class {key}.", 2)
+
+    def fit(self, X: XConstructor, y: YConstructor) -> Self:
         """Fit to data.
 
         Parameters
@@ -362,17 +444,8 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict or sequence, default=-1
+        y: sequence
             Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -380,13 +453,19 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Estimator instance.
 
         """
-        if isinstance(y, series_t):
-            self.target_names_in_ = np.array([y.name])
+        Xt = to_df(X)
+        yt = to_tabular(y, index=Xt.index)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
+        if isinstance(yt, pd.Series):
+            self.target_names_in_ = np.array([yt.name])
         else:
             raise ValueError("The Balancer class does not support multioutput tasks.")
 
+        # ClusterCentroids is unavailable since it has no sample_indices_
         strategies = {
-            # clustercentroids=ClusterCentroids,  #  noqa: ERA001 (has no sample_indices_)
             "condensednearestneighbour": CondensedNearestNeighbour,
             "editednearestneighborus": EditedNearestNeighbours,
             "repeatededitednearestneighbours": RepeatedEditedNearestNeighbours,
@@ -429,21 +508,20 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         # Create dict of class counts in y
         if not hasattr(self, "mapping_"):
-            self.mapping_ = {str(v): v for v in y.sort_values().unique()}
+            self.mapping_ = {str(v): v for v in yt.sort_values().unique()}
 
         self._counts = {}
         for key, value in self.mapping_.items():
-            self._counts[key] = np.sum(y == value)
+            self._counts[key] = np.sum(yt == value)
 
-        self._estimator = estimator.fit(X, y)
+        self._estimator = estimator.fit(Xt, yt)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{estimator.__class__.__name__.lower()}_", self._estimator)
 
         return self
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas = -1) -> tuple[DataFrame, Series]:
+    def transform(self, X: XConstructor, y: YConstructor) -> tuple[XReturn, YReturn]:
         """Balance the data.
 
         Parameters
@@ -451,12 +529,8 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str or sequence, default=-1
+        y: sequence
             Target column corresponding to `X`.
-
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -467,79 +541,74 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Transformed target column.
 
         """
+        check_is_fitted(self)
 
-        def log_changes(y):
-            """Print the changes per target class."""
-            for key, value in self.mapping_.items():
-                diff = self._counts[key] - np.sum(y == value)
-                if diff > 0:
-                    self._log(f" --> Removing {diff} samples from class {key}.", 2)
-                elif diff < 0:
-                    self._log(f" --> Adding {-diff} samples to class {key}.", 2)
+        Xt = to_df(X, columns=self.feature_names_in_)
+        yt = to_series(y, index=Xt.index, name=self.target_names_in_[0])  # type: ignore[arg-type]
 
         if "over_sampling" in self._estimator.__module__:
             self._log(f"Oversampling with {self._estimator.__class__.__name__}...", 1)
 
-            index = X.index  # Save indices for later reassignment
-            X, y = self._estimator.fit_resample(X, y)
+            index = Xt.index  # Save indices for later reassignment
+            Xt, yt = self._estimator.fit_resample(Xt, yt)
 
             # Create indices for the new samples
             n_idx: list[int | str]
             if index.dtype.kind in "ifu":
-                n_idx = list(range(max(index) + 1, max(index) + len(X) - len(index) + 1))
+                n_idx = list(range(max(index) + 1, max(index) + len(Xt) - len(index) + 1))
             else:
                 n_idx = [
                     f"{self._estimator.__class__.__name__.lower()}_{i}"
-                    for i in range(1, len(X) - len(index) + 1)
+                    for i in range(1, len(Xt) - len(index) + 1)
                 ]
 
             # Assign the old + new indices
-            X.index = list(index) + list(n_idx)
-            y.index = list(index) + list(n_idx)
+            Xt.index = pd.Index(list(index) + n_idx)
+            yt.index = pd.Index(list(index) + n_idx)
 
-            log_changes(y)
+            self._log_changes(yt)
 
         elif "under_sampling" in self._estimator.__module__:
             self._log(f"Undersampling with {self._estimator.__class__.__name__}...", 1)
 
-            self._estimator.fit_resample(X, y)
+            self._estimator.fit_resample(Xt, yt)
 
             # Select chosen rows (imblearn doesn't return them in order)
-            samples = sorted(self._estimator.sample_indices_)
-            X, y = X.iloc[samples], y.iloc[samples]  # type: ignore[call-overload]
+            samples = np.asarray(sorted(self._estimator.sample_indices_))
+            Xt, yt = Xt.iloc[samples], yt.iloc[samples]
 
-            log_changes(y)
+            self._log_changes(yt)
 
         elif "combine" in self._estimator.__module__:
             self._log(f"Balancing with {self._estimator.__class__.__name__}...", 1)
 
-            index = X.index
-            X_new, y_new = self._estimator.fit_resample(X, y)
+            index = Xt.index
+            X_new, y_new = self._estimator.fit_resample(Xt, yt)
 
             # Select rows kept by the undersampler
             if self._estimator.__class__.__name__ == "SMOTEENN":
-                samples = sorted(self._estimator.enn_.sample_indices_)
+                samples = np.asarray(sorted(self._estimator.enn_.sample_indices_))
             elif self._estimator.__class__.__name__ == "SMOTETomek":
-                samples = sorted(self._estimator.tomek_.sample_indices_)
+                samples = np.asarray(sorted(self._estimator.tomek_.sample_indices_))
 
             # Select the remaining samples from the old dataframe
-            o_samples = [s for s in samples if s < len(X)]
-            X, y = X.iloc[o_samples], y.iloc[o_samples]  # type: ignore[call-overload]
+            o_samples = [s for s in samples if s < len(Xt)]
+            Xt, yt = Xt.iloc[o_samples], yt.iloc[o_samples]  # type: ignore[call-overload]
 
             # Create indices for the new samples
             if index.dtype.kind in "ifu":
-                n_idx = list(range(max(index) + 1, max(index) + len(X_new) - len(X) + 1))
+                n_idx = list(range(max(index) + 1, max(index) + len(X_new) - len(Xt) + 1))
             else:
                 n_idx = [
                     f"{self._estimator.__class__.__name__.lower()}_{i}"
-                    for i in range(1, len(X_new) - len(X) + 1)
+                    for i in range(1, len(X_new) - len(Xt) + 1)
                 ]
 
             # Select the new samples and assign the new indices
             X_new = X_new.iloc[-len(X_new) + len(o_samples):]
-            X_new.index = n_idx
+            X_new.index = pd.Index(n_idx)
             y_new = y_new.iloc[-len(y_new) + len(o_samples):]
-            y_new.index = n_idx
+            y_new.index = pd.Index(n_idx)
 
             # First, output the samples created
             for key, value in self.mapping_.items():
@@ -548,17 +617,17 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
             # Then, output the samples dropped
             for key, value in self.mapping_.items():
-                if (diff := self._counts[key] - np.sum(y == value)) > 0:
+                if (diff := self._counts[key] - np.sum(yt == value)) > 0:
                     self._log(f" --> Removing {diff} samples from class: {key}.", 2)
 
             # Add the new samples to the old dataframe
-            X, y = bk.concat([X, X_new]), bk.concat([y, y_new])
+            Xt, yt = pd.concat([Xt, X_new]), pd.concat([yt, y_new])
 
-        return X, y
+        return self._convert(Xt), self._convert(yt)
 
 
 @beartype
-class Cleaner(TransformerMixin, _SetOutputMixin):
+class Cleaner(TransformerMixin):
     """Applies standard data cleaning steps on a dataset.
 
     Use the parameters to choose which transformations to perform.
@@ -612,24 +681,12 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -722,8 +779,7 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         self.drop_missing_target = drop_missing_target
         self.encode_target = encode_target
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame | None = None, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor | None = None, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -732,17 +788,8 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`.
 
         Returns
         -------
@@ -750,7 +797,14 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             Estimator instance.
 
         """
+        Xt = to_df(X)
+        yt = to_tabular(y, index=getattr(Xt, "index", None))
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
         self.mapping_: dict[str, Any] = {}
+        self.target_names_in_ = np.array([])
         self._drop_cols = []
         self._estimators = {}
 
@@ -759,26 +813,23 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
 
         self._log("Fitting Cleaner...", 1)
 
-        if X is not None and self.drop_dtypes is not None:
-            self._drop_cols = list(X.select_dtypes(include=lst(self.drop_dtypes)).columns)
+        if Xt is not None and self.drop_dtypes is not None:
+            self._drop_cols = list(Xt.select_dtypes(include=lst(self.drop_dtypes)).columns)
 
-        if y is not None:
-            if isinstance(y, series_t):
-                self.target_names_in_ = np.array([y.name])
-            else:
-                self.target_names_in_ = y.columns.to_numpy()
+        if yt is not None:
+            self.target_names_in_ = np.array(get_col_names(yt))
 
             if self.drop_chars:
-                if isinstance(y, series_t):
-                    y.name = re.sub(self.drop_chars, "", str(y.name))
+                if isinstance(yt, pd.DataFrame):
+                    yt = yt.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
                 else:
-                    y = y.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
+                    yt.name = re.sub(self.drop_chars, "", str(yt.name))
 
             if self.drop_missing_target:
-                y = replace_missing(y, self.missing_).dropna(axis=0)
+                yt = replace_missing(yt, self.missing_).dropna(axis=0)
 
             if self.encode_target:
-                for col in get_cols(y):
+                for col in get_cols(yt):
                     if isinstance(col.iloc[0], sequence_t):  # Multilabel
                         MultiLabelBinarizer = self._get_est_class(
                             name="MultiLabelBinarizer",
@@ -788,7 +839,9 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
                     elif list(uq := np.unique(col)) != list(range(col.nunique())):
                         LabelEncoder = self._get_est_class("LabelEncoder", "preprocessing")
                         self._estimators[col.name] = LabelEncoder().fit(col)
-                        self.mapping_.update({col.name: {str(it(v)): i for i, v in enumerate(uq)}})
+                        self.mapping_.update(
+                            {str(col.name): {str(it(v)): i for i, v in enumerate(uq)}}
+                        )
 
         return self
 
@@ -818,12 +871,11 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
 
         return np.array(columns)
 
-    @composed(crash, method_to_log)
     def transform(
         self,
-        X: DataFrame | None = None,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Apply the data cleaning steps to the data.
 
         Parameters
@@ -832,17 +884,8 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             Feature set with shape=(n_samples, n_features). If None,
             `X` is ignored.
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`.
 
         Returns
         -------
@@ -853,95 +896,98 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             Transformed target column. Only returned if provided.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+        yt = to_tabular(y, index=getattr(Xt, "index", None), columns=self.target_names_in_)
+
         self._log("Cleaning the data...", 1)
 
-        if X is not None:
+        if Xt is not None:
             # Unify all missing values
-            X = replace_missing(X, self.missing_)
+            Xt = replace_missing(Xt, self.missing_)
 
-            for name, column in X.items():
+            for name, column in Xt.items():
                 # Drop features with an invalid data type
                 if name in self._drop_cols:
                     self._log(
                         f" --> Dropping feature {name} for "
                         f"having type: {column.dtype.name}.", 2,
                     )
-                    X = X.drop(columns=name)
+                    Xt = Xt.drop(columns=name)
 
                 elif column.dtype.name in CAT_TYPES:
                     if self.strip_categorical:
                         # Strip strings from blank spaces
-                        X[name] = column.apply(
+                        Xt[name] = column.apply(
                             lambda val: val.strip() if isinstance(val, str) else val
                         )
 
             # Drop prohibited chars from column names
             if self.drop_chars:
-                X = X.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
+                Xt = Xt.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
 
             # Drop duplicate samples
             if self.drop_duplicates:
-                X = X.drop_duplicates(ignore_index=True)
+                Xt = Xt.drop_duplicates(ignore_index=True)
 
             if self.convert_dtypes:
-                X = X.convert_dtypes()
+                Xt = Xt.convert_dtypes()
 
-        if y is not None:
+        if yt is not None:
             if self.drop_chars:
-                if isinstance(y, series_t):
-                    y.name = re.sub(self.drop_chars, "", str(y.name))
+                if isinstance(y, pd.Series):
+                    yt.name = re.sub(self.drop_chars, "", str(yt.name))
                 else:
-                    y = y.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
+                    yt = yt.rename(lambda x: re.sub(self.drop_chars, "", str(x)), axis=1)
 
             # Delete samples with missing values in target
             if self.drop_missing_target:
-                length = len(y)  # Save original length to count deleted rows later
-                y = replace_missing(y, self.missing_).dropna()
+                length = len(yt)  # Save original length to count deleted rows later
+                yt = replace_missing(yt, self.missing_).dropna()
 
-                if X is not None:
-                    X = X[X.index.isin(y.index)]  # Select only indices that remain
+                if Xt is not None:
+                    Xt = Xt[Xt.index.isin(yt.index)]  # Select only indices that remain
 
-                if (d := length - len(y)) > 0:
+                if (d := length - len(yt)) > 0:
                     self._log(f" --> Dropping {d} rows with missing values in target.", 2)
 
             if self.encode_target and self._estimators:
-                yt = y.__class__(dtype="object")
-                for col in get_cols(y):
+                y_new = yt.__class__(dtype="object")
+                for col in get_cols(yt):
                     if est := self._estimators.get(col.name):
                         if n_cols(out := est.transform(col)) == 1:
                             self._log(f" --> Label-encoding column {col.name}.", 2)
-                            out = to_series(out, y.index, col.name)
-
+                            out = to_series(out, yt.index, str(col.name))
                         else:
                             self._log(f" --> Label-binarizing column {col.name}.", 2)
                             out = to_df(
                                 data=out,
-                                index=y.index,
+                                index=yt.index,
                                 columns=[f"{col.name}_{c}" for c in est.classes_],
                             )
 
                         # Replace target with encoded column(s)
-                        if isinstance(y, series_t):
-                            yt = out
+                        if isinstance(yt, pd.Series):
+                            y_new = out
                         else:
-                            yt = merge(yt, out)
+                            y_new = merge(y_new, out)
 
                     else:  # Add unchanged column
-                        yt = merge(yt, col)
+                        y_new = merge(y_new, col)
 
-                y = yt
+                yt = y_new
 
             if self.convert_dtypes:
-                y = y.convert_dtypes()
+                yt = yt.convert_dtypes()
 
-        return variable_return(X, y)
+        return variable_return(self._convert(Xt), self._convert(yt))
 
-    @composed(crash, method_to_log)
     def inverse_transform(
         self,
-        X: DataFrame | None = None,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        X: XConstructor | None = None,
+        y: YConstructor | None = None,
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Inversely transform the label encoding.
 
         This method only inversely transforms the target encoding.
@@ -953,17 +999,8 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
         X: dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`.
 
         Returns
         -------
@@ -974,38 +1011,43 @@ class Cleaner(TransformerMixin, _SetOutputMixin):
             Original target column. Only returned if provided.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+        yt = to_tabular(y, index=getattr(Xt, "index", None))
+
         self._log("Inversely cleaning the data...", 1)
 
-        if y is not None and self._estimators:
-            yt = y.__class__(dtype="object")
+        if yt is not None and self._estimators:
+            y_new = yt.__class__(dtype="object")
             for col in self.target_names_in_:
                 if est := self._estimators.get(col):
                     if est.__class__.__name__ == "LabelEncoder":
                         self._log(f" --> Inversely label-encoding column {col}.", 2)
-                        out = est.inverse_transform(bk.DataFrame(y)[col])
+                        out = est.inverse_transform(pd.DataFrame(yt)[col])
 
-                    elif isinstance(y, dataframe_t):
+                    elif isinstance(yt, pd.DataFrame):
                         self._log(f" --> Inversely label-binarizing column {col}.", 2)
                         out = est.inverse_transform(
-                            y.loc[:, y.columns.str.startswith(f"{col}_")].to_numpy()
+                            yt.loc[:, yt.columns.str.startswith(f"{col}_")].to_numpy()
                         )
 
                     # Replace encoded columns with target column
-                    if isinstance(y, series_t):
-                        yt = to_series(out, y.index, col)
+                    if isinstance(yt, pd.Series):
+                        y_new = to_series(out, yt.index, col)
                     else:
-                        yt = merge(yt, to_series(out, y.index, col))
+                        y_new = merge(y_new, to_series(out, yt.index, col))
 
                 else:  # Add unchanged column
-                    yt = merge(yt, bk.DataFrame(y)[col])
+                    y_new = merge(y_new, pd.DataFrame(yt)[col])
 
-            y = yt
+            yt = y_new
 
-        return variable_return(X, y)
+        return variable_return(self._convert(Xt), self._convert(yt))
 
 
 @beartype
-class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Decomposer(TransformerMixin, OneToOneFeatureMixin):
     """Detrend and deseasonalize the time series.
 
     This class does two things:
@@ -1144,8 +1186,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.sp = sp
         self.seasonal_model = seasonal_model
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -1153,7 +1194,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1164,13 +1205,17 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         """
         from atom.models import MODELS
 
+        Xt = to_df(X)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
         if isinstance(self.model, str):
             if self.model in MODELS:
                 model = MODELS[self.model](
                     goal=Goal.forecast,
                     **{x: getattr(self, x) for x in BaseTransformer.attrs if hasattr(self, x)},
                 )
-                model.task = Goal.forecast.infer_task(y)
                 forecaster = model._get_est({})
             else:
                 raise ValueError(
@@ -1192,7 +1237,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self._log("Fitting Decomposer...", 1)
 
         self._estimators: dict[Hashable, tuple[Transformer, Transformer]] = {}
-        for name, column in X.select_dtypes(include="number").items():
+        for name, column in Xt.select_dtypes(include="number").items():
             trend = Detrender(
                 forecaster=forecaster,
                 model=self.trend_model,
@@ -1213,8 +1258,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         return self
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Decompose the data.
 
         Parameters
@@ -1222,7 +1266,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1231,15 +1275,18 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Transformed feature set.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Decomposing the data...", 1)
 
         for col, (trend, season) in self._estimators.items():
-            X[col] = season.transform(trend.transform(X[col]))
+            Xt[col] = season.transform(trend.transform(Xt[col]))
 
-        return X
+        return self._convert(Xt)
 
-    @composed(crash, method_to_log)
-    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def inverse_transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Inversely transform the data.
 
         Parameters
@@ -1247,7 +1294,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1256,16 +1303,20 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Original feature set.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Inversely decomposing the data...", 1)
 
         for col, (trend, season) in self._estimators.items():
-            X[col] = trend.inverse_transform(season.inverse_transform(X[col]))
+            Xt[col] = trend.inverse_transform(season.inverse_transform(Xt[col]))
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
-class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Discretizer(TransformerMixin, OneToOneFeatureMixin):
     """Bin continuous data into intervals.
 
     For each feature, the bin edges are computed during fit and,
@@ -1323,24 +1374,12 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1433,8 +1472,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.bins = bins
         self.labels = labels
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -1442,7 +1480,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1490,16 +1528,21 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
             return labels
 
-        self._estimators: dict[str, Estimator] = {}
-        self._labels: dict[str, Sequence[str]] = {}
+        Xt = to_df(X)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
+        self._estimators: dict[Hashable, Estimator] = {}
+        self._labels: dict[Hashable, Sequence[str]] = {}
 
         self._log("Fitting Discretizer...", 1)
 
-        for i, col in enumerate(X.select_dtypes(include="number")):
+        for i, col in enumerate(Xt.select_dtypes(include="number")):
             # Assign bins per column
             if isinstance(self.bins, dict):
                 if col in self.bins:
-                    bins_c = self.bins[col]
+                    bins_c = self.bins[str(col)]
                 else:
                     continue  # Ignore existing column not specified in dict
             else:
@@ -1513,7 +1556,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                         raise ValueError(
                             "Invalid value for the bins parameter. The length of the "
                             "bins does not match the length of the columns, got len"
-                            f"(bins)={len(bins_c)} and len(columns)={X.shape[1]}."
+                            f"(bins)={len(bins_c)} and len(columns)={Xt.shape[1]}."
                         ) from None
                 else:
                     bins_x = bins_c
@@ -1531,11 +1574,11 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                     encode="ordinal",
                     strategy=self.strategy,
                     **kwargs,
-                ).fit(X[[col]])
+                ).fit(Xt[[col]])
 
                 # Save labels for transform method
                 self._labels[col] = get_labels(
-                    col=col,
+                    col=str(col),
                     bins=self._estimators[col].bin_edges_[0],
                 )
 
@@ -1555,14 +1598,13 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
                 # Make of cut a transformer
                 self._estimators[col] = FunctionTransformer(
-                    func=bk.cut,
-                    kw_args={"bins": bins_c, "labels": get_labels(col, bins_c)},
-                ).fit(X[[col]])
+                    func=pd.cut,
+                    kw_args={"bins": bins_c, "labels": get_labels(str(col), bins_c)},
+                ).fit(Xt[[col]])
 
         return self
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Bin the data into intervals.
 
         Parameters
@@ -1570,7 +1612,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1579,25 +1621,29 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Transformed feature set.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Binning the features...", 1)
 
         for col in self._estimators:
             if self.strategy == "custom":
-                X[col] = self._estimators[col].transform(X[col])
+                Xt[col] = self._estimators[col].transform(Xt[col])
             else:
-                X[col] = self._estimators[col].transform(X[[col]]).iloc[:, 0]
+                Xt[col] = self._estimators[col].transform(Xt[[col]]).iloc[:, 0]
 
                 # Replace cluster values with labels
                 for i, label in enumerate(self._labels[col]):
-                    X[col] = X[col].replace(i, label)
+                    Xt[col] = Xt[col].replace(i, label)
 
-            self._log(f" --> Discretizing feature {col} in {X[col].nunique()} bins.", 2)
+            self._log(f" --> Discretizing feature {col} in {Xt[col].nunique()} bins.", 2)
 
-        return X
+        return self._convert(Xt)
 
 
 @beartype
-class Encoder(TransformerMixin, _SetOutputMixin):
+class Encoder(TransformerMixin):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
@@ -1750,8 +1796,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         self.value = value
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
@@ -1763,17 +1808,8 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or dataframe-like
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: sequence or dataframe-like
+            Target column(s) corresponding to `X`.
 
         Returns
         -------
@@ -1800,6 +1836,12 @@ class Encoder(TransformerMixin, _SetOutputMixin):
             "woe": WOEEncoder,
         }
 
+        Xt = to_df(X)
+        yt = to_tabular(y, index=Xt.index)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
         if isinstance(self.strategy, str):
             if self.strategy.lower().endswith("encoder"):
                 self.strategy = self.strategy[:-7]  # Remove 'Encoder' at the end
@@ -1824,7 +1866,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
 
         if self.infrequent_to_value:
             if self.infrequent_to_value < 1:
-                infrequent_to_value = int(self.infrequent_to_value * len(X))
+                infrequent_to_value = int(self.infrequent_to_value * len(Xt))
             else:
                 infrequent_to_value = int(self.infrequent_to_value)
 
@@ -1832,12 +1874,12 @@ class Encoder(TransformerMixin, _SetOutputMixin):
 
         encoders: dict[str, list[str]] = defaultdict(list)
 
-        for name, column in X.select_dtypes(include=CAT_TYPES).items():
+        for name, column in Xt.select_dtypes(include=CAT_TYPES).items():
             # Replace infrequent classes with the string in `value`
             if self.infrequent_to_value:
                 values = column.value_counts()
                 self._to_value[name] = values[values <= infrequent_to_value].index.tolist()
-                X[name] = column.replace(self._to_value[name], self.value)
+                Xt[name] = column.replace(self._to_value[name], self.value)
 
             # Get the unique categories before fitting
             self._categories[name] = column.dropna().sort_values().unique().tolist()
@@ -1851,14 +1893,13 @@ class Encoder(TransformerMixin, _SetOutputMixin):
                     self._log(
                         f" --> The number of classes passed to feature {name} in the "
                         f"ordinal parameter ({len(ordinal_c)}) don't match the number "
-                        f"of classes in the data ({column.nunique(dropna=True)}).",
-                        1,
+                        f"of classes in the data ({column.nunique(dropna=True)}).", 1,
                         severity="warning",
                     )
 
                 # Create custom mapping from 0 to N - 1
                 mapping: dict[Hashable, Scalar] = {v: i for i, v in enumerate(ordinal_c)}
-                mapping.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
+                mapping.setdefault(np.nan, -1)  # Encoder always needs mapping of NaN
                 self.mapping_[str(name)] = mapping
 
                 encoders["ordinal"].append(str(name))
@@ -1897,7 +1938,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
             remainder="passthrough",
             n_jobs=self.n_jobs,
             verbose_feature_names_out=False,
-        ).fit(X, y)
+        ).fit(Xt, yt)
 
         return self
 
@@ -1924,8 +1965,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
 
         return get_col_order(cols, self.feature_names_in_, self._estimator.feature_names_in_)
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Encode the data.
 
         Parameters
@@ -1933,7 +1973,7 @@ class Encoder(TransformerMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -1942,10 +1982,14 @@ class Encoder(TransformerMixin, _SetOutputMixin):
             Encoded dataframe.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Encoding categorical columns...", 1)
 
         # Convert infrequent classes to value
-        X = X.replace(self._to_value, self.value)
+        Xt = Xt.replace(self._to_value, self.value)
 
         for name, categories in self._categories.items():
             if name in self._estimator.transformers_[0][2]:
@@ -1957,24 +2001,24 @@ class Encoder(TransformerMixin, _SetOutputMixin):
 
             self._log(
                 f" --> {estimator.__class__.__name__[:-7]}-encoding feature "
-                f"{name}. Contains {X[name].nunique()} classes.", 2,
+                f"{name}. Contains {Xt[name].nunique()} classes.", 2,
             )
 
             # Count the propagated missing values
-            if n_nans := X[name].isna().sum():
+            if n_nans := Xt[name].isna().sum():
                 self._log(f"   --> Propagating {n_nans} missing values.", 2)
 
             # Check for unknown classes
-            if uc := len(X[name].dropna()[~X[name].isin(categories)]):
+            if uc := len(Xt[name].dropna()[~Xt[name].isin(categories)]):
                 self._log(f"   --> Handling {uc} unknown classes.", 2)
 
-        Xt = self._estimator.transform(X)
+        Xt = self._estimator.transform(Xt)
 
-        return Xt[self.get_feature_names_out()]
+        return self._convert(Xt[self.get_feature_names_out()])
 
 
 @beartype
-class Imputer(TransformerMixin, _SetOutputMixin):
+class Imputer(TransformerMixin):
     """Handle missing values in the data.
 
     Impute or remove missing values according to the selected strategy.
@@ -1988,7 +2032,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
     Parameters
     ----------
-    strat_num: str, int or float, default="drop"
+    strat_num: str, int or float, default="mean"
         Imputing strategy for numerical columns. Choose from:
 
         - "drop": Drop rows containing missing values.
@@ -2008,7 +2052,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
            of column.
         - int or float: Impute with provided numerical value.
 
-    strat_cat: str, default="drop"
+    strat_cat: str, default="most_frequent"
         Imputing strategy for categorical columns. Choose from:
 
         - "drop": Drop rows containing missing values.
@@ -2036,24 +2080,12 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2134,8 +2166,8 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
     def __init__(
         self,
-        strat_num: Scalar | NumericalStrats = "drop",
-        strat_cat: str | CategoricalStrats = "drop",
+        strat_num: Scalar | NumericalStrats = "mean",
+        strat_cat: str | CategoricalStrats = "most_frequent",
         *,
         max_nan_rows: FloatLargerZero | None = None,
         max_nan_cols: FloatLargerZero | None = None,
@@ -2157,8 +2189,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         self.max_nan_rows = max_nan_rows
         self.max_nan_cols = max_nan_cols
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -2166,7 +2197,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -2175,22 +2206,27 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             Estimator instance.
 
         """
+        Xt = to_df(X)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
         if not hasattr(self, "missing_"):
             self.missing_ = DEFAULT_MISSING
 
         self._log("Fitting Imputer...", 1)
 
         # Unify all values to impute
-        X = replace_missing(X, self.missing_)
+        Xt = replace_missing(Xt, self.missing_)
 
         if self.max_nan_rows is not None:
             if self.max_nan_rows <= 1:
-                self._max_nan_rows = int(X.shape[1] * self.max_nan_rows)
+                self._max_nan_rows = int(Xt.shape[1] * self.max_nan_rows)
             else:
                 self._max_nan_rows = int(self.max_nan_rows)
 
-            X = X.dropna(axis=0, thresh=X.shape[1] - self._max_nan_rows)
-            if X.empty:
+            Xt = Xt.dropna(axis=0, thresh=Xt.shape[1] - self._max_nan_rows)
+            if Xt.empty:
                 raise ValueError(
                     "Invalid value for the max_nan_rows parameter, got "
                     f"{self.max_nan_rows}. All rows contain more than "
@@ -2200,11 +2236,11 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
         if self.max_nan_cols is not None:
             if self.max_nan_cols <= 1:
-                max_nan_cols = int(X.shape[0] * self.max_nan_cols)
+                max_nan_cols = int(Xt.shape[0] * self.max_nan_cols)
             else:
                 max_nan_cols = int(self.max_nan_cols)
 
-            X = X.drop(columns=X.columns[X.isna().sum() > max_nan_cols])
+            Xt = Xt.drop(columns=Xt.columns[Xt.isna().sum() > max_nan_cols])
 
         # Load the imputer class from sklearn or cuml (note the different modules)
         SimpleImputer = self._get_est_class(
@@ -2224,7 +2260,7 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             elif self.strat_num == "drop":
                 num_imputer = "passthrough"
             else:
-                num_imputer = make_sklearn(sktimeImputer)(
+                num_imputer = make_sklearn(SktimeImputer)(
                     method=self.strat_num,
                     missing_values=[pd.NA],
                     random_state=self.random_state,
@@ -2252,13 +2288,13 @@ class Imputer(TransformerMixin, _SetOutputMixin):
 
         self._estimator = ColumnTransformer(
             transformers=[
-                ("num_imputer", num_imputer, list(X.select_dtypes(include="number"))),
-                ("cat_imputer", cat_imputer, list(X.select_dtypes(include=CAT_TYPES))),
+                ("num_imputer", num_imputer, list(Xt.select_dtypes(include="number"))),
+                ("cat_imputer", cat_imputer, list(Xt.select_dtypes(include=CAT_TYPES))),
             ],
             remainder="passthrough",
             n_jobs=self.n_jobs,
             verbose_feature_names_out=False,
-        ).fit(X)
+        ).fit(Xt)
 
         return self
 
@@ -2284,12 +2320,11 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             [c for c in self.feature_names_in_ if c in self._estimator.get_feature_names_out()]
         )
 
-    @composed(crash, method_to_log)
     def transform(
         self,
-        X: DataFrame,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        X: XConstructor,
+        y: YConstructor | None = None,
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Impute the missing values.
 
         Note that leaving y=None can lead to inconsistencies in
@@ -2301,17 +2336,8 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`.
 
         Returns
         -------
@@ -2322,6 +2348,11 @@ class Imputer(TransformerMixin, _SetOutputMixin):
             Transformed target column. Only returned if provided.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+        yt = to_tabular(y, index=Xt.index)
+
         num_imputer = self._estimator.named_transformers_["num_imputer"]
         cat_imputer = self._estimator.named_transformers_["cat_imputer"]
 
@@ -2330,52 +2361,49 @@ class Imputer(TransformerMixin, _SetOutputMixin):
         self._log("Imputing missing values...", 1)
 
         # Unify all values to impute
-        X = replace_missing(X, self.missing_)
+        Xt = replace_missing(Xt, self.missing_)
 
         # Drop rows with too many missing values
         if self.max_nan_rows is not None:
-            length = len(X)
-            X = X.dropna(axis=0, thresh=X.shape[1] - self._max_nan_rows)
-            if diff := length - len(X):
+            length = len(Xt)
+            Xt = Xt.dropna(axis=0, thresh=Xt.shape[1] - self._max_nan_rows)
+            if diff := length - len(Xt):
                 self._log(
                     f" --> Dropping {diff} samples for containing more "
-                    f"than {self._max_nan_rows} missing values.",
-                    2,
+                    f"than {self._max_nan_rows} missing values.", 2,
                 )
 
         if self.strat_num == "drop":
-            length = len(X)
-            X = X.dropna(subset=self._estimator.transformers_[0][2])
-            if diff := length - len(X):
+            length = len(Xt)
+            Xt = Xt.dropna(subset=self._estimator.transformers_[0][2])
+            if diff := length - len(Xt):
                 self._log(
                     f" --> Dropping {diff} samples for containing "
-                    f"missing values in numerical columns.",
-                    2,
+                    f"missing values in numerical columns.", 2,
                 )
 
         if self.strat_cat == "drop":
-            length = len(X)
-            X = X.dropna(subset=self._estimator.transformers_[1][2])
-            if diff := length - len(X):
+            length = len(Xt)
+            Xt = Xt.dropna(subset=self._estimator.transformers_[1][2])
+            if diff := length - len(Xt):
                 self._log(
                     f" --> Dropping {diff} samples for containing "
-                    f"missing values in categorical columns.",
-                    2,
+                    f"missing values in categorical columns.", 2,
                 )
 
         # Print imputation information per feature
-        for name, column in X.items():
+        for name, column in Xt.items():
             if nans := column.isna().sum():
                 # Drop columns with too many missing values
                 if name not in self._estimator.feature_names_in_:
                     self._log(
                         f" --> Dropping feature {name}. Contains {nans} "
-                        f"({nans * 100 // len(X)}%) missing values.", 2,
+                        f"({nans * 100 // len(Xt)}%) missing values.", 2,
                     )
-                    X = X.drop(columns=name)
+                    Xt = Xt.drop(columns=name)
                     continue
 
-                if self.strat_num != "drop" and name in num_imputer.feature_names_in_:
+                if name in getattr(num_imputer, "feature_names_in_", []):
                     if not isinstance(self.strat_num, str):
                         self._log(
                             f" --> Imputing {nans} missing values with "
@@ -2389,15 +2417,14 @@ class Imputer(TransformerMixin, _SetOutputMixin):
                     elif self.strat_num in ("mean", "median", "most_frequent"):
                         self._log(
                             f" --> Imputing {nans} missing values with {self.strat_num} "
-                            f"({np.round(get_stat(num_imputer, name), 2)}) in column "
-                            f"{name}.", 2,
+                            f"({np.round(get_stat(num_imputer, name), 2)}) in column {name}.", 2,
                         )
                     else:
                         self._log(
                             f" --> Imputing {nans} missing values with {self.strat_num} "
                             f"in column {name}.", 2,
                         )
-                elif self.strat_cat != "drop" and name in cat_imputer.feature_names_in_:
+                elif name in getattr(cat_imputer, "feature_names_in_", []):
                     if self.strat_cat == "most_frequent":
                         self._log(
                             f" --> Imputing {nans} missing values with most_frequent "
@@ -2409,20 +2436,20 @@ class Imputer(TransformerMixin, _SetOutputMixin):
                             f"'{self.strat_cat}' in column {name}.", 2,
                         )
 
-        Xt = self._estimator.transform(X)
+        Xt = self._estimator.transform(Xt)
 
         # Make y consistent with X
-        if y is not None:
-            y = y[y.index.isin(Xt.index)]
+        if yt is not None:
+            yt = yt.loc[yt.index.isin(Xt.index)]
 
         # Reorder columns to original order
         Xt = Xt[self.get_feature_names_out()]
 
-        return variable_return(Xt, y)
+        return variable_return(self._convert(Xt), self._convert(yt))
 
 
 @beartype
-class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Normalizer(TransformerMixin, OneToOneFeatureMixin):
     """Transform the data to follow a Normal/Gaussian distribution.
 
     This transformation is useful for modeling issues related to
@@ -2459,24 +2486,12 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2564,8 +2579,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.strategy = strategy
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -2573,7 +2587,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -2587,6 +2601,11 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             "boxcox": "PowerTransformer",
             "quantile": "QuantileTransformer",
         }
+
+        Xt = to_df(X)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
 
         if self.strategy in ("yeojohnson", "boxcox"):
             estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
@@ -2608,7 +2627,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                 f"Choose from: {', '.join(strategies)}."
             )
 
-        num_cols = X.select_dtypes(include="number")
+        num_cols = Xt.select_dtypes(include="number")
 
         if num_cols.empty:
             raise ValueError(
@@ -2624,8 +2643,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         return self
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Apply the transformations to the data.
 
         Parameters
@@ -2633,7 +2651,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -2642,15 +2660,17 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Normalized dataframe.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Normalizing features...", 1)
-        Xt = self._estimator.transform(X[self._estimator.feature_names_in_])
 
-        X.update(Xt)
+        Xt.update(self._estimator.transform(Xt[self._estimator.feature_names_in_]))
 
-        return X[self.feature_names_in_]
+        return self._convert(Xt)
 
-    @composed(crash, method_to_log)
-    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def inverse_transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Apply the inverse transformation to the data.
 
         Parameters
@@ -2658,7 +2678,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -2667,17 +2687,21 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Original dataframe.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Inversely normalizing features...", 1)
-        Xt = self._estimator.inverse_transform(X[self._estimator.feature_names_in_])
-        Xt = to_df(Xt, index=X.index, columns=self._estimator.feature_names_in_)
 
-        X.update(Xt)
+        out: np.ndarray = self._estimator.inverse_transform(Xt[self._estimator.feature_names_in_])
 
-        return X
+        Xt.update(to_df(out, index=Xt.index, columns=self._estimator.feature_names_in_))
+
+        return self._convert(Xt)
 
 
 @beartype
-class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Pruner(TransformerMixin, OneToOneFeatureMixin):
     """Prune outliers from the data.
 
     Replace or remove outliers. The definition of outlier depends
@@ -2732,25 +2756,12 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, dict or None, default=None
-        Execution engine to use for [data][data-acceleration] and
-        [estimators][estimator-acceleration]. The value should be
-        one of the possible values to change one of the two engines,
-        or a dictionary with keys `data` and `estimator`, with their
-        corresponding choice as values to change both engines. If
-        None, the default values are used. Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "data":
-
-            - "pandas" (default)
-            - "pyarrow"
-            - "modin"
-
-        - "estimator":
-
-            - "sklearn" (default)
-            - "sklearnex"
-            - "cuml"
+        - "sklearn" (default)
+        - "cuml"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2839,12 +2850,11 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.include_target = include_target
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
     def transform(
         self,
-        X: DataFrame,
-        y: Pandas | None = None,
-    ) -> Pandas | tuple[DataFrame, Pandas]:
+        X: XConstructor,
+        y: YConstructor | None = None,
+    ) -> YReturn | tuple[XReturn, YReturn]:
         """Apply the outlier strategy on the data.
 
         Parameters
@@ -2852,17 +2862,8 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, dataframe-like or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
+        y: sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to `X`.
 
         Returns
         -------
@@ -2873,6 +2874,9 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Transformed target column. Only returned if provided.
 
         """
+        Xt = to_df(X, columns=getattr(self, "feature_names_in_", None))
+        yt = to_tabular(y, index=Xt.index)
+
         # Estimators with their modules
         strategies = {
             "iforest": ["IsolationForest", "ensemble"],
@@ -2911,7 +2915,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self._log("Pruning outliers...", 1)
 
         # Prepare dataset (merge with y and exclude categorical columns)
-        objective = merge(X, y) if self.include_target and y is not None else X
+        objective = merge(Xt, yt) if self.include_target and yt is not None else Xt
         objective = objective.select_dtypes(include=["number"])
 
         outliers = []
@@ -2933,13 +2937,13 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                         # Replace outliers with NaN and after that with max,
                         # so that the max is not calculated with the outliers in it
                         cond1 = z_scores[:, i] > self.max_sigma
-                        mask = objective[col].mask(cond1, np.NaN)
-                        objective[col] = mask.replace(np.NaN, mask.max(skipna=True))
+                        mask = objective[col].mask(cond1, np.nan)
+                        objective[col] = mask.replace(np.nan, mask.max(skipna=True))
 
                         # Replace outliers with the minimum
                         cond2 = z_scores[:, i] < -self.max_sigma
-                        mask = objective[col].mask(cond2, np.NaN)
-                        objective[col] = mask.replace(np.NaN, mask.min(skipna=True))
+                        mask = objective[col].mask(cond2, np.nan)
+                        objective[col] = mask.replace(np.nan, mask.min(skipna=True))
 
                         # Sum number of replacements
                         counts += cond1.sum() + cond2.sum()
@@ -2973,27 +2977,27 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
 
         if outliers:
             # Select outliers from intersection of strategies
-            mask = [any(strats) for strats in zip(*outliers, strict=True)]
-            self._log(f" --> Dropping {len(mask) - sum(mask)} outliers.", 2)
+            outlier_rows = [any(strats) for strats in zip(*outliers, strict=True)]
+            self._log(f" --> Dropping {len(outlier_rows) - sum(outlier_rows)} outliers.", 2)
 
             # Keep only the non-outliers from the data
-            X = X[mask]
-            if y is not None:
-                y = y[mask]
+            Xt = Xt[outlier_rows]
+            if yt is not None:
+                yt = yt[outlier_rows]
 
         else:
             # Replace the columns in X and y with the new values from objective
-            X.update(objective)
-            if isinstance(y, series_t) and y.name in objective:
-                y.update(objective[str(y.name)])
-            elif isinstance(y, dataframe_t):
-                y.update(objective)
+            Xt.update(objective)
+            if isinstance(yt, pd.Series) and yt.name in objective:
+                yt.update(objective[str(yt.name)])
+            elif isinstance(yt, pd.DataFrame):
+                yt.update(objective)
 
-        return variable_return(X, y)
+        return variable_return(self._convert(Xt), self._convert(yt))
 
 
 @beartype
-class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
+class Scaler(TransformerMixin, OneToOneFeatureMixin):
     """Scale the data.
 
     Apply one of sklearn's scaling strategies. Categorical columns
@@ -3022,11 +3026,11 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         `#!python device="gpu"` to use the GPU. Read more in the
         [user guide][gpu-acceleration].
 
-    engine: str, default="sklearn"
-        Execution engine for [estimators][estimator-acceleration].
-        Choose from:
+    engine: str or None, default=None
+        Execution engine to use for [estimators][estimator-acceleration].
+        If None, the default value is used. Choose from:
 
-        - "sklearn"
+        - "sklearn" (default)
         - "cuml"
 
     verbose: int, default=0
@@ -3096,7 +3100,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         *,
         include_binary: Bool = False,
         device: str = "cpu",
-        engine: Engine = "sklearn",
+        engine: Engine = None,
         verbose: Verbose = 0,
         **kwargs,
     ):
@@ -3105,8 +3109,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         self.include_binary = include_binary
         self.kwargs = kwargs
 
-    @composed(crash, method_to_log)
-    def fit(self, X: DataFrame, y: Pandas | None = None) -> Self:
+    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
         """Fit to data.
 
         Parameters
@@ -3114,7 +3117,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -3130,10 +3133,15 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             "robust": "RobustScaler",
         }
 
-        num_cols = X.select_dtypes(include="number")
+        Xt = to_df(X)
+
+        self._check_feature_names(Xt, reset=True)
+        self._check_n_features(Xt, reset=True)
+
+        num_cols = Xt.select_dtypes(include="number")
 
         if not self.include_binary:
-            num_cols = X[[n for n, c in num_cols.items() if ~np.isin(c.unique(), [0, 1]).all()]]
+            num_cols = Xt[[n for n, c in num_cols.items() if ~np.isin(c.unique(), [0, 1]).all()]]
 
         if num_cols.empty:
             raise ValueError(
@@ -3142,19 +3150,17 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
                 "non-binary columns when include_binary=False."
             )
 
-        estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
-        self._estimator = estimator(**self.kwargs)
-
         self._log("Fitting Scaler...", 1)
-        self._estimator.fit(num_cols)
+
+        estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
+        self._estimator = estimator(**self.kwargs).fit(num_cols)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)
 
         return self
 
-    @composed(crash, method_to_log)
-    def transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Perform standardization by centering and scaling.
 
         Parameters
@@ -3162,7 +3168,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -3171,15 +3177,17 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Scaled dataframe.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Scaling features...", 1)
-        Xt = self._estimator.transform(X[self._estimator.feature_names_in_])
 
-        X.update(Xt)
+        Xt.update(self._estimator.transform(Xt[self._estimator.feature_names_in_]))
 
-        return X
+        return self._convert(Xt)
 
-    @composed(crash, method_to_log)
-    def inverse_transform(self, X: DataFrame, y: Pandas | None = None) -> DataFrame:
+    def inverse_transform(self, X: XConstructor, y: YConstructor | None = None) -> XReturn:
         """Apply the inverse transformation to the data.
 
         Parameters
@@ -3187,7 +3195,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, dataframe-like or None, default=None
+        y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
 
         Returns
@@ -3196,10 +3204,14 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin, _SetOutputMixin):
             Scaled dataframe.
 
         """
+        check_is_fitted(self)
+
+        Xt = to_df(X, columns=self.feature_names_in_)
+
         self._log("Inversely scaling features...", 1)
-        Xt = self._estimator.inverse_transform(X[self._estimator.feature_names_in_])
-        Xt = to_df(Xt, index=X.index, columns=self._estimator.feature_names_in_)
 
-        X.update(Xt)
+        out: np.ndarray = self._estimator.inverse_transform(Xt[self._estimator.feature_names_in_])
 
-        return X
+        Xt.update(to_df(out, index=Xt.index, columns=self._estimator.feature_names_in_))
+
+        return self._convert(Xt)

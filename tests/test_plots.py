@@ -7,14 +7,15 @@ Description: Unit tests for the plots module.
 
 import glob
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from optuna.visualization._terminator_improvement import _ImprovementInfo
 from shap.plots._force import AdditiveForceVisualizer
-from sklearn.metrics import f1_score, get_scorer
+from sklearn.metrics import f1_score, get_scorer, mean_squared_error
+from sktime.forecasting.base import ForecastingHorizon
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.plots.baseplot import Aesthetics, BaseFigure
@@ -219,9 +220,11 @@ def test_canvas():
     """Assert that the canvas works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with atom.canvas(1, 2, sharex=True, sharey=True, title="Title", display=False) as fig:
+    with atom.canvas(2, 2, sharex=True, sharey=True, title="Title", display=False) as fig:
         atom.plot_residuals(title={"text": "Residuals plot", "x": 0})
         atom.plot_feature_importance(title="Feature importance plot")
+        atom.plot_residuals()
+        atom.plot_residuals()
     assert fig.__class__.__name__ == "Figure"
 
 
@@ -394,6 +397,13 @@ def test_plot_rfecv(scoring):
     atom.plot_rfecv(display=False)
 
 
+def test_plot_series():
+    """Assert that the plot_series method works."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_series(columns=None, display=False)
+    atom.plot_series(columns=-1, display=False)
+
+
 def test_plot_wordcloud():
     """Assert that the plot_wordcloud method works."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
@@ -476,6 +486,13 @@ def test_plot_parallel_coordinate():
 
 def test_plot_pareto_front():
     """Assert that the plot_pareto_front method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("tree")
+
+    # Not multi-metric
+    with pytest.raises(PermissionError, match=".*models with multi-metric runs.*"):
+        atom.plot_pareto_front(display=False)
+
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("tree", metric=["mae", "mse", "rmse"], n_trials=3)
 
@@ -612,8 +629,12 @@ def test_plot_forecast():
     """Assert that the plot_forecast method works."""
     atom = ATOMForecaster(X_ex, y=(-2, -1), holdout_size=0.1, random_state=1)
     atom.run(models=["NF", "ES"])
-    atom.plot_forecast(display=False)
+    atom.plot_forecast(inverse=False, display=False)
     atom.plot_forecast(fh=atom.holdout.index, X=atom.holdout, display=False)
+
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run(models="NF")
+    atom.plot_forecast(fh=ForecastingHorizon(range(3)), display=False)
 
 
 def test_plot_gains():
@@ -646,8 +667,6 @@ def test_plot_parshap():
     atom.dummy.plot_parshap(display=False)  # Without colorbar
 
 
-@patch("atom.plots.predictionplot.Parallel", MagicMock())
-@patch("atom.plots.predictionplot.partial_dependence", MagicMock())
 def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method works."""
     atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
@@ -761,6 +780,8 @@ def test_plot_results():
         atom.plot_results(metric="time+mae", display=False)
 
     atom.plot_results(metric=None, display=False)
+    atom.plot_results(metric=0, display=False)
+    atom.plot_results(metric=mean_squared_error, display=False)
     atom.plot_results(metric=["time_fit+time"], display=False)
     atom.plot_results(metric=["mae", "mse"], display=False)
 
@@ -882,4 +903,8 @@ def test_plot_shap_waterfall():
     """Assert that the plot_shap_waterfall method works."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
+
+    with pytest.raises(ValueError, match=".*plotting multiple samples.*"):
+        atom.plot_shap_waterfall(rows=(0, 1), display=False)
+
     atom.plot_shap_waterfall(display=False)

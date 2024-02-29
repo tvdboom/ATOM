@@ -10,9 +10,11 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pytest
 from category_encoders.target_encoder import TargetEncoder
 from pandas.testing import assert_frame_equal, assert_index_equal
+from sklearn.base import BaseEstimator
 from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
@@ -32,7 +34,7 @@ from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10, y10_label,
+    X_class, X_ex, X_label, X_pa, X_reg, X_sparse, X_text, y10, y10_label,
     y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc, y_label,
     y_multiclass, y_multireg, y_reg,
 )
@@ -80,6 +82,13 @@ def test_backend_with_n_jobs_1():
 
 
 # Test magic methods =============================================== >>
+
+def test_init():
+    """Assert that the __init__ method works for non-standard parameters."""
+    atom = ATOMClassifier(X_bin, y_bin, device="gpu", backend="multiprocessing")
+    assert atom.device == "gpu"
+    assert atom.backend == "multiprocessing"
+
 
 def test_repr():
     """Assert that the __repr__ method visualizes the pipeline(s)."""
@@ -313,6 +322,13 @@ def test_inverse_transform():
     assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
+def test_inverse_transform_output():
+    """Assert that the output type is determined by the data engine."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    atom.scale()
+    assert isinstance(atom.inverse_transform(X_bin), pa.Table)
+
+
 def test_load_no_atom():
     """Assert that an error is raised when the instance is not atom."""
     trainer = DirectClassifier("LR", random_state=1)
@@ -380,8 +396,10 @@ def test_reset():
 def test_save_data():
     """Assert that the dataset is saved to a csv file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save_data("auto")
-    assert glob.glob("ATOMClassifier_dataset.csv")
+    atom.save_data("auto", rows="test")
+    atom.save_data("auto", rows=range(100))
+    assert glob.glob("ATOMClassifier_test.csv")
+    assert glob.glob("ATOMClassifier.csv")
 
 
 def test_shrink_dtypes_excluded():
@@ -403,6 +421,15 @@ def test_shrink_str2cat():
 
     atom.shrink(str2cat=True)
     assert atom.dtypes[2].name == "category"
+
+
+def test_shrink_int2bool():
+    """Assert that the int2bool parameter works as intended."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.dtypes[0].name == "int64"
+
+    atom.shrink(int2bool=True)
+    assert atom.dtypes[0].name == "boolean"
 
 
 def test_shrink_int2uint():
@@ -442,8 +469,8 @@ def test_shrink_dense2sparse():
 
 
 def test_shrink_pyarrow():
-    """Assert that it works with the pyarrow data backend."""
-    atom = ATOMClassifier(X_bin, y_bin, engine={"data": "pyarrow"}, random_state=1)
+    """Assert that it works with pyarrow dtypes."""
+    atom = ATOMClassifier(X_pa, y_bin, engine="pandas-pyarrow", random_state=1)
     assert atom.dtypes[0].name == "double[pyarrow]"
     atom.shrink()
     assert atom.dtypes[0].name == "float[pyarrow]"
@@ -488,6 +515,13 @@ def test_transform_not_train_only():
     assert len(atom.transform(X_bin)) == len(X_bin)
 
 
+def test_transform_output():
+    """Assert that the output type is determined by the data engine."""
+    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    atom.scale()
+    assert isinstance(atom.transform(X_bin), pa.Table)
+
+
 # Test base transformers =========================================== >>
 
 def test_add_after_model():
@@ -512,6 +546,15 @@ def test_add_basetransformer_params_are_attached():
     atom.add(PCA(random_state=2))  # When instance
     assert atom.pipeline[0].get_params()["random_state"] == 1
     assert atom.pipeline[1].get_params()["random_state"] == 2
+
+
+def test_add_results_from_cache():
+    """Assert that cached transformers are retrieved."""
+    atom = ATOMClassifier(X_bin, y_bin, memory=True, random_state=1)
+    atom.scale()
+
+    atom = ATOMClassifier(X_bin, y_bin, memory=True, random_state=1)
+    atom.scale()
 
 
 def test_add_train_only():
@@ -630,15 +673,15 @@ def test_add_keep_column_names():
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer keeps rows equal
-    atom.add(DummyTransformer(strategy="equal"), get_feature_names_out=None)
+    atom.add(DummyTransformer(strategy="equal"), feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
     # Transformer drops rows
-    atom.add(DummyTransformer(strategy="drop"), get_feature_names_out=None)
+    atom.add(DummyTransformer(strategy="drop"), feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x2", "x3"]
 
     # Transformer adds a new column
-    atom.add(DummyTransformer(strategy="add"), columns="!x2", get_feature_names_out=None)
+    atom.add(DummyTransformer(strategy="add"), columns="!x2", feature_names_out=None)
     assert atom.features.tolist() == ["x0", "x2", "x3", "x4"]
 
 
@@ -649,9 +692,9 @@ def test_raise_length_mismatch():
         atom.prune(columns=[2, 4])
 
 
-def test_add_pyarrow_columns():
+def test_keep_pyarrow_dtypes():
     """Assert that columns keep the pyarrow dtype."""
-    atom = ATOMClassifier(X_bin, y_bin, engine="pyarrow", random_state=1)
+    atom = ATOMClassifier(X_pa, y_bin, random_state=1)
     assert isinstance(atom.dtypes[0], pd.ArrowDtype)
     atom.scale()
     assert isinstance(atom.dtypes[0], pd.ArrowDtype)
@@ -689,6 +732,18 @@ def test_add_reset_index():
     atom = ATOMClassifier(X_bin, y_bin, index=False, random_state=1)
     atom.prune()
     assert list(atom.dataset.index) == list(range(len(atom.dataset)))
+
+
+def test_add_raise_duplicate_indices():
+    """Assert that an error is raised when indices are duplicated."""
+
+    class AddRowsTransformer(BaseEstimator):
+        def transform(self, X, y):
+            return pd.concat([X, X.iloc[:5]]), pd.concat([y, y.iloc[:5]])
+
+    atom = ATOMClassifier(X_bin, y_bin, index=True, random_state=1)
+    with pytest.raises(ValueError, match=".*Duplicate indices.*"):
+        atom.add(AddRowsTransformer)
 
 
 def test_add_params_to_method():
@@ -775,10 +830,10 @@ def test_balance_wrong_task():
 
 def test_balance():
     """Assert that the balance method balances the training set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    length = (atom.y_train == 1).sum()
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.clean()  # To have column mapping
     atom.balance(strategy="NearMiss")
-    assert (atom.y_train == 1).sum() != length
+    assert (atom.y_train == 0).sum() == (atom.y_train == 1).sum()
 
 
 def test_clean():

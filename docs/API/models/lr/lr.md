@@ -29,7 +29,7 @@
         from_docstring: False
         include:
             - pipeline
-            - atom.branch:Branch.mapping
+            - atom.data:Branch.mapping
             - dataset
             - train
             - test
@@ -38,15 +38,15 @@
             - X_train
             - y_train
             - X_test
-            - atom.branch:Branch.y_test
+            - atom.data:Branch.y_test
             - X_holdout
             - y_holdout
-            - atom.branch:Branch.shape
-            - atom.branch:Branch.columns
-            - atom.branch:Branch.n_columns
-            - atom.branch:Branch.features
-            - atom.branch:Branch.n_features
-            - atom.branch:Branch.target
+            - shape
+            - columns
+            - n_columns
+            - features
+            - n_features
+            - atom.data:Branch.target
 
 <br>
 

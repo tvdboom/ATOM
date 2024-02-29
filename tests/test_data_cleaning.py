@@ -32,9 +32,9 @@ from .conftest import (
 
 def test_repr():
     """Assert that __repr__ hides the default engine."""
+    assert str(Cleaner()) == "Cleaner()"
     assert str(Cleaner(engine="pyarrow")) == "Cleaner(engine={'data': 'pyarrow'})"
     assert str(Cleaner(engine="sklearnex")) == "Cleaner(engine={'estimator': 'sklearnex'})"
-    assert str(Cleaner()) == "Cleaner()"
     assert str(Cleaner(device="gpu")) == "Cleaner(device='gpu')"
     assert str(Cleaner(verbose=2)) == "Cleaner(verbose=2)"
     assert str(Cleaner(device="gpu", verbose=2)) == "Cleaner(device='gpu', verbose=2)"
@@ -423,8 +423,8 @@ def test_missing_values_are_propagated():
 def test_unknown_classes_are_imputed():
     """Assert that unknown classes are imputed."""
     encoder = Encoder()
-    encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).iloc[0, 0] == -1.0
+    encoder.fit([["a"], ["b"], ["b"], ["a"]])
+    assert encoder.transform([["c"]]).iloc[0, 0] == -1.0
 
 
 def test_ordinal_encoder():
@@ -468,7 +468,7 @@ def test_kwargs_parameters():
 
 # Test Imputer ===================================================== >>
 
-@pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
+@pytest.mark.parametrize("missing", [None, np.nan, np.inf, -np.inf, 99])
 def test_imputing_all_missing_values_numeric(missing):
     """Assert that all missing values are imputed in numeric columns."""
     X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]

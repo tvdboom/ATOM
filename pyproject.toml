@@ -21,29 +21,24 @@ classifiers = [
 dependencies = [
     "beartype>=0.16.4",
     "category-encoders>=2.6.3",
-    "dagshub>=0.3.8",
     "dill>=0.3.6",
+    "featuretools>=1.28.0",
     "gplearn>=0.4.2",
     "imbalanced-learn>=0.12.0",
     "ipython>=8.11.0",
     "ipywidgets>=8.1.1",
-    "featuretools>=1.28.0",
     "joblib>=1.3.1",
     "matplotlib>=3.7.2",
-    "mlflow>=2.7.1",
-    "modin[ray]>=0.25.0",
+    "mlflow>=2.10.2",
     "nltk>=3.8.1",
     "numpy>=1.23.0",
     "optuna>=3.4.0",
-    "pandas[parquet]>=2.1.2",
+    "pandas>=2.1.2",
     "plotly>=5.18.0",
-    "ray[serve]>=2.9.1",
-    "requests>=2.31.0",
     "scikit-learn>=1.4.0",
-    "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "scipy>=1.10.1",
     "shap>=0.43.0",
-    "sktime[forecasting]>=0.24.0",
+    "sktime[forecasting]>=0.26.0",
     "statsmodels>=0.14.1",
     "zoofs>=0.1.26",
 ]
@@ -52,9 +47,18 @@ dependencies = [
 full = [
     "botorch>=0.8.5",
     "catboost>=1.2",
+    "dagshub>=0.3.8",
+    "dask[distributed]>=2024.2.0",
     "explainerdashboard>=0.4.3",
     "gradio>=3.44.4",
     "lightgbm>=4.1.0",
+    "modin[ray]>=0.25.0",
+    "polars>=0.20.7",
+    "pyarrow>=15.0.0",
+    "pyspark>=3.5.0",
+    "ray[serve]>=2.9.1",
+    "requests>=2.31.0",
+    "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "schemdraw>=0.16",
     "statsforecast>=1.6.0",
     "sweetviz>=2.3.1",
@@ -65,12 +69,11 @@ full = [
 [tool.pdm.dev-dependencies]
 dev = [
     # Linting
-    "isort>=5.12.0",
-    "mypy>=1.6.1",
-    "pandas_stubs>=2.1.1.230928",
+    "isort>=5.13.2",
+    "mypy>=1.8.0",
+    "pandas_stubs>=2.2.0.240218",
     "pre-commit>=3.5.0",
-    "ruff>=0.1.7",
-    "types-requests>=2.31.0.10",
+    "ruff>=0.2.2",
     # Testing
     "nbmake>=1.4.1",  # To test example notebooks
     "pytest>=7.2.1",
@@ -124,6 +127,8 @@ line-length = 99
 indent-width = 4
 show-fixes = true
 extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
 select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
@@ -168,7 +173,7 @@ ignore = [
     "B023",  # Function definition does not bind loop variable
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports
 "baserunner.py" = ["ERA001"]  # Commented-out code
 "patches.py" = ["A003"]  # Class attribute is shadowing a Python builtin
@@ -182,9 +187,13 @@ ignore = [
     "PT011",  # error is too broad
 ]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
 [tool.mypy]
 ignore_missing_imports = true
-disable_error_code = ["attr-defined"]
+disable_error_code = [
+    "attr-defined",
+    "abstract",  # See https://github.com/python/mypy/issues/4717
+    "override",  # Transformers' methods don't always match with that of TransformerMixin
+]

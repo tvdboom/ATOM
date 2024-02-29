@@ -186,7 +186,7 @@ atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
 And lastly, analyze the results.
 
 ```python
-print(atom.evaluate())
+print(atom.results)
 
 atom.plot_roc()
 ```

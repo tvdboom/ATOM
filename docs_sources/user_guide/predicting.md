@@ -15,7 +15,7 @@ in sklearn's and sktime's API.
 
 For classification and regression tasks:
 
-:: atom.models:AdaBoost
+:: atom.models:SupportVectorMachine
     :: methods:
         toc_only: True
         include:

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -11,11 +9,17 @@ from __future__ import annotations
 
 import importlib
 import json
-import os
 from dataclasses import dataclass
 from inspect import (
-    Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
-    ismethod, isroutine, signature,
+    Parameter,
+    getdoc,
+    getmembers,
+    getsourcelines,
+    isclass,
+    isfunction,
+    ismethod,
+    isroutine,
+    signature,
 )
 from typing import Any, Optional
 from collections.abc import Callable
@@ -24,7 +28,7 @@ import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
 
-from atom.utils.utils import Goal, Task
+from atom.utils.utils import Goal
 
 
 # Variables ======================================================== >>
@@ -34,14 +38,20 @@ from atom.utils.utils import Goal, Task
 CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
+    metadata_routing="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
+    metadatarouter="https://scikit-learn.org/stable/modules/generated/sklearn.utils.metadata_routing.MetadataRouter.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     pathlibpath="https://docs.python.org/3/library/pathlib.html#pathlib.Path",
     joblibmemory="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html",
     warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
     datetimeindex="https://pandas.pydata.org/docs/reference/api/pandas.DatetimeIndex.html",
+    periodalias="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases",
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
+    adf="https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test",
+    kpss="https://en.wikipedia.org/wiki/KPSS_test",
+    lb="https://en.wikipedia.org/wiki/Ljung%E2%80%93Box_test",
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
     skpipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
     pipelinedocs="https://scikit-learn.org/stable/modules/compose.html#pipeline",
@@ -60,11 +70,22 @@ CUSTOM_URLS = dict(
     forecastinghorizon="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.base.ForecastingHorizon.html#sktime.forecasting.base.ForecastingHorizon",
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
+    sklearncrossvalidate="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html",
+    sktimeevaluate="https://sktime-backup.readthedocs.io/en/latest/api_reference/auto_generated/sktime.forecasting.model_evaluation.evaluate.html",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
     ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
+    # BaseRunner
+    styler="https://pandas.pydata.org/docs/reference/api/pandas.io.formats.style.Styler.html",
+    stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
+    stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
+    stackingforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.StackingForecaster.html",
+    votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
+    votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
+    ensembleforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.EnsembleForecaster.html",
     # Data cleaning
+    set_output="https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_set_output.html",
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
     hashingencoder="https://contrib.scikit-learn.org/category_encoders/hashing.html",
@@ -83,11 +104,6 @@ CUSTOM_URLS = dict(
     minmax="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html",
     maxabs="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html",
     robust="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html",
-    # Ensembles
-    votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
-    votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
-    stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
-    stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
     # Feature engineering
     dfs="https://docs.featuretools.com/en/v0.16.0/automated_feature_engineering/afe.html#deep-feature-synthesis",
     gfg="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer",
@@ -126,6 +142,7 @@ CUSTOM_URLS = dict(
     baggingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html",
     baggingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html",
     bagdocs="https://scikit-learn.org/stable/modules/ensemble.html#bootstrapping",
+    batsclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.bats.BATS.html",
     bayesianridgeclass="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html",
     brdocs="https://scikit-learn.org/stable/modules/linear_model.html#bayesian-regression",
     bernoullinbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html",
@@ -137,12 +154,14 @@ CUSTOM_URLS = dict(
     catnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#categorical-naive-bayes",
     complementnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.CategoricalNB.html",
     cnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#complement-naive-bayes",
+    crostonclass="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.croston.Croston.html",
     decisiontreeclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html",
     decisiontreeregressor="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html",
     treedocs="https://scikit-learn.org/stable/modules/tree.html",
     dummyclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html",
     dummyregressor="https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyRegressor.html",
     dummydocs="https://scikit-learn.org/stable/modules/model_evaluation.html#dummy-estimators",
+    dynamicfactorclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.dynamic_factor.DynamicFactor.html",
     elasticnetreg="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html",
     endocs="https://scikit-learn.org/stable/modules/linear_model.html#elastic-net",
     esclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.exp_smoothing.ExponentialSmoothing.html",
@@ -169,6 +188,7 @@ CUSTOM_URLS = dict(
     knndocs="https://scikit-learn.org/stable/modules/neighbors.html",
     multinomialnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html",
     mnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes",
+    statsforecastmstl="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.statsforecast.StatsForecastMSTL.html",
     lars="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lars.html",
     larsdocs="https://scikit-learn.org/stable/modules/linear_model.html#least-angle-regression",
     lassoreg="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html",
@@ -196,6 +216,7 @@ CUSTOM_URLS = dict(
     percclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Perceptron.html",
     percdocs="https://scikit-learn.org/stable/modules/linear_model.html#perceptron",
     polynomialtrendforecaster="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.trend.PolynomialTrendForecaster.html",
+    prophetclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.fbprophet.Prophet.html",
     qdaclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html",
     radiusneighborsclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsClassifier.html",
     radiusneighborsregressor="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsRegressor.html",
@@ -206,16 +227,22 @@ CUSTOM_URLS = dict(
     ridgedocs="https://scikit-learn.org/stable/modules/linear_model.html#ridge-regression",
     cumlrf="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.ensemble.RandomForestClassifier",
     rfdocs="https://scikit-learn.org/stable/modules/ensemble.html#random-forests",
+    sarimaxclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.sarimax.SARIMAX.html",
     sgdclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html",
     sgdregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html",
     sgddocs="https://scikit-learn.org/stable/modules/sgd.html",
+    stlforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.trend.STLForecaster.html",
     svc="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html",
     svr="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html",
     svmdocs="https://scikit-learn.org/stable/modules/svm.html",
+    tbatsclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.tbats.TBATS.html",
+    thetaforecaster="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.theta.ThetaForecaster.html",
     xgbclassifier="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier",
     xgbregressor="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor",
     xgbdocs="https://xgboost.readthedocs.io/en/latest/index.html",
     naiveforecasterclass="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.naive.NaiveForecaster.html",
+    varclass="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.var.VAR.html",
+    varmaxclass="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.varmax.VARMAX.html",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -229,6 +256,9 @@ CUSTOM_URLS = dict(
     update_traces="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html#plotly.graph_objects.Figure.update_traces",
     fanova="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.importance.FanovaImportanceEvaluator.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
+    nyquist="https://en.wikipedia.org/wiki/Nyquist_frequency",
+    random_walk="https://en.wikipedia.org/wiki/Random_walk",
+    arma="https://en.wikipedia.org/wiki/Autoregressive_moving-average_model",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
     det="https://scikit-learn.org/stable/auto_examples/model_selection/plot_det.html",
@@ -260,6 +290,7 @@ class AutoDocs:
     The docstring should follow the numpydoc style[^1]. Blocks should
     start with `::`. The following blocks are accepted:
 
+    - toc
     - tags
     - head (summary + description)
     - summary (first line of docstring, required)
@@ -304,7 +335,7 @@ class AutoDocs:
         r"\Z",
     )
 
-    def __init__(self, obj: Callable, method: Optional[Callable] = None):
+    def __init__(self, obj: Callable, method: Callable | None = None):
         if method:
             self.obj = getattr(obj, method)
             self.method = method
@@ -362,12 +393,33 @@ class AutoDocs:
 
         """
         text = "\n"
-        if any(body.lstrip().startswith(c) for c in ("- ", "* ", "+ ")):
+        if body.lstrip().startswith(("- ", "* ", "+ ")):
             text += "\n"
 
         text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
 
         return text + "\n"
+
+    def get_toc(self) -> str:
+        """Return a toc of the objects in self.
+
+        Note that object must be iterable.
+
+        Returns
+        -------
+        str
+            Toc of the objects.
+
+        """
+        toc = "<table markdown style='font-size: 0.9em'>"
+        for obj in self.obj:
+            func = AutoDocs(obj)
+
+            name = f"[{obj.__name__}][] ({obj.acronym})"
+            toc += f"<tr><td>{name}</td><td>{func.get_summary()}</td></tr>"
+
+        toc += "</table>"
+        return toc
 
     def get_tags(self) -> str:
         """Return the object's tags.
@@ -381,16 +433,18 @@ class AutoDocs:
 
         """
         text = f"[{self.obj.acronym}][predefined-models]{{ .md-tag }}"
-        if self.obj.needs_scaling:
+        if getattr(self.obj, "needs_scaling", False):
             text += "&nbsp;&nbsp;[needs scaling][automated-feature-scaling]{ .md-tag }"
-        if self.obj.accepts_sparse:
+        if getattr(self.obj, "accepts_sparse", False):
             text += "&nbsp;&nbsp;[accept sparse][sparse-datasets]{ .md-tag }"
-        if self.obj.native_multilabel:
+        if getattr(self.obj, "multiple_seasonality", False):
+            text += "&nbsp;&nbsp;[multiple seasonality][seasonality]{ .md-tag }"
+        if getattr(self.obj, "native_multilabel", False):
             text += "&nbsp;&nbsp;[native multilabel][multilabel]{ .md-tag }"
-        if self.obj.native_multioutput:
+        if getattr(self.obj, "native_multioutput", False):
             text += "&nbsp;&nbsp;[native multioutput][multioutput-tasks]{ .md-tag }"
-        if self.obj.has_validation:
-            text += "&nbsp;&nbsp;[allows validation][in-training-validation]{ .md-tag }"
+        if getattr(self.obj, "validation", None):
+            text += "&nbsp;&nbsp;[in-training validation][]{ .md-tag }"
         if any(engine not in ("sklearn", "sktime") for engine in self.obj.supports_engines):
             text += "&nbsp;&nbsp;[supports acceleration][estimator-acceleration]{ .md-tag }"
 
@@ -419,9 +473,9 @@ class AutoDocs:
         for k, v in params.items():
             if k not in ("cls", "self") and not k.startswith("_"):
                 if v.default == Parameter.empty:
-                    if '**' in str(v):
+                    if "**" in str(v):
                         sign.append(f"**{k}")  # Add ** to kwargs
-                    elif '*' in str(v):
+                    elif "*" in str(v):
                         sign.append(f"*{k}")  # Add * to args
                     else:
                         sign.append(k)
@@ -433,7 +487,7 @@ class AutoDocs:
 
         sign = f"({', '.join(sign)})"
 
-        f = self.obj.__module__.replace('.', '/')  # Module and filename sep by /
+        f = self.obj.__module__.replace(".", "/")  # Module and filename sep by /
         if "atom" in self.obj.__module__:
             url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
         elif "sklearn" in self.obj.__module__:
@@ -442,7 +496,7 @@ class AutoDocs:
             url = ""
 
         anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
-        module = self.obj.__module__ + '.' if obj != "method" else ""
+        module = self.obj.__module__ + "." if obj != "method" else ""
         obj = f"<em>{obj}</em>"
         name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
         if url:
@@ -573,10 +627,9 @@ class AutoDocs:
                     elif obj.__class__.__name__ == "cached_property":
                         obj = obj.func
 
-                    # Get the output type
-                    output = str(signature(obj)).split(" -> ")[-1]
-                    if output.startswith("'") and output.endswith("'"):
-                        output = output[1:-1]
+                    # Get the return type. Sometimes it returns a string 'Pandas'
+                    # and sometimes a class pandas.DataFrame. Unclear why
+                    output = str(signature(obj).return_annotation)
 
                     header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}\n</div>"
@@ -610,7 +663,7 @@ class AutoDocs:
                             pass
 
                     # Get the body corresponding to the header
-                    pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
+                    pattern = f"(?<={re.escape(header)}\n).*?(?=\n\\w|\n\\*|\n\\[|\\Z)"
                     body = re.search(pattern, match, re.S | re.M).group()
 
                     header = header.replace("*", r"\*")  # Use literal * for args/kwargs
@@ -731,7 +784,8 @@ class AutoDocs:
             methods = include
         else:
             methods = [
-                m for m, _ in getmembers(self.obj, predicate=predicate)
+                m
+                for m, _ in getmembers(self.obj, predicate=predicate)
                 if not m.startswith("_") and not any(re.fullmatch(p, m) for p in exclude)
             ]
 
@@ -792,7 +846,7 @@ def render(markdown: str, **kwargs) -> str:
 
     """
     autodocs = None
-    while match := re.search("(:: )(\w.*?)(?=::|\n\n|\Z)", markdown, re.S):
+    while match := re.search("(:: )([a-z].*?)(?=::|\n\n|\\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))
 
         # Commands should always be dicts with the configuration as a list in values
@@ -804,7 +858,9 @@ def render(markdown: str, **kwargs) -> str:
             else:
                 command = {command: None}  # Has no options specified
 
-        if "tags" in command:
+        if "toc" in command:
+            text = autodocs.get_toc()
+        elif "tags" in command:
             text = autodocs.get_tags()
         elif "signature" in command:
             text = autodocs.get_signature()
@@ -856,27 +912,24 @@ def types_conversion(dtype: str) -> str:
 
     """
     types = {
-        "typing.": "",
-        "Scalar": "int | float",
-        "Pandas": "Series | DataFrame",
-        "Model": "[model][models]",
-        "Run": "[Run][mlflowrun]",
+        "<class '": "",
+        "'>": "",
+        "typing.": "",  # For typing.Any
+        "atom.pipeline.": "",  # To transform later both class and str
         "Study": "[Study][]",
         "FrozenTrial": "[FrozenTrial][]",
-        "Union[int, numpy.integer]": "int",
-        "Union[float, numpy.floating]": "float",
-        "pandas.core.indexes.base.Index": "Index",
-        "pandas.core.series.Series": "Series",
-        "pandas.core.frame.DataFrame": "DataFrame",
-        "Union[int, numpy.integer, float, numpy.floating]": "int | float",
-        "Union[Series, modin.pandas.series.Series]": "Series",
-        "Union[DataFrame, modin.pandas.dataframe.DataFrame]": "DataFrame",
-        "Union[int, numpy.integer, Series, modin.pandas.series.Series]": "int | Series",
-        "Union[Series, modin.pandas.series.Series, DataFrame, modin.pandas.dataframe.DataFrame]": "Series | DataFrame",
-        "atom.branch.branch.": "",
-        "Branch": "[Branch][]",
-        "atom.pipeline.": "",
+        "Model": "[model][models]",
+        "Run": "[Run][mlflowrun]",
+        "pandas.core.indexes.base.Index": "pd.Index",
+        "pandas.core.series.Series": "pd.Series",
+        "pandas.core.frame.DataFrame": "pd.DataFrame",
+        "atom.branch.branch.Branch": "[Branch][]",
         "Pipeline": "[Pipeline][]",
+        "collections.abc.Hashable": "str",
+        "Scalar": "int | float",
+        "Pandas": "pd.Series | pd.DataFrame",
+        "int | numpy.integer": "int",
+        "float | numpy.floating": "float",
     }
 
     for k, v in types.items():
@@ -930,7 +983,7 @@ def clean_search(config: MkDocsConfig):
         Object containing the search index.
 
     """
-    with open(f"{config.data['site_dir']}/search/search_index.json", 'r') as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json") as f:
         search = json.load(f)
 
     for elem in search["docs"]:
@@ -938,9 +991,11 @@ def clean_search(config: MkDocsConfig):
         elem["text"] = re.sub(r"window\.PLOTLYENV.*?\)\s*?}\s*?", "", elem["text"], flags=re.S)
 
         # Remove mkdocs-jupyter css
-        elem["text"] = re.sub(r"\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
+        elem["text"] = re.sub(
+            r"\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S
+        )
 
-    with open(f"{config.data['site_dir']}/search/search_index.json", 'w') as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json", "w") as f:
         json.dump(search, f)
 
 
@@ -981,7 +1036,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
             text = match.group()
             if not link:
                 # Only adapt when has form [anchor][]
-                link = anchor.replace(' ', '-').replace('.', '').lower()
+                link = anchor.replace(" ", "-").replace(".", "").lower()
                 text = f"[{anchor}][{link}]"
             if link in CUSTOM_URLS:
                 # Replace keyword with custom url
@@ -990,7 +1045,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
                 link = link.replace("self", autodocs.obj.__name__.lower())
                 text = f"[{anchor}][{link}]"
 
-            result += markdown[start:match.start()] + text
+            result += markdown[start : match.start()] + text
             start = match.end()
 
     return result + markdown[start:]

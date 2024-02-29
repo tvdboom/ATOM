@@ -38,8 +38,8 @@ or together:
 * X
 * X, y
 
-Remember to use the `y` parameter to indicate the target column in X when
-using the first option. If not specified, the last column in X is used as
+Remember to use the `y` parameter to indicate the target column in `X` when
+using the first option. If not specified, the last column in `X` is used as
 the target. In both these cases, the sizes of the sets are defined using the
 `test_size` and `holdout_size` parameters. Note that the splits are made
 after the subsample of the dataset with the `n_rows` parameter (when not
@@ -358,6 +358,7 @@ method) or through a function (see the [apply][atomclassifier-apply]
 method). Remember that all transformations are only applied to the
 dataset in the current branch.
 
+<br>
 
 ## Row and column selection
 
@@ -422,3 +423,51 @@ rows of the training set, not the test set. To get the same result as sktime, us
     Note that for these methods, using `#!python atom.plot_roc(rows="train+test")`,
     only plots one line with the data from both sets. See the
     [advanced plotting example][example-advanced-plotting].
+
+
+<br>
+
+## Data engines
+
+ATOM is mostly built around [sklearn](https://scikit-learn.org/stable/) (and [sktime](https://www.sktime.net/en/stable/) for [time series][]
+tasks), and both these libraries use numpy as their computation backend. Since
+`atom` relies heavily on column names, it uses pandas (which in turn uses numpy)
+as its data backend. However, for the convenience of the user, it implements
+several data engines, that wraps the data in a different type when called by the
+user. This is very similar to sklearn's [set_output][] behaviour, but ATOM
+extends this to many more data types. For example, selecting the `polars` data
+engine, makes `atom.dataset` return a polars dataframe and `atom.winner.predict(X)`
+return a polars series. See [here][example-data-engines] an example notebook.
+
+The data engine can be specified through the [`engine`][atomclassifier-engine]
+parameter, e.g. `#!python engine="pyarrow"` or `#!python engine={"data": "pyarrow",
+"estimator": "sklearnex"}` to combine it with an [estimator engine][estimator acceleration].
+ATOM integrates the following data engines:
+
+- **numpy**: Transform the data to a [`numpy`](https://numpy.org/) array.
+- **pandas**: Leave the dataset as a [`pandas`](https://pandas.pydata.org/docs/index.html) object. This is the default
+  engine, that leaves the data unchanged.
+- **pandas-pyarrow**: Transform the data to [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html) with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
+  backend. Read more in pandas' [user guide](https://pandas.pydata.org/docs/user_guide/pyarrow.html).
+- **polars**: The [polars](https://docs.pola.rs/) library is a blazingly fast dataframe library
+  implemented in Rust and based on Apache Arrow. Transforms the data to a polars
+  dataframe or series.
+- **polars-lazy**: This engine is similar to the `polars` engine, but it returns
+  a [pl.LazyFrame](https://docs.pola.rs/py-polars/html/reference/lazyframe/index.html) instead of a [pl.pd.DataFrame](https://docs.pola.rs/py-polars/html/reference/dataframe/index.html).
+- **pyarrow**: PyArrow is a cross-language, platform-independent, in-memory data
+  format, that provides an efficient and fast way to serialize and deserialize data.
+  the data is transformed to a [pa.Table](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html) or [pa.Array](https://arrow.apache.org/docs/python/generated/pyarrow.Array.html).
+- **modin**: The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement
+  for pandas, that uses [Ray](https://www.ray.io/) as backend. Transform the data to a modin dataframe
+  or series.
+- **dask**: The [dask](https://docs.dask.org/en/stable/) library is a powerful Python library for parallel and
+  distributed computing. Transform the data to a [dask dataframe](https://docs.dask.org/en/latest/dataframe.html) or [dask series](https://docs.dask.org/en/stable/generated/dask.dataframe.Series.html).
+- **pyspark**: The [pyspark](https://spark.apache.org/docs/latest/api/python/index.html) library is the Python API for Apache Spark.
+  Transform the data to a [pyspark dataframe](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html) or [pyspark series](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.Column.html).
+- **pyspark-pandas**: Similar to the `pyspark` engine, but it returns pyspark objects
+  with the [pandas API](https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/index.html).
+
+!!! note
+    It's important to realize that, within atom, the data is still processed using
+    pandas (with the numpy backend). Only when the data is returned to the user, it
+    is transformed to the selected format.

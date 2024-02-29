@@ -30,8 +30,8 @@ from statsmodels.tsa.stattools import acf, ccf, pacf
 from atom.plots.baseplot import BasePlot
 from atom.utils.constants import PALETTE
 from atom.utils.types import (
-    Bool, ColumnSelector, DataFrame, Int, IntLargerZero, Legend, PACFMethods,
-    RowSelector, Segment, Sequence, Series, TargetSelector,
+    Bool, ColumnSelector, Int, IntLargerZero, Legend, PACFMethods, RowSelector,
+    Segment, Sequence, TargetSelector,
 )
 from atom.utils.utils import (
     check_dependency, crash, divide, get_corpus, has_task, lst,
@@ -311,11 +311,11 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         --------
         ```pycon
         from atom import ATOMForecaster
-        from sktime.datasets import load_airline
+        from sktime.datasets import load_macroeconomic
 
-        y = load_airline()
+        X = load_macroeconomic()
 
-        atom = ATOMForecaster(y, random_state=1)
+        atom = ATOMForecaster(X, random_state=1)
         atom.plot_ccf()
         ```
 
@@ -540,7 +540,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     @crash
     def plot_correlation(
         self,
-        columns: Segment | Sequence[Int | str] | DataFrame | None = None,
+        columns: Segment | Sequence[Int | str] | pd.DataFrame | None = None,
         method: Literal["pearson", "kendall", "spearman"] = "pearson",
         *,
         title: str | dict[str, Any] | None = None,
@@ -1223,7 +1223,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         """
 
-        def get_text(column: Series) -> Series:
+        def get_text(column: pd.Series) -> pd.Series:
             """Get the complete corpus as sequence of tokens.
 
             Parameters
@@ -1862,7 +1862,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
     @crash
     def plot_relationships(
         self,
-        columns: Segment | Sequence[Int | str] | DataFrame = (0, 1, 2),
+        columns: Segment | Sequence[Int | str] | pd.DataFrame = (0, 1, 2),
         *,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = None,
@@ -2198,7 +2198,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         Parameters
         ----------
         rows: str, sequence or dict, default=("train", "test")
-            Selection of rows on which to calculate the metric.
+            Selection of rows to plot.
 
             - If str: Name of the data set to plot.
             - If sequence: Names of the data sets to plot.

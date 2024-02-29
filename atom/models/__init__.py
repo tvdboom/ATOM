@@ -17,8 +17,8 @@ from atom.models.classreg import (
     QuadraticDiscriminantAnalysis, RadiusNearestNeighbors, RandomForest, Ridge,
     StochasticGradientDescent, SupportVectorMachine, XGBoost,
 )
-from atom.models.custom import CustomModel
-from atom.models.ensembles import Stacking, Voting
+from atom.models.custom import create_custom_model
+from atom.models.ensembles import create_stacking_model, create_voting_model
 from atom.models.ts import (
     ARIMA, BATS, ETS, MSTL, SARIMAX, STL, TBATS, VAR, VARMAX, AutoARIMA,
     AutoETS, Croston, DynamicFactor, ExponentialSmoothing, NaiveForecaster,
@@ -87,9 +87,3 @@ MODELS = ClassMap(
     XGBoost,
     key="acronym",
 )
-
-# Available ensembles
-ENSEMBLES = ClassMap(Stacking, Voting, key="acronym")
-
-# Available models + ensembles
-MODELS_ENSEMBLES = ClassMap(*MODELS, *ENSEMBLES, key="acronym")

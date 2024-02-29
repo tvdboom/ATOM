@@ -5,7 +5,6 @@ Description: Unit tests for nlp.py
 
 """
 
-from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -189,21 +188,6 @@ def test_hashing():
     X = Vectorizer(strategy="hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
     assert "hash1" in X
-
-
-@patch.dict(
-    "sys.modules",
-    {
-        "cuml": MagicMock(spec=["__spec__"]),
-        "cuml.common.device_selection": MagicMock(spec=["set_global_device_type"]),
-        "cuml.internals.memory_utils": MagicMock(spec=["set_global_output_type"]),
-        "cuml.feature_extraction.text": MagicMock(),
-    },
-)
-def test_gpu():
-    """Assert that the gpu implementation calls the get method of matrix."""
-    vectorizer = Vectorizer(device="gpu", engine="cuml")
-    pytest.raises(ValueError, vectorizer.fit_transform, X_text)
 
 
 def test_return_sparse():

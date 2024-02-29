@@ -85,6 +85,7 @@ CUSTOM_URLS = dict(
     votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
     ensembleforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.EnsembleForecaster.html",
     # Data cleaning
+    set_output="https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_set_output.html",
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
     hashingencoder="https://contrib.scikit-learn.org/category_encoders/hashing.html",
@@ -919,18 +920,16 @@ def types_conversion(dtype: str) -> str:
         "FrozenTrial": "[FrozenTrial][]",
         "Model": "[model][models]",
         "Run": "[Run][mlflowrun]",
-        "pandas.core.indexes.base.Index": "Index",
-        "pandas.core.series.Series": "Series",
-        "pandas.core.frame.DataFrame": "DataFrame",
+        "pandas.core.indexes.base.Index": "pd.Index",
+        "pandas.core.series.Series": "pd.Series",
+        "pandas.core.frame.DataFrame": "pd.DataFrame",
         "atom.branch.branch.Branch": "[Branch][]",
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",
-        "Pandas": "Series | DataFrame",
+        "Pandas": "pd.Series | pd.DataFrame",
         "int | numpy.integer": "int",
         "float | numpy.floating": "float",
-        "Series | modin.pandas.series.Series": "Series",
-        "DataFrame | modin.pandas.dataframe.DataFrame": "DataFrame",
     }
 
     for k, v in types.items():

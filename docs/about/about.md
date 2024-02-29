@@ -217,6 +217,13 @@ core project contributors with a set of developer tools free of charge.
   </div>
   <div class="column">
     <div class="logo">
+      <a href="../API/models/prophet" draggable="false">
+        <img src="../img/logos/prophet.png" alt="prophet" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
       <a href="../user_guide/accelerating/#gpu-acceleration" draggable="false">
         <img src="../img/logos/rapids.png" alt="rapids" draggable="false">
       </a>
@@ -229,6 +236,8 @@ core project contributors with a set of developer tools free of charge.
       </a>
     </div>
   </div>
+</div>
+<div class="row">
   <div class="column">
     <div class="logo">
       <a href="../user_guide/models" draggable="false">
@@ -236,8 +245,13 @@ core project contributors with a set of developer tools free of charge.
       </a>
     </div>
   </div>
-</div>
-<div class="row">
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/time-series" draggable="false">
+        <img src="../img/logos/sktime.png" alt="sktime" draggable="false">
+      </a>
+    </div>
+  </div>
   <div class="column">
     <div class="logo">
       <a href="../API/models/xgb" draggable="false">

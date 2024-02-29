@@ -52,6 +52,24 @@ choose which transformations to perform. The available steps are:
 
 <br>
 
+## Time series decomposition
+
+Time series decomposition involves thinking of a series as a combination
+of level, trend, seasonality, and noise components, each representing one
+of the underlying categories of patterns. Decomposing the series is a
+statistical task that deconstructs the data, leaving some components to
+model them in isolation.
+
+Use the [Decomposer][] class to remove trend and seasonality. It can be
+accessed from atom through the [decompose][atomforecaster-decompose] method.
+
+!!! tip
+    Use the [plot_decomposition][] method to visualize the trend,
+    seasonality and residuals of the time series. This can help to determine
+    if the data follows an additive or multiplicative trend.
+
+<br>
+
 ## Binning numerical features
 
 Discretization (otherwise known as quantization or binning) provides
@@ -100,8 +118,8 @@ transform the column in place.
 ## Imputing missing values
 
 For various reasons, many real world datasets contain missing values,
-often encoded as blanks, NaNs or other placeholders. Such datasets
-however are incompatible with ATOM's models which assume that all
+often encoded as blanks, NaNs or other placeholders. Such datasets,
+however, are incompatible with ATOM's models, which assume that all
 values in an array are numerical, and that all have and hold meaning.
 The [Imputer][] class handles missing values in the dataset by either
 dropping or imputing the value. It can be accessed from atom through

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
@@ -9,7 +7,6 @@ Description: Module containing the automatic example rendering.
 
 import ast
 import os
-import re
 import shutil
 import sys
 from base64 import b64encode
@@ -94,7 +91,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         """
         if code == "":
             return code
-        elif not any(code.startswith(x) for x in (" ", ")", "]", "}")):
+        elif not code.startswith((" ", ")", "]", "}")):
             return f">>> {code}"
         else:
             return f"... {code}"
@@ -123,12 +120,12 @@ def execute(src: str) -> tuple[list[str], list[str]]:
             end_line = node.end_lineno
 
             # Get complete code block
-            block = lines[node.lineno - 1: end_line]
+            block = lines[node.lineno - 1 : end_line]
 
             if "# hide" not in line:
                 output[-1].extend([draw(code) for code in block])
 
-            # Add filename parameter to plot call to save figure
+            # Add filename parameter to plot call to save the figure
             if ".plot_" in line or ".canvas(" in line:
                 f, arguments = block[0].split("(", 1)
                 if arguments.startswith(")"):
@@ -154,12 +151,14 @@ def execute(src: str) -> tuple[list[str], list[str]]:
                     output.append([])  # Add new code block
 
                 if (f := latest_file()).endswith(".html"):
-                    with open(f"{DIR_EXAMPLES}{f}", 'r', encoding="utf-8") as file:
+                    with open(f"{DIR_EXAMPLES}{f}", encoding="utf-8") as file:
                         figures.append(file.read())
                 else:
-                    with open(f"{DIR_EXAMPLES}{f}", 'rb') as file:
+                    with open(f"{DIR_EXAMPLES}{f}", "rb") as file:
                         img = b64encode(file.read()).decode("utf-8")
-                    figures.append(f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>")
+                    figures.append(
+                        f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"
+                    )
 
         elif i > end_line:
             output[-1].append(draw(line))
@@ -224,7 +223,7 @@ def formatter(
             language=language,
             md=md,
             options=options,
-            **kwargs
+            **kwargs,
         )
 
     # First line of markdown page
@@ -243,7 +242,7 @@ def formatter(
 
             render.append(source)
 
-    except Exception as e:
-        raise SuperFencesException(f"Exception raised running code:\n{src}") from e
+    except Exception as ex:
+        raise SuperFencesException(f"Exception raised running code:\n{src}") from ex
 
     return "<br>".join(render)

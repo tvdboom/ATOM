@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.trial import TrialState
@@ -32,7 +33,7 @@ from atom.utils.types import (
     int_t, segment_t,
 )
 from atom.utils.utils import (
-    bk, check_dependency, crash, divide, get_segment, it, lst, rnd,
+    check_dependency, crash, divide, get_segment, it, lst, rnd,
 )
 
 
@@ -244,8 +245,8 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
         models_c = self._check_hyperparams(models_c)
         metric_c = self._get_metric(metric)
 
-        x_min = bk.concat([m.trials[metric_c] for m in models_c]).min(axis=None)
-        x_max = bk.concat([m.trials[metric_c] for m in models_c]).max(axis=None)
+        x_min = pd.concat([m.trials[metric_c] for m in models_c]).min(axis=None)
+        x_max = pd.concat([m.trials[metric_c] for m in models_c]).max(axis=None)
         x = np.linspace(x_min, x_max, 100)
 
         self._get_figure()

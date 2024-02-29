@@ -15,7 +15,7 @@ from collections.abc import Hashable
 from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
-from typing import Any, overload
+from typing import Any
 
 import dill as pickle
 import numpy as np
@@ -32,19 +32,18 @@ from sktime.transformations.series.difference import Differencer
 
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
-from atom.branch import Branch
-from atom.models import MODELS, Stacking, Voting
+from atom.data import Branch
+from atom.models import MODELS, create_stacking_model, create_voting_model
 from atom.pipeline import Pipeline
 from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
-    Bool, DataFrame, FloatZeroToOneExc, HarmonicsSelector, Int, IntLargerOne,
-    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
-    RowSelector, Seasonality, Segment, Sequence, Series, SPDict, SPTuple,
-    TargetSelector, YSelector, bool_t, dataframe_t, int_t, segment_t,
-    sequence_t,
+    Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
+    IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
+    Pandas, RowSelector, Seasonality, Segment, Sequence, SPDict, SPTuple,
+    TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataContainer, Goal, SeasonalPeriod, Task, bk, check_is_fitted,
+    ClassMap, DataContainer, Goal, SeasonalPeriod, Task, check_is_fitted,
     composed, crash, divide, flt, get_cols, get_segment, get_versions,
     has_task, lst, merge, method_to_log, n_cols,
 )
@@ -80,27 +79,42 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     def __dir__(self) -> list[str]:
         """Add additional attrs from __getattr__ to the dir."""
-        attrs = list(super().__dir__())
-        attrs += [x for x in dir(self.branch) if not x.startswith("_")]
-        attrs += list(DF_ATTRS)
+        # Exclude from _available_if conditions
+        attrs = [x for x in super().__dir__() if hasattr(self, x)]
+
+        # Add additional attrs from the branch
+        attrs += self.branch._get_shared_attrs()
+
+        # Add additional attrs from the dataset
+        attrs += [x for x in DF_ATTRS if hasattr(self.dataset, x)]
+
+        # Add branch names in lower-case
         attrs += [b.name.lower() for b in self._branches]
+
+        # Add column names (excluding those with spaces)
         attrs += [c for c in self.columns if re.fullmatch(r"\w+$", c)]
+
+        # Add model names in lower-case
         if isinstance(self._models, ClassMap):
             attrs += [m.name.lower() for m in self._models]
+
         return attrs
 
     def __getattr__(self, item: str) -> Any:
         """Get branch, attr from branch, model, column or attr from dataset."""
         if item in self.__dict__["_branches"]:
             return self._branches[item]  # Get branch
-        elif item in dir(self.branch) and not item.startswith("_"):
-            return getattr(self.branch, item)  # Get attr from branch
+        elif item in self.branch._get_shared_attrs():
+            if isinstance(attr := getattr(self.branch, item), pandas_t):
+                return self._convert(attr)  # Transform data through data engine
+            else:
+                return attr
         elif item in self.__dict__["_models"]:
             return self._models[item]  # Get model
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column from dataset
-        elif item in DF_ATTRS:
-            return getattr(self.branch.dataset, item)  # Get attr from dataset
+        elif item in DF_ATTRS and hasattr(self.dataset, item):
+            return getattr(self.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'.")
 
@@ -120,7 +134,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
     def __len__(self) -> int:
         """Return length of dataset."""
-        return len(self.dataset)
+        return len(self.branch.dataset)
 
     def __contains__(self, item: str) -> bool:
         """Whether the item is a column in the dataset."""
@@ -159,7 +173,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     @cached_property
     def task(self) -> Task:
         """Dataset's [task][] type."""
-        return self._goal.infer_task(self.y)
+        return self._goal.infer_task(self.branch.y)
 
     @property
     def sp(self) -> SPTuple:
@@ -202,14 +216,14 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._branches.current
 
     @property
-    def holdout(self) -> DataFrame | None:
+    def holdout(self) -> pd.DataFrame | None:
         """Holdout set.
 
         This data set is untransformed by the pipeline. Read more in
         the [user guide][data-sets].
 
         """
-        return self.branch._holdout
+        return self._convert(self.branch._holdout)
 
     @property
     def models(self) -> str | list[str] | None:
@@ -376,234 +390,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         else:
             return flt([get_single_sp(x) for x in lst(sp)])
 
-    @staticmethod
-    @overload
-    def _check_input(
-        X: XSelector,
-        y: Literal[None],
-        columns: Axes,
-        name: Literal[None],
-    ) -> tuple[DataFrame, None]: ...
-
-    @staticmethod
-    @overload
-    def _check_input(
-        X: Literal[None],
-        y: YSelector,
-        columns: Literal[None],
-        name: str | Sequence[str],
-    ) -> tuple[None, Pandas]: ...
-
-    @staticmethod
-    @overload
-    def _check_input(
-        X: XSelector,
-        y: YSelector,
-        columns: Axes | None = ...,
-        name: str | Sequence[str] | None = ...,
-    ) -> tuple[DataFrame, Pandas]: ...
-
-    @staticmethod
-    def _check_input(
-        X: XSelector | None = None,
-        y: YSelector | None = None,
-        columns: Axes | None = None,
-        name: str | Sequence[str] | None = None,
-    ) -> tuple[DataFrame | None, Pandas | None]:
-        """Prepare the input data.
-
-        Convert X and y to pandas (if not already) and perform standard
-        compatibility checks (dimensions, length, indices, etc...).
-
-        Parameters
-        ----------
-        X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). If None,
-            `X` is ignored.
-
-        y: int, str, dict, sequence, dataframe or None, default=None
-            Target column corresponding to `X`.
-
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - If dict: Name of the target column and sequence of values.
-            - If sequence: Target column with shape=(n_samples,) or
-              sequence of column names or positions for multioutput
-              tasks.
-            - If dataframe: Target columns for multioutput tasks.
-
-        columns: sequence or None, default=None
-            Names of the features corresponding to `X`. If X already is a
-            dataframe, force feature order. If None and X is not a
-            dataframe, assign default feature names.
-
-        name: str, sequence or None, default=None
-            Name of the target column(s) corresponding to y. If None and
-            y is not a pandas object, assign default target name.
-
-        Returns
-        -------
-        dataframe or None
-            Feature dataset. Only returned if provided.
-
-        series, dataframe or None
-            Target column corresponding to `X`.
-
-        """
-        Xt: DataFrame | None = None
-        yt: Pandas | None = None
-
-        if X is None and y is None:
-            raise ValueError("X and y can't be both None!")
-        elif X is not None:
-            Xt = to_df(deepcopy(X() if callable(X) else X), columns=columns)
-
-            # If text dataset, change the name of the column to corpus
-            if list(Xt.columns) == ["x0"] and Xt[Xt.columns[0]].dtype == "object":
-                Xt = Xt.rename(columns={Xt.columns[0]: "corpus"})
-            else:
-                # Convert all column names to str
-                Xt.columns = Xt.columns.astype(str)
-
-                # No duplicate rows nor column names are allowed
-                if Xt.columns.duplicated().any():
-                    raise ValueError("Duplicate column names found in X.")
-
-                # Reorder columns to original order
-                if columns is not None:
-                    try:
-                        Xt = Xt[list(columns)]  # Force order determined by columns
-                    except KeyError:
-                        raise ValueError(
-                            f"The features are different than seen at fit time. "
-                            f"Features {set(Xt.columns) - set(columns)} are missing in X."
-                        ) from None
-
-        # Prepare target column
-        if isinstance(y, (dict, *sequence_t, *dataframe_t)):
-            if isinstance(y, dict):
-                yt = to_df(deepcopy(y), index=getattr(Xt, "index", None))
-                if n_cols(yt) == 1:
-                    yt = yt.iloc[:, 0]  # If y is one-dimensional, get series
-
-            else:
-                # If X and y have different number of rows, try multioutput
-                if Xt is not None and len(Xt) != len(y):
-                    try:
-                        targets: list[Hashable] = []
-                        for col in y:
-                            if col in Xt.columns:
-                                targets.append(col)
-                            elif isinstance(col, int_t):
-                                if -Xt.shape[1] <= col < Xt.shape[1]:
-                                    targets.append(Xt.columns[int(col)])
-                                else:
-                                    raise IndexError(
-                                        "Invalid value for the y parameter. Value "
-                                        f"{col} is out of range for data with "
-                                        f"{Xt.shape[1]} columns."
-                                    )
-
-                        Xt, yt = Xt.drop(columns=targets), Xt[targets]
-
-                    except (TypeError, IndexError, KeyError):
-                        raise ValueError(
-                            "X and y don't have the same number of rows,"
-                            f" got len(X)={len(Xt)} and len(y)={len(y)}."
-                        ) from None
-                else:
-                    yt = y
-
-                default_cols = [f"y{i}" for i in range(n_cols(y))]
-                yt = to_tabular(
-                    data=deepcopy(yt),
-                    index=getattr(Xt, "index", None),
-                    name=flt(name) if name is not None else "target",
-                    columns=name if isinstance(name, sequence_t) else default_cols,
-                )
-
-            # Check X and y have the same indices
-            if Xt is not None and not Xt.index.equals(yt.index):
-                raise ValueError("X and y don't have the same indices!")
-
-        elif isinstance(y, str):
-            if Xt is not None:
-                if y not in Xt.columns:
-                    raise ValueError(f"Column {y} not found in X!")
-
-                Xt, yt = Xt.drop(columns=y), Xt[y]
-
-            else:
-                raise ValueError("X can't be None when y is a string.")
-
-        elif isinstance(y, int_t):
-            if Xt is None:
-                raise ValueError("X can't be None when y is an int.")
-
-            Xt, yt = Xt.drop(columns=Xt.columns[int(y)]), Xt[Xt.columns[int(y)]]
-
-        return Xt, yt
-
-    def _set_index(self, df: DataFrame, y: Pandas | None) -> DataFrame:
-        """Assign an index to the dataframe.
-
-        Parameters
-        ----------
-        df: dataframe
-            Dataset.
-
-        y: series, dataframe or None
-            Target column(s). Used to check that the provided index
-            is not one of the target columns. If None, the check is
-            skipped.
-
-        Returns
-        -------
-        dataframe
-            Dataset with updated indices.
-
-        """
-        if self._config.index is True:  # True gets caught by isinstance(int)
-            pass
-        elif self._config.index is False:
-            df = df.reset_index(drop=True)
-        elif isinstance(self._config.index, int_t):
-            if -df.shape[1] <= self._config.index <= df.shape[1]:
-                df = df.set_index(df.columns[int(self._config.index)], drop=True)
-            else:
-                raise IndexError(
-                    f"Invalid value for the index parameter. Value {self._config.index} "
-                    f"is out of range for a dataset with {df.shape[1]} columns."
-                )
-        elif isinstance(self._config.index, str):
-            if self._config.index in df:
-                df = df.set_index(self._config.index, drop=True)
-            else:
-                raise ValueError(
-                    "Invalid value for the index parameter. "
-                    f"Column {self._config.index} not found in the dataset."
-                )
-
-        if y is not None and df.index.name in (c.name for c in get_cols(y)):
-            raise ValueError(
-                "Invalid value for the index parameter. The index column "
-                f"can not be the same as the target column, got {df.index.name}."
-            )
-
-        if df.index.duplicated().any():
-            raise ValueError(
-                "Invalid value for the index parameter. There are duplicate indices "
-                "in the dataset. Use index=False to reset the index to RangeIndex."
-            )
-
-        return df
-
     def _get_data(
         self,
-        arrays: tuple,
+        arrays: tuple[Any, ...],
         y: YSelector = -1,
-    ) -> tuple[DataContainer, DataFrame | None]:
+        *,
+        index: IndexSelector | None = None,
+    ) -> tuple[DataContainer, pd.DataFrame | None]:
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -617,17 +410,21 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         y: int, str or sequence, default=-1
             Transformed target column.
 
+        index: bool, int, str, sequence or None, default=None
+            Index parameter as provided in constructor. If None, the
+            index is retrieved from `self._config`.
+
         Returns
         -------
         DataContainer
             Train and test sets.
 
-        dataframe or None
+        pd.DataFrame or None
             Holdout data set. Returns None if not specified.
 
         """
 
-        def _subsample(df: DataFrame) -> DataFrame:
+        def _subsample(df: pd.DataFrame) -> pd.DataFrame:
             """Select a random subset of a dataframe.
 
             If shuffle=True, the subset is shuffled, else row order
@@ -636,12 +433,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             Parameters
             ----------
-            df: dataframe
+            df: pd.DataFrame
                 Dataset.
 
             Returns
             -------
-            dataframe
+            pd.DataFrame
                 Subset of df.
 
             """
@@ -657,10 +454,75 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
+        def _set_index(
+            df: pd.DataFrame,
+            y: Pandas | None,
+            index: IndexSelector | None = None,
+        ) -> pd.DataFrame:
+            """Assign an index to the dataframe.
+
+            Parameters
+            ----------
+            df: pd.DataFrame
+                Dataset.
+
+            y: pd.Series, pd.DataFrame or None
+                Target column(s). Used to check that the provided index
+                is not one of the target columns. If None, the check is
+                skipped.
+
+            index: bool, int, str or sequence or None, default=None
+                Index parameter as provided in constructor. If None, the
+                index is retrieved from `self._config`.
+
+            Returns
+            -------
+            pd.DataFrame
+                Dataset with updated indices.
+
+            """
+            if index is None:
+                index = self._config.index
+
+            if index is True:  # True gets caught by isinstance(int)
+                pass
+            elif index is False:
+                df = df.reset_index(drop=True)
+            elif isinstance(index, int_t):
+                if -df.shape[1] <= index <= df.shape[1]:
+                    df = df.set_index(df.columns[int(index)], drop=True)
+                else:
+                    raise IndexError(
+                        f"Invalid value for the index parameter. Value {index} "
+                        f"is out of range for a dataset with {df.shape[1]} columns."
+                    )
+            elif isinstance(index, str):
+                if index in df:
+                    df = df.set_index(index, drop=True)
+                else:
+                    raise ValueError(
+                        "Invalid value for the index parameter. "
+                        f"Column {index} not found in the dataset."
+                    )
+
+            if y is not None and df.index.name in (c.name for c in get_cols(y)):
+                raise ValueError(
+                    "Invalid value for the index parameter. The index column "
+                    f"can not be the same as the target column, got {df.index.name}."
+                )
+
+            if df.index.duplicated().any():
+                raise ValueError(
+                    "Invalid value for the index parameter. There are duplicate indices "
+                    "in the dataset. Use index=False to reset the index to RangeIndex."
+                )
+
+            return df
+
         def _no_data_sets(
-            X: DataFrame,
+            X: pd.DataFrame,
             y: Pandas,
-        ) -> tuple[DataContainer, DataFrame | None]:
+        ) -> tuple[DataContainer, pd.DataFrame | None]:
             """Generate data sets from one dataset.
 
             Additionally, assigns an index, shuffles the data, selects
@@ -669,10 +531,10 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             Parameters
             ----------
-            X: dataframe
+            X: pd.DataFrame
                 Feature set with shape=(n_samples, n_features).
 
-            y: series or dataframe
+            y: pd.Series or pd.DataFrame
                 Target column(s) corresponding to `X`.
 
             Returns
@@ -680,7 +542,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             DataContainer
                 Train and test sets.
 
-            dataframe or None
+            pd.DataFrame or None
                 Holdout data set. Returns None if not specified.
 
             """
@@ -694,14 +556,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             data = _subsample(data)
 
-            if isinstance(self._config.index, sequence_t):
-                if len(self._config.index) != len(data):
+            if isinstance(index, sequence_t):
+                if len(index) != len(data):
                     raise IndexError(
-                        "Invalid value for the index parameter. Length of "
-                        f"index ({len(self._config.index)}) doesn't match "
-                        f"that of the dataset ({len(data)})."
+                        "Invalid value for the index parameter. Length of index "
+                        f"({len(index)}) doesn't match that of the dataset ({len(data)})."
                     )
-                data.index = self._config.index
+                data.index = pd.Index(index)
 
             if len(data) < 5:
                 raise ValueError(
@@ -754,23 +615,22 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     stratify=self._config.get_stratify_columns(data, y),
                 )
 
-                complete_set = self._set_index(bk.concat([train, test, holdout]), y)
+                complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
 
                 container = DataContainer(
                     data=(data := complete_set.iloc[: len(data)]),
                     train_idx=data.index[:-len(test)],
                     test_idx=data.index[-len(test):],
-                    n_cols=len(get_cols(y)),
+                    n_targets=n_cols(y),
                 )
 
             except ValueError as ex:
                 # Clarify common error with stratification for multioutput tasks
-                if "least populated class" in str(ex) and isinstance(y, dataframe_t):
+                if isinstance(y, pd.DataFrame):
                     raise ValueError(
                         "Stratification for multioutput tasks is applied over all target "
-                        "columns, which results in a least populated class that has only "
-                        "one member. Either select only one column to stratify over, or "
-                        "set the parameter stratify=False."
+                        "columns. Either select only one column to stratify over, or set "
+                        "the parameter stratify=False."
                     ) from ex
                 else:
                     raise ex
@@ -781,13 +641,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             return container, holdout
 
         def _has_data_sets(
-            X_train: DataFrame,
+            X_train: pd.DataFrame,
             y_train: Pandas,
-            X_test: DataFrame,
+            X_test: pd.DataFrame,
             y_test: Pandas,
-            X_holdout: DataFrame | None = None,
+            X_holdout: pd.DataFrame | None = None,
             y_holdout: Pandas | None = None,
-        ) -> tuple[DataContainer, DataFrame | None]:
+        ) -> tuple[DataContainer, pd.DataFrame | None]:
             """Generate data sets from provided sets.
 
             Additionally, assigns an index, shuffles the data and
@@ -795,22 +655,22 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             Parameters
             ----------
-            X_train: dataframe
+            X_train: pd.DataFrame
                 Training set.
 
-            y_train: series or dataframe
+            y_train: pd.Series or pd.DataFrame
                 Target column(s) corresponding to `X`_train.
 
-            X_test: dataframe
+            X_test: pd.DataFrame
                 Test set.
 
-            y_test: series or dataframe
+            y_test: pd.Series or pd.DataFrame
                 Target column(s) corresponding to `X`_test.
 
-            X_holdout: dataframe or None
-                Holdout set. Is None if not provided by the user.
+            X_holdout: pd.DataFrame or None, default=None
+                Holdout set. Can be None if not provided by the user.
 
-            y_holdout: series, dataframe or None
+            y_holdout: pd.Series, pd.DataFrame or None, default=None
                 Target column(s) corresponding to `X`_holdout.
 
             Returns
@@ -818,7 +678,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             DataContainer
                 Train and test sets.
 
-            dataframe or None
+            pd.DataFrame or None
                 Holdout data set. Returns None if not specified.
 
             """
@@ -851,29 +711,28 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self._config.index, sequence_t):
+            if isinstance(index, sequence_t):
                 len_data = len(train) + len(test)
                 if holdout is not None:
                     len_data += len(holdout)
 
-                if len(self._config.index) != len_data:
+                if len(index) != len_data:
                     raise IndexError(
-                        "Invalid value for the index parameter. Length of "
-                        f"index ({len(self._config.index)}) doesn't match "
-                        f"that of the data sets ({len_data})."
+                        "Invalid value for the index parameter. Length of index "
+                        f"({len(index)}) doesn't match that of the data sets ({len_data})."
                     )
-                train.index = self._config.index[: len(train)]
-                test.index = self._config.index[len(train): len(train) + len(test)]
+                train.index = pd.Index(index[: len(train)])
+                test.index = pd.Index(index[len(train): len(train) + len(test)])
                 if holdout is not None:
-                    holdout.index = self._config.index[-len(holdout):]
+                    holdout.index = pd.Index(index[-len(holdout):])
 
-            complete_set = self._set_index(bk.concat([train, test, holdout]), y_test)
+            complete_set = _set_index(pd.concat([train, test, holdout]), y_test, index)
 
             container = DataContainer(
                 data=(data := complete_set.iloc[:len(train) + len(test)]),
                 train_idx=data.index[: len(train)],
                 test_idx=data.index[-len(test):],
-                n_cols=len(get_cols(y_train)),
+                n_targets=n_cols(y_train),
             )
 
             if holdout is not None:
@@ -884,16 +743,16 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self._goal.name == "forecast" and not isinstance(y, (*int_t, str)):
+            if self.branch._container:
+                return self.branch._data, self.branch._holdout
+            elif self._goal is Goal.forecast and not isinstance(y, (*int_t, str)):
                 # arrays=() and y=y for forecasting
                 sets = _no_data_sets(*self._check_input(y=y))
-            elif not self.branch._container:
+            else:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
                     "successfully. See the documentation for the allowed formats."
                 )
-            else:
-                return self.branch._data, self.branch._holdout
 
         elif len(arrays) == 1:
             # X or y for forecasting
@@ -953,7 +812,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         if self._goal.name == "forecast":
             # For forecasting, check if index complies with sktime's standard
             valid, msg, _ = check_is_mtype(
-                obj=pd.DataFrame(bk.concat([sets[0].data, sets[1]])),
+                obj=pd.DataFrame(pd.concat([sets[0].data, sets[1]])),
                 mtype="pd.DataFrame",
                 return_metadata=True,
                 var_name="the dataset",
@@ -963,7 +822,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 raise ValueError(msg)
         else:
             # Else check for duplicate indices
-            if bk.concat([sets[0].data, sets[1]]).index.duplicated().any():
+            if pd.concat([sets[0].data, sets[1]]).index.duplicated().any():
                 raise ValueError(
                     "Duplicate indices found in the dataset. "
                     "Try initializing atom using `index=False`."
@@ -1272,7 +1131,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def get_class_weight(
         self,
         rows: RowSelector = "train",
-    ) -> dict[Hashable, float] | dict[str, dict[Hashable, float]]:
+    ) -> dict[Hashable, float] | dict[Hashable, dict[Hashable, float]]:
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
@@ -1294,12 +1153,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         """
 
-        def get_weights(col: Series) -> dict[Hashable, float]:
+        def get_weights(col: pd.Series) -> dict[Hashable, float]:
             """Get the class weights for one column.
 
             Parameters
             ----------
-            col: series
+            col: pd.Series
                 Column to get the weights from.
 
             Returns
@@ -1313,14 +1172,14 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         _, y = self.branch._get_rows(rows, return_X_y=True)
 
-        if self.task.is_multioutput:
-            return {str(col.name): get_weights(col) for col in get_cols(y)}
-        else:
+        if isinstance(y, pd.Series):
             return get_weights(y)
+        else:
+            return {col.name: get_weights(col) for col in get_cols(y)}
 
     @available_if(has_task("classification"))
     @composed(crash, beartype)
-    def get_sample_weight(self, rows: RowSelector = "train") -> Series:
+    def get_sample_weight(self, rows: RowSelector = "train") -> pd.Series:
         """Return sample weights for a balanced data set.
 
         The returned weights are inversely proportional to the class
@@ -1335,13 +1194,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         Returns
         -------
-        series
+        pd.Series
             Sequence of weights with shape=(n_samples,).
 
         """
         _, y = self.branch._get_rows(rows, return_X_y=True)
         weights = compute_sample_weight("balanced", y=y)
-        return bk.Series(weights, name="sample_weight").round(3)
+        return pd.Series(weights, name="sample_weight").round(3)
 
     @available_if(has_task("forecast"))
     @composed(crash, beartype)
@@ -1430,7 +1289,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         if not (seasonal_periods := [int(sp) for sp in seasonal_periods if sp <= max_sp]):
             raise ValueError(
-                "No seasonal periods were detected. Try decreasing the max_sp parameter."
+                "No seasonal periods were detected. Try "
+                f"increasing the max_sp parameter, got {max_sp}."
             )
 
         return flt(seasonal_periods)
@@ -1640,7 +1500,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
                 kwargs[regressor] = model._get_est({})
 
-        self._models.append(Stacking(models=models_c, name=name, **kw_model))
+        self._models.append(create_stacking_model(models=models_c, name=name, **kw_model))
         self[name]._est_params = kwargs if self.task.is_forecast else {"cv": "prefit"} | kwargs
 
         if train_on_test:
@@ -1708,7 +1568,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     )
 
         self._models.append(
-            Voting(
+            create_voting_model(
                 models=models_c,
                 name=name,
                 goal=self._goal,

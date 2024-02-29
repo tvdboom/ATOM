@@ -39,10 +39,10 @@ from atom.utils.types import (
     Bool, ColumnSelector, FloatZeroToOneExc, Int, IntLargerEqualZero,
     IntLargerFour, IntLargerZero, Kind, Legend, MetricConstructor,
     MetricSelector, ModelsSelector, RowSelector, Sequence, TargetSelector,
-    TargetsSelector, XSelector, index_t,
+    TargetsSelector, XConstructor, int_t,
 )
 from atom.utils.utils import (
-    Task, bk, check_canvas, check_dependency, check_empty, check_predict_proba,
+    Task, check_canvas, check_dependency, check_empty, check_predict_proba,
     crash, divide, get_custom_scorer, has_task, lst, rnd,
 )
 
@@ -832,7 +832,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 from atom.models import OrdinaryLeastSquares
 
                 model = OrdinaryLeastSquares(goal=self._goal)
-                estimator = model._get_est({}).fit(bk.DataFrame(y_true), y_pred)
+                estimator = model._get_est({}).fit(pd.DataFrame(y_true), y_pred)
 
                 self._draw_line(
                     x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
@@ -1116,11 +1116,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         self,
         models: ModelsSelector = None,
         fh: RowSelector | ForecastingHorizon = "dataset",
-        X: XSelector | None = None,
+        X: XConstructor | None = None,
         target: TargetSelector = 0,
         *,
         plot_insample: Bool = False,
         plot_interval: Bool = True,
+        inverse: Bool = True,
         title: str | dict[str, Any] | None = None,
         legend: Legend | dict[str, Any] | None = "upper left",
         figsize: tuple[IntLargerZero, IntLargerZero] = (900, 900),
@@ -1160,6 +1161,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             Whether to plot prediction intervals together with the exact
             predicted values. Models wihtout a `predict_interval` method
             are skipped silently.
+
+        inverse: bool, default=True
+            Whether to inversely transform the output through the
+            pipeline. This doesn't affect the predictions if there are
+            no transformers in the pipeline or if the transformers have
+            no `inverse_transform` method or don't apply to `y`.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -1232,20 +1239,26 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             if X is not None:
-                X = m.transform(X)
-            elif isinstance(fh, index_t):
-                X = m.branch._all.loc[fh]
+                Xt = m.transform(X)
+            elif isinstance(fh, pd.Index):
+                Xt = m.branch._all.loc[fh]
+            else:
+                Xt = X
 
             # Draw predictions and interval
-            y_pred = m.predict(fh=fh, X=check_empty(X))
+            y_pred = m.predict(fh=fh, X=check_empty(Xt), inverse=inverse)
+
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
 
             if not plot_insample:
                 idx = y_pred.index.intersection(m.branch.train.index)
-                y_pred.loc[idx] = np.NaN  # type: ignore[index]
+                y_pred.loc[idx] = np.nan  # type: ignore[call-overload]
 
-            y_true = m.branch._all.loc[y_pred.index, target_c]
+            if inverse:
+                y_true = m.og._all.loc[y_pred.index, target_c]
+            else:
+                y_true = m.branch._all.loc[y_pred.index, target_c]
 
             self._draw_line(
                 x=(x := self._get_plot_index(y_pred)),
@@ -1271,7 +1284,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             if plot_interval:
                 try:
-                    y_interval = m.predict_interval(fh=fh, X=X)
+                    y_interval = m.predict_interval(fh=fh, X=Xt, inverse=inverse)
                 except (AttributeError, NotImplementedError):
                     continue  # Fails for some models like ES
 
@@ -1282,7 +1295,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     y = y_interval  # Univariate
 
                 if not plot_insample:
-                    y.loc[y.index.intersection(m.branch.train.index)] = np.NaN
+                    y.loc[y.index.intersection(m.branch.train.index)] = np.nan
 
                 fig.add_traces(
                     [
@@ -1317,6 +1330,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         fig.add_scatter(
             x=x,
             y=y_true,
+            name=target_c,
             mode="lines+markers",
             line={"width": 1, "color": "black", "dash": "dash"},
             opacity=0.6,
@@ -1887,7 +1901,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     data = data.sample(500, random_state=self.random_state)
 
                 explanation = m._shap.get_explanation(data, target_c)
-                shap = bk.DataFrame(explanation.values, columns=m.branch.features)
+                shap = pd.DataFrame(explanation.values, columns=m.branch.features)
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
@@ -2134,7 +2148,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+            predictions = Parallel(n_jobs=self.n_jobs)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.branch.X_test,
@@ -3138,7 +3152,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     def plot_results(
         self,
         models: ModelsSelector = None,
-        metric: MetricSelector = None,
+        metric: MetricSelector | MetricConstructor = None,
         rows: RowSelector = "test",
         *,
         title: str | dict[str, Any] | None = None,
@@ -3239,11 +3253,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         else:
             metric_c = []
             for m in lst(metric):
-                if isinstance(m, str):
+                if isinstance(m, int_t):
+                    metric_c.extend(self._get_metric(m))
+                elif isinstance(m, str):
                     metric_c.extend(m.split("+"))
                 else:
                     metric_c.append(m)
-            metric_c = [m if "time" in m else get_custom_scorer(m) for m in metric_c]
+            metric_c = [m if "time" in str(m) else get_custom_scorer(m) for m in metric_c]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()

@@ -12,22 +12,20 @@ from abc import ABCMeta
 from datetime import datetime as dt
 from typing import Any
 
-import joblib
 import mlflow
 import numpy as np
-import ray
 from joblib import Parallel, delayed
 from optuna import Study, create_study
 
 from atom.baserunner import BaseRunner
-from atom.branch import BranchManager
+from atom.data import BranchManager
 from atom.data_cleaning import BaseTransformer
-from atom.models import MODELS, CustomModel
+from atom.models import MODELS, create_custom_model
 from atom.plots import RunnerPlot
-from atom.utils.types import Model, sequence_t
+from atom.utils.types import Model, Verbose, sequence_t
 from atom.utils.utils import (
-    ClassMap, DataConfig, Goal, Task, check_dependency, get_custom_scorer, lst,
-    sign, time_to_str,
+    ClassMap, DataConfig, Goal, Task, adjust, check_dependency,
+    get_custom_scorer, lst, sign, time_to_str,
 )
 
 
@@ -70,7 +68,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
         self._models = lst(models) if models is not None else ClassMap()
         self._metric = lst(metric) if metric is not None else ClassMap()
 
-        self._config = DataConfig()
+        self._config = DataConfig(index=self._goal is Goal.forecast)
         self._branches = BranchManager(memory=self.memory)
 
         self._n_trials = {}
@@ -220,7 +218,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 inc.append(model)
 
             else:  # Model is a custom estimator
-                inc.append(CustomModel(estimator=model, **kwargs))
+                inc.append(create_custom_model(estimator=model, **kwargs))
 
         if inc and exc:
             raise ValueError(
@@ -305,7 +303,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
     def _core_iteration(self):
         """Fit and evaluate all models and displays final results."""
 
-        def execute_model(m: Model) -> Model | None:
+        def execute_model(m: Model, verbose: Verbose | None = None) -> Model | None:
             """Execute a single model.
 
             Runs hyperparameter tuning, training and bootstrap for one
@@ -316,6 +314,10 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             m: Model
                 Model to train and evaluate.
 
+            verbose: int or None, default=None
+                Verbosity level for the estimator. If None, it leaves it to
+                its original verbosity.
+
             Returns
             -------
             Model or None
@@ -325,25 +327,25 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             """
             try:
                 # Set BaseTransformer params in new nodes
-                self.engine = self.engine  # Set new env variable for data engine
                 self.experiment = self.experiment  # Set mlflow experiment
                 self.logger = self.logger  # Reassign logger's handlers
                 m.logger = m.logger
 
                 self._log("\n", 1)  # Separate output from header
 
-                # If it has predefined or custom dimensions, run the ht
-                m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
-                if self._n_trials[m._group] > 0:
-                    if m._ht["distributions"] or hasattr(m, "_get_distributions"):
-                        m.hyperparameter_tuning(self._n_trials[m._group])
+                with adjust(m, verbose=verbose):
+                    # If it has predefined or custom dimensions, run the ht
+                    m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
+                    if self._n_trials[m._group] > 0:
+                        if m._ht["distributions"] or hasattr(m, "_get_distributions"):
+                            m.hyperparameter_tuning(self._n_trials[m._group])
 
-                m.fit()
+                    m.fit()
 
-                if self._n_bootstrap[m._group]:
-                    m.bootstrapping(self._n_bootstrap[m._group])
+                    if self._n_bootstrap[m._group]:
+                        m.bootstrapping(self._n_bootstrap[m._group])
 
-                self._log("-" * 49 + f"\nTime: {time_to_str(m.results['time'])}", 1)
+                    self._log("-" * 49 + f"\nTime: {time_to_str(m.results['time'])}", 1)
 
                 return m
 
@@ -367,32 +369,25 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
         t = dt.now()  # Measure the time the whole pipeline takes
 
         if self.parallel and len(self._models) > 1:
-            # Turn off verbosity
-            vb = self.verbose
-            self.verbose = 0
-            for m in self._models:
-                m.verbose = self.verbose
-
             if self.backend == "ray":
+                import ray
+
                 # This implementation is more efficient than through joblib's
                 # ray backend. The difference is that in this one you start N
                 # tasks, and in the other, you start N actors and then have them
                 # each run the function
                 execute_remote = ray.remote(num_cpus=self.n_jobs)(execute_model)
-                models = ray.get([execute_remote.remote(m) for m in self._models])
+                models = ray.get([execute_remote.remote(m, 0) for m in self._models])
+            elif self.backend == "dask":
+                import dask
+
+                models = dask.compute(*[dask.delayed(execute_model)(m, 0) for m in self._models])
             else:
-                models = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                models = Parallel(n_jobs=self.n_jobs)(
                     delayed(execute_model)(m) for m in self._models
                 )
-
-            # Reset verbosity
-            self.verbose = vb
-            for m in self._models:
-                m.verbose = vb
-
         else:
-            with joblib.parallel_backend(backend=self.backend):
-                models = [model for m in self._models if (model := execute_model(m))]
+            models = [model for m in self._models if (model := execute_model(m))]
 
         self._models = ClassMap(m for m in models if m)
 

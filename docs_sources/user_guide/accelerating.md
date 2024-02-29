@@ -5,7 +5,6 @@ For very large datasets, ATOM offers various ways to accelerate its
 pipeline:
 
  - [Run estimators on GPU][gpu-acceleration]
- - [Use a faster data engine][data-acceleration]
  - [Use a faster estimator engine][estimator-acceleration]
  - [Run processes in parallel][parallel-execution]
 
@@ -53,42 +52,14 @@ regardless of the engine parameter.
     type.
 
 
-## Data acceleration
-
-The data engine can be specified through the [`engine`][atomclassifier-engine]
-parameter, e.g. `#!python engine="pyarrow"` or
-`#!python engine={"data": "pyarrow", "estimator": "sklearnex"}` to combine it
-with an [estimator engine][estimator acceleration]. ATOM integrates the following
-data engines:
-
-- **pandas**: This is the default data engine. It uses the [`pandas`](https://pandas.pydata.org/docs/index.html)
-  library with [`numpy`](https://numpy.org/) as backend.
-- **pyarrow**: This engine also uses [`pandas`](https://pandas.pydata.org/docs/user_guide/pyarrow.html), but with the [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
-  backend, instead of `numpy`. PyArrow is a cross-language, platform-independent,
-  in-memory data format, that provides an efficient and fast way to serialize and
-  deserialize data.
-- **modin**: The [modin](https://modin.readthedocs.io/en/stable/) library is a multi-threading, drop-in replacement
-  for pandas, that uses [Ray](https://www.ray.io/) as backend.
-
-!!! note
-    Although atom accepts a numpy array or a list of lists as input, it
-    converts the data internally to the specified data engine since its API
-    requires column names and indices.
-
-!!! warning
-    Depending on the data engine, the following limitations apply:
-
-    - The `pyarrow` engine doesn't support [sparse datasets][].
-    - The [LightGBM][] and [XGBoost][] models don't support the `pyarrow` engine.
-    - The `modin` engine is not compatible with [forecast][time-series] tasks.
-
-
 ## Estimator acceleration
 
 The estimator engine can be specified through the [`engine`][atomclassifier-engine]
-parameter, which takes a dict with a key `estimator` that accepts three
-values: [sklearn][], [sklearnex][] and [cuml][]. Read [here][gpu-acceleration]
-how to run the estimators on GPU instead of CPU.
+parameter, e.g. `#!python engine="sklearnex"` or `#!python engine={"data": "pyarrow",
+"estimator": "sklearnex"}` to combine it with a [data engine][data-engines].
+ATOM integrates the following estimator engines: [sklearn][], [sklearnex][] and
+[cuml][]. Read [here][gpu-acceleration] how to run the estimators on GPU instead
+of CPU.
 
 !!! warning
     Estimators accelerated with sklearnex or cuML sometimes use slightly
@@ -161,8 +132,7 @@ CUDA programming. For large datasets, these GPU-based implementations can
 complete 10-50x faster than their CPU equivalents.
 
 !!! warning
-    * cuML estimators don't support [multioutput tasks][] nor the [pyarrow][]
-      data engine.
+    * cuML estimators don't support [multioutput tasks][].
     * Install cuML using `pip install --extra-index-url=https://pypi.nvidia.com
       cuml-cu11` or `pip install --extra-index-url=https://pypi.nvidia.com
       cuml-cu12` depending on your CUDA version. Read more about RAPIDS'
@@ -238,16 +208,18 @@ parallelization backends.
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).
-* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework
-  that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
-  See [here][example-ray-backend] an example use case.
+* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework that makes it
+  easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html). See
+  [here][example-ray-backend] an example use case.
+* **dask:** [Dask](https://docs.dask.org/en/stable/) is a flexible parallel computing library for analytics.
+  Read more about Dask [here](https://docs.dask.org/en/stable/10-minutes-to-dask.html).
 
 
 The parallelization backend is applied in the following cases:
 
 * In every individual estimator that uses parallelization internally.
 * To calculate cross-validated results during [hyperparameter tuning][].
-* To train multiple models in parallel (when the trainer's `parallel` parameter is True).
+* To train multiple models in parallel (when [`parallel=True`][directclassifier-parallel]).
 * To calculate partial dependencies in [plot_partial_dependence][].
 
 !!! note
