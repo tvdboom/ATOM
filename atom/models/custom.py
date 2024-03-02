@@ -33,7 +33,7 @@ def create_custom_model(estimator: Predictor, **kwargs) -> BaseModel:
     """
     base = ForecastModel if kwargs["goal"] is Goal.forecast else ClassRegModel
 
-    class CustomModel(base):   # type: ignore[valid-type, misc]
+    class CustomModel(base):   # type: ignore[valid-type]
         """Model with estimator provided by user."""
 
         def __init__(self, **kwargs):

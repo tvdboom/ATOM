@@ -329,6 +329,12 @@ def test_target_is_int():
     assert y.name == "mean radius"
 
 
+def test_target_is_dict():
+    """Assert that target column is assigned correctly for a dictionary."""
+    _, y = BaseTransformer._check_input(X10, {"y1": y10, "y2": y10})
+    assert list(y.columns) == ["y1", "y2"]
+
+
 def test_X_is_None_with_int():
     """Assert that an error is raised when X is None and y is an int."""
     with pytest.raises(ValueError, match=".*can't be None when y is an int.*"):

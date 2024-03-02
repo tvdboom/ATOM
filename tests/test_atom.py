@@ -85,7 +85,7 @@ def test_backend_with_n_jobs_1():
 
 def test_init():
     """Assert that the __init__ method works for non-standard parameters."""
-    atom = ATOMClassifier(X_bin, y_bin, device="gpu", backend="multiprocessing")
+    atom = ATOMClassifier(X_bin, y_bin, n_jobs=2, device="gpu", backend="multiprocessing")
     assert atom.device == "gpu"
     assert atom.backend == "multiprocessing"
 
