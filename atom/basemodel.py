@@ -73,8 +73,8 @@ from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust, cache, check_dependency, check_empty, composed,
     crash, estimator_has_attr, flt, get_col_names, get_cols, get_custom_scorer,
-    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
-    to_series, to_tabular,
+    has_task, is_sparse, it, lst, merge, method_to_log, rnd, sign, time_to_str,
+    to_df, to_series, to_tabular,
 )
 
 
@@ -275,8 +275,11 @@ class BaseModel(RunnerPlot):
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             if getattr(self, "needs_scaling", None) and not self.branch.check_scaling():
-                self.scaler = Scaler(device=self.device, engine=self.engine.estimator)
-                self.scaler.fit(self.X_train)
+                self.scaler = Scaler(
+                    with_mean=not is_sparse(self.X_train),
+                    device=self.device,
+                    engine=self.engine.estimator,
+                ).fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""
@@ -1853,7 +1856,10 @@ class BaseModel(RunnerPlot):
             """
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
-            if isinstance(y_pred := self.predict([X], verbose=0), pd.DataFrame):
+            with adjust(self, transform="pandas"):
+                y_pred = self.predict([X])
+
+            if isinstance(y_pred, pd.DataFrame):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])

@@ -63,23 +63,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Code quality analysis with CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
             languages: python
-
-  code-quality-qodana:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out source repository
-        uses: actions/checkout@v3
-      - name: Set up Python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      - name: Code quality analysis with Qodana
-        uses: JetBrains/qodana-action@main
-        env:
-          QODANA_TOKEN: ${{ secrets.QODANA_CLOUD }}
 
   unit-tests:
     runs-on: ${{ matrix.os }}
@@ -121,11 +107,9 @@ jobs:
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
           df -h
           echo "Removing large packages"
-          sudo apt-get remove -y '^ghc-8.*'
           sudo apt-get remove -y '^dotnet-.*'
           sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox mono-devel
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h

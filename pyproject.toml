@@ -69,11 +69,7 @@ full = [
 [tool.pdm.dev-dependencies]
 dev = [
     # Linting
-    "isort>=5.13.2",
-    "mypy>=1.8.0",
-    "pandas_stubs>=2.2.0.240218",
     "pre-commit>=3.5.0",
-    "ruff>=0.3.0",
     # Testing
     "nbmake>=1.4.1",  # To test example notebooks
     "pytest>=7.2.1",

@@ -187,6 +187,12 @@ def test_sp_property_none():
     assert atom.sp == atom._config.sp == SPTuple()
 
 
+def test_sp_property_invalid_index():
+    """Assert that an error is raised when index has no freqstr."""
+    with pytest.raises(ValueError, match=".*has no attribute freqstr.*"):
+        ATOMForecaster(y_bin, sp="index", random_state=1)
+
+
 def test_sp_property_index():
     """Assert that the sp property can be set up correctly."""
     atom = ATOMForecaster(y_fc, sp="index", random_state=1)
@@ -197,6 +203,12 @@ def test_sp_property_infer():
     """Assert that the sp property can be set up correctly."""
     atom = ATOMForecaster(y_fc, sp="infer", random_state=1)
     assert atom.sp.sp == [12, 24, 36, 11, 48]
+
+
+def test_sp_property_invalid_str():
+    """Assert that an error is raised when sp in an unknown string."""
+    with pytest.raises(ValueError, match=".*a list of allowed values.*"):
+        ATOMForecaster(y_fc, sp="T", random_state=1)
 
 
 def test_sp_property_str():
@@ -219,8 +231,8 @@ def test_sp_property_sequence():
 
 def test_sp_property_dict():
     """Assert that the sp property can be set up correctly."""
-    atom = ATOMForecaster(y_fc, sp={"sp": 3, "seasonal_model": "multiplicative"}, random_state=1)
-    assert atom.sp == SPTuple(sp=3, seasonal_model="multiplicative")
+    atom = ATOMForecaster(y_fc, sp={"sp": None, "seasonal_model": "multiplicative"})
+    assert atom.sp == SPTuple(sp=None, seasonal_model="multiplicative")
 
 
 def test_branch_property():
@@ -270,6 +282,7 @@ def test_metric_property():
 def test_winners_property():
     """Assert that the winners property returns the best models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.winners is None
     atom.run(["LR", "Tree", "LDA"])
     assert atom.winners == [atom.lr, atom.lda, atom.tree]
 
@@ -277,6 +290,7 @@ def test_winners_property():
 def test_winner_property():
     """Assert that the winner property returns the best model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.winner is None
     atom.run(["LR", "Tree", "LDA"])
     assert atom.winner is atom.lr
 
@@ -398,12 +412,6 @@ def test_index_is_sequence_has_data_sets():
     atom = ATOMClassifier(bin_train, bin_test, bin_test, index=index, random_state=1)
     assert atom.dataset.index[0] == "index_0"
     assert atom.holdout.index[0] == "index_569"
-
-
-def test_duplicate_indices():
-    """Assert that an error is raised when there are duplicate indices."""
-    with pytest.raises(ValueError, match=".*duplicate indices.*"):
-        ATOMClassifier(X_bin, X_bin, index=True, random_state=1)
 
 
 @pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
@@ -727,6 +735,12 @@ def test_invalid_index_forecast():
     """Assert that an error is raised when the index is invalid."""
     with pytest.raises(ValueError, match=".*index of the dataset must.*"):
         ATOMForecaster(pd.Series([1, 2, 3, 4, 5], index=[1, 4, 2, 3, 5]), random_state=1)
+
+
+def test_duplicate_indices():
+    """Assert that an error is raised when there are duplicate indices."""
+    with pytest.raises(ValueError, match=".*duplicate indices.*"):
+        ATOMClassifier(X_bin, X_bin, index=True, random_state=1)
 
 
 # Test utility methods ============================================= >>

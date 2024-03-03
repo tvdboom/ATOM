@@ -385,6 +385,45 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
             )
             return BasePlot._fig.next_subplot
 
+    @staticmethod
+    def _draw_diagonal_line(values: tuple, xaxis: str, yaxis: str):
+        """Draw a diagonal line across the axis.
+
+        The line should be used as a reference. It's not added to the
+        legend and doesn't show any information on hover.
+
+        Parameters
+        ----------
+        values: tuple of sequence
+            Values of the data points required to determine the ranges in
+            format (x, y).
+
+        xaxis: str
+            Name of the x-axis to draw in.
+
+        yaxis: str
+            Name of the y-axis to draw in.
+
+        """
+        # Get the ranges with a 5% margin, except when the range is exactly 0-1
+        y_min, y_max = min(values[1]), max(values[1])
+        if np.issubdtype(type(y_min), np.number) and y_min != 0 and y_max != 1:
+            margin = (y_max - y_min) * 0.05
+            y_min = y_min - margin
+            y_max = y_max + margin
+
+        BasePlot._fig.figure.add_shape(
+            type="line",
+            x0=y_min,
+            x1=y_max,
+            y0=y_min,
+            y1=y_max,
+            xref=xaxis,
+            yref=yaxis,
+            line={"width": 1, "color": "black"},
+            opacity=0.5,
+        )
+
     def _draw_line(
         self,
         parent: str,
@@ -446,44 +485,6 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                 BasePlot._fig.showlegend(f"{parent}-{child}" if child else parent, legend)
             ),
             **kwargs,
-        )
-
-    @staticmethod
-    def _draw_diagonal_line(values: tuple, xaxis: str, yaxis: str):
-        """Draw a diagonal line across the axis.
-
-        The line should be used as a reference. It's not added to the
-        legend and doesn't show any information on hover.
-
-        Parameters
-        ----------
-        values: tuple of sequence
-            Values of the data points required to determine the ranges in
-            format (x, y).
-
-        xaxis: str
-            Name of the x-axis to draw in.
-
-        yaxis: str
-            Name of the y-axis to draw in.
-
-        """
-        # Get the ranges with a 5% margin
-        y_min, y_max = min(values[1]), max(values[1])
-        if np.issubdtype(type(y_min), np.number):
-            y_min *= 0.95
-            y_max *= 1.05
-
-        BasePlot._fig.figure.add_shape(
-            type="line",
-            x0=y_min,
-            x1=y_max,
-            y0=y_min,
-            y1=y_max,
-            xref=xaxis,
-            yref=yaxis,
-            line={"width": 1, "color": "black"},
-            opacity=0.5,
         )
 
     def _plot(

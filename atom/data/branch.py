@@ -7,7 +7,6 @@ Description: Module containing the Branch class.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Hashable
 from functools import cached_property
 from pathlib import Path
@@ -167,25 +166,11 @@ class Branch:
 
     @name.setter
     def name(self, value: str):
-        from atom.models import MODELS
-
+        """Assign a new branch's name."""
         if not value:
             raise ValueError("A branch can't have an empty name.")
-        elif value.lower().startswith(("stack", "vote")):
-            raise ValueError(
-                "Invalid name for the branch. The name of a "
-                "branch can't begin with 'stack' or 'vote'."
-            )
-        else:
-            for model in MODELS:
-                if re.match(model.acronym, value, re.I):
-                    raise ValueError(
-                        "Invalid name for the branch. The name of a branch can't "
-                        f"begin with a model's acronym, and {model.acronym} "
-                        f"is the acronym of the {model.__name__} model."
-                    )
 
-        self._name: str = value
+        self._name = value
 
     # Data properties ============================================== >>
 

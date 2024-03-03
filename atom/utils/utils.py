@@ -182,7 +182,7 @@ class SeasonalPeriod(IntEnum):
     """Seasonal periodicity.
 
     Covers pandas' aliases for periods.
-    See: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases
+    See: https://pandas.pydminata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases
 
     """
 
@@ -191,14 +191,13 @@ class SeasonalPeriod(IntEnum):
     W = 52  # week
     M = 12  # month
     Q = 4  # quarter
-    A = 1  # year
     Y = 1  # year
-    H = 24  # hours
-    T = 60  # minutes
-    S = 60  # seconds
-    L = 1e3  # milliseconds
-    U = 1e6  # microseconds
-    N = 1e9  # nanoseconds
+    h = 24  # hours
+    min = 60  # minutes
+    s = 60  # seconds
+    ms = 1e3  # milliseconds
+    us = 1e6  # microseconds
+    ns = 1e9  # nanoseconds
 
 
 @dataclass
@@ -1616,6 +1615,7 @@ def check_scaling(obj: Pandas) -> bool:
     all columns lies between -0.25 and 0.15 and the mean of the
     standard deviation of all columns lies between 0.85 and 1.15.
     Categorical and binary columns are excluded from the calculation.
+    Sparse datasets return False.
 
     Parameters
     ----------
@@ -1628,14 +1628,16 @@ def check_scaling(obj: Pandas) -> bool:
         Whether the data set is scaled.
 
     """
-    if isinstance(obj, pd.DataFrame):
-        mean = obj.mean(numeric_only=True).mean()
-        std = obj.std(numeric_only=True).mean()
+    if not is_sparse(obj):
+        if isinstance(obj, pd.DataFrame):
+            mean = obj.mean(numeric_only=True).mean()
+            std = obj.std(numeric_only=True).mean()
+        else:
+            mean = obj.mean()
+            std = obj.std()
+        return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
     else:
-        mean = obj.mean()
-        std = obj.std()
-
-    return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
+        return False
 
 
 @contextmanager

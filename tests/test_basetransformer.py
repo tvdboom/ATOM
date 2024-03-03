@@ -17,6 +17,7 @@ import mlflow
 import pandas as pd
 import polars as pl
 import pytest
+from joblib.memory import Memory
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import ClassifierChain
 from sklearn.naive_bayes import GaussianNB
@@ -78,24 +79,18 @@ def test_engine_parameter_no_cuml():
         BaseTransformer(device="gpu", engine={"estimator": "cuml"})
 
 
-@patch("ray.init")
-def test_backend_parameter_ray(ray):
-    """Assert that ray is initialized when selected."""
-    BaseTransformer(backend="ray")
-    assert ray.is_called_once
-
-
-@patch("dask.distributed.Client")
-def test_backend_parameter_dask(dask):
-    """Assert that dask is initialized when selected."""
-    BaseTransformer(backend="dask")
-    assert dask.is_called_once
-
-
-def test_backend_parameter():
+@pytest.mark.parametrize("backend", ["threading", "dask"])
+def test_backend_parameter(backend):
     """Assert that other backends can be specified."""
-    base = BaseTransformer(backend="threading")
-    assert base.backend == "threading"
+    base = BaseTransformer(backend=backend)
+    assert base.backend == backend
+
+
+@pytest.mark.parametrize("memory", [False, True, "test", Path("test"), Memory("test")])
+def test_memory_parameter(memory):
+    """Assert that the memory parameter accepts multiple types."""
+    base = BaseTransformer(memory=memory)
+    assert isinstance(base.memory, Memory)
 
 
 def test_warnings_parameter_bool():
