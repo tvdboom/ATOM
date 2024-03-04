@@ -32,7 +32,7 @@ def create_stacking_model(**kwargs) -> BaseModel:
     """
     base = ForecastModel if kwargs["goal"] is Goal.forecast else ClassRegModel
 
-    class Stacking(base):  # type: ignore[valid-type, misc]
+    class Stacking(base):  # type: ignore[valid-type]
         """Stacking ensemble.
 
         Parameters
@@ -57,7 +57,7 @@ def create_stacking_model(**kwargs) -> BaseModel:
         _estimators: ClassVar[dict[str, str]] = {
             "classification": "sklearn.ensemble.StackingClassifier",
             "regression": "sklearn.ensemble.StackingRegressor",
-            "forecast": "atom.utils.patches.StackingForecaster",
+            "forecast": "sktime.forecasting.compose.StackingForecaster",
         }
 
         def __init__(self, models: list[Model], **kwargs):
@@ -120,7 +120,7 @@ def create_voting_model(**kwargs) -> BaseModel:
     """
     base = ForecastModel if kwargs["goal"] is Goal.forecast else ClassRegModel
 
-    class Voting(base):   # type: ignore[valid-type, misc]
+    class Voting(base):   # type: ignore[valid-type]
         """Voting ensemble.
 
         Parameters
@@ -143,9 +143,9 @@ def create_voting_model(**kwargs) -> BaseModel:
         supports_engines = ("sklearn",)
 
         _estimators: ClassVar[dict[str, str]] = {
-            "classification": "atom.utils.patches.VotingClassifier",
-            "regression": "atom.utils.patches.VotingRegressor",
-            "forecast": "atom.utils.patches.EnsembleForecaster",
+            "classification": "sklearn.ensemble.VotingClassifier",
+            "regression": "sklearn.ensemble.VotingRegressor",
+            "forecast": "sktime.forecasting.compose.EnsembleForecaster",
         }
 
         def __init__(self, models: list[Model], **kwargs):

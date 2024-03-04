@@ -267,7 +267,7 @@ XConstructor: TypeAlias = (
 XSelector: TypeAlias = XConstructor | Callable[..., XConstructor]
 YConstructor: TypeAlias = Sequence[Any] | XConstructor
 YSelector: TypeAlias = Int | str | YConstructor
-FHConstructor: TypeAlias = Int | Sequence[Int] | ForecastingHorizon
+FHConstructor: TypeAlias = Hashable | Sequence[Hashable] | ForecastingHorizon
 
 # Selection of rows or columns by name or position
 ColumnSelector: TypeAlias = Int | str | Segment | Sequence[Int | str] | pd.DataFrame

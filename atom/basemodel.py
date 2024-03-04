@@ -63,18 +63,18 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import DF_ATTRS
 from atom.utils.patches import fit_and_score
 from atom.utils.types import (
-    HT, Backend, Bool, Engine, FHConstructor, Float, FloatZeroToOneExc, Int,
+    HT, Backend, Bool, Engine, Float, FloatZeroToOneExc, Int,
     IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
     PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
     Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XReturn,
-    XSelector, YReturn, YSelector, float_t, int_t,
+    XSelector, YConstructor, YReturn, YSelector, float_t, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust, cache, check_dependency, check_empty, composed,
     crash, estimator_has_attr, flt, get_col_names, get_cols, get_custom_scorer,
-    has_task, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
-    to_series, to_tabular,
+    has_task, is_sparse, it, lst, merge, method_to_log, rnd, sign, time_to_str,
+    to_df, to_series, to_tabular,
 )
 
 
@@ -265,13 +265,8 @@ class BaseModel(RunnerPlot):
         # Inject goal-specific methods from ForecastModel
         if goal is Goal.forecast and ClassRegModel in self.__class__.__bases__:
             for n, m in vars(ForecastModel).items():
-                if not n.startswith("__"):
-                    try:
-                        setattr(self, n, m.__get__(self, ForecastModel))
-                    except AttributeError:
-                        # available_if descriptor raises an error
-                        # if the estimator doesn't have the method
-                        pass
+                if hasattr(m, "__get__"):
+                    setattr(self, n, m.__get__(self, ForecastModel))
 
         # Skip this part if only initialized for the estimator
         if branches:
@@ -280,8 +275,11 @@ class BaseModel(RunnerPlot):
             self._train_idx = len(self.branch._data.train_idx)  # Can change for sh and ts
 
             if getattr(self, "needs_scaling", None) and not self.branch.check_scaling():
-                self.scaler = Scaler(device=self.device, engine=self.engine.estimator)
-                self.scaler.fit(self.X_train)
+                self.scaler = Scaler(
+                    with_mean=not is_sparse(self.X_train),
+                    device=self.device,
+                    engine=self.engine.estimator,
+                ).fit(self.X_train)
 
     def __repr__(self) -> str:
         """Display class name."""
@@ -1858,7 +1856,10 @@ class BaseModel(RunnerPlot):
             """
             conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
 
-            if isinstance(y_pred := self.predict([X], verbose=0), pd.DataFrame):
+            with adjust(self, transform="pandas"):
+                y_pred = self.predict([X])
+
+            if isinstance(y_pred, pd.DataFrame):
                 return [conv(elem) for elem in y_pred.iloc[0, :]]
             else:
                 return conv(y_pred[0])
@@ -1937,10 +1938,13 @@ class BaseModel(RunnerPlot):
 
         self._log("Creating dashboard...", 1)
 
-        X, y = self.branch._get_rows(rows, return_X_y=True)
+        Xt, yt = self.branch._get_rows(rows, return_X_y=True)
+
+        if self.scaler:
+            Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
 
         # Get shap values from the internal ShapExplanation object
-        exp = self._shap.get_explanation(X, target=(0,))
+        exp = self._shap.get_explanation(Xt, target=(0,))
 
         # Explainerdashboard requires all the target classes
         if self.task.is_classification:
@@ -1954,9 +1958,9 @@ class BaseModel(RunnerPlot):
 
         params = {"permutation_metric": self._metric, "n_jobs": self.n_jobs}
         if self.task.is_classification:
-            explainer = ClassifierExplainer(self.estimator, X, y, **params)
+            explainer = ClassifierExplainer(self.estimator, Xt, yt, **params)
         else:
-            explainer = RegressionExplainer(self.estimator, X, y, **params)
+            explainer = RegressionExplainer(self.estimator, Xt, yt, **params)
 
         explainer.set_shap_values(exp.base_values, exp.values)
 
@@ -2465,8 +2469,7 @@ class BaseModel(RunnerPlot):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            `X` is ignored. If None,
-            `X` is ignored in the transformers.
+            `X` is ignored. If None, `X` is ignored in the transformers.
 
         y: int, str, sequence, dataframe-like or None, default=None
             Target column(s) corresponding to `X`.
@@ -2639,10 +2642,7 @@ class ClassRegModel(BaseModel):
             with adjust(self.pipeline, verbose=verbose) as pl:
                 out = pl.transform(Xt, yt)
 
-            if isinstance(out, tuple):
-                return out
-            else:
-                return out, yt
+            return out if isinstance(out, tuple) else (out, yt)
 
         def assign_prediction_columns() -> list[str]:
             """Assign column names for the prediction methods.
@@ -2971,7 +2971,7 @@ class ForecastModel(BaseModel):
     @overload
     def _prediction(
         self,
-        fh: RowSelector | FHConstructor | None = ...,
+        fh: RowSelector | ForecastingHorizon | None = ...,
         y: RowSelector | YSelector | None = ...,
         X: XSelector | None = ...,
         metric: str | MetricFunction | Scorer | None = ...,
@@ -2990,7 +2990,7 @@ class ForecastModel(BaseModel):
     @overload
     def _prediction(
         self,
-        fh: RowSelector | FHConstructor | None,
+        fh: RowSelector | ForecastingHorizon | None,
         y: RowSelector | YSelector | None,
         X: XSelector | None,
         metric: str | MetricFunction | Scorer | None,
@@ -3001,7 +3001,7 @@ class ForecastModel(BaseModel):
 
     def _prediction(
         self,
-        fh: RowSelector | FHConstructor | None = None,
+        fh: RowSelector | ForecastingHorizon | None = None,
         y: RowSelector | YSelector | None = None,
         X: XSelector | None = None,
         metric: str | MetricFunction | Scorer | None = None,
@@ -3011,9 +3011,10 @@ class ForecastModel(BaseModel):
     ) -> Float | Normal | Pandas:
         """Get predictions on new data or existing rows.
 
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The model should implement the provided method.
+        If `fh` is not a [ForecastingHorizon][], it gets the rows from
+        the branch. If `fh` is a [ForecastingHorizon][] or not provided,
+        it converts `X` and `y` through the pipeline. The model should
+        implement the provided method.
 
         Parameters
         ----------
@@ -3050,61 +3051,45 @@ class ForecastModel(BaseModel):
             called.
 
         """
+        Xt: pd.DataFrame | None
+        yt: Pandas | None
 
-        def get_transform_X_y(
-            X: XSelector | None,
-            y: YSelector | None,
-        ) -> tuple[pd.DataFrame, Pandas | None]:
-            """Get X and y from the pipeline transformation.
+        if not isinstance(fh, ForecastingHorizon | None):
+            Xt, yt = self.branch._get_rows(fh, return_X_y=True)
 
-            Parameters
-            ----------
-            X: dataframe-like or None
-                Feature set.
+            if self.scaler:
+                Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
 
-            y: int, str, sequence, dataframe-like or None
-                Target column(s) corresponding to `X`.
+            fh = ForecastingHorizon(Xt.index, is_relative=False)
 
-            Returns
-            -------
-            dataframe
-                Transformed feature set.
-
-            series, dataframe or None
-                Transformed target column.
-
-            """
-            Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)
-
-            with adjust(self.pipeline, verbose=verbose) as pl:
-                out = pl.transform(Xt, yt)
-
-            if isinstance(out, tuple):
-                return out
-            elif X is not None:
-                return out, yt
-            else:
-                return Xt, out
-
-        if y is not None:
+        elif y is not None:
             try:
                 Xt, yt = self.branch._get_rows(y, return_X_y=True)  # type: ignore[call-overload]
 
-                if self.scaler and not Xt.empty:
+                if self.scaler and Xt is not None:
                     Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
 
             except Exception:  # noqa: BLE001
-                Xt, yt = get_transform_X_y(X, y)
+                Xt, yt = self._check_input(X, y, columns=self.og.features, name=self.og.target)  # type: ignore[arg-type]
+
+                with adjust(self.pipeline, verbose=verbose) as pl:
+                    out = pl.transform(Xt, yt)
+
+                Xt, yt = out if isinstance(out, tuple) else (Xt, out)
+
+        elif X is not None:
+            Xt, _ = self._check_input(X, columns=self.og.features, name=self.og.target)  # type: ignore[call-overload, arg-type]
+
+            with adjust(self.pipeline, verbose=verbose) as pl:
+                Xt = pl.transform(Xt)
 
         else:
-            Xt, yt = get_transform_X_y(X, y)
+            Xt, yt = X, y
 
         if method != "score":
             if "y" in sign(func := getattr(self.estimator, method)):
                 return self.memory.cache(func)(y=yt, X=check_empty(Xt), **kwargs)
             else:
-                if fh is not None and not isinstance(fh, ForecastingHorizon):
-                    fh = self.branch._get_rows(fh).index
                 return self.memory.cache(func)(fh=fh, X=check_empty(Xt), **kwargs)
         else:
             if metric is None:
@@ -3112,13 +3097,12 @@ class ForecastModel(BaseModel):
             else:
                 scorer = get_custom_scorer(metric)
 
-            return self._score_from_est(scorer, self.estimator, Xt, yt, **kwargs)
+            return self._score_from_est(scorer, self.estimator, Xt, yt, **kwargs)  # type: ignore[arg-type]
 
-    @available_if(estimator_has_attr("predict"))
     @composed(crash, method_to_log, beartype)
     def predict(
         self,
-        fh: RowSelector | FHConstructor,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         inverse: Bool = True,
@@ -3165,11 +3149,10 @@ class ForecastModel(BaseModel):
         else:
             return self._convert(pred)
 
-    @available_if(estimator_has_attr("predict_interval"))
     @composed(crash, method_to_log, beartype)
     def predict_interval(
         self,
-        fh: RowSelector | FHConstructor,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         coverage: Float | Sequence[Float] = 0.9,
@@ -3242,11 +3225,10 @@ class ForecastModel(BaseModel):
         else:
             return self._convert(pred)
 
-    @available_if(estimator_has_attr("predict_proba"))
     @composed(crash, method_to_log, beartype)
     def predict_proba(
         self,
-        fh: RowSelector | FHConstructor,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         marginal: Bool = True,
@@ -3290,11 +3272,10 @@ class ForecastModel(BaseModel):
             method="predict_proba",
         )
 
-    @available_if(estimator_has_attr("predict_quantiles"))
     @composed(crash, method_to_log, beartype)
     def predict_quantiles(
         self,
-        fh: RowSelector | FHConstructor,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         alpha: Float | Sequence[Float] = (0.05, 0.95),
@@ -3341,11 +3322,10 @@ class ForecastModel(BaseModel):
             )
         )
 
-    @available_if(estimator_has_attr("predict_residuals"))
     @composed(crash, method_to_log, beartype)
     def predict_residuals(
         self,
-        y: RowSelector | YSelector,
+        y: RowSelector | YConstructor,
         X: XSelector | None = None,
         *,
         verbose: Verbose | None = None,
@@ -3360,11 +3340,13 @@ class ForecastModel(BaseModel):
 
         Parameters
         ----------
-        y: int, str, sequence or dataframe-like
-            Ground truth observations.
+        y: hashable, segment, sequence or dataframe-like
+            [Selection of rows][row-and-column-selection] or ground
+            truth observations.
 
-        X: hashable, segment, sequence, dataframe-like or None, default=None
-            Exogenous time series corresponding to `y`.
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to `y`. This parameter
+            is ignored outif `y` is a selection of rows in the dataset.
 
         verbose: int or None, default=None
             Verbosity level for the transformers in the pipeline. If
@@ -3381,11 +3363,10 @@ class ForecastModel(BaseModel):
             self._prediction(y=y, X=X, verbose=verbose, method="predict_residuals")
         )
 
-    @available_if(estimator_has_attr("predict_var"))
     @composed(crash, method_to_log, beartype)
     def predict_var(
         self,
-        fh: RowSelector | FHConstructor,
+        fh: RowSelector | ForecastingHorizon,
         X: XSelector | None = None,
         *,
         cov: Bool = False,
@@ -3432,13 +3413,12 @@ class ForecastModel(BaseModel):
             )
         )
 
-    @available_if(estimator_has_attr("score"))
     @composed(crash, method_to_log, beartype)
     def score(
         self,
         y: RowSelector | YSelector,
         X: XSelector | None = None,
-        fh: RowSelector | FHConstructor | None = None,
+        fh: RowSelector | ForecastingHorizon | None = None,
         *,
         metric: str | MetricFunction | Scorer | None = None,
         verbose: Verbose | None = None,
@@ -3453,20 +3433,22 @@ class ForecastModel(BaseModel):
 
         !!! info
             If the `metric` parameter is left to its default value, the
-            method returns atom's metric score, not the metric returned
-            by sktime's score method for estimators.
+            method returns atom's metric score, not the metric used by
+            sktime's score method for estimators.
 
         Parameters
         ----------
         y: int, str, sequence or dataframe-like
-            Ground truth observations.
+            [Selection of rows][row-and-column-selection] or ground
+            truth observations.
 
-        X: hashable, segment, sequence, dataframe-like or None, default=None
-            Exogenous time series corresponding to `fh`.
+        X: dataframe-like or None, default=None
+            Exogenous time series corresponding to `fh`. This parameter
+            is ignored if `y` is a selection of rows in the dataset.
 
         fh: hashable, segment, sequence, dataframe, [ForecastingHorizon][] or None, default=None
-            The [forecasting horizon][row-and-column-selection] encoding
-            the time stamps to forecast at.
+            Do nothing. The forecast horizon is taken from the index of
+            `y`. Implemented for continuity of sktime's API.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,
@@ -3481,14 +3463,7 @@ class ForecastModel(BaseModel):
         Returns
         -------
         float
-            Metric score of y with respect to a ground truth.
+            Metric score of `y` with respect to a ground truth.
 
         """
-        return self._prediction(
-            y=y,
-            X=X,
-            fh=fh,
-            metric=metric,
-            verbose=verbose,
-            method="score",
-        )
+        return self._prediction(fh=None, y=y, X=X, metric=metric, verbose=verbose, method="score")

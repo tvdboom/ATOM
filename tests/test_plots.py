@@ -15,7 +15,6 @@ import pytest
 from optuna.visualization._terminator_improvement import _ImprovementInfo
 from shap.plots._force import AdditiveForceVisualizer
 from sklearn.metrics import f1_score, get_scorer, mean_squared_error
-from sktime.forecasting.base import ForecastingHorizon
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.plots.baseplot import Aesthetics, BaseFigure
@@ -566,7 +565,7 @@ def test_plot_confusion_matrix():
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["RF", "LGB"], est_params={"n_estimators": 5})
-    atom.plot_confusion_matrix(threshold=0.2, display=False)
+    atom.plot_confusion_matrix(rows=[0, 1, 2], threshold=0.2, display=False)
 
     # For multiclass classification tasks
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -627,14 +626,18 @@ def test_plot_feature_importance():
 
 def test_plot_forecast():
     """Assert that the plot_forecast method works."""
-    atom = ATOMForecaster(X_ex, y=(-2, -1), holdout_size=0.1, random_state=1)
-    atom.run(models=["NF", "ES"])
-    atom.plot_forecast(inverse=False, display=False)
-    atom.plot_forecast(fh=atom.holdout.index, X=atom.holdout, display=False)
-
     atom = ATOMForecaster(y_fc, random_state=1)
     atom.run(models="NF")
-    atom.plot_forecast(fh=ForecastingHorizon(range(3)), display=False)
+
+    # All values are in train set when in_sample=False
+    with pytest.raises(ValueError, match=".*plot_insample parameter.*"):
+        atom.plot_forecast(fh=range(3), plot_insample=False, display=False)
+
+    atom.plot_forecast(inverse=False, display=False)
+
+    atom = ATOMForecaster(X_ex, y=(-2, -1), random_state=1)
+    atom.run(models=["NF", "ES"])
+    atom.plot_forecast(display=False)
 
 
 def test_plot_gains():

@@ -366,8 +366,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
                 if name not in SeasonalPeriod.__members__:
                     raise ValueError(
-                        f"Invalid value for the seasonal period, got {name}. "
-                        f"Valid values are: {', '.join(SeasonalPeriod.__members__)}"
+                        f"Invalid value for the seasonal period, got {name}. See "
+                        "https://pandas.pydata.org/pandas-docs/stable/user_guide/"
+                        "timeseries.html#period-aliases for a list of allowed values."
                     )
 
                 # Formula is same as SeasonalPeriod[name] for period=1
@@ -509,12 +510,6 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 raise ValueError(
                     "Invalid value for the index parameter. The index column "
                     f"can not be the same as the target column, got {df.index.name}."
-                )
-
-            if df.index.duplicated().any():
-                raise ValueError(
-                    "Invalid value for the index parameter. There are duplicate indices "
-                    "in the dataset. Use index=False to reset the index to RangeIndex."
                 )
 
             return df
@@ -820,12 +815,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             if not valid:
                 raise ValueError(msg)
-        else:
+        elif index is not False:
             # Else check for duplicate indices
             if pd.concat([sets[0].data, sets[1]]).index.duplicated().any():
                 raise ValueError(
-                    "Duplicate indices found in the dataset. "
-                    "Try initializing atom using `index=False`."
+                    "There are duplicate indices in the dataset. "
+                    "Use index=False to reset the index to RangeIndex."
                 )
 
         return sets

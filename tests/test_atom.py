@@ -85,7 +85,7 @@ def test_backend_with_n_jobs_1():
 
 def test_init():
     """Assert that the __init__ method works for non-standard parameters."""
-    atom = ATOMClassifier(X_bin, y_bin, device="gpu", backend="multiprocessing")
+    atom = ATOMClassifier(X_bin, y_bin, n_jobs=2, device="gpu", backend="multiprocessing")
     assert atom.device == "gpu"
     assert atom.backend == "multiprocessing"
 
@@ -255,6 +255,7 @@ def test_n_classes():
 def test_unavailable_sparse_properties():
     """Assert that certain properties are unavailable for sparse datasets."""
     atom = ATOMClassifier(X_sparse, y10, random_state=1)
+    assert atom.scaled is False
     with pytest.raises(AttributeError):
         print(atom.nans)
     with pytest.raises(AttributeError):

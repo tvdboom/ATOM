@@ -33,6 +33,7 @@ import scipy.sparse as sps
 from beartype.door import is_bearable
 from IPython.display import display
 from matplotlib.colors import to_rgba
+from mlflow.models.signature import infer_signature
 from pandas._libs.missing import NAType
 from pandas._typing import Axes, Dtype
 from pandas.api.types import is_numeric_dtype
@@ -44,7 +45,7 @@ from sklearn.metrics import (
     matthews_corrcoef,
 )
 from sklearn.utils import _print_elapsed_time
-from sklearn.utils.validation import _is_fitted
+from sklearn.utils.validation import _check_response_method, _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
@@ -181,7 +182,7 @@ class SeasonalPeriod(IntEnum):
     """Seasonal periodicity.
 
     Covers pandas' aliases for periods.
-    See: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases
+    See: https://pandas.pydminata.org/pandas-docs/stable/user_guide/timeseries.html#period-aliases
 
     """
 
@@ -190,14 +191,13 @@ class SeasonalPeriod(IntEnum):
     W = 52  # week
     M = 12  # month
     Q = 4  # quarter
-    A = 1  # year
     Y = 1  # year
-    H = 24  # hours
-    T = 60  # minutes
-    S = 60  # seconds
-    L = 1e3  # milliseconds
-    U = 1e6  # microseconds
-    N = 1e9  # nanoseconds
+    h = 24  # hours
+    min = 60  # minutes
+    s = 60  # seconds
+    ms = 1e3  # milliseconds
+    us = 1e6  # microseconds
+    ns = 1e9  # nanoseconds
 
 
 @dataclass
@@ -654,25 +654,24 @@ class TrialsCallback:
                     for met in self.T._metric.keys():
                         mlflow.log_metric(f"{met}_validation", trial_info[met])
 
-                    if estimator := trial_info["estimator"]:
-                        # Mlflow only accepts params with char length <=250
-                        mlflow.log_params(
-                            {k: v for k, v in estimator.get_params().items() if len(str(v)) <= 250}
-                        )
+                    # Mlflow only accepts params with char length <=250
+                    mlflow.log_params(
+                        {
+                            k: v
+                            for k, v in trial_info["estimator"].get_params().items()
+                            if len(str(v)) <= 250
+                        }
+                    )
 
-                        mlflow.sklearn.log_model(
-                            sk_model=estimator,
-                            artifact_path=estimator.__class__.__name__,
-                            signature=mlflow.models.signature.infer_signature(
-                                model_input=pd.DataFrame(self.T.branch.X),
-                                model_output=estimator.predict(self.T.branch.X.iloc[[0]]),
-                            ),
-                            input_example=pd.DataFrame(self.T.branch.X.iloc[[0], :]),
-                        )
-                    else:
-                        mlflow.log_params(
-                            {k: v for k, v in trial.params.items() if len(str(v)) <= 250}
-                        )
+                    mlflow.sklearn.log_model(
+                        sk_model=(est := trial_info["estimator"]),
+                        artifact_path=est.__class__.__name__,
+                        signature=infer_signature(
+                            model_input=self.T.branch.X,
+                            model_output=est.predict(self.T.branch.X.iloc[[0]]),
+                        ),
+                        input_example=self.T.branch.X.iloc[[0], :],
+                    )
 
         if self.n_jobs == 1:
             # Print overview of trials
@@ -898,23 +897,6 @@ class ShapExplanation:
         self._shap_values = pd.Series(dtype="object")
         self._interaction_values = pd.Series(dtype="object")
 
-    @property
-    def attr(self) -> str:
-        """Get the model's main prediction method.
-
-        Returns
-        -------
-        str
-            Name of the prediction method.
-
-        """
-        if hasattr(self.estimator, "predict_proba"):
-            return "predict_proba"
-        elif hasattr(self.estimator, "decision_function"):
-            return "decision_function"
-        else:
-            return "predict"
-
     @cached_property
     def explainer(self) -> Explainer:
         """Get shap's explainer.
@@ -935,7 +917,8 @@ class ShapExplanation:
             return Explainer(self.estimator, **kwargs)
         except TypeError:
             # If a method is provided as first arg, selects always Permutation
-            return Explainer(getattr(self.estimator, self.attr), **kwargs)
+            responses = ("predict_proba", "decision_function", "predict")
+            return Explainer(_check_response_method(self.estimator, responses), **kwargs)
 
     def get_explanation(
         self,
@@ -1632,6 +1615,7 @@ def check_scaling(obj: Pandas) -> bool:
     all columns lies between -0.25 and 0.15 and the mean of the
     standard deviation of all columns lies between 0.85 and 1.15.
     Categorical and binary columns are excluded from the calculation.
+    Sparse datasets return False.
 
     Parameters
     ----------
@@ -1644,14 +1628,16 @@ def check_scaling(obj: Pandas) -> bool:
         Whether the data set is scaled.
 
     """
-    if isinstance(obj, pd.DataFrame):
-        mean = obj.mean(numeric_only=True).mean()
-        std = obj.std(numeric_only=True).mean()
+    if not is_sparse(obj):
+        if isinstance(obj, pd.DataFrame):
+            mean = obj.mean(numeric_only=True).mean()
+            std = obj.std(numeric_only=True).mean()
+        else:
+            mean = obj.mean()
+            std = obj.std()
+        return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
     else:
-        mean = obj.mean()
-        std = obj.std()
-
-    return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
+        return False
 
 
 @contextmanager
@@ -1852,7 +1838,7 @@ def to_df(
                 data_c = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
             else:
                 data_c = pd.DataFrame(
-                    data=data,  # type: ignore[misc, arg-type]
+                    data=data,  # type: ignore[arg-type]
                     index=index,
                     columns=columns,
                     copy=True,
@@ -1995,12 +1981,12 @@ def to_tabular(
 
     """
     if (n_targets := n_cols(data)) == 1:
-        return to_series(data, index=index, name=flt(columns))  # type: ignore[misc, arg-type]
+        return to_series(data, index=index, name=flt(columns))  # type: ignore[arg-type]
     else:
-        if columns is None and not hasattr(data, "__dataframe__"):
+        if columns is None and not isinstance(data, dict) and not hasattr(data, "__dataframe__"):
             columns = [f"y{i}" for i in range(n_targets)]
 
-        return to_df(data, index=index, columns=columns)  # type: ignore[misc, arg-type]
+        return to_df(data, index=index, columns=columns)  # type: ignore[arg-type]
 
 
 def check_is_fitted(
@@ -2013,8 +1999,9 @@ def check_is_fitted(
 
     Checks if the estimator is fitted by verifying the presence of
     fitted attributes (not None or empty). Otherwise, it raises a
-    NotFittedError. Extension on sklearn's function that accounts
-    for empty dataframes and series and returns a boolean.
+    NotFittedError. Wraps sklearn's function but doesn't check for
+    the presence of the `fit` method and can return a boolean instead
+    of always raising an exception.
 
     Parameters
     ----------
@@ -2036,12 +2023,7 @@ def check_is_fitted(
         Whether the estimator is fitted.
 
     """
-    if hasattr(obj, "_is_fitted"):
-        is_fitted = obj._is_fitted
-    else:
-        is_fitted = _is_fitted(obj, attributes)
-
-    if not is_fitted:
+    if not _is_fitted(obj, attributes):
         if exception:
             raise NotFittedError(
                 f"This {type(obj).__name__} instance is not yet fitted. "
@@ -2359,8 +2341,6 @@ def fit_one(
                 if len(kwargs) == 0:
                     if y is not None and hasattr(estimator, "_cols"):
                         kwargs["X"] = to_df(y)[inc]
-                    elif params["X"].default != Parameter.empty:
-                        kwargs["X"] = params["X"].default  # Fill X with default
                     elif X is None:
                         raise ValueError(
                             "Exception while trying to fit transformer "
@@ -2616,7 +2596,7 @@ def estimator_has_attr(attr: str) -> Callable:
 
     def check(model: BaseModel) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
-        getattr(model._est_class, attr)
+        getattr(model.estimator, attr)
         return True
 
     return check

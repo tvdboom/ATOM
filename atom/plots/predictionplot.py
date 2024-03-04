@@ -42,8 +42,8 @@ from atom.utils.types import (
     TargetsSelector, XConstructor, int_t,
 )
 from atom.utils.utils import (
-    Task, check_canvas, check_dependency, check_empty, check_predict_proba,
-    crash, divide, get_custom_scorer, has_task, lst, rnd,
+    Task, adjust, check_canvas, check_dependency, check_predict_proba, crash,
+    divide, get_custom_scorer, has_task, lst, rnd,
 )
 
 
@@ -1230,23 +1230,14 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         models_c = self._get_plot_models(models)
         target_c = self.branch._get_target(target, only_columns=True)
 
-        if not isinstance(fh, ForecastingHorizon):
-            fh = self.branch._get_rows(fh).index
-
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = BasePlot._fig.get_axes(y=(0.0, 0.29))
 
         for m in models_c:
-            if X is not None:
-                Xt = m.transform(X)
-            elif isinstance(fh, pd.Index):
-                Xt = m.branch._all.loc[fh]
-            else:
-                Xt = X
-
             # Draw predictions and interval
-            y_pred = m.predict(fh=fh, X=check_empty(Xt), inverse=inverse)
+            with adjust(m, transform="pandas"):
+                y_pred = m.predict(fh=fh, X=X, inverse=inverse)
 
             if self.task.is_multioutput:
                 y_pred = y_pred[target_c]
@@ -1255,10 +1246,16 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 idx = y_pred.index.intersection(m.branch.train.index)
                 y_pred.loc[idx] = np.nan  # type: ignore[call-overload]
 
+                if y_pred.isna().all():
+                    raise ValueError(
+                        "Invalid value for the plot_insample parameter. plot_insample "
+                        "must be True when all predicted values are in the training set."
+                    )
+
             if inverse:
-                y_true = m.og._all.loc[y_pred.index, target_c]
+                y_true = m.og._all[target_c]
             else:
-                y_true = m.branch._all.loc[y_pred.index, target_c]
+                y_true = m.branch._all[target_c]
 
             self._draw_line(
                 x=(x := self._get_plot_index(y_pred)),
@@ -1270,21 +1267,23 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 yaxis=yaxis,
             )
 
-            # Draw residuals
-            self._draw_line(
-                x=x,
-                y=np.subtract(y_true, y_pred),
-                mode="lines+markers",
-                parent=m.name,
-                legend=legend,
-                showlegend=False,
-                xaxis=xaxis2,
-                yaxis=yaxis2,
-            )
+            # Draw residuals if fh within range of y_true
+            if not (idx := y_pred.index.intersection(y_true.index)).empty:
+                self._draw_line(
+                    x=x,
+                    y=np.subtract(y_true.loc[idx], y_pred.loc[idx]),
+                    mode="lines+markers",
+                    parent=m.name,
+                    legend=legend,
+                    showlegend=False,
+                    xaxis=xaxis2,
+                    yaxis=yaxis2,
+                )
 
             if plot_interval:
                 try:
-                    y_interval = m.predict_interval(fh=fh, X=Xt, inverse=inverse)
+                    with adjust(m, transform="pandas"):
+                        y_interval = m.predict_interval(fh=fh, X=X, inverse=inverse)
                 except (AttributeError, NotImplementedError):
                     continue  # Fails for some models like ES
 
@@ -1328,7 +1327,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         # Draw original time series
         fig.add_scatter(
-            x=x,
+            x=self._get_plot_index(y_true),
             y=y_true,
             name=target_c,
             mode="lines+markers",
@@ -2941,7 +2940,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for m in models_c:
             X, y_true = m.branch._get_rows(rows, return_X_y=True)
-            y_pred = m.predict_proba(X.index)
+
+            with adjust(m, transform="pandas"):
+                y_pred = m.predict_proba(X.index)
 
             for v in np.unique(m.dataset[col]):
                 # Get indices per class

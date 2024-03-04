@@ -180,7 +180,7 @@ X_sparse = pd.DataFrame(
     data={
         "feature 1": pd.arrays.SparseArray([1, 0, 0, 0, 0, 0, 1, 0, 1, 0]),
         "feature 2": pd.arrays.SparseArray([1, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
-        "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
+        "feature 3": pd.arrays.SparseArray([2, 1, 1, 0, 0, 0, 2, 0, 0, 0]),
     },
 )
 

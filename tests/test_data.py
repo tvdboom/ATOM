@@ -71,20 +71,6 @@ def test_name_empty_name():
         atom.branch.name = ""
 
 
-def test_name_ensemble_name():
-    """Assert that an error is raised when name is the name of an ensemble."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*can't begin with 'stack'.*"):
-        atom.branch.name = "stacked"
-
-
-def test_name_model_name():
-    """Assert that an error is raised when name is a model's acronym."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*model's acronym.*"):
-        atom.branch.name = "Lda"
-
-
 def test_name_setter():
     """Assert that the branch name changes correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

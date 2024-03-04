@@ -270,6 +270,12 @@ def test_custom_cv():
     atom.run("dummy", n_trials=1, ht_params={"cv": KFold(n_splits=3)})
 
 
+def test_cv_larger_one_forecast():
+    """Assert that cv can be set to larger than one for forecast tasks."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF", n_trials=1, ht_params={"cv": 2})
+
+
 def test_skip_duplicate_calls():
     """Assert that trials with the same parameters skip the calculation."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -432,6 +438,8 @@ def test_best_trial_property():
     assert atom.tree.best_trial.number == 1
     atom.tree.best_trial = 4
     assert atom.tree.best_trial.number == 4
+    atom.tree.best_trial = None
+    assert atom.tree.best_trial.number == 1
 
 
 def test_best_trial_property_invalid():
@@ -702,7 +710,7 @@ def test_create_app(interface):
 def test_create_dashboard_multioutput():
     """Assert that the method is unavailable for multioutput tasks."""
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    atom.run("Tree")
+    atom.run("LR")
     with pytest.raises(AttributeError, match=".*has no attribute.*"):
         atom.tree.create_dashboard()
 
@@ -1036,18 +1044,19 @@ def test_forecast_get_tags():
 def test_predictions_only_fh():
     """Assert that predictions can be made using only the fh."""
     atom = ATOMForecaster(y_fc, random_state=1)
-    atom.run("NF")
-    assert isinstance(atom.nf.predict(fh=range(10)), pd.Series)
-    assert isinstance(atom.nf.predict_interval(fh=ForecastingHorizon([1, 2])), pd.DataFrame)
+    atom.run(["NF", "OLS"])
+    assert isinstance(atom.ols.predict(fh=atom.test), pd.Series)
+    assert isinstance(atom.ols.predict(fh=ForecastingHorizon([1, 2])), pd.Series)
 
 
 def test_predictions_with_exogenous():
     """Assert that predictions can be made with exogenous variables."""
     atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
     atom.run("NF")
-    assert isinstance(atom.nf.predict_proba(fh=range(10), X=X_ex.iloc[:10]), Normal)
-    assert isinstance(atom.nf.predict_quantiles(fh=range(10), X=X_ex.iloc[:10]), pd.DataFrame)
-    assert isinstance(atom.nf.predict_var(fh=range(10), X=X_ex.iloc[:10]), pd.DataFrame)
+    assert isinstance(atom.nf.predict(ForecastingHorizon(range(10)), X=X_ex.iloc[:10]), pd.Series)
+    assert isinstance(atom.nf.predict_proba(range(10), X=X_ex.iloc[:10]), Normal)
+    assert isinstance(atom.nf.predict_quantiles(range(10), X=X_ex.iloc[:10]), pd.DataFrame)
+    assert isinstance(atom.nf.predict_var(range(10), X=X_ex.iloc[:10]), pd.DataFrame)
 
 
 def test_ts_prediction_inverse_transform():
@@ -1063,9 +1072,10 @@ def test_ts_prediction_inverse_transform():
 
 def test_predictions_with_y():
     """Assert that predictions can be made with y."""
-    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
-    atom.run("NF")
-    assert isinstance(atom.nf.predict_residuals(y=y_ex[:10], X=X_ex.iloc[:10]), pd.Series)
+    atom = ATOMForecaster(y_fc[:-10], random_state=1)
+    atom.run("OLS")
+    assert isinstance(atom.ols.predict_residuals(y=atom.test), pd.Series)
+    assert isinstance(atom.ols.predict_residuals(y=y_fc[-10:]), pd.Series)
 
 
 def test_score_ts_metric_is_None():

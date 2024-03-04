@@ -187,19 +187,23 @@ def test_cleaner_drop_invalid_column_list_types():
 
 def test_cleaner_remove_characters_from_column_names():
     """Assert that specified chars are removed from column names."""
+    cleaner = Cleaner(drop_chars="[^A-Za-z0-9]+")
+
     X, y = X_bin.copy(), y_bin.copy()
     X.columns = ["test##", *X.columns[1:]]
     y.name = "::test"
-    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    X, y = cleaner.fit_transform(X, y)
     assert X.columns[0] == "test"
     assert y.name == "test"
+    assert list(cleaner.get_feature_names_out()) == list(X.columns)
 
     X, y = X_class.copy(), y_multiclass.copy()
     X.columns = ["test##", *X.columns[1:]]
     y.columns = ["::test", *y.columns[1:]]
-    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    X, y = cleaner.fit_transform(X, y)
     assert X.columns[0] == "test"
     assert y.columns[0] == "test"
+    assert list(cleaner.get_feature_names_out()) == list(X.columns)
 
 
 def test_cleaner_strip_categorical_features():
@@ -487,6 +491,12 @@ def test_imputing_all_missing_values_categorical(missing):
     imputer = Imputer(strat_cat="most_frequent")
     X, _ = imputer.fit_transform(X, y)
     assert X.isna().sum().sum() == 0
+
+
+def test_max_nan_rows_invalid():
+    """Assert that an error is raised when all rows are dropped."""
+    with pytest.raises(ValueError, match=".*rows contain more than.*"):
+        Imputer(max_nan_rows=0.01).fit_transform([[np.nan]])
 
 
 @pytest.mark.parametrize("max_nan_rows", [5, 0.5])
