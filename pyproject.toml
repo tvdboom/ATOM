@@ -197,5 +197,5 @@ disable_error_code = [
 
 [tool.coverage.report]
 exclude_also = [
-    "IF TYPE_CHECKING",
+    "IF TYPE_CHECKING:",
 ]

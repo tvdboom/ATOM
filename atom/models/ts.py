@@ -8,7 +8,6 @@ Description: Module containing all time series models.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from logging import ERROR, WARNING, getLogger
 from typing import Any, ClassVar
 
 from optuna.distributions import BaseDistribution
@@ -1011,19 +1010,6 @@ class Prophet(ForecastModel):
     _estimators: ClassVar[dict[str, str]] = {
         "forecast": "sktime.forecasting.fbprophet.Prophet"
     }
-
-    @property
-    def _est_class(self) -> type[Predictor]:
-        """Return the estimator's class (not instance)."""
-        est = super()._est_class
-
-        # Supress logging info from prophet and cmdstanpy
-        # Can't be done in basetransformer since needs to happen after import
-        getLogger("prophet").setLevel(ERROR if self.warnings == "ignore" else WARNING)
-        getLogger("cmdstanpy").setLevel(ERROR if self.warnings == "ignore" else WARNING)
-        getLogger("prophet").propagate = False
-
-        return est
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the model's estimator with unpacked parameters.

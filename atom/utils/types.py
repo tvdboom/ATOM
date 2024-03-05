@@ -197,6 +197,7 @@ class Scorer(SkScorer, Protocol):
 
     name: str
     fullname: str
+    _response_method: str
 
 
 @runtime_checkable

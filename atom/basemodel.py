@@ -72,9 +72,9 @@ from atom.utils.types import (
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust, cache, check_dependency, check_empty, composed,
-    crash, estimator_has_attr, flt, get_col_names, get_cols, get_custom_scorer,
-    has_task, is_sparse, it, lst, merge, method_to_log, rnd, sign, time_to_str,
-    to_df, to_series, to_tabular,
+    crash, estimator_has_attr, flt, get_cols, get_custom_scorer, has_task,
+    is_sparse, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
+    to_series, to_tabular,
 )
 
 
@@ -764,7 +764,7 @@ class BaseModel(RunnerPlot):
             Target column(s) corresponding to `X`.
 
         **kwargs
-            Additional keyword arguments for the `scorer`.
+            Additional keyword arguments for the score function.
 
         Returns
         -------
@@ -776,20 +776,13 @@ class BaseModel(RunnerPlot):
             y_pred = estimator.predict(fh=y.index, X=check_empty(X))
         else:
             y_pred = to_tabular(
-                data=estimator.predict(X),
+                data=_check_response_method(estimator, scorer._response_method)(X),
                 index=y.index,
-                columns=get_col_names(y),
             )
 
         return self._score_from_pred(scorer, y, y_pred, **kwargs)
 
-    def _score_from_pred(
-        self,
-        scorer: Scorer,
-        y_true: Pandas,
-        y_pred: Pandas,
-        **kwargs,
-    ) -> Float:
+    def _score_from_pred(self, scorer: Scorer, y_true: Pandas, y_pred: Pandas, **kwargs) -> Float:
         """Calculate the metric score from predicted values.
 
         Since sklearn metrics don't support multiclass-multioutput
@@ -801,10 +794,10 @@ class BaseModel(RunnerPlot):
         scorer: Scorer
             Metric to calculate.
 
-        y_true: series or dataframe
+        y_true: pd.Series or pd.DataFrame
             True values in the target column(s).
 
-        y_pred: series or dataframe
+        y_pred: pd.Series or pd.DataFrame
             Predicted values corresponding to y_true.
 
         **kwargs
@@ -829,8 +822,13 @@ class BaseModel(RunnerPlot):
 
         if self.task is Task.multiclass_multioutput_classification:
             # Get the mean of the scores over the target columns
-            scores = [scorer._sign * func(y_true[c], y_pred[c]) for c in y_pred.columns]
-            return np.mean(scores, axis=0)
+            return np.mean(
+                [
+                    scorer._sign * func(y_true[col1], y_pred[col2])
+                    for col1, col2 in zip(y_true, y_pred, strict=True)
+                ],
+                axis=0,
+            )
         else:
             return scorer._sign * func(y_true, y_pred)
 
@@ -2519,7 +2517,7 @@ class ClassRegModel(BaseModel):
         return {
             "acronym": self.acronym,
             "fullname": self.fullname,
-            "estimator": self._est_class,
+            "estimator": self._est_class.__name__,
             "module": self._est_class.__module__,
             "handles_missing": getattr(self, "handles_missing", None),
             "needs_scaling": self.needs_scaling,
@@ -2960,7 +2958,7 @@ class ForecastModel(BaseModel):
         return {
             "acronym": self.acronym,
             "fullname": self.fullname,
-            "estimator": self._est_class,
+            "estimator": self._est_class.__name__,
             "module": self._est_class.__module__,
             "handles_missing": getattr(self, "handles_missing", None),
             "multiple_seasonality": getattr(self, "multiple_seasonality", None),

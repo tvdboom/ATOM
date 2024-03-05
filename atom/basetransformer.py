@@ -16,7 +16,9 @@ from collections.abc import Hashable
 from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
-from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
+from logging import (
+    DEBUG, FileHandler, Formatter, Logger, NullHandler, getLogger,
+)
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Literal, NoReturn, TypeVar, overload
@@ -249,13 +251,16 @@ class BaseTransformer:
     @logger.setter
     @beartype
     def logger(self, value: str | Path | Logger | None):
-        external_loggers = ["dagshub", "mlflow", "optuna", "ray", "featuretools"]
+        external_loggers = [
+            "dagshub", "mlflow", "optuna", "ray", "featuretools", "prophet", "cmdstanpy"
+        ]
 
         # Clear existing handlers for external loggers
         for name in external_loggers:
             for handler in (log := getLogger(name)).handlers:
                 handler.close()
             log.handlers.clear()
+            log.addHandler(NullHandler())  # Add dummy handler to avoid logging.lastResort
 
         if not value:
             logger = None
@@ -283,7 +288,9 @@ class BaseTransformer:
 
                 # Redirect loggers to file handler
                 for name in [logger.name, *external_loggers]:
-                    getLogger(name).addHandler(fh)
+                    log = getLogger(name)
+                    log.setLevel(DEBUG)
+                    log.addHandler(fh)
 
         self._logger = logger
 

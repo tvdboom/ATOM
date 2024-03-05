@@ -90,10 +90,10 @@ class BaseFigure:
         self.hspace = hspace
         self.vspace = vspace
         if isinstance(palette, str):
-            self.palette = cycle(getattr(px.colors.qualitative, palette))
+            self._palette = getattr(px.colors.qualitative, palette)
         elif isinstance(palette, sequence_t):
             # Convert color names or hex to rgb
-            self.palette = cycle(list(map(to_rgb, palette)))
+            self._palette = list(map(to_rgb, palette))
         self.is_canvas = is_canvas
         self.backend = backend
         self.create_figure = create_figure
@@ -108,6 +108,7 @@ class BaseFigure:
 
         self.groups: list[str] = []
         self.style: Style = {"palette": {}, "marker": {}, "dash": {}, "shape": {}}
+        self.palette = cycle(self._palette)
         self.marker = cycle(self._marker)
         self.dash = cycle(self._dash)
         self.shape = cycle(self._shape)
