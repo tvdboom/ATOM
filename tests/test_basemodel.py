@@ -253,7 +253,7 @@ def test_ht_with_multioutput():
     atom = ATOMForecaster(y=X_ex, random_state=1)
     atom.run("OLS", n_trials=1)
 
-    atom = ATOMRegressor(X_class, y=y_multireg, random_state=1)
+    atom = ATOMRegressor(X_reg, y=y_multireg, random_state=1)
     atom.run("Tree", n_trials=1)
 
 
