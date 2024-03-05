@@ -354,11 +354,6 @@ class Pipeline(SkPipeline):
             else:
                 cloned = clone(transformer)
 
-                # Attach internal attrs otherwise wiped by clone
-                for attr in ("_cols", "_train_only"):
-                    if hasattr(transformer, attr):
-                        setattr(cloned, attr, getattr(transformer, attr))
-
             with adjust(cloned, verbose=self._verbose):
                 # Fit or load the current estimator from cache
                 # Type ignore because routed_params is never None but

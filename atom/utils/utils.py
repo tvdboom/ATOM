@@ -2023,17 +2023,14 @@ def check_is_fitted(
         Whether the estimator is fitted.
 
     """
-    if not _is_fitted(obj, attributes):
-        if exception:
-            raise NotFittedError(
-                f"This {type(obj).__name__} instance is not yet fitted. "
-                f"Call {'run' if hasattr(obj, 'run') else 'fit'} with "
-                "appropriate arguments before using this object."
-            )
-        else:
-            return False
+    if not (is_fitted := _is_fitted(obj, attributes)) and exception:
+        raise NotFittedError(
+            f"This {type(obj).__name__} instance is not yet fitted. "
+            f"Call {'run' if hasattr(obj, 'run') else 'fit'} with "
+            "appropriate arguments before using this object."
+        )
 
-    return True
+    return is_fitted
 
 
 def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:

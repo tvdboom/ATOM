@@ -2621,11 +2621,6 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin):
                 random_state=kwargs.pop("random_state", self.random_state),
                 **kwargs,
             )
-        else:
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(strategies)}."
-            )
 
         num_cols = Xt.select_dtypes(include="number")
 
@@ -2889,11 +2884,6 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
         }
 
         for strat in lst(self.strategy):
-            if strat not in ["zscore", *strategies]:
-                raise ValueError(
-                    "Invalid value for the strategy parameter. "
-                    f"Choose from: zscore, {', '.join(strategies)}."
-                )
             if strat != "zscore" and str(self.method) != "drop":
                 raise ValueError(
                     "Invalid value for the method parameter. Only the zscore "
@@ -2986,12 +2976,8 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
                 yt = yt[outlier_rows]
 
         else:
-            # Replace the columns in X and y with the new values from objective
+            # Replace the columns in X with the new values from objective
             Xt.update(objective)
-            if isinstance(yt, pd.Series) and yt.name in objective:
-                yt.update(objective[str(yt.name)])
-            elif isinstance(yt, pd.DataFrame):
-                yt.update(objective)
 
         return variable_return(self._convert(Xt), self._convert(yt))
 

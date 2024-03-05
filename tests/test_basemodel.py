@@ -36,7 +36,7 @@ from atom.utils.utils import check_is_fitted, check_scaling
 
 from .conftest import (
     X10_str, X_bin, X_class, X_ex, X_idx, X_label, X_reg, y10, y10_str, y_bin,
-    y_class, y_ex, y_fc, y_idx, y_label, y_multiclass, y_reg,
+    y_class, y_ex, y_fc, y_idx, y_label, y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -99,6 +99,7 @@ def test_est_params_invalid_param():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models=["LR", "LGB"],
+        metric="AP",
         n_trials=1,
         est_params={"test": 220, "LGB": {"n_estimators": 5}},
     )
@@ -248,6 +249,12 @@ def test_ht_with_multioutput():
     """Assert that the hyperparameter tuning works with multioutput tasks."""
     atom = ATOMClassifier(X_class, y=y_multiclass, stratify=False, random_state=1)
     atom.run("SGD", n_trials=1, est_params={"max_iter": 5})
+
+    atom = ATOMForecaster(y=X_ex, random_state=1)
+    atom.run("OLS", n_trials=1)
+
+    atom = ATOMRegressor(X_class, y=y_multireg, random_state=1)
+    atom.run("Tree", n_trials=1)
 
 
 def test_ht_with_pruning():
@@ -1043,10 +1050,10 @@ def test_forecast_get_tags():
 
 def test_predictions_only_fh():
     """Assert that predictions can be made using only the fh."""
-    atom = ATOMForecaster(y_fc, random_state=1)
-    atom.run(["NF", "OLS"])
+    atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
+    atom.run("OLS")
     assert isinstance(atom.ols.predict(fh=atom.test), pd.Series)
-    assert isinstance(atom.ols.predict(fh=ForecastingHorizon([1, 2])), pd.Series)
+    assert isinstance(atom.ols.predict(fh=ForecastingHorizon([1, 2]), X=X_ex.iloc[:2]), pd.Series)
 
 
 def test_predictions_with_exogenous():
@@ -1072,10 +1079,10 @@ def test_ts_prediction_inverse_transform():
 
 def test_predictions_with_y():
     """Assert that predictions can be made with y."""
-    atom = ATOMForecaster(y_fc[:-10], random_state=1)
+    atom = ATOMForecaster(X_ex.iloc[:-2], y=y_ex[:-2], random_state=1)
     atom.run("OLS")
     assert isinstance(atom.ols.predict_residuals(y=atom.test), pd.Series)
-    assert isinstance(atom.ols.predict_residuals(y=y_fc[-10:]), pd.Series)
+    assert isinstance(atom.ols.predict_residuals(y=y_ex[-2:], X=X_ex.iloc[-2:]), pd.Series)
 
 
 def test_score_ts_metric_is_None():

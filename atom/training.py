@@ -29,6 +29,14 @@ from atom.utils.utils import (
 )
 
 
+__all__ = [
+    "DirectClassifier", "DirectForecaster", "DirectRegressor",
+    "SuccessiveHalvingClassifier", "SuccessiveHalvingForecaster",
+    "SuccessiveHalvingRegressor", "TrainSizingClassifier",
+    "TrainSizingForecaster", "TrainSizingRegressor",
+]
+
+
 class Direct(BaseEstimator, BaseTrainer):
     """Direct training approach.
 

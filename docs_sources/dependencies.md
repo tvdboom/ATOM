@@ -40,7 +40,7 @@ packages are necessary for its correct functioning.
 * **[optuna](https://optuna.org/)** (>=3.4.0)
 * **[pandas](https://pandas.pydata.org/)** (>=2.1.2)
 * **[plotly](https://plotly.com/python/)** (>=5.18.0)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.0)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.1.post1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)
 * **[sktime[forecasting]](http://www.sktime.net/en/latest/)** (>=0.26.0)

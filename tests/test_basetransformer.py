@@ -15,7 +15,6 @@ from unittest.mock import patch
 
 import mlflow
 import pandas as pd
-import polars as pl
 import pytest
 from joblib.memory import Memory
 from sklearn.ensemble import RandomForestClassifier
@@ -31,8 +30,8 @@ from atom.utils.types import EngineTuple
 from atom.utils.utils import merge
 
 from .conftest import (
-    X10, X_bin, X_bin_array, X_sparse, X_text, bin_test, bin_train, y10, y_bin,
-    y_bin_array, y_fc,
+    X10, X_bin, X_sparse, X_text, bin_test, bin_train, y10, y_bin, y_bin_array,
+    y_fc,
 )
 
 
@@ -179,20 +178,6 @@ def test_input_X_and_y_None():
     """Assert that an error is raised when both X and y are None."""
     with pytest.raises(ValueError, match=".*both None.*"):
         BaseTransformer._check_input()
-
-
-def test_input_is_numpy():
-    """Assert that the data provided is converted to pandas objects."""
-    X, y = BaseTransformer._check_input(X_bin_array, y_bin_array)
-    assert isinstance(X, pd.DataFrame)
-    assert isinstance(y, pd.Series)
-
-
-def test_input_is_polars():
-    """Assert that the data provided can be a callable."""
-    X, y = BaseTransformer._check_input(pl.from_pandas(X_bin), pl.from_pandas(y_bin))
-    assert isinstance(X, pd.DataFrame)
-    assert isinstance(y, pd.Series)
 
 
 def test_X_is_callable():

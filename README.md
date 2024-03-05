@@ -101,6 +101,7 @@ Example steps taken by ATOM's pipeline:
 * [50+ plots to analyze the data and model performance](https://tvdboom.github.io/ATOM/latest/user_guide/plots/#available-plots)
 * [Avoid refactoring to test new pipelines](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#branches)
 * [Native support for GPU training](https://tvdboom.github.io/ATOM/latest/user_guide/accelerating/#gpu-acceleration)
+* [Integration with polars, pyspark and pyarrow](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#data-engines)
 * [25+ example notebooks to get you started](https://tvdboom.github.io/ATOM/latest/examples/accelerating_cuml/)
 * [Full integration with multilabel and multioutput datasets](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#multioutput-tasks)
 * [Native support for sparse datasets](https://tvdboom.github.io/ATOM/latest/user_guide/data_management/#sparse-datasets)

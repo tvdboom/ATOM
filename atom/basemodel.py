@@ -779,6 +779,8 @@ class BaseModel(RunnerPlot):
                 data=_check_response_method(estimator, scorer._response_method)(X),
                 index=y.index,
             )
+            if isinstance(y_pred, pd.DataFrame) and self.task is Task.binary_classification:
+                y_pred = y_pred.iloc[:, 1]  # Return probability of the positive class
 
         return self._score_from_pred(scorer, y, y_pred, **kwargs)
 

@@ -8,8 +8,10 @@ Description: Unit tests for training.py
 import pytest
 
 from atom.training import (
-    DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
-    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
+    DirectClassifier, DirectForecaster, DirectRegressor,
+    SuccessiveHalvingClassifier, SuccessiveHalvingForecaster,
+    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingForecaster,
+    TrainSizingRegressor,
 )
 
 from .conftest import reg_test, reg_train
@@ -62,6 +64,9 @@ def test_goals_trainers():
     trainer = DirectClassifier("LR")
     assert trainer._goal.name == "classification"
 
+    trainer = DirectForecaster("NF")
+    assert trainer._goal.name == "forecast"
+
     trainer = DirectRegressor("OLS")
     assert trainer._goal.name == "regression"
 
@@ -71,6 +76,9 @@ def test_goals_successive_halving():
     trainer = SuccessiveHalvingClassifier("LR")
     assert trainer._goal.name == "classification"
 
+    trainer = SuccessiveHalvingForecaster("NF")
+    assert trainer._goal.name == "forecast"
+
     trainer = SuccessiveHalvingRegressor("OLS")
     assert trainer._goal.name == "regression"
 
@@ -79,6 +87,9 @@ def test_goals_train_sizing():
     """Assert that the goal of every TrainSizing class is set correctly."""
     trainer = TrainSizingClassifier("LR")
     assert trainer._goal.name == "classification"
+
+    trainer = TrainSizingForecaster("NF")
+    assert trainer._goal.name == "forecast"
 
     trainer = TrainSizingRegressor("OLS")
     assert trainer._goal.name == "regression"
