@@ -5212,22 +5212,13 @@ should only be applied on the training set are excluded from this step
 <p>The available prediction methods are the standard methods for predictors
 in sklearn's and sktime's API.</p>
 <p>For classification and regression tasks:</p>
-<ul>
-<li>decision_function</li>
-<li>predict</li>
-<li>predict_log_proba</li>
-<li>predict_proba</li>
-<li>score</li>
-</ul>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine-score">score</a></td><td>Get a metric score on new data.</td></tr></p>
+</table>
 <p>For forecast tasks:</p>
-<ul>
-<li>predict</li>
-<li>predict_interval</li>
-<li>predict_proba</li>
-<li>predict_quantiles</li>
-<li>predict_var</li>
-<li>score</li>
-</ul>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_interval">predict_interval</a></td><td>Get prediction intervals on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_proba">predict_proba</a></td><td>Get probabilistic forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_quantiles">predict_quantiles</a></td><td>Get quantile forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-predict_var">predict_var</a></td><td>Get variance forecasts on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="../../API/models/arima/#arima-score">score</a></td><td>Get a metric score on new data.</td></tr></p>
+</table>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The <code>score</code> method return atom's metric score, not the metric returned

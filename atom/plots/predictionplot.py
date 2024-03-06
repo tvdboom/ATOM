@@ -1211,6 +1211,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         ```pycon
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
+        from sktime.forecasting.base import ForecastingHorizon
 
         y = load_airline()
 
@@ -1223,7 +1224,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         atom.plot_forecast(fh="train+test", plot_interval=False)
 
         # Forecast the next 4 years starting from the test set
-        atom.plot_forecast(fh=range(len(atom.test), len(atom.test) + 48))
+        atom.plot_forecast(fh=ForecastingHorizon(range(48)))
         ```
 
         """

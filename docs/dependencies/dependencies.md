@@ -40,7 +40,7 @@ packages are necessary for its correct functioning.
 * **[optuna](https://optuna.org/)** (>=3.4.0)
 * **[pandas](https://pandas.pydata.org/)** (>=2.1.2)
 * **[plotly](https://plotly.com/python/)** (>=5.18.0)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.0)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.4.1.post1)
 * **[scipy](https://www.scipy.org/)** (>=1.10.1)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.43.0)
 * **[sktime[forecasting]](http://www.sktime.net/en/latest/)** (>=0.26.0)
@@ -86,11 +86,7 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 
 **Linting**
 
-* **[isort](https://pycqa.github.io/isort/)** (>=5.13.2)
-* **[mypy](https://www.mypy-lang.org/)** (>=1.8.0)
-* **[pandas_stubs](https://pypi.org/project/pandas-stubs/)** (>=2.2.0.240218)
 * **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
-* **[ruff](https://docs.astral.sh/ruff/)** (>=0.2.2)
 
 **Testing**
 

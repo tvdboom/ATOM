@@ -459,7 +459,7 @@ class AutoDocs:
             Object's signature.
 
         """
-        # Assign object type
+        # Assign an object type
         params = signature(self.obj).parameters
         if isclass(self.obj):
             obj = "class"
@@ -737,8 +737,8 @@ class AutoDocs:
                     content += f'\n{indent}=== "{engine}"\n'
                     sub_indent += " " * 4
 
-                # sklearnex can run on cpu or gpu
-                if engine == "sklearnex":
+                # sklearnex and cuml can run on cpu or gpu
+                if engine in ("sklearnex", "cuml"):
                     for device in ("cpu", "gpu"):
                         content += f'\n{sub_indent}=== "{device}"\n'
 
@@ -923,7 +923,7 @@ def types_conversion(dtype: str) -> str:
         "pandas.core.indexes.base.Index": "pd.Index",
         "pandas.core.series.Series": "pd.Series",
         "pandas.core.frame.DataFrame": "pd.DataFrame",
-        "atom.branch.branch.Branch": "[Branch][]",
+        "atom.data.branch.Branch": "[Branch][]",
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",

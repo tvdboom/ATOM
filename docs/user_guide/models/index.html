@@ -5406,8 +5406,8 @@ the LightGBM model.</p>
 <p>Although ATOM allows running all models for a given task using
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>, it's usually smarter to select only
 a subset of models. Every model has a series of tags that indicate
-special characteristics of the model. Use a model's <code>get_tags</code> method
-to see its tags, or the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a>
+special characteristics of the model. Use a model's <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-get_tags"><code>get_tags</code></a>
+method to see its tags, or the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a>
 method to get an overview of all models and their tags. The tags differ
 per task, but can include:</p>
 <ul>

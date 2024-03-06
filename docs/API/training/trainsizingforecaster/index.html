@@ -5382,7 +5382,7 @@
 
 <h1 id="trainsizingforecaster">TrainSizingForecaster</h1>
 <hr />
-<p><a id='TrainSizingForecaster'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingForecaster</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine=None, backend="loky", memory=False, verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1891>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
+<p><a id='TrainSizingForecaster'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingForecaster</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", n_jobs=1, device="cpu", engine=None, backend="loky", memory=False, verbose=0, warnings=False, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1899>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
 <p>The following steps are applied to every model (per iteration):</p>
 <ol>
 <li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
@@ -5593,22 +5593,22 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.1463</span>
 <span class="go">Test evaluation --&gt; mape: -0.1584</span>
-<span class="go">Time elapsed: 0.019s</span>
+<span class="go">Time elapsed: 0.018s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.019s</span>
+<span class="go">Time: 0.018s</span>
 
 
 <span class="go">Results for PolynomialTrend:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.117</span>
 <span class="go">Test evaluation --&gt; mape: -0.1491</span>
-<span class="go">Time elapsed: 0.023s</span>
+<span class="go">Time elapsed: 0.019s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.023s</span>
+<span class="go">Time: 0.019s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.045s</span>
+<span class="go">Total time: 0.040s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">Croston         --&gt; mape: -0.1584</span>
 <span class="go">PolynomialTrend --&gt; mape: -0.1491 !</span>
@@ -5622,27 +5622,27 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for Croston:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.2419</span>
-<span class="go">Test evaluation --&gt; mape: -0.1584</span>
+<span class="go">Train evaluation --&gt; mape: -0.2336</span>
+<span class="go">Test evaluation --&gt; mape: -0.1625</span>
+<span class="go">Time elapsed: 0.017s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Time: 0.017s</span>
+
+
+<span class="go">Results for PolynomialTrend:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; mape: -0.1145</span>
+<span class="go">Test evaluation --&gt; mape: -0.1462</span>
 <span class="go">Time elapsed: 0.019s</span>
 <span class="go">-------------------------------------------------</span>
 <span class="go">Time: 0.019s</span>
 
 
-<span class="go">Results for PolynomialTrend:</span>
-<span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.1086</span>
-<span class="go">Test evaluation --&gt; mape: -0.1491</span>
-<span class="go">Time elapsed: 0.022s</span>
-<span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.022s</span>
-
-
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.044s</span>
+<span class="go">Total time: 0.038s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">Croston         --&gt; mape: -0.1584</span>
-<span class="go">PolynomialTrend --&gt; mape: -0.1491 !</span>
+<span class="go">Croston         --&gt; mape: -0.1625</span>
+<span class="go">PolynomialTrend --&gt; mape: -0.1462 !</span>
 
 
 <span class="go">Run: 2 =========================== &gt;&gt;</span>
@@ -5653,27 +5653,27 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for Croston:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.3875</span>
-<span class="go">Test evaluation --&gt; mape: -0.1584</span>
-<span class="go">Time elapsed: 0.019s</span>
+<span class="go">Train evaluation --&gt; mape: -0.3769</span>
+<span class="go">Test evaluation --&gt; mape: -0.1624</span>
+<span class="go">Time elapsed: 0.017s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.019s</span>
+<span class="go">Time: 0.017s</span>
 
 
 <span class="go">Results for PolynomialTrend:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.1372</span>
-<span class="go">Test evaluation --&gt; mape: -0.1491</span>
-<span class="go">Time elapsed: 0.024s</span>
+<span class="go">Train evaluation --&gt; mape: -0.1155</span>
+<span class="go">Test evaluation --&gt; mape: -0.1319</span>
+<span class="go">Time elapsed: 0.021s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.024s</span>
+<span class="go">Time: 0.021s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.046s</span>
+<span class="go">Total time: 0.040s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">Croston         --&gt; mape: -0.1584</span>
-<span class="go">PolynomialTrend --&gt; mape: -0.1491 !</span>
+<span class="go">Croston         --&gt; mape: -0.1624</span>
+<span class="go">PolynomialTrend --&gt; mape: -0.1319 !</span>
 
 
 <span class="go">Run: 3 =========================== &gt;&gt;</span>
@@ -5684,27 +5684,27 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for Croston:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.5685</span>
-<span class="go">Test evaluation --&gt; mape: -0.1584</span>
-<span class="go">Time elapsed: 0.019s</span>
+<span class="go">Train evaluation --&gt; mape: -0.5556</span>
+<span class="go">Test evaluation --&gt; mape: -0.1624</span>
+<span class="go">Time elapsed: 0.017s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.019s</span>
+<span class="go">Time: 0.017s</span>
 
 
 <span class="go">Results for PolynomialTrend:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.2215</span>
-<span class="go">Test evaluation --&gt; mape: -0.1491</span>
-<span class="go">Time elapsed: 0.023s</span>
+<span class="go">Train evaluation --&gt; mape: -0.1108</span>
+<span class="go">Test evaluation --&gt; mape: -0.1237</span>
+<span class="go">Time elapsed: 0.021s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.023s</span>
+<span class="go">Time: 0.021s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.045s</span>
+<span class="go">Total time: 0.040s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">Croston         --&gt; mape: -0.1584</span>
-<span class="go">PolynomialTrend --&gt; mape: -0.1491 !</span>
+<span class="go">Croston         --&gt; mape: -0.1624</span>
+<span class="go">PolynomialTrend --&gt; mape: -0.1237 !</span>
 
 
 <span class="go">Run: 4 =========================== &gt;&gt;</span>
@@ -5715,27 +5715,27 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for Croston:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.8306</span>
-<span class="go">Test evaluation --&gt; mape: -0.1584</span>
-<span class="go">Time elapsed: 0.018s</span>
+<span class="go">Train evaluation --&gt; mape: -0.8149</span>
+<span class="go">Test evaluation --&gt; mape: -0.1624</span>
+<span class="go">Time elapsed: 0.017s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.018s</span>
+<span class="go">Time: 0.017s</span>
 
 
 <span class="go">Results for PolynomialTrend:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; mape: -0.3671</span>
-<span class="go">Test evaluation --&gt; mape: -0.1491</span>
-<span class="go">Time elapsed: 0.023s</span>
+<span class="go">Train evaluation --&gt; mape: -0.1165</span>
+<span class="go">Test evaluation --&gt; mape: -0.1207</span>
+<span class="go">Time elapsed: 0.020s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.023s</span>
+<span class="go">Time: 0.020s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.044s</span>
+<span class="go">Total time: 0.040s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">Croston         --&gt; mape: -0.1584</span>
-<span class="go">PolynomialTrend --&gt; mape: -0.1491 !</span>
+<span class="go">Croston         --&gt; mape: -0.1624</span>
+<span class="go">PolynomialTrend --&gt; mape: -0.1207 !</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
@@ -5743,16 +5743,16 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">                mape_train  mape_test  time_fit      time</span>
 <span class="go">frac model                                               </span>
-<span class="go">0.2  Croston02     -0.1463    -0.1584  0.018524  0.018524</span>
-<span class="go">     PT02          -0.1170    -0.1491  0.023022  0.023022</span>
-<span class="go">0.4  Croston04     -0.2419    -0.1584  0.019018  0.019018</span>
-<span class="go">     PT04          -0.1086    -0.1491  0.022021  0.022021</span>
-<span class="go">0.6  Croston06     -0.3875    -0.1584  0.019018  0.019018</span>
-<span class="go">     PT06          -0.1372    -0.1491  0.024021  0.024021</span>
-<span class="go">0.8  Croston08     -0.5685    -0.1584  0.019017  0.019017</span>
-<span class="go">     PT08          -0.2215    -0.1491  0.023025  0.023025</span>
-<span class="go">1.0  Croston10     -0.8306    -0.1584  0.018017  0.018017</span>
-<span class="go">     PT10          -0.3671    -0.1491  0.023021  0.023021</span>
+<span class="go">0.2  Croston02     -0.1463    -0.1584  0.018017  0.018017</span>
+<span class="go">     PT02          -0.1170    -0.1491  0.019018  0.019018</span>
+<span class="go">0.4  Croston04     -0.2336    -0.1625  0.017016  0.017016</span>
+<span class="go">     PT04          -0.1145    -0.1462  0.019017  0.019017</span>
+<span class="go">0.6  Croston06     -0.3769    -0.1624  0.017016  0.017016</span>
+<span class="go">     PT06          -0.1155    -0.1319  0.021018  0.021018</span>
+<span class="go">0.8  Croston08     -0.5556    -0.1624  0.017015  0.017015</span>
+<span class="go">     PT08          -0.1108    -0.1237  0.021019  0.021019</span>
+<span class="go">1.0  Croston10     -0.8149    -0.1624  0.017015  0.017015</span>
+<span class="go">     PT10          -0.1165    -0.1207  0.020017  0.020017</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -5844,7 +5844,7 @@ of methods to handle the data, run the training, and manage the pipeline.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-clear">clear</a></td><td>Reset attributes and clear cache from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-export_pipeline">export_pipeline</a></td><td>Export the internal pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced data set.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-run">run</a></td><td>Train and evaluate the models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingforecaster-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='trainsizingforecaster-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L950>[source]</a></span></div>Give an overview of the available predefined models.</p>
+<p><a id='trainsizingforecaster-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L945>[source]</a></span></div>Give an overview of the available predefined models.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='available_models-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
 Filter the returned models providing any of the column as
@@ -5879,7 +5879,7 @@ depend on the task, but can include:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, sharex=False, sharey=False, hspace=0.05, vspace=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L711>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='trainsizingforecaster-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, sharex=False, sharey=False, hspace=0.05, vspace=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L712>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -5930,7 +5930,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1007>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
+<p><a id='trainsizingforecaster-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1002>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="#trainsizingforecaster-save">saving</a> the instance. The affected
@@ -5943,7 +5943,7 @@ attributes are:</p>
 <li>Calculated <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1026>[source]</a></span></div>Delete models.</p>
+<p><a id='trainsizingforecaster-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1021>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
 before <a class="autorefs autorefs-internal" href="#trainsizingforecaster-save">saving</a>. Deleted models are not removed from
@@ -5954,7 +5954,7 @@ Models to delete. If None, all models are deleted.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5, as_frame=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1046>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<p><a id='trainsizingforecaster-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5, as_frame=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1041>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric to calculate. If None, it returns an overview of
@@ -5985,7 +5985,7 @@ Scores of the models.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1102>[source]</a></span></div>Export the internal pipeline.</p>
+<p><a id='trainsizingforecaster-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1097>[source]</a></span></div>Export the internal pipeline.</p>
 <p>This method returns a deepcopy of the branch's pipeline.
 Optionally, you can add a model as final estimator. The
 returned pipeline is already fitted on the training set.</p>
@@ -6000,7 +6000,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1129>[source]</a></span></div>Return class weights for a balanced data set.</p>
+<p><a id='trainsizingforecaster-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1124>[source]</a></span></div>Return class weights for a balanced data set.</p>
 <p>Statistically, the class weights re-balance the data set so
 that the sampled data set represents the target population
 as closely as possible. The returned weights are inversely
@@ -6025,7 +6025,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1298>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p><a id='trainsizingforecaster-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1293>[source]</a></span></div>Merge another instance of the same class into this one.</p>
 <p>Branches, models, metrics and attributes of the other instance
 are merged into this one. If there are branches and/or models
 with the same name, they are merged adding the <code>suffix</code>
@@ -6043,7 +6043,7 @@ Branches and models with conflicting names are merged adding
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-update_layout'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L830>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='trainsizingforecaster-update_layout'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L831>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -6052,7 +6052,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-update_traces'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L845>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='trainsizingforecaster-update_traces'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L846>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">
@@ -6061,9 +6061,9 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-reset_aesthetics'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L816>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='trainsizingforecaster-reset_aesthetics'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L817>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(*arrays)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L182>[source]</a></span></div>Train and evaluate the models.</p>
+<p><a id='trainsizingforecaster-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(*arrays)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L190>[source]</a></span></div>Train and evaluate the models.</p>
 <p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='run-\*arrays'></a><strong>*arrays: sequence of indexables</strong><br><div markdown class='param'>
@@ -6076,7 +6076,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1360>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='trainsizingforecaster-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1355>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str or Path, default="auto"</strong><br><div markdown class='param'>
 Filename or <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">pathlib.Path</a> of the file to save. Use
@@ -6098,7 +6098,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", train_on_test=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1412>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<p><a id='trainsizingforecaster-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", train_on_test=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1407>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one
@@ -6133,7 +6133,7 @@ parameter, e.g., <code>atom.stacking(final_estimator="LR")</code>.</p>
 <p></div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='trainsizingforecaster-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1511>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<p><a id='trainsizingforecaster-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1506>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one

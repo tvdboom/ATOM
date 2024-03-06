@@ -5342,7 +5342,7 @@ are multiplied together. This suggests that the effect of one component is
 proportional to the level of the other components.</p>
 <p>Specify the trend and/or seasonal models providing the <code>sp</code> parameter (or attribute)
 with a dictionary, e.g., <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">sp</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sp&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;seasonal_model&quot;</span><span class="p">:</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">}</span></code>.
-Both the <code>seasonal_trend</code> and <code>seasonal_model</code> values default to <code>additive</code>.</p>
+Both the <code>seasonal_model</code> and <code>trend_model</code> values default to <code>None</code>.</p>
 <p><br></p>
 <h2 id="forecasting-with-regressors">Forecasting with regressors</h2>
 <p>All of ATOM's <a class="autorefs autorefs-internal" href="../models/#predefined-models">regressors</a> can also be used in forecasting

@@ -5409,13 +5409,13 @@ algorithm for intermediate datasets (n_samples &gt;= 10k).</p>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 1.0</span>
 <span class="go">Test evaluation --&gt; f1: 0.9589</span>
-<span class="go">Time elapsed: 0.522s</span>
+<span class="go">Time elapsed: 0.425s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.522s</span>
+<span class="go">Time: 0.425s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.525s</span>
+<span class="go">Total time: 0.428s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">GradientBoostingMachine --&gt; f1: 0.9589</span>
 </code></pre></div>
@@ -5534,10 +5534,10 @@ one of those attributes.
 <p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> can be called directly from the model.
 The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-export_pipeline">export_pipeline</a></td><td>Export the transformer pipeline with final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-decision_function">decision_function</a></td><td>Get confidence scores on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-export_pipeline">export_pipeline</a></td><td>Export the transformer pipeline with final estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-get_tags">get_tags</a></td><td>Get the model's tags.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-predict">predict</a></td><td>Get predictions on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-predict_log_proba">predict_log_proba</a></td><td>Get class log-probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-predict_proba">predict_proba</a></td><td>Get class probabilities on new data or existing rows.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-score">score</a></td><td>Get a metric score on new data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-update_layout">update_layout</a></td><td>Update the properties of the plot's layout.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#gradientboostingmachine-update_traces">update_traces</a></td><td>Update the properties of the plot's traces.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='gradientboostingmachine-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1279>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='gradientboostingmachine-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1277>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -5548,7 +5548,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1764>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='gradientboostingmachine-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1762>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -5565,7 +5565,7 @@ independent set for testing (<a class="autorefs autorefs-internal" href="../../.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, sharex=False, sharey=False, hspace=0.05, vspace=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L711>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='gradientboostingmachine-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, sharex=False, sharey=False, hspace=0.05, vspace=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L712>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -5616,7 +5616,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1804>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p><a id='gradientboostingmachine-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1802>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
@@ -5630,7 +5630,7 @@ affected attributes are:</p>
 <li>Calculated <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1828>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='gradientboostingmachine-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1826>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -5642,7 +5642,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(rows="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1889>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='gradientboostingmachine-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(rows="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1890>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -5673,7 +5673,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1977>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='gradientboostingmachine-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1981>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the model's
 performance. If the scoring method is not specified in <code>kwargs</code>,
@@ -5690,7 +5690,28 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2060>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='gradientboostingmachine-decision_function'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>decision_function</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2713>[source]</a></span></div>Get confidence scores on new data or existing rows.</p>
+<p>New data is first transformed through the model's pipeline.
+Transformers that are only applied on the training set are
+skipped. The estimator must have a <code>decision_function</code> method.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='decision_function-X'></a><strong>X: hashable, segment, sequence or dataframe-like</strong><br><div markdown class='param'>
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of rows</a> or feature
+set with shape=(n_samples, n_features) to make predictions
+on.</p>
+<p></div><a id='decision_function-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
+Verbosity level for the transformers in the pipeline. If
+None, it uses the pipeline's verbosity.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='decision_function-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
+Predicted confidence scores with shape=(n_samples,) for
+binary classification tasks (log likelihood ratio of the
+positive class) or shape=(n_samples, n_classes) for
+multiclass classification tasks.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='gradientboostingmachine-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2064>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="#gradientboostingmachine-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
@@ -5721,7 +5742,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2160>[source]</a></span></div>Export the transformer pipeline with final estimator.</p>
+<p><a id='gradientboostingmachine-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2164>[source]</a></span></div>Export the transformer pipeline with final estimator.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -5731,7 +5752,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1174>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='gradientboostingmachine-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1172>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -5746,7 +5767,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2178>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='gradientboostingmachine-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2182>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases, it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -5769,7 +5790,7 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2220>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
+<p><a id='gradientboostingmachine-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2224>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
 <p>Only available for models with a <code>predict_proba</code> method in a
 binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <table class="table_params">
@@ -5781,7 +5802,16 @@ The best threshold or list of thresholds for multilabel tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L900>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='gradientboostingmachine-get_tags'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_tags</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2506>[source]</a></span></div>Get the model's tags.</p>
+<p>Return class parameters that provide general information about
+the model's characteristics.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_tags-dict'></a><strong>dict</strong><br><div markdown class='param'>
+Model's tags.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='gradientboostingmachine-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L898>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -5794,7 +5824,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2250>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='gradientboostingmachine-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2254>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement an <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -5826,7 +5856,71 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="None", archive_existing_versions=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2302>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p><a id='gradientboostingmachine-predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, inverse=True, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2751>[source]</a></span></div>Get predictions on new data or existing rows.</p>
+<p>New data is first transformed through the model's pipeline.
+Transformers that are only applied on the training set are
+skipped. The estimator must have a <code>predict</code> method.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict-X'></a><strong>X: hashable, segment, sequence or dataframe-like</strong><br><div markdown class='param'>
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of rows</a> or feature
+set with shape=(n_samples, n_features) to make predictions
+on.</p>
+<p></div><a id='predict-inverse'></a><strong>inverse: bool, default=True</strong><br><div markdown class='param'>
+Whether to inversely transform the output through the
+pipeline. This doesn't affect the predictions if there are
+no transformers in the pipeline or if the transformers have
+no <code>inverse_transform</code> method or don't apply to <code>y</code>.</p>
+<p></div><a id='predict-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
+Verbosity level for the transformers in the pipeline. If
+None, it uses the pipeline's verbosity.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
+Predictions with shape=(n_samples,) or shape=(n_samples,
+n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='gradientboostingmachine-predict_log_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_log_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2799>[source]</a></span></div>Get class log-probabilities on new data or existing rows.</p>
+<p>New data is first transformed through the model's pipeline.
+Transformers that are only applied on the training set are
+skipped. The estimator must have a <code>predict_log_proba</code> method.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict_log_proba-X'></a><strong>X: hashable, segment, sequence or dataframe-like</strong><br><div markdown class='param'>
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of rows</a> or feature
+set with shape=(n_samples, n_features) to make predictions
+on.</p>
+<p></div><a id='predict_log_proba-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
+Verbosity level for the transformers in the pipeline. If
+None, it uses the pipeline's verbosity.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict_log_proba-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
+Predicted class log-probabilities with shape=(n_samples,
+n_classes) or shape=(n_samples * n_classes, n_targets) with
+a multiindex format for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='gradientboostingmachine-predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2836>[source]</a></span></div>Get class probabilities on new data or existing rows.</p>
+<p>New data is first transformed through the model's pipeline.
+Transformers that are only applied on the training set are
+skipped. The estimator must have a <code>predict_proba</code> method.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='predict_proba-X'></a><strong>X: hashable, segment, sequence or dataframe-like</strong><br><div markdown class='param'>
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of rows</a> or feature
+set with shape=(n_samples, n_features) to make predictions
+on.</p>
+<p></div><a id='predict_proba-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
+Verbosity level for the transformers in the pipeline. If
+None, it uses the pipeline's verbosity.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict_proba-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
+Predicted class probabilities with shape=(n_samples,
+n_classes) or shape=(n_samples * n_classes, n_targets) with
+a multiindex format for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='gradientboostingmachine-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="None", archive_existing_versions=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2306>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
 <p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
 enabled using one of the following URI schemes: databricks,
 http, https, postgresql, mysql, sqlite, mssql.</p>
@@ -5844,9 +5938,9 @@ moved to the "Archived" stage. Only valid when <code>stage</code> is
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-reset_aesthetics'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L816>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='gradientboostingmachine-reset_aesthetics'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L817>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2351>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='gradientboostingmachine-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2355>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str or Path, default="auto"</strong><br><div markdown class='param'>
 Filename or <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">pathlib.Path</a> of the file to save. Use
@@ -5854,7 +5948,49 @@ Filename or <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2373>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
+<p><a id='gradientboostingmachine-score'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>score</strong>(X, y=None, metric=None, sample_weight=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2873>[source]</a></span></div>Get a metric score on new data.</p>
+<p>New data is first transformed through the model's pipeline.
+Transformers that are only applied on the training set are
+skipped.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">user guide</a>.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>If the <code>metric</code> parameter is left to its default value, the
+method returns atom's metric score, not the metric returned
+by sklearn's score method for estimators.</p>
+</div>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='score-X'></a><strong>X: hashable, segment, sequence or dataframe-like</strong><br><div markdown class='param'>
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#row-and-column-selection">Selection of rows</a> or feature
+set with shape=(n_samples, n_features) to make predictions
+on.</p>
+<p></div><a id='score-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Target column(s) corresponding to <code>X</code>.</p>
+<ul>
+<li>If None: <code>X</code> must be a selection of rows in the dataset.</li>
+<li>If int: Position of the target column in <code>X</code>.</li>
+<li>If str: Name of the target column in <code>X</code>.</li>
+<li>If sequence: Target column with shape=(n_samples,) or
+  sequence of column names or positions for multioutput
+  tasks.</li>
+<li>If dataframe: Target columns for multioutput tasks.</li>
+</ul>
+<p></div><a id='score-metric'></a><strong>metric: str, func, scorer or None, default=None</strong><br><div markdown class='param'>
+Metric to calculate. Choose from any of sklearn's scorers,
+a function with signature <code>metric(y_true, y_pred) -&gt; score</code>
+or a scorer object. If None, it uses atom's metric (the main
+metric for <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>).</p>
+<p></div><a id='score-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
+Sample weights corresponding to <code>y</code>.</p>
+<p></div><a id='score-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
+Verbosity level for the transformers in the pipeline. If
+None, it uses the pipeline's verbosity.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='score-float'></a><strong>float</strong><br><div markdown class='param'>
+Metric score of X with respect to y.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='gradientboostingmachine-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2377>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
 <p>The complete pipeline is served with the model. The inference
 data must be supplied as json to the HTTP request, e.g.
 <code>requests.get("http://127.0.0.1:8000/", json=X.to_json())</code>.
@@ -5876,7 +6012,7 @@ Port for HTTP server.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2447>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='gradientboostingmachine-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2451>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be
@@ -5886,8 +6022,7 @@ data is scaled as well.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
-<code>X</code> is ignored. If None,
-<code>X</code> is ignored in the transformers.</p>
+<code>X</code> is ignored. If None, <code>X</code> is ignored in the transformers.</p>
 <p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Target column(s) corresponding to <code>X</code>.</p>
 <ul>
@@ -5908,7 +6043,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-update_layout'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L830>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='gradientboostingmachine-update_layout'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L831>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
 <table class="table_params">
@@ -5917,7 +6052,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='gradientboostingmachine-update_traces'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L845>[source]</a></span></div>Update the properties of the plot's traces.</p>
+<p><a id='gradientboostingmachine-update_traces'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L846>[source]</a></span></div>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>
 <table class="table_params">

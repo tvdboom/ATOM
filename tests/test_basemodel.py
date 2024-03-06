@@ -1048,8 +1048,16 @@ def test_forecast_get_tags():
     assert isinstance(atom.nf.get_tags(), dict)
 
 
-def test_predictions_only_fh():
+def test_predictions_invalid_fh():
     """Assert that predictions can be made using only the fh."""
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    with pytest.raises(ValueError, match=".*Use a ForecastingHorizon.*"):
+        atom.nf.predict(fh=range(200))
+
+
+def test_predictions_only_fh():
+    """Assert that predictions can be made using only the fh with exogenous variables."""
     atom = ATOMForecaster(X_ex, y=y_ex, random_state=1)
     atom.run("OLS")
     assert isinstance(atom.ols.predict(fh=atom.test), pd.Series)

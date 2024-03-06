@@ -3055,12 +3055,18 @@ class ForecastModel(BaseModel):
         yt: Pandas | None
 
         if not isinstance(fh, ForecastingHorizon | None):
-            Xt, yt = self.branch._get_rows(fh, return_X_y=True)
+            try:
+                Xt, yt = self.branch._get_rows(fh, return_X_y=True)
 
-            if self.scaler:
-                Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
+                if self.scaler:
+                    Xt = cast(pd.DataFrame, self.scaler.transform(Xt))
 
-            fh = ForecastingHorizon(Xt.index, is_relative=False)
+                fh = ForecastingHorizon(Xt.index, is_relative=False)
+            except IndexError:
+                raise ValueError(
+                    f"Ambiguous use of parameter fh, got {fh}. Use a ForecastingHorizon "
+                    "object to make predictions on future samples outside the dataset."
+                ) from None
 
         elif y is not None:
             try:

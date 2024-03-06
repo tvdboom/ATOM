@@ -59,7 +59,7 @@ proportional to the level of the other components.
 
 Specify the trend and/or seasonal models providing the `sp` parameter (or attribute)
 with a dictionary, e.g., `#!python atom.sp = {"sp": 12, "seasonal_model": "multiplicative"}`.
-Both the `seasonal_trend` and `seasonal_model` values default to `additive`.
+Both the `seasonal_model` and `trend_model` values default to `None`.
 
 <br>
 

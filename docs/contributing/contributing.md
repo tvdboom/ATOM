@@ -96,8 +96,8 @@ and accept your changes.
   as possible.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
-* Run [pre-commit](https://pre-commit.com/): `pre-commit run --all-files`
-  and make sure all tests pass.
+* Run [pre-commit](https://pre-commit.com/): `pre-commit run --all-files` and make sure all
+  tests pass.
 
 If your contribution requires a new library dependency:
 

@@ -408,8 +408,7 @@ as the index of the row selection. Note that, contrary to sktime's API but for
 consistency with the rest of ATOM's API, atom's fh starts with the training set,
 i.e., selecting `#!python atom.nf.predict(fh=range(5))` forecasts the first 5
 rows of the training set, not the test set. To get the same result as sktime, use
-`#!python atom.nf.predict(fh=range(len(atom.test), len(atom.test) + 5))` or
-`#!python atom.nf.predict(fh=atom.test.index[:5])` instead.
+a [ForecastingHorizon][] object, e.g., `#!python atom.nf.predict(fh=ForecastingHorizon(range(5)))`.
 
 
 !!! info
