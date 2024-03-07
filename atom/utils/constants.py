@@ -7,7 +7,7 @@ Description: Module containing utility constants.
 
 
 # Current library version
-__version__ = "6.0.0"
+__version__ = "6.0.1"
 
 # Column types considered categorical
 CAT_TYPES = ["object", "category", "string", "boolean"]
