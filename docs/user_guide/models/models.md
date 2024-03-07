@@ -9,56 +9,56 @@ class containing the underlying estimator is attached to atom as an
 attribute. We refer to these "subclasses" as models. Apart from the
 estimator, the models contain a variety of attributes and methods that
 can help you understand how the underlying estimator performed. They
-can be accessed using their acronyms, e.g. `atom.LGB` to access the
+can be accessed using their acronyms, e.g., `atom.LGB` to access the
 LightGBM model. The available models and their corresponding
 acronyms are:
 
-* "AdaB" for [AdaBoost][]
-* "ARD" for [AutomaticRelevanceDetermination][]
-* "Bag" for [Bagging][]
-* "BR" for [BayesianRidge][]
-* "BNB" for [BernoulliNB][]
-* "CatB" for [CatBoost][]
-* "CatNB" for [CategoricalNB][]
-* "CNB" for [ComplementNB][]
-* "Tree" for [DecisionTree][]
-* "Dummy" for [Dummy][]
-* "EN" for [ElasticNet][]
-* "ETree" for [ExtraTree][]
-* "ET" for [ExtraTrees][]
-* "GNB" for [GaussianNB][]
-* "GP" for [GaussianProcess][]
-* "GBM" for [GradientBoosting][]
-* "Huber" for [HuberRegression][]
-* "hGBM" for [HistGradientBoosting][]
-* "KNN" for [KNearestNeighbors][]
-* "Lasso" for [Lasso][]
-* "Lars" for [LeastAngleRegression][]
-* "LGB" for [LightGBM][]
-* "LDA" for [LinearDiscriminantAnalysis][]
-* "lSVM" for [LinearSVM][]
-* "LR" for [LogisticRegression][]
-* "MLP" for [MultiLayerPerceptron][]
-* "MNB" for [MultinomialNB][]
-* "OLS" for [OrdinaryLeastSquares][]
-* "OMP" for [OrthogonalMatchingPursuit][]
-* "PA" for [PassiveAggressive][]
-* "Perc" for [Perceptron][]
-* "QDA" for [QuadraticDiscriminantAnalysis][]
-* "RNN" for [RadiusNearestNeighbors][]
-* "RF" for [RandomForest][]
-* "Ridge" for [Ridge][]
-* "SGD" for [StochasticGradientDescent][]
-* "SVM" for [SupportVectorMachine][]
-* "XGB" for [XGBoost][]
+:: atom.models:MODELS
+    :: toc
 
 !!! warning
-    The model classes can not be initialized directly by the user! Use
+    The model classes cannot be initialized directly by the user! Use
     them only through atom.
 
 !!! tip
-    The acronyms are case-insensitive, e.g. `atom.lgb` also calls
+    The acronyms are case-insensitive, e.g., `atom.lgb` also calls
     the LightGBM model.
+
+<br>
+
+## Model selection
+
+Although ATOM allows running all models for a given task using
+`#!python atom.run(models=None)`, it's usually smarter to select only
+a subset of models. Every model has a series of tags that indicate
+special characteristics of the model. Use a model's [`get_tags`][adaboost-get_tags]
+method to see its tags, or the [available_models][atomclassifier-available_models]
+method to get an overview of all models and their tags. The tags differ
+per task, but can include:
+
+- **acronym:** Model's acronym (used to call the model).
+- **fullname:** Name of the model's class.
+- **estimator:** Name of the model's underlying estimator.
+- **module:** The estimator's module.
+- **handles_missing:** Whether the model can handle missing values
+  without preprocessing. If False, consider using the [Imputer][] class
+  before training the models.
+- **needs_scaling:** Whether the model requires feature scaling. If True,
+  [automated feature scaling][] is applied.
+- **accepts_sparse:** Whether the model accepts [sparse input][sparse-datasets].
+- **uses_exogenous:** Whether the model uses [exogenous variables][].
+- **multiple_seasonality:** Whether the model can handle more than one
+  [seasonality period][seasonality].
+- **native_multilabel:** Whether the model has native support for [multilabel][] tasks.
+- **native_multioutput:** Whether the model has native support for [multioutput tasks][].
+- **validation:** Whether the model has [in-training validation][].
+- **supports_engines:** [Engines][estimator-acceleration] supported by the model.
+
+To filter for specific tags, specify the column name with the desired value
+in the arguments of `available_models`, e.g., `#!python atom.available_models(accepts_sparse=True)`
+to get all models that accept sparse input or `#!python atom.available_models(supports_engines="cuml")`
+to get all models that support the [cuML][] engine.
+
 
 <br>
 
@@ -73,19 +73,16 @@ There are two ways to achieve this:
   the required model characteristics to the pipeline.
 
 ```pycon
->>> from atom import ATOMRegressor, ATOMModel
->>> from sklearn.linear_model import RANSACRegressor
+from atom import ATOMRegressor, ATOMModel
+from sklearn.datasets import load_diabetes
+from sklearn.linear_model import RANSACRegressor
 
->>> ransac = ATOMModel(
-...     models=RANSACRegressor,
-...     acronym="RANSAC",
-...     fullname="Random Sample Consensus",
-...     needs_scaling=True,
-... )
+ransac = ATOMModel(RANSACRegressor, name="RANSAC", needs_scaling=True)
 
->>> atom = ATOMRegressor(X, y)
->>> atom.run(ransac)
+X, y = load_diabetes(return_X_y=True, as_frame=True)
 
+atom = ATOMRegressor(X, y)
+atom.run(ransac)
 ```
 
 * Using the estimator's class or an instance of the class. This approach
@@ -93,12 +90,14 @@ There are two ways to achieve this:
   parameters to their default values.
 
 ```pycon
->>> from atom import ATOMRegressor
->>> from sklearn.linear_model import RANSACRegressor
+from atom import ATOMRegressor
+from sklearn.datasets import load_diabetes
+from sklearn.linear_model import RANSACRegressor
 
->>> atom = ATOMRegressor(X, y)
->>> atom.run(RANSACRegressor)
+X, y = load_diabetes(return_X_y=True, as_frame=True)
 
+atom = ATOMRegressor(X, y)
+atom.run(RANSACRegressor)
 ```
 
 Additional things to take into account:
@@ -106,10 +105,10 @@ Additional things to take into account:
 * Custom models can be accessed through their acronym like any other model, e.g.
   `atom.ransac` in the example above.
 * Custom models are not restricted to sklearn estimators, but they should
-  follow [sklearn's API][api], i.e. have a fit and predict method.
+  follow [sklearn's API][api], i.e., have a fit and predict method.
 * [Parameter customization][] (for the initializer) is only possible for
   custom models which provide an estimator that has a `set_params()` method,
-  i.e. it's a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
+  i.e., it's a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
 * [Hyperparameter tuning][] for custom models is ignored unless appropriate
   dimensions are provided through `ht_params`.
 
@@ -125,7 +124,7 @@ wrappers [KerasClassifier](https://www.adriangb.com/scikeras/refs/heads/master/g
 or [KerasRegressor](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasRegressor.html#scikeras.wrappers.KerasRegressor).
 
 Many deep learning use cases, for example in computer vision, use datasets
-with more than 2 dimensions, e.g. image data can have shape (n_samples,
+with more than 2 dimensions, e.g., image data can have shape (n_samples,
 length, width, rgb). Luckily, scikeras has a workaround to be able to work
 with such datasets. Learn with this [example][example-deep-learning] how to
 use ATOM to train and validate a Convolutional Neural Network on an image
@@ -149,9 +148,9 @@ stacking. Click [here][example-ensembles] to see an example that uses
 ensemble models.
 
 If the ensemble's underlying estimator is a model that used [automated feature scaling][],
-it's added as a Pipeline containing the `scaler` and estimator. If a
-[mlflow experiment][tracking] is active, the ensembles start their own
-run, just like the [predefined models][] do.
+it's added as a Pipeline containing the [`Scaler`][] and estimator. If
+a [mlflow experiment][tracking] is active, the ensembles start their
+own run, just like the [predefined models][] do.
 
 !!! warning
     Combining models trained on different branches into one ensemble is
@@ -184,9 +183,6 @@ resources, since the classes are always initialized with fitted estimators.
 As a consequence of this, the VotingClassifier can not use sklearn's build-in
 LabelEncoder for the target column since it can't be fitted when initializing
 the class. For the vast majority of use cases, the changes will have no effect.
-If you want to export the estimator and retrain it on different data, just make
-sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
-the underlying estimators first.
 
 
 <br>
@@ -201,13 +197,12 @@ prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 A stacking model is created from a trainer through the [stacking][atomclassifier-stacking]
 method. The stacking model is added automatically to the list of
 models in the trainer, under the `Stack` acronym. The underlying
-estimator is a custom adaptation of [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html)
-or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
-depending on the task. The only difference between ATOM's and sklearn's
-implementation is that ATOM's implementation doesn't fit estimators if
-they're already fitted. The two estimators are customized in this way to
-save time and computational resources, since the classes are always
-initialized with fitted estimators. For the vast majority of use cases,
-the changes will have no effect. If you want to export the estimator and
-retrain it on different data, just make sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
-the underlying estimators first.
+estimators are [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html) or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
+depending on the task.
+
+!!! tip
+    By default, the final estimator is trained on the training set.
+    Note that this is the same data on which the other estimators are
+    fitted, increasing the chance of overfitting. If possible, it's 
+    recommended to use `train_on_test=True` in combination with a
+    [holdout set][data-sets] for model evaluation.

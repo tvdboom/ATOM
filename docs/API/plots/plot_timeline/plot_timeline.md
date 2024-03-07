@@ -1,7 +1,7 @@
 # plot_timeline
 ---------------
 
-:: atom.plots:HTPlot.plot_timeline
+:: atom.plots:HyperparameterTuningPlot.plot_timeline
     :: signature
     :: head
     :: table:

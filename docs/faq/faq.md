@@ -15,14 +15,12 @@ them on the [Slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/
 
 ??? faq "How does ATOM relate to AutoML?"
     ATOM is not an AutoML tool since it does not automate the search for
-    an optimal pipeline like well known AutoML tools such as
+    an optimal pipeline like well-known AutoML tools such as
     [auto-sklearn](https://automl.github.io/auto-sklearn/master/) or
     [EvalML](https://evalml.alteryx.com/en/stable/) do. Instead, ATOM helps
     the user find the optimal pipeline himself. One of the goals of this
     package is to help data scientists produce explainable pipelines, and
-    using an AutoML black box function would impede that. That said, it is
-    possible to integrate a EvalML pipeline with atom through the [automl][atomclassifier-automl]
-    method.
+    using an AutoML black box function would impede that.
 
 ??? faq "Is it possible to run deep learning models?"
     Yes. Deep learning models can be added as custom models to the pipeline
@@ -45,8 +43,8 @@ them on the [Slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/
 
 ??? faq "Can I train models through atom using a GPU?"
     Yes. Refer to the [user guide][gpu-acceleration] to see what algorithms
-    and models have a GPU implementation. Be aware that it requires additional
-    software and hardware dependencies.
+    and models have a GPU implementation. Be aware that it could require
+    additional software and hardware dependencies.
 
 ??? faq "How are numerical and categorical columns differentiated?"
     The columns are separated using a dataframe's [select_dtypes](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)

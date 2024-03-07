@@ -1,7 +1,7 @@
 # plot_hyperparameter_importance
 --------------------------------
 
-:: atom.plots:HTPlot.plot_hyperparameter_importance
+:: atom.plots:HyperparameterTuningPlot.plot_hyperparameter_importance
     :: signature
     :: head
     :: table:

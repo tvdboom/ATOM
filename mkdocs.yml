@@ -6,7 +6,7 @@ repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
-copyright: Copyright &copy; 2023, by Mavs.
+copyright: Copyright &copy; 2019-2024, by Mavs.
 
 theme:
     name: material
@@ -14,6 +14,8 @@ theme:
     favicon: img/favicon.ico
     custom_dir: docs_sources/overrides
     features:
+        - content.code.copy
+        - navigation.footer
         - navigation.instant
         - navigation.tabs
         - navigation.tabs.sticky
@@ -72,32 +74,38 @@ plugins:
     - search
     - autorefs
     - mkdocs-jupyter:
+          include_requirejs: true
           include: ["*.ipynb"]
           include_source: true
           ignore_h1_titles: true
     - mkdocs-simple-hooks:
           hooks:
-              on_page_markdown: "docs_sources.autodocs:render"
-              on_page_content: "docs_sources.autodocs:convert_plotly"
-              on_post_build: "docs_sources.autodocs:clean_search"
+              on_page_markdown: docs_sources.scripts.autodocs:render
+              on_page_content: docs_sources.scripts.autodocs:corrections
+              on_post_build: docs_sources.scripts.autodocs:clean_search
 
 markdown_extensions:
     - admonition
-    - md_in_html  # Allows for writing Markdown inside of HTML
-    - def_list  # Allows for definition lists (e.g. nomenclature)
+    - md_in_html  # Allows for writing Markdown inside HTML
+    - def_list  # Allows for definition lists (e.g., nomenclature)
     - attr_list  # Allows for HTML attributes and CSS classes to markdown objects
     - footnotes
     - pymdownx.details  # Allows for collapsible admonition blocks
     - pymdownx.magiclink  # Allows for bare links of the form <url>
     - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
-    - pymdownx.superfences  # Allows for arbitrary nesting of code and content blocks
+    - pymdownx.superfences:
+        preserve_tabs: true
+        custom_fences:
+            - name: pycon
+              class: pycon
+              format: !!python/name:docs_sources.scripts.autorun.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true
     - pymdownx.tabbed:  # Allows the usage of content tabs
           alternate_style: true
     - pymdownx.emoji:  # Automatically inlines bundled and custom icons and emojis
-          emoji_index: !!python/name:materialx.emoji.twemoji
-          emoji_generator: !!python/name:materialx.emoji.to_svg
+          emoji_index: !!python/name:material.extensions.emoji.twemoji
+          emoji_generator: !!python/name:material.extensions.emoji.to_svg
     - pymdownx.highlight:  # Allows for highlighting of code blocks
           use_pygments: true
           pygments_lang_class: true
@@ -122,6 +130,7 @@ nav:
         - Data cleaning: user_guide/data_cleaning.md
         - Feature engineering: user_guide/feature_engineering.md
         - NLP: user_guide/nlp.md
+        - Time Series: user_guide/time_series.md
         - Models: user_guide/models.md
         - Training: user_guide/training.md
         - Predicting: user_guide/predicting.md
@@ -129,17 +138,22 @@ nav:
     - API:
         - ATOM:
             - ATOMClassifier: API/ATOM/atomclassifier.md
+            - ATOMForecaster: API/ATOM/atomforecaster.md
             - ATOMModel: API/ATOM/atommodel.md
             - ATOMRegressor: API/ATOM/atomregressor.md
+        - Branch:
+            - Branch: API/branch/branch.md
+            - BranchManager: API/branch/branchmanager.md
         - Data cleaning:
-             - Balancer: API/data_cleaning/balancer.md
-             - Cleaner: API/data_cleaning/cleaner.md
-             - Discretizer: API/data_cleaning/discretizer.md
-             - Encoder: API/data_cleaning/encoder.md
-             - Imputer: API/data_cleaning/imputer.md
-             - Normalizer: API/data_cleaning/normalizer.md
-             - Pruner: API/data_cleaning/pruner.md
-             - Scaler: API/data_cleaning/scaler.md
+            - Balancer: API/data_cleaning/balancer.md
+            - Cleaner: API/data_cleaning/cleaner.md
+            - Decomposer: API/data_cleaning/decomposer.md
+            - Discretizer: API/data_cleaning/discretizer.md
+            - Encoder: API/data_cleaning/encoder.md
+            - Imputer: API/data_cleaning/imputer.md
+            - Normalizer: API/data_cleaning/normalizer.md
+            - Pruner: API/data_cleaning/pruner.md
+            - Scaler: API/data_cleaning/scaler.md
         - Feature engineering:
             - FeatureExtractor: API/feature_engineering/featureextractor.md
             - FeatureGenerator: API/feature_engineering/featuregenerator.md
@@ -152,23 +166,34 @@ nav:
             - Vectorizer: API/nlp/vectorizer.md
         - Training:
             - DirectClassifier: API/training/directclassifier.md
+            - DirectForecaster: API/training/directforecaster.md
             - DirectRegressor: API/training/directregressor.md
             - SuccessiveHalvingClassifier: API/training/successivehalvingclassifier.md
+            - SuccessiveHalvingForecaster: API/training/successivehalvingforecaster.md
             - SuccessiveHalvingRegressor: API/training/successivehalvingregressor.md
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
+            - TrainSizingForecaster: API/training/trainsizingforecaster.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
             - AdaBoost: API/models/adab.md
+            - ARIMA: API/models/arima.md
+            - AutoARIMA: API/models/autoarima.md
+            - AutoETS: API/models/autoets.md
             - AutomaticRelevanceDetermination: API/models/ard.md
             - Bagging: API/models/bag.md
+            - BATS: API/models/bats.md
             - BayesianRidge: API/models/br.md
             - BernoulliNB: API/models/bnb.md
             - CatBoost: API/models/catb.md
             - CategoricalNB: API/models/catnb.md
             - ComplementNB: API/models/cnb.md
+            - Croston: API/models/croston.md
             - DecisionTree: API/models/tree.md
             - Dummy: API/models/dummy.md
+            - DynamicFactor: API/models/df.md
             - ElasticNet: API/models/en.md
+            - ETS: API/models/ets.md
+            - ExponentialSmoothing: API/models/es.md
             - ExtraTree: API/models/etree.md
             - ExtraTrees: API/models/et.md
             - GaussianNB: API/models/gnb.md
@@ -183,47 +208,61 @@ nav:
             - LinearDiscriminantAnalysis: API/models/lda.md
             - LinearSVM: API/models/lsvm.md
             - LogisticRegression: API/models/lr.md
+            - MSTL: API/models/mstl.md
             - MultiLayerPerceptron: API/models/mlp.md
             - MultinomialNB: API/models/mnb.md
+            - NaiveForecaster: API/models/nf.md
             - OrdinaryLeastSquares: API/models/ols.md
             - OrthogonalMatchingPursuit: API/models/omp.md
             - PassiveAggressive: API/models/pa.md
             - Perceptron: API/models/perc.md
+            - PolynomialTrend: API/models/pt.md
+            - Prophet: API/models/prophet.md
             - QuadraticDiscriminantAnalysis: API/models/qda.md
             - RadiusNearestNeighbors: API/models/rnn.md
             - RandomForest: API/models/rf.md
             - Ridge: API/models/ridge.md
+            - SARIMAX: API/models/sarimax.md
             - StochasticGradientDescent: API/models/sgd.md
+            - STL: API/models/stl.md
             - SupportVectorMachine: API/models/svm.md
+            - TBATS: API/models/tbats.md
+            - Theta: API/models/theta.md
+            - VAR: API/models/var.md
+            - VARMAX: API/models/varmax.md
             - XGBoost: API/models/xgb.md
-        - Predicting:
-            - decision_function: API/predicting/decision_function.md
-            - predict: API/predicting/predict.md
-            - predict_log_proba: API/predicting/predict_log_proba.md
-            - predict_proba: API/predicting/predict_proba.md
-            - score: API/predicting/score.md
+        - Pipeline:
+            - Pipeline: API/pipeline/pipeline.md
         - Plots:
+            - plot_acf: API/plots/plot_acf.md
+            - plot_bootstrap: API/plots/plot_bootstrap.md
             - plot_calibration: API/plots/plot_calibration.md
+            - plot_ccf: API/plots/plot_ccf.md
             - plot_components: API/plots/plot_components.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_correlation: API/plots/plot_correlation.md
+            - plot_decomposition: API/plots/plot_decomposition.md
             - plot_det: API/plots/plot_det.md
             - plot_distribution: API/plots/plot_distribution.md
             - plot_edf: API/plots/plot_edf.md
             - plot_errors: API/plots/plot_errors.md
             - plot_evals: API/plots/plot_evals.md
             - plot_feature_importance: API/plots/plot_feature_importance.md
+            - plot_fft: API/plots/plot_fft.md
+            - plot_forecast: API/plots/plot_forecast.md
             - plot_gains: API/plots/plot_gains.md
             - plot_hyperparameter_importance: API/plots/plot_hyperparameter_importance.md
             - plot_hyperparameters: API/plots/plot_hyperparameters.md
             - plot_learning_curve: API/plots/plot_learning_curve.md
             - plot_lift: API/plots/plot_lift.md
             - plot_ngrams: API/plots/plot_ngrams.md
+            - plot_pacf: API/plots/plot_pacf.md
             - plot_parallel_coordinate: API/plots/plot_parallel_coordinate.md
             - plot_pareto_front: API/plots/plot_pareto_front.md
             - plot_parshap: API/plots/plot_parshap.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md
             - plot_pca: API/plots/plot_pca.md
+            - plot_periodogram: API/plots/plot_periodogram.md
             - plot_permutation_importance: API/plots/plot_permutation_importance.md
             - plot_pipeline: API/plots/plot_pipeline.md
             - plot_prc: API/plots/plot_prc.md
@@ -234,6 +273,7 @@ nav:
             - plot_results: API/plots/plot_results.md
             - plot_rfecv: API/plots/plot_rfecv.md
             - plot_roc: API/plots/plot_roc.md
+            - plot_series: API/plots/plot_series.md
             - plot_shap_bar: API/plots/plot_shap_bar.md
             - plot_shap_beeswarm: API/plots/plot_shap_beeswarm.md
             - plot_shap_decision: API/plots/plot_shap_decision.md
@@ -253,9 +293,10 @@ nav:
         - Accelerating sklearnex: examples/accelerating_sklearnex.ipynb
         - Advanced plotting: examples/advanced_plotting.ipynb
         - Automated feature scaling: examples/automated_feature_scaling.ipynb
-        - AutoML: examples/automl.ipynb
         - Binary classification: examples/binary_classification.ipynb
+        - Bootstrapping: examples/bootstrapping.ipynb
         - Calibration: examples/calibration.ipynb
+        - Data engines: examples/data_engines.ipynb
         - Deep learning: examples/deep_learning.ipynb
         - Ensembles: examples/ensembles.ipynb
         - Feature engineering: examples/feature_engineering.ipynb
@@ -264,18 +305,22 @@ nav:
         - Hyperparameter tuning: examples/hyperparameter_tuning.ipynb
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - In-training validation: examples/in_training_validation.ipynb
+        - Memory considerations: examples/memory_considerations.ipynb
+        - Multi-metric runs: examples/multi_metric.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multilabel classification: examples/multilabel_classification.ipynb
         - Multioutput regression: examples/multioutput_regression.ipynb
-        - Multi-metric runs: examples/multi_metric.ipynb
+        - Multivariate forecast: examples/multivariate_forecast.ipynb
         - NLP: examples/nlp.ipynb
         - Pruning: examples/pruning.ipynb
         - Ray backend: examples/ray_backend.ipynb
         - Regression: examples/regression.ipynb
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb
+        - Univariate forecast: examples/univariate_forecast.ipynb
         - Utilities: examples/utilities.ipynb
     - Changelog:
+        - v6.x.x: changelog/v6.x.x.md
         - v5.x.x: changelog/v5.x.x.md
         - v4.x.x: changelog/v4.x.x.md
     - FAQ: faq.md

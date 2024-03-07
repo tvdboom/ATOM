@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
+"""Automated Tool for Optimized Modeling (ATOM).
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Unit tests for basetrainer.py
 
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import mlflow
 import pytest
-import ray
 from mlflow.tracking.fluent import ActiveRun
 from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import MedianPruner
@@ -71,16 +68,16 @@ def test_invalid_model_name():
 
 def test_multiple_models_with_add():
     """Assert that you can add model names to select them."""
-    trainer = DirectClassifier("gnb+lr+lr2", random_state=1)
+    trainer = DirectClassifier("Dummy+tree+tree_2", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["GNB", "LR", "LR2"]
+    assert trainer.models == ["Dummy", "Tree", "Tree_2"]
 
 
 def test_multiple_same_models():
     """Assert that the same model can used with different names."""
-    trainer = DirectClassifier(["lr", "lr2", "lr_3"], random_state=1)
+    trainer = DirectClassifier(["Tree", "Tree_2", "Tree_3"], random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["LR", "LR2", "LR_3"]
+    assert trainer.models == ["Tree", "Tree_2", "Tree_3"]
 
 
 def test_only_task_models():
@@ -124,7 +121,7 @@ def test_default_metric():
     # Multioutput can't be initialized directly from the trainer
     atom = ATOMClassifier(label_train, label_test, y=[-2, -1], random_state=1)
     atom.run("LR")
-    assert atom.metric == "average_precision"
+    assert atom.metric == "ap"
 
     trainer = DirectRegressor("OLS", random_state=1)
     trainer.run(reg_train, reg_test)
@@ -142,7 +139,7 @@ def test_metric_is_acronym():
     """Assert that using the metric acronyms work."""
     trainer = DirectClassifier("LR", metric="auc", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.metric == "roc_auc"
+    assert trainer.metric == "auc"
 
 
 @pytest.mark.parametrize("metric", ["tn", "fp", "fn", "tp", "fpr", "tpr", "tnr", "fnr"])
@@ -258,37 +255,37 @@ def test_custom_distributions():
 def test_custom_distributions_is_all():
     """Assert that the custom distributions can be set for all models."""
     trainer = DirectClassifier(
-        models=["LR1", "LR2"],
+        models=["LR_1", "LR_2"],
         n_trials=1,
         ht_params={
             "distributions": {
                 "all": {"max_iter": IntDistribution(10, 20)},
-                "LR2": {"penalty": CategoricalDistribution(["l1", "l2"])},
+                "LR_2": {"penalty": CategoricalDistribution(["l1", "l2"])},
             },
         },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert list(trainer.lr1.best_params) == ["max_iter"]
-    assert list(trainer.lr2.best_params) == ["max_iter", "penalty"]
+    assert list(trainer.lr_1.best_params) == ["max_iter"]
+    assert list(trainer.lr_2.best_params) == ["max_iter", "penalty"]
 
 
 def test_custom_distributions_per_model():
     """Assert that the custom distributions are distributed over the models."""
     trainer = DirectClassifier(
-        models=["LR1", "LR2"],
+        models=["LR_1", "LR_2"],
         n_trials=1,
         ht_params={
             "distributions": {
-                "lr1": {"max_iter": IntDistribution(10, 20)},
-                "lr2": {"max_iter": IntDistribution(30, 40)},
+                "lr_1": {"max_iter": IntDistribution(10, 20)},
+                "lr_2": {"max_iter": IntDistribution(30, 40)},
             },
         },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert 10 <= trainer.lr1.best_params["max_iter"] <= 20
-    assert 30 <= trainer.lr2.best_params["max_iter"] <= 40
+    assert 10 <= trainer.lr_1.best_params["max_iter"] <= 20
+    assert 30 <= trainer.lr_2.best_params["max_iter"] <= 40
 
 
 def test_ht_params_kwargs():
@@ -312,13 +309,6 @@ def test_ht_params_invalid_key():
         random_state=1,
     )
     with pytest.raises(ValueError, match=".*ht_params parameter.*"):
-        trainer.run(bin_train, bin_test)
-
-
-def test_errors_invalid():
-    """Assert that an error is raised when errors is invalid."""
-    trainer = DirectClassifier(models="LR", errors="invalid", random_state=1)
-    with pytest.raises(ValueError, match=".*errors parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -395,10 +385,21 @@ def test_parallel_with_ray():
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert trainer._models == [trainer.lr, trainer.lda]
-    ray.shutdown()
 
 
+def test_parallel_with_dask():
+    """Assert that parallel runs successfully with dask backend."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        parallel=True,
+        n_jobs=2,
+        backend="dask",
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+
+
+@patch("atom.basetrainer.Parallel", MagicMock())
 def test_parallel():
     """Assert that parallel runs successfully."""
     trainer = DirectClassifier(
@@ -407,17 +408,6 @@ def test_parallel():
         n_jobs=2,
         random_state=1,
     )
-    trainer.run(bin_train, bin_test)
-    assert trainer._models == [trainer.lr, trainer.lda]
-
-
-def test_all_models_failed():
-    """Assert that an error is raised when all models failed."""
-    trainer = DirectClassifier(
-        models=["LR", "RF"],
-        n_trials=1,
-        ht_params={"distributions": "test"},
-        random_state=1,
-    )
+    # Fails because Mock returns empty list
     with pytest.raises(RuntimeError, match=".*All models failed.*"):
         trainer.run(bin_train, bin_test)

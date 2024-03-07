@@ -8,15 +8,14 @@ exploration  and experimentation, it provides various data cleaning
 classes to apply the most common transformations fast and easy.
 
 !!! note
-    All of atom's data cleaning methods automatically adopt the relevant
-    transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`)
-    from atom. A different choice can be added as parameter to the method
-    call, e.g. `#!python atom.scale(verbose=2)`.
-
-!!! note
-    Like the [add][atomclassifier-add] method, the data cleaning methods
-    accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `#!python atom.scale(columns=[0, 1])`.
+    * All of atom's data cleaning methods automatically adopt the relevant
+      transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`)
+      from atom. A different choice can be added as parameter to the method
+      call, e.g., `#!python atom.scale(verbose=2)`.
+    * Like the [add][atomclassifier-add] method, the data cleaning methods
+      accept the `columns` parameter to only transform a subset of the
+      dataset's features, e.g., `#!python atom.scale(columns=[0, 1])`. Read
+      more in the [row and column selection][] section.
 
 
 <br>
@@ -39,7 +38,7 @@ method.
 ## Standard data cleaning
 
 There are many data cleaning steps that are useful to perform on any
-dataset before modelling. These are general rules that apply almost
+dataset before modeling. These are general rules that apply almost
 on every use-case and every task. The [Cleaner][] class is a convenient
 tool to apply such steps. It can be accessed from atom through the
 [clean][atomclassifier-clean] method. Use the class' parameters to
@@ -50,6 +49,24 @@ choose which transformations to perform. The available steps are:
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
 * Encode the target column.
+
+<br>
+
+## Time series decomposition
+
+Time series decomposition involves thinking of a series as a combination
+of level, trend, seasonality, and noise components, each representing one
+of the underlying categories of patterns. Decomposing the series is a
+statistical task that deconstructs the data, leaving some components to
+model them in isolation.
+
+Use the [Decomposer][] class to remove trend and seasonality. It can be
+accessed from atom through the [decompose][atomforecaster-decompose] method.
+
+!!! tip
+    Use the [plot_decomposition][] method to visualize the trend,
+    seasonality and residuals of the time series. This can help to determine
+    if the data follows an additive or multiplicative trend.
 
 <br>
 
@@ -101,8 +118,8 @@ transform the column in place.
 ## Imputing missing values
 
 For various reasons, many real world datasets contain missing values,
-often encoded as blanks, NaNs or other placeholders. Such datasets
-however are incompatible with ATOM's models which assume that all
+often encoded as blanks, NaNs or other placeholders. Such datasets,
+however, are incompatible with ATOM's models, which assume that all
 values in an array are numerical, and that all have and hold meaning.
 The [Imputer][] class handles missing values in the dataset by either
 dropping or imputing the value. It can be accessed from atom through
@@ -123,11 +140,11 @@ through the [normalize][atomclassifier-normalize] method.
 
 ## Handling outliers
 
-When modelling, it is important to clean the data sample to ensure that
+When modeling, it is important to clean the data sample to ensure that
 the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
-learning modelling and model skill in general can be improved by 
+learning modeling and model skill in general can be improved by 
 understanding and even removing these outlier samples. The [Pruner][]
 class offers 7 different strategies to detect outliers (described
 hereunder). It can be accessed from atom through the [prune][atomclassifier-prune]
@@ -210,5 +227,5 @@ quickly scale atom's dataset using one of sklearn's scalers. It can be
 accessed from atom through the [scale][atomclassifier-scale] method. 
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here][gpu-acceleration]
-    for further information about GPU implementation.
+    All strategies can utilize GPU speed-up. Click [here][estimator-acceleration]
+    for further information about GPU acceleration.

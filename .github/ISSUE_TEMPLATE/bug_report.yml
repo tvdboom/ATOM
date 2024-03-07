@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug.
+description: Create a report to help us fix the bug.
 labels: [bug]
 body:
   - type: checkboxes
@@ -9,30 +9,92 @@ body:
       options:
       - label: I've read the [contribution guidelines](https://tvdboom.github.io/ATOM/latest/contributing/).
         required: true
-      - label: The documentation does not mention anything about my problem.
-      - label: There are no open or closed issues that are related to my problem.
+      - label: The [documentation](https://tvdboom.github.io/ATOM) does not mention anything about my problem.
+      - label: There are no [open or closed issues](https://github.com/tvdboom/ATOM/issues) that are related to my problem.
   - type: textarea
+    validations:
+      required: true
     attributes:
       label: Description
       description: Provide a brief description of the bug in 1-2 sentences.
+  - type: textarea
     validations:
       required: true
+    attributes:
+      label: Steps to reproduce
+      description: >
+        Please add a [minimal code example](https://scikit-learn.org/dev/developers/minimal_reproducer.html)
+        that can reproduce the error when running it. Be as succinct as possible,
+        **do not depend on external data files**: instead you can generate synthetic
+        data using `numpy.random`, [sklearn.datasets.make_regression](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html),
+        [sklearn.datasets.make_classification](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_classification.html) 
+        or a few lines of Python code. Example:
+
+        ```python
+        from atom import ATOMClassifier
+        from sklearn.datasets import load_breast_cancer
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        atom = ATOMClassifier(X, y, random_state=1)
+        atom.run("OLS", errors="raise")
+        ```
+
+        If the code is too long, feel free to put it in a public gist and link it
+        in the issue: https://gist.github.com.
+
+        In short, **we are going to copy-paste your code** to run it and we expect
+        to get the same result as you.
+
+        We acknowledge that crafting a minimal reproducible code example requires
+        some effort on your side but it really helps the maintainers quickly reproduce
+        the problem and analyze its cause.
+      placeholder: |
+        ```
+        Sample code to reproduce the problem.
+        ```
   - type: textarea
+    validations:
+      required: true
     attributes:
       label: Expected behaviour
       description: Describe what you'd expect to happen.
+      placeholder: >
+        Example: No error is thrown.
   - type: textarea
+    validations:
+      required: true
     attributes:
       label: Actual behaviour
-      description: Describe what is actually happening.
+      description: >
+        Paste or describe the results you observe instead of the expected results.
+        If you observe an error, please paste the error message including the
+        **full traceback** of the exception. For instance the code above raises the
+        following exception:
+
+        ```python-traceback
+        ---------------------------------------------------------------------------
+        TypeError                                 Traceback (most recent call last)
+        <ipython-input-1-a674e682c281> in <module>
+              6 atom = ATOMClassifier(X, y, random_state=1)
+        ----> 7 atom.run("OLS", errors="raise")
+
+        ValueError: The OrdinaryLeastSquares model is not available for multilabel classification tasks!
+        ```
+      placeholder: >
+        Please paste or specifically describe the actual output or traceback.
   - type: textarea
+    validations:
+      required: true
     attributes:
-      label: Steps to reproduce
-      description: Paste a minimal example to reproduce the bug.
-  - type: textarea
+      label: Python and package versions
+      render: Shell
+      description: |
+        Please run the following and paste the output below.
+
+        ```python
+        import atom; atom.show_versions()
+        ```
+  - type: markdown
     attributes:
-      label: Python and package version
-      description: Provide the used versions, i.e. run the following commands in the console.
-      value: |
-        - Python: `import sys; sys.version`
-        - ATOM: `import atom; atom.__version__`
+      value: Thanks for contributing 🎉!

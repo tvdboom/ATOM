@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
+"""Automated Tool for Optimized Modeling (ATOM).
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Unit tests for feature_engineering.py
 
@@ -15,25 +13,41 @@ from sklearn.tree import DecisionTreeClassifier
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
-from atom.utils import to_df
+from atom.utils.utils import to_df
 
 from .conftest import (
-    X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_reg,
+    X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_fc,
+    y_reg,
 )
 
 
 # Test FeatureExtractor ============================================ >>
 
-def test_invalid_encoding_type():
-    """Assert that an error is raised when encoding_type is invalid."""
-    with pytest.raises(ValueError, match=".*the encoding_type parameter.*"):
-        FeatureExtractor(encoding_type="invalid").transform(X10_dt)
-
-
 def test_invalid_features():
     """Assert that an error is raised when features are invalid."""
     with pytest.raises(ValueError, match=".*an attribute of pd.Series.dt.*"):
         FeatureExtractor(features="invalid").transform(X10_dt)
+
+
+def test_from_index_invalid():
+    """Assert that an error is raised when the index is no datetime."""
+    extractor = FeatureExtractor(from_index=True)
+    with pytest.raises(ValueError, match=".*index to a timestamp format.*"):
+        extractor.transform(X_bin)
+
+
+def test_from_index():
+    """Assert that features can be extracted from the index."""
+    extractor = FeatureExtractor(from_index=True)
+    X = extractor.transform(pd.DataFrame(y_fc))
+    assert "Period_year" in X.columns
+
+
+def test_skip_no_variance():
+    """Assert that features with no variance are not in the output."""
+    extractor = FeatureExtractor(from_index=True)
+    X = extractor.transform(pd.DataFrame(y_fc))
+    assert "Period_day" not in X.columns
 
 
 def test_wrongly_converted_columns_are_ignored():
@@ -46,7 +60,7 @@ def test_wrongly_converted_columns_are_ignored():
 def test_datetime_features_are_used():
     """Assert that datetime64 features are used as is."""
     X = to_df(X10_dt)
-    X["x2"] = pd.to_datetime(X["x2"])
+    X["x2"] = pd.to_datetime(X["x2"], dayfirst=True)
 
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X)
@@ -73,21 +87,24 @@ def test_order_features():
     """Assert that the new features are in the order provided."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_dt)
-    assert X.columns.get_loc("x2_day") == 2
+    assert X.columns.get_loc("x2_year") == 2
     assert X.columns.get_loc("x2_month") == 3
-    assert X.columns.get_loc("x2_year") == 4
+    assert X.columns.get_loc("x2_day") == 4
 
 
-@pytest.mark.parametrize("fxs", [
-    ("microsecond", "%f"),
-    ("second", "%S"),
-    ("hour", "%H"),
-    ("weekday", "%d/%m/%Y"),
-    ("day", "%d/%m/%Y"),
-    ("dayofyear", "%d/%m/%Y"),
-    ("month", "%d/%m/%Y"),
-    ("quarter", "%d/%m/%Y"),
-])
+@pytest.mark.parametrize(
+    "fxs",
+    [
+        ("microsecond", "%f"),
+        ("second", "%S"),
+        ("hour", "%H"),
+        ("weekday", "%d/%m/%Y"),
+        ("day", "%d/%m/%Y"),
+        ("dayofyear", "%d/%m/%Y"),
+        ("month", "%d/%m/%Y"),
+        ("quarter", "%d/%m/%Y"),
+    ],
+)
 def test_all_cyclic_features(fxs):
     """Assert that all cyclic columns create two features."""
     extractor = FeatureExtractor(features=fxs[0], fmt=fxs[1], encoding_type="cyclic")
@@ -104,27 +121,6 @@ def test_features_are_not_dropped():
 
 
 # Test FeatureGenerator ============================================ >>
-
-def test_n_features_parameter_negative():
-    """Assert that an error is raised when n_features is negative."""
-    generator = FeatureGenerator(n_features=-2)
-    with pytest.raises(ValueError, match=".*the n_features parameter.*"):
-        generator.fit(X_bin, y_bin)
-
-
-def test_strategy_parameter():
-    """Assert that the strategy parameter is either dfs or gfg."""
-    generator = FeatureGenerator(strategy="invalid")
-    with pytest.raises(ValueError, match=".*strategy parameter.*"):
-        generator.fit(X_bin, y_bin)
-
-
-def test_operators_parameter():
-    """Assert that all operators are valid."""
-    generator = FeatureGenerator("gfg", n_features=None, operators=("div", "invalid"))
-    with pytest.raises(ValueError, match=".*value in the operators.*"):
-        generator.fit(X_bin, y_bin)
-
 
 def test_n_features_above_maximum():
     """Assert that n_features becomes maximum if more than maximum."""
@@ -149,7 +145,7 @@ def test_genetic_non_improving_features():
         random_state=1,
     )
     _ = generator.fit_transform(X_reg, y_reg)
-    assert generator.genetic_features is None
+    assert not hasattr(generator, "genetic_features_")
 
 
 def test_attribute_genetic_features():
@@ -162,7 +158,7 @@ def test_attribute_genetic_features():
         random_state=1,
     )
     _ = generator.fit_transform(X_bin, y_bin)
-    assert not generator.genetic_features.empty
+    assert not generator.genetic_features_.empty
 
 
 def test_updated_dataset():
@@ -173,7 +169,7 @@ def test_updated_dataset():
 
 
 def test_default_feature_names():
-    """Assert that the new features get correct default names."""
+    """Assert that the new features get the correct default names."""
     X = X_bin.copy()
     X["x31"] = range(len(X))
 
@@ -185,84 +181,49 @@ def test_default_feature_names():
         random_state=1,
     )
     X = generator.fit_transform(X, y_bin)
-    assert "x30" not in X and "x32" in X
+    assert "x32" in X
+    assert "x30" not in X
 
 
 # Test FeatureGrouper ============================================= >>
 
-def test_groups_invalid_int():
-    """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper(group=[0, 99])
-    with pytest.raises(ValueError, match=".*out of range.*"):
-        grouper.transform(X_bin)
-
-
-def test_groups_invalid_str():
-    """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper(group=[0, "invalid"])
-    with pytest.raises(ValueError, match=".*not find any column.*"):
-        grouper.transform(X_bin)
-
-
-def test_unequal_groups_names():
-    """Assert that an error is raised when len(groups) != len(names)."""
-    grouper = FeatureGrouper(group=[0, 1, 2], name=["a", "b"])
-    with pytest.raises(ValueError, match=".*does not match.*"):
-        grouper.transform(X_bin)
-
-
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
-    grouper = FeatureGrouper(group=[0, 1, 2], operators="invalid")
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="invalid")
     with pytest.raises(ValueError, match=".*operators parameter.*"):
         grouper.transform(X_bin)
 
 
 def test_invalid_operator():
     """Assert that an error is raised when the result is not one-dimensional."""
-    grouper = FeatureGrouper(group=[0, 1, 2], operators="log")
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="log")
     with pytest.raises(ValueError, match=".*one-dimensional.*"):
         grouper.transform(X_bin)
 
 
-@pytest.mark.parametrize("groups", ["mean.+", "float", [0, 1], [[0, 1], [2, 3]]])
-def test_groups_are_created(groups):
+def test_groups_are_created():
     """Assert that the groups are made."""
-    grouper = FeatureGrouper(group=groups)
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]})
     X = grouper.transform(X_bin)
-    assert "mean(group_1)" in X.columns
+    assert "mean(g1)" in X.columns
     assert X.columns[0] != X_bin.columns[0]
 
 
-def test_custom_names_and_operators():
-    """Assert that custom names and operators can be used."""
-    grouper = FeatureGrouper(group=[0, 1], name="gr", operators="var")
+def test_custom_operators():
+    """Assert that custom operators can be used."""
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, operators="var")
     X = grouper.transform(X_bin)
-    assert "var(gr)" in X.columns
+    assert "var(g1)" in X.columns
 
 
 def test_columns_are_kept():
     """Assert that group columns can be kept."""
-    grouper = FeatureGrouper(group=[0, 1, 2], drop_columns=False)
+    grouper = FeatureGrouper({"g1": ["mean radius", "mean texture"]}, drop_columns=False)
     X = grouper.transform(X_bin)
     assert X.columns[0] == X_bin.columns[0]
 
 
-def test_attribute_is_created():
-    """Assert that the groups attribute is created."""
-    grouper = FeatureGrouper(group=[[0, 1], [2, 3]])
-    grouper.transform(X_bin)
-    assert list(grouper.groups) == ["group_1", "group_2"]
-
-
 # Test FeatureSelector ============================================= >>
-
-def test_unknown_strategy_parameter():
-    """Assert that an error is raised when strategy is unknown."""
-    selector = FeatureSelector(strategy="invalid")
-    with pytest.raises(ValueError, match=".*the strategy parameter.*"):
-        selector.fit(X_reg, y_reg)
-
 
 def test_solver_parameter_empty():
     """Assert that an error is raised when solver is None."""
@@ -284,11 +245,18 @@ def test_goal_attribute():
     assert selector._estimator.estimator.__class__.__name__.endswith("Regressor")
 
 
-def test_solver_parameter_invalid_value():
-    """Assert that an error is raised when solver is unknown."""
-    selector = FeatureSelector(strategy="RFE", solver="invalid")
+def test_sfm_invalid_solver():
+    """Assert that an error is raised when solver is invalid."""
+    selector = FeatureSelector(strategy="sfm", solver="invalid_class", n_features=5)
     with pytest.raises(ValueError, match=".*Unknown model.*"):
-        selector.fit(X_reg, y_reg)
+        selector.fit_transform(X_bin, y_bin)
+
+
+def test_sfm_invalid_solver_no_task():
+    """Assert that an error is raised when solver is invalid."""
+    selector = FeatureSelector(strategy="sfm", solver="RF")
+    with pytest.raises(ValueError, match=".*must be followed by '_class'.*"):
+        selector.fit_transform(X_bin, y_bin)
 
 
 def test_kwargs_but_no_strategy():
@@ -298,38 +266,10 @@ def test_kwargs_but_no_strategy():
         selector.fit(X_reg, y_reg)
 
 
-def test_n_features_parameter():
-    """Assert that an error is raised when n_features is invalid."""
-    selector = FeatureSelector(strategy="sfm", solver="XGB_reg", n_features=0)
-    with pytest.raises(ValueError, match=".*the n_features parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_min_repeated_parameter():
-    """Assert that an error is raised when min_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, min_repeated=-1)
-    with pytest.raises(ValueError, match=".*the min_repeated parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_max_repeated_parameter():
-    """Assert that an error is raised when max_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, max_repeated=-1)
-    with pytest.raises(ValueError, match=".*the max_repeated parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
 def test_max_repeated_smaller_min_repeated():
     """Assert that an error is raised when min_repeated > max_repeated."""
     selector = FeatureSelector(strategy=None, min_repeated=100, max_repeated=2)
     with pytest.raises(ValueError, match=".*can't be higher.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_max_correlation_parameter():
-    """Assert that an error is raised when max_correlation is invalid."""
-    selector = FeatureSelector(strategy=None, max_correlation=-0.2)
-    with pytest.raises(ValueError, match=".*the max_correlation parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
@@ -342,22 +282,24 @@ def test_error_y_is_None():
 
 @pytest.mark.parametrize("min_repeated", [2, 0.1])
 def test_remove_high_variance(min_repeated):
-    """Assert that high variance features are removed."""
+    """Assert that high-variance features are removed."""
     X = X_bin.copy()
     X["invalid"] = [f"{i}" for i in range(len(X))]  # Add column with maximum variance
     selector = FeatureSelector(min_repeated=min_repeated, max_repeated=None)
     X = selector.fit_transform(X)
     assert X.shape[1] == X_bin.shape[1]
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 @pytest.mark.parametrize("max_repeated", [400, 0.9])
 def test_remove_low_variance(max_repeated):
-    """Assert that low variance features are removed."""
+    """Assert that low-variance features are removed."""
     X = X_bin.copy()
     X["invalid"] = "test"  # Add column with minimum variance
     selector = FeatureSelector(min_repeated=None, max_repeated=max_repeated)
     X = selector.fit_transform(X)
     assert X.shape[1] == X_bin.shape[1]
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_remove_collinear_without_y():
@@ -367,8 +309,10 @@ def test_remove_collinear_without_y():
     X["invalid"] = list(range(len(X)))
     selector = FeatureSelector(max_correlation=1)
     X = selector.fit_transform(X)
-    assert "valid" in X and "invalid" not in X
-    assert hasattr(selector, "collinear")
+    assert "valid" in X
+    assert "invalid" not in X
+    assert hasattr(selector, "collinear_")
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_remove_collinear_with_y():
@@ -376,7 +320,8 @@ def test_remove_collinear_with_y():
     selector = FeatureSelector(max_correlation=0.9)
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] < X_bin.shape[1]
-    assert hasattr(selector, "collinear")
+    assert hasattr(selector, "collinear_")
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_solver_parameter_empty_univariate():
@@ -398,6 +343,7 @@ def test_univariate_strategy_custom_solver():
     selector = FeatureSelector("univariate", solver=f_regression, n_features=9)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 9
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_pca_strategy():
@@ -405,14 +351,15 @@ def test_pca_strategy():
     selector = FeatureSelector(strategy="pca", n_features=0.7)
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 21
-    assert selector.pca.get_params()["svd_solver"] == "auto"
+    assert selector.pca_.get_params()["svd_solver"] == "auto"
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_pca_components():
     """Assert that the pca strategy creates components instead of features."""
     selector = FeatureSelector(strategy="pca", solver="arpack", n_features=5)
     X = selector.fit_transform(X_bin)
-    assert selector.pca.svd_solver == "arpack"
+    assert selector.pca_.svd_solver == "arpack"
     assert "pca0" in X.columns
 
 
@@ -420,8 +367,8 @@ def test_pca_sparse_data():
     """Assert that the pca strategy uses TruncatedSVD for sparse data."""
     selector = FeatureSelector(strategy="pca", n_features=2)
     selector.fit(X_sparse)
-    assert selector.pca.__class__.__name__ == "TruncatedSVD"
-    assert selector.pca.get_params()["algorithm"] == "randomized"
+    assert selector.pca_.__class__.__name__ == "TruncatedSVD"
+    assert selector.pca_.get_params()["algorithm"] == "randomized"
 
 
 def test_sfm_prefit_invalid_estimator():
@@ -446,13 +393,7 @@ def test_sfm_strategy_not_threshold():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 16
-
-
-def test_sfm_invalid_solver():
-    """Assert that an error is raised when solver is invalid."""
-    selector = FeatureSelector(strategy="sfm", solver="invalid", n_features=5)
-    with pytest.raises(ValueError, match=".*Unknown model.*"):
-        selector.fit_transform(X_bin, y_bin)
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_sfm_strategy_fitted_solver():
@@ -490,12 +431,13 @@ def test_sfs_strategy():
     )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 6
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_rfe_strategy():
     """Assert that the RFE strategy works as intended."""
     selector = FeatureSelector(
-        strategy="RFE",
+        strategy="rfe",
         solver=DecisionTreeClassifier(random_state=1),
         n_features=28,
         random_state=1,
@@ -515,6 +457,7 @@ def test_rfecv_strategy_before_pipeline_classification():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 3
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_rfecv_strategy_before_pipeline_regression():
@@ -528,13 +471,14 @@ def test_rfecv_strategy_before_pipeline_regression():
     )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
+    assert list(selector.get_feature_names_out()) == list(X.columns)
 
 
 def test_kwargs_parameter_threshold():
-    """Assert that the kwargs parameter works as intended (add threshold)."""
+    """Assert that the kwargs parameter works as intended."""
     selector = FeatureSelector(
         strategy="sfm",
-        solver=DecisionTreeClassifier(random_state=1),
+        solver=DecisionTreeClassifier,
         n_features=3,
         threshold="mean",
         random_state=1,
@@ -556,6 +500,18 @@ def test_kwargs_parameter_pca():
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 12
+
+
+def test_advanced_no_get_feature_names_out():
+    """Assert that get_feature_names_out is not implemented for advanced strats."""
+    selector = FeatureSelector(
+        strategy="pso",
+        solver="tree_class",
+        n_iteration=1,
+        population_size=1,
+    ).fit(X_bin, y_bin)
+    with pytest.raises(NotImplementedError, match=".*get_feature_names_out.*"):
+        selector.get_feature_names_out()
 
 
 def test_advanced_provided_validation_sets():
@@ -580,7 +536,7 @@ def test_advanced_missing_y_valid():
 
 
 def test_advanced_custom_scoring():
-    """Assert that scoring can be specified by the user."""
+    """Assert that the user can specify a custom scorer."""
     selector = FeatureSelector(
         strategy="pso",
         solver="tree_class",
@@ -589,7 +545,7 @@ def test_advanced_custom_scoring():
         scoring="auc",
     )
     selector = selector.fit(X_bin, y_bin)
-    assert selector.pso.kwargs["scoring"].name == "roc_auc"
+    assert selector.pso_.kwargs["scoring"].name == "auc"
 
 
 def test_advanced_binary_classification_scoring():
@@ -601,7 +557,7 @@ def test_advanced_binary_classification_scoring():
         population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
-    assert selector.pso.kwargs["scoring"].name == "f1"
+    assert selector.pso_.kwargs["scoring"].name == "f1"
 
 
 def test_advanced_multiclass_classification_scoring():
@@ -613,7 +569,7 @@ def test_advanced_multiclass_classification_scoring():
         population_size=1,
     )
     selector = selector.fit(X_class, y_class)
-    assert selector.pso.kwargs["scoring"].name == "f1_weighted"
+    assert selector.pso_.kwargs["scoring"].name == "f1_weighted"
 
 
 def test_advanced_regression_scoring():
@@ -625,7 +581,7 @@ def test_advanced_regression_scoring():
         population_size=1,
     )
     selector = selector.fit(X_reg, y_reg)
-    assert selector.hho.kwargs["scoring"].name == "r2"
+    assert selector.hho_.kwargs["scoring"].name == "r2"
 
 
 def test_advanced_custom_objective_function():
@@ -633,9 +589,9 @@ def test_advanced_custom_objective_function():
     selector = FeatureSelector(
         strategy="gwo",
         solver="tree_class",
-        objective_function=lambda *args: 1,
+        objective_function=lambda *args: 1,  # noqa: ARG005
         n_iteration=1,
         population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
-    assert selector.gwo.objective_function.__name__ == "<lambda>"
+    assert selector.gwo_.objective_function.__name__ == "<lambda>"

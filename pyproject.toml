@@ -8,77 +8,85 @@ description = "A Python package for fast exploration of machine learning pipelin
 authors = [{name = "Mavs", email = "m.524687@gmail.com"}]
 license = {file = "LICENSE"}
 readme = "README.md"
-requires-python = ">=3.8"
-keywords = ["Python package", "Machine Learning", "Modelling", "Data Pipeline"]
+requires-python = ">=3.10,<3.12"
+keywords = ["Python package", "Machine Learning", "Modeling", "Data Pipeline"]
 dynamic = ["version"]
 classifiers = [
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "category-encoders>=2.5.1",
-    "dagshub<=0.2.10",
+    "beartype>=0.16.4",
+    "category-encoders>=2.6.3",
     "dill>=0.3.6",
+    "featuretools>=1.28.0",
     "gplearn>=0.4.2",
-    "imbalanced-learn>=0.10.1",
-    "featuretools>=1.23.0",
-    "joblib>=1.1.0",
-    "matplotlib>=3.6.3",
-    "mlflow>=2.2.0",
-    "modin[ray]>=0.18.1",
+    "imbalanced-learn>=0.12.0",
+    "ipython>=8.11.0",
+    "ipywidgets>=8.1.1",
+    "joblib>=1.3.1",
+    "matplotlib>=3.7.2",
+    "mlflow>=2.10.2",
     "nltk>=3.8.1",
-    "numpy>=1.23.5",
-    "optuna>=3.2.0",
-    "pandas>=1.5.3",
-    "plotly>=5.13.1",
-    "ray[serve]>=2.3.0",
-    "shap>=0.41.0",
-    "scikit-learn>=1.2.1",
-    "scikit-learn-intelex>=2023.0.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
-    "scipy>=1.9.3",
+    "numpy>=1.23.0",
+    "optuna>=3.4.0",
+    "pandas>=2.1.2",
+    "plotly>=5.18.0",
+    "scikit-learn>=1.4.1.post1",
+    "scipy>=1.10.1",
+    "shap>=0.43.0",
+    "sktime[forecasting]>=0.26.0",
+    "statsmodels>=0.14.1",
     "zoofs>=0.1.26",
 ]
 
 [project.optional-dependencies]
 full = [
     "botorch>=0.8.5",
-    "catboost>=1.1.1",
-    "evalml>=0.68.0",
-    "explainerdashboard>=0.4.2",
-    "gradio>=3.19.1",
-    "lightgbm>=3.3.5",
+    "catboost>=1.2",
+    "dagshub>=0.3.8",
+    "dask[distributed]>=2024.2.0",
+    "explainerdashboard>=0.4.3",
+    "gradio>=3.44.4",
+    "lightgbm>=4.1.0",
+    "modin[ray]>=0.25.0",
+    "polars>=0.20.7",
+    "pyarrow>=15.0.0",
+    "pyspark>=3.5.0",
+    "ray[serve]>=2.9.1",
+    "requests>=2.31.0",
+    "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "schemdraw>=0.16",
+    "statsforecast>=1.6.0",
+    "sweetviz>=2.3.1",
     "wordcloud>=1.9.2",
-    "xgboost>=1.7.4",
-    "ydata-profiling>=4.1.0",
+    "xgboost>=2.0.0",
 ]
 
 [tool.pdm.dev-dependencies]
 dev = [
     # Linting
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "flake8-pyproject>=1.2.2",  # To configure flake8 with pyproject.toml
+    "pre-commit>=3.5.0",
     # Testing
     "nbmake>=1.4.1",  # To test example notebooks
     "pytest>=7.2.1",
     "pytest-cov>=4.0.0",
+    "pytest-mock>=3.12.0",
     "pytest-xdist>=3.2.0",
-    "scikeras>=0.10.0",
-    "tensorflow>=2.11.0",
+    "scikeras>=0.11.0",
+    "tensorflow>=2.13.0",
     # Documentation
+    "jupyter-contrib-nbextensions>=0.7.0",
     "mike>=1.1.2",  # For versioning
-    "mkdocs>=1.4.2",
-    "mkdocs-autorefs>=0.4.1",
-    "mkdocs-jupyter>=0.22.0",
-    "mkdocs-material>=9.1.0",
-    "mkdocs-material-extensions>=1.1.1",
+    "mkdocs>=1.5.3",
+    "mkdocs-autorefs>=0.5.0",
+    "mkdocs-jupyter>=0.24.6",
+    "mkdocs-material>=9.4.7",
     "mkdocs-simple-hooks>=0.1.5",
-    "pymdown-extensions>=9.9.2",
+    "pymdown-extensions>=10.3.1",
     "pyyaml>=6.0",
 ]
 
@@ -90,7 +98,7 @@ dev = [
 
 [tool.pdm.version]
 source = "file"
-path = "atom/utils.py"
+path = "atom/utils/constants.py"
 
 [tool.pdm.build]
 includes = ["atom"]
@@ -101,18 +109,6 @@ testpaths = "tests/"
 python_files = "*.py"
 python_functions = "test_*"
 
-[tool.flake8]
-max-line-length = 90
-ignore = [
-    "W605",  # Invalid escape sequence: \s, \w, etc... (removed due to docstrings)
-    "W503",  # Line break before binary operator
-    "E731",  # Assign a lambda expression
-]
-per-file-ignores = [
-    "__init__.py: F401",  # Imported but unused
-    "utils.py: E704",  # Multiple statements on one line (def)
-]
-
 [tool.isort]
 skip_gitignore = true
 multi_line_output = 5
@@ -121,3 +117,85 @@ lines_after_imports = 2
 include_trailing_comma = true
 ignore_comments = true
 remove_redundant_aliases = true
+
+[tool.ruff]
+line-length = 99
+indent-width = 4
+show-fixes = true
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "D",  # Missing docstring in public function
+    "UP",  # pyupgrade
+    "YTT",  # flake8-2020
+    "BLE",  # blind-except
+    "FBT",  # boolean-trap
+    "B",  # bugbear
+    "A",  # builtins
+    "COM",  # commas
+    "C4",  # flake8-comprehensions
+    "T10",  # debugger
+    "ISC",  # implici-str-concat
+    "ICN",  # import-conventions
+    "G",  # flake8-logging-format
+    "INP",  # no-pep420
+    "PIE",  # flake8-pie
+    "T20",  # print
+    "PYI",  # pyi
+    "PT",  # flake8-pytest-style
+    "Q",  # quotes
+    "RSE",  # raise
+    "TID",  # tidy-imports
+    "ARG",  # flake8-unused-arguments
+    "ERA",  # commented-code
+    "PD",  # pandas-vet
+    "PGH",  # pygrep
+    "FLY",  # flynt
+    "NPY",  # numpy-specific-rules
+    "PERF",  # performance checks
+    "RUF",  # ruff
+]
+ignore = [
+    "E731",  # Do not assign a `lambda` expression, use a `def`
+    "COM812",  # Trailing comma missing
+    "PD901",  #  Avoid using the generic variable name `df` for DataFrames
+    "PD011",  # Use `.to_numpy()` instead of `.values`
+    "PD009",  # Use `.iloc` instead of `.iat`
+    "ARG002",  # Unused method argument
+    "B023",  # Function definition does not bind loop variable
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Unused imports
+"baserunner.py" = ["ERA001"]  # Commented-out code
+"patches.py" = ["A003"]  # Class attribute is shadowing a Python builtin
+"types.py" = [
+    "D105",  # Missing docstring in magic method
+    "D102",  # Missing docstring in public method
+]
+"tests/*" = [
+    "T20",  # print found
+    "S101",  # assert called
+    "PT011",  # error is too broad
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.mypy]
+ignore_missing_imports = true
+disable_error_code = [
+    "attr-defined",
+    "abstract",  # See https://github.com/python/mypy/issues/4717
+    "override",  # Transformers' methods don't always match with that of TransformerMixin
+    "misc",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "IF TYPE_CHECKING:",
+]

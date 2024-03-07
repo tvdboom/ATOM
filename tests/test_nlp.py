@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-
-"""Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
 Description: Unit tests for nlp.py
 
 """
 
-from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -22,8 +19,16 @@ from .conftest import X_bin, X_text, y10
 
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
-    with pytest.raises(ValueError, match=".*not contain a text corpus.*"):
+    with pytest.raises(ValueError, match=".*contain a column named corpus.*"):
         TextCleaner().transform(X_bin)
+
+
+def test_corpus_is_not_of_correct_type():
+    """Assert that an error is raised when corpus has an incorrect type."""
+    X = X_bin.copy()
+    X["corpus"] = 1
+    with pytest.raises(TypeError, match=".*consist of a string or sequence.*"):
+        TextCleaner().transform(X)
 
 
 def test_decode():
@@ -40,35 +45,30 @@ def test_drop_emails():
     """Assert that email addresses are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["test@webmail.com"]])["corpus"][0] == ""
-    assert not cleaner.drops["email"].dropna().empty
 
 
 def test_drop_url():
     """Assert that URLs are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["www.test.com"]])["corpus"][0] == ""
-    assert not cleaner.drops["url"].dropna().empty
 
 
 def test_drop_html():
     """Assert that html tags are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["<table>test</table>"]])["corpus"][0] == "test"
-    assert not cleaner.drops["html"].dropna().empty
 
 
 def test_drop_emojis():
     """Assert that emojis are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([[":test_emoji:"]])["corpus"][0] == ""
-    assert not cleaner.drops["emoji"].dropna().empty
 
 
 def test_drop_numbers():
     """Assert that numbers are dropped from the text."""
     cleaner = TextCleaner()
     assert cleaner.transform([["123,123.123"]])["corpus"][0] == ""
-    assert not cleaner.drops["number"].dropna().empty
 
 
 def test_drop_punctuation():
@@ -101,7 +101,7 @@ def test_bigrams():
     tokenizer = Tokenizer(bigram_freq=0.5)
     X = tokenizer.transform([["a b a b"]])
     assert X["corpus"][0] == ["a_b", "a_b"]
-    assert isinstance(tokenizer.bigrams, pd.DataFrame)
+    assert isinstance(tokenizer.bigrams_, pd.DataFrame)
 
 
 def test_trigrams():
@@ -109,7 +109,7 @@ def test_trigrams():
     tokenizer = Tokenizer(trigram_freq=0.5)
     X = tokenizer.transform([["a b c a b c"]])
     assert X["corpus"][0] == ["a_b_c", "a_b_c"]
-    assert isinstance(tokenizer.trigrams, pd.DataFrame)
+    assert isinstance(tokenizer.trigrams_, pd.DataFrame)
 
 
 def test_quadgrams():
@@ -117,7 +117,7 @@ def test_quadgrams():
     tokenizer = Tokenizer(quadgram_freq=0.5)
     X = tokenizer.transform([["a b c d a b c d"]])
     assert X["corpus"][0] == ["a_b_c_d", "a_b_c_d"]
-    assert isinstance(tokenizer.quadgrams, pd.DataFrame)
+    assert isinstance(tokenizer.quadgrams_, pd.DataFrame)
 
 
 def test_no_ngrams():
@@ -125,7 +125,7 @@ def test_no_ngrams():
     tokenizer = Tokenizer(quadgram_freq=2)
     X = tokenizer.transform([["a b c d"]])
     assert X["corpus"][0] == ["a", "b", "c", "d"]
-    assert tokenizer.quadgrams is None
+    assert not hasattr(tokenizer, "quadgrams_")
 
 
 # Test TextNormalizer ================================================== >>
@@ -161,45 +161,39 @@ def test_lemmatization():
 
 # Test Vectorizer ================================================== >>
 
+def test_hashing_with_get_feature_names_out():
+    """Assert that get_feature_names_out doesn't work with hashing."""
+    vectorizer = Vectorizer(strategy="hashing", n_features=10).fit(X_text)
+    with pytest.raises(ValueError, match=".*get_feature_names_out method.*"):
+        vectorizer.get_feature_names_out()
+
+
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
-    assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
-
-
-def test_invalid_strategy():
-    """Assert that an error is raised when the strategy is invalid."""
-    vectorizer = Vectorizer(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        vectorizer.fit(X_text)
+    vectorizer = Vectorizer().fit({"corpus": [["hi"], ["hi"]]})
+    assert "corpus_hi" in vectorizer.get_feature_names_out()
+    assert "corpus_hi" in vectorizer.transform({"corpus": [["hi"]]})
 
 
 @pytest.mark.parametrize("strategy", ["bow", "tfidf"])
 def test_strategies(strategy):
-    """Assert that the BOW and TF-IDF strategies works as intended."""
+    """Assert that the bow and tf-idf strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)
     assert X.shape == (10, 20)
     assert "corpus_york" in X
 
 
 def test_hashing():
-    """Assert that the Hashing strategy works as intended."""
-    X = Vectorizer(strategy="Hashing", n_features=10).fit_transform(X_text)
+    """Assert that the hashing strategy works as intended."""
+    X = Vectorizer(strategy="hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
     assert "hash1" in X
-
-
-@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
-@patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
-def test_gpu():
-    """Assert that the gpu implementation calls the get method of matrix."""
-    vectorizer = Vectorizer(device="gpu", engine="cuml")
-    pytest.raises(ValueError, vectorizer.fit_transform, X_text)
 
 
 def test_return_sparse():
     """Assert that the output is sparse."""
     X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text, y10)
-    assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
+    assert all(isinstance(dtype, pd.SparseDtype) for dtype in X.dtypes)
 
 
 def test_error_sparse_with_dense():
@@ -212,7 +206,7 @@ def test_error_sparse_with_dense():
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(test_func)
     with pytest.raises(ValueError, match=".*value for the return_sparse.*"):
-        atom.vectorize(strategy="BOW", return_sparse=True)
+        atom.vectorize(strategy="bow", return_sparse=True)
 
 
 def test_sparse_with_dense():
@@ -224,5 +218,5 @@ def test_sparse_with_dense():
 
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(test_func)
-    atom.vectorize(strategy="BOW", return_sparse=False)
-    assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
+    atom.vectorize(strategy="bow", return_sparse=False)
+    assert not any(isinstance(dtype, pd.SparseDtype) for dtype in atom.dtypes)

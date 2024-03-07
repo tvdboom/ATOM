@@ -1,32 +1,22 @@
-# -*- coding: utf-8 -*-
+"""Automated Tool for Optimized Modeling (ATOM).
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the BaseTracker class.
 
 """
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-
-@dataclass
-class TrackingParams:
-    """Tracking parameters for a mlflow experiment."""
-
-    log_ht: bool  # Track every trial of the hyperparameter tuning
-    log_model: bool  # Save the model estimator after fitting
-    log_plots: bool  # Save plot artifacts
-    log_data: bool  # Save the train and test sets
-    log_pipeline: bool  # Save the model's pipeline
+from atom.utils.types import Bool
+from atom.utils.utils import TrackingParams
 
 
 class BaseTracker:
+    """Defines attributes for mlflow tracking."""
 
     # Tracking parameters for mlflow
     _tracking_params = TrackingParams(
         log_ht=True,
-        log_model=True,
         log_plots=True,
         log_data=False,
         log_pipeline=False,
@@ -38,17 +28,8 @@ class BaseTracker:
         return self._tracking_params.log_ht
 
     @log_ht.setter
-    def log_ht(self, value: bool):
-        self._tracking_params.log_ht = value
-
-    @property
-    def log_model(self) -> bool:
-        """Whether to save the model's estimator after fitting."""
-        return self._tracking_params.log_model
-
-    @log_model.setter
-    def log_model(self, value: bool):
-        self._tracking_params.log_model = value
+    def log_ht(self, value: Bool):
+        self._tracking_params.log_ht = bool(value)
 
     @property
     def log_plots(self) -> bool:
@@ -56,8 +37,8 @@ class BaseTracker:
         return self._tracking_params.log_plots
 
     @log_plots.setter
-    def log_plots(self, value: bool):
-        self._tracking_params.log_plots = value
+    def log_plots(self, value: Bool):
+        self._tracking_params.log_plots = bool(value)
 
     @property
     def log_data(self) -> bool:
@@ -65,8 +46,8 @@ class BaseTracker:
         return self._tracking_params.log_data
 
     @log_data.setter
-    def log_data(self, value: bool):
-        self._tracking_params.log_data = value
+    def log_data(self, value: Bool):
+        self._tracking_params.log_data = bool(value)
 
     @property
     def log_pipeline(self) -> bool:
@@ -74,5 +55,5 @@ class BaseTracker:
         return self._tracking_params.log_pipeline
 
     @log_pipeline.setter
-    def log_pipeline(self, value: bool):
-        self._tracking_params.log_pipeline = value
+    def log_pipeline(self, value: Bool):
+        self._tracking_params.log_pipeline = bool(value)

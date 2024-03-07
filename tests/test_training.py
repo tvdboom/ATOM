@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
+"""Automated Tool for Optimized Modeling (ATOM).
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Unit tests for training.py
 
@@ -10,37 +8,16 @@ Description: Unit tests for training.py
 import pytest
 
 from atom.training import (
-    DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
-    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
+    DirectClassifier, DirectForecaster, DirectRegressor,
+    SuccessiveHalvingClassifier, SuccessiveHalvingForecaster,
+    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingForecaster,
+    TrainSizingRegressor,
 )
 
-from .conftest import (
-    bin_test, bin_train, class_test, class_train, reg_test, reg_train,
-)
+from .conftest import reg_test, reg_train
 
 
 # Test trainers ============================================== >>
-
-def test_infer_task():
-    """Assert that the correct task is inferred from the data."""
-    trainer = DirectClassifier("LR")
-    trainer.run(bin_train, bin_test)
-    assert trainer.task == "binary classification"
-
-    trainer = DirectClassifier("LR")
-    trainer.run(class_train, class_test)
-    assert trainer.task == "multiclass classification"
-
-    trainer = DirectRegressor("LGB", est_params={"n_estimators": 5})
-    trainer.run(reg_train, reg_test)
-    assert trainer.task == "regression"
-
-
-def test_sh_skip_runs_below_zero():
-    """Assert that an error is raised if skip_runs < 0."""
-    sh = SuccessiveHalvingRegressor(models="OLS", skip_runs=-1)
-    pytest.raises(ValueError, sh.run, reg_train, reg_test)
-
 
 def test_sh_skip_runs_too_large():
     """Assert that an error is raised if skip_runs >= n_runs."""
@@ -60,8 +37,8 @@ def test_models_are_restored():
         random_state=1,
     )
     sh.run(reg_train, reg_test)
-    assert "Tree" not in sh._models  # Original model is deleted
-    assert all(m in sh.models for m in ("Tree4", "RF2", "LGB1"))
+    assert "Tree" not in sh._models  # The original model is deleted
+    assert all(m in sh.models for m in ("Tree4", "AdaB2", "AdaB1"))
 
 
 def test_ts_int_train_sizes():
@@ -85,25 +62,34 @@ def test_ts_different_train_sizes_types():
 def test_goals_trainers():
     """Assert that the goal of every Trainer class is set correctly."""
     trainer = DirectClassifier("LR")
-    assert trainer.goal == "class"
+    assert trainer._goal.name == "classification"
+
+    trainer = DirectForecaster("NF")
+    assert trainer._goal.name == "forecast"
 
     trainer = DirectRegressor("OLS")
-    assert trainer.goal == "reg"
+    assert trainer._goal.name == "regression"
 
 
 def test_goals_successive_halving():
     """Assert that the goal of every SuccessiveHalving class is set correctly."""
-    sh = SuccessiveHalvingClassifier("LR")
-    assert sh.goal == "class"
+    trainer = SuccessiveHalvingClassifier("LR")
+    assert trainer._goal.name == "classification"
 
-    sh = SuccessiveHalvingRegressor("OLS")
-    assert sh.goal == "reg"
+    trainer = SuccessiveHalvingForecaster("NF")
+    assert trainer._goal.name == "forecast"
+
+    trainer = SuccessiveHalvingRegressor("OLS")
+    assert trainer._goal.name == "regression"
 
 
 def test_goals_train_sizing():
     """Assert that the goal of every TrainSizing class is set correctly."""
-    ts = TrainSizingClassifier("LR")
-    assert ts.goal == "class"
+    trainer = TrainSizingClassifier("LR")
+    assert trainer._goal.name == "classification"
 
-    ts = TrainSizingRegressor("OLS")
-    assert ts.goal == "reg"
+    trainer = TrainSizingForecaster("NF")
+    assert trainer._goal.name == "forecast"
+
+    trainer = TrainSizingRegressor("OLS")
+    assert trainer._goal.name == "regression"

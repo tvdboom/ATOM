@@ -2,8 +2,8 @@
 ----------
 
 The training phase is where the models are fitted on the training data.
-After this, you can use the [plots][] and [prediction methods][] to
-evaluate the results. The training applies the following steps for all
+After this, you can use the [plots][] and [prediction methods][predicting]
+to evaluate the results. The training applies the following steps for all
 models:
 
 1. Use [hyperparameter tuning][] to select the optimal hyperparameters for 
@@ -17,12 +17,15 @@ There are three approaches to run the training.
 
 * Direct training:
     - [DirectClassifier][]
+    - [DirectForecaster][]
     - [DirectRegressor][]
 * Training via [successive halving][]:
     - [SuccessiveHalvingClassifier][]
+    - [SuccessiveHalvingForecaster][]
     - [SuccessiveHalvingRegressor][]
 * Training via [train sizing][]:
     - [TrainSizingClassifier][]
+    - [TrainSizingForecaster][]
     - [TrainSizingRegressor][]
 
 The direct fashion repeats the aforementioned steps only once, while the
@@ -32,23 +35,24 @@ directly. Instead, every approach can be called directly from atom through
 the [run][atomclassifier-run], [successive_halving][atomclassifier-successive_halving]
 and [train_sizing][atomclassifier-train_sizing] methods respectively.
 
-Models are called through their [acronyms][models], e.g. `#!python atom.run(models="RF")`
+Models are called through their [acronyms][models], e.g., `#!python atom.run(models="RF")`
 will train a [RandomForest][]. If you want to run the same model multiple
-times, add a tag after the acronym to differentiate them.
+times, add a tag after the acronym to differentiate them. the tag must be 
+separated from the accronym by an underscore.
 
-```pycon
->>> atom.run(
-...     models=["RF1", "RF2"],
-...     est_params={
-...         "RF1": {"n_estimators": 100},
-...         "RF2": {"n_estimators": 200},
-...     }
-... )
+```python
+atom.run(
+    models=["RF_1", "RF_2"],
+    est_params={
+        "RF_1": {"n_estimators": 100},
+        "RF_2": {"n_estimators": 200},
+    }
+)
 ```
 
 For example, this pipeline fits two Random Forest models, one with 100
 and the other with 200 decision trees. The models can be accessed through
-`atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
+`atom.rf_1` and `atom.rf_2`. Use tagged models to test how the same model
 performs when fitted with different parameters or on different data sets.
 See the [Imbalanced datasets][example-imbalanced-datasets] example.
 
@@ -83,7 +87,7 @@ three ways of defining the scorer:
 
 Note that all scorers follow the convention that higher return values
 are better than lower return values. Thus, metrics which measure the
-distance between the model and the data (i.e. loss functions), like
+distance between the model and the data (i.e., loss functions), like
 `max_error` or `mean_squared_error`, will return the negated value of
 the metric.
 
@@ -97,7 +101,7 @@ sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
 case-insensitive and can be used in the [`metric`][directclassifier-metric]
-parameter instead of the scorer's full name, e.g. `#!python atom.run("LR", metric="BA")`
+parameter instead of the scorer's full name, e.g., `#!python atom.run("LR", metric="BA")`
 uses `balanced_accuracy`. The available acronyms are:
 
 * "AP" for "average_precision"
@@ -136,7 +140,7 @@ tasks.
 Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the `metric` parameter with a list of
-desired metrics, e.g. `#!python atom.run("LDA", metric=["r2", "mse"])`.
+desired metrics, e.g., `#!python atom.run("LDA", metric=["r2", "mse"])`.
 
 When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
@@ -149,7 +153,7 @@ model.
     * The [`winning`][atomclassifier-winner] model is retrieved comparing only
       the main metric.
     * Some plots let you choose which of the metrics in a multi-metric run
-      to show using the `metric` parameter, e.g. [plot_results][].
+      to show using the `metric` parameter, e.g., [plot_results][].
 
 <br>
 
@@ -197,14 +201,14 @@ The predefined models that support in-training validation are:
 * [XGBoost][]
 
 To apply in-training validation to a [custom model][custom-models], use the
-[`has_validation`][atommodel-has_validation] parameter when creating the
+[`validation`][atommodel-validation] parameter when creating the
 custom model.
 
 !!! warning
     * In-training validation is **not** calculated during [hyperparameter tuning][].
     * CatBoost selects the weights achieved by the best evaluation on the
     test set after training. This means that, by default, there is some
-    minor data leakage in the test set. Use the `use_best_model=False`
+    minor data leakage in the test set. Use the `#!python use_best_model=False`
     parameter to avoid this behavior or use a [holdout set][data-sets] to
     evaluate the final estimator.
 
@@ -228,8 +232,8 @@ this example, both the [XGBoost][] and the [LightGBM][] model use
 200 boosted trees. Make sure all the models do have the specified
 parameters or an exception will be raised!
 
-```pycon
->>> atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
+```python
+atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
 ```
 
 To specify parameters per model, use the model name as key and a dict
@@ -237,22 +241,22 @@ of the parameters as value. In this example, the [XGBoost][] model uses
 `n_estimators=200` and the [MultiLayerPerceptron][] uses one hidden
 layer with 75 neurons.
 
-```pycon
->>> atom.run(
-...     models=["XGB", "MLP"],
-...     est_params={
-...         "XGB": {"n_estimators": 200},
-...         "MLP": {"hidden_layer_sizes": (75,)},
-...     }
-... )
+```python
+atom.run(
+    models=["XGB", "MLP"],
+    est_params={
+        "XGB": {"n_estimators": 200},
+        "MLP": {"hidden_layer_sizes": (75,)},
+    }
+)
 ```
 
 Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding `_fit` at the end of the
 parameter. For example, to change [XGBoost][]'s verbosity, we can run:
 
-```pycon
->>> atom.run(models="XGB", est_params={"verbose_fit": True})
+```python
+atom.run(models="XGB", est_params={"verbose_fit": True})
 ```
 
 !!! note
@@ -314,9 +318,9 @@ Extra things to take into account:
     The hyperparameter tuning output can become quite wide for models
     with many hyperparameters. If you are working in a Jupyter Notebook,
     you can change the output's width running the following code in a cell:
-    ```pycon
-    >>> from IPython.display import display, HTML
-    >>> display(HTML("<style>.container { width:100% !important; }</style>"))
+    ```python
+    from IPython.display import display, HTML
+    display(HTML("<style>.container { width:100% !important; }</style>"))
     ```
 
 Other settings can be changed through the [`ht_params`][directclassifier-ht_params]
@@ -333,12 +337,12 @@ tune other parameters only for specific ones. The following example tunes
 the `n_estimators` parameter for both models but the `max_depth` parameter
 only for the [RandomForest][].
 
-```pycon
->>> atom.run(
-...    models=["ET", "RF"],
-...    n_trials=30,
-...    ht_params={"distributions": {"all": "n_estimators", "RF": "max_depth"}},
-... )
+```python
+atom.run(
+    models=["ET", "RF"],
+    n_trials=30,
+    ht_params={"distributions": {"all": "n_estimators", "RF": "max_depth"}},
+)
 ```
 
 Like the [`columns`][atomclassifier-add] parameter in atom's methods, you
@@ -347,12 +351,12 @@ It's possible to exclude multiple parameters, but not to combine inclusion
 and exclusion for the same model. For example, to optimize a [RandomForest][]
 using all its predefined parameters except `n_estimators`, run:
 
-```pycon
->>> atom.run(
-...     models="ET",
-...     n_trials=15,
-...     ht_params={"distributions": "!n_estimators"},
-... )
+```python
+atom.run(
+    models="ET",
+    n_trials=15,
+    ht_params={"distributions": "!n_estimators"},
+)
 ```
 
 If just the parameter name is provided, the predefined distribution is
@@ -361,41 +365,41 @@ sure they are compliant with [optuna's API](https://optuna.readthedocs.io/en/sta
 See every model's individual documentation in ATOM's API section for an
 overview of their hyperparameters and distributions.
 
-```pycon
->>> from optuna.distributions import (
-...    IntDistribution, FloatDistribution, CategoricalDistribution
-... )
+```python
+from optuna.distributions import (
+    IntDistribution, FloatDistribution, CategoricalDistribution
+)
 
->>> atom.run(
-...     models=["ET", "RF"],
-...     n_trials=30,
-...     ht_params={
-...         "dimensions": {
-...             "all": {"n_estimators": IntDistribution(10, 100, step=10),
-...             "RF": {
-...                 "max_depth": IntDistribution(1, 10),
-...                 "max_features": CategoricalDistribution(["sqrt", "log2"]),
-...            },
-...         },
-...     },
-... )
+atom.run(
+    models=["ET", "RF"],
+    n_trials=30,
+    ht_params={
+        "dimensions": {
+            "all": {"n_estimators": IntDistribution(10, 100, step=10)},
+            "RF": {
+                "max_depth": IntDistribution(1, 10),
+                "max_features": CategoricalDistribution(["sqrt", "log2"]),
+           },
+        },
+    }
+)
 ```
 
 Parameters for optuna's [study][] and the study's [optimize][] method can
 be added as kwargs to `ht_params`. For example, to use a different sampler
 or add a custom callback.
 
-```pycon
->>> from optuna.samplers import RandomSampler
+```python
+from optuna.samplers import RandomSampler
 
->>> atom.run(
-...     models="LR",
-...     n_trials=30,
-...     ht_params={
-...         "sampler": RandomSampler(seed=atom.random_state),
-...         "callbacks": custom_callback(),
-...     },
-... )
+atom.run(
+    models="LR",
+    n_trials=30,
+    ht_params={
+        "sampler": RandomSampler(seed=atom.random_state),
+        "callbacks": custom_callback(),
+    },
+)
 ```
 
 !!! note
@@ -430,10 +434,10 @@ The study uses [MedianPruner](https://optuna.readthedocs.io/en/stable/reference/
 as default pruner. You can use any other of optuna's [pruners](https://optuna.readthedocs.io/en/stable/reference/pruners.html)
 through the [`ht_params`][directclassifier-ht_params] parameter.
 
-```pycon
->>> from optuna.pruners import HyperbandPruner
+```python
+from optuna.pruners import HyperbandPruner
 
->>> atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
+atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
 ```
 
 !!! warning
@@ -452,8 +456,10 @@ the test set. This way you can get a distribution of the performance of
 the model. The sets are the same for every model. The number of sets can
 be chosen through the [`n_bootstrap`][directclassifier-n_bootstrap] parameter.
 
+See [here][example-bootstrapping] a bootstrapping example.
+
 !!! tip
-    Use the [plot_results][] method to plot the boostrap scores in a boxplot.
+    Use the [plot_bootstrap][] method to plot the boostrap scores in a boxplot.
 
 
 <br>
@@ -466,7 +472,7 @@ where the process is repeated. This continues until only one model
 remains, which is fitted on the complete dataset. Beware that a model's
 performance can depend greatly on the amount of data on which it is
 trained. For this reason, we recommend only to use this technique with
-similar models, e.g. only using tree-based models.
+similar models, e.g., only using tree-based models.
 
 Run successive halving from atom via the [successive_halving][atomclassifier-successive_halving]
 method. Consecutive runs of the same model are saved with the model's

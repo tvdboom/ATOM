@@ -22,7 +22,7 @@ The class contains some magic methods to help you access some of its
 elements faster. Note that methods that apply on the pipeline can return
 different results per branch.
 
-* **\__repr__:** Prints an overview of atom's branches, models and metric.
+* **\__repr__:** Prints an overview of atom's branches, models, and metrics.
 * **\__len__:** Returns the length of the dataset.
 * **\__iter__:** Iterate over the pipeline's transformers.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
@@ -42,26 +42,26 @@ attributes accordingly.
     - attributes:
         from_docstring: False
         include:
-            - atom.branch:Branch.pipeline
-            - atom.branch:Branch.mapping
-            - atom.branch:Branch.dataset
-            - atom.branch:Branch.train
-            - atom.branch:Branch.test
-            - atom.branch:Branch.X
-            - atom.branch:Branch.y
-            - atom.branch:Branch.X_train
-            - atom.branch:Branch.y_train
-            - atom.branch:Branch.X_test
-            - atom.branch:Branch.y_test
-            - atom.branch:Branch.shape
-            - atom.branch:Branch.columns
-            - atom.branch:Branch.n_columns
-            - atom.branch:Branch.features
-            - atom.branch:Branch.n_features
-            - atom.branch:Branch.target
+            - atom.data:Branch.pipeline
+            - atom.data:Branch.mapping
+            - atom.data:Branch.dataset
+            - atom.data:Branch.train
+            - atom.data:Branch.test
+            - atom.data:Branch.X
+            - atom.data:Branch.y
+            - holdout
+            - atom.data:Branch.X_train
+            - atom.data:Branch.y_train
+            - atom.data:Branch.X_test
+            - atom.data:Branch.y_test
+            - atom.data:Branch.shape
+            - atom.data:Branch.columns
+            - atom.data:Branch.n_columns
+            - atom.data:Branch.features
+            - atom.data:Branch.n_features
+            - atom.data:Branch.target
             - scaled
             - duplicates
-            - missing
             - nans
             - n_nans
             - numerical
@@ -84,6 +84,8 @@ in the instance after [training][].
     - attributes:
         from_docstring: False
         include:
+            - ignore
+            - missing
             - branch
             - models
             - metric
@@ -103,7 +105,6 @@ experiment are tracked. Read more in the [user guide][tracking].
         from_docstring: False
         include:
             - log_ht
-            - log_model
             - log_plots
             - log_data
             - log_pipeline
@@ -138,12 +139,11 @@ of utility methods to handle the data and manage the pipeline.
     include:
         - add
         - apply
-        - automl
         - available_models
         - canvas
         - clear
         - delete
-        - distribution
+        - distributions
         - eda
         - evaluate
         - export_pipeline
@@ -151,9 +151,9 @@ of utility methods to handle the data and manage the pipeline.
         - get_sample_weight
         - inverse_transform
         - load
-        - log
         - merge
         - update_layout
+        - update_traces
         - reset
         - reset_aesthetics
         - save

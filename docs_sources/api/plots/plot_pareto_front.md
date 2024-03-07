@@ -1,7 +1,7 @@
 # plot_pareto_front
 -------------------
 
-:: atom.plots:HTPlot.plot_pareto_front
+:: atom.plots:HyperparameterTuningPlot.plot_pareto_front
     :: signature
     :: head
     :: table:

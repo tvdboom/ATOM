@@ -1,7 +1,7 @@
 # plot_slice
 ------------
 
-:: atom.plots:HTPlot.plot_slice
+:: atom.plots:HyperparameterTuningPlot.plot_slice
     :: signature
     :: head
     :: table:

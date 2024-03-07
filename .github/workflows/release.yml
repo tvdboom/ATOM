@@ -1,10 +1,27 @@
 name: Build and release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
 jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all commits/branches
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -e .[dev]
+      - name: Update documentation
+        run: |
+          echo "Deploying documentation for release ATOM ${GITHUB_REF_NAME::-2}"
+          mike deploy --push --update-aliases ${GITHUB_REF_NAME::-2} latest
+
   publish:
     runs-on: ubuntu-latest
     steps:
@@ -13,33 +30,17 @@ jobs:
     - name: Set up Python environment
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.11"
     - name: Install dependencies
       run: |
-        python -m pip install -U pip
+        python -m pip install -U pip setuptools
         pip install -U pdm
     - name: Build
       run: |
         rm -rf dist/*
         pdm build
     - name: Release to PyPI
-      uses: pypa/gh-action-pypi-publish@release/${{ GITHUB_REF_NAME }}
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_PWD }}
         verbose: true
-
-  documentation:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out source repository
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # Fetch all commits/branches
-    - name: Install dependencies
-      run: |
-        python -m pip install -U pip
-        pip install -e .[dev]
-    - name: Update documentation
-      run: |
-        echo "Deploying documentation for release ATOM ${GITHUB_REF_NAME::-2}"
-        mike deploy --push --update-aliases ${GITHUB_REF_NAME::-2} latest

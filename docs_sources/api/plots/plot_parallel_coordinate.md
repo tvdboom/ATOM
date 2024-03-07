@@ -1,7 +1,7 @@
 # plot_parallel_coordinate
 --------------------------
 
-:: atom.plots:HTPlot.plot_parallel_coordinate
+:: atom.plots:HyperparameterTuningPlot.plot_parallel_coordinate
     :: signature
     :: head
     :: table:

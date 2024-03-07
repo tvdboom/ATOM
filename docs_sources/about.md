@@ -3,7 +3,7 @@
 
 ## What is it?
 
-Automated Tool for Optimized Modelling (ATOM) is an open-source
+Automated Tool for Optimized Modeling (ATOM) is an open-source
 Python package designed to help data scientists fasten up the
 exploration phase of their machine learning projects. ATOM is a
 low-code, easy-to-use library, capable of running experiments
@@ -93,7 +93,7 @@ deployment. Click on the icons to read more about its main functionalities.
 
 * Data scientists that want to fasten up the exploration phase of their machine
   learning projects.
-* Data scientists that want to run a simple modelling experiment without having
+* Data scientists that want to run a simple modeling experiment without having
   to spend too much time on coding.
 * Data scientists that are new to Python and are not (yet) familiar with all
   the relevant machine learning packages.
@@ -136,7 +136,7 @@ ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by provid
 core project contributors with a set of developer tools free of charge.
 
 <div align="center" markdown>
-  [![JetBrains](img/jetbrains.png){ .icon width="200" height="200" }](https://www.jetbrains.com)
+  [![JetBrains](img/jetbrains.png){ .icon width="200" height="200" }](https://www.jetbrains.com/community/opensource/#support)
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   [![PyCharm](img/pycharm.png){ .icon width="200" height="200" }](https://www.jetbrains.com/pycharm/)
 </div>
@@ -217,6 +217,13 @@ core project contributors with a set of developer tools free of charge.
   </div>
   <div class="column">
     <div class="logo">
+      <a href="../API/models/prophet" draggable="false">
+        <img src="../img/logos/prophet.png" alt="prophet" draggable="false">
+      </a>
+    </div>
+  </div>
+  <div class="column">
+    <div class="logo">
       <a href="../user_guide/accelerating/#gpu-acceleration" draggable="false">
         <img src="../img/logos/rapids.png" alt="rapids" draggable="false">
       </a>
@@ -229,6 +236,8 @@ core project contributors with a set of developer tools free of charge.
       </a>
     </div>
   </div>
+</div>
+<div class="row">
   <div class="column">
     <div class="logo">
       <a href="../user_guide/models" draggable="false">
@@ -236,8 +245,13 @@ core project contributors with a set of developer tools free of charge.
       </a>
     </div>
   </div>
-</div>
-<div class="row">
+  <div class="column">
+    <div class="logo">
+      <a href="../user_guide/time-series" draggable="false">
+        <img src="../img/logos/sktime.png" alt="sktime" draggable="false">
+      </a>
+    </div>
+  </div>
   <div class="column">
     <div class="logo">
       <a href="../API/models/xgb" draggable="false">

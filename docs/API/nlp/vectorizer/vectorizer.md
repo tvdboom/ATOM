@@ -21,3 +21,5 @@
 
 :: methods:
     toc_only: False
+    exclude:
+        - get_metadata_routing

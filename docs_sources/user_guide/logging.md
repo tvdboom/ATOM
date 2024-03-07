@@ -31,19 +31,19 @@ view it at http://localhost:5000.
 !!! note
     When using ATOM on [Databricks](https://databricks.com/), the
     experiment's name should include the complete path to the storage,
-    e.g. `/Users/username@domain.com/experiment_name`.
+    e.g., `/Users/username@domain.com/experiment_name`.
 
 
 **Example**
 
-```pycon
->>> from atom import ATOMClassifier
->>> from sklearn.datasets import load_breast_cancer
+```python
+from atom import ATOMClassifier
+from sklearn.datasets import load_breast_cancer
 
->>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
->>> atom = ATOMClassifier(X, y, experiment="breast_cancer")
->>> atom.run(models=["LR", "RF", "LGB"], n_trials=(0, 0, 10))
+atom = ATOMClassifier(X, y, experiment="breast_cancer")
+atom.run(models=["LR", "RF", "LGB"], n_trials=(0, 0, 10))
 ```
 
 ![MLflow](../img/mlflow.png)
@@ -67,14 +67,14 @@ already exist, a new public repo is created.
 
 **Example**
 
-```pycon
->>> from atom import ATOMClassifier
->>> from sklearn.datasets import load_breast_cancer
+```python
+from atom import ATOMClassifier
+from sklearn.datasets import load_breast_cancer
 
->>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
->>> atom = ATOMClassifier(X, y, experiment="dagshub:breast_cancer")
->>> atom.run(models=["LR", "RF"])
+atom = ATOMClassifier(X, y, experiment="dagshub:breast_cancer")
+atom.run(models=["LR", "RF"])
 ```
 
 ![DAGsHub](../img/dagshub.png)
@@ -87,7 +87,7 @@ already exist, a new public repo is created.
 The runs are automatically tagged with the model's full name, the [branch][branches]
 from which the model was trained, and the time it took to fit the model.
 Add additional custom tags through the [`ht_params`][directclassifier-ht_params]
-parameter, e.g. 
+parameter, e.g., 
 `#!python atom.run(["LR", "RF"], ht_params={"tags": {"tag1": 1}})`.
 
 **Parameters**<br>
@@ -97,13 +97,12 @@ parameters passed to the fit method are **not** tracked.
 **Model**<br>
 The model's estimator is stored as artifact. The estimator has to be
 compatible with the [mlflow.sklearn](https://www.mlflow.org/docs/latest/python_api/mlflow.sklearn.html),
-module. This option can be switched off using atom's [`log_model`]
-[atomclassifier-log_model] attribute, e.g. `#!python atom.log_model = False`.
+module.
 
 **Hyperparameter tuning**<br>
 If [hyperparameter tuning][] is performed, every trial is tracked as a nested
 run in the model's main run. This option can be switched off using atom's
-[`log_ht`][atomclassifier-log_ht] attribute, e.g. `#!python atom.log_ht = False`.
+[`log_ht`][atomclassifier-log_ht] attribute, e.g., `#!python atom.log_ht = False`.
 The data and pipeline options are never stored within nested runs.
 
 **Metrics**<br>
@@ -121,11 +120,11 @@ using atom's [`log_data`][atomclassifier-log_data] attribute, e.g.
 The model's pipeline (returned from the [export_pipeline][atomclassifier-export_pipeline]
 method) can be stored as an artifact. This option can be switched on
 using atom's [`log_pipeline`][atomclassifier-log_pipeline] attribute,
-e.g. `#!python atom.log_pipeline = True`.
+e.g., `#!python atom.log_pipeline = True`.
 
 **Plots**<br>
 By default, plots are stored as `.html` artifacts in all runs corresponding
 to the models that are showed in the plot. If the `filename` parameter is
 specified, they are stored under that name, else the method's name is used.
 This option can be switched off using atom's [`log_plots`][atomclassifier-log_plots]
-attribute, e.g. `#!python atom.log_plots = False`.
+attribute, e.g., `#!python atom.log_plots = False`.

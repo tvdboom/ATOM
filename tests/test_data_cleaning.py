@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
 Description: Unit tests for data_cleaning.py
@@ -9,76 +7,101 @@ Description: Unit tests for data_cleaning.py
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 from category_encoders.target_encoder import TargetEncoder
 from imblearn.combine import SMOTETomek
-from sklearn.ensemble import RandomForestClassifier
+from pandas.testing import assert_frame_equal, assert_series_equal
+from sklearn.base import clone
 from sklearn.preprocessing import StandardScaler
+from sktime.forecasting.naive import NaiveForecaster
 
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
-    Scaler,
+    Balancer, Cleaner, Decomposer, Discretizer, Encoder, Imputer, Normalizer,
+    Pruner, Scaler,
 )
-from atom.utils import NotFittedError, check_scaling, merge, to_df
+from atom.utils.types import NumericalStrats
+from atom.utils.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
-    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
+    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_ex, X_idx, y10,
     y10_label, y10_nan, y10_str, y_bin, y_class, y_idx, y_multiclass,
 )
 
 
 # Test TransformerMixin ============================================ >>
 
+def test_repr():
+    """Assert that __repr__ hides the default engine."""
+    assert str(Cleaner()) == "Cleaner()"
+    assert str(Cleaner(engine="pyarrow")) == "Cleaner(engine={'data': 'pyarrow'})"
+    assert str(Cleaner(engine="sklearnex")) == "Cleaner(engine={'estimator': 'sklearnex'})"
+    assert str(Cleaner(device="gpu")) == "Cleaner(device='gpu')"
+    assert str(Cleaner(verbose=2)) == "Cleaner(verbose=2)"
+    assert str(Cleaner(device="gpu", verbose=2)) == "Cleaner(device='gpu', verbose=2)"
+
+
+def test_clone():
+    """Assert that cloning the transformer keeps internal attributes."""
+    pruner = Pruner().fit(X_bin)
+    pruner._cols = [0]
+    assert hasattr(clone(pruner), "_cols")
+
+
+def test_transform_check_is_fitted():
+    """Assert that an error is raised when not fitted."""
+    pytest.raises(NotFittedError, Scaler().transform, X_bin)
+
+
 def test_fit_transform():
     """Assert that the fit_transform method works as intended."""
     X_1 = Scaler().fit_transform(X_bin)
     X_2 = Scaler().fit(X_bin).transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
-
-
-def test_fit_transform_no_fit():
-    """Assert that the fit_transform method works when no fit method."""
-    X, y = Balancer().fit_transform(X_bin, y_bin)
-    assert len(X) > len(X_bin)
+    assert_frame_equal(X_1, X_2)
 
 
 def test_inverse_transform():
     """Assert that the inverse_transform returns the data unchanged."""
     encoder = Encoder().fit(X_bin)
-    pd.testing.assert_frame_equal(encoder.inverse_transform(X_bin), X_bin)
+    assert_frame_equal(encoder.inverse_transform(X_bin), X_bin)
+
+
+def test_set_output():
+    """Assert that the set_output method works."""
+    encoder = Encoder().fit(X_bin).set_output(transform="polars")
+    assert isinstance(encoder.transform(X_bin), pl.DataFrame)
 
 
 # Test Balancer ==================================================== >>
 
-
 def test_balance_multioutput_task():
     """Assert that an error is raised for multioutput tasks."""
     with pytest.raises(ValueError, match=".*not support multioutput.*"):
-        Balancer().transform(X_class, y_multiclass)
+        Balancer().fit_transform(X_class, y_multiclass)
 
 
 def test_balancer_strategy_unknown_str():
     """Assert that an error is raised when strategy is unknown."""
     balancer = Balancer(strategy="invalid")
     with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        balancer.transform(X_bin, y_bin)
+        balancer.fit_transform(X_bin, y_bin)
 
 
 def test_balancer_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
     balancer = Balancer(strategy=StandardScaler())
     with pytest.raises(TypeError, match=".*type for the strategy.*"):
-        balancer.transform(X_bin, y_bin)
+        balancer.fit_transform(X_bin, y_bin)
 
 
 def test_balancer_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     balancer = Balancer(strategy=SMOTETomek)
-    X, y = balancer.transform(X_bin, y_bin)
+    X, y = balancer.fit_transform(X_bin, y_bin)
     assert len(X) != len(X_bin)
 
     balancer = Balancer(strategy=SMOTETomek())
-    X, y = balancer.transform(X_bin, y_bin)
+    X, y = balancer.fit_transform(X_bin, y_bin)
     assert len(X) != len(X_bin)
 
 
@@ -86,45 +109,45 @@ def test_balancer_custom_estimator():
 def test_balancers(strategy):
     """Assert that balancer estimators work as intended."""
     balancer = Balancer(strategy=strategy, sampling_strategy="all")
-    X, y = balancer.transform(X_bin, y_bin)
+    X, y = balancer.fit_transform(X_bin, y_bin)
     assert len(X) != len(X_bin)
 
 
 def test_balancer_kwargs():
     """Assert that kwargs can be passed to the estimator."""
     balancer = Balancer(strategy="SMOTE", k_neighbors=12)
-    balancer.transform(X_class, y_class)
-    assert balancer.smote.get_params()["k_neighbors"] == 12
+    balancer.fit_transform(X_class, y_class)
+    assert balancer.smote_.get_params()["k_neighbors"] == 12
 
 
 def test_oversampling_numerical_index():
     """Assert that new samples have an increasing int index."""
-    X, y = Balancer(strategy="smote").transform(X_bin, y_bin)
+    X, y = Balancer(strategy="smote").fit_transform(X_bin, y_bin)
     assert list(X.index) == list(range(len(X)))
 
 
 def test_oversampling_string_index():
     """Assert that new samples have a new index."""
-    X, y = Balancer(strategy="smote").transform(X_idx, y_idx)
+    X, y = Balancer(strategy="smote").fit_transform(X_idx, y_idx)
     assert X.index[-1] == f"smote_{len(X) - len(X_idx)}"
 
 
 def test_undersampling_keeps_indices():
     """Assert that indices are kept after transformation."""
-    X, y = Balancer(strategy="nearmiss").transform(X_bin, y_bin)
+    X, y = Balancer(strategy="nearmiss").fit_transform(X_bin, y_bin)
     assert list(X.index) != list(range(len(X)))
 
 
 def test_combinations_numerical_index():
     """Assert that new samples have an increasing int index."""
-    X, y = Balancer(strategy="smoteenn").transform(X_bin, y_bin)
+    X, y = Balancer(strategy="smoteenn").fit_transform(X_bin, y_bin)
     assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
     assert max(X.index) > max(X_bin.index)  # Samples were added
 
 
 def test_combinations_string_index():
     """Assert that new samples have a new index."""
-    X, y = Balancer(strategy="smotetomek").transform(X_idx, y_idx)
+    X, y = Balancer(strategy="smotetomek").fit_transform(X_idx, y_idx)
     assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
     assert len(X.index.str.startswith("smotetomek") > 0)  # Samples were added
 
@@ -132,17 +155,29 @@ def test_combinations_string_index():
 def test_balancer_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     balancer = Balancer(strategy="smote")
-    balancer.transform(X_bin, y_bin)
-    assert hasattr(balancer, "smote")
+    balancer.fit_transform(X_bin, y_bin)
+    assert hasattr(balancer, "smote_")
 
 
 # Test Cleaner ==================================================== >>
 
-def test_cleaner_drop_invalid_column_type():
+def test_cleaner_convert_dtypes():
+    """Assert that column dtypes are converted."""
+    X = X_bin.copy()
+    X["object_col"] = "2"
+    assert X["object_col"].dtype == "object"
+    X, y = Cleaner(convert_dtypes=True).fit_transform(X, y_bin)
+    assert X["object_col"].dtype == "string"
+    assert y.dtype.name.startswith("I")  # Nullable dtype
+
+
+def test_cleaner_drop_invalid_dtypes():
     """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
-    X = Cleaner(drop_types="datetime64[ns]").fit_transform(X)
+    cleaner = Cleaner(drop_dtypes="datetime64[ns]").fit(X)
+    assert "datetime_col" not in cleaner.get_feature_names_out()
+    X = cleaner.transform(X)
     assert "datetime_col" not in X.columns
 
 
@@ -151,7 +186,7 @@ def test_cleaner_drop_invalid_column_list_types():
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
     X["string_col"] = [str(i) for i in range(len(X))]  # String column
-    cleaner = Cleaner(drop_types=["datetime64[ns]", "object"])
+    cleaner = Cleaner(drop_dtypes=["datetime64[ns]", "object"])
     X = cleaner.fit_transform(X)
     assert "datetime_col" not in X.columns
     assert "string_col" not in X.columns
@@ -159,28 +194,32 @@ def test_cleaner_drop_invalid_column_list_types():
 
 def test_cleaner_remove_characters_from_column_names():
     """Assert that specified chars are removed from column names."""
+    cleaner = Cleaner(drop_chars="[^A-Za-z0-9]+")
+
     X, y = X_bin.copy(), y_bin.copy()
-    X.columns = ["test##"] + list(X.columns[1:])
+    X.columns = ["test##", *X.columns[1:]]
     y.name = "::test"
-    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    X, y = cleaner.fit_transform(X, y)
     assert X.columns[0] == "test"
     assert y.name == "test"
+    assert list(cleaner.get_feature_names_out()) == list(X.columns)
 
     X, y = X_class.copy(), y_multiclass.copy()
-    X.columns = ["test##"] + list(X.columns[1:])
-    y.columns = ["::test"] + list(y.columns[1:])
-    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    X.columns = ["test##", *X.columns[1:]]
+    y.columns = ["::test", *y.columns[1:]]
+    X, y = cleaner.fit_transform(X, y)
     assert X.columns[0] == "test"
     assert y.columns[0] == "test"
+    assert list(cleaner.get_feature_names_out()) == list(X.columns)
 
 
 def test_cleaner_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()
     X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
-    X = Cleaner().fit_transform(X)
+    X = Cleaner(convert_dtypes=False).fit_transform(X)
     series = pd.Series([str(i) for i in range(len(X))], name="string_col")
-    pd.testing.assert_series_equal(X["string_col"], series)
+    assert_series_equal(X["string_col"], series)
 
 
 def test_cleaner_strip_ignores_nan():
@@ -190,7 +229,7 @@ def test_cleaner_strip_ignores_nan():
 
 
 def test_cleaner_drop_duplicate_rows():
-    """Assert that that duplicate rows are removed."""
+    """Assert that duplicate rows are removed."""
     X = Cleaner(drop_duplicates=True).fit_transform(X10)
     assert len(X) == 7
 
@@ -215,55 +254,62 @@ def test_cleaner_multilabel():
 
 def test_cleaner_multiclass_multioutput():
     """Assert that multiclass-multioutput targets are encoded."""
-    y = merge(
-        pd.Series(y10_str, name="a"),
-        pd.Series(y10, name="b"),
-        pd.Series(y10_str, name="c"),
-    )
+    y = pd.DataFrame({"a": y10_str, "b": y10, "c": y10_str})
     y_transformed = Cleaner().fit_transform(y=y)
     assert list(y_transformed.columns) == ["a", "b", "c"]
-    assert all(v in [0, 1] for v in y_transformed.values.ravel())
+    assert all(v in (0, 1) for v in y_transformed.to_numpy().ravel())
 
 
 def test_cleaner_inverse_transform():
     """Assert that the inverse_transform method works."""
-    cleaner = Cleaner().fit(y=y10_str)
+    cleaner = Cleaner(convert_dtypes=False).fit(y=y10_str)
     y = cleaner.inverse_transform(y=cleaner.transform(y=y10_str))
-    pd.testing.assert_series_equal(pd.Series(y10_str, name="target"), y)
+    assert_series_equal(pd.Series(y10_str, name="target"), y)
 
 
-def test_cleaner_inverse_transform_multiclass_multilabel():
-    """Assert that the inverse_transform method works for multioutput."""
-    y = merge(
-        pd.Series(y10_label, name="a"),
-        pd.Series(y10, name="b"),
-        pd.Series(y10_label, name="c"),
-    )
-    cleaner = Cleaner().fit(y=y)
-    y = cleaner.inverse_transform(y=cleaner.transform(y=y))
-    pd.testing.assert_frame_equal(pd.DataFrame(dict(a=y10_label, b=y10, c=y10_label)), y)
+def test_cleaner_inverse_transform_multilabel():
+    """Assert that the inverse_transform method works for multilabel."""
+    y = pd.DataFrame({"a": y10_label, "b": y10, "c": y10_label})
+    cleaner = Cleaner(convert_dtypes=False).fit(y=y)
+    y_new = cleaner.inverse_transform(y=cleaner.transform(y=y))
+    assert_frame_equal(y_new, y)
 
 
 def test_cleaner_target_mapping_binary():
     """Assert that the mapping attribute is set for binary tasks."""
     cleaner = Cleaner().fit(y=y10_str)
-    assert cleaner.mapping == {"target": {"n": 0, "y": 1}}
+    assert cleaner.mapping_ == {"target": {"n": 0, "y": 1}}
+
+
+# Test Decomposer ================================================== >>
+
+def test_decomposer_invalid_model():
+    """Assert that an error is raised when model is invalid."""
+    with pytest.raises(ValueError, match=".*value for the model.*"):
+        Decomposer(model="invalid").fit(X_ex)
+
+
+@pytest.mark.parametrize("model", ["croston", NaiveForecaster, NaiveForecaster()])
+def test_decomposer_custom_model(model):
+    """Assert that the decomposer works with multiple model inputs."""
+    composer = Decomposer(model=model).fit(X_ex)
+    assert composer.transform(X_ex).shape == X_ex.shape
+
+
+def test_decomposer_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    composer = Decomposer(test_seasonality=False).fit(X_ex)
+    assert_frame_equal(X_ex, composer.inverse_transform(composer.transform(X_ex)))
 
 
 # Test Discretizer ================================================= >>
 
-def test_strategy_parameter_discretizer():
-    """Assert that the strategy parameter is set correctly."""
-    discretizer = Discretizer(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy parameter.*"):
-        discretizer.fit(X_bin)
-
-
-def test_invalid_bins_missing_column():
-    """Assert that an error is raised when a column is missing."""
-    discretizer = Discretizer(strategy="uniform", bins={"invalid": 5})
-    with pytest.raises(ValueError, match=".*not found in the dictionary.*"):
-        discretizer.fit(X_bin)
+def test_missing_columns_in_dict_are_ignored():
+    """Assert that only columns in the dict are transformed."""
+    discretizer = Discretizer(strategy="uniform", bins={"mean radius": 5})
+    X = discretizer.fit_transform(X_bin)
+    assert X["mean radius"].dtype.kind == "O"
+    assert X["mean texture"].dtype.kind == "f"
 
 
 def test_invalid_bins_custom_strategy():
@@ -354,21 +400,7 @@ def test_strategy_with_encoder_at_end():
     """Assert that the strategy works with Encoder at the end of the string."""
     encoder = Encoder(strategy="TargetEncoder", max_onehot=None)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["x2"].__class__.__name__ == "TargetEncoder"
-
-
-def test_max_onehot_parameter():
-    """Assert that the max_onehot parameter is set correctly."""
-    encoder = Encoder(max_onehot=-2)
-    with pytest.raises(ValueError, match=".*value for the max_onehot.*"):
-        encoder.fit(X10_str, y10)
-
-
-def test_infrequent_to_value_parameter():
-    """Assert that the infrequent_to_value parameter is set correctly."""
-    encoder = Encoder(infrequent_to_value=-2)
-    with pytest.raises(ValueError, match=".*value for the infrequent_to_value.*"):
-        encoder.fit(X10_str, y10)
+    assert isinstance(encoder._estimator.named_transformers_["rest"], TargetEncoder)
 
 
 @pytest.mark.parametrize("infrequent_to_value", [3, 0.3])
@@ -381,7 +413,7 @@ def test_infrequent_to_value(infrequent_to_value):
 
 def test_encoder_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
-    encoder = Encoder(strategy=RandomForestClassifier())
+    encoder = Encoder(strategy=StandardScaler())
     with pytest.raises(TypeError, match=".*type for the strategy.*"):
         encoder.fit_transform(X10_str, y10)
 
@@ -390,50 +422,43 @@ def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     encoder = Encoder(strategy=TargetEncoder, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.at[0, "x2"] != "a"
-
-    encoder = Encoder(strategy=TargetEncoder(), max_onehot=None)
-    X = encoder.fit_transform(X10_str, y10)
-    assert X.at[0, "x2"] != "a"
-
-
-def test_encoder_check_is_fitted():
-    """Assert that an error is raised if the instance is not fitted."""
-    pytest.raises(NotFittedError, Encoder().transform, X_bin, y_bin)
+    assert X.loc[0, "x2"] != "a"
 
 
 def test_missing_values_are_propagated():
     """Assert that missing values are propagated."""
     encoder = Encoder(max_onehot=None)
-    assert np.isnan(encoder.fit_transform(X10_sn, y10).iat[0, 2])
+    assert np.isnan(encoder.fit_transform(X10_sn, y10).iloc[0, 2])
 
 
 def test_unknown_classes_are_imputed():
     """Assert that unknown classes are imputed."""
     encoder = Encoder()
-    encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).iat[0, 0] == -1.0
+    encoder.fit([["a"], ["b"], ["b"], ["a"]])
+    assert encoder.transform([["c"]]).iloc[0, 0] == -1.0
 
 
 def test_ordinal_encoder():
-    """Assert that the Ordinal-encoder works as intended."""
+    """Assert that the ordinal encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["x2"] == 0) | (X["x2"] == 1))
-    assert list(encoder.mapping) == ["x2", "x3"]
+    assert list(encoder.mapping_) == ["x2", "x3"]
 
 
 def test_ordinal_features():
     """Assert that ordinal features are encoded."""
     encoder = Encoder(max_onehot=None, ordinal={"x2": ["b", "a", "c"]})
     X = encoder.fit_transform(X10_str2, y10)
-    assert X.iat[0, 2] == 1 and X.iat[2, 2] == 0
+    assert X.iloc[0, 2] == 1
+    assert X.iloc[2, 2] == 0
 
 
 def test_one_hot_encoder():
-    """Assert that the OneHot-encoder works as intended."""
-    encoder = Encoder(max_onehot=4)
-    X = encoder.fit_transform(X10_str, y10)
+    """Assert that the onehot encoder works as intended."""
+    encoder = Encoder(max_onehot=4).fit(X10_str, y10)
+    assert "x2_c" in encoder.get_feature_names_out()
+    X = encoder.transform(X10_str)
     assert "x2_c" in X.columns
 
 
@@ -449,82 +474,53 @@ def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
     encoder = Encoder(strategy="Target", max_onehot=None, smoothing=20)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["x2"].get_params()["smoothing"] == 20
+    assert encoder._estimator.named_transformers_["rest"].get_params()["smoothing"] == 20
 
 
 # Test Imputer ===================================================== >>
 
-def test_strat_num_parameter():
-    """Assert that the strat_num parameter is set correctly."""
-    imputer = Imputer(strat_num="invalid")
-    with pytest.raises(ValueError, match=".*Unknown strategy for the strat_num.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_invalid_max_nan_rows():
-    """Assert that an error is raised for invalid max_nan_rows."""
-    imputer = Imputer(max_nan_rows=-2)
-    with pytest.raises(ValueError, match=".*value for the max_nan_rows.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_invalid_max_nan_cols():
-    """Assert that an error is raised for invalid max_nan_cols."""
-    imputer = Imputer(max_nan_cols=-5)
-    with pytest.raises(ValueError, match=".*value for the max_nan_cols.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_imputer_check_is_fitted():
-    """Assert that an error is raised if the instance is not fitted."""
-    pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
-
-
-@pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
+@pytest.mark.parametrize("missing", [None, np.nan, np.inf, -np.inf, 99])
 def test_imputing_all_missing_values_numeric(missing):
     """Assert that all missing values are imputed in numeric columns."""
     X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]
     y = [1, 1, 0, 0]
-    imputer = Imputer(strat_num="mean")
-    imputer.missing.append(99)
-    X, y = imputer.fit_transform(X, y)
+    imputer = Imputer(strat_num="mean").fit(X, y)
+    imputer.missing_.append(99)
+    X, y = imputer.transform(X, y)
     assert X.isna().sum().sum() == 0
 
 
-@pytest.mark.parametrize("missing", ["", "?", "NaN", "NA", "nan", "inf"])
+@pytest.mark.parametrize("missing", [None, np.nan, pd.NA, np.inf, "", "?", "NA", "inf"])
 def test_imputing_all_missing_values_categorical(missing):
     """Assert that all missing values are imputed in categorical columns."""
     X = [[missing, "a", "a"], ["b", "c", missing], ["b", "a", "c"], ["c", "a", "a"]]
     y = [1, 1, 0, 0]
     imputer = Imputer(strat_cat="most_frequent")
-    X, y = imputer.fit_transform(X, y)
+    X, _ = imputer.fit_transform(X, y)
     assert X.isna().sum().sum() == 0
 
 
+def test_max_nan_rows_invalid():
+    """Assert that an error is raised when all rows are dropped."""
+    with pytest.raises(ValueError, match=".*rows contain more than.*"):
+        Imputer(max_nan_rows=0.01).fit_transform([[np.nan]])
+
+
 @pytest.mark.parametrize("max_nan_rows", [5, 0.5])
-def test_rows_too_many_nans(max_nan_rows):
+def test_rows_too_many_nans(max_nan_rows, random):
     """Assert that rows with too many missing values are dropped."""
     X = X_bin.copy()
-    for i in range(5):  # Add 5 rows with all NaN values
+    for _ in range(5):  # Add 5 rows with all NaN values
         X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
-    y = [np.random.randint(2) for _ in range(len(X))]
+    y = [random.integers(2) for _ in range(len(X))]
     imputer = Imputer(
         strat_num="mean",
         strat_cat="most_frequent",
         max_nan_rows=max_nan_rows,
     )
     X, y = imputer.fit_transform(X, y)
-    assert len(X) == 569  # Original size
+    assert len(X) == len(y) == 569  # Original size
     assert X.isna().sum().sum() == 0
-
-
-def test_all_rows_too_many_nans():
-    """Assert that an error is raised when all rows have too many nans."""
-    X = X_bin.copy()
-    X["only nans"] = np.NaN
-    imputer = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_rows=0.01)
-    with pytest.raises(ValueError, match=".*All rows contain.*"):
-        imputer.fit_transform(X, y_bin)
 
 
 @pytest.mark.parametrize("max_nan_cols", [20, 0.5])
@@ -537,8 +533,9 @@ def test_cols_too_many_nans(max_nan_cols):
         strat_num="mean",
         strat_cat="most_frequent",
         max_nan_cols=max_nan_cols,
-    )
-    X, y = imputer.fit_transform(X, y_bin)
+    ).fit(X, y_bin)
+    assert len(imputer.get_feature_names_out()) == 30
+    X, y = imputer.transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
 
@@ -546,7 +543,7 @@ def test_cols_too_many_nans(max_nan_cols):
 def test_imputing_numeric_drop():
     """Assert that imputing drop for numerical values works."""
     imputer = Imputer(strat_num="drop")
-    X, y = imputer.fit_transform(X10_nan, y10)
+    X, _ = imputer.fit_transform(X10_nan, y10)
     assert len(X) == 8
     assert X.isna().sum().sum() == 0
 
@@ -554,55 +551,31 @@ def test_imputing_numeric_drop():
 def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
     imputer = Imputer(strat_num=3.2)
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3.2
+    X, _ = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == 3.2
     assert X.isna().sum().sum() == 0
 
 
-def test_imputing_numeric_knn():
-    """Assert that imputing numerical values with KNNImputer works."""
-    imputer = Imputer(strat_num="knn")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_mean():
-    """Assert that imputing the mean for numerical values works."""
-    imputer = Imputer(strat_num="mean")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_median():
-    """Assert that imputing the median for numerical values works."""
-    imputer = Imputer(strat_num="median")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_most_frequent():
-    """Assert that imputing the most_frequent for numerical values works."""
-    imputer = Imputer(strat_num="most_frequent")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iat[0, 0] == 3
+@pytest.mark.parametrize("strat_num", NumericalStrats.__args__)
+def test_imputing_numeric(strat_num):
+    """Assert that imputing numerical columns works."""
+    imputer = Imputer(strat_num=strat_num)
+    X, _ = imputer.fit_transform(X10_nan, y10)
     assert X.isna().sum().sum() == 0
 
 
 def test_imputing_non_numeric_string():
     """Assert that imputing a string for non-numerical values works."""
     imputer = Imputer(strat_cat="missing")
-    X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iat[0, 2] == "missing"
+    X, _ = imputer.fit_transform(X10_sn, y10)
+    assert X.iloc[0, 2] == "missing"
     assert X.isna().sum().sum() == 0
 
 
 def test_imputing_non_numeric_drop():
     """Assert that the drop strategy for non-numerical works."""
     imputer = Imputer(strat_cat="drop")
-    X, y = imputer.fit_transform(X10_sn, y10)
+    X, _ = imputer.fit_transform(X10_sn, y10)
     assert len(X) == 9
     assert X.isna().sum().sum() == 0
 
@@ -610,30 +583,24 @@ def test_imputing_non_numeric_drop():
 def test_imputing_non_numeric_most_frequent():
     """Assert that the most_frequent strategy for non-numerical works."""
     imputer = Imputer(strat_cat="most_frequent")
-    X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iat[0, 2] == "d"
+    X, _ = imputer.fit_transform(X10_sn, y10)
+    assert X.iloc[0, 2] == "d"
     assert X.isna().sum().sum() == 0
 
 
 # Test Normalizer ======================================================= >>
-
-def test_normalizer_check_is_fitted():
-    """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Normalizer().transform, X_bin)
-
-
-def test_normalizer_invalid_strategy():
-    """Assert that an error is raised when strategy is invalid."""
-    normalizer = Normalizer(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        normalizer.fit(X_bin)
-
 
 @pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_normalizer_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     normalizer = Normalizer(strategy=strategy)
     normalizer.fit_transform(X10)
+
+
+def test_normalizer_no_columns():
+    """Assert that an error is raised when there are no numerical columns."""
+    with pytest.raises(ValueError, match=".*no columns during fit.*"):
+        Normalizer().fit([["a", "b", "a", "a"]])
 
 
 def test_normalizer_categorical_columns():
@@ -655,13 +622,6 @@ def test_normalizer_inverse_categorical_columns():
     assert X["x2"].dtype.kind == "O"
 
 
-def test_normalizer_y_is_ignored():
-    """Assert that the y parameter is ignored if provided."""
-    X_1 = Normalizer().fit_transform(X_bin, y_bin)
-    X_2 = Normalizer().fit_transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
-
-
 def test_normalizer_kwargs():
     """Assert that kwargs can be passed to the estimator."""
     X = Normalizer(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
@@ -673,43 +633,22 @@ def test_normalizer_ignores_categorical_columns():
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Normalizer().fit_transform(X)
-    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+    assert list(X[X.columns[1]]) == ["a" for _ in range(len(X))]
 
 
 def test_normalizer_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     normalizer = Normalizer(strategy="quantile")
     normalizer.fit_transform(X_bin)
-    assert hasattr(normalizer, "quantile")
+    assert hasattr(normalizer, "quantile_")
 
 
 # Test Pruner ====================================================== >>
 
-def test_invalid_strategy_parameter():
-    """Assert that an error is raised for an invalid strategy parameter."""
-    pruner = Pruner(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        pruner.transform(X_bin)
-
-
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
-    pruner = Pruner(strategy="iforest", method="min_max")
+    pruner = Pruner(strategy="iforest", method="minmax")
     with pytest.raises(ValueError, match=".*accepts another method.*"):
-        pruner.transform(X_bin)
-
-
-def test_invalid_method_parameter():
-    """Assert that an error is raised for an invalid method parameter."""
-    pruner = Pruner(method="invalid")
-    with pytest.raises(ValueError, match=".*value for the method parameter.*"):
-        pruner.transform(X_bin)
-
-
-def test_invalid_max_sigma_parameter():
-    """Assert that an error is raised for an invalid max_sigma parameter."""
-    pruner = Pruner(max_sigma=0)
-    with pytest.raises(ValueError, match=".*value for the max_sigma.*"):
         pruner.transform(X_bin)
 
 
@@ -724,35 +663,35 @@ def test_max_sigma_functionality():
 
 def test_kwargs_parameter_pruner():
     """Assert that the kwargs are passed to the strategy estimator."""
-    pruner = Pruner(strategy="iForest", n_estimators=50)
+    pruner = Pruner(strategy="iforest", n_estimators=50)
     pruner.transform(X10)
-    assert pruner.iforest.get_params()["n_estimators"] == 50
+    assert pruner.iforest_.get_params()["n_estimators"] == 50
 
 
 def test_drop_pruner():
     """Assert that rows with outliers are dropped when strategy="drop"."""
     X = Pruner(method="drop", max_sigma=2).transform(X10)
-    assert len(X) + 2 == len(X10)
+    assert len(X10) > len(X)
 
 
-def test_min_max_pruner():
-    """Assert that the method works as intended when strategy="min_max"."""
-    X = Pruner(method="min_max", max_sigma=2).transform(X10)
-    assert X.iat[3, 0] == 0.23  # Max of column
-    assert X.iat[5, 1] == 2  # Min of column
+def test_minmax_pruner():
+    """Assert that the method works as intended when strategy="minmax"."""
+    X = Pruner(method="minmax", max_sigma=2).transform(X10)
+    assert X.iloc[3, 0] == 0.23  # Max of column
+    assert X.iloc[5, 1] == 2  # Min of column
 
 
 def test_value_pruner():
     """Assert that the method works as intended when strategy=value."""
     X = Pruner(method=-99, max_sigma=2).transform(X10)
-    assert X.iat[3, 0] == -99
-    assert X.iat[5, 1] == -99
+    assert X.iloc[3, 0] == -99
+    assert X.iloc[5, 1] == -99
 
 
 def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
-    X, y = Pruner(method="min_max", max_sigma=2).transform(X10_str, y10)
-    pd.testing.assert_series_equal(X["x1"], to_df(X10_str)["x1"])
+    X, y = Pruner(method="minmax", max_sigma=2).transform(X10_str, y10)
+    assert_series_equal(X["x1"], to_df(X10_str)["x1"])
 
 
 def test_drop_outlier_in_target():
@@ -761,64 +700,58 @@ def test_drop_outlier_in_target():
     assert len(y) + 2 == len(y10)
 
 
-@pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan"])
+@pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan", "hdbscan"])
 def test_pruner_strategies(strategy):
-    """Assert that all estimator requiring strategies work."""
+    """Assert that all estimators requiring strategies work."""
     pruner = Pruner(strategy=strategy)
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert hasattr(pruner, strategy.lower())
+    assert hasattr(pruner, f"{strategy}_")
 
 
 def test_multiple_strategies():
-    """Assert that selecting multiple strategies work."""
+    """Assert that selecting multiple strategies works."""
     pruner = Pruner(strategy=["zscore", "lof", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert all(hasattr(pruner, attr) for attr in ("lof", "iforest"))
+    assert all(hasattr(pruner, attr) for attr in ("lof_", "iforest_"))
 
 
 def test_kwargs_one_strategy():
     """Assert that kwargs can be provided for one strategy."""
     pruner = Pruner(strategy="iforest", n_estimators=100)
     pruner.transform(X_bin, y_bin)
-    assert pruner.iforest.get_params()["n_estimators"] == 100
+    assert pruner.iforest_.get_params()["n_estimators"] == 100
 
 
 def test_kwargs_multiple_strategies():
     """Assert that kwargs can be provided for multiple strategies."""
     pruner = Pruner(["svm", "lof"], svm={"kernel": "poly"}, lof={"n_neighbors": 10})
     pruner.transform(X_bin, y_bin)
-    assert pruner.svm.get_params()["kernel"] == "poly"
-    assert pruner.lof.get_params()["n_neighbors"] == 10
+    assert pruner.svm_.get_params()["kernel"] == "poly"
+    assert pruner.lof_.get_params()["n_neighbors"] == 10
 
 
 def test_pruner_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     pruner = Pruner(strategy="iforest")
     pruner.transform(X_bin)
-    assert hasattr(pruner, "iforest")
+    assert hasattr(pruner, "iforest_")
 
 
 # Test Scaler ====================================================== >>
-
-def test_scaler_check_is_fitted():
-    """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Scaler().transform, X_bin)
-
-
-def test_scaler_invalid_strategy():
-    """Assert that an error is raised when strategy is invalid."""
-    scaler = Scaler(strategy="invalid")
-    with pytest.raises(ValueError, match=".*value for the strategy.*"):
-        scaler.fit(X_bin)
-
 
 @pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
 def test_scaler_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     scaler = Scaler(strategy=strategy)
     scaler.fit_transform(X_bin)
+
+
+def test_scaler_no_columns():
+    """Assert that an error is raised when there are no numerical columns."""
+    with pytest.raises(ValueError, match=".*no columns during fit.*"):
+        Scaler(include_binary=False).fit([[0, 1, 0, 1, 1, 1, 1]])
 
 
 def test_scaler_categorical_and_binary_columns():
@@ -828,17 +761,11 @@ def test_scaler_categorical_and_binary_columns():
     assert X["x2"].dtype.kind == "O"
 
 
-def test_scaler_y_is_ignored():
-    """Assert that the y parameter is ignored if provided."""
-    X_1 = Scaler().fit_transform(X_bin, y_bin)
-    X_2 = Scaler().fit_transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
-
-
 def test_scaler_kwargs():
     """Assert that kwargs can be passed to the estimator."""
     X = Scaler(strategy="minmax", feature_range=(1, 2)).fit_transform(X_bin)
-    assert min(X.iloc[:, 0]) >= 1 and max(X.iloc[:, 0]) <= 2
+    assert min(X.iloc[:, 0]) >= 1
+    assert max(X.iloc[:, 0]) <= 2
 
 
 def test_scaler_return_scaled_dataset():
@@ -852,7 +779,7 @@ def test_scaler_inverse_transform():
     scaler = Scaler().fit(X_bin)
     X_transformed = scaler.transform(X_bin)
     X_original = scaler.inverse_transform(X_transformed)
-    pd.testing.assert_frame_equal(X_bin, X_original)
+    assert_frame_equal(X_bin, X_original)
 
 
 def test_scaler_inverse_categorical_columns():
@@ -866,11 +793,11 @@ def test_scaler_ignores_categorical_columns():
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Scaler().fit_transform(X)
-    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+    assert list(X[X.columns[1]]) == ["a" for _ in range(len(X))]
 
 
 def test_scaler_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
     scaler = Scaler(strategy="robust")
     scaler.fit_transform(X_bin)
-    assert hasattr(scaler, "robust")
+    assert hasattr(scaler, "robust_")

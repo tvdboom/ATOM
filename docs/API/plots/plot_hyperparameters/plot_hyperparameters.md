@@ -1,7 +1,7 @@
 # plot_hyperparameters
 ----------------------
 
-:: atom.plots:HTPlot.plot_hyperparameters
+:: atom.plots:HyperparameterTuningPlot.plot_hyperparameters
     :: signature
     :: head
     :: table:

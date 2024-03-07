@@ -1,7 +1,7 @@
 # plot_pca
 ----------
 
-:: atom.plots:FeatureSelectorPlot.plot_pca
+:: atom.plots:DataPlot.plot_pca
     :: signature
     :: head
     :: table:
