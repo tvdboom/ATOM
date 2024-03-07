@@ -1614,8 +1614,6 @@ def check_scaling(obj: Pandas) -> bool:
     A data set is considered scaled when the mean of the mean of
     all columns lies between -0.25 and 0.15 and the mean of the
     standard deviation of all columns lies between 0.85 and 1.15.
-    Categorical and binary columns are excluded from the calculation.
-    Sparse datasets return False.
 
     Parameters
     ----------
@@ -1628,16 +1626,13 @@ def check_scaling(obj: Pandas) -> bool:
         Whether the data set is scaled.
 
     """
-    if not is_sparse(obj):
-        if isinstance(obj, pd.DataFrame):
-            mean = obj.mean(numeric_only=True).mean()
-            std = obj.std(numeric_only=True).mean()
-        else:
-            mean = obj.mean()
-            std = obj.std()
-        return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
+    if isinstance(obj, pd.DataFrame):
+        mean = obj.mean(numeric_only=True).mean()
+        std = obj.std(numeric_only=True).mean()
     else:
-        return False
+        mean = obj.mean()
+        std = obj.std()
+    return bool(-0.15 < mean < 0.15 and 0.85 < std < 1.15)
 
 
 @contextmanager

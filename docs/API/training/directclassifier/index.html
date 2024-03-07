@@ -5587,22 +5587,22 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 0.992</span>
 <span class="go">Test evaluation --&gt; f1: 0.9767</span>
-<span class="go">Time elapsed: 0.131s</span>
+<span class="go">Time elapsed: 0.129s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.131s</span>
+<span class="go">Time: 0.129s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 1.0</span>
 <span class="go">Test evaluation --&gt; f1: 0.9585</span>
-<span class="go">Time elapsed: 0.163s</span>
+<span class="go">Time elapsed: 0.155s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.163s</span>
+<span class="go">Time: 0.155s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.301s</span>
+<span class="go">Total time: 0.289s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">LogisticRegression --&gt; f1: 0.9767 !</span>
 <span class="go">RandomForest       --&gt; f1: 0.9585</span>
@@ -5611,9 +5611,9 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
-<span class="go">    f1_train  f1_test  time_fit      time</span>
-<span class="go">LR     0.992   0.9767  0.131119  0.131119</span>
-<span class="go">RF     1.000   0.9585  0.163149  0.163149</span>
+<span class="go">    f1_train  f1_test  time_fit     time</span>
+<span class="go">LR     0.992   0.9767   0.12853  0.12853</span>
+<span class="go">RF     1.000   0.9585   0.15544  0.15544</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -5791,7 +5791,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1002>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
+<p><a id='directclassifier-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1001>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="#directclassifier-save">saving</a> the instance. The affected
@@ -5804,7 +5804,7 @@ attributes are:</p>
 <li>Calculated <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='directclassifier-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1021>[source]</a></span></div>Delete models.</p>
+<p><a id='directclassifier-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1020>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
 before <a class="autorefs autorefs-internal" href="#directclassifier-save">saving</a>. Deleted models are not removed from
@@ -5815,7 +5815,7 @@ Models to delete. If None, all models are deleted.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5, as_frame=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1041>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<p><a id='directclassifier-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5, as_frame=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1040>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric to calculate. If None, it returns an overview of
@@ -5846,7 +5846,7 @@ Scores of the models.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1097>[source]</a></span></div>Export the internal pipeline.</p>
+<p><a id='directclassifier-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1096>[source]</a></span></div>Export the internal pipeline.</p>
 <p>This method returns a deepcopy of the branch's pipeline.
 Optionally, you can add a model as final estimator. The
 returned pipeline is already fitted on the training set.</p>
@@ -5861,7 +5861,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1124>[source]</a></span></div>Return class weights for a balanced data set.</p>
+<p><a id='directclassifier-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1123>[source]</a></span></div>Return class weights for a balanced data set.</p>
 <p>Statistically, the class weights re-balance the data set so
 that the sampled data set represents the target population
 as closely as possible. The returned weights are inversely
@@ -5886,7 +5886,7 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1293>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p><a id='directclassifier-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1292>[source]</a></span></div>Merge another instance of the same class into this one.</p>
 <p>Branches, models, metrics and attributes of the other instance
 are merged into this one. If there are branches and/or models
 with the same name, they are merged adding the <code>suffix</code>
@@ -5937,7 +5937,7 @@ Training set and test set. Allowed formats are:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1355>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='directclassifier-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1354>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str or Path, default="auto"</strong><br><div markdown class='param'>
 Filename or <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">pathlib.Path</a> of the file to save. Use
@@ -5959,7 +5959,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", train_on_test=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1407>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<p><a id='directclassifier-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", train_on_test=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1406>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one
@@ -5994,7 +5994,7 @@ parameter, e.g., <code>atom.stacking(final_estimator="LR")</code>.</p>
 <p></div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='directclassifier-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1506>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<p><a id='directclassifier-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1505>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one

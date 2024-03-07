@@ -255,7 +255,6 @@ def test_n_classes():
 def test_unavailable_sparse_properties():
     """Assert that certain properties are unavailable for sparse datasets."""
     atom = ATOMClassifier(X_sparse, y10, random_state=1)
-    assert atom.scaled is False
     with pytest.raises(AttributeError):
         print(atom.nans)
     with pytest.raises(AttributeError):

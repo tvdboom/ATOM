@@ -984,9 +984,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         rows = []
         for model in MODELS:
-            m = model(goal=self._goal, branches=self._branches)
-            if self._goal.name in m._estimators:
-                tags = m.get_tags()
+            if self._goal.name in model._estimators:
+                tags = model(goal=self._goal).get_tags()
 
                 for key, value in kwargs.items():
                     k = tags.get(key)

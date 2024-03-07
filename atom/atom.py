@@ -314,7 +314,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         A data set is considered scaled when it has mean~0 and std~1,
         or when there is a scaler in the pipeline. Categorical and
         binary columns (only zeros and ones) are excluded from the
-        calculation.
+        calculation. [Sparse datasets][] always return False.
 
         """
         return self.branch.check_scaling()

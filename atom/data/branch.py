@@ -27,8 +27,8 @@ from atom.utils.types import (
     YDatasets, int_t, pandas_t, segment_t,
 )
 from atom.utils.utils import (
-    DataContainer, check_scaling, flt, get_col_names, get_cols, lst, merge,
-    to_tabular,
+    DataContainer, check_scaling, flt, get_col_names, get_cols, is_sparse, lst,
+    merge, to_tabular,
 )
 
 
@@ -869,7 +869,7 @@ class Branch:
         A data set is considered scaled when it has mean~0 and std~1,
         or when there is a scaler in the pipeline. Categorical and
         binary columns (only zeros and ones) are excluded from the
-        calculation.
+        calculation. [Sparse datasets][] always return False.
 
         Returns
         -------
@@ -879,6 +879,9 @@ class Branch:
         """
         if any("scaler" in name.lower() for name in self.pipeline.named_steps):
             return True
+
+        if is_sparse(self.X):
+            return False
 
         df = self.X.loc[:, (~self.X.isin([0, 1])).any(axis=0)]  # Remove binary columns
 

@@ -5719,31 +5719,31 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0858</span>
 <span class="go">Test evaluation --&gt; mape: -0.2305</span>
-<span class="go">Time elapsed: 0.032s</span>
+<span class="go">Time elapsed: 0.084s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.032s</span>
+<span class="go">Time: 0.084s</span>
 
 
 <span class="go">Results for ExponentialSmoothing:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0864</span>
 <span class="go">Test evaluation --&gt; mape: -0.2303</span>
-<span class="go">Time elapsed: 0.023s</span>
+<span class="go">Time elapsed: 0.044s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.023s</span>
+<span class="go">Time: 0.044s</span>
 
 
 <span class="go">Results for ETS:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; mape: -0.0858</span>
 <span class="go">Test evaluation --&gt; mape: -0.2305</span>
-<span class="go">Time elapsed: 0.023s</span>
+<span class="go">Time elapsed: 0.039s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.023s</span>
+<span class="go">Time: 0.039s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.082s</span>
+<span class="go">Total time: 0.174s</span>
 <span class="go">-------------------------------------</span>
 <span class="go">NaiveForecaster      --&gt; mape: -0.2305</span>
 <span class="go">ExponentialSmoothing --&gt; mape: -0.2303 !</span>
@@ -5754,9 +5754,9 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">     mape_train  mape_test  time_fit      time</span>
-<span class="go">NF      -0.0858    -0.2305  0.032029  0.032029</span>
-<span class="go">ES      -0.0864    -0.2303  0.023021  0.023021</span>
-<span class="go">ETS     -0.0858    -0.2305  0.023021  0.023021</span>
+<span class="go">NF      -0.0858    -0.2305  0.084337  0.084337</span>
+<span class="go">ES      -0.0864    -0.2303  0.044167  0.044167</span>
+<span class="go">ETS     -0.0858    -0.2305  0.039036  0.039036</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="magic-methods">Magic methods</h2>
@@ -5808,7 +5808,7 @@ the <a class="autorefs autorefs-internal" href="../../../user_guide/data_managem
 <p>A data set is considered scaled when it has mean~0 and std~1,
 or when there is a scaler in the pipeline. Categorical and
 binary columns (only zeros and ones) are excluded from the
-calculation.
+calculation. <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#sparse-datasets">Sparse datasets</a> always return False.
 </div><a id='atomforecaster-duplicates'></a><strong>duplicates: int</strong><br><div markdown class='param'>Number of duplicate rows in the dataset.
 </div><a id='atomforecaster-nans'></a><strong>nans: pd.Series</strong><br><div markdown class='param'>Columns with the number of missing values in them.</p>
 <p>This property is unavailable for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#sparse-datasets">sparse datasets</a>.
@@ -6135,7 +6135,7 @@ Statistic results with multiindex levels:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1002>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
+<p><a id='atomforecaster-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1001>[source]</a></span></div>Reset attributes and clear cache from all models.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="#atomforecaster-save">saving</a> the instance. The affected
@@ -6148,7 +6148,7 @@ attributes are:</p>
 <li>Calculated <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='atomforecaster-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1021>[source]</a></span></div>Delete models.</p>
+<p><a id='atomforecaster-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1020>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
 before <a class="autorefs autorefs-internal" href="#atomforecaster-save">saving</a>. Deleted models are not removed from
@@ -6242,7 +6242,7 @@ None, don't save anything.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5, as_frame=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1041>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<p><a id='atomforecaster-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, rows="test", threshold=0.5, as_frame=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1040>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric to calculate. If None, it returns an overview of
@@ -6273,7 +6273,7 @@ Scores of the models.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1097>[source]</a></span></div>Export the internal pipeline.</p>
+<p><a id='atomforecaster-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1096>[source]</a></span></div>Export the internal pipeline.</p>
 <p>This method returns a deepcopy of the branch's pipeline.
 Optionally, you can add a model as final estimator. The
 returned pipeline is already fitted on the training set.</p>
@@ -6288,7 +6288,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-get_sample_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_sample_weight</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1175>[source]</a></span></div>Return sample weights for a balanced data set.</p>
+<p><a id='atomforecaster-get_sample_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_sample_weight</strong>(rows="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1174>[source]</a></span></div>Return sample weights for a balanced data set.</p>
 <p>The returned weights are inversely proportional to the class
 frequencies in the selected data set. For <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>,
 the weights of each column of <code>y</code> will be multiplied.</p>
@@ -6301,7 +6301,7 @@ Sequence of weights with shape=(n_samples,).
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-get_seasonal_period'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_seasonal_period</strong>(max_sp=None, harmonics=None, target=0)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1200>[source]</a></span></div>Get the seasonal periods of the time series.</p>
+<p><a id='atomforecaster-get_seasonal_period'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_seasonal_period</strong>(max_sp=None, harmonics=None, target=0)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1199>[source]</a></span></div>Get the seasonal periods of the time series.</p>
 <p>Use the data in the training set to calculate the seasonal
 period. The data is internally differentiated before the
 seasonality is detected using ACF.</p>
@@ -6411,7 +6411,7 @@ Unpickled atom instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1293>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p><a id='atomforecaster-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1292>[source]</a></span></div>Merge another instance of the same class into this one.</p>
 <p>Branches, models, metrics and attributes of the other instance
 are merged into this one. If there are branches and/or models
 with the same name, they are merged adding the <code>suffix</code>
@@ -6458,7 +6458,7 @@ If True, flushes completely the cache.
 <p><br><br></p>
 <p><a id='atomforecaster-reset_aesthetics'></a><div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L817>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
-<p><a id='atomforecaster-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1355>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='atomforecaster-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1354>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str or Path, default="auto"</strong><br><div markdown class='param'>
 Filename or <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">pathlib.Path</a> of the file to save. Use
@@ -6508,7 +6508,7 @@ None, transform all columns.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", train_on_test=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1407>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<p><a id='atomforecaster-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(models=None, name="Stack", train_on_test=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1406>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one
@@ -6578,7 +6578,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomforecaster-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1506>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<p><a id='atomforecaster-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(models=None, name="Vote", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1505>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Combining models trained on different branches into one

@@ -24,8 +24,8 @@ from atom.training import DirectClassifier
 from atom.utils.utils import merge
 
 from .conftest import (
-    X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,
-    y_bin_array, y_idx, y_multiclass,
+    X10, X10_str, X_bin, X_bin_array, X_class, X_idx, X_sparse, y10, y10_str,
+    y_bin, y_bin_array, y_idx, y_multiclass,
 )
 
 
@@ -566,6 +566,12 @@ def test_check_scaling_scaler_in_pipeline():
     assert not atom.branch.check_scaling()
     atom.add(MinMaxScaler())
     assert atom.branch.check_scaling()
+
+
+def test_check_scaling_sparse():
+    """Assert that the sparse datasets return False for check_scaling."""
+    atom = ATOMClassifier(X_sparse, y=y10, random_state=1)
+    assert not atom.branch.check_scaling()
 
 
 def test_check_scaling():
