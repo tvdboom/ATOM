@@ -5704,13 +5704,13 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">Fitting FeatureSelector...</span>
 <span class="go">Performing feature selection ...</span>
 <span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
-<span class="go">   --&gt; Dropping feature mean area (rank 9).</span>
-<span class="go">   --&gt; Dropping feature mean fractal dimension (rank 6).</span>
-<span class="go">   --&gt; Dropping feature smoothness error (rank 7).</span>
-<span class="go">   --&gt; Dropping feature concavity error (rank 2).</span>
-<span class="go">   --&gt; Dropping feature concave points error (rank 4).</span>
-<span class="go">   --&gt; Dropping feature symmetry error (rank 5).</span>
-<span class="go">   --&gt; Dropping feature fractal dimension error (rank 8).</span>
+<span class="go">   --&gt; Dropping feature mean texture (rank 5).</span>
+<span class="go">   --&gt; Dropping feature mean perimeter (rank 4).</span>
+<span class="go">   --&gt; Dropping feature mean area (rank 8).</span>
+<span class="go">   --&gt; Dropping feature mean fractal dimension (rank 7).</span>
+<span class="go">   --&gt; Dropping feature smoothness error (rank 9).</span>
+<span class="go">   --&gt; Dropping feature symmetry error (rank 2).</span>
+<span class="go">   --&gt; Dropping feature fractal dimension error (rank 6).</span>
 <span class="go">   --&gt; Dropping feature worst area (rank 3).</span>
 
 
@@ -5725,46 +5725,46 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for LogisticRegression:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9826</span>
-<span class="go">Test evaluation --&gt; f1: 0.9784</span>
-<span class="go">Time elapsed: 0.110s</span>
+<span class="go">Train evaluation --&gt; f1: 0.9913</span>
+<span class="go">Test evaluation --&gt; f1: 0.965</span>
+<span class="go">Time elapsed: 0.105s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.110s</span>
+<span class="go">Time: 0.105s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 1.0</span>
-<span class="go">Test evaluation --&gt; f1: 0.9565</span>
-<span class="go">Time elapsed: 0.181s</span>
+<span class="go">Test evaluation --&gt; f1: 0.9726</span>
+<span class="go">Time elapsed: 0.175s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.181s</span>
+<span class="go">Time: 0.175s</span>
 
 
 <span class="go">Results for XGBoost:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; f1: 1.0</span>
-<span class="go">Test evaluation --&gt; f1: 0.9859</span>
-<span class="go">Time elapsed: 0.637s</span>
+<span class="go">Test evaluation --&gt; f1: 0.965</span>
+<span class="go">Time elapsed: 0.439s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.637s</span>
+<span class="go">Time: 0.439s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.937s</span>
+<span class="go">Total time: 0.729s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.9784</span>
-<span class="go">RandomForest       --&gt; f1: 0.9565</span>
-<span class="go">XGBoost            --&gt; f1: 0.9859 !</span>
+<span class="go">LogisticRegression --&gt; f1: 0.965</span>
+<span class="go">RandomForest       --&gt; f1: 0.9726 !</span>
+<span class="go">XGBoost            --&gt; f1: 0.965</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">     f1_train  f1_test  time_fit      time</span>
-<span class="go">LR     0.9826   0.9784  0.110099  0.110099</span>
-<span class="go">RF     1.0000   0.9565  0.181198  0.181198</span>
-<span class="go">XGB    1.0000   0.9859  0.636924  0.636924</span>
+<span class="go">LR     0.9913   0.9650  0.105095  0.105095</span>
+<span class="go">RF     1.0000   0.9726  0.175159  0.175159</span>
+<span class="go">XGB    1.0000   0.9650  0.439400  0.439400</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="magic-methods">Magic methods</h2>

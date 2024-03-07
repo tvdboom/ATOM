@@ -102,7 +102,7 @@ and accept your changes.
 If your contribution requires a new library dependency:
 
 * Double-check that the new dependency is easy to install via pip and Anaconda.
-* The library should support Python 3.10 and 3.11.
+* The library should support Python 3.10, 3.11 and 3.12.
 * Make sure the code works with the latest version of the library.
 * Update the dependencies in the documentation.
 * Add the library with the minimum required version to `pyproject.toml`.
