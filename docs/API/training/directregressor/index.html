@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/training/directregressor/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v6.0/API/training/directregressor/">
       
       
         <link rel="prev" href="../directforecaster/">
@@ -5580,35 +5580,35 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for OrdinaryLeastSquares:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.6107</span>
-<span class="go">Test evaluation --&gt; r2: 0.5305</span>
-<span class="go">Time elapsed: 0.194s</span>
+<span class="go">Train evaluation --&gt; r2: 0.5956</span>
+<span class="go">Test evaluation --&gt; r2: 0.5885</span>
+<span class="go">Time elapsed: 0.196s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.194s</span>
+<span class="go">Time: 0.196s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.9814</span>
-<span class="go">Test evaluation --&gt; r2: 0.8471</span>
-<span class="go">Time elapsed: 0.936s</span>
+<span class="go">Train evaluation --&gt; r2: 0.9807</span>
+<span class="go">Test evaluation --&gt; r2: 0.8664</span>
+<span class="go">Time elapsed: 0.941s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.936s</span>
+<span class="go">Time: 0.941s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 1.132s</span>
+<span class="go">Total time: 1.139s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">OrdinaryLeastSquares --&gt; r2: 0.5305</span>
-<span class="go">RandomForest         --&gt; r2: 0.8471 !</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.5885</span>
+<span class="go">RandomForest         --&gt; r2: 0.8664 !</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">     r2_train  r2_test  time_fit      time</span>
-<span class="go">OLS    0.6107   0.5305  0.194246  0.194246</span>
-<span class="go">RF     0.9814   0.8471  0.935568  0.935568</span>
+<span class="go">OLS    0.5956   0.5885  0.196178  0.196178</span>
+<span class="go">RF     0.9807   0.8664  0.940853  0.940853</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>

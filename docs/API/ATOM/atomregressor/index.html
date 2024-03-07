@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/ATOM/atomregressor/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v6.0/API/ATOM/atomregressor/">
       
       
         <link rel="prev" href="../atommodel/">
@@ -5678,7 +5678,7 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="go">-------------------------------------</span>
 <span class="go">Memory: 39.03 kB</span>
 <span class="go">Scaled: False</span>
-<span class="go">Outlier values: 12 (0.3%)</span>
+<span class="go">Outlier values: 15 (0.4%)</span>
 
 
 
@@ -5706,46 +5706,46 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for OrdinaryLeastSquares:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.5202</span>
-<span class="go">Test evaluation --&gt; r2: 0.4943</span>
-<span class="go">Time elapsed: 0.025s</span>
+<span class="go">Train evaluation --&gt; r2: 0.4996</span>
+<span class="go">Test evaluation --&gt; r2: 0.5648</span>
+<span class="go">Time elapsed: 0.024s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.025s</span>
+<span class="go">Time: 0.024s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.9245</span>
-<span class="go">Test evaluation --&gt; r2: 0.4963</span>
-<span class="go">Time elapsed: 0.247s</span>
+<span class="go">Train evaluation --&gt; r2: 0.9157</span>
+<span class="go">Test evaluation --&gt; r2: 0.5042</span>
+<span class="go">Time elapsed: 0.242s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.247s</span>
+<span class="go">Time: 0.242s</span>
 
 
 <span class="go">Results for XGBoost:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; r2: 1.0</span>
-<span class="go">Test evaluation --&gt; r2: 0.3671</span>
-<span class="go">Time elapsed: 0.195s</span>
+<span class="go">Test evaluation --&gt; r2: 0.4416</span>
+<span class="go">Time elapsed: 0.198s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.195s</span>
+<span class="go">Time: 0.198s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.469s</span>
+<span class="go">Total time: 0.467s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">OrdinaryLeastSquares --&gt; r2: 0.4943</span>
-<span class="go">RandomForest         --&gt; r2: 0.4963 ~ !</span>
-<span class="go">XGBoost              --&gt; r2: 0.3671 ~</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.5648 !</span>
+<span class="go">RandomForest         --&gt; r2: 0.5042 ~</span>
+<span class="go">XGBoost              --&gt; r2: 0.4416 ~</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 
 <span class="go">     r2_train  r2_test  time_fit      time</span>
-<span class="go">OLS    0.5202   0.4943  0.025088  0.025088</span>
-<span class="go">RF     0.9245   0.4963  0.246899  0.246899</span>
-<span class="go">XGB    1.0000   0.3671  0.194856  0.194856</span>
+<span class="go">OLS    0.4996   0.5648  0.024105  0.024105</span>
+<span class="go">RF     0.9157   0.5042  0.241735  0.241735</span>
+<span class="go">XGB    1.0000   0.4416  0.198054  0.198054</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="magic-methods">Magic methods</h2>

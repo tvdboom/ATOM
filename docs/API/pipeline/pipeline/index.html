@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/pipeline/pipeline/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v6.0/API/pipeline/pipeline/">
       
       
         <link rel="prev" href="../../models/xgb/">
@@ -5368,7 +5368,7 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go">-------------------------------------</span>
 <span class="go">Memory: 138.97 kB</span>
 <span class="go">Scaled: False</span>
-<span class="go">Outlier values: 173 (1.2%)</span>
+<span class="go">Outlier values: 175 (1.2%)</span>
 
 
 
@@ -5388,14 +5388,14 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="go">Fitting FeatureSelector...</span>
 <span class="go">Performing feature selection ...</span>
 <span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
-<span class="go">   --&gt; Dropping feature mean smoothness (rank 4).</span>
-<span class="go">   --&gt; Dropping feature mean symmetry (rank 8).</span>
-<span class="go">   --&gt; Dropping feature mean fractal dimension (rank 5).</span>
-<span class="go">   --&gt; Dropping feature texture error (rank 2).</span>
-<span class="go">   --&gt; Dropping feature concavity error (rank 7).</span>
-<span class="go">   --&gt; Dropping feature concave points error (rank 3).</span>
-<span class="go">   --&gt; Dropping feature worst compactness (rank 9).</span>
-<span class="go">   --&gt; Dropping feature worst fractal dimension (rank 6).</span>
+<span class="go">   --&gt; Dropping feature mean radius (rank 2).</span>
+<span class="go">   --&gt; Dropping feature mean perimeter (rank 8).</span>
+<span class="go">   --&gt; Dropping feature mean smoothness (rank 5).</span>
+<span class="go">   --&gt; Dropping feature mean fractal dimension (rank 7).</span>
+<span class="go">   --&gt; Dropping feature texture error (rank 9).</span>
+<span class="go">   --&gt; Dropping feature smoothness error (rank 4).</span>
+<span class="go">   --&gt; Dropping feature concavity error (rank 6).</span>
+<span class="go">   --&gt; Dropping feature worst compactness (rank 3).</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
@@ -5409,17 +5409,17 @@ Number of features seen during first step <code>fit</code> method.</p>
 
 <span class="go">Results for LogisticRegression:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; f1: 0.9843</span>
-<span class="go">Test evaluation --&gt; f1: 0.993</span>
-<span class="go">Time elapsed: 0.030s</span>
+<span class="go">Train evaluation --&gt; f1: 0.9826</span>
+<span class="go">Test evaluation --&gt; f1: 0.9787</span>
+<span class="go">Time elapsed: 0.029s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.030s</span>
+<span class="go">Time: 0.029s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.033s</span>
+<span class="go">Total time: 0.032s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">LogisticRegression --&gt; f1: 0.993</span>
+<span class="go">LogisticRegression --&gt; f1: 0.9787</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the pipeline object</span>
