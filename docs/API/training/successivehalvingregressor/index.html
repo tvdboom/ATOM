@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v6.0/API/training/successivehalvingregressor/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/training/successivehalvingregressor/">
       
       
         <link rel="prev" href="../successivehalvingforecaster/">
@@ -5587,27 +5587,27 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for OrdinaryLeastSquares:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.6372</span>
-<span class="go">Test evaluation --&gt; r2: 0.502</span>
-<span class="go">Time elapsed: 0.194s</span>
+<span class="go">Train evaluation --&gt; r2: 0.6614</span>
+<span class="go">Test evaluation --&gt; r2: 0.5188</span>
+<span class="go">Time elapsed: 0.196s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.194s</span>
+<span class="go">Time: 0.196s</span>
 
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.9745</span>
-<span class="go">Test evaluation --&gt; r2: 0.7474</span>
-<span class="go">Time elapsed: 0.510s</span>
+<span class="go">Train evaluation --&gt; r2: 0.9758</span>
+<span class="go">Test evaluation --&gt; r2: 0.7854</span>
+<span class="go">Time elapsed: 0.519s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.510s</span>
+<span class="go">Time: 0.519s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.708s</span>
+<span class="go">Total time: 0.717s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">OrdinaryLeastSquares --&gt; r2: 0.502 ~</span>
-<span class="go">RandomForest         --&gt; r2: 0.7474 ~ !</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.5188 ~</span>
+<span class="go">RandomForest         --&gt; r2: 0.7854 !</span>
 
 
 <span class="go">Run: 1 =========================== &gt;&gt;</span>
@@ -5618,17 +5618,17 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">Results for RandomForest:</span>
 <span class="go">Fit ---------------------------------------------</span>
-<span class="go">Train evaluation --&gt; r2: 0.9788</span>
-<span class="go">Test evaluation --&gt; r2: 0.8174</span>
-<span class="go">Time elapsed: 0.943s</span>
+<span class="go">Train evaluation --&gt; r2: 0.9809</span>
+<span class="go">Test evaluation --&gt; r2: 0.8417</span>
+<span class="go">Time elapsed: 0.938s</span>
 <span class="go">-------------------------------------------------</span>
-<span class="go">Time: 0.943s</span>
+<span class="go">Time: 0.938s</span>
 
 
 <span class="go">Final results ==================== &gt;&gt;</span>
-<span class="go">Total time: 0.944s</span>
+<span class="go">Total time: 0.939s</span>
 <span class="go">-------------------------------------</span>
-<span class="go">RandomForest --&gt; r2: 0.8174</span>
+<span class="go">RandomForest --&gt; r2: 0.8417</span>
 
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
@@ -5636,9 +5636,9 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 
 <span class="go">            r2_train  r2_test  time_fit      time</span>
 <span class="go">frac model                                       </span>
-<span class="go">0.5  OLS2     0.6372   0.5020  0.194176  0.194176</span>
-<span class="go">     RF2      0.9745   0.7474  0.510463  0.510463</span>
-<span class="go">1.0  RF1      0.9788   0.8174  0.942855  0.942855</span>
+<span class="go">0.5  OLS2     0.6614   0.5188  0.196180  0.196180</span>
+<span class="go">     RF2      0.9758   0.7854  0.519471  0.519471</span>
+<span class="go">1.0  RF1      0.9809   0.8417  0.937853  0.937853</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
