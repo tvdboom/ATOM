@@ -106,6 +106,28 @@ Click [here][example-nlp] to see an example that uses sparse data.
 
 <br>
 
+## Metadata
+
+
+Read more about metadata routing in sklearn's [user guide][metadata_routing].
+
+**groups**
+
+Groups are unavailable for [forecast][time-series] tasks.
+
+!!! warning
+    A group can only be present in one [data set][data-sets], thus a group
+    present in the training set is not validated upon, and a group present
+    in the test set is not used for training. It's highly recommended to use
+    a model's [cross_validate][adaboost-cross_validate] method to validate
+    on all groups and so avoid potential biases.
+
+
+**sample_weight**
+
+
+<br>
+
 ## Multioutput tasks
 
 Multioutput is a task where there are more than one target column, i.e.,

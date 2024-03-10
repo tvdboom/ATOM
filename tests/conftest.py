@@ -7,13 +7,13 @@ Description: Global fixtures and variables for the tests.
 
 from __future__ import annotations
 
+from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pytest
-from ray.util.joblib import register_ray
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -109,6 +109,7 @@ def _mock_mlflow_log_model(mocker):
     mocker.patch("mlflow.sklearn.log_model")
 
 
+@pytest.mark.skipif(not find_spec("ray"), reason="Ray is not installed.")
 @pytest.fixture(autouse=True)
 def _register_ray():
     """Register ray as joblib backend.
@@ -118,6 +119,8 @@ def _register_ray():
     in basetransformer.py.
 
     """
+    from ray.util.joblib import register_ray
+
     register_ray()
 
 

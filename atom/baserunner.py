@@ -455,6 +455,51 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
+        def _split_sets(data: pd.DataFrame, y: Pandas, size: Scalar) -> tuple[pd.DataFrame, pd.DataFrame]:
+            """Split the data set into two sets.
+
+            Parameters
+            ----------
+            data: pd.DataFrame
+                Dataset.
+
+            size: int or float
+                Size of the second set.
+
+            Returns
+            -------
+            pd.DataFrame
+                First set.
+
+            pd.DataFrame
+                Second set.
+
+            """
+            if self._config.get_groups() is None:
+                return train_test_split(
+                    data,
+                    test_size=size,
+                    random_state=self.random_state,
+                    shuffle=self._config.shuffle,
+                    stratify=self._config.get_stratify_columns(data, y),
+                )
+            else:
+                if self.task.is_forecast:
+                    raise ValueError(
+                        "Invalid value for the metadata parameter. The key "
+                        "'groups' is unavailable for forecast tasks."
+                    )
+                if not self._config.shuffle:
+                    raise ValueError(
+                        "Invalid value for the shuffle parameter. The shuffle parameter "
+                        "can't be False when 'groups' is passed to the metadata parameter."
+                    )
+
+                gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=42)
+                train_idx, test_idx = next(gss.split(X, y, groups))
+
+                return data.iloc[train_idx], data.iloc[test_idx]
+
         def _set_index(
             df: pd.DataFrame,
             y: Pandas | None,

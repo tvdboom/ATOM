@@ -6,6 +6,7 @@ Description: Unit tests for basemodel.py
 """
 
 import glob
+from importlib.util import find_spec
 from unittest.mock import patch
 
 import numpy as np
@@ -18,7 +19,6 @@ from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler
 from optuna.study import Study
 from pandas.testing import assert_frame_equal, assert_series_equal
-from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -902,8 +902,11 @@ def test_save_estimator():
     assert glob.glob("MultinomialNB.pkl")
 
 
+@pytest.mark.skipif(not find_spec("ray"), reason="Ray is not installed.")
 def test_serve():
     """Assert that the serve method deploys a reachable endpoint."""
+    from ray import serve
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     atom.mnb.serve()

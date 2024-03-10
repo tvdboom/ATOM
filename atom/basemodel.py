@@ -1024,7 +1024,7 @@ class BaseModel(RunnerPlot):
                             splitter = SingleWindowSplitter(range(1, len(self.og.test)))
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
-                    elif isinstance(self._ht["cv"], int_t):
+                    else:
                         # We use ShuffleSplit instead of K-fold because it
                         # works with n_splits=1 and multioutput stratification
                         if cols is None:
@@ -2035,6 +2035,13 @@ class BaseModel(RunnerPlot):
                 backend_params=kwargs.pop("backend_params", {"n_jobs": self.n_jobs}),
             )
         else:
+            if "groups" in kwargs:
+                raise ValueError(
+                    "The parameter groups can not be passed directly to cross_validate. "
+                    "ATOM uses metadata routing to manage dta groups. Pass the groups to "
+                    "atom's 'metadata' parameter in the constructor."
+                )
+
             # Monkey patch sklearn's _fit_and_score function to allow
             # for pipelines that drop samples during transformation
             with patch("sklearn.model_selection._validation._fit_and_score", fit_and_score):
@@ -2043,10 +2050,10 @@ class BaseModel(RunnerPlot):
                     X=self.og.X,
                     y=self.og.y,
                     scoring=scoring,
+                    params=self._config.get_metadata_params(),
                     return_train_score=kwargs.pop("return_train_score", True),
                     error_score=kwargs.pop("error_score", "raise"),
                     n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-                    verbose=kwargs.pop("verbose", 0),
                     **kwargs,
                 )
 

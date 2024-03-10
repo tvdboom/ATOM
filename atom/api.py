@@ -18,8 +18,8 @@ from sklearn.base import clone
 from atom.atom import ATOM
 from atom.utils.types import (
     Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
-    NJobs, Predictor, Scalar, Seasonality, SPDict, Verbose, Warnings,
-    YSelector,
+    MetadataDict, NJobs, Predictor, Scalar, Seasonality, SPDict, Verbose,
+    Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -187,6 +187,16 @@ class ATOMClassifier(ATOM):
         - If int: Position of the column to use as index.
         - If str: Name of the column to use as index.
         - If sequence: Array with shape=(n_samples,) to use as index.
+
+    metadata: dict or None, default=None
+        [Metadata][] to route to estimators, scorers, and CV splitters.
+        If None, no metadata is used. If dict, the available keys are:
+
+        - groups: sequence of shape=(n_samples,)
+            Group labels for the samples used while splitting the
+            dataset into train and test sets.
+        - sample_weight: sequence of shape=(n_samples,)
+            Individual weights for each sample.
 
     ignore: int, str, sequence or None, default=None
         Features in X to ignore during data transformations and model
@@ -360,6 +370,7 @@ class ATOMClassifier(ATOM):
         *arrays,
         y: YSelector = -1,
         index: IndexSelector = False,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
         stratify: IndexSelector = True,
@@ -381,6 +392,7 @@ class ATOMClassifier(ATOM):
             arrays=arrays,
             y=y,
             index=index,
+            metadata=metadata,
             ignore=ignore,
             test_size=test_size,
             holdout_size=holdout_size,
@@ -455,6 +467,13 @@ class ATOMForecaster(ATOM):
 
         This parameter is ignored if the time series is provided
         through `arrays`.
+
+    metadata: dict or None, default=None
+        [Metadata][] to route to estimators, scorers, and CV splitters.
+        If None, no metadata is used. If dict, the available keys are:
+
+        - sample_weight: sequence of shape=(n_samples,)
+            Individual weights for each sample.
 
     ignore: int, str, sequence or None, default=None
         Exogenous features in X to ignore during data transformations
@@ -630,6 +649,7 @@ class ATOMForecaster(ATOM):
         self,
         *arrays,
         y: YSelector = -1,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         sp: Seasonality | SPDict = None,
         n_rows: Scalar = 1,
@@ -650,6 +670,7 @@ class ATOMForecaster(ATOM):
             arrays=arrays,
             y=y,
             index=True,
+            metadata=metadata,
             ignore=ignore,
             sp=sp,
             test_size=test_size,
@@ -731,6 +752,16 @@ class ATOMRegressor(ATOM):
         - If int: Position of the column to use as index.
         - If str: Name of the column to use as index.
         - If sequence: Array with shape=(n_samples,) to use as index.
+
+    metadata: dict or None, default=None
+        [Metadata][] to route to estimators, scorers, and CV splitters.
+        If None, no metadata is used. If dict, the available keys are:
+
+        - groups: sequence of shape=(n_samples,)
+            Group labels for the samples used while splitting the
+            dataset into train and test sets.
+        - sample_weight: sequence of shape=(n_samples,)
+            Individual weights for each sample.
 
     ignore: int, str, sequence or None, default=None
         Features in X to ignore during data transformations and model
@@ -890,6 +921,7 @@ class ATOMRegressor(ATOM):
         *arrays,
         y: YSelector = -1,
         index: IndexSelector = False,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
         n_rows: Scalar = 1,
@@ -911,6 +943,7 @@ class ATOMRegressor(ATOM):
             y=y,
             index=index,
             ignore=ignore,
+            metadata=metadata,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=shuffle,

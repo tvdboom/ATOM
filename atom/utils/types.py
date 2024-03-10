@@ -82,6 +82,13 @@ class SPDict(TypedDict, total=False):
     trend_model: SeasonalityModels
 
 
+class MetadataDict(TypedDict, total=False):
+    """Dictionary type for the `metadata` parameter."""
+
+    groups: Sequence[Hashable] | None = None
+    sample_weight: Sequence[Scalar] | None = None
+
+
 class EngineDict(TypedDict, total=False):
     """Dictionary type for the `engine` parameter."""
 

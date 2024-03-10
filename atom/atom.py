@@ -52,11 +52,11 @@ from atom.utils.types import (
     Engine, EngineTuple, Estimator, FeatureNamesOut, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
-    IntLargerZero, MetricConstructor, ModelsConstructor, NItems, NJobs,
-    NormalizerStrats, NumericalStrats, Operators, Predictor, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Seasonality, Sequence, SPDict,
-    TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings, XReturn,
-    XSelector, YReturn, YSelector, sequence_t,
+    IntLargerZero, MetadataDict, MetricConstructor, ModelsConstructor, NItems,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
+    SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
+    XReturn, XSelector, YReturn, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,
@@ -94,6 +94,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         y: YSelector = -1,
         index: IndexSelector = False,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         sp: Seasonality | SPDict = None,
         shuffle: Bool = True,
@@ -127,6 +128,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         self._config = DataConfig(
             index=index is not False,
+            metadata=metadata,
             shuffle=shuffle,
             stratify=stratify,
             n_rows=n_rows,

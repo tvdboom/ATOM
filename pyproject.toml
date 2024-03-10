@@ -1,6 +1,6 @@
 [build-system]
-requires = ["pdm-pep517"]
-build-backend = "pdm.pep517.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project]
 name = "atom-ml"
@@ -41,7 +41,7 @@ dependencies = [
     "shap>=0.43.0",
     "sktime[forecasting]>=0.26.0",
     "statsmodels>=0.14.1",
-    "zoofs>=0.1.26",
+    "zoofs>=0.1.25",  # Keep at 0.1.25 because it's the max conda version
 ]
 
 [project.optional-dependencies]
@@ -57,7 +57,7 @@ full = [
     "polars>=0.20.7",
     "pyarrow>=15.0.0",
     "pyspark>=3.5.0",
-    "ray[serve]>=2.9.1",
+    "ray[serve]>=2.9.1; python_version < '3.12'",
     "requests>=2.31.0",
     "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
     "schemdraw>=0.16",
@@ -68,10 +68,8 @@ full = [
 ]
 
 [tool.pdm.dev-dependencies]
-dev = [
-    # Linting
-    "pre-commit>=3.5.0",
-    # Testing
+lint = ["pre-commit>=3.5.0"]
+test = [
     "nbmake>=1.4.1",  # To test example notebooks
     "pytest>=7.2.1",
     "pytest-cov>=4.0.0",
@@ -79,7 +77,8 @@ dev = [
     "pytest-xdist>=3.2.0",
     "scikeras>=0.11.0",
     "tensorflow>=2.13.0",
-    # Documentation
+]
+doc = [
     "jupyter-contrib-nbextensions>=0.7.0",
     "mike>=1.1.2",  # For versioning
     "mkdocs>=1.5.3",
@@ -198,5 +197,6 @@ disable_error_code = [
 
 [tool.coverage.report]
 exclude_also = [
-    "IF TYPE_CHECKING:",
+    "if TYPE_CHECKING:",
+    "@(abc\\.)?abstractmethod",
 ]

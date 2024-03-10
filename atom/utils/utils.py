@@ -50,10 +50,10 @@ from sklearn.utils.validation import _check_response_method, _is_fitted
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
-    IndexSelector, Int, IntLargerEqualZero, MetricFunction, Model, Pandas,
-    PandasConvertible, Predictor, Scalar, Scorer, Segment, Sequence, SPTuple,
-    Transformer, Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t,
-    segment_t, sequence_t,
+    IndexSelector, Int, IntLargerEqualZero, MetadataDict, MetricFunction,
+    Model, Pandas, PandasConvertible, Predictor, Scalar, Scorer, Segment,
+    Sequence, SPTuple, Transformer, Verbose, XConstructor, XReturn,
+    YConstructor, YReturn, int_t, segment_t, sequence_t,
 )
 
 
@@ -243,6 +243,7 @@ class DataConfig:
     """
 
     index: bool = False
+    metadata: MetadataDict | None = None
     ignore: tuple[str, ...] = ()
     sp: SPTuple = SPTuple()  # noqa: RUF009
     shuffle: Bool = False
@@ -250,6 +251,40 @@ class DataConfig:
     n_rows: Scalar = 1
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
+
+    def get_groups(self) -> pd.Series | None:
+        """Get the groups to stratify by.
+
+        Returns
+        -------
+        pd.Series or None
+            Groups to stratify by.
+
+        """
+        if self.metadata and self.metadata.get("groups") is not None:
+            return self.metadata["groups"]
+
+        return None
+
+    def get_metadata_params(self) -> dict[str, Any]:
+        """Get the metadata parameters.
+
+        Returns
+        -------
+        dict or None
+            Metadata parameters.
+
+        """
+        params = {}
+
+        if self.metadata:
+            if self.metadata.get("groups") is not None:
+                params["groups"] = self.metadata["groups"]
+
+            if self.metadata.get("sample_weight") is not None:
+                params["sample_weight"] = self.metadata["sample_weight"]
+
+        return params
 
     def get_stratify_columns(self, df: pd.DataFrame, y: Pandas) -> pd.DataFrame | None:
         """Get columns to stratify by.

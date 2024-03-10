@@ -1,6 +1,10 @@
 # Mlflow
 mlruns/
 
+# PDM
+pdm.lock
+.pdm-build/
+
 # Log, pickle and figures in root directory
 /*.log
 /*.pkl
@@ -72,4 +76,5 @@ coverage.xml
 # Others
 .pylint.d
 
+# GitHub
 github.com/

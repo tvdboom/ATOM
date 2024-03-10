@@ -21,7 +21,10 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -U pip pre-commit
+        run: |
+          python -m pip install -U pip
+          pip install -U pdm
+          pdm install -G lint
       - name: Apply isort
         run: pre-commit run isort --all-files
 
@@ -35,7 +38,10 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -U pip pre-commit
+        run: |
+          python -m pip install -U pip
+          pip install -U pdm
+          pdm install -G lint
       - name: Apply linting
         run: pre-commit run ruff --all-files
 
@@ -49,7 +55,10 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -U pip pre-commit
+        run: |
+          python -m pip install -U pip
+          pip install -U pdm
+          pdm install -G lint
       - name: Check type hints
         run: pre-commit run mypy --all-files
 
@@ -71,8 +80,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - name: Check out source repository
         uses: actions/checkout@v3
@@ -82,9 +91,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install -U pip setuptools
-          pip install -U pytest pytest-mock pytest-cov pytest-xdist
-          pip install -e .[full]
+          python -m pip install -U pip
+          pip install -U pdm
+          pdm install -G full -G test
           pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
       - name: Run tests w/ coverage
         run: pytest -n=auto --cov=atom --cov-report=xml tests/
@@ -124,9 +133,9 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: |
-          python -m pip install -U pip setuptools
-          pip install -U pytest pytest-xdist nbmake scikeras tensorflow
-          pip install -e .[full]
+          python -m pip install -U pip
+          pip install -U pdm
+          pdm install -G full -G test
       - name: Run example notebooks
         run: |
           pytest \
