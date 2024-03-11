@@ -305,9 +305,7 @@ class DataConfig:
 
         """
         # Stratification is not possible when the data cannot change order
-        if self.stratify is False:
-            return None
-        elif self.shuffle is False:
+        if self.stratify is False or self.shuffle is False:
             return None
         elif self.stratify is True:
             return df[[c.name for c in get_cols(y)]]

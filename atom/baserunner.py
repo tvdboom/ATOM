@@ -16,7 +16,7 @@ from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
 from typing import Any
-
+from sklearn.model_selection import GroupShuffleSplit
 import dill as pickle
 import numpy as np
 import pandas as pd
@@ -495,8 +495,16 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         "can't be False when 'groups' is passed to the metadata parameter."
                     )
 
-                gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=42)
-                train_idx, test_idx = next(gss.split(X, y, groups))
+                if self._config.stratify is True:
+                    pass
+                elif self._config.stratify is False:
+                    gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=42)
+                    train_idx, test_idx = next(gss.split(X, y, groups))
+                else:
+                    raise ValueError(
+                        "Invalid value for the stratify parameter. The stratify parameter "
+                        "must be True or False when 'groups' is passed to the metadata parameter."
+                    )
 
                 return data.iloc[train_idx], data.iloc[test_idx]
 

@@ -219,13 +219,12 @@ class ATOMClassifier(ATOM):
 
     shuffle: bool, default=True
         Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of target classes over the sets.
+        test set.
 
     stratify: bool, int, str or sequence, default=True
         Handle stratification of the target classes over the data sets.
 
-        - If False: The data is split randomly.
+        - If False: No stratification is applied.
         - If True: The data is stratified over the target column.
         - Else: Name or position of the columns to stratify by. The
           columns can't contain `NaN` values.
@@ -234,7 +233,7 @@ class ATOMClassifier(ATOM):
         set is provided through `arrays`.
 
         For [multioutput tasks][], stratification applies to the joint
-        target columns.
+        target columns when `stratify=True`.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
@@ -784,8 +783,7 @@ class ATOMRegressor(ATOM):
 
     shuffle: bool, default=True
         Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of target classes over the sets.
+        test set.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects

@@ -2038,7 +2038,7 @@ class BaseModel(RunnerPlot):
             if "groups" in kwargs:
                 raise ValueError(
                     "The parameter groups can not be passed directly to cross_validate. "
-                    "ATOM uses metadata routing to manage dta groups. Pass the groups to "
+                    "ATOM uses metadata routing to manage data groups. Pass the groups to "
                     "atom's 'metadata' parameter in the constructor."
                 )
 
