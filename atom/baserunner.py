@@ -455,7 +455,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
-        def _split_sets(data: pd.DataFrame, y: Pandas, size: Scalar) -> tuple[pd.DataFrame, pd.DataFrame]:
+        def _split_sets(data: pd.DataFrame, size: Scalar) -> tuple[pd.DataFrame, pd.DataFrame]:
             """Split the data set into two sets.
 
             Parameters
@@ -475,13 +475,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 Second set.
 
             """
-            if self._config.get_groups() is None:
+            if (groups := self._config.get_groups(data.index)) is None:
                 return train_test_split(
                     data,
                     test_size=size,
                     random_state=self.random_state,
                     shuffle=self._config.shuffle,
-                    stratify=self._config.get_stratify_columns(data, y),
+                    stratify=self._config.get_stratify_column(data),
                 )
             else:
                 if self.task.is_forecast:
@@ -489,24 +489,19 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                         "Invalid value for the metadata parameter. The key "
                         "'groups' is unavailable for forecast tasks."
                     )
-                if not self._config.shuffle:
+                if self._config.shuffle is False:
                     raise ValueError(
                         "Invalid value for the shuffle parameter. The shuffle parameter "
                         "can't be False when 'groups' is passed to the metadata parameter."
                     )
 
-                if self._config.stratify is True:
-                    pass
-                elif self._config.stratify is False:
-                    gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=42)
-                    train_idx, test_idx = next(gss.split(X, y, groups))
-                else:
-                    raise ValueError(
-                        "Invalid value for the stratify parameter. The stratify parameter "
-                        "must be True or False when 'groups' is passed to the metadata parameter."
-                    )
+                # We don't take stratification into account since the
+                # behavior of StratifiedGroupShuffleSplit is undefined
+                # and therefore not implemented in sklearn
+                gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=self.random_state)
+                idx1, idx2 = next(gss.split(data, groups=groups))
 
-                return data.iloc[train_idx], data.iloc[test_idx]
+                return data.iloc[idx1], data.iloc[idx2]
 
         def _set_index(
             df: pd.DataFrame,
@@ -645,23 +640,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                             f"got {self._config.holdout_size}."
                         )
 
-                    data, holdout = train_test_split(
-                        data,
-                        test_size=holdout_size,
-                        random_state=self.random_state,
-                        shuffle=self._config.shuffle,
-                        stratify=self._config.get_stratify_columns(data, y),
-                    )
+                    data, holdout = _split_sets(data, size=holdout_size)
                 else:
                     holdout = None
 
-                train, test = train_test_split(
-                    data,
-                    test_size=test_size,
-                    random_state=self.random_state,
-                    shuffle=self._config.shuffle,
-                    stratify=self._config.get_stratify_columns(data, y),
-                )
+                train, test = _split_sets(data, size=test_size)
 
                 complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
 

@@ -109,21 +109,6 @@ def _mock_mlflow_log_model(mocker):
     mocker.patch("mlflow.sklearn.log_model")
 
 
-@pytest.mark.skipif(not find_spec("ray"), reason="Ray is not installed.")
-@pytest.fixture(autouse=True)
-def _register_ray():
-    """Register ray as joblib backend.
-
-    Although atom does this internally, it's skipped when ray is
-    mocked. Not registering it fails the call to joblib.parallel_config
-    in basetransformer.py.
-
-    """
-    from ray.util.joblib import register_ray
-
-    register_ray()
-
-
 @pytest.fixture()
 def random():
     """Return numpy's default random number generator."""

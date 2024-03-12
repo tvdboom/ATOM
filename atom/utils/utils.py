@@ -247,22 +247,27 @@ class DataConfig:
     ignore: tuple[str, ...] = ()
     sp: SPTuple = SPTuple()  # noqa: RUF009
     shuffle: Bool = False
-    stratify: IndexSelector = True
+    stratify: Int | str | None = None
     n_rows: Scalar = 1
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
 
-    def get_groups(self) -> pd.Series | None:
+    def get_groups(self, index: pd.Index) -> pd.Series | None:
         """Get the groups to stratify by.
+
+        Parameters
+        ----------
+        index: pd.Index
+            Indices to get the groups from.
 
         Returns
         -------
         pd.Series or None
-            Groups to stratify by.
+            Groups. Returns None if no groups are specified.
 
         """
         if self.metadata and self.metadata.get("groups") is not None:
-            return self.metadata["groups"]
+            return self.metadata["groups"].loc[index]
 
         return None
 
@@ -286,50 +291,41 @@ class DataConfig:
 
         return params
 
-    def get_stratify_columns(self, df: pd.DataFrame, y: Pandas) -> pd.DataFrame | None:
-        """Get columns to stratify by.
+    def get_stratify_column(self, df: pd.DataFrame) -> pd.DataFrame | None:
+        """Get the column to stratify over.
 
         Parameters
         ----------
         df: pd.DataFrame
-            Dataset from which to get the columns.
-
-        y: pd.Series or pd.DataFrame
-            Target column(s).
+            Dataset from which to get the column.
 
         Returns
         -------
-        pd.DataFrame or None
-            Dataset with subselection of columns. Returns None if
-            there's no stratification.
+        pd.Series or None
+            Stratification column. Returns None if there's no
+            stratification.
 
         """
         # Stratification is not possible when the data cannot change order
-        if self.stratify is False or self.shuffle is False:
+        if self.stratify is None or self.shuffle is False:
             return None
-        elif self.stratify is True:
-            return df[[c.name for c in get_cols(y)]]
-        else:
-            inc = []
-            for col in lst(self.stratify):
-                if isinstance(col, int_t):
-                    if -df.shape[1] <= col <= df.shape[1]:
-                        inc.append(df.columns[int(col)])
-                    else:
-                        raise ValueError(
-                            f"Invalid value for the stratify parameter. Value {col} "
-                            f"is out of range for a dataset with {df.shape[1]} columns."
-                        )
-                elif isinstance(col, str):
-                    if col in df:
-                        inc.append(col)
-                    else:
-                        raise ValueError(
-                            "Invalid value for the stratify parameter. "
-                            f"Column {col} not found in the dataset."
-                        )
 
-            return df[inc]
+        if isinstance(col, int_t):
+            if -df.shape[1] <= col <= df.shape[1]:
+                return df.columns[int(col)]
+            else:
+                raise ValueError(
+                    f"Invalid value for the stratify parameter. Value {col} "
+                    f"is out of range for a dataset with {df.shape[1]} columns."
+                )
+        elif isinstance(col, str):
+            if col in df:
+                return df[col]
+            else:
+                raise ValueError(
+                    "Invalid value for the stratify parameter. "
+                    f"Column {col} not found in the dataset."
+                )
 
 
 class CatBMetric:

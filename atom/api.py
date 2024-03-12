@@ -209,6 +209,10 @@ class ATOMClassifier(ATOM):
         This parameter is ignored if the test set is provided
         through `arrays`.
 
+        If 'groups' is provided in the `metadata` parameter, `test_size`
+        represents the proportion of groups to include in the test split
+        or the absolute number of test groups.
+
     holdout_size: int, float or None, default=None
         - If None: No holdout data set is kept apart.
         - If <=1: Fraction of the dataset to include in the holdout set.
@@ -221,19 +225,17 @@ class ATOMClassifier(ATOM):
         Whether to shuffle the dataset before splitting the train and
         test set.
 
-    stratify: bool, int, str or sequence, default=True
+    stratify: int, str or None, default=-1
         Handle stratification of the target classes over the data sets.
 
-        - If False: No stratification is applied.
-        - If True: The data is stratified over the target column.
-        - Else: Name or position of the columns to stratify by. The
-          columns can't contain `NaN` values.
+        - If None: No stratification is applied.
+        - If int: Position of the column to use for stratification.
+        - If str: Name of the column to use for stratification.
+
+        The stratification column can't contain `NaN` values.
 
         This parameter is ignored if `shuffle=False` or if the test
         set is provided through `arrays`.
-
-        For [multioutput tasks][], stratification applies to the joint
-        target columns when `stratify=True`.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
@@ -372,7 +374,7 @@ class ATOMClassifier(ATOM):
         metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
-        stratify: IndexSelector = True,
+        stratify: Int | str | None = True,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -675,7 +677,7 @@ class ATOMForecaster(ATOM):
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=False,
-            stratify=False,
+            stratify=None,
             n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,
@@ -772,6 +774,10 @@ class ATOMRegressor(ATOM):
 
         This parameter is ignored if the test set is provided
         through `arrays`.
+
+        If 'groups' is provided in the `metadata` parameter, `test_size`
+        represents the proportion of groups to include in the test split
+        or the absolute number of test groups.
 
     holdout_size: int, float or None, default=None
         - If None: No holdout data set is kept apart.
@@ -945,7 +951,7 @@ class ATOMRegressor(ATOM):
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=shuffle,
-            stratify=False,
+            stratify=None,
             n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,

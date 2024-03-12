@@ -40,7 +40,7 @@ from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
-    ShuffleSplit, StratifiedShuffleSplit, TimeSeriesSplit,
+    ShuffleSplit, StratifiedShuffleSplit, TimeSeriesSplit, GroupShuffleSplit, GroupKFold, StratifiedGroupKFold, KFold, StratifiedKFold
 )
 from sklearn.model_selection._validation import cross_validate
 from sklearn.multioutput import (
@@ -1015,8 +1015,9 @@ class BaseModel(RunnerPlot):
                     score = t.value if len(self._metric) == 1 else t.values
                     break
             else:
-                # Follow the same stratification strategy as atom
-                cols = self._config.get_stratify_columns(self.og.train, self.og.y_train)
+                # Follow the same splitting strategy as atom
+                groups = self._config.get_groups(self.og.train.index)
+                cols = self._config.get_stratify_column(self.og.train)
 
                 if isinstance(cv := self._ht["cv"], int_t):
                     if self.task.is_forecast:
@@ -1025,24 +1026,43 @@ class BaseModel(RunnerPlot):
                         else:
                             splitter = TimeSeriesSplit(n_splits=cv)
                     else:
-                        # We use ShuffleSplit instead of K-fold because it
-                        # works with n_splits=1 and multioutput stratification
-                        if cols is None:
-                            splitter = ShuffleSplit
+                        if cv == 1:
+                            if groups is not None:
+                                CVClass = GroupShuffleSplit
+                            elif cols is None:
+                                CVClass = ShuffleSplit
+                            else:
+                                CVClass = StratifiedShuffleSplit
                         else:
-                            splitter = StratifiedShuffleSplit
+                            if groups is not None:
+                                if cols is None:
+                                    CVClass = GroupKFold
+                                else:
+                                    CVClass = StratifiedGroupKFold
+                            elif cols is None:
+                                CVClass = KFold
+                            else:
+                                CVClass = StratifiedKFold
 
-                        splitter = splitter(
-                            n_splits=self._ht["cv"],
-                            test_size=self._config.test_size,
-                            random_state=trial.number + (self.random_state or 0),
-                        )
+                        kwargs = {}
+                        if "test_size" in sign(CVClass):
+                            kwargs["test_size"] = self._config.test_size
+                        if "shuffle" in sign(CVClass):
+                            kwargs["shuffle"] = self._config.shuffle
+                        if "random_state" in sign(CVClass):
+                            # Different seed per trial but same across models
+                            kwargs["random_state"] = trial.number + (self.random_state or 0)
+
+                        splitter = CVClass(n_splits=cv, **kwargs)
+
                 else:  # Custom cross-validation generator
                     splitter = cv
 
                 args = [self.og.X_train]
-                if "y" in sign(splitter.split) and cols is not None:
+                if cols is not None:
                     args.append(cols)
+                if groups is not None:
+                    args.append(groups)
 
                 # Parallel loop over fit_model
                 results = Parallel(n_jobs=self.n_jobs)(
