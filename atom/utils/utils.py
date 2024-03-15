@@ -45,12 +45,13 @@ from sklearn.metrics import (
     matthews_corrcoef,
 )
 from sklearn.utils import _print_elapsed_time
+from sklearn.utils.metadata_routing import UNCHANGED
 from sklearn.utils.validation import _check_response_method, _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
-    IndexSelector, Int, IntLargerEqualZero, MetadataDict, MetricFunction,
+    Int, IntLargerEqualZero, MetadataTuple, MetricFunction,
     Model, Pandas, PandasConvertible, Predictor, Scalar, Scorer, Segment,
     Sequence, SPTuple, Transformer, Verbose, XConstructor, XReturn,
     YConstructor, YReturn, int_t, segment_t, sequence_t,
@@ -243,7 +244,7 @@ class DataConfig:
     """
 
     index: bool = False
-    metadata: MetadataDict | None = None
+    metadata: MetadataTuple = MetadataTuple()  # noqa: RUF009
     ignore: tuple[str, ...] = ()
     sp: SPTuple = SPTuple()  # noqa: RUF009
     shuffle: Bool = False
@@ -252,46 +253,88 @@ class DataConfig:
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
 
-    def get_groups(self, index: pd.Index) -> pd.Series | None:
-        """Get the groups to stratify by.
+    @cached_property
+    def n_groups(self) -> Int:
+        """Return the number of groups."""
+        if self.metadata.groups is not None:
+            return self.metadata.groups.nunique()
+        else:
+            return 0
+
+    def reindex_metadata(
+        self,
+        new_index: pd.Index | None = None,
+        loc: pd.Index | None = None,
+        iloc: pd.Index | None = None,
+    ):
+        """Reindex the 'groups' and 'sample_weight' keys in metadata.
 
         Parameters
         ----------
-        index: pd.Index
-            Indices to get the groups from.
+        new_index: pd.Index or None, default=None
+            New index to replace the current one. The rows remain in
+            the same order.
 
-        Returns
-        -------
-        pd.Series or None
-            Groups. Returns None if no groups are specified.
+        loc: pd.Index or None, default=None
+            New order to reindex the metadata based on current names.
+
+        iloc: pd.Index or None, default=None
+            New order to reindex the metadata based on positions.
 
         """
-        if self.metadata and self.metadata.get("groups") is not None:
-            return self.metadata["groups"].loc[index]
+        for key in ("groups", "sample_weight"):
+            if (value := getattr(self.metadata, key)) is not None:
+                if new_index is not None:
+                    value.index = new_index
+                elif loc is not None:
+                    setattr(self.metadata, key, value.loc[loc])
+                elif iloc is not None:
+                    setattr(self.metadata, key, value.iloc[iloc])
 
-        return None
+    def get_request(self, key: str) -> Literal[True] | UNCHANGED:
+        """Get the request for metadata.
 
-    def get_metadata_params(self) -> dict[str, Any]:
-        """Get the metadata parameters.
+        If the metadata is present, it returns True, which means the
+        metadata is requested and passed to fit if provided. The request
+        is ignored if metadata is not provided. If UNCHANGED, it retains
+        the existing request.
+
+        Parameters
+        ----------
+        key: str
+            Metadata key.
 
         Returns
         -------
-        dict or None
+        True or UNCHANGED
+            Metadata request response.
+
+        """
+        if getattr(self.metadata, key) is not None:
+            return True
+        else:
+            return UNCHANGED
+
+    def get_metadata(self, index: pd.Index) -> dict[str, pd.Series]:
+        """Get the metadata parameters.
+
+        Only the indices of the metadata that match those provided
+        are returned.
+
+        Returns
+        -------
+        dict
             Metadata parameters.
 
         """
         params = {}
-
-        if self.metadata:
-            if self.metadata.get("groups") is not None:
-                params["groups"] = self.metadata["groups"]
-
-            if self.metadata.get("sample_weight") is not None:
-                params["sample_weight"] = self.metadata["sample_weight"]
+        for key in ("groups", "sample_weight"):
+            if self.get_request(key) is True:
+                params[key] = getattr(self.metadata, key).loc[index]
 
         return params
 
-    def get_stratify_column(self, df: pd.DataFrame) -> pd.DataFrame | None:
+    def get_stratify_column(self, df: pd.DataFrame) -> pd.Series | None:
         """Get the column to stratify over.
 
         Parameters
@@ -310,21 +353,21 @@ class DataConfig:
         if self.stratify is None or self.shuffle is False:
             return None
 
-        if isinstance(col, int_t):
-            if -df.shape[1] <= col <= df.shape[1]:
-                return df.columns[int(col)]
+        if isinstance(self.stratify, int_t):
+            if -df.shape[1] <= self.stratify <= df.shape[1]:
+                return df[df.columns[int(self.stratify)]]
             else:
                 raise ValueError(
-                    f"Invalid value for the stratify parameter. Value {col} "
+                    f"Invalid value for the stratify parameter. Value {self.stratify} "
                     f"is out of range for a dataset with {df.shape[1]} columns."
                 )
-        elif isinstance(col, str):
-            if col in df:
-                return df[col]
+        elif isinstance(self.stratify, str):
+            if self.stratify in df:
+                return df[self.stratify]
             else:
                 raise ValueError(
                     "Invalid value for the stratify parameter. "
-                    f"Column {col} not found in the dataset."
+                    f"Column {self.stratify} not found in the dataset."
                 )
 
 
@@ -2377,8 +2420,11 @@ def fit_one(
                             "target column, e.g., atom.decompose(columns=-1)."
                         )
 
-            if "y" in params and y is not None:
-                kwargs["y"] = y
+            if y is not None:
+                if "y" in params:
+                    kwargs["y"] = y
+                if "Y" in params:  # Some estimators like ClassifierChain use Y
+                    kwargs["Y"] = y
 
             # Keep custom attrs since some transformers reset during fit
             with keep_attrs(estimator):

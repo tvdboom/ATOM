@@ -444,7 +444,7 @@ class DirectClassifier(Direct):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -674,7 +674,7 @@ class DirectForecaster(Direct):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -906,7 +906,7 @@ class DirectRegressor(Direct):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -1145,7 +1145,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -1378,7 +1378,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -1614,7 +1614,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -1859,7 +1859,7 @@ class TrainSizingClassifier(TrainSizing):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -2098,7 +2098,7 @@ class TrainSizingForecaster(TrainSizing):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """
@@ -2339,7 +2339,7 @@ class TrainSizingRegressor(TrainSizing):
     runner.run(train, test)
 
     # Analyze the results
-    print(runner.results)
+    runner.results
     ```
 
     """

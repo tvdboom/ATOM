@@ -157,7 +157,7 @@ core project contributors with a set of developer tools free of charge.
   </div>
   <div class="column">
     <div class="logo">
-      <a href="../user_guide/logging/#tracking" draggable="false">
+      <a href="../user_guide/logging/#dagshub-integration" draggable="false">
         <img src="../img/logos/dagshub.png" alt="dagshub" draggable="false">
       </a>
     </div>

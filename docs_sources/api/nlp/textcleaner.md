@@ -22,4 +22,4 @@
 :: methods:
     toc_only: False
     exclude:
-        - get_metadata_routing 
+        - get_metadata_routing

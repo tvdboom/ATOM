@@ -3,7 +3,7 @@ site_author: Mavs
 site_url: https://tvdboom.github.io/ATOM
 repo_name: tvdboom/ATOM
 repo_url: https://github.com/tvdboom/ATOM
-edit_uri: ""
+edit_uri: edit/master/docs_sources/
 docs_dir: docs_sources/
 site_dir: docs/
 copyright: Copyright &copy; 2019-2024, by Mavs.
@@ -14,6 +14,8 @@ theme:
     favicon: img/favicon.ico
     custom_dir: docs_sources/overrides
     features:
+        - content.action.edit
+        - content.action.view
         - content.code.copy
         - navigation.footer
         - navigation.instant
@@ -35,7 +37,7 @@ theme:
               icon: material/weather-sunny
               name: Switch to dark mode
 
-    # Dark mode
+        # Dark mode
         - media: "(prefers-color-scheme: dark)"
           scheme: slate
           primary: teal
@@ -83,6 +85,13 @@ plugins:
               on_page_markdown: docs_sources.scripts.autodocs:render
               on_page_content: docs_sources.scripts.autodocs:corrections
               on_post_build: docs_sources.scripts.autodocs:clean_search
+    - git-revision-date-localized:
+          enable_creation_date: true
+          fallback_to_build_date: true
+          enabled: !ENV [CI, false]
+    - git-committers:
+          repository: tvdboom/ATOM
+          branch: master
 
 markdown_extensions:
     - admonition
@@ -241,6 +250,7 @@ nav:
             - plot_components: API/plots/plot_components.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_correlation: API/plots/plot_correlation.md
+            - plot_cv_splits: API/plots/plot_cv_splits.md
             - plot_decomposition: API/plots/plot_decomposition.md
             - plot_det: API/plots/plot_det.md
             - plot_distribution: API/plots/plot_distribution.md
@@ -306,6 +316,7 @@ nav:
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - In-training validation: examples/in_training_validation.ipynb
         - Memory considerations: examples/memory_considerations.ipynb
+        - Metadata: examples/metadata.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multilabel classification: examples/multilabel_classification.ipynb

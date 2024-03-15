@@ -114,6 +114,21 @@ class Style(TypedDict):
     shape: dict[str, str]
 
 
+class MetadataTuple(NamedTuple):
+    """Type of the `metadata` parameter."""
+
+    groups: pd.Series | None = None
+    sample_weight: pd.Series | None = None
+
+
+class SPTuple(NamedTuple):
+    """Return type of the `sp` parameter."""
+
+    sp: int | list[int] | None = None
+    seasonal_model: SeasonalityModels = "additive"
+    trend_model: SeasonalityModels = "additive"
+
+
 class EngineTuple(NamedTuple):
     """Return type of the `engine` parameter.
 
@@ -135,14 +150,6 @@ class EngineTuple(NamedTuple):
         from atom.data import DATA_ENGINES
 
         return DATA_ENGINES[self.data]()
-
-
-class SPTuple(NamedTuple):
-    """Return type of the `sp` parameter."""
-
-    sp: int | list[int] | None = None
-    seasonal_model: SeasonalityModels = "additive"
-    trend_model: SeasonalityModels = "additive"
 
 
 @runtime_checkable

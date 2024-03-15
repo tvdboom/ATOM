@@ -33,6 +33,8 @@ from atom.utils.utils import Goal
 
 # Variables ======================================================== >>
 
+ATOM_URL = "https://github.com/tvdboom/ATOM/blob/master/"
+
 # Mapping of keywords to urls
 # Usage in docs: [anchor][key] or [key][] -> [anchor][value]
 CUSTOM_URLS = dict(
@@ -60,6 +62,7 @@ CUSTOM_URLS = dict(
     report="https://github.com/fbdesignpro/sweetviz/blob/master/sweetviz/dataframe_report.py#L23",
     to_csv="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html",
     # BaseModel
+    styler="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.io.formats.style.Styler.html",
     mlflowrun="https://mlflow.org/docs/latest/python_api/mlflow.entities.html#mlflow.entities.Run",
     make_reduction="https://sktime-backup.readthedocs.io/en/v0.13.0/api_reference/auto_generated/sktime.forecasting.compose.make_reduction.html",
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
@@ -77,7 +80,6 @@ CUSTOM_URLS = dict(
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
     ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
     # BaseRunner
-    styler="https://pandas.pydata.org/docs/reference/api/pandas.io.formats.style.Styler.html",
     stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
     stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
     stackingforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.StackingForecaster.html",
@@ -489,7 +491,7 @@ class AutoDocs:
 
         f = self.obj.__module__.replace(".", "/")  # Module and filename sep by /
         if "atom" in self.obj.__module__:
-            url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
+            url = f"{ATOM_URL}{f}.py"
         elif "sklearn" in self.obj.__module__:
             url = f"https://github.com/scikit-learn/scikit-learn/blob/main/{f}.py"
         else:
@@ -655,9 +657,9 @@ class AutoDocs:
 
                             if default != str(real.default):
                                 raise ValueError(
-                                    f"Default value {default} of parameter {param} "
+                                    f"Default value {real.default} of parameter {param} "
                                     f"of object {self.obj} doesn't match the value "
-                                    f"in the docstring: {real.default}."
+                                    f"in the docstring: {default}."
                                 )
                         except KeyError:
                             pass
@@ -884,8 +886,6 @@ def render(markdown: str, **kwargs) -> str:
             text = autodocs.get_hyperparameters()
         elif "methods" in command:
             text = autodocs.get_methods(command["methods"] or {})
-        elif "insert" in command:
-            text = insert(command["insert"] or {})
         else:
             text = ""
 
@@ -999,8 +999,8 @@ def clean_search(config: MkDocsConfig):
         json.dump(search, f)
 
 
-def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
-    """Custom handling of autorefs links.
+def custom_autorefs(markdown: str, autodocs: AutoDocs | None = None) -> str:
+    """Handle autorefs links.
 
     ATOM's documentation accepts some custom formatting for autorefs
     links in order to make the documentation cleaner and easier to

@@ -50,13 +50,13 @@ def test_task_assignment():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     assert atom.task.name == "multiclass_classification"
 
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
-    atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y=y10_label, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
-    atom = ATOMClassifier(X10, y=y10_label2, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y=y10_label2, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
@@ -709,11 +709,11 @@ def test_add_derivative_columns_keep_position():
 
 def test_multioutput_y_return():
     """Assert that y returns a dataframe when multioutput."""
-    atom = ATOMClassifier(X10, y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y10_label, random_state=1)
     atom.add(Cleaner())
     assert isinstance(atom.y, pd.DataFrame)
 
-    atom = ATOMClassifier(X10, y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y10_label, random_state=1)
     atom.add(MultiLabelBinarizer())
     assert isinstance(atom.y, pd.DataFrame)
 

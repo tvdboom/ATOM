@@ -1,13 +1,12 @@
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
-Description: Global fixtures and variables for the tests.
+Description: Global fixtures and variables for the test suite.
 
 """
 
 from __future__ import annotations
 
-from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
 import numpy as np

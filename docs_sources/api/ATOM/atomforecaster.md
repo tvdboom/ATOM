@@ -82,6 +82,7 @@ in the instance after [training][].
     - attributes:
         from_docstring: False
         include:
+            - metadata
             - ignore
             - missing
             - sp

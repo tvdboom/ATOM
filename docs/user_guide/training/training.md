@@ -6,7 +6,7 @@ After this, you can use the [plots][] and [prediction methods][predicting]
 to evaluate the results. The training applies the following steps for all
 models:
 
-1. Use [hyperparameter tuning][] to select the optimal hyperparameters for 
+1. Use [hyperparameter tuning][] to select the optimal hyperparameters for
    the model (optional).
 2. The model is fitted on the training set using the best combination
    of hyperparameters found. After that, the model is evaluated on the tes set.
@@ -37,7 +37,7 @@ and [train_sizing][atomclassifier-train_sizing] methods respectively.
 
 Models are called through their [acronyms][models], e.g., `#!python atom.run(models="RF")`
 will train a [RandomForest][]. If you want to run the same model multiple
-times, add a tag after the acronym to differentiate them. the tag must be 
+times, add a tag after the acronym to differentiate them. the tag must be
 separated from the accronym by an underscore.
 
 ```python
@@ -121,7 +121,7 @@ uses `balanced_accuracy`. The available acronyms are:
 
 
 ATOM also provides some extra common metrics for binary classification
-tasks. 
+tasks.
 
 * "TN" for True Negatives
 * "FP" for False Positives
@@ -450,8 +450,8 @@ atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
 
 After fitting the estimator, you can assess the robustness of the model
 using the [bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics))
-technique. This technique creates several new data sets selecting random 
-samples from the training set (with replacement) and evaluates them on 
+technique. This technique creates several new data sets selecting random
+samples from the training set (with replacement) and evaluates them on
 the test set. This way you can get a distribution of the performance of
 the model. The sets are the same for every model. The number of sets can
 be chosen through the [`n_bootstrap`][directclassifier-n_bootstrap] parameter.

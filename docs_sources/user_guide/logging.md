@@ -25,7 +25,7 @@ stored locally at `./mlruns`. To configure the backend, use
 [mlflow.set_tracking_uri](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri)
 in your notebook or IDE before initializing atom. This does not affect
 the currently active run (if one exists), but takes effect for successive
-runs. Run `mlflow ui` on your terminal to open MLflow's Tracking UI and 
+runs. Run `mlflow ui` on your terminal to open MLflow's Tracking UI and
 view it at http://localhost:5000.
 
 !!! note
@@ -87,7 +87,7 @@ atom.run(models=["LR", "RF"])
 The runs are automatically tagged with the model's full name, the [branch][branches]
 from which the model was trained, and the time it took to fit the model.
 Add additional custom tags through the [`ht_params`][directclassifier-ht_params]
-parameter, e.g., 
+parameter, e.g.,
 `#!python atom.run(["LR", "RF"], ht_params={"tags": {"tag1": 1}})`.
 
 **Parameters**<br>

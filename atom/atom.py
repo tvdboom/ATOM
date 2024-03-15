@@ -52,17 +52,18 @@ from atom.utils.types import (
     Engine, EngineTuple, Estimator, FeatureNamesOut, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
-    IntLargerZero, MetadataDict, MetricConstructor, ModelsConstructor, NItems,
-    NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
-    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
-    SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
-    XReturn, XSelector, YReturn, YSelector, sequence_t,
+    IntLargerZero, MetadataDict, MetadataTuple, MetricConstructor,
+    ModelsConstructor, NItems, NJobs, NormalizerStrats, NumericalStrats,
+    Operators, Predictor, PrunerStrats, RowSelector, Scalar, ScalerStrats,
+    Seasonality, Sequence, SPDict, TargetSelector, Transformer,
+    VectorizerStarts, Verbose, Warnings, XReturn, XSelector, YReturn,
+    YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,
     composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
     is_sparse, lst, make_sklearn, merge, method_to_log, n_cols,
-    replace_missing, sign,
+    replace_missing, sign, to_series,
 )
 
 
@@ -128,8 +129,11 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         self._config = DataConfig(
             index=index is not False,
-            metadata=metadata,
-            shuffle=shuffle,
+            metadata=MetadataTuple(
+                groups=to_series((metadata or {}).get("groups")),
+                sample_weight=to_series((metadata or {}).get("sample_weight")),
+            ),
+            shuffle=shuffle if stratify is not None else False,
             stratify=stratify,
             n_rows=n_rows,
             test_size=test_size,
@@ -273,6 +277,15 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             f"Branch {current} successfully deleted. "
             f"Switched to branch {self.branch.name}.", 1,
         )
+
+    @property
+    def metadata(self) -> MetadataTuple:
+        """Metadata of the dataset.
+
+        Read more in the [user guide][metadata].
+
+        """
+        return self._config.metadata
 
     @property
     def ignore(self) -> tuple[str, ...]:
@@ -1540,6 +1553,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         !!! warning
             * The balance method does not support [multioutput tasks][].
+            * The balance method does not support `sample_weights` passed
+              through [metadata][] routing.
             * This transformation is only applied to the training set
               to maintain the original distribution of target classes
               in the test set.
@@ -1549,6 +1564,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             of the target class distribution per data set.
 
         """
+        if self._config.get_request("sample_weight"):
+            raise PermissionError(
+                "The balance method does not support sample_weights "
+                "passed through metadata routing."
+            )
+
         columns = kwargs.pop("columns", None)
         balancer = Balancer(
             strategy=strategy,
@@ -1862,7 +1883,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             strategy=strategy,
             include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
-        )
+        ).set_fit_request(sample_weight=self._config.get_request("sample_weight"))
 
         self._add_transformer(scaler, columns=columns)
 

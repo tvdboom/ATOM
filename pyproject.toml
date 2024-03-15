@@ -68,26 +68,28 @@ full = [
 ]
 
 [tool.pdm.dev-dependencies]
-lint = ["pre-commit>=3.5.0"]
+lint = ["pre-commit>=3.6.2"]
 test = [
-    "nbmake>=1.4.1",  # To test example notebooks
-    "pytest>=7.2.1",
-    "pytest-cov>=4.0.0",
+    "nbmake>=1.5.3",  # To test example notebooks
+    "pytest>=8.1.1",
+    "pytest-cov>=4.1.0",
     "pytest-mock>=3.12.0",
-    "pytest-xdist>=3.2.0",
+    "pytest-xdist>=3.5.0",
     "scikeras>=0.11.0",
     "tensorflow>=2.13.0",
 ]
 doc = [
     "jupyter-contrib-nbextensions>=0.7.0",
-    "mike>=1.1.2",  # For versioning
+    "mike>=2.0.0",  # For versioning
     "mkdocs>=1.5.3",
-    "mkdocs-autorefs>=0.5.0",
+    "mkdocs-autorefs>=1.0.1",
+    "mkdocs-git-committers-plugin-2>=2.3.0",
+    "mkdocs-git-revision-date-localized-plugin>=1.2.4",
     "mkdocs-jupyter>=0.24.6",
-    "mkdocs-material>=9.4.7",
+    "mkdocs-material>=9.5.13",
     "mkdocs-simple-hooks>=0.1.5",
-    "pymdown-extensions>=10.3.1",
-    "pyyaml>=6.0",
+    "pymdown-extensions>=10.7.1",
+    "pyyaml>=6.0.1",
 ]
 
 [project.urls]
@@ -105,6 +107,7 @@ includes = ["atom"]
 source-includes = ["tests/*.py"]
 
 [tool.pytest.ini_options]
+cache_dir = ".cache/pytest"
 testpaths = "tests/"
 python_files = "*.py"
 python_functions = "test_*"
@@ -119,6 +122,7 @@ ignore_comments = true
 remove_redundant_aliases = true
 
 [tool.ruff]
+cache-dir = ".cache/ruff"
 line-length = 99
 indent-width = 4
 show-fixes = true
@@ -187,6 +191,7 @@ ignore = [
 convention = "numpy"
 
 [tool.mypy]
+cache_dir = ".cache/mypy"
 ignore_missing_imports = true
 disable_error_code = [
     "attr-defined",

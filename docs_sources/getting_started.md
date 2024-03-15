@@ -114,7 +114,7 @@ X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 atom = ATOMClassifier(X, y="RainTomorrow")  # hide
 atom.verbose = 2  # hide
 
-atom.impute(strat_num="median", strat_cat="most_frequent")  
+atom.impute(strat_num="median", strat_cat="most_frequent")
 atom.encode(strategy="Target", max_onehot=8)
 ```
 
@@ -129,7 +129,7 @@ X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 
 atom = ATOMClassifier(X, y="RainTomorrow")  # hide
 
-atom.impute(strat_num="median", strat_cat="most_frequent")  # hide 
+atom.impute(strat_num="median", strat_cat="most_frequent")  # hide
 atom.encode(strategy="Target", max_onehot=8)  # hide
 atom.verbose = 2  # hide
 
@@ -145,12 +145,12 @@ X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
 
 atom = ATOMClassifier(X, y="RainTomorrow")  # hide
 
-atom.impute(strat_num="median", strat_cat="most_frequent")  # hide 
+atom.impute(strat_num="median", strat_cat="most_frequent")  # hide
 atom.encode(strategy="Target", max_onehot=8)  # hide
 
 atom.run(models=["LR", "LDA"], metric="auc", n_trials=6)  # hide
 
-print(atom.results)
+atom.results
 
 atom.plot_roc()
 ```

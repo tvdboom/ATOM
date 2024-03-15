@@ -10,8 +10,20 @@ repos:
     hooks:
     - id: ruff
       types_or: [ python, pyi, jupyter ]
-      args: ["--fix"]
+      args: [--fix]
       files: ^atom/.*\.py$|tests/.*\.py$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+      - id: check-toml
+      - id: name-tests-test
+        args: [--pytest-test-first]
+      - id: check-added-large-files
+      - id: check-merge-conflict
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0

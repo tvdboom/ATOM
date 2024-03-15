@@ -17,9 +17,9 @@ from sklearn.base import clone
 
 from atom.atom import ATOM
 from atom.utils.types import (
-    Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
-    MetadataDict, NJobs, Predictor, Scalar, Seasonality, SPDict, Verbose,
-    Warnings, YSelector,
+    Backend, Bool, ColumnSelector, Engine, IndexSelector, Int,
+    IntLargerEqualZero, MetadataDict, NJobs, Predictor, Scalar, Seasonality,
+    SPDict, Verbose, Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -222,8 +222,7 @@ class ATOMClassifier(ATOM):
         through `arrays`.
 
     shuffle: bool, default=True
-        Whether to shuffle the dataset before splitting the train and
-        test set.
+        Whether to shuffle the dataset before splitting the data sets.
 
     stratify: int, str or None, default=-1
         Handle stratification of the target classes over the data sets.
@@ -359,7 +358,7 @@ class ATOMClassifier(ATOM):
     atom.run(models=["LR", "RF", "XGB"])
 
     # Analyze the results
-    print(atom.results)
+    atom.results
     ```
 
     """
@@ -374,7 +373,7 @@ class ATOMClassifier(ATOM):
         metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
-        stratify: Int | str | None = True,
+        stratify: Int | str | None = -1,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -639,7 +638,7 @@ class ATOMForecaster(ATOM):
     atom.run(models=["NF", "ES", "ETS"])
 
     # Analyze the results
-    print(atom.results)
+    atom.results
     ```
 
     """
@@ -788,8 +787,7 @@ class ATOMRegressor(ATOM):
         through `arrays`.
 
     shuffle: bool, default=True
-        Whether to shuffle the dataset before splitting the train and
-        test set.
+        Whether to shuffle the dataset before splitting the data sets.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
@@ -913,7 +911,7 @@ class ATOMRegressor(ATOM):
     atom.run(models=["OLS", "RF", "XGB"])
 
     # Analyze the results
-    print(atom.results)
+    atom.results
     ```
 
     """

@@ -3095,7 +3095,12 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         self.include_binary = include_binary
         self.kwargs = kwargs
 
-    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
+    def fit(
+        self,
+        X: XConstructor,
+        y: YConstructor | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
+    ) -> Self:
         """Fit to data.
 
         Parameters
@@ -3105,6 +3110,9 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
 
         y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
+
+        sample_weight: sequence or None, default=None
+            Sample weights with shape=(n_samples,).
 
         Returns
         -------
@@ -3127,7 +3135,9 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         num_cols = Xt.select_dtypes(include="number")
 
         if not self.include_binary:
-            num_cols = Xt[[n for n, c in num_cols.items() if ~np.isin(c.unique(), [0, 1]).all()]]
+            num_cols = Xt[
+                [n for n, c in num_cols.items() if ~np.isin(c.dropna().unique(), [0, 1]).all()]
+            ]
 
         if num_cols.empty:
             raise ValueError(
@@ -3139,7 +3149,12 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         self._log("Fitting Scaler...", 1)
 
         estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
-        self._estimator = estimator(**self.kwargs).fit(num_cols)
+        self._estimator = estimator(**self.kwargs)
+
+        if sample_weight is not None:
+            self._estimator.set_fit_request(sample_weight=True)
+
+        self._estimator.fit(num_cols, sample_weight=sample_weight)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)

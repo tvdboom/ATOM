@@ -203,6 +203,6 @@ depending on the task.
 !!! tip
     By default, the final estimator is trained on the training set.
     Note that this is the same data on which the other estimators are
-    fitted, increasing the chance of overfitting. If possible, it's 
+    fitted, increasing the chance of overfitting. If possible, it's
     recommended to use `train_on_test=True` in combination with a
     [holdout set][data-sets] for model evaluation.

@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.io.formats.style import Styler
 from pandas.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal,
 )
@@ -24,8 +25,8 @@ from atom.utils.types import SPTuple
 from atom.utils.utils import NotFittedError, merge
 
 from .conftest import (
-    X10, X_bin, X_class, X_idx, X_label, X_reg, bin_test, bin_train, fc_test,
-    fc_train, y10, y_bin, y_class, y_fc, y_idx, y_label, y_multiclass, y_reg,
+    X10, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, fc_test, fc_train,
+    y10, y_bin, y_class, y_fc, y_idx, y_multiclass, y_reg,
 )
 
 
@@ -562,12 +563,6 @@ def test_test_size_int():
     assert len(atom.train) == len(X_bin) - 100
 
 
-def test_error_message_impossible_stratification():
-    """Assert that the correct error is shown when stratification fails."""
-    with pytest.raises(ValueError, match=".*stratify=False.*"):
-        ATOMClassifier(X_label[:30], y=y_label[:30], stratify=True, random_state=1)
-
-
 def test_input_is_X_y():
     """Assert that input X, y works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -875,14 +870,7 @@ def test_evaluate(metric):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.evaluate)
     atom.run("Tree")
-    assert isinstance(atom.evaluate(metric, as_frame=True), pd.DataFrame)
-
-
-def test_evaluate_returns_styler():
-    """Assert that the evaluate method returns a pandas styler."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LR"])
-    assert isinstance(atom.evaluate(), pd.io.formats.style.Styler)
+    assert isinstance(atom.evaluate(metric), Styler)
 
 
 def test_export_pipeline_same_transformer():

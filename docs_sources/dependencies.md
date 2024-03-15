@@ -87,26 +87,28 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 
 **Linting**
 
-* **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
+* **[pre-commit](https://pre-commit.com/)** (>=3.6.2)
 
 **Testing**
 
-* **[nbmake](https://github.com/treebeardtech/nbmake)** (>=1.4.1)
-* **[pytest](https://docs.pytest.org/en/latest/)** (>=7.2.1)
-* **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.0.0)
+* **[nbmake](https://github.com/treebeardtech/nbmake)** (>=1.5.3)
+* **[pytest](https://docs.pytest.org/en/latest/)** (>=8.1.1)
+* **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.1.0)
 * **[pytest-mock](https://github.com/pytest-dev/pytest-mock/)** (>=3.12.0)
-* **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.2.0)
+* **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.5.0)
 * **[scikeras](https://github.com/adriangb/scikeras)** (>=0.11.0)
 * **[tensorflow](https://www.tensorflow.org/learn)** (>=2.13.0)
 
 **Documentation**
 
 * **[jupyter-contrib-nbextensions](https://github.com/ipython-contrib/jupyter_contrib_nbextensions)** (>=0.7.0)
-* **[mike](https://github.com/jimporter/mike)** (>=1.1.2)
+* **[mike](https://github.com/jimporter/mike)** (>=2.0.0)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.5.3)
-* **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=0.5.0)
+* **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=1.0.1)
+* **[mkdocs-git-committers-plugin-2](https://github.com/ojacques/mkdocs-git-committers-plugin-2/)** (>=2.3.0)
+* **[mkdocs-git-revision-date-localized-plugin](https://github.com/timvink/mkdocs-git-revision-date-localized-plugin)** (>=1.2.4)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.24.6)
-* **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.4.7)
+* **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.5.13)
 * **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
-* **[pymdown-extensions](https://github.com/facelessuser/pymdown-extensions)** (>=10.3.1)
-* **[pyyaml](https://pyyaml.org/)** (>=6.0)
+* **[pymdown-extensions](https://github.com/facelessuser/pymdown-extensions)** (>=10.7.1)
+* **[pyyaml](https://pyyaml.org/)** (>=6.0.1)

@@ -36,11 +36,13 @@ from optuna.storages import InMemoryStorage
 from optuna.study import Study
 from optuna.terminator import report_cross_validation_scores
 from optuna.trial import FrozenTrial, Trial, TrialState
+from pandas.io.formats.style import Styler
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
-    ShuffleSplit, StratifiedShuffleSplit, TimeSeriesSplit, GroupShuffleSplit, GroupKFold, StratifiedGroupKFold, KFold, StratifiedKFold
+    BaseCrossValidator, GroupKFold, GroupShuffleSplit, KFold, ShuffleSplit,
+    StratifiedGroupKFold, StratifiedKFold, StratifiedShuffleSplit,
 )
 from sklearn.model_selection._validation import cross_validate
 from sklearn.multioutput import (
@@ -447,6 +449,65 @@ class BaseModel(RunnerPlot):
 
         """
         return deepcopy(params)
+
+    def _get_cv(self, cv: Int | BaseCrossValidator, max_length: Int) -> BaseCrossValidator:
+        """Return a cross-validator class.
+
+        The cross-validator is selected based on the task and the
+        presence/absence of groups and stratification.
+
+        Parameters
+        ----------
+        cv: int or CrossValidator
+            Number of folds or cv object. If cv object, it is returned
+            as is.
+
+        total_length: int
+            Total length of the dataset. Only used for forecasting
+            tasks when cv > 1.
+
+        Returns
+        -------
+        CrossValidator
+            Cross-validator class.
+
+        """
+        if isinstance(cv, int_t):
+            if self.task.is_forecast:
+                if cv == 1:
+                    return SingleWindowSplitter(fh=range(1, len(self.og.test)))
+                else:
+                    return ExpandingWindowSplitter(
+                        fh=range(1, len(self.og.test) + 1),
+                        initial_window=(max_length - len(self.og.test)) // cv,
+                        step_length=(max_length - len(self.og.test)) // cv,
+                    )
+            else:
+                kwargs = {
+                    "n_splits": cv,
+                    "shuffle": self._config.shuffle,
+                    "random_state": self._config.random_state,
+                }
+
+                if cv == 1:
+                    if self._config.metadata.get("groups"):
+                        return GroupShuffleSplit(**kwargs)
+                    elif self._config.stratify is None:
+                        return ShuffleSplit(**kwargs)
+                    else:
+                        return StratifiedShuffleSplit(**kwargs)
+                else:
+                    if self._config.metadata.get("groups"):
+                        if self._config.stratify is None:
+                            return GroupKFold(**kwargs)
+                        else:
+                            return StratifiedGroupKFold(**kwargs)
+                    elif self._config.stratify is None:
+                        return KFold(n_splits=cv)
+                    else:
+                        return StratifiedKFold(**kwargs)
+        else:
+            return cv
 
     def _get_est(self, params: dict[str, Any]) -> Predictor:
         """Get the estimator instance.
@@ -1015,58 +1076,21 @@ class BaseModel(RunnerPlot):
                     score = t.value if len(self._metric) == 1 else t.values
                     break
             else:
+                splitter = self._get_cv(self._ht["cv"], max_length=len(self.og.train))
+
                 # Follow the same splitting strategy as atom
-                groups = self._config.get_groups(self.og.train.index)
-                cols = self._config.get_stratify_column(self.og.train)
+                stratify = self._config.get_stratify_column(self.og.train)
+                groups = self._config.get_metadata(self.og.train.index).get("groups")
 
-                if isinstance(cv := self._ht["cv"], int_t):
-                    if self.task.is_forecast:
-                        if cv == 1:
-                            splitter = SingleWindowSplitter(range(1, len(self.og.test)))
-                        else:
-                            splitter = TimeSeriesSplit(n_splits=cv)
-                    else:
-                        if cv == 1:
-                            if groups is not None:
-                                CVClass = GroupShuffleSplit
-                            elif cols is None:
-                                CVClass = ShuffleSplit
-                            else:
-                                CVClass = StratifiedShuffleSplit
-                        else:
-                            if groups is not None:
-                                if cols is None:
-                                    CVClass = GroupKFold
-                                else:
-                                    CVClass = StratifiedGroupKFold
-                            elif cols is None:
-                                CVClass = KFold
-                            else:
-                                CVClass = StratifiedKFold
-
-                        kwargs = {}
-                        if "test_size" in sign(CVClass):
-                            kwargs["test_size"] = self._config.test_size
-                        if "shuffle" in sign(CVClass):
-                            kwargs["shuffle"] = self._config.shuffle
-                        if "random_state" in sign(CVClass):
-                            # Different seed per trial but same across models
-                            kwargs["random_state"] = trial.number + (self.random_state or 0)
-
-                        splitter = CVClass(n_splits=cv, **kwargs)
-
-                else:  # Custom cross-validation generator
-                    splitter = cv
-
-                args = [self.og.X_train]
-                if cols is not None:
-                    args.append(cols)
+                kwargs: dict[str, Any] = {"X": self.og.X_train}
+                if stratify is not None:
+                    kwargs["y"] = stratify
                 if groups is not None:
-                    args.append(groups)
+                    kwargs["groups"] = groups
 
                 # Parallel loop over fit_model
                 results = Parallel(n_jobs=self.n_jobs)(
-                    delayed(fit_model)(estimator, i, j) for i, j in splitter.split(*args)
+                    delayed(fit_model)(estimator, i, j) for i, j in splitter.split(**kwargs)
                 )
 
                 estimator = results[0][0]
@@ -1999,7 +2023,7 @@ class BaseModel(RunnerPlot):
             self._log("Dashboard successfully saved.", 1)
 
     @composed(crash, method_to_log)
-    def cross_validate(self, **kwargs) -> pd.DataFrame:
+    def cross_validate(self, *, include_holdout: Bool = False, **kwargs) -> Styler:
         """Evaluate the model using cross-validation.
 
         This method cross-validates the whole pipeline on the complete
@@ -2009,6 +2033,10 @@ class BaseModel(RunnerPlot):
 
         Parameters
         ----------
+        include_holdout: bool, default=False
+            Whether to include the holdout set (if available) in the
+            cross-validation.
+
         **kwargs
             Additional keyword arguments for one of these functions.
 
@@ -2017,10 +2045,19 @@ class BaseModel(RunnerPlot):
 
         Returns
         -------
-        pd.DataFrame
+        [Styler][]
             Overview of the results.
 
         """
+        self._log("Applying cross-validation...", 1)
+
+        if not include_holdout:
+            X = self.og.X
+            y = self.og.y
+        else:
+            X = self.og._all[self.og.features]
+            y = self.og._all[self.og.target]
+
         # Assign scoring from atom if not specified
         if kwargs.get("scoring"):
             scorer = get_custom_scorer(kwargs.pop("scoring"))
@@ -2028,14 +2065,11 @@ class BaseModel(RunnerPlot):
         else:
             scoring = dict(self._metric)
 
-        self._log("Applying cross-validation...", 1)
-
-        results = pd.DataFrame()
         if self.task.is_forecast:
             self.cv = evaluate(
                 forecaster=self.export_pipeline(),
-                y=self.og.y,
-                X=self.og.X,
+                y=y,
+                X=X,
                 scoring=[
                     make_forecasting_scorer(
                         func=metric._score_func,
@@ -2044,15 +2078,10 @@ class BaseModel(RunnerPlot):
                     )
                     for name, metric in scoring.items()
                 ],
-                cv=kwargs.pop(
-                    "cv", ExpandingWindowSplitter(
-                        fh=len(self.og.test) // 5,
-                        initial_window=len(self.og.train),
-                        step_length=len(self.og.test) // 5,
-                    )
-                ),
+                cv=self._get_cv(kwargs.pop("cv", 5), max_length=len(X)),
                 backend=kwargs.pop("backend", self.backend if self.backend != "ray" else None),
                 backend_params=kwargs.pop("backend_params", {"n_jobs": self.n_jobs}),
+                return_data=True,
             )
         else:
             if "groups" in kwargs:
@@ -2067,16 +2096,19 @@ class BaseModel(RunnerPlot):
             with patch("sklearn.model_selection._validation._fit_and_score", fit_and_score):
                 self.cv = cross_validate(
                     estimator=self.export_pipeline(),
-                    X=self.og.X,
-                    y=self.og.y,
+                    X=X,
+                    y=y,
                     scoring=scoring,
-                    params=self._config.get_metadata_params(),
+                    cv=self._get_cv(kwargs.pop("cv", 5), max_length=len(X)),
+                    params=self._config.get_metadata(self.og.X.index),
                     return_train_score=kwargs.pop("return_train_score", True),
                     error_score=kwargs.pop("error_score", "raise"),
                     n_jobs=kwargs.pop("n_jobs", self.n_jobs),
+                    return_indices=True,  # Required for plot_cv_splits
                     **kwargs,
                 )
 
+        results = pd.DataFrame()
         for m in scoring:
             if f"train_{m}" in self.cv:
                 results[f"train_{m}"] = self.cv[f"train_{m}"]
@@ -2086,7 +2118,7 @@ class BaseModel(RunnerPlot):
         results.loc["mean"] = results.mean()
         results.loc["std"] = results.std()
 
-        return results
+        return results.style.highlight_max(props="background-color: lightgreen")
 
     @composed(crash, beartype)
     def evaluate(

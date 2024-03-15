@@ -101,7 +101,7 @@ native support for sparse matrices.
 Click [here][example-nlp] to see an example that uses sparse data.
 
 !!! warning
-    Estimators accelerated using [sklearnex][] don't support sparse 
+    Estimators accelerated using [sklearnex][] don't support sparse
     datasets.
 
 <br>
@@ -410,7 +410,7 @@ The check is performed in the order described hereunder:
    select all rows in the training set, or `#!python rows="test+holdout"` to
    select all rows in the test and holdout sets. Valid data sets are `dataset`,
    `train`, `test` and `holdout`.
-5. By dtype (only for columns), e.g., `#!python columns="number"` to select only 
+5. By dtype (only for columns), e.g., `#!python columns="number"` to select only
    numerical columns. See pandas' [user guide](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.select_dtypes.html).
 6. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
    starting with `mean_`.

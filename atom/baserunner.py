@@ -16,14 +16,15 @@ from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
 from typing import Any
-from sklearn.model_selection import GroupShuffleSplit
+
 import dill as pickle
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from pandas.io.formats.style import Styler
 from pandas.tseries.frequencies import to_offset
 from pmdarima.arima.utils import ndiffs
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 from sktime.datatypes import check_is_mtype
@@ -39,8 +40,9 @@ from atom.utils.constants import DF_ATTRS
 from atom.utils.types import (
     Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
     IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
-    Pandas, RowSelector, Seasonality, Segment, Sequence, SPDict, SPTuple,
-    TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t, sequence_t,
+    Pandas, RowSelector, Scalar, Seasonality, Segment, Sequence, SPDict,
+    SPTuple, TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t,
+    sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Goal, SeasonalPeriod, Task, check_is_fitted,
@@ -276,7 +278,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             self.delete(self.winner.name)
 
     @property
-    def results(self) -> pd.DataFrame:
+    def results(self) -> Styler:
         """Overview of the training results.
 
         All durations are in seconds. Possible values include:
@@ -326,7 +328,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             ).sort_index(level=0, ascending=True)
 
-        return df
+        return df.style.highlight_max(props="background-color: lightgreen")
 
     # Utility methods ============================================== >>
 
@@ -448,12 +450,17 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 n_rows = int(self._config.n_rows)
 
-            if self._config.shuffle:
-                return df.iloc[random.sample(range(len(df)), k=n_rows)]
-            elif self._goal.name == "forecast":
+            if self._goal is Goal.forecast:
                 return df.iloc[-n_rows:]  # For forecasting, select from tail
             else:
-                return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
+                k = random.sample(range(len(df)), k=n_rows)
+
+                if self._config.shuffle:
+                    self._config.reindex_metadata(iloc=pd.Index(k))
+                    return df.iloc[k]
+                else:
+                    self._config.reindex_metadata(iloc=pd.Index(sorted(k)))
+                    return df.iloc[sorted(k)]
 
         def _split_sets(data: pd.DataFrame, size: Scalar) -> tuple[pd.DataFrame, pd.DataFrame]:
             """Split the data set into two sets.
@@ -475,7 +482,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 Second set.
 
             """
-            if (groups := self._config.get_groups(data.index)) is None:
+            if (groups := self._config.get_metadata(data.index).get("groups")) is None:
                 return train_test_split(
                     data,
                     test_size=size,
@@ -484,20 +491,14 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     stratify=self._config.get_stratify_column(data),
                 )
             else:
-                if self.task.is_forecast:
+                if self._goal is Goal.forecast:
                     raise ValueError(
                         "Invalid value for the metadata parameter. The key "
                         "'groups' is unavailable for forecast tasks."
                     )
-                if self._config.shuffle is False:
-                    raise ValueError(
-                        "Invalid value for the shuffle parameter. The shuffle parameter "
-                        "can't be False when 'groups' is passed to the metadata parameter."
-                    )
 
-                # We don't take stratification into account since the
-                # behavior of StratifiedGroupShuffleSplit is undefined
-                # and therefore not implemented in sklearn
+                # We don't take stratification into account since the behavior
+                # would be undefined (hence not implemented in sklearn)
                 gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=self.random_state)
                 idx1, idx2 = next(gss.split(data, groups=groups))
 
@@ -533,6 +534,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             if index is None:
                 index = self._config.index
 
+            # Rearrange the metadata to the current dataset
+            self._config.reindex_metadata(loc=df.index)
+
             if index is True:  # True gets caught by isinstance(int)
                 pass
             elif index is False:
@@ -559,6 +563,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     "Invalid value for the index parameter. The index column "
                     f"can not be the same as the target column, got {df.index.name}."
                 )
+
+            # Assign the same indices as the current dataset
+            self._config.reindex_metadata(df.index)
 
             return df
 
@@ -621,50 +628,44 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             # Define test set size
             if self._config.test_size < 1:
-                test_size = max(1, int(self._config.test_size * len(data)))
+                if n_groups := self._config.n_groups:
+                    test_size = max(1, int(self._config.test_size * n_groups))
+                else:
+                    test_size = max(1, int(self._config.test_size * len(data)))
             else:
                 test_size = self._config.test_size
 
-            try:
-                # Define holdout set size
-                if self._config.holdout_size:
-                    if self._config.holdout_size < 1:
-                        holdout_size = max(1, int(self._config.holdout_size * len(data)))
+            # Define holdout set size
+            if self._config.holdout_size:
+                if self._config.holdout_size < 1:
+                    if n_groups := self._config.n_groups:
+                        holdout_size = max(1, int(self._config.holdout_size * n_groups))
                     else:
-                        holdout_size = self._config.holdout_size
-
-                    if not 0 <= holdout_size <= len(data) - test_size:
-                        raise ValueError(
-                            "Invalid value for the holdout_size parameter. "
-                            "Value should lie between 0 and len(X) - len(test), "
-                            f"got {self._config.holdout_size}."
-                        )
-
-                    data, holdout = _split_sets(data, size=holdout_size)
+                        holdout_size = max(1, int(self._config.holdout_size * len(data)))
                 else:
-                    holdout = None
+                    holdout_size = self._config.holdout_size
 
-                train, test = _split_sets(data, size=test_size)
-
-                complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
-
-                container = DataContainer(
-                    data=(data := complete_set.iloc[: len(data)]),
-                    train_idx=data.index[:-len(test)],
-                    test_idx=data.index[-len(test):],
-                    n_targets=n_cols(y),
-                )
-
-            except ValueError as ex:
-                # Clarify common error with stratification for multioutput tasks
-                if isinstance(y, pd.DataFrame):
+                if not 0 <= holdout_size <= len(data) - test_size:
                     raise ValueError(
-                        "Stratification for multioutput tasks is applied over all target "
-                        "columns. Either select only one column to stratify over, or set "
-                        "the parameter stratify=False."
-                    ) from ex
-                else:
-                    raise ex
+                        "Invalid value for the holdout_size parameter. "
+                        "Value should lie between 0 and len(X) - len(test), "
+                        f"got {self._config.holdout_size}."
+                    )
+
+                data, holdout = _split_sets(data, size=holdout_size)
+            else:
+                holdout = None
+
+            train, test = _split_sets(data, size=test_size)
+
+            complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
+
+            container = DataContainer(
+                data=(data := complete_set.iloc[: len(data)]),
+                train_idx=data.index[:-len(test)],
+                test_idx=data.index[-len(test):],
+                n_targets=n_cols(y),
+            )
 
             if holdout is not None:
                 holdout = complete_set.iloc[len(data):]
@@ -840,7 +841,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         else:
             raise ValueError("Invalid data arrays. See the documentation for the allowed formats.")
 
-        if self._goal.name == "forecast":
+        if self._goal is Goal.forecast:
             # For forecasting, check if index complies with sktime's standard
             valid, msg, _ = check_is_mtype(
                 obj=pd.DataFrame(pd.concat([sets[0].data, sets[1]])),
@@ -1080,8 +1081,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         rows: RowSelector = "test",
         *,
         threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-        as_frame: Bool = False,
-    ) -> Any | pd.DataFrame:
+    ) -> Styler:
         """Get all models' scores for the provided metrics.
 
         Parameters
@@ -1107,16 +1107,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             The same threshold per target column is applied to all
             models.
 
-        as_frame: bool, default=False
-            Whether to return the scores as a pd.DataFrame. If False, a
-            `pandas.io.formats.style.Styler` object is returned, which
-            has a `_repr_html_` method defined, so it is rendered
-            automatically in a notebook. The highest score per metric
-            is highlighted.
-
         Returns
         -------
-        [Styler][] or pd.DataFrame
+        [Styler][]
             Scores of the models.
 
         """
@@ -1124,10 +1117,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         df = pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
 
-        if len(self._models) == 1 or as_frame:
-            return df
-        else:
-            return df.style.highlight_max(props="background-color: lightgreen")
+        return df.style.highlight_max(props="background-color: lightgreen")
 
     @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
@@ -1230,7 +1220,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         _, y = self.branch._get_rows(rows, return_X_y=True)
         weights = compute_sample_weight("balanced", y=y)
-        return pd.Series(weights, name="sample_weight").round(3)
+        return pd.Series(weights, index=y.index, name="sample_weight").round(3)
 
     @available_if(has_task("forecast"))
     @composed(crash, beartype)

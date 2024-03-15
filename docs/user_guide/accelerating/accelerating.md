@@ -9,7 +9,7 @@ pipeline:
  - [Run processes in parallel][parallel-execution]
 
 !!! warning
-    Performance improvements are usually noticeable for datasets larger 
+    Performance improvements are usually noticeable for datasets larger
     than ~5M rows. For smaller datasets, using other values than the
     default can even harm performance!
 
@@ -46,7 +46,7 @@ regardless of the engine parameter.
 
 !!! example
     [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1gbTMqTt5sDuP3kBLy1-_U6Z2uZaSm43O?authuser=0#scrollTo=FEB9_7R7Wq4h&forceEdit=true&sandboxMode=true)
-    
+
     Train a model on a GPU yourself using Google Colab. Just click on the
     badge above and run the notebook! Make sure to choose the GPU runtime
     type.
@@ -147,9 +147,9 @@ complete 10-50x faster than their CPU equivalents.
     from atom import ATOMClassifier
     from cuml.metrics import accuracy_score
     from sklearn.datasets import make_classification
-    
+
     X, y = make_classification(n_samples=100, random_state=1)
-    
+
     atom = ATOMClassifier(X, y, engine={"estimator": "cuml"}, verbose=2)
     atom.run("LR", metric=accuracy_score)
     ```
@@ -204,7 +204,7 @@ parallelization backends.
 * **multiprocessing:** Previous process-based backend based on `multiprocessing.Pool`.
   Less robust than loky.
 * **threading:** Very low-overhead backend but it suffers from the Python Global
-  Interpreter Lock if the called function relies a lot on Python objects. It's 
+  Interpreter Lock if the called function relies a lot on Python objects. It's
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).

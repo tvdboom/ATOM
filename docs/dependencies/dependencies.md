@@ -87,7 +87,7 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 
 **Linting**
 
-* **[pre-commit](https://pre-commit.com/)** (>=3.5.0)
+* **[pre-commit](https://pre-commit.com/)** (>=3.6.2)
 
 **Testing**
 

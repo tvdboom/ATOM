@@ -14,14 +14,14 @@ from code import InteractiveInterpreter
 from io import StringIO
 from uuid import uuid4
 
-import matplotlib
+import matplotlib as mpl
 import plotly.io as pio
 from markdown import Markdown
 from pymdownx.superfences import SuperFencesException
 
 
 # Avoid plot rendering
-matplotlib.use("Agg")
+mpl.use("Agg")
 pio.renderers.default = "pdf"
 
 # Directory in which to store all plots from the examples

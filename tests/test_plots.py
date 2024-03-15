@@ -672,7 +672,7 @@ def test_plot_parshap():
 
 def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method works."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("Tree")
     with pytest.raises(PermissionError, match=".*not available for multilabel.*"):
         atom.plot_partial_dependence(display=False)
@@ -758,7 +758,7 @@ def test_plot_probabilities():
 
 def test_plot_probabilities_multioutput():
     """Assert that the plot_probabilities method works for multioutput tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("LR")
     atom.plot_probabilities(display=False)
 
@@ -817,7 +817,7 @@ def test_plot_threshold(metric):
 
 def test_plot_threshold_multilabel():
     """Assert that the plot_threshold method works for multilabel tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("Tree")
     atom.plot_threshold(display=False)
 
@@ -834,7 +834,7 @@ def test_plot_shap_fail():
 
 def test_plot_shap_multioutput():
     """Assert that the shap plots work with multioutput tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run(["LR", "Tree"])
     atom.lr.plot_shap_bar(display=False)  # Non-native multioutput
     atom.tree.plot_shap_bar(display=False)  # Native multioutput
