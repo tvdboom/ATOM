@@ -595,6 +595,221 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             display=display,
         )
 
+    @crash
+    def plot_cv_splits(
+        self,
+        models: ModelsSelector = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Visualize the cross-validation splits.
+
+        Additionally, it shows class labels and [groups][metadata] when
+        provided.
+
+        !!! warning
+            This plot is only available for models that ran cross-validation
+            using the [cross_validate][adaboost-cross_validate] method.
+
+        Parameters
+        ----------
+        models: int, str, Model, segment, sequence or None, default=None
+            Model to plot. If None, all models are selected. Note that
+            leaving the default option could raise an exception if there
+            are multiple models. To avoid this, call the plot directly
+            from a model, e.g., `atom.lr.plot_cv_splits()`.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Position to display the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_data_splits
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_relationships
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier, ATOMForecaster
+        from random import choices
+        from sklearn.datasets import load_breast_cancer
+        from sktime.datasets import load_airline
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        # Without groups
+        atom = ATOMClassifier(X, y, shuffle=False, n_rows=0.2, random_state=1)
+        atom.run("LR")
+        atom.lr.cross_validate(cv=4)
+        atom.plot_cv_splits()
+
+        # With groups
+        groups = choices(["A", "B", "C", "D"], k=X.shape[0])
+        atom = ATOMClassifier(X, y, metadata={"groups": groups}, n_rows=0.2, random_state=1)
+        atom.run("LR")
+        atom.lr.cross_validate(cv=4)
+        atom.plot_cv_splits()
+
+        # For forecast models
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.run("Croston")
+        atom.croston.cross_validate(cv=4)
+        atom.plot_cv_splits()
+        ```
+
+        """
+        models_c = self._get_plot_models(models, max_one=True)[0]
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        if not hasattr(models_c, "cv"):
+            raise ValueError(
+                "The plot_splits method is only available for models that ran "
+                "cross-validation through the cross_validate method. Use the "
+                "plot_data_splits method to show the train/test split."
+            )
+        elif self.task.is_forecast:
+            data = {"train": models_c.cv["y_train"], "test": models_c.cv["y_test"]}
+        else:
+            data = {
+                "train": models_c.cv["indices"]["train"],
+                "test": models_c.cv["indices"]["y_test"],
+            }
+
+        # Determine if the holdout set was used for training
+        if len(data["train"][0]) + len(data["test"][0]) == len(self.og.X):
+            y = models_c.y
+        else:
+            y = models_c._all[models_c.branch.target]
+
+        for ds in ("train", "test"):
+            for i in range(len(models_c.cv["fit_time"])):
+                if self.task.is_forecast:
+                    x = self._get_plot_index(models_c.cv[f"y_{ds}"][i])
+                else:
+                    x = models_c.cv["indices"][ds][i]
+
+                self._draw_line(
+                    x=x,
+                    y=[str(i)] * len(x),
+                    parent=ds,
+                    mode="markers",
+                    marker={
+                        "symbol": "line-ns",
+                        "size": 25,
+                        "line": {
+                            "width": self.marker_size,
+                            "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
+                        },
+                    },
+                    hovertemplate=f"%{{y}}: {ds}<extra></extra>",
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+        if self.task.is_classification:
+            for col in get_cols(y):
+                mapping = models_c.branch.mapping.get(col.name, {k: k for k in np.unique(col)})
+                inverse_mapping = {v: k for k, v in mapping.items()}
+
+                self._draw_line(
+                    x=(x2 := list(range(y.shape[0]))),
+                    y=[col.name] * len(x2),
+                    parent=str(col.name),
+                    mode="markers",
+                    marker={
+                        "symbol": "line-ns",
+                        "size": 25,
+                        "line": {
+                            "width": self.marker_size,
+                            "color": [f"rgba({BasePlot._fig.get_elem(i)[4:-1]}, 1)" for i in col],
+                        },
+                    },
+                    customdata=[inverse_mapping[i] for i in y],
+                    hovertemplate=f"{col.name}: %{{customdata}}<extra></extra>",
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+        if (groups := self._config.get_groups(y)) is not None:
+            self._draw_line(
+                x=(x3 := list(range(y.shape[0]))),
+                y=["group"] * len(x3),
+                parent="group",
+                mode="markers",
+                marker={
+                    "symbol": "line-ns",
+                    "size": 25,
+                    "line": {
+                        "width": self.marker_size,
+                        "color": [
+                            f"rgba({BasePlot._fig.get_elem(f'g{i}')[4:-1]}, 1)" for i in groups
+                        ],
+                    },
+                },
+                customdata=groups,
+                hovertemplate="group: %{customdata}<extra></extra>",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        fig.update_yaxes(autorange="reversed")
+        fig.update_layout(hovermode="x unified")
+
+        BasePlot._fig.used_models.append(models_c)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            xlabel="Rows",
+            ylabel="CV Iterations",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_cv_splits",
+            filename=filename,
+            display=display,
+        )
+
     @available_if(has_task("binary"))
     @crash
     def plot_det(
@@ -3442,205 +3657,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize,
             plotname="plot_roc",
-            filename=filename,
-            display=display,
-        )
-
-    @crash
-    def plot_cv_splits(
-        self,
-        models: ModelsSelector = None,
-        *,
-        title: str | dict[str, Any] | None = None,
-        legend: Legend | dict[str, Any] | None = "upper right",
-        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
-        filename: str | Path | None = None,
-        display: Bool | None = True,
-    ) -> go.Figure | None:
-        """Plot the data splits.
-
-        !!! warning
-            This plot is only available for models that ran cross-validation
-            using the [cross_validate][adaboost-cross_validate] method.
-
-        Parameters
-        ----------
-        models: int, str, Model, segment, sequence or None, default=None
-            Model to plot. If None, all models are selected. Note that
-            leaving the default option could raise an exception if there
-            are multiple models. To avoid this, call the plot directly
-            from a model, e.g., `atom.lr.plot_cv_splits()`.
-
-        title: str, dict or None, default=None
-            Title for the plot.
-
-            - If None, no title is shown.
-            - If str, text for the title.
-            - If dict, [title configuration][parameters].
-
-        legend: str, dict or None, default="upper right"
-            Legend for the plot. See the [user guide][parameters] for
-            an extended description of the choices.
-
-            - If None: No legend is shown.
-            - If str: Position to display the legend.
-            - If dict: Legend configuration.
-
-        figsize: tuple, default=(900, 600)
-            Figure's size in pixels, format as (x, y).
-
-        filename: str, Path or None, default=None
-            Save the plot using this name. Use "auto" for automatic
-            naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no file type,
-            the plot is saved as html. If None, the plot is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the figure.
-
-        Returns
-        -------
-        [go.Figure][] or None
-            Plot object. Only returned if `display=None`.
-
-        See Also
-        --------
-        atom.plots:PredictionPlot.plot_calibration
-        atom.plots:DataPlot.plot_data_splits
-        atom.plots:DataPlot.plot_relationships
-
-        Examples
-        --------
-        ```pycon
-        from atom import ATOMClassifier, ATOMForecaster
-        from random import choices
-        from sklearn.datasets import load_breast_cancer
-        from sktime.datasets import load_airline
-
-        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
-
-        # Without groups
-        atom = ATOMClassifier(X, y, shuffle=False, n_rows=0.2, random_state=1)
-        atom.run("LR")
-        atom.lr.cross_validate(cv=4)
-        atom.plot_cv_splits()
-
-        # With groups
-        groups = choices(["A", "B", "C", "D"], k=X.shape[0])
-        atom = ATOMClassifier(X, y, metadata={"groups": groups}, n_rows=0.2, random_state=1)
-        atom.run("LR")
-        atom.lr.cross_validate(cv=4)
-        atom.plot_cv_splits()
-
-        # For forecast models
-        y = load_airline()
-
-        atom = ATOMForecaster(y, random_state=1)
-        atom.run("Croston")
-        atom.croston.cross_validate(cv=4)
-        atom.plot_cv_splits()
-        ```
-
-        """
-        models_c = self._get_plot_models(models, max_one=True)[0]
-
-        fig = self._get_figure()
-        xaxis, yaxis = BasePlot._fig.get_axes()
-
-        if not hasattr(models_c, "cv"):
-            raise ValueError(
-                "The plot_splits method is only available for models that ran "
-                "cross validation through the cross_validate method. Use the "
-                "plot_data_splits method to show the train/test split."
-            )
-
-        for ds in ("train", "test"):
-            for i in range(len(models_c.cv["fit_time"])):
-                if isinstance(models_c.cv, dict):
-                    x = models_c.cv["indices"][ds][i]
-                else:
-                    x = self._get_plot_index(models_c.cv[f"y_{ds}"][i])
-
-                self._draw_line(
-                    x=x,
-                    y=[str(i)] * len(x),
-                    parent=ds,
-                    mode="markers",
-                    marker={
-                        "symbol": "line-ns",
-                        "size": 25,
-                        "line": {
-                            "width": self.marker_size,
-                            "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
-                        },
-                    },
-                    hovertemplate=f"%{{y}}: {ds}<extra></extra>",
-                    legend=legend,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
-
-        if self.task.is_classification:
-            for col in get_cols(models_c.y):
-                mapping = models_c.branch.mapping.get(col.name, {k: k for k in np.unique(col)})
-                inverse_mapping = {v: k for k, v in mapping.items()}
-
-                self._draw_line(
-                    x=(x := list(range(models_c.shape[0]))),
-                    y=[col.name] * len(x),
-                    parent=str(col.name),
-                    mode="markers",
-                    marker={
-                        "symbol": "line-ns",
-                        "size": 25,
-                        "line": {
-                            "width": self.marker_size,
-                            "color": [f"rgba({BasePlot._fig.get_elem(i)[4:-1]}, 1)" for i in col],
-                        },
-                    },
-                    customdata=[inverse_mapping[i] for i in models_c.y],
-                    hovertemplate=f"{col.name}: %{{customdata}}<extra></extra>",
-                    legend=legend,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
-                )
-
-        if (groups := self._config.get_groups(models_c.y.index)) is not None:
-            self._draw_line(
-                x=(x := list(range(models_c.shape[0]))),
-                y=["group"] * len(x),
-                parent="group",
-                mode="markers",
-                marker={
-                    "symbol": "line-ns",
-                    "size": 25,
-                    "line": {
-                        "width": self.marker_size,
-                        "color": [
-                            f"rgba({BasePlot._fig.get_elem(f'g{i}')[4:-1]}, 1)" for i in groups
-                        ],
-                    },
-                },
-                customdata=groups,
-                hovertemplate="Group: %{customdata}<extra></extra>",
-                legend=legend,
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
-
-        fig.update_yaxes(autorange="reversed")
-        fig.update_layout({"hovermode": "x unified"})
-
-        BasePlot._fig.used_models.append(models_c)
-        return self._plot(
-            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            groupclick="togglegroup",
-            xlabel="Rows",
-            ylabel="CV Iterations",
-            title=title,
-            legend=legend,
-            figsize=figsize,
-            plotname="plot_cv_splits",
             filename=filename,
             display=display,
         )

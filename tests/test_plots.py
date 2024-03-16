@@ -22,8 +22,8 @@ from atom.utils.types import Legend
 from atom.utils.utils import NotFittedError
 
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10,
-    y_bin, y_class, y_ex, y_fc, y_label, y_multiclass, y_reg,
+    X10, X10_str, X_bin, X_class, X_ex, X_label, X_reg, X_sparse, X_text,
+    bin_groups, y10, y_bin, y_class, y_ex, y_fc, y_label, y_multiclass, y_reg,
 )
 
 
@@ -313,6 +313,15 @@ def test_plot_correlation():
     atom.plot_correlation(display=False)
 
 
+def test_plot_data_splits():
+    """Assert that the plot_data_splits method works."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata={"groups": bin_groups}, random_state=1)
+    atom.plot_data_splits(display=False)
+
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_data_splits(display=False)
+
+
 @pytest.mark.parametrize("columns", [None, -1])
 def test_plot_decomposition(columns):
     """Assert that the plot_decomposition method works."""
@@ -576,6 +585,21 @@ def test_plot_confusion_matrix():
         atom.plot_confusion_matrix(display=False)
 
     atom.lgb.plot_confusion_matrix(display=False)
+
+
+def test_plot_cv_splits():
+    """Assert that the plot_cv_splits method works."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata={"groups": bin_groups}, random_state=1)
+    atom.run("Dummy")
+    with pytest.raises(ValueError, match=".*ran cross-validation.*"):
+        atom.plot_cv_splits(display=False)
+    atom.dummy.cross_validate(cv=2)
+    atom.plot_cv_splits(display=False)
+
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.run("NF")
+    atom.nf.cross_validate(cv=2)
+    atom.plot_cv_splits(display=False)
 
 
 def test_plot_det():

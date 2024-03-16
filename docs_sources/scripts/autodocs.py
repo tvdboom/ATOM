@@ -916,6 +916,7 @@ def types_conversion(dtype: str) -> str:
         "'>": "",
         "typing.": "",  # For typing.Any
         "atom.pipeline.": "",  # To transform later both class and str
+        "sklearn.utils._bunch.": "",  # To transform later both class and str
         "Study": "[Study][]",
         "FrozenTrial": "[FrozenTrial][]",
         "Model": "[model][models]",
@@ -924,6 +925,8 @@ def types_conversion(dtype: str) -> str:
         "pandas.core.series.Series": "pd.Series",
         "pandas.core.frame.DataFrame": "pd.DataFrame",
         "atom.data.branch.Branch": "[Branch][]",
+        "Styler": "[Styler][]",
+        "Bunch": "[Bunch][]",
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",

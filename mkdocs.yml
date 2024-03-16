@@ -251,6 +251,7 @@ nav:
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_correlation: API/plots/plot_correlation.md
             - plot_cv_splits: API/plots/plot_cv_splits.md
+            - plot_data_splits: API/plots/plot_data_splits.md
             - plot_decomposition: API/plots/plot_decomposition.md
             - plot_det: API/plots/plot_det.md
             - plot_distribution: API/plots/plot_distribution.md

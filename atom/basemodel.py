@@ -1100,7 +1100,7 @@ class BaseModel(RunnerPlot):
 
                 # Follow the same splitting strategy as atom
                 stratify = self._config.get_stratify_column(self.og.train)
-                groups = self._config.get_metadata(self.og.train.index).get("groups")
+                groups = self._config.get_metadata(self.og.train).get("groups")
 
                 kwargs: dict[str, Any] = {"X": self.og.X_train}
                 if stratify is not None:
@@ -2049,7 +2049,8 @@ class BaseModel(RunnerPlot):
         This method cross-validates the whole pipeline on the complete
         dataset. Use it to assess the robustness of the model's
         performance. If the scoring method is not specified in `kwargs`,
-        it uses atom's metric.
+        it uses atom's metric. The results of the cross-validation are
+        stored in the model's `cv` attribute.
 
         Parameters
         ----------
@@ -2120,7 +2121,7 @@ class BaseModel(RunnerPlot):
                     y=y,
                     scoring=scoring,
                     cv=self._get_cv(kwargs.pop("cv", 5), max_length=len(X)),
-                    params=self._config.get_metadata(self.og.X.index),
+                    params=self._config.get_metadata(X),
                     return_train_score=kwargs.pop("return_train_score", True),
                     error_score=kwargs.pop("error_score", "raise"),
                     n_jobs=kwargs.pop("n_jobs", self.n_jobs),

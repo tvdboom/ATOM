@@ -589,7 +589,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                     else:
                         title = {"text": title, **default_title}
 
-                    fig.update_layout({"annotations": (*fig.layout.annotations, title)})
+                    fig.update_layout(annotations=(*fig.layout.annotations, title))
 
             if not BasePlot._fig.is_canvas and kwargs.get("plotname"):
                 default_title = {

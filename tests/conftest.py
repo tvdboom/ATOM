@@ -7,6 +7,7 @@ Description: Global fixtures and variables for the test suite.
 
 from __future__ import annotations
 
+from random import choices
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -348,3 +349,6 @@ class_train, class_test = get_train_test(X_class, y_class)
 reg_train, reg_test = get_train_test(X_reg, y_reg)
 label_train, label_test = get_train_test(X_label, y_label)
 fc_train, fc_test = get_train_test(None, y_fc)
+
+# Groups
+bin_groups = choices(["A", "B", "C", "D"], k=X_bin.shape[0])

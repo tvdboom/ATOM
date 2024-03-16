@@ -478,7 +478,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 Second set.
 
             """
-            if (groups := self._config.get_groups(data.index)) is None:
+            if (groups := self._config.get_groups(data)) is None:
                 return train_test_split(
                     data,
                     test_size=size,

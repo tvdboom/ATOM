@@ -34,7 +34,7 @@ from atom.utils.types import (
     Segment, Sequence, TargetSelector,
 )
 from atom.utils.utils import (
-    check_dependency, crash, divide, get_corpus, has_task, lst,
+    check_dependency, crash, divide, get_cols, get_corpus, has_task, lst,
     replace_missing, rnd,
 )
 
@@ -208,7 +208,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 )
 
         fig.update_yaxes(zerolinecolor="black")
-        fig.update_layout({"hovermode": "x unified"})
+        fig.update_layout(hovermode="x unified")
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -398,7 +398,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 )
 
         fig.update_yaxes(zerolinecolor="black")
-        fig.update_layout({"hovermode": "x unified"})
+        fig.update_layout(hovermode="x unified")
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -660,6 +660,178 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize,
             plotname="plot_correlation",
+            filename=filename,
+            display=display,
+        )
+
+    @crash
+    def plot_data_splits(
+        self,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Visualize the train/test splits.
+
+        Additionally, it shows class labels and [groups][metadata] when
+        provided.
+
+        Parameters
+        ----------
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Position to display the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:PredictionPlot.plot_cv_splits
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_relationships
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier, ATOMForecaster
+        from random import choices
+        from sklearn.datasets import load_breast_cancer
+        from sktime.datasets import load_airline
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        groups = choices(["A", "B", "C", "D"], k=X.shape[0])
+
+        atom = ATOMClassifier(
+            X,
+            y=y,
+            metadata={"groups": groups},
+            n_rows=0.2,
+            holdout_size=0.1,
+            random_state=1,
+        )
+        atom.run("LR")
+        atom.plot_data_splits()
+        ```
+
+        """
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        all_reset = self.branch._all.reset_index()
+        for ds in ["train", "test"] + ([] if self.branch.holdout is None else ["holdout"]):
+            if self.task.is_forecast:
+                x = self._get_plot_index(getattr(self.branch, ds))
+            else:
+                x = all_reset[all_reset["index"].isin(getattr(self.branch, ds).index)].index
+
+            self._draw_line(
+                x=x,
+                y=["data"] * len(x),
+                parent=ds,
+                mode="markers",
+                marker={
+                    "symbol": "line-ns",
+                    "size": 25,
+                    "line": {
+                        "width": self.marker_size,
+                        "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
+                    },
+                },
+                hovertemplate=f"%{{y}}: {ds}<extra></extra>",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        if self.task.is_classification:
+            for col in get_cols(self.branch._all[self.branch.target]):
+                mapping = self.branch.mapping.get(col.name, {k: k for k in np.unique(col)})
+                inverse_mapping = {v: k for k, v in mapping.items()}
+
+                self._draw_line(
+                    x=(x2 := list(range(self.branch._all.shape[0]))),
+                    y=[col.name] * len(x2),
+                    parent=str(col.name),
+                    mode="markers",
+                    marker={
+                        "symbol": "line-ns",
+                        "size": 25,
+                        "line": {
+                            "width": self.marker_size,
+                            "color": [f"rgba({BasePlot._fig.get_elem(i)[4:-1]}, 1)" for i in col],
+                        },
+                    },
+                    customdata=[inverse_mapping[i] for i in self.branch._all[col.name]],
+                    hovertemplate=f"{col.name}: %{{customdata}}<extra></extra>",
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+        if (groups := self._config.get_groups()) is not None:
+            self._draw_line(
+                x=(x3 := list(range(self.branch._all.shape[0]))),
+                y=["group"] * len(x3),
+                parent="group",
+                mode="markers",
+                marker={
+                    "symbol": "line-ns",
+                    "size": 25,
+                    "line": {
+                        "width": self.marker_size,
+                        "color": [
+                            f"rgba({BasePlot._fig.get_elem(f'g{i}')[4:-1]}, 1)" for i in groups
+                        ],
+                    },
+                },
+                customdata=groups,
+                hovertemplate="group: %{customdata}<extra></extra>",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        fig.update_yaxes(autorange="reversed")
+        fig.update_layout(hovermode="x unified")
+
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            xlabel="Rows",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_data_splits",
             filename=filename,
             display=display,
         )
@@ -982,7 +1154,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                             yaxis=yaxis,
                         )
 
-            fig.update_layout({"barmode": "overlay"})
+            fig.update_layout(barmode="overlay")
 
             return self._plot(
                 ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -1476,7 +1648,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 )
 
         fig.update_yaxes(zerolinecolor="black")
-        fig.update_layout({"hovermode": "x unified"})
+        fig.update_layout(hovermode="x unified")
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -2161,7 +2333,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
                 ]
             )
 
-        fig.update_layout({"hovermode": "x unified"})
+        fig.update_layout(hovermode="x unified")
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),

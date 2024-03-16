@@ -280,7 +280,7 @@ class DataConfig:
             elif iloc is not None:
                 self.metadata[key] = value.iloc[iloc]
 
-    def get_groups(self, index: pd.Index | None = None) -> pd.Series | None:
+    def get_groups(self, data: Pandas | None = None) -> pd.Series | None:
         """Get the metadata groups.
 
         Only the indices of the metadata that match those provided
@@ -288,9 +288,9 @@ class DataConfig:
 
         Parameters
         ----------
-        index: pd.Index or None, default=None
-            Indices to get the metadata from. If None, all indices
-            are returned.
+        data: pd.Series, pd.DataFrame or None, default=None
+            Data corresponding to get the metadata from. If None, all
+            groups are returned.
 
         Returns
         -------
@@ -299,14 +299,14 @@ class DataConfig:
 
         """
         if "groups" in self.metadata:
-            if index is None:
+            if data is None:
                 return self.metadata.groups
             else:
-                return self.metadata.groups.loc[index]
+                return self.metadata.groups.loc[data.index]
         else:
             return None
 
-    def get_sample_weight(self, index: pd.Index | None = None) -> pd.Series | None:
+    def get_sample_weight(self, data: Pandas | None = None) -> pd.Series | None:
         """Get the metadata sample weights.
 
         Only the indices of the metadata that match those provided
@@ -314,9 +314,9 @@ class DataConfig:
 
         Parameters
         ----------
-        index: pd.Index or None, default=None
-            Indices to get the metadata from. If None, all indices
-            are returned.
+        data: pd.Series, pd.DataFrame or None, default=None
+            Data corresponding to get the metadata from. If None, all
+            sample weights are returned.
 
         Returns
         -------
@@ -325,14 +325,14 @@ class DataConfig:
 
         """
         if "sample_weight" in self.metadata:
-            if index is None:
+            if data is None:
                 return self.metadata.sample_weight
             else:
-                return self.metadata.sample_weight.loc[index]
+                return self.metadata.sample_weight.loc[data.index]
         else:
             return None
 
-    def get_metadata(self, index: pd.Index | None = None) -> dict[str, Any]:
+    def get_metadata(self, data: Pandas | None = None) -> dict[str, Any]:
         """Get all metadata.
 
         Only the indices of the metadata that match those provided
@@ -340,9 +340,9 @@ class DataConfig:
 
         Parameters
         ----------
-        index: pd.Index or None, default=None
-            Indices to get the metadata from. If None, all indices
-            are returned.
+        data: pd.Series, pd.DataFrame or None, default=None
+            Data corresponding to get the metadata from. If None, all
+            metadata is returned.
 
         Returns
         -------
@@ -350,7 +350,7 @@ class DataConfig:
             Metadata for the requested indices.
 
         """
-        return {k: getattr(self, f"get_{k}")(index) for k, v in self.metadata.items()}
+        return {k: getattr(self, f"get_{k}")(data) for k, v in self.metadata.items()}
 
     def get_stratify_column(self, df: pd.DataFrame) -> pd.Series | None:
         """Get the column to stratify over.

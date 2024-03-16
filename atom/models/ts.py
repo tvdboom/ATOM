@@ -1184,7 +1184,7 @@ class SARIMAX(ForecastModel):
         if "order" in self._est_params:
             for p in self._order:
                 dist.pop(p)
-        if "seasonal_order" in self._est_params or not self._config.sp.sp:
+        if "seasonal_order" in self._est_params or not self._config.sp.get("sp"):
             # Drop seasonal order params if specified by user or no seasonal periodicity
             for p in self._s_order:
                 dist.pop(p)
