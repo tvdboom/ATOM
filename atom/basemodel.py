@@ -483,29 +483,49 @@ class BaseModel(RunnerPlot):
                         step_length=(max_length - len(self.og.test)) // cv,
                     )
             else:
-                kwargs = {
-                    "n_splits": cv,
-                    "shuffle": self._config.shuffle,
-                    "random_state": self._config.random_state,
-                }
-
                 if cv == 1:
                     if self._config.metadata.get("groups"):
-                        return GroupShuffleSplit(**kwargs)
+                        return GroupShuffleSplit(
+                            n_splits=cv,
+                            test_size=self._config.test_size,
+                            random_state=self.random_state,
+                        )
                     elif self._config.stratify is None:
-                        return ShuffleSplit(**kwargs)
+                        return ShuffleSplit(
+                            n_splits=cv,
+                            test_size=self._config.test_size,
+                            random_state=self.random_state,
+                        )
                     else:
-                        return StratifiedShuffleSplit(**kwargs)
+                        return StratifiedShuffleSplit(
+                            n_splits=cv,
+                            test_size=self._config.test_size,
+                            random_state=self.random_state,
+                        )
                 else:
-                    if self._config.metadata.get("groups"):
+                    rs = self.random_state if self._config.shuffle else None
+                    if self._config.metadata.get("groups") is None:
                         if self._config.stratify is None:
-                            return GroupKFold(**kwargs)
+                            return KFold(n_splits=cv)
                         else:
-                            return StratifiedGroupKFold(**kwargs)
-                    elif self._config.stratify is None:
-                        return KFold(n_splits=cv)
+                            return StratifiedKFold(
+                                n_splits=cv,
+                                shuffle=self._config.shuffle,
+                                random_state=rs,
+                            )
                     else:
-                        return StratifiedKFold(**kwargs)
+                        if self._config.stratify is None:
+                            return GroupKFold(
+                                n_splits=cv,
+                                shuffle=self._config.shuffle,
+                                random_state=rs,
+                            )
+                        else:
+                            return StratifiedGroupKFold(
+                                n_splits=cv,
+                                shuffle=self._config.shuffle,
+                                random_state=rs,
+                            )
         else:
             return cv
 

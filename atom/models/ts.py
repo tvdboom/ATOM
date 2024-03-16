@@ -113,7 +113,7 @@ class ARIMA(ForecastModel):
         # Convert params to hyperparameters 'order' and 'seasonal_order'
         if all(p in params for p in self._order):
             params["order"] = [params[p] for p in self._order]
-        if all(p in params for p in self._s_order) and self._config.sp.sp:
+        if all(p in params for p in self._s_order) and self._config.sp.get("sp"):
             params["seasonal_order"] = [params[p] for p in self._s_order] + [self._config.sp.sp]
 
         # Drop order and seasonal_order params
@@ -167,7 +167,7 @@ class ARIMA(ForecastModel):
         if "order" in self._est_params:
             for p in self._order:
                 dist.pop(p)
-        if "seasonal_order" in self._est_params or not self._config.sp.sp:
+        if "seasonal_order" in self._est_params or not self._config.sp.get("sp"):
             # Drop seasonal order params if specified by user or no seasonal periodicity
             for p in self._s_order:
                 dist.pop(p)
@@ -325,7 +325,7 @@ class AutoETS(ForecastModel):
             Estimator instance.
 
         """
-        return super()._get_est({"sp": self._config.sp.sp or 1, "auto": True} | params)
+        return super()._get_est({"sp": self._config.sp.get("sp", 1), "auto": True} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -625,8 +625,8 @@ class ExponentialSmoothing(ForecastModel):
         """
         return super()._get_est(
             {
-                "trend": self._config.sp.trend_model if self._config.sp.sp else None,
-                "seasonal": self._config.sp.seasonal_model if self._config.sp.sp else None,
+                "trend": self._config.sp.get("trend_model"),
+                "seasonal": self._config.sp.get("seasonal_model"),
             } | params
         )
 
@@ -708,8 +708,8 @@ class ETS(ForecastModel):
         """
         return super()._get_est(
             {
-                "trend": self._config.sp.trend_model if self._config.sp.sp else None,
-                "seasonal": self._config.sp.seasonal_model if self._config.sp.sp else None,
+                "trend": self._config.sp.get("trend_model"),
+                "seasonal": self._config.sp.get("seasonal_model"),
             } | params
         )
 
@@ -795,7 +795,7 @@ class MSTL(ForecastModel):
             Estimator instance.
 
         """
-        return super()._get_est({"season_length": self._config.sp.sp or 1} | params)
+        return super()._get_est({"season_length": self._config.sp.get("sp", 1)} | params)
 
     def _trial_to_est(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert trial's hyperparameters to parameters for the estimator.
@@ -895,7 +895,7 @@ class NaiveForecaster(ForecastModel):
             Estimator instance.
 
         """
-        return super()._get_est({"sp": self._config.sp.sp or 1} | params)
+        return super()._get_est({"sp": self._config.sp.get("sp", 1)} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1027,7 +1027,7 @@ class Prophet(ForecastModel):
         """
         # Prophet expects a DateTime index frequency
         freq = None
-        if self._config.sp.sp:
+        if self._config.sp.get("sp"):
             try:
                 freq = next(
                     n for n, m in SeasonalPeriod.__members__.items()
@@ -1039,7 +1039,8 @@ class Prophet(ForecastModel):
                     freq = self.X_train.index.freq.name
 
         return super()._get_est(
-            {"freq": freq, "seasonality_mode": self._config.sp.seasonal_model} | params
+            {"freq": freq, "seasonality_mode": self._config.sp.get("seasonal_model", "additive")}
+            | params
         )
 
     @staticmethod
@@ -1248,7 +1249,7 @@ class STL(ForecastModel):
         """
         # Parameter sp must be provided to STL and >=2
         # None is only accepted if y has freq in index but sktime passes array
-        return super()._get_est({"sp": self._config.sp.sp or 2} | params)
+        return super()._get_est({"sp": self._config.sp.get("sp", 2)} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:
@@ -1426,7 +1427,7 @@ class Theta(ForecastModel):
             Estimator instance.
 
         """
-        return super()._get_est({"sp": self._config.sp.sp or 1} | params)
+        return super()._get_est({"sp": self._config.sp.get("sp", 1)} | params)
 
     @staticmethod
     def _get_distributions() -> dict[str, BaseDistribution]:

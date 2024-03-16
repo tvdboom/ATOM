@@ -1336,6 +1336,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             yaxis=yaxis,
         )
 
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel=self.branch.dataset.index.name or "index",
+            ylabel="Residual",
+        )
+
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}",
@@ -1344,12 +1350,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     "zerolinewidth": 1,
                 },
             }
-        )
-
-        self._plot(
-            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
-            xlabel=self.branch.dataset.index.name or "index",
-            ylabel="Residual",
         )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -3512,9 +3512,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         Examples
         --------
         ```pycon
-        from atom import ATOMClassifier
+        from atom import ATOMClassifier, ATOMForecaster
         from random import choices
         from sklearn.datasets import load_breast_cancer
+        from sktime.datasets import load_airline
 
         X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
@@ -3525,10 +3526,18 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         atom.plot_cv_splits()
 
         # With groups
-        groups = choices(["A", "B", "C", "D", "E"], k=X.shape[0])
+        groups = choices(["A", "B", "C", "D"], k=X.shape[0])
         atom = ATOMClassifier(X, y, metadata={"groups": groups}, n_rows=0.2, random_state=1)
         atom.run("LR")
         atom.lr.cross_validate(cv=4)
+        atom.plot_cv_splits()
+
+        # For forecast models
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.run("Croston")
+        atom.croston.cross_validate(cv=4)
         atom.plot_cv_splits()
         ```
 
@@ -3547,8 +3556,13 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         for ds in ("train", "test"):
             for i in range(len(models_c.cv["fit_time"])):
+                if isinstance(models_c.cv, dict):
+                    x = models_c.cv["indices"][ds][i]
+                else:
+                    x = self._get_plot_index(models_c.cv[f"y_{ds}"][i])
+
                 self._draw_line(
-                    x=(x := models_c.cv["indices"][ds][i]),
+                    x=x,
                     y=[str(i)] * len(x),
                     parent=ds,
                     mode="markers",
@@ -3560,7 +3574,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                             "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
                         },
                     },
-                    customdata=models_c.dataset.index,
                     hovertemplate=f"%{{y}}: {ds}<extra></extra>",
                     legend=legend,
                     xaxis=xaxis,
@@ -3592,7 +3605,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     yaxis=yaxis,
                 )
 
-        if (groups := self._config.get_metadata(models_c.y.index).get("groups")) is not None:
+        if (groups := self._config.get_groups(models_c.y.index)) is not None:
             self._draw_line(
                 x=(x := list(range(models_c.shape[0]))),
                 y=["group"] * len(x),
@@ -3604,7 +3617,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     "line": {
                         "width": self.marker_size,
                         "color": [
-                            f"rgba({BasePlot._fig.get_elem(f'#{i}#')[4:-1]}, 1)" for i in groups
+                            f"rgba({BasePlot._fig.get_elem(f'g{i}')[4:-1]}, 1)" for i in groups
                         ],
                     },
                 },

@@ -53,7 +53,7 @@ def test_task_assignment():
     atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
-    atom = ATOMClassifier(X10, y=y10_label, random_state=1)
+    atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X10, y=y10_label2, random_state=1)

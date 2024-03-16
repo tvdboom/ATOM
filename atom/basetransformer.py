@@ -615,11 +615,12 @@ class BaseTransformer:
                 continue
             elif match := re.search("^(n_jobs|random_state)$|__\1$", p):
                 obj.set_params(**{p: getattr(self, match.group())})
-            elif re.search(r"^sp$|__sp$", p) and hasattr(self, "_config") and self._config.sp:
-                if self.multiple_seasonality:
-                    obj.set_params(**{p: self._config.sp.sp})
-                else:
-                    obj.set_params(**{p: lst(self._config.sp.sp)[0]})
+            elif re.search(r"^sp$|__sp$", p) and hasattr(self, "_config"):
+                if sp := self._config.sp.get("sp"):
+                    if self.multiple_seasonality:
+                        obj.set_params(**{p: sp})
+                    else:
+                        obj.set_params(**{p: lst(sp)[0]})
 
         return make_sklearn(obj, feature_names_out=feature_names_out)
 

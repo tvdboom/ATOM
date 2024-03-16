@@ -14,7 +14,7 @@ from collections import deque
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 from functools import cached_property, wraps
 from importlib import import_module
@@ -44,17 +44,15 @@ from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import _print_elapsed_time
-from sklearn.utils.metadata_routing import UNCHANGED
+from sklearn.utils import Bunch, _print_elapsed_time
 from sklearn.utils.validation import _check_response_method, _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
-    Int, IntLargerEqualZero, MetadataTuple, MetricFunction,
-    Model, Pandas, PandasConvertible, Predictor, Scalar, Scorer, Segment,
-    Sequence, SPTuple, Transformer, Verbose, XConstructor, XReturn,
-    YConstructor, YReturn, int_t, segment_t, sequence_t,
+    Int, IntLargerEqualZero, MetricFunction, Model, Pandas, PandasConvertible,
+    Predictor, Scalar, Scorer, Segment, Sequence, Transformer, Verbose,
+    XConstructor, XReturn, YConstructor, YReturn, int_t, segment_t, sequence_t,
 )
 
 
@@ -237,29 +235,21 @@ class Aesthetics:
 class DataConfig:
     """Stores the data configuration.
 
-    This is a utility class to store the data configuration in one
-    attribute and pass it down to the models. The default values are
-    the ones adopted by trainers.
+    Utility class to store the data configuration in one attribute
+    and pass it down to the models. The default values are the ones
+    adopted by trainers.
 
     """
 
     index: bool = False
-    metadata: MetadataTuple = MetadataTuple()  # noqa: RUF009
+    metadata: Bunch = field(default_factory=Bunch)
     ignore: tuple[str, ...] = ()
-    sp: SPTuple = SPTuple()  # noqa: RUF009
+    sp: Bunch = field(default_factory=Bunch)
     shuffle: Bool = False
     stratify: Int | str | None = None
     n_rows: Scalar = 1
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
-
-    @cached_property
-    def n_groups(self) -> Int:
-        """Return the number of groups."""
-        if self.metadata.groups is not None:
-            return self.metadata.groups.nunique()
-        else:
-            return 0
 
     def reindex_metadata(
         self,
@@ -282,57 +272,85 @@ class DataConfig:
             New order to reindex the metadata based on positions.
 
         """
-        for key in ("groups", "sample_weight"):
-            if (value := getattr(self.metadata, key)) is not None:
-                if new_index is not None:
-                    value.index = new_index
-                elif loc is not None:
-                    setattr(self.metadata, key, value.loc[loc])
-                elif iloc is not None:
-                    setattr(self.metadata, key, value.iloc[iloc])
+        for key, value in self.metadata.items():
+            if new_index is not None:
+                self.metadata[key].index = new_index
+            elif loc is not None:
+                self.metadata[key] = value.loc[loc]
+            elif iloc is not None:
+                self.metadata[key] = value.iloc[iloc]
 
-    def get_request(self, key: str) -> Literal[True] | UNCHANGED:
-        """Get the request for metadata.
-
-        If the metadata is present, it returns True, which means the
-        metadata is requested and passed to fit if provided. The request
-        is ignored if metadata is not provided. If UNCHANGED, it retains
-        the existing request.
-
-        Parameters
-        ----------
-        key: str
-            Metadata key.
-
-        Returns
-        -------
-        True or UNCHANGED
-            Metadata request response.
-
-        """
-        if getattr(self.metadata, key) is not None:
-            return True
-        else:
-            return UNCHANGED
-
-    def get_metadata(self, index: pd.Index) -> dict[str, pd.Series]:
-        """Get the metadata parameters.
+    def get_groups(self, index: pd.Index | None = None) -> pd.Series | None:
+        """Get the metadata groups.
 
         Only the indices of the metadata that match those provided
         are returned.
 
+        Parameters
+        ----------
+        index: pd.Index or None, default=None
+            Indices to get the metadata from. If None, all indices
+            are returned.
+
         Returns
         -------
-        dict
+        pd.Series or None
             Metadata parameters.
 
         """
-        params = {}
-        for key in ("groups", "sample_weight"):
-            if self.get_request(key) is True:
-                params[key] = getattr(self.metadata, key).loc[index]
+        if "groups" in self.metadata:
+            if index is None:
+                return self.metadata.groups
+            else:
+                return self.metadata.groups.loc[index]
+        else:
+            return None
 
-        return params
+    def get_sample_weight(self, index: pd.Index | None = None) -> pd.Series | None:
+        """Get the metadata sample weights.
+
+        Only the indices of the metadata that match those provided
+        are returned.
+
+        Parameters
+        ----------
+        index: pd.Index or None, default=None
+            Indices to get the metadata from. If None, all indices
+            are returned.
+
+        Returns
+        -------
+        pd.Series or None
+            Metadata parameters.
+
+        """
+        if "sample_weight" in self.metadata:
+            if index is None:
+                return self.metadata.sample_weight
+            else:
+                return self.metadata.sample_weight.loc[index]
+        else:
+            return None
+
+    def get_metadata(self, index: pd.Index | None = None) -> dict[str, Any]:
+        """Get all metadata.
+
+        Only the indices of the metadata that match those provided
+        are returned.
+
+        Parameters
+        ----------
+        index: pd.Index or None, default=None
+            Indices to get the metadata from. If None, all indices
+            are returned.
+
+        Returns
+        -------
+        dict
+            Metadata for the requested indices.
+
+        """
+        return {k: getattr(self, f"get_{k}")(index) for k, v in self.metadata.items()}
 
     def get_stratify_column(self, df: pd.DataFrame) -> pd.Series | None:
         """Get the column to stratify over.

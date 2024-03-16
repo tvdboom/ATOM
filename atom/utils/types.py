@@ -74,19 +74,19 @@ class Sequence(Protocol[_T]):
         ]
 
 
+class MetadataDict(TypedDict, total=False):
+    """Dictionary type for the `metadata` parameter."""
+
+    groups: Sequence[Hashable]
+    sample_weight: Sequence[Scalar]
+
+
 class SPDict(TypedDict, total=False):
     """Dictionary type for the `sp` parameter."""
 
     sp: Seasonality
     seasonal_model: SeasonalityModels
     trend_model: SeasonalityModels
-
-
-class MetadataDict(TypedDict, total=False):
-    """Dictionary type for the `metadata` parameter."""
-
-    groups: Sequence[Hashable] | None = None
-    sample_weight: Sequence[Scalar] | None = None
 
 
 class EngineDict(TypedDict, total=False):
@@ -112,21 +112,6 @@ class Style(TypedDict):
     marker: dict[str, str]
     dash: dict[str, str]
     shape: dict[str, str]
-
-
-class MetadataTuple(NamedTuple):
-    """Type of the `metadata` parameter."""
-
-    groups: pd.Series | None = None
-    sample_weight: pd.Series | None = None
-
-
-class SPTuple(NamedTuple):
-    """Return type of the `sp` parameter."""
-
-    sp: int | list[int] | None = None
-    seasonal_model: SeasonalityModels = "additive"
-    trend_model: SeasonalityModels = "additive"
 
 
 class EngineTuple(NamedTuple):

@@ -26,6 +26,7 @@ from joblib.memory import Memory
 from pandas._typing import DtypeObj
 from scipy import stats
 from sklearn.pipeline import Pipeline as SkPipeline
+from sklearn.utils import Bunch
 from sklearn.utils.metaestimators import available_if
 
 from atom.baserunner import BaseRunner
@@ -52,12 +53,11 @@ from atom.utils.types import (
     Engine, EngineTuple, Estimator, FeatureNamesOut, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
-    IntLargerZero, MetadataDict, MetadataTuple, MetricConstructor,
-    ModelsConstructor, NItems, NJobs, NormalizerStrats, NumericalStrats,
-    Operators, Predictor, PrunerStrats, RowSelector, Scalar, ScalerStrats,
-    Seasonality, Sequence, SPDict, TargetSelector, Transformer,
-    VectorizerStarts, Verbose, Warnings, XReturn, XSelector, YReturn,
-    YSelector, sequence_t,
+    IntLargerZero, MetadataDict, MetricConstructor, ModelsConstructor, NItems,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
+    SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
+    XReturn, XSelector, YReturn, YSelector, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,
@@ -129,12 +129,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         self._config = DataConfig(
             index=index is not False,
-            metadata=MetadataTuple(
-                groups=to_series((metadata or {}).get("groups")),
-                sample_weight=to_series((metadata or {}).get("sample_weight")),
-            ),
-            shuffle=shuffle if stratify is not None else False,
-            stratify=stratify,
+            metadata=Bunch(**{k: to_series(v, name=k) for k, v in (metadata or {}).items()}),  # type: ignore[call-overload]
+            shuffle=shuffle,
+            stratify=stratify if shuffle else None,
             n_rows=n_rows,
             test_size=test_size,
             holdout_size=holdout_size,
@@ -279,13 +276,19 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         )
 
     @property
-    def metadata(self) -> MetadataTuple:
+    def metadata(self) -> Bunch:
         """Metadata of the dataset.
 
         Read more in the [user guide][metadata].
 
         """
         return self._config.metadata
+
+    @metadata.setter
+    def metadata(self, value: MetadataDict | None):
+        self._config.metadata = Bunch(
+            **{k: to_series(v, index=self.y.index, name=k) for k, v in (value or {}).items()}  # type: ignore[call-overload]
+        )
 
     @property
     def ignore(self) -> tuple[str, ...]:
@@ -518,7 +521,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     # regression='ct' is trend stationarity
                     stat = kpss(X, regression="ct", nlags="auto")
                 elif test == "lb":
-                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
+                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.get("sp"))[0])
                     stat = l_jung.loc[l_jung["lb_pvalue"].idxmin()]
 
                 # Add as column to the dataframe
@@ -1036,7 +1039,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         self._log("Dataset stats " + "=" * 20 + " >>", _vb)
         self._log(f"Shape: {self.branch.shape}", _vb)
-        if self.task.is_forecast and self.sp.sp:
+        if self.task.is_forecast and self.sp.get("sp"):
             self._log(f"Seasonal period: {self.sp.sp}", _vb)
 
         for ds in ("train", "test", "holdout"):
@@ -1664,10 +1667,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         columns = kwargs.pop("columns", None)
         decomposer = Decomposer(
             model=model,
-            trend_model=self.sp.trend_model,
+            trend_model=self.sp.get("trend_model", "additive"),
             test_seasonality=test_seasonality,
-            sp=lst(self.sp.sp)[0],
-            seasonal_model=self.sp.seasonal_model,
+            sp=lst(self.sp.get("sp"))[0],
+            seasonal_model=self.sp.get("seasonal_model", "additive"),
             **self._prepare_kwargs(kwargs, sign(Decomposer)),
         )
 
@@ -1883,7 +1886,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             strategy=strategy,
             include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
-        ).set_fit_request(sample_weight=self._config.get_request("sample_weight"))
+        ).set_fit_request(sample_weight="sample_weight" in self.metadata)
 
         self._add_transformer(scaler, columns=columns)
 

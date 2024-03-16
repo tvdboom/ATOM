@@ -17,11 +17,11 @@ from pandas.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal,
 )
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.utils import Bunch
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.data import Branch
 from atom.training import DirectClassifier, DirectForecaster
-from atom.utils.types import SPTuple
 from atom.utils.utils import NotFittedError, merge
 
 from .conftest import (
@@ -185,7 +185,7 @@ def test_getitem_list():
 def test_sp_property_none():
     """Assert that the sp property can be set up correctly."""
     atom = ATOMForecaster(y_fc, sp=None, random_state=1)
-    assert atom.sp == atom._config.sp == SPTuple()
+    assert atom.sp == atom._config.sp == Bunch()
 
 
 def test_sp_property_invalid_index():
@@ -227,13 +227,13 @@ def test_sp_property_int():
 def test_sp_property_sequence():
     """Assert that the sp property can be set up correctly."""
     atom = ATOMForecaster(y_fc, sp=(12, 24), random_state=1)
-    assert atom.sp == SPTuple(sp=[12, 24])
+    assert atom.sp == Bunch(sp=[12, 24])
 
 
 def test_sp_property_dict():
     """Assert that the sp property can be set up correctly."""
-    atom = ATOMForecaster(y_fc, sp={"sp": None, "seasonal_model": "multiplicative"})
-    assert atom.sp == SPTuple(sp=None, seasonal_model="multiplicative")
+    atom = ATOMForecaster(y_fc, sp={"seasonal_model": "multiplicative"})
+    assert atom.sp == Bunch(seasonal_model="multiplicative")
 
 
 def test_branch_property():
@@ -308,14 +308,14 @@ def test_results_property():
     """Assert that the results property returns an overview of the results."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert atom.results.shape == (1, 4)
+    assert atom.results.data.shape == (1, 4)
 
 
 def test_results_property_dropna():
     """Assert that the results property doesn't return columns with NaNs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert "mean_bootstrap" not in atom.results
+    assert "mean_bootstrap" not in atom.results.data
 
 
 def test_results_property_successive_halving():
@@ -415,7 +415,7 @@ def test_index_is_sequence_has_data_sets():
     assert atom.holdout.index[0] == "index_569"
 
 
-@pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
+@pytest.mark.parametrize("stratify", [-1, "target"])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
     atom = ATOMClassifier(X_bin, y_bin, stratify=stratify, random_state=1)
@@ -424,9 +424,9 @@ def test_stratify_options(stratify):
     np.testing.assert_almost_equal(train_balance, test_balance, decimal=2)
 
 
-def test_stratify_is_False():
-    """Assert that the data is not stratified when stratify=False."""
-    atom = ATOMClassifier(X_bin, y_bin, stratify=False, random_state=1)
+def test_stratify_is_None():
+    """Assert that the data is not stratified when stratify=None."""
+    atom = ATOMClassifier(X_bin, y_bin, stratify=None, random_state=1)
     train_balance = atom.classes["train"][0] / atom.classes["train"][1]
     test_balance = atom.classes["test"][0] / atom.classes["test"][1]
     assert abs(train_balance - test_balance) > 0.05

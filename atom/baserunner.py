@@ -25,6 +25,7 @@ from pandas.io.formats.style import Styler
 from pandas.tseries.frequencies import to_offset
 from pmdarima.arima.utils import ndiffs
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
+from sklearn.utils import Bunch
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 from sktime.datatypes import check_is_mtype
@@ -41,8 +42,7 @@ from atom.utils.types import (
     Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
     IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
     Pandas, RowSelector, Scalar, Seasonality, Segment, Sequence, SPDict,
-    SPTuple, TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t,
-    sequence_t,
+    TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
     ClassMap, DataContainer, Goal, SeasonalPeriod, Task, check_is_fitted,
@@ -178,7 +178,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._goal.infer_task(self.branch.y)
 
     @property
-    def sp(self) -> SPTuple:
+    def sp(self) -> Bunch:
         """Seasonality of the time series.
 
         Read more about seasonality in the [user guide][seasonality].
@@ -191,15 +191,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def sp(self, sp: Seasonality | SPDict):
         """Convert seasonality to information container."""
         if sp is None:
-            self._config.sp = SPTuple()
+            self._config.sp = Bunch()
         elif isinstance(sp, dict):
-            self._config.sp = SPTuple(
-                sp=self._get_sp(sp.get("sp", SPTuple().sp)),
-                seasonal_model=sp.get("seasonal_model", SPTuple().seasonal_model),
-                trend_model=sp.get("trend_model", SPTuple().trend_model),
-            )
+            self._config.sp = Bunch(**sp)
         else:
-            self._config.sp = SPTuple(sp=self._get_sp(sp))
+            self._config.sp = Bunch(sp=self._get_sp(sp))
 
     @property
     def og(self) -> Branch:
@@ -482,7 +478,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 Second set.
 
             """
-            if (groups := self._config.get_metadata(data.index).get("groups")) is None:
+            if (groups := self._config.get_groups(data.index)) is None:
                 return train_test_split(
                     data,
                     test_size=size,
@@ -628,8 +624,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             # Define test set size
             if self._config.test_size < 1:
-                if n_groups := self._config.n_groups:
-                    test_size = max(1, int(self._config.test_size * n_groups))
+                if (groups := self._config.get_groups()) is not None:
+                    test_size = max(1, int(self._config.test_size * groups.nunique()))
                 else:
                     test_size = max(1, int(self._config.test_size * len(data)))
             else:
@@ -638,8 +634,8 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             # Define holdout set size
             if self._config.holdout_size:
                 if self._config.holdout_size < 1:
-                    if n_groups := self._config.n_groups:
-                        holdout_size = max(1, int(self._config.holdout_size * n_groups))
+                    if (groups := self._config.get_groups()) is not None:
+                        holdout_size = max(1, int(self._config.holdout_size * groups.nunique()))
                     else:
                         holdout_size = max(1, int(self._config.holdout_size * len(data)))
                 else:
