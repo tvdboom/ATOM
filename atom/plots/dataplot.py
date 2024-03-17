@@ -674,10 +674,12 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
         filename: str | Path | None = None,
         display: Bool | None = True,
     ) -> go.Figure | None:
-        """Visualize the train/test splits.
+        """Visualize the data splits.
 
-        Additionally, it shows class labels and [groups][metadata] when
-        provided.
+        Plots the train/test/holdout splits. The x-axis shows the
+        number of rows, where every point corresponds to the n-th
+        sample.  Additionally, class labels and [groups][metadata]
+        are plotted when relevant.
 
         Parameters
         ----------
@@ -928,8 +930,8 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
             # Returns correlation array and confidence interval
             decompose = seasonal_decompose(
                 x=self.branch.dataset[col],
-                model=self.sp.seasonal_model,
-                period=self.sp.sp or self._get_sp(self.branch.dataset.index.freqstr),
+                model=self.sp.get("seasonal_model", "additive"),
+                period=self.sp.get("sp", self._get_sp(self.branch.dataset.index.freqstr)),
             )
 
             self._draw_line(

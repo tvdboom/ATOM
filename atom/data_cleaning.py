@@ -3151,10 +3151,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
         self._estimator = estimator(**self.kwargs)
 
-        if sample_weight is not None:
-            self._estimator.set_fit_request(sample_weight=True)
-
-        self._estimator.fit(num_cols, sample_weight=sample_weight)
+        self._estimator.fit(num_cols)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)

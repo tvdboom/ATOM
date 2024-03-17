@@ -75,11 +75,11 @@ extra:
 plugins:
     - search
     - autorefs
-#    - mkdocs-jupyter:
-#          include_requirejs: true
-#          include: ["*.ipynb"]
-#          include_source: true
-#          ignore_h1_titles: true
+    - mkdocs-jupyter:
+          include_requirejs: true
+          include: ["*.ipynb"]
+          include_source: true
+          ignore_h1_titles: true
     - mkdocs-simple-hooks:
           hooks:
               on_page_markdown: docs_sources.scripts.autodocs:render
@@ -104,10 +104,10 @@ markdown_extensions:
     - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
     - pymdownx.superfences:
         preserve_tabs: true
-#        custom_fences:
-#            - name: pycon
-#              class: pycon
-#              format: !!python/name:docs_sources.scripts.autorun.formatter
+        custom_fences:
+            - name: pycon
+              class: pycon
+              format: !!python/name:docs_sources.scripts.autorun.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true
     - pymdownx.tabbed:  # Allows the usage of content tabs

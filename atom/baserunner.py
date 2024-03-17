@@ -1080,6 +1080,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     ) -> Styler:
         """Get all models' scores for the provided metrics.
 
+        !!! tip
+            This method returns a pandas' [Styler][] object for a clean
+            visualization. If necessary, convert the result back to the
+            regular dataframe using its `data` attribute.
+
         Parameters
         ----------
         metric: str, func, scorer, sequence or None, default=None

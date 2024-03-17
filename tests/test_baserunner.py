@@ -322,16 +322,16 @@ def test_results_property_successive_halving():
     """Assert that the results property works for successive halving runs."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.successive_halving(["OLS", "Tree"])
-    assert atom.results.shape == (3, 4)
-    assert list(atom.results.index.get_level_values(0)) == [0.5, 0.5, 1.0]
+    assert atom.results.data.shape == (3, 4)
+    assert list(atom.results.data.index.get_level_values(0)) == [0.5, 0.5, 1.0]
 
 
 def test_results_property_train_sizing():
     """Assert that the results property works for train sizing runs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.train_sizing("LR")
-    assert atom.results.shape == (5, 4)
-    assert list(atom.results.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
+    assert atom.results.data.shape == (5, 4)
+    assert list(atom.results.data.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
 
 
 # Test _get_data =================================================== >>
@@ -861,7 +861,7 @@ def test_delete_default():
     atom.delete()  # All models
     assert not atom.models
     assert not atom.metric
-    assert atom.results.empty
+    assert atom.results.data.empty
 
 
 @pytest.mark.parametrize("metric", ["ap", "f1"])

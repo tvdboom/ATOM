@@ -53,7 +53,7 @@ def test_task_assignment():
     atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
-    atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y=y10_label, stratify=None, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X10, y=y10_label2, random_state=1)
@@ -709,11 +709,11 @@ def test_add_derivative_columns_keep_position():
 
 def test_multioutput_y_return():
     """Assert that y returns a dataframe when multioutput."""
-    atom = ATOMClassifier(X10, y10_label, random_state=1)
+    atom = ATOMClassifier(X10, y10_label, stratify=None, random_state=1)
     atom.add(Cleaner())
     assert isinstance(atom.y, pd.DataFrame)
 
-    atom = ATOMClassifier(X10, y10_label, random_state=1)
+    atom = ATOMClassifier(X10, y10_label, stratify=None, random_state=1)
     atom.add(MultiLabelBinarizer())
     assert isinstance(atom.y, pd.DataFrame)
 
@@ -838,7 +838,7 @@ def test_balance():
 
 def test_clean():
     """Assert that the clean method cleans the dataset."""
-    atom = ATOMClassifier(X10, y10_sn, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y10_sn, stratify=None, random_state=1)
     atom.clean()
     assert len(atom.dataset) == 9
     assert atom.mapping == {"target": {"n": 0, "y": 1}}

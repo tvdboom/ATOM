@@ -1567,7 +1567,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             of the target class distribution per data set.
 
         """
-        if self._config.get_request("sample_weight"):
+        if self._config.get_sample_weight() is not None:
             raise PermissionError(
                 "The balance method does not support sample_weights "
                 "passed through metadata routing."
@@ -1886,7 +1886,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             strategy=strategy,
             include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
-        ).set_fit_request(sample_weight="sample_weight" in self.metadata)
+        )
 
         self._add_transformer(scaler, columns=columns)
 

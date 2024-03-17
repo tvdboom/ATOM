@@ -23,11 +23,12 @@ repos:
       - id: name-tests-test
         args: [--pytest-test-first]
       - id: check-added-large-files
+        args: [--maxkb=80000]
       - id: check-merge-conflict
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [beartype, types-requests, git+https://github.com/pandas-dev/pandas-stubs.git]
+        additional_dependencies: [beartype, types-requests, pandas-stubs]
         files: ^atom/.*\.py$|tests/.*\.py$

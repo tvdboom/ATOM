@@ -1102,7 +1102,7 @@ class BaseModel(RunnerPlot):
                 stratify = self._config.get_stratify_column(self.og.train)
                 groups = self._config.get_metadata(self.og.train).get("groups")
 
-                kwargs: dict[str, Any] = {"X": self.og.X_train}
+                kwargs: dict[str, Any] = {next(iter(sign(splitter.split))): self.og.X_train}
                 if stratify is not None:
                     kwargs["y"] = stratify
                 if groups is not None:
@@ -2052,6 +2052,11 @@ class BaseModel(RunnerPlot):
         it uses atom's metric. The results of the cross-validation are
         stored in the model's `cv` attribute.
 
+        !!! tip
+            This method returns a pandas' [Styler][] object for a clean
+            visualization. If necessary, convert the result back to the
+            regular dataframe using its `data` attribute.
+
         Parameters
         ----------
         include_holdout: bool, default=False
@@ -2102,7 +2107,7 @@ class BaseModel(RunnerPlot):
                 cv=self._get_cv(kwargs.pop("cv", 5), max_length=len(X)),
                 backend=kwargs.pop("backend", self.backend if self.backend != "ray" else None),
                 backend_params=kwargs.pop("backend_params", {"n_jobs": self.n_jobs}),
-                return_data=True,
+                return_data=True,  # Required for plot_cv_splits
             )
         else:
             if "groups" in kwargs:

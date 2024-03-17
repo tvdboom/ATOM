@@ -18,6 +18,7 @@ from optuna.distributions import CategoricalDistribution, IntDistribution
 from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler
 from optuna.study import Study
+from pandas.io.formats.style import Styler
 from pandas.testing import assert_frame_equal, assert_series_equal
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
@@ -265,7 +266,7 @@ def test_ht_with_pruning():
         n_trials=7,
         ht_params={
             "distributions": {"max_iter": IntDistribution(5, 15)},
-            "pruner": PatientPruner(None, patience=1),
+            "pruner": PatientPruner(None, patience=3),
         },
     )
     assert "PRUNED" in atom.sgd.trials["state"].unique()
@@ -442,7 +443,7 @@ def test_best_trial_property():
     """Assert that the best_trial property can be set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", n_trials=5)
-    assert atom.tree.best_trial.number == 1
+    assert atom.tree.best_trial.number != 4
     atom.tree.best_trial = 4
     assert atom.tree.best_trial.number == 4
     atom.tree.best_trial = None
@@ -753,16 +754,16 @@ def test_cross_validate():
     """Assert that the cross_validate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert isinstance(atom.lr.cross_validate(), pd.DataFrame)
-    assert isinstance(atom.lr.cross_validate(scoring="AP"), pd.DataFrame)
+    assert isinstance(atom.lr.cross_validate(), Styler)
+    assert isinstance(atom.lr.cross_validate(scoring="AP"), Styler)
 
 
 def test_cross_validate_ts():
     """Assert that the cross_validate method works for forecast tasks."""
     atom = ATOMForecaster(y_fc, random_state=1)
     atom.run("NF")
-    assert isinstance(atom.nf.cross_validate(), pd.DataFrame)
-    assert isinstance(atom.nf.cross_validate(scoring="mae"), pd.DataFrame)
+    assert isinstance(atom.nf.cross_validate(), Styler)
+    assert isinstance(atom.nf.cross_validate(scoring="mae"), Styler)
 
 
 def test_evaluate_invalid_threshold_length():

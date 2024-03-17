@@ -608,8 +608,11 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
     ) -> go.Figure | None:
         """Visualize the cross-validation splits.
 
-        Additionally, it shows class labels and [groups][metadata] when
-        provided.
+        Plots the train and test splits for each cross-validation
+        iteration of the `cv` object. The x-axis shows the number of
+        rows, where every point corresponds to the n-th sample. The top
+        bar shows the original train/test split. Additionally, class
+        labels and [groups][metadata] are plotted when relevant.
 
         !!! warning
             This plot is only available for models that ran cross-validation
@@ -674,14 +677,14 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         # Without groups
         atom = ATOMClassifier(X, y, shuffle=False, n_rows=0.2, random_state=1)
         atom.run("LR")
-        atom.lr.cross_validate(cv=4)
+        resutls = atom.lr.cross_validate(cv=4)
         atom.plot_cv_splits()
 
         # With groups
         groups = choices(["A", "B", "C", "D"], k=X.shape[0])
         atom = ATOMClassifier(X, y, metadata={"groups": groups}, n_rows=0.2, random_state=1)
         atom.run("LR")
-        atom.lr.cross_validate(cv=4)
+        resutls = atom.lr.cross_validate(cv=4)
         atom.plot_cv_splits()
 
         # For forecast models
@@ -689,7 +692,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         atom = ATOMForecaster(y, random_state=1)
         atom.run("Croston")
-        atom.croston.cross_validate(cv=4)
+        resutls = atom.croston.cross_validate(cv=4)
         atom.plot_cv_splits()
         ```
 
@@ -706,18 +709,49 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 "plot_data_splits method to show the train/test split."
             )
         elif self.task.is_forecast:
-            data = {"train": models_c.cv["y_train"], "test": models_c.cv["y_test"]}
+            data = {
+                "train": models_c.cv["y_train"].to_numpy(),
+                "test": models_c.cv["y_test"].to_numpy(),
+            }
         else:
             data = {
                 "train": models_c.cv["indices"]["train"],
-                "test": models_c.cv["indices"]["y_test"],
+                "test": models_c.cv["indices"]["test"],
             }
 
         # Determine if the holdout set was used for training
-        if len(data["train"][0]) + len(data["test"][0]) == len(self.og.X):
+        if len(data["train"][-1]) + len(data["test"][-1]) == len(self.og.X):
             y = models_c.y
+            sets = ["train", "test"]
         else:
             y = models_c._all[models_c.branch.target]
+            sets = ["train", "test", "holdout"]
+
+        all_reset = self.branch._all.reset_index()
+        for ds in sets:
+            if self.task.is_forecast:
+                x = self._get_plot_index(getattr(models_c, ds))
+            else:
+                x = all_reset[all_reset["index"].isin(getattr(models_c, ds).index)].index
+
+            self._draw_line(
+                x=x,
+                y=["data"] * len(x),
+                parent=ds,
+                mode="markers",
+                marker={
+                    "symbol": "line-ns",
+                    "size": 25,
+                    "line": {
+                        "width": self.marker_size,
+                        "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
+                    },
+                },
+                hovertemplate=f"%{{y}}: {ds}<extra></extra>",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
 
         for ds in ("train", "test"):
             for i in range(len(models_c.cv["fit_time"])):
