@@ -1653,9 +1653,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         See the [Decomposer][] class for a description of the parameters.
         ATOM automatically injects the `sp`, `trend_model` and
-        `seasonal_model` parameters of the Decomposer class. See the
-        [seasonality][] section in the user guide to learn how to adjust
-        these values.
+        `seasonal_model` parameters of the class. See the [seasonality][]
+        section in the user guide to learn how to adjust these values.
 
         !!! tip
             * Use the `columns` parameter to only decompose the target
@@ -1886,7 +1885,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             strategy=strategy,
             include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
-        )
+        ).set_fit_request(sample_weights=self._config.get_sample_weight() is not None)
 
         self._add_transformer(scaler, columns=columns)
 

@@ -17,6 +17,7 @@ from uuid import uuid4
 import matplotlib as mpl
 import plotly.io as pio
 from markdown import Markdown
+from pandas.io.formats.style import Styler
 from pymdownx.superfences import SuperFencesException
 
 
@@ -27,6 +28,9 @@ pio.renderers.default = "pdf"
 # Directory in which to store all plots from the examples
 shutil.rmtree(DIR_EXAMPLES := "docs_sources/img/examples/", ignore_errors=True)
 os.mkdir(DIR_EXAMPLES)
+
+# Cached output (same across code blocks)
+cached_last_value = None
 
 
 class StreamOut:
@@ -108,6 +112,8 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         if files := [os.path.join(DIR_EXAMPLES, f) for f in os.listdir(DIR_EXAMPLES)]:
             return os.path.basename(max(files, key=os.path.getmtime))
 
+    global cached_last_value
+
     ipy = InteractiveInterpreter()
 
     lines = src.split("\n")
@@ -120,7 +126,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
             end_line = node.end_lineno
 
             # Get complete code block
-            block = lines[node.lineno - 1 : end_line]
+            block = lines[node.lineno - 1: end_line]
 
             if "# hide" not in line:
                 output[-1].extend([draw(code) for code in block])
@@ -143,8 +149,17 @@ def execute(src: str) -> tuple[list[str], list[str]]:
 
                 if text := stream.read():
                     # Omit plot's output
-                    if not text.startswith("{'application/pdf'"):
+                    if not text.startswith(("{'application/pdf'", "<pandas.io.formats.style")):
                         output[-1].append(f"\n{text}")
+
+            value = ipy.locals["__builtins__"].get("_")
+            if cached_last_value is not value and isinstance(value, Styler):
+                cached_last_value = value
+
+                if end_line < len(lines):
+                    output.append([])  # Add new code block
+
+                figures.append(value._repr_html_())
 
             if ".plot_" in line or ".canvas(" in line:
                 if end_line < len(lines):
@@ -156,6 +171,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
                 else:
                     with open(f"{DIR_EXAMPLES}{f}", "rb") as file:
                         img = b64encode(file.read()).decode("utf-8")
+
                     figures.append(
                         f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"
                     )

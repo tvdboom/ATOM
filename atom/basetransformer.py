@@ -32,6 +32,7 @@ from joblib.memory import Memory
 from pandas._typing import Axes
 from sklearn.utils.validation import check_memory
 
+from atom.integrations import INTEGRATIONS
 from atom.utils.types import (
     Backend, Bool, Engine, EngineDataOptions, EngineEstimatorOptions,
     EngineTuple, Estimator, FeatureNamesOut, Int, IntLargerEqualZero, Pandas,
@@ -304,35 +305,24 @@ class BaseTransformer:
     def experiment(self, value: str | None):
         self._experiment = value
         if value:
-            if value.lower().startswith("dagshub:"):
-                check_dependency("dagshub")
-                check_dependency("requests")
-                import dagshub
-                import requests
-                from dagshub.auth.token_auth import HTTPBearerAuth
+            if ":" in value:
+                integrator, experiment_name = value.split(":", 1)
+                if integrator in INTEGRATIONS:
+                    INTEGRATIONS[integrator](project_name=experiment_name)
+                else:
+                    raise ValueError(
+                        "Invalid value for the experiment parameter. Character ':' must "
+                        f"be preceded by a valid integration platform, got {integrator}. "
+                        f"Available options are: {','.join(INTEGRATIONS)}."
+                    )
+            else:
+                if any(k in mlflow.get_tracking_uri() for k in INTEGRATIONS):
+                    mlflow.set_tracking_uri("")  # Reset URI to ./mlruns
 
-                value = value[8:]  # Drop dagshub:
-
-                token = dagshub.auth.get_token()
-                os.environ["MLFLOW_TRACKING_USERNAME"] = token
-                os.environ["MLFLOW_TRACKING_PASSWORD"] = token
-
-                # Fetch username from dagshub api
-                username = requests.get(
-                    url="https://dagshub.com/api/v1/user",
-                    auth=HTTPBearerAuth(token),
-                    timeout=5,
-                ).json()["username"]
-
-                if f"{username}/{value}" not in os.getenv("MLFLOW_TRACKING_URI", ""):
-                    dagshub.init(repo_name=value, repo_owner=username)
-                    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-
-            elif "dagshub" in mlflow.get_tracking_uri():
-                mlflow.set_tracking_uri("")  # Reset URI to ./mlruns
+                experiment_name = value
 
             mlflow.sklearn.autolog(disable=True)
-            mlflow.set_experiment(value)
+            mlflow.set_experiment(experiment_name)
 
     @property
     def random_state(self) -> int | None:

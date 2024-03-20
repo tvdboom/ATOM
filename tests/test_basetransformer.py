@@ -147,6 +147,12 @@ def test_experiment_dagshub(dagshub, request, token):
     assert "dagshub" not in mlflow.get_tracking_uri()
 
 
+def test_experiment_invalid_integrator():
+    """Assert that an error is raised when the integrator does not exist."""
+    with pytest.raises(ValueError, match=".*preceded by a valid integration.*"):
+        BaseTransformer(experiment="invalid:test")
+
+
 def test_device_id_no_value():
     """Assert that the device id can be left empty."""
     base = BaseTransformer(device="gpu")

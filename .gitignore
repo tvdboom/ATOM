@@ -75,6 +75,7 @@ coverage.xml
 
 # Others
 .pylint.d
+.neptune/
 
 # GitHub
 github.com/

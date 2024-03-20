@@ -37,7 +37,7 @@ from atom.basetransformer import BaseTransformer
 from atom.data import Branch
 from atom.models import MODELS, create_stacking_model, create_voting_model
 from atom.pipeline import Pipeline
-from atom.utils.constants import DF_ATTRS
+from atom.utils.constants import COLOR_SCHEME, DF_ATTRS
 from atom.utils.types import (
     Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
     IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
@@ -288,6 +288,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         - **time_bootstrap:** Duration of the bootstrapping.
         - **time:** Total duration of the run.
 
+        !!! tip
+            This attribute returns a pandas' [Styler][] object. Convert
+            the result back to a regular dataframe using its `data`
+            attribute.
+
         """
 
         def frac(m: Model) -> float:
@@ -324,7 +329,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             ).sort_index(level=0, ascending=True)
 
-        return df.style.highlight_max(props="background-color: lightgreen")
+        return (
+            df
+            .style
+            .highlight_max(props=COLOR_SCHEME, subset=[c for c in df if not c.startswith("time")])
+            .highlight_min(props=COLOR_SCHEME, subset=[c for c in df if c.startswith("time")])
+        )
 
     # Utility methods ============================================== >>
 
@@ -1054,9 +1064,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def delete(self, models: ModelsSelector = None):
         """Delete models.
 
-        If all models are removed, the metric is reset. Use this method
-        to drop unwanted models from the pipeline or to free some memory
-        before [saving][self-save]. Deleted models are not removed from
+        If all models are removed, the metric is reset. Use this
+        method to drop unwanted or to free some memory before
+        [saving][self-save]. Deleted models are not removed from
         any active [mlflow experiment][tracking].
 
         Parameters
@@ -1081,9 +1091,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """Get all models' scores for the provided metrics.
 
         !!! tip
-            This method returns a pandas' [Styler][] object for a clean
-            visualization. If necessary, convert the result back to the
-            regular dataframe using its `data` attribute.
+            This method returns a pandas' [Styler][] object. Convert
+            the result back to a regular dataframe using its `data`
+            attribute.
 
         Parameters
         ----------
@@ -1118,7 +1128,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
         df = pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
 
-        return df.style.highlight_max(props="background-color: lightgreen")
+        return df.style.highlight_max(props=COLOR_SCHEME)
 
     @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:

@@ -9,20 +9,13 @@ from __future__ import annotations
 
 import importlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from inspect import (
-    Parameter,
-    getdoc,
-    getmembers,
-    getsourcelines,
-    isclass,
-    isfunction,
-    ismethod,
-    isroutine,
-    signature,
+    Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
+    ismethod, isroutine, signature,
 )
 from typing import Any, Optional
-from collections.abc import Callable
 
 import regex as re
 import yaml
@@ -780,14 +773,12 @@ class AutoDocs:
         include = config.get("include", [])
         exclude = config.get("exclude", [])
 
-        predicate = lambda f: ismethod(f) or isfunction(f)
-
         if include:
             methods = include
         else:
             methods = [
                 m
-                for m, _ in getmembers(self.obj, predicate=predicate)
+                for m, _ in getmembers(self.obj, predicate=lambda f: ismethod(f) or isfunction(f))
                 if not m.startswith("_") and not any(re.fullmatch(p, m) for p in exclude)
             ]
 
@@ -813,9 +804,11 @@ class AutoDocs:
                 if func.obj.__module__.startswith("atom"):
                     if description := func.get_description():
                         blocks += "\n\n" + description + "\n"
+                if example := func.get_block("Examples"):
+                    blocks += "!!! example" + "\n    ".join(example.split("\n")) + "\n\n"
                 if table := func.get_table(["Parameters", "Returns", "Yields"]):
                     blocks += table + "<br>"
-                else:
+                if not table and not example:
                     # \n to exit markdown and <br> to insert space
                     blocks += "\n" + "<br>"
 
@@ -891,7 +884,7 @@ def render(markdown: str, **kwargs) -> str:
 
         markdown = markdown[:match.start()] + text + markdown[match.end():]
 
-        # Change the custom autorefs now to use [self-...][]
+        # Change the custom autorefs now to use [...][self-...]
         markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)

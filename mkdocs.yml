@@ -75,11 +75,11 @@ extra:
 plugins:
     - search
     - autorefs
-    - mkdocs-jupyter:
-          include_requirejs: true
-          include: ["*.ipynb"]
-          include_source: true
-          ignore_h1_titles: true
+#    - mkdocs-jupyter:
+#          include_requirejs: true
+#          include: ["*.ipynb"]
+#          include_source: true
+#          ignore_h1_titles: true
     - mkdocs-simple-hooks:
           hooks:
               on_page_markdown: docs_sources.scripts.autodocs:render

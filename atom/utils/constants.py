@@ -32,6 +32,9 @@ DF_ATTRS = (
     "ndim",
 )
 
+# Highlighted color scheme for styler objects
+COLOR_SCHEME = "background-color: lightgreen"
+
 # Default color palette (discrete color, continuous scale)
 PALETTE = {
     "rgb(0, 98, 98)": "Teal",

@@ -18,7 +18,6 @@ from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 from functools import cached_property, wraps
 from importlib import import_module
-from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
@@ -1620,7 +1619,7 @@ def check_empty(obj: Pandas | None) -> Pandas | None:
     return obj if isinstance(obj, pd.DataFrame) and not obj.empty else None
 
 
-def check_dependency(name: str):
+def check_dependency(name: str, pypi_name: str | None = None):
     """Check an optional dependency.
 
     Raise an error if the package is not installed.
@@ -1630,13 +1629,18 @@ def check_dependency(name: str):
     name: str
         Name of the package to check.
 
+    pypi_name: str or None, default=None
+        Name of the package on PyPI. If None, it's the same as `name`.
+
     """
-    if not find_spec(name):
+    try:
+        import_module(name)
+    except ModuleNotFoundError:
         raise ModuleNotFoundError(
             f"Unable to import the {name} package. Install it using "
-            f"`pip install {name}` or install all of atom's optional "
-            "dependencies with `pip install atom-ml[full]`."
-        )
+            f"`pip install {pypi_name or name.replace('_', '-')}` or "
+            "install all of atom's optional dependencies with `pip install atom-ml[full]`."
+        ) from None
 
 
 def check_nltk_module(module: str, *, quiet: bool):

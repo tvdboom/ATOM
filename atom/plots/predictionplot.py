@@ -676,23 +676,23 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         # Without groups
         atom = ATOMClassifier(X, y, shuffle=False, n_rows=0.2, random_state=1)
-        atom.run("LR")
-        resutls = atom.lr.cross_validate(cv=4)
+        atom.run("LR", metric=["f1", "auc"])
+        atom.lr.cross_validate(cv=4)
         atom.plot_cv_splits()
 
         # With groups
         groups = choices(["A", "B", "C", "D"], k=X.shape[0])
         atom = ATOMClassifier(X, y, metadata={"groups": groups}, n_rows=0.2, random_state=1)
-        atom.run("LR")
-        resutls = atom.lr.cross_validate(cv=4)
+        atom.run("LR", metric=["f1", "auc"])
+        atom.lr.cross_validate(cv=4)
         atom.plot_cv_splits()
 
         # For forecast models
         y = load_airline()
 
         atom = ATOMForecaster(y, random_state=1)
-        atom.run("Croston")
-        resutls = atom.croston.cross_validate(cv=4)
+        atom.run("Croston", metric=["mape", "mse", "mae"])
+        atom.croston.cross_validate(cv=4)
         atom.plot_cv_splits()
         ```
 

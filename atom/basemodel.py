@@ -62,7 +62,7 @@ from atom.data import Branch, BranchManager
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import RunnerPlot
-from atom.utils.constants import DF_ATTRS
+from atom.utils.constants import COLOR_SCHEME, DF_ATTRS
 from atom.utils.patches import fit_and_score
 from atom.utils.types import (
     HT, Backend, Bool, Engine, Float, FloatZeroToOneExc, Int,
@@ -2053,9 +2053,9 @@ class BaseModel(RunnerPlot):
         stored in the model's `cv` attribute.
 
         !!! tip
-            This method returns a pandas' [Styler][] object for a clean
-            visualization. If necessary, convert the result back to the
-            regular dataframe using its `data` attribute.
+            This method returns a pandas' [Styler][] object. Convert
+            the result back to a regular dataframe using its `data`
+            attribute.
 
         Parameters
         ----------
@@ -2134,17 +2134,21 @@ class BaseModel(RunnerPlot):
                     **kwargs,
                 )
 
-        results = pd.DataFrame()
+        df = pd.DataFrame()
         for m in scoring:
             if f"train_{m}" in self.cv:
-                results[f"train_{m}"] = self.cv[f"train_{m}"]
+                df[f"train_{m}"] = self.cv[f"train_{m}"]
             if f"test_{m}" in self.cv:
-                results[f"test_{m}"] = self.cv[f"test_{m}"]
-        results["time (s)"] = self.cv["fit_time"]
-        results.loc["mean"] = results.mean()
-        results.loc["std"] = results.std()
+                df[f"test_{m}"] = self.cv[f"test_{m}"]
+        df["time"] = self.cv["fit_time"]
+        df.loc["mean"] = df.mean()
 
-        return results.style.highlight_max(props="background-color: lightgreen")
+        return (
+            df
+            .style
+            .highlight_max(props=COLOR_SCHEME, subset=[c for c in df if not c.startswith("time")])
+            .highlight_min(props=COLOR_SCHEME, subset=[c for c in df if c.startswith("time")])
+        )
 
     @composed(crash, beartype)
     def evaluate(
@@ -2157,15 +2161,15 @@ class BaseModel(RunnerPlot):
         """Get the model's scores for the provided metrics.
 
         !!! tip
-            Use the [self-get_best_threshold][] or [plot_threshold][]
-            method to determine a suitable value for the `threshold`
-            parameter.
+            Use the [get_best_threshold][self-get_best_threshold] or
+            [plot_threshold][] method to determine a suitable value for
+            the `threshold` parameter.
 
         Parameters
         ----------
         metric: str, func, scorer, sequence or None, default=None
             Metrics to calculate. If None, a selection of the most
-            common metrics per task are used.
+            common metrics per task is used.
 
         rows: hashable, segment, sequence or dataframe, default="test"
             [Selection of rows][row-and-column-selection] to calculate
