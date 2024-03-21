@@ -3,7 +3,7 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
-        files: ^atom/.*\.py$|tests/.*\.py$
+        files: .*\.py
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.0
@@ -11,7 +11,7 @@ repos:
     - id: ruff
       types_or: [ python, pyi, jupyter ]
       args: [--fix]
-      files: ^atom/.*\.py$|tests/.*\.py$
+      files: .*\.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -30,5 +30,5 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [beartype, types-requests, pandas-stubs]
-        files: ^atom/.*\.py$|tests/.*\.py$
+        additional_dependencies: [beartype, pandas-stubs, types-markdown, types-requests, types-pyyaml]
+        files: .*\.py

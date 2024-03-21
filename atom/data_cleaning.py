@@ -420,6 +420,10 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
         self.strategy = strategy
         self.kwargs = kwargs
 
+    def _more_tags(self):
+        """Overwrite some default sklearn tags."""
+        return {"requires_y": True, "X_types": ["2darray", "sparse"]}
+
     def _log_changes(self, y: pd.Series):
         """Print the changes per target class.
 
@@ -514,6 +518,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
         for key, value in self.mapping_.items():
             self._counts[key] = np.sum(yt == value)
 
+        # Fit only checks input and sampling strategy
         self._estimator = estimator.fit(Xt, yt)
 
         # Add the estimator as attribute to the instance
@@ -778,6 +783,10 @@ class Cleaner(TransformerMixin):
         self.drop_duplicates = drop_duplicates
         self.drop_missing_target = drop_missing_target
         self.encode_target = encode_target
+
+    def _more_tags(self):
+        """Overwrite some default sklearn tags."""
+        return {"X_types": ["2darray", "sparse"]}
 
     def fit(self, X: XConstructor | None = None, y: YConstructor | None = None) -> Self:
         """Fit to data.

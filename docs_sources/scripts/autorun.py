@@ -53,15 +53,17 @@ class StreamOut:
         return value
 
     def __enter__(self):
+        """Enter the context manager."""
         return self
 
     def __exit__(self, type, value, traceback):
+        """Exit the context manager."""
         sys.stdout = self.old
         self.old = None
         self.stdout = None
 
 
-def execute(src: str) -> tuple[list[str], list[str]]:
+def execute(src: str) -> tuple[list[list[str]], list[str]]:
     """Get the code with output.
 
     Parameters
@@ -71,10 +73,10 @@ def execute(src: str) -> tuple[list[str], list[str]]:
 
     Returns
     -------
-    list of str
+    list
         Blocks of formatted code with output.
 
-    list of str
+    list
         Figures corresponding to every code block (can be empty).
 
     """
@@ -100,7 +102,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         else:
             return f"... {code}"
 
-    def latest_file() -> str | None:
+    def get_latest_file() -> str | None:
         """Get the most recent file from the plots directory.
 
         Returns
@@ -111,6 +113,8 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         """
         if files := [os.path.join(DIR_EXAMPLES, f) for f in os.listdir(DIR_EXAMPLES)]:
             return os.path.basename(max(files, key=os.path.getmtime))
+        else:
+            return None
 
     global cached_last_value
 
@@ -120,10 +124,11 @@ def execute(src: str) -> tuple[list[str], list[str]]:
     tree = {x.lineno: x for x in ast.parse(src).body}
 
     end_line = 0
-    output, figures = [[]], []
+    output: list[list[str]] = [[]]
+    figures: list[str] = []
     for i, line in enumerate(lines, start=1):
         if node := tree.get(i):
-            end_line = node.end_lineno
+            end_line = node.end_lineno or 99999
 
             # Get complete code block
             block = lines[node.lineno - 1: end_line]
@@ -165,16 +170,17 @@ def execute(src: str) -> tuple[list[str], list[str]]:
                 if end_line < len(lines):
                     output.append([])  # Add new code block
 
-                if (f := latest_file()).endswith(".html"):
-                    with open(f"{DIR_EXAMPLES}{f}", encoding="utf-8") as file:
-                        figures.append(file.read())
-                else:
-                    with open(f"{DIR_EXAMPLES}{f}", "rb") as file:
-                        img = b64encode(file.read()).decode("utf-8")
+                if latest_file := get_latest_file():
+                    if latest_file.endswith(".html"):
+                        with open(f"{DIR_EXAMPLES}{latest_file}", "rb", encoding="utf-8") as file:
+                            figures.append(file.read())
+                    else:
+                        with open(f"{DIR_EXAMPLES}{latest_file}", "rb", encoding="utf-8") as file:
+                            img = b64encode(file.read()).decode("utf-8")
 
-                    figures.append(
-                        f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"
-                    )
+                        figures.append(
+                            f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"
+                        )
 
         elif i > end_line:
             output[-1].append(draw(line))
@@ -218,32 +224,10 @@ def formatter(
         Source formatted to HTML.
 
     """
+    to_html = md.preprocessors["fenced_code_block"].extension.superfences[0]["formatter"]
 
-    def to_html(code: list[str]) -> str:
-        """Convert a code block to html.
-
-        Parameters
-        ----------
-        code: list of str
-            List of commands.
-
-        Returns
-        -------
-        str
-            Clean representation of the code.
-
-        """
-        return md.preprocessors["fenced_code_block"].extension.superfences[0]["formatter"](
-            src="\n".join(code),
-            class_name=css_class,
-            language=language,
-            md=md,
-            options=options,
-            **kwargs,
-        )
-
-    # First line of markdown page
-    print(md.lines[0])
+    # Show title of page for debugging purposes
+    print(md.lines[0])  # noqa: T201
 
     try:
         output, figures = execute(src.strip())
@@ -252,13 +236,20 @@ def formatter(
         for i in range(max(len(output), len(figures))):
             source = ""
             if i < len(output):
-                source += to_html(output[i])
-            if i < len(figures):
+                source += to_html(
+                    src="\n".join(output[i]),
+                    class_name=css_class,
+                    language=language,
+                    md=md,
+                    options=options,
+                    **kwargs,
+                )
+            if i < len(figures):  # Add figures after code
                 source += figures[i]
 
             render.append(source)
 
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001
         raise SuperFencesException(f"Exception raised running code:\n{src}") from ex
 
     return "<br>".join(render)

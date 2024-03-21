@@ -177,7 +177,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports
 "baserunner.py" = ["ERA001"]  # Commented-out code
-"patches.py" = ["A003"]  # Class attribute is shadowing a Python builtin
 "types.py" = [
     "D105",  # Missing docstring in magic method
     "D102",  # Missing docstring in public method
@@ -186,6 +185,13 @@ ignore = [
     "T20",  # print found
     "S101",  # assert called
     "PT011",  # error is too broad
+]
+"autodocs.py" = [
+    "C408",  # Unnecessary `dict` call
+    "ARG001",  # Unused function argument
+]
+"autorun.py" = [
+    "A002",  #  Argument is shadowing a Python builtin
 ]
 
 [tool.ruff.lint.pydocstyle]

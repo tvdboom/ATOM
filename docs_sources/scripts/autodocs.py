@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import importlib
 import json
-from collections.abc import Callable
 from dataclasses import dataclass
 from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     ismethod, isroutine, signature,
 )
-from typing import Any, Optional
+from typing import Any
 
 import regex as re
 import yaml
@@ -304,11 +303,11 @@ class AutoDocs:
 
     Parameters
     ----------
-    obj: callable
+    obj: object
         Class, method or function to parse.
 
-    method: callable or None
-        Method of the obj to parse.
+    method: str or None
+        Method of `obj` to parse.
 
     References
     ----------
@@ -330,18 +329,19 @@ class AutoDocs:
         r"\Z",
     )
 
-    def __init__(self, obj: Callable, method: Callable | None = None):
+    def __init__(self, obj: object, method: str | None = None):
         if method:
             self.obj = getattr(obj, method)
-            self.method = method
-            self._parent_anchor = obj.__name__.lower() + "-"
+            self._parent_anchor = f"{obj.__name__.lower()}-"
         else:
             self.obj = obj
-            self.method = method
             self._parent_anchor = ""
 
         self.method = method
-        self.doc = getdoc(self.obj)
+        if not (doc := getdoc(self.obj)):
+            raise ValueError(f"Object {self.obj} has no docstring.")
+        else:
+            self.doc = doc
 
     @staticmethod
     def get_obj(command: str) -> AutoDocs:
@@ -391,7 +391,7 @@ class AutoDocs:
         if body.lstrip().startswith(("- ", "* ", "+ ")):
             text += "\n"
 
-        text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
+        text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(keepends=True)])
 
         return text + "\n"
 
@@ -480,8 +480,6 @@ class AutoDocs:
                     else:
                         sign.append(f"{k}={v.default}")
 
-        sign = f"({', '.join(sign)})"
-
         f = self.obj.__module__.replace(".", "/")  # Module and filename sep by /
         if "atom" in self.obj.__module__:
             url = f"{ATOM_URL}{f}.py"
@@ -490,7 +488,7 @@ class AutoDocs:
         else:
             url = ""
 
-        anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
+        anchor = f"[](){{#{self._parent_anchor}{self.obj.__name__}}}\n"
         module = self.obj.__module__ + "." if obj != "method" else ""
         obj = f"<em>{obj}</em>"
         name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
@@ -499,7 +497,7 @@ class AutoDocs:
             url = f"<span style='float:right'><a href={url}#L{line}>[source]</a></span>"
 
         # \n\n in front of signature to break potential lists in markdown
-        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}{sign}{url}</div>"
+        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}({', '.join(sign)}){url}</div>"
 
     def get_summary(self) -> str:
         """Return the object's summary.
@@ -550,7 +548,7 @@ class AutoDocs:
 
                 # If it's a class, refer to the page, else to the anchor
                 if cls._parent_anchor:
-                    link = f"{cls._parent_anchor}-{cls.obj.__name__}"
+                    link = f"{cls._parent_anchor}{cls.obj.__name__}"
                 else:
                     link = ""
 
@@ -853,39 +851,40 @@ def render(markdown: str, **kwargs) -> str:
             else:
                 command = {command: None}  # Has no options specified
 
-        if "toc" in command:
-            text = autodocs.get_toc()
-        elif "tags" in command:
-            text = autodocs.get_tags()
-        elif "signature" in command:
-            text = autodocs.get_signature()
-        elif "head" in command:
-            text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
-        elif "summary" in command:
-            text = autodocs.get_summary()
-        elif "description" in command:
-            text = autodocs.get_description()
-        elif "table" in command:
-            text = autodocs.get_table(command["table"])
-        elif "see also" in command:
-            text = autodocs.get_see_also()
-        elif "notes" in command:
-            text = autodocs.get_block("Notes")
-        elif "references" in command:
-            text = autodocs.get_block("References")
-        elif "examples" in command:
-            text = autodocs.get_block("Examples")
-        elif "hyperparameters" in command:
-            text = autodocs.get_hyperparameters()
-        elif "methods" in command:
-            text = autodocs.get_methods(command["methods"] or {})
-        else:
-            text = ""
+        if autodocs:
+            if "toc" in command:
+                text = autodocs.get_toc()
+            elif "tags" in command:
+                text = autodocs.get_tags()
+            elif "signature" in command:
+                text = autodocs.get_signature()
+            elif "head" in command:
+                text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
+            elif "summary" in command:
+                text = autodocs.get_summary()
+            elif "description" in command:
+                text = autodocs.get_description()
+            elif "table" in command:
+                text = autodocs.get_table(command["table"])
+            elif "see also" in command:
+                text = autodocs.get_see_also()
+            elif "notes" in command:
+                text = autodocs.get_block("Notes")
+            elif "references" in command:
+                text = autodocs.get_block("References")
+            elif "examples" in command:
+                text = autodocs.get_block("Examples")
+            elif "hyperparameters" in command:
+                text = autodocs.get_hyperparameters()
+            elif "methods" in command:
+                text = autodocs.get_methods(command["methods"] or {})
+            else:
+                text = ""
 
-        markdown = markdown[:match.start()] + text + markdown[match.end():]
+            markdown = markdown[:match.start()] + text + markdown[match.end():]
 
-        # Change the custom autorefs now to use [...][self-...]
-        markdown = custom_autorefs(markdown, autodocs)
+            # Change the custom autorefs now to use [...][self-...]
+            markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
 
