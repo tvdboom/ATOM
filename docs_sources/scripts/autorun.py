@@ -172,11 +172,11 @@ def execute(src: str) -> tuple[list[list[str]], list[str]]:
 
                 if latest_file := get_latest_file():
                     if latest_file.endswith(".html"):
-                        with open(f"{DIR_EXAMPLES}{latest_file}", "rb", encoding="utf-8") as file:
-                            figures.append(file.read())
+                        with open(f"{DIR_EXAMPLES}{latest_file}", encoding="utf-8") as pio_f:
+                            figures.append(pio_f.read())
                     else:
-                        with open(f"{DIR_EXAMPLES}{latest_file}", "rb", encoding="utf-8") as file:
-                            img = b64encode(file.read()).decode("utf-8")
+                        with open(f"{DIR_EXAMPLES}{latest_file}", mode="rb") as mpl_f:
+                            img = b64encode(mpl_f.read()).decode("utf-8")  # type: ignore[[arg-type]
 
                         figures.append(
                             f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"

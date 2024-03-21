@@ -329,7 +329,7 @@ class AutoDocs:
         r"\Z",
     )
 
-    def __init__(self, obj: object, method: str | None = None):
+    def __init__(self, obj: type[object], method: str | None = None):
         if method:
             self.obj = getattr(obj, method)
             self._parent_anchor = f"{obj.__name__.lower()}-"
@@ -627,7 +627,7 @@ class AutoDocs:
                     header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}\n</div>"
 
-                    anchor = f"<a id='{self.obj.__name__.lower()}-{obj.__name__}'></a>"
+                    anchor = f"[](){{#{self.obj.__name__.lower()}-{obj.__name__}}}\n"
                     content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             elif match := self.get_block(name):
@@ -663,7 +663,7 @@ class AutoDocs:
                     text = f"<div markdown class='param'>{self.parse_body(body)}</div>"
 
                     obj_name = header.split(":")[0]
-                    anchor = f"<a id='{self.obj.__name__.lower()}-{obj_name}'></a>"
+                    anchor = f"[](){{#{self.obj.__name__.lower()}-{obj_name}}}\n"
                     content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             if content:
@@ -709,7 +709,7 @@ class AutoDocs:
 
             text = ""
             for name, dist in model._get_distributions().items():
-                anchor = f"<a id='{self.obj.__name__.lower()}-{name}'></a>"
+                anchor = f"[](){{#{self.obj.__name__.lower()}-{name}}}\n"
                 text += f"{anchor}<strong>{name}</strong><br>"
                 text += f"<div markdown class='param'>{dist}</div>"
 
