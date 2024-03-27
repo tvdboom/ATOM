@@ -147,11 +147,11 @@ def execute(src: str) -> tuple[list[list[str]], list[str]]:
                     args, close = arguments.rsplit(")", 1)
                     block[0] = f'{f}({args}, filename="{DIR_EXAMPLES}{uuid4()}"){close}'
 
-            # first check for syntax errors
+            # First check for syntax errors
             try:
                 # Add \n at end to exit contextmanagers
                 code = ipy.compile("\n".join(block) + "\n")
-            except Exception:
+            except (OverflowError, SyntaxError, ValueError):
                 ipy.showsyntaxerror()
                 raise
 
@@ -161,7 +161,7 @@ def execute(src: str) -> tuple[list[list[str]], list[str]]:
                 try:
                     # Capture anything sent to stdout
                     with StreamOut() as stream:
-                        exec(code, dict(ipy.locals))
+                        exec(code, ipy.locals)  # type: ignore[arg-type]
 
                         if text := stream.read():
                             # Omit plot's output

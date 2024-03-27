@@ -2,7 +2,6 @@
 mlruns/
 
 # PDM
-pdm.lock
 .pdm-build/
 
 # Log, pickle and figures in root directory

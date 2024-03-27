@@ -92,6 +92,7 @@ plugins:
     - git-committers:
           repository: tvdboom/ATOM
           branch: master
+          token: ${{ secrets.GITHUB_TOKEN }}
 
 markdown_extensions:
     - admonition

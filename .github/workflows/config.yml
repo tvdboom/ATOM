@@ -160,3 +160,18 @@ jobs:
           --ignore=./examples/accelerating_cuml.ipynb \
           --ignore=./examples/ray_backend.ipynb \
           ./examples/
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v4
+      - name: Set up pdm
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.11"
+          cache: true
+      - name: Install dependencies
+        run: pdm install -G doc
+      - name: Build documentation
+        run: mkdocs build --strict
