@@ -211,7 +211,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from optuna.distributions import IntDistribution
         from sklearn.datasets import make_classification
@@ -353,7 +353,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -485,7 +485,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -675,7 +675,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -844,7 +844,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1004,7 +1004,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1162,7 +1162,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -1278,7 +1278,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from optuna.pruners import PatientPruner
         from sklearn.datasets import make_classification
@@ -1440,7 +1440,7 @@ class HyperparameterTuningPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 

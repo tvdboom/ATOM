@@ -147,15 +147,29 @@ def execute(src: str) -> tuple[list[list[str]], list[str]]:
                     args, close = arguments.rsplit(")", 1)
                     block[0] = f'{f}({args}, filename="{DIR_EXAMPLES}{uuid4()}"){close}'
 
-            # Capture anything sent to stdout
-            with StreamOut() as stream:
+            # first check for syntax errors
+            try:
                 # Add \n at end to exit contextmanagers
-                ipy.runsource("\n".join(block) + "\n")
+                code = ipy.compile("\n".join(block) + "\n")
+            except Exception:
+                ipy.showsyntaxerror()
+                raise
 
-                if text := stream.read():
-                    # Omit plot's output
-                    if not text.startswith(("{'application/pdf'", "<pandas.io.formats.style")):
-                        output[-1].append(f"\n{text}")
+            if code is None:
+                raise ValueError("Code block is incomplete.")
+            else:
+                try:
+                    # Capture anything sent to stdout
+                    with StreamOut() as stream:
+                        exec(code, dict(ipy.locals))
+
+                        if text := stream.read():
+                            # Omit plot's output
+                            if not text.startswith(("{'application/pdf'", "<pandas.io.formats")):
+                                output[-1].append(f"\n{text}")
+                except Exception:
+                    ipy.showtraceback()
+                    raise
 
             value = ipy.locals["__builtins__"].get("_")
             if cached_last_value is not value and isinstance(value, Styler):
@@ -249,7 +263,7 @@ def formatter(
 
             render.append(source)
 
-    except Exception as ex:  # noqa: BLE001
+    except Exception as ex:
         raise SuperFencesException(f"Exception raised running code:\n{src}") from ex
 
     return "<br>".join(render)

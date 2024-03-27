@@ -127,7 +127,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -309,7 +309,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_macroeconomic
 
@@ -476,7 +476,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -600,7 +600,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -723,7 +723,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier, ATOMForecaster
         from random import choices
         from sklearn.datasets import load_breast_cancer
@@ -904,7 +904,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -1052,7 +1052,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         import numpy as np
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
@@ -1250,7 +1250,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -1376,7 +1376,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         import numpy as np
         from atom import ATOMClassifier
         from sklearn.datasets import fetch_20newsgroups
@@ -1569,7 +1569,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -1721,7 +1721,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1868,7 +1868,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -1980,7 +1980,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2092,7 +2092,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2251,7 +2251,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2423,7 +2423,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -2533,7 +2533,7 @@ class DataPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```pycon
+        ```python
         import numpy as np
         from atom import ATOMClassifier
         from sklearn.datasets import fetch_20newsgroups

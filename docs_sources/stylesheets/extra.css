@@ -3,6 +3,10 @@
     font-weight: normal;
 }
 
+/*Show line numbers in code blocks*/
+[data-linenos]:before {
+  content: attr(data-linenos);
+}
 
 /* Prevent the selection of and ... in code blocks */
 .language-pycon .gp {

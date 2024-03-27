@@ -75,7 +75,7 @@ class Branch:
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 

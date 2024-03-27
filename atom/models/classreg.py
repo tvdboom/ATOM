@@ -50,7 +50,7 @@ class AdaBoost(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -118,7 +118,7 @@ class AutomaticRelevanceDetermination(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -188,7 +188,7 @@ class Bagging(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -254,7 +254,7 @@ class BayesianRidge(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -320,7 +320,7 @@ class BernoulliNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -401,7 +401,7 @@ class CatBoost(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -585,7 +585,7 @@ class CategoricalNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     import numpy as np
 
@@ -649,7 +649,7 @@ class ComplementNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -711,7 +711,7 @@ class DecisionTree(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -786,7 +786,7 @@ class Dummy(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -853,7 +853,7 @@ class ElasticNet(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -920,7 +920,7 @@ class ExtraTree(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -994,7 +994,7 @@ class ExtraTrees(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1089,7 +1089,7 @@ class GaussianNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1150,7 +1150,7 @@ class GaussianProcess(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1206,7 +1206,7 @@ class GradientBoostingMachine(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1285,7 +1285,7 @@ class HuberRegression(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -1353,7 +1353,7 @@ class HistGradientBoosting(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1429,7 +1429,7 @@ class KNearestNeighbors(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1501,7 +1501,7 @@ class Lasso(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -1566,7 +1566,7 @@ class LeastAngleRegression(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -1623,7 +1623,7 @@ class LightGBM(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1793,7 +1793,7 @@ class LinearDiscriminantAnalysis(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -1878,7 +1878,7 @@ class LinearSVM(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2005,7 +2005,7 @@ class LogisticRegression(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2113,7 +2113,7 @@ class MultiLayerPerceptron(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2219,7 +2219,7 @@ class MultinomialNB(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2283,7 +2283,7 @@ class OrdinaryLeastSquares(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -2330,7 +2330,7 @@ class OrthogonalMatchingPursuit(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -2379,7 +2379,7 @@ class PassiveAggressive(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2455,7 +2455,7 @@ class Perceptron(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2522,7 +2522,7 @@ class QuadraticDiscriminantAnalysis(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2589,7 +2589,7 @@ class RadiusNearestNeighbors(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2670,7 +2670,7 @@ class RandomForest(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2784,7 +2784,7 @@ class Ridge(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMRegressor
     from sklearn.datasets import fetch_california_housing
 
@@ -2857,7 +2857,7 @@ class StochasticGradientDescent(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -2942,7 +2942,7 @@ class SupportVectorMachine(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -3059,7 +3059,7 @@ class XGBoost(ClassRegModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 

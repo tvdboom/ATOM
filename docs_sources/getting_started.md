@@ -78,7 +78,7 @@ on top of this section to run this example yourself.
 
 Make the necessary imports and load the data.
 
-```pycon
+```python
 import pandas as pd
 from atom import ATOMClassifier
 
@@ -92,7 +92,7 @@ are convenient wrappers for the whole machine learning pipeline. Contrary
 to sklearn's API, they are initialized providing the data you want to
 manipulate.
 
-```pycon
+```python
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
 X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
@@ -106,7 +106,7 @@ calling the [impute][atomclassifier-impute] method will initialize an
 dataset. The transformations are applied immediately after calling the
 method (no fit and transform commands necessary).
 
-```pycon
+```python
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
 X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
@@ -122,7 +122,7 @@ Similarly, models are [trained and evaluated][training] using the
 [run][atomclassifier-run] method. Here, we fit both a [LogisticRegression][]
 and [LinearDiscriminantAnalysis][] model, and apply [hyperparameter tuning][].
 
-```pycon
+```python
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
 X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide
@@ -138,7 +138,7 @@ atom.run(models=["LR", "LDA"], metric="auc", n_trials=6)
 
 And lastly, analyze the results.
 
-```pycon
+```python
 import pandas as pd  # hide
 from atom import ATOMClassifier  # hide
 X = pd.read_csv("./examples/datasets/weatherAUS.csv", nrows=100)  # hide

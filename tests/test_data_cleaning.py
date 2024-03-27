@@ -24,8 +24,9 @@ from atom.utils.types import NumericalStrats
 from atom.utils.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
-    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_ex, X_idx, y10,
-    y10_label, y10_nan, y10_str, y_bin, y_class, y_idx, y_multiclass,
+    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_ex, X_idx,
+    X_sparse, y10, y10_label, y10_nan, y10_str, y_bin, y_class, y_idx,
+    y_multiclass,
 )
 
 
@@ -196,7 +197,7 @@ def test_cleaner_remove_characters_from_column_names():
     """Assert that specified chars are removed from column names."""
     cleaner = Cleaner(drop_chars="[^A-Za-z0-9]+")
 
-    X, y = X_bin.copy(), y_bin.copy()
+    X, y = X_sparse.copy(), pd.Series(y10)
     X.columns = ["test##", *X.columns[1:]]
     y.name = "::test"
     X, y = cleaner.fit_transform(X, y)

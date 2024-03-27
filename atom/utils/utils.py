@@ -34,7 +34,7 @@ from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from pandas._libs.missing import NAType
-from pandas._typing import Axes, Dtype
+from pandas._typing import Axes, DtypeObj
 from pandas.api.types import is_numeric_dtype
 from shap import Explainer
 from sklearn.base import BaseEstimator
@@ -1406,7 +1406,8 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
     """Replace all values considered 'missing' in a dataset.
 
     This method replaces the missing values in columns with pandas'
-    nullable dtypes with `pd.NA`, else with `np.NaN`.
+    nullable dtypes with `pd.NA`, else with `np.NaN`. Sparse datasets
+    are ignored since sparse columns don't support item assignment.
 
     Parameters
     ----------
@@ -1423,36 +1424,25 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         Data set without missing values.
 
     """
-
-    def get_nan(dtype: Dtype) -> float | NAType:
-        """Get NaN type depending on a column's type.
-
-        Parameters
-        ----------
-        dtype: Dtype
-            Type of the column.
-
-        Returns
-        -------
-        np.NaN or pd.NA
-            Missing value indicator.
-
-        """
-        return np.nan if isinstance(dtype, np.dtype) else pd.NA
-
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.nan, np.inf, -np.inf]
 
-    if isinstance(X, pd.DataFrame):
-        return X.replace(
-            to_replace={c: (missing_values or []) + default_values for c in X.columns},
-            value={c: get_nan(d) for c, d in X.dtypes.items()},
-        )
+    if not is_sparse(X):
+        get_nan: Callable[[DtypeObj], float | NAType] = \
+            lambda dtype: np.nan if isinstance(dtype, np.dtype) else pd.NA
+
+        if isinstance(X, pd.DataFrame):
+            return X.replace(
+                to_replace={c: (missing_values or []) + default_values for c in X.columns},
+                value={c: get_nan(d) for c, d in X.dtypes.items()},
+            )
+        else:
+            return X.replace(
+                to_replace=(missing_values or []) + default_values,
+                value=get_nan(X.dtype),
+            )
     else:
-        return X.replace(
-            to_replace=(missing_values or []) + default_values,
-            value=get_nan(X.dtype),
-        )
+        return X
 
 
 def n_cols(obj: YConstructor | None) -> int:

@@ -72,7 +72,7 @@ There are two ways to achieve this:
 * Using [ATOMModel][] (recommended). With this approach you can pass
   the required model characteristics to the pipeline.
 
-```pycon
+```python
 from atom import ATOMRegressor, ATOMModel
 from sklearn.datasets import load_diabetes
 from sklearn.linear_model import RANSACRegressor
@@ -89,7 +89,7 @@ atom.run(ransac)
   will also call [ATOMModel][] under the hood, but it will leave its
   parameters to their default values.
 
-```pycon
+```python
 from atom import ATOMRegressor
 from sklearn.datasets import load_diabetes
 from sklearn.linear_model import RANSACRegressor

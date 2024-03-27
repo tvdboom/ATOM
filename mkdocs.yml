@@ -102,12 +102,12 @@ markdown_extensions:
     - pymdownx.details  # Allows for collapsible admonition blocks
     - pymdownx.magiclink  # Allows for bare links of the form <url>
     - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
-#    - pymdownx.superfences:
-#        preserve_tabs: true
-#        custom_fences:
-#            - name: pycon
-#              class: pycon
-#              format: !!python/name:docs_sources.scripts.formatter
+    - pymdownx.superfences:
+        preserve_tabs: true
+        custom_fences:
+            - name: python
+              class: python
+              format: !!python/name:docs_sources.scripts.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true
     - pymdownx.tabbed:  # Allows the usage of content tabs
@@ -118,6 +118,8 @@ markdown_extensions:
     - pymdownx.highlight:  # Allows for highlighting of code blocks
           use_pygments: true
           pygments_lang_class: true
+          linenums: true
+          linenums_style: pymdownx-inline
 
 extra_css:
     - stylesheets/extra.css

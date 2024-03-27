@@ -68,7 +68,7 @@ class ARIMA(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_longley
 
@@ -209,7 +209,7 @@ class AutoARIMA(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_longley
 
@@ -288,7 +288,7 @@ class AutoETS(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -380,7 +380,7 @@ class BATS(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -461,7 +461,7 @@ class Croston(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -520,7 +520,7 @@ class DynamicFactor(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_longley
 
@@ -586,7 +586,7 @@ class ExponentialSmoothing(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -669,7 +669,7 @@ class ETS(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -758,7 +758,7 @@ class MSTL(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -858,7 +858,7 @@ class NaiveForecaster(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -929,7 +929,7 @@ class PolynomialTrend(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -988,7 +988,7 @@ class Prophet(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -1096,7 +1096,7 @@ class SARIMAX(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_longley
 
@@ -1210,7 +1210,7 @@ class STL(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -1305,7 +1305,7 @@ class TBATS(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -1390,7 +1390,7 @@ class Theta(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -1468,7 +1468,7 @@ class VAR(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_longley
 
@@ -1531,7 +1531,7 @@ class VARMAX(ForecastModel):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom import ATOMForecaster
     from sktime.datasets import load_longley
 

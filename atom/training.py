@@ -428,7 +428,7 @@ class DirectClassifier(Direct):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import DirectClassifier
     from sklearn.datasets import load_breast_cancer
     from sklearn.model_selection import train_test_split
@@ -661,7 +661,7 @@ class DirectForecaster(Direct):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import DirectForecaster
     from sktime.datasets import load_airline
     from sktime.split import temporal_train_test_split
@@ -890,7 +890,7 @@ class DirectRegressor(Direct):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import DirectRegressor
     from sklearn.datasets import load_digits
     from sklearn.model_selection import train_test_split
@@ -1129,7 +1129,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import SuccessiveHalvingClassifier
     from sklearn.datasets import load_breast_cancer
     from sklearn.model_selection import train_test_split
@@ -1365,7 +1365,7 @@ class SuccessiveHalvingForecaster(SuccessiveHalving):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import SuccessiveHalvingForecaster
     from sktime.datasets import load_airline
     from sktime.split import temporal_train_test_split
@@ -1598,7 +1598,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import SuccessiveHalvingRegressor
     from sklearn.datasets import load_digits
     from sklearn.model_selection import train_test_split
@@ -1843,7 +1843,7 @@ class TrainSizingClassifier(TrainSizing):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import TrainSizingClassifier
     from sklearn.datasets import load_breast_cancer
     from sklearn.model_selection import train_test_split
@@ -2085,7 +2085,7 @@ class TrainSizingForecaster(TrainSizing):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import TrainSizingForecaster
     from sktime.datasets import load_airline
     from sktime.split import temporal_train_test_split
@@ -2323,7 +2323,7 @@ class TrainSizingRegressor(TrainSizing):
 
     Examples
     --------
-    ```pycon
+    ```python
     from atom.training import TrainSizingRegressor
     from sklearn.datasets import load_digits
     from sklearn.model_selection import train_test_split

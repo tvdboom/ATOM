@@ -373,7 +373,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -389,7 +389,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Balancer
         from sklearn.datasets import load_breast_cancer
 
@@ -731,7 +731,7 @@ class Cleaner(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -747,7 +747,7 @@ class Cleaner(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Cleaner
         from numpy.random import randint
 
@@ -1147,7 +1147,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
 
@@ -1162,7 +1162,7 @@ class Decomposer(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Decomposer
         from sktime.datasets import load_longley
 
@@ -1419,7 +1419,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1440,7 +1440,7 @@ class Discretizer(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Discretizer
         from sklearn.datasets import load_breast_cancer
 
@@ -1745,7 +1745,7 @@ class Encoder(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
         from numpy.random import randint
@@ -1765,7 +1765,7 @@ class Encoder(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Encoder
         from sklearn.datasets import load_breast_cancer
         from numpy.random import randint
@@ -2132,7 +2132,7 @@ class Imputer(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         import numpy as np
         from atom import ATOMClassifier
         from numpy.random import randint
@@ -2153,7 +2153,7 @@ class Imputer(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         import numpy as np
         from atom.data_cleaning import Imputer
         from numpy.random import randint
@@ -2536,7 +2536,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2555,7 +2555,7 @@ class Normalizer(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Normalizer
         from sklearn.datasets import load_breast_cancer
 
@@ -2800,7 +2800,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2818,7 +2818,7 @@ class Pruner(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Normalizer
         from sklearn.datasets import load_breast_cancer
 
@@ -3058,7 +3058,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```pycon
+        ```python
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -3074,7 +3074,7 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```pycon
+        ```python
         from atom.data_cleaning import Scaler
         from sklearn.datasets import load_breast_cancer
 
