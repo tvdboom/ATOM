@@ -58,7 +58,7 @@ additional libraries. You can install all the optional dependencies using
 * **[botorch](https://botorch.org/docs/introduction)** (>=0.8.5)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.2)
 * **[dagshub](https://github.com/DagsHub/client)** (>=0.3.8)
-* **[dask[distributed]](https://dask.org/)** (>=2024.2.0)
+* **[dask[dataframe,distributed]](https://dask.org/)** (>=2024.2.0)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.3)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.44.4)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=4.1.0)
