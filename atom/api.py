@@ -626,7 +626,7 @@ class ATOMForecaster(ATOM):
     Examples
     --------
     ```python
-    from atom import aATOMForecaster
+    from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
     y = load_airline()
