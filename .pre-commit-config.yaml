@@ -13,6 +13,13 @@ repos:
       args: [--fix]
       files: .*\.(py|ipy)
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [beartype, pandas-stubs, types-markdown, types-requests, types-pyyaml]
+        files: .*\.(py|ipy)
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -32,10 +39,3 @@ repos:
     rev: 2.13.2
     hooks:
       - id: pdm-lock-check
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [beartype, pandas-stubs, types-markdown, types-requests, types-pyyaml]
-        files: .*\.(py|ipy)
