@@ -20,7 +20,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "beartype>=0.16.4",
+    "beartype>=0.18.0",
     "category-encoders>=2.6.3",
     "dill>=0.3.6",
     "featuretools>=1.28.0",

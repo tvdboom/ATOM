@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm install -G lint --no-default
+        run: pdm sync -G lint --no-default
       - name: Run isort
         run: pdm run pre-commit run isort --all-files
 
@@ -37,7 +37,7 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm install -G lint --no-default
+        run: pdm sync -G lint --no-default
       - name: Run ruff
         run: pdm run pre-commit run ruff --all-files
 
@@ -52,7 +52,7 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm install -G lint --no-default
+        run: pdm sync -G lint --no-default
       - name: Run pre-commit hooks
         run: |
           pdm run pre-commit run check-added-large-files --all-files
@@ -75,7 +75,7 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm install -G lint --no-default
+        run: pdm sync -G lint --no-default
       - name: Run mypy
         run: pdm run pre-commit run mypy --all-files
 
@@ -109,7 +109,7 @@ jobs:
           cache: true
       - name: Install dependencies
         run: |
-          pdm install -G full -G test
+          pdm sync -G full -G test
           pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
       - name: Run tests w/ coverage
         run: pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
@@ -149,7 +149,7 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm install -G full -G test
+        run: pdm sync -G full -G test
       - name: Run example notebooks
         run: |
           pdm run pytest \
@@ -172,21 +172,6 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm install -G doc --no-default
+        run: pdm sync -G doc --no-default
       - name: Build documentation
-        run: pdm run mkdocs build --strict --site-dir /home/runner/work/ATOM/ATOM/docs_sources/
-
-  documentation2:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out source repository
-        uses: actions/checkout@v4
-      - name: Set up pdm
-        uses: pdm-project/setup-pdm@v4
-        with:
-          python-version: "3.11"
-          cache: true
-      - name: Install dependencies
-        run: pdm install -G doc --no-default
-      - name: Build documentation
-        run: mkdocs build --strict
+        run: pdm run mkdocs build --strict

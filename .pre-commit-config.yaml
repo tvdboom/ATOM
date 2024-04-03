@@ -28,6 +28,11 @@ repos:
         args: [--pytest-test-first]
       - id: trailing-whitespace
 
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.13.2
+    hooks:
+      - id: pdm-lock-check
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.9.0
     hooks:
