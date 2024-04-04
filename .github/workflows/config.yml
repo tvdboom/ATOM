@@ -11,6 +11,28 @@ on:
       - development
 
 jobs:
+  free-disk-space:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free disk space
+        run: |
+          echo "=============================================="
+          echo "Freeing up disk space on CI system"
+          echo "=============================================="
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+          df -h
+          echo "Removing large packages..."
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y '^llvm-.*'
+          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox mono-devel
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          df -h
+          echo "Removing large directories"
+          # Deleting ~15GB
+          rm -rf /usr/share/dotnet/
+          df -h
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -163,6 +185,7 @@ jobs:
 
   documentation:
     runs-on: ubuntu-latest
+    needs: free-disk-space
     steps:
       - name: Check out source repository
         uses: actions/checkout@v4
