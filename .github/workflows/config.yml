@@ -194,6 +194,10 @@ jobs:
         with:
           python-version: "3.11"
           cache: true
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 10
       - name: Install dependencies
         run: pdm sync -G full -G doc
       - name: Build documentation
