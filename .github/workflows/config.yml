@@ -11,29 +11,20 @@ on:
       - development
 
 jobs:
-#  free-disk-space:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Free disk space
-#        run: |
-#          echo "=============================================="
-#          echo "Freeing up disk space on CI system"
-#          echo "=============================================="
-#          echo "Listing 100 largest packages"
-#          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
-#          df -h
-#          echo "Removing large packages..."
-#          sudo apt-get remove -y '^dotnet-.*'
-#          sudo apt-get remove -y '^llvm-.*'
-#          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox mono-devel
-#          sudo apt-get autoremove -y
-#          sudo apt-get clean
-#          df -h
-#          echo "Removing large directories"
-#          # Deleting ~15GB
-#          rm -rf /usr/share/dotnet/
-#          df -h
+  free-disk-space:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free disk space
+        run: |
+          sudo df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo df -h
+
   isort:
+    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -49,6 +40,7 @@ jobs:
         run: pdm run pre-commit run isort --all-files
 
   ruff:
+    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -64,6 +56,7 @@ jobs:
         run: pdm run pre-commit run ruff --all-files
 
   pre-commit-hooks:
+    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -87,6 +80,7 @@ jobs:
           pdm run pre-commit run trailing-whitespace --all-files
 
   mypy:
+    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -115,31 +109,32 @@ jobs:
         with:
             languages: python
 
-#  unit-tests:
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os: [ubuntu-latest, windows-latest, macos-latest]
-#        python-version: ["3.10", "3.11"]
-#    steps:
-#      - name: Check out source repository
-#        uses: actions/checkout@v4
-#      - name: Set up pdm
-#        uses: pdm-project/setup-pdm@v4
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#          cache: true
-#      - name: Install dependencies
-#        run: |
-#          pdm sync -G full -G test
-#          pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
-#      - name: Run tests w/ coverage
-#        run: pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
-#      - name: Upload coverage to Codecov
-#        uses: codecov/codecov-action@v4
-#        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
-#        with:
-#          files: ./coverage.xml
+  unit-tests:
+    needs: free-disk-space
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11"]
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v4
+      - name: Set up pdm
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: true
+      - name: Install dependencies
+        run: |
+          pdm sync -G full -G test
+          pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
+      - name: Run tests w/ coverage
+        run: pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
+        with:
+          files: ./coverage.xml
 #
 #  examples-tests:
 #    runs-on: ubuntu-latest
@@ -184,6 +179,7 @@ jobs:
 #          ./examples/
 
   documentation:
+    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -193,14 +189,6 @@ jobs:
         with:
           python-version: "3.11"
           cache: true
-      - name: Free disk space
-        run: |
-          sudo df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo df -h
       - name: Install dependencies
         run: pdm sync -G full -G doc
       - name: Build documentation

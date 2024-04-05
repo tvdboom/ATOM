@@ -5,7 +5,7 @@
 groups = ["default", "doc", "full", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:cdcb4c5e745b0d7e54d1d8cb61fec7ab33725c3542041723081761411e9e1802"
+content_hash = "sha256:6597d7fae9e645b5a025566f54efcba577f19660d1a70efde9452cf56ad37b42"
 
 [[package]]
 name = "absl-py"
@@ -2913,6 +2913,15 @@ dependencies = [
 files = [
     {file = "jupytext-1.16.1-py3-none-any.whl", hash = "sha256:796ec4f68ada663569e5d38d4ef03738a01284bfe21c943c485bc36433898bd0"},
     {file = "jupytext-1.16.1.tar.gz", hash = "sha256:68c7b68685e870e80e60fda8286fbd6269e9c74dc1df4316df6fe46eabc94c99"},
+]
+
+[[package]]
+name = "kaleido"
+version = "0.2.1.post1"
+summary = "Static image export for web-based visualization libraries with zero dependencies"
+groups = ["doc"]
+files = [
+    {file = "kaleido-0.2.1.post1-py2.py3-none-manylinux2014_armv7l.whl", hash = "sha256:d313940896c24447fc12c74f60d46ea826195fc991f58569a6e73864d53e5c20"},
 ]
 
 [[package]]

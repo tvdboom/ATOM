@@ -103,6 +103,7 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 **Documentation**
 
 * **[jupyter-contrib-nbextensions](https://github.com/ipython-contrib/jupyter_contrib_nbextensions)** (>=0.7.0)
+* **[kaleido](https://github.com/plotly/Kaleido)** (>=0.2.1)
 * **[mike](https://github.com/jimporter/mike)** (>=2.0.0)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.5.3)
 * **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=1.0.1)
