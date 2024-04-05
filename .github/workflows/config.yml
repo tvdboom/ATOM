@@ -185,7 +185,6 @@ jobs:
 
   documentation:
     runs-on: ubuntu-latest
-    needs: free-disk-space
     steps:
       - name: Check out source repository
         uses: actions/checkout@v4
