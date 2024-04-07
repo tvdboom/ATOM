@@ -49,15 +49,15 @@ full = [
     "botorch>=0.8.5; python_version < '3.12'",
     "catboost>=1.2",
     "dagshub>=0.3.8",
-    "dask[dataframe,distributed]>=2024.2.0",
+#    "dask[dataframe,distributed]>=2024.2.0",
     "explainerdashboard>=0.4.3",
     "gradio>=3.44.4",
     "lightgbm>=4.1.0",
-    "modin[ray]>=0.25.0; python_version < '3.12'",
+#    "modin[ray]>=0.25.0; python_version < '3.12'",
     "optuna-integration>=3.6.0",
-    "polars>=0.20.7",
-    "pyarrow>=15.0.0",
-    "pyspark>=3.5.0",
+#    "polars>=0.20.7",
+#    "pyarrow>=15.0.0",
+#    "pyspark>=3.5.0",
     "ray[serve]>=2.9.1; python_version < '3.12'",
     "requests>=2.31.0",
     "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
@@ -83,7 +83,7 @@ test = [
 ]
 doc = [
     "jupyter-contrib-nbextensions>=0.7.0",
-    "kaleido>=0.2.1",  # For plotly static image export
+    "kaleido==0.2.1",  # For plotly static image export
     "mike>=2.0.0",  # For versioning
     "mkdocs>=1.5.3",
     "mkdocs-autorefs>=1.0.1",

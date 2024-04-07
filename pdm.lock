@@ -5,7 +5,7 @@
 groups = ["default", "doc", "full", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:6597d7fae9e645b5a025566f54efcba577f19660d1a70efde9452cf56ad37b42"
+content_hash = "sha256:8e0a99d4705180766e85aa2e70faf9bcd8ec85af9b9640cd0afc714ee7cc3eb1"
 
 [[package]]
 name = "absl-py"
@@ -1180,78 +1180,6 @@ files = [
 ]
 
 [[package]]
-name = "dask"
-version = "2024.4.0"
-requires_python = ">=3.9"
-summary = "Parallel PyData with Task Scheduling"
-groups = ["full"]
-dependencies = [
-    "click>=8.1",
-    "cloudpickle>=1.5.0",
-    "fsspec>=2021.09.0",
-    "importlib-metadata>=4.13.0; python_version < \"3.12\"",
-    "packaging>=20.0",
-    "partd>=1.2.0",
-    "pyyaml>=5.3.1",
-    "toolz>=0.10.0",
-]
-files = [
-    {file = "dask-2024.4.0-py3-none-any.whl", hash = "sha256:f8332781ffde3d3e49df31fe4066e1eab571a87b94a11661a8ecf06e2892ee6d"},
-    {file = "dask-2024.4.0.tar.gz", hash = "sha256:d5be22660b332865e7e868df2f1322a75f6cacaf8dd9ec08057e6fa8a96a19ac"},
-]
-
-[[package]]
-name = "dask-expr"
-version = "1.0.9"
-requires_python = ">=3.9"
-summary = "High Level Expressions for Dask "
-groups = ["full"]
-dependencies = [
-    "dask==2024.4.0",
-    "pandas>=2",
-    "pyarrow>=7.0.0",
-]
-files = [
-    {file = "dask-expr-1.0.9.tar.gz", hash = "sha256:da9f0b25d67e1d7e41958181dd20f418830c47123c52916acb42885b56760ecc"},
-    {file = "dask_expr-1.0.9-py3-none-any.whl", hash = "sha256:74ebe50577310a10aeec5ae7e8b1ca03e5d7875211c3b2d8915eac01590e185d"},
-]
-
-[[package]]
-name = "dask"
-version = "2024.4.0"
-extras = ["array"]
-requires_python = ">=3.9"
-summary = "Parallel PyData with Task Scheduling"
-groups = ["full"]
-dependencies = [
-    "dask==2024.4.0",
-    "numpy>=1.21",
-]
-files = [
-    {file = "dask-2024.4.0-py3-none-any.whl", hash = "sha256:f8332781ffde3d3e49df31fe4066e1eab571a87b94a11661a8ecf06e2892ee6d"},
-    {file = "dask-2024.4.0.tar.gz", hash = "sha256:d5be22660b332865e7e868df2f1322a75f6cacaf8dd9ec08057e6fa8a96a19ac"},
-]
-
-[[package]]
-name = "dask"
-version = "2024.4.0"
-extras = ["dataframe", "distributed"]
-requires_python = ">=3.9"
-summary = "Parallel PyData with Task Scheduling"
-groups = ["full"]
-dependencies = [
-    "dask-expr<1.1,>=1.0",
-    "dask==2024.4.0",
-    "dask[array]",
-    "distributed==2024.4.0",
-    "pandas>=1.3",
-]
-files = [
-    {file = "dask-2024.4.0-py3-none-any.whl", hash = "sha256:f8332781ffde3d3e49df31fe4066e1eab571a87b94a11661a8ecf06e2892ee6d"},
-    {file = "dask-2024.4.0.tar.gz", hash = "sha256:d5be22660b332865e7e868df2f1322a75f6cacaf8dd9ec08057e6fa8a96a19ac"},
-]
-
-[[package]]
 name = "dataclasses-json"
 version = "0.6.4"
 requires_python = ">=3.7,<4.0"
@@ -1330,34 +1258,6 @@ groups = ["full", "lint"]
 files = [
     {file = "distlib-0.3.8-py2.py3-none-any.whl", hash = "sha256:034db59a0b96f8ca18035f36290806a9a6e6bd9d1ff91e45a7f172eb17e51784"},
     {file = "distlib-0.3.8.tar.gz", hash = "sha256:1530ea13e350031b6312d8580ddb6b27a104275a31106523b8f123787f494f64"},
-]
-
-[[package]]
-name = "distributed"
-version = "2024.4.0"
-requires_python = ">=3.9"
-summary = "Distributed scheduler for Dask"
-groups = ["full"]
-dependencies = [
-    "click>=8.0",
-    "cloudpickle>=1.5.0",
-    "dask==2024.4.0",
-    "jinja2>=2.10.3",
-    "locket>=1.0.0",
-    "msgpack>=1.0.0",
-    "packaging>=20.0",
-    "psutil>=5.7.2",
-    "pyyaml>=5.3.1",
-    "sortedcontainers>=2.0.5",
-    "tblib>=1.6.0",
-    "toolz>=0.10.0",
-    "tornado>=6.0.4",
-    "urllib3>=1.24.3",
-    "zict>=3.0.0",
-]
-files = [
-    {file = "distributed-2024.4.0-py3-none-any.whl", hash = "sha256:fea01a71877b1013fe36b6e5ed759d360ef7fdcd668c5d5ad11adcca2d386d7a"},
-    {file = "distributed-2024.4.0.tar.gz", hash = "sha256:bf53bb2aac89f4525f0d372fa755262fe710c5a069b0bf0ef7b81fc3b6c7841f"},
 ]
 
 [[package]]
@@ -2917,11 +2817,16 @@ files = [
 
 [[package]]
 name = "kaleido"
-version = "0.2.1.post1"
+version = "0.2.1"
 summary = "Static image export for web-based visualization libraries with zero dependencies"
 groups = ["doc"]
 files = [
-    {file = "kaleido-0.2.1.post1-py2.py3-none-manylinux2014_armv7l.whl", hash = "sha256:d313940896c24447fc12c74f60d46ea826195fc991f58569a6e73864d53e5c20"},
+    {file = "kaleido-0.2.1-py2.py3-none-macosx_10_11_x86_64.whl", hash = "sha256:ca6f73e7ff00aaebf2843f73f1d3bacde1930ef5041093fe76b83a15785049a7"},
+    {file = "kaleido-0.2.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:bb9a5d1f710357d5d432ee240ef6658a6d124c3e610935817b4b42da9c787c05"},
+    {file = "kaleido-0.2.1-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:aa21cf1bf1c78f8fa50a9f7d45e1003c387bd3d6fe0a767cfbbf344b95bdc3a8"},
+    {file = "kaleido-0.2.1-py2.py3-none-manylinux2014_aarch64.whl", hash = "sha256:845819844c8082c9469d9c17e42621fbf85c2b237ef8a86ec8a8527f98b6512a"},
+    {file = "kaleido-0.2.1-py2.py3-none-win32.whl", hash = "sha256:ecc72635860be616c6b7161807a65c0dbd9b90c6437ac96965831e2e24066552"},
+    {file = "kaleido-0.2.1-py2.py3-none-win_amd64.whl", hash = "sha256:4670985f28913c2d063c5734d125ecc28e40810141bdb0a46f15b76c1d45f23c"},
 ]
 
 [[package]]
@@ -3083,17 +2988,6 @@ files = [
     {file = "llvmlite-0.42.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d47494552559e00d81bfb836cf1c4d5a5062e54102cc5767d5aa1e77ccd2505c"},
     {file = "llvmlite-0.42.0-cp312-cp312-win_amd64.whl", hash = "sha256:05cb7e9b6ce69165ce4d1b994fbdedca0c62492e537b0cc86141b6e2c78d5888"},
     {file = "llvmlite-0.42.0.tar.gz", hash = "sha256:f92b09243c0cc3f457da8b983f67bd8e1295d0f5b3746c7a1861d7a99403854a"},
-]
-
-[[package]]
-name = "locket"
-version = "1.0.0"
-requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-summary = "File-based locks for Python on Linux and Windows"
-groups = ["full"]
-files = [
-    {file = "locket-1.0.0-py2.py3-none-any.whl", hash = "sha256:b6c819a722f7b6bd955b80781788e4a66a55628b858d347536b7e81325a3a5e3"},
-    {file = "locket-1.0.0.tar.gz", hash = "sha256:5c0d4c052a8bbbf750e056a8e65ccd309086f4f0f18a2eac306a8dfa4112a632"},
 ]
 
 [[package]]
@@ -3620,43 +3514,6 @@ files = [
 ]
 
 [[package]]
-name = "modin"
-version = "0.28.0"
-requires_python = ">=3.9"
-summary = "Modin: Make your pandas code run faster by changing one line of code."
-groups = ["full"]
-marker = "python_version < \"3.12\""
-dependencies = [
-    "fsspec>=2022.11.0",
-    "numpy>=1.22.4",
-    "packaging>=21.0",
-    "pandas<2.3,>=2.2",
-    "psutil>=5.8.0",
-]
-files = [
-    {file = "modin-0.28.0-py3-none-any.whl", hash = "sha256:d40999bf5a1a64eb9a583815c32e7ac0a6041448334c25c1261ad5addf8e2579"},
-    {file = "modin-0.28.0.tar.gz", hash = "sha256:32219cc958b3645eef17782e684189b5e13a01c8051cf5938202c52b7bfd5cc0"},
-]
-
-[[package]]
-name = "modin"
-version = "0.28.0"
-extras = ["ray"]
-requires_python = ">=3.9"
-summary = "Modin: Make your pandas code run faster by changing one line of code."
-groups = ["full"]
-marker = "python_version < \"3.12\""
-dependencies = [
-    "modin==0.28.0",
-    "pyarrow>=7.0.0",
-    "ray[default]!=2.5.0,>=1.13.0",
-]
-files = [
-    {file = "modin-0.28.0-py3-none-any.whl", hash = "sha256:d40999bf5a1a64eb9a583815c32e7ac0a6041448334c25c1261ad5addf8e2579"},
-    {file = "modin-0.28.0.tar.gz", hash = "sha256:32219cc958b3645eef17782e684189b5e13a01c8051cf5938202c52b7bfd5cc0"},
-]
-
-[[package]]
 name = "mpmath"
 version = "1.3.0"
 summary = "Python library for arbitrary-precision floating-point arithmetic"
@@ -3673,6 +3530,7 @@ version = "1.0.8"
 requires_python = ">=3.8"
 summary = "MessagePack serializer"
 groups = ["full"]
+marker = "python_version < \"3.12\""
 files = [
     {file = "msgpack-1.0.8-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:505fe3d03856ac7d215dbe005414bc28505d26f0c128906037e66d98c4e95868"},
     {file = "msgpack-1.0.8-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e6b7842518a63a9f17107eb176320960ec095a8ee3b4420b5f688e24bf50c53c"},
@@ -4407,21 +4265,6 @@ files = [
 ]
 
 [[package]]
-name = "partd"
-version = "1.4.1"
-requires_python = ">=3.7"
-summary = "Appendable key-value storage"
-groups = ["full"]
-dependencies = [
-    "locket",
-    "toolz",
-]
-files = [
-    {file = "partd-1.4.1-py3-none-any.whl", hash = "sha256:27e766663d36c161e2827aa3e28541c992f0b9527d3cca047e13fb3acdb989e6"},
-    {file = "partd-1.4.1.tar.gz", hash = "sha256:56c25dd49e6fea5727e731203c466c6e092f308d8f0024e199d02f6aa2167f67"},
-]
-
-[[package]]
 name = "pathspec"
 version = "0.12.1"
 requires_python = ">=3.8"
@@ -4604,21 +4447,6 @@ files = [
 ]
 
 [[package]]
-name = "polars"
-version = "0.20.18"
-requires_python = ">=3.8"
-summary = "Blazingly fast DataFrame library"
-groups = ["full"]
-files = [
-    {file = "polars-0.20.18-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:e305f5e6c0b8dc37fe0ff3bb1143a8bf0341134e0b23dec7c50a148f426acceb"},
-    {file = "polars-0.20.18-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:26716f074301f583da9af93108d57da631622d6496cbcbb8c08476180953f408"},
-    {file = "polars-0.20.18-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5b3843f69228df68cb82e39647c212fde58671c064c25a0c4d544f9446160a7e"},
-    {file = "polars-0.20.18-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:4b775e9677d0050775243400def1f5de4dd02b5ee220873406abc4028228525e"},
-    {file = "polars-0.20.18-cp38-abi3-win_amd64.whl", hash = "sha256:73b81b9582c48f0ca4ae08c0adc56917b0c55682044bedf0eccd3f94e4e39169"},
-    {file = "polars-0.20.18.tar.gz", hash = "sha256:8a321cbdbb459e3c0cc1af2ce6ac930d0d3b5ccbeb2dd3e4237ad07d487fd290"},
-]
-
-[[package]]
 name = "pre-commit"
 version = "3.7.0"
 requires_python = ">=3.9"
@@ -4767,16 +4595,6 @@ files = [
     {file = "py_spy-0.3.14-py2.py3-none-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:3e8e48032e71c94c3dd51694c39e762e4bbfec250df5bf514adcdd64e79371e0"},
     {file = "py_spy-0.3.14-py2.py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:f59b0b52e56ba9566305236375e6fc68888261d0d36b5addbe3cf85affbefc0e"},
     {file = "py_spy-0.3.14-py2.py3-none-win_amd64.whl", hash = "sha256:8f5b311d09f3a8e33dbd0d44fc6e37b715e8e0c7efefafcda8bfd63b31ab5a31"},
-]
-
-[[package]]
-name = "py4j"
-version = "0.10.9.7"
-summary = "Enables Python programs to dynamically access arbitrary Java objects"
-groups = ["full"]
-files = [
-    {file = "py4j-0.10.9.7-py2.py3-none-any.whl", hash = "sha256:85defdfd2b2376eb3abf5ca6474b51ab7e0de341c75a02f46dc9b5976f5a5c1b"},
-    {file = "py4j-0.10.9.7.tar.gz", hash = "sha256:0b6e5315bb3ada5cf62ac651d107bb2ebc02def3dee9d9548e3baac644ea8dbb"},
 ]
 
 [[package]]
@@ -5009,19 +4827,6 @@ dependencies = [
 files = [
     {file = "pyro-ppl-1.9.0.tar.gz", hash = "sha256:41f4c005159568280fbc511648960a98a2b1a410027d8bd0a43220ac9b102cdf"},
     {file = "pyro_ppl-1.9.0-py3-none-any.whl", hash = "sha256:33e63fcd4df7a81aa295b6d9ce572751921b5ad2803f5c2b30692c824d2cc90d"},
-]
-
-[[package]]
-name = "pyspark"
-version = "3.5.1"
-requires_python = ">=3.8"
-summary = "Apache Spark Python API"
-groups = ["full"]
-dependencies = [
-    "py4j==0.10.9.7",
-]
-files = [
-    {file = "pyspark-3.5.1.tar.gz", hash = "sha256:dd6569e547365eadc4f887bf57f153e4d582a68c4b490de475d55b9981664910"},
 ]
 
 [[package]]
@@ -5338,41 +5143,6 @@ dependencies = [
     "protobuf!=3.19.5,>=3.15.3",
     "pyyaml",
     "requests",
-]
-files = [
-    {file = "ray-2.10.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:8a174268c7b6ca9826e4884b837395b695a45c17049927965d1b4cc370184ba2"},
-    {file = "ray-2.10.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c193deed7e3f604cdb37047f5646cab14f4337693dd32add8bc902dfadb89f75"},
-    {file = "ray-2.10.0-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:a3db89d22afc7a0a976249715dd90ffe69f7692d32cb599cd1afbc38482060f7"},
-    {file = "ray-2.10.0-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:cb74f7d2aa5a21e5f9dcb315a4f9bde822328e76ba95cd0ba370cfda098a67f4"},
-    {file = "ray-2.10.0-cp310-cp310-win_amd64.whl", hash = "sha256:44ab600fe0b5a12675d0d42d564994ac4e53286217c4de1c4eb00d74ae79ef24"},
-    {file = "ray-2.10.0-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:8eb606b7d247213b377ccca0f8d425f9c61a48b23e9b2e4566bc75f66d797bb5"},
-    {file = "ray-2.10.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8eb11aec8a65946f7546d0e703158c03a85a8be27332dbbf86d9411802700e7e"},
-    {file = "ray-2.10.0-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:5b4ec4b5707e18382685d0703ed04afd1602359a3056f6ae4b37588a0551eef3"},
-    {file = "ray-2.10.0-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:c7d1438cba8726ec9a59c96964e007b60a0728436647f48c383228692c2f2ee0"},
-    {file = "ray-2.10.0-cp311-cp311-win_amd64.whl", hash = "sha256:eceecea4133e63f5d607cc9f2a4278de51eeeeef552f694895e381aae9ff8522"},
-]
-
-[[package]]
-name = "ray"
-version = "2.10.0"
-extras = ["default"]
-requires_python = ">=3.8"
-summary = "Ray provides a simple, universal API for building distributed applications."
-groups = ["full"]
-marker = "python_version < \"3.12\""
-dependencies = [
-    "aiohttp-cors",
-    "aiohttp>=3.7",
-    "colorful",
-    "grpcio>=1.42.0; python_version >= \"3.10\"",
-    "opencensus",
-    "prometheus-client>=0.7.1",
-    "py-spy>=0.2.0",
-    "pydantic!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,<3",
-    "ray==2.10.0",
-    "requests",
-    "smart-open",
-    "virtualenv!=20.21.1,>=20.0.24",
 ]
 files = [
     {file = "ray-2.10.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:8a174268c7b6ca9826e4884b837395b695a45c17049927965d1b4cc370184ba2"},
@@ -6084,16 +5854,6 @@ files = [
 ]
 
 [[package]]
-name = "sortedcontainers"
-version = "2.4.0"
-summary = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
-groups = ["full"]
-files = [
-    {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
-    {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
-]
-
-[[package]]
 name = "soupsieve"
 version = "2.5"
 requires_python = ">=3.8"
@@ -6331,17 +6091,6 @@ files = [
     {file = "tbb-2021.12.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:a925e9a7c77d3a46ae31c34b0bb7f801c4118e857d137b68f68a8e458fcf2bd7"},
     {file = "tbb-2021.12.0-py3-none-win32.whl", hash = "sha256:b1725b30c174048edc8be70bd43bb95473f396ce895d91151a474d0fa9f450a8"},
     {file = "tbb-2021.12.0-py3-none-win_amd64.whl", hash = "sha256:fc2772d850229f2f3df85f1109c4844c495a2db7433d38200959ee9265b34789"},
-]
-
-[[package]]
-name = "tblib"
-version = "3.0.0"
-requires_python = ">=3.8"
-summary = "Traceback serialization library."
-groups = ["full"]
-files = [
-    {file = "tblib-3.0.0-py3-none-any.whl", hash = "sha256:80a6c77e59b55e83911e1e607c649836a69c103963c5f28a46cbeef44acf8129"},
-    {file = "tblib-3.0.0.tar.gz", hash = "sha256:93622790a0a29e04f0346458face1e144dc4d32f493714c6c3dff82a4adb77e6"},
 ]
 
 [[package]]
@@ -7483,17 +7232,6 @@ files = [
     {file = "yarl-1.9.4-cp312-cp312-win_amd64.whl", hash = "sha256:a9bd00dc3bc395a662900f33f74feb3e757429e545d831eef5bb280252631984"},
     {file = "yarl-1.9.4-py3-none-any.whl", hash = "sha256:928cecb0ef9d5a7946eb6ff58417ad2fe9375762382f1bf5c55e61645f2c43ad"},
     {file = "yarl-1.9.4.tar.gz", hash = "sha256:566db86717cf8080b99b58b083b773a908ae40f06681e87e589a976faf8246bf"},
-]
-
-[[package]]
-name = "zict"
-version = "3.0.0"
-requires_python = ">=3.8"
-summary = "Mutable mapping tools"
-groups = ["full"]
-files = [
-    {file = "zict-3.0.0-py2.py3-none-any.whl", hash = "sha256:5796e36bd0e0cc8cf0fbc1ace6a68912611c1dbd74750a3f3026b9b9d6a327ae"},
-    {file = "zict-3.0.0.tar.gz", hash = "sha256:e321e263b6a97aafc0790c3cfb3c04656b7066e6738c37fffcca95d803c9fba5"},
 ]
 
 [[package]]
