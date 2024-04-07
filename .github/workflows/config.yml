@@ -107,14 +107,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
-      - name: Free disk space
-        run: |
-          sudo df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo df -h
+#      - name: Free disk space
+#        if: ${{ matrix.os != 'windows-latest' }}
+#        run: |
+#          sudo df -h
+#          sudo rm -rf /usr/share/dotnet
+#          sudo rm -rf /opt/ghc
+#          sudo rm -rf "/usr/local/share/boost"
+#          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+#          sudo df -h
       - name: Install dependencies
         run: |
           pdm sync -G full -G test
