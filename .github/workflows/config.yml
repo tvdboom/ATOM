@@ -11,20 +11,7 @@ on:
       - development
 
 jobs:
-  free-disk-space:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Free disk space
-        run: |
-          sudo df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo df -h
-
   isort:
-    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -40,7 +27,6 @@ jobs:
         run: pdm run pre-commit run isort --all-files
 
   ruff:
-    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -56,7 +42,6 @@ jobs:
         run: pdm run pre-commit run ruff --all-files
 
   pre-commit-hooks:
-    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -80,7 +65,6 @@ jobs:
           pdm run pre-commit run trailing-whitespace --all-files
 
   mypy:
-    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -179,9 +163,16 @@ jobs:
 #          ./examples/
 
   documentation:
-    needs: free-disk-space
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space
+        run: |
+          sudo df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo df -h
       - name: Check out source repository
         uses: actions/checkout@v4
       - name: Set up pdm
