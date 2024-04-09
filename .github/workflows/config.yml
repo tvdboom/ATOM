@@ -11,22 +11,6 @@ on:
       - development
 
 jobs:
-  free-disk:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Free disk space
-        run: |
-          echo "=============================================="
-          echo "Freeing up disk space on CI system"
-          echo "=============================================="
-          df -h
-          # Deleting ~15GB
-          rm -rf /usr/share/dotnet/
-          rm -rf /opt/ghc
-          rm -rf /usr/local/share/boost
-          rm -rf "$AGENT_TOOLSDIRECTORY"
-          df -h
-
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -119,16 +103,19 @@ jobs:
     steps:
       - name: Free disk space
         run: |
-          echo "=============================================="
-          echo "Freeing up disk space on CI system"
-          echo "=============================================="
           df -h
-          rm -rf /usr/share/dotnet/
-          rm -rf /opt/ghc
-          rm -rf /usr/local/share/boost
-          rm -rf "$AGENT_TOOLSDIRECTORY"
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            Remove-Item -Path "C:\Program Files\dotnet" -Recurse -Force
+            Remove-Item -Path "C:\opt\ghc" -Recurse -Force
+            Remove-Item -Path "C:\ProgramData\boost" -Recurse -Force
+            Remove-Item -Path "$env:AGENT_TOOLSDIRECTORY" -Recurse -Force
+          else
+            rm -rf /usr/share/dotnet/
+            rm -rf /opt/ghc
+            rm -rf /usr/local/share/boost
+            rm -rf "$AGENT_TOOLSDIRECTORY"
+          fi
           df -h
-
       - name: Check out source repository
         uses: actions/checkout@v4
       - name: Set up pdm
@@ -198,21 +185,11 @@ jobs:
     steps:
       - name: Free disk space
         run: |
-          echo "=============================================="
-          echo "Freeing up disk space on CI system"
-          echo "=============================================="
           df -h
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            Remove-Item -Path "C:\Program Files\dotnet" -Recurse -Force
-            Remove-Item -Path "C:\opt\ghc" -Recurse -Force
-            Remove-Item -Path "C:\ProgramData\boost" -Recurse -Force
-            Remove-Item -Path "$env:AGENT_TOOLSDIRECTORY" -Recurse -Force
-          else
-            rm -rf /usr/share/dotnet/
-            rm -rf /opt/ghc
-            rm -rf /usr/local/share/boost
-            rm -rf "$AGENT_TOOLSDIRECTORY"
-          fi
+          rm -rf /usr/share/dotnet/
+          rm -rf /opt/ghc
+          rm -rf /usr/local/share/boost
+          rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
       - name: Check out source repository
         uses: actions/checkout@v4
