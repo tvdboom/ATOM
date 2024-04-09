@@ -104,15 +104,10 @@ jobs:
         shell: bash
         run: |
           df -h
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            Remove-Item -Path "C:\Program Files\dotnet" -Recurse -Force
-            Remove-Item -Path "$env:AGENT_TOOLSDIRECTORY" -Recurse -Force
-          else
-            rm -rf /usr/share/dotnet/
-            rm -rf /opt/ghc
-            rm -rf /usr/local/share/boost
-            rm -rf "$AGENT_TOOLSDIRECTORY"
-          fi
+          rm -rf /usr/share/dotnet/
+          rm -rf /opt/ghc
+          rm -rf /usr/local/share/boost
+          rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
       - name: Check out source repository
         uses: actions/checkout@v4
