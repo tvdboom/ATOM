@@ -24,7 +24,6 @@ jobs:
           rm -rf /usr/share/dotnet/
           rm -rf /opt/ghc
           rm -rf /usr/local/share/boost
-          rm -rf /dev/shm/
           rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
 
@@ -128,7 +127,6 @@ jobs:
           rm -rf /usr/share/dotnet/
           rm -rf /opt/ghc
           rm -rf /usr/local/share/boost
-          rm -rf /dev/shm/
           rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
       - name: Check out source repository
@@ -208,7 +206,6 @@ jobs:
           rm -rf /usr/share/dotnet/
           rm -rf /opt/ghc
           rm -rf /usr/local/share/boost
-          rm -rf /dev/shm/
           rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
       - name: Check out source repository
