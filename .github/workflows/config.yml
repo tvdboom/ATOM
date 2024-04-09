@@ -100,23 +100,18 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11"]
     steps:
-      - name: Free disk space
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Free disk space windows
         run: |
           df -h
-          rm -rf /usr/share/dotnet/
-          rm -rf /opt/ghc
-          rm -rf /usr/local/share/boost
-          rm -rf "$AGENT_TOOLSDIRECTORY"
-          df -h
-      - name: Free disk space
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          df -h
-          Remove-Item -Path "C:\Program Files\dotnet" -Recurse -Force
-          Remove-Item -Path "C:\opt\ghc" -Recurse -Force
-          Remove-Item -Path "C:\ProgramData\boost" -Recurse -Force
-          Remove-Item -Path "$env:AGENT_TOOLSDIRECTORY" -Recurse -Force
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            Remove-Item -Path "C:\Program Files\dotnet" -Recurse -Force
+            Remove-Item -Path "$env:AGENT_TOOLSDIRECTORY" -Recurse -Force
+          else
+            rm -rf /usr/share/dotnet/
+            rm -rf /opt/ghc
+            rm -rf /usr/local/share/boost
+            rm -rf "$AGENT_TOOLSDIRECTORY"
+          fi
           df -h
       - name: Check out source repository
         uses: actions/checkout@v4
@@ -139,47 +134,36 @@ jobs:
         with:
           files: ./coverage.xml
 
-#  examples-tests:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Free disk space
-#        run: |
-#          echo "=============================================="
-#          echo "Freeing up disk space on CI system"
-#          echo "=============================================="
-#          echo "Listing 100 largest packages"
-#          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
-#          df -h
-#          echo "Removing large packages..."
-#          sudo apt-get remove -y '^dotnet-.*'
-#          sudo apt-get remove -y '^llvm-.*'
-#          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox mono-devel
-#          sudo apt-get autoremove -y
-#          sudo apt-get clean
-#          df -h
-#          echo "Removing large directories"
-#          # Deleting ~15GB
-#          rm -rf /usr/share/dotnet/
-#          df -h
-#      - name: Check out source repository
-#        uses: actions/checkout@v4
-#      - name: Set up pdm
-#        uses: pdm-project/setup-pdm@v4
-#        with:
-#          python-version: "3.11"
-#          cache: true
-#      - name: Install dependencies
-#        run: pdm sync -G full -G test
-#      - name: Run example notebooks
-#        run: |
-#          pdm run pytest \
-#          -n=auto \
-#          --nbmake \
-#          --nbmake-timeout=600 \
-#          --ignore=./examples/webapp/ \
-#          --ignore=./examples/accelerating_cuml.ipynb \
-#          --ignore=./examples/ray_backend.ipynb \
-#          ./examples/
+  examples-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free disk space
+        run: |
+          df -h
+          rm -rf /usr/share/dotnet/
+          rm -rf /opt/ghc
+          rm -rf /usr/local/share/boost
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+      - name: Check out source repository
+        uses: actions/checkout@v4
+      - name: Set up pdm
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.11"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -G full -G test
+      - name: Run example notebooks
+        run: |
+          pdm run pytest \
+          -n=auto \
+          --nbmake \
+          --nbmake-timeout=600 \
+          --ignore=./examples/webapp/ \
+          --ignore=./examples/accelerating_cuml.ipynb \
+          --ignore=./examples/ray_backend.ipynb \
+          ./examples/
 
   documentation:
     runs-on: ubuntu-latest
