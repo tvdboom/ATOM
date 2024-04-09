@@ -107,21 +107,37 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
-#      - name: Free disk space
-#        if: ${{ matrix.os != 'windows-latest' }}
-#        run: |
-#          sudo df -h
-#          sudo rm -rf /usr/share/dotnet
-#          sudo rm -rf /opt/ghc
-#          sudo rm -rf "/usr/local/share/boost"
-#          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-#          sudo df -h
+      - name: Free disk space
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          echo "=============================================="
+          echo "Freeing up disk space on CI system"
+          echo "=============================================="
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+          df -h
+          echo "Removing large packages..."
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y '^llvm-.*'
+          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox mono-devel
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          sudo df -h
+          echo "Removing large directories"
+          # Deleting ~15GB
+          sudo rm -rf /usr/share/dotnet/
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo df -h
       - name: Install dependencies
         run: |
           pdm sync -G full -G test
           pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
       - name: Run tests w/ coverage
-        run: pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+          pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
@@ -175,12 +191,24 @@ jobs:
     steps:
       - name: Free disk space
         run: |
-          sudo df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo df -h
+          echo "=============================================="
+          echo "Freeing up disk space on CI system"
+          echo "=============================================="
+          df -h
+          echo "Removing large packages..."
+          apt-get remove -y '^dotnet-.*'
+          apt-get remove -y '^llvm-.*'
+          apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox mono-devel
+          apt-get autoremove -y
+          apt-get clean
+          df -h
+          echo "Removing large directories"
+          # Deleting ~15GB
+          rm -rf /usr/share/dotnet/
+          rm -rf /opt/ghc
+          rm -rf "/usr/local/share/boost"
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
       - name: Check out source repository
         uses: actions/checkout@v4
       - name: Set up pdm
