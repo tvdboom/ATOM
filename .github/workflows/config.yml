@@ -94,7 +94,6 @@ jobs:
             languages: python
 
   unit-tests:
-    needs: free-disk
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -181,7 +180,6 @@ jobs:
 
   documentation:
     runs-on: ubuntu-latest
-    needs: free-disk
     steps:
       - name: Free disk space
         run: |
