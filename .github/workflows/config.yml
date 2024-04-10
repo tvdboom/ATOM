@@ -122,7 +122,6 @@ jobs:
           pip install cmdstanpy==0.9.5  # Fixes https://github.com/facebook/prophet/issues/2354
       - name: Run tests w/ coverage
         run: |
-          export PYTHONPATH="${PYTHONPATH}:$(pwd)"
           pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
