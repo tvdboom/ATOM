@@ -60,7 +60,7 @@ full = [
     "pyspark>=3.5.0",
     "ray[serve]>=2.9.1; python_version < '3.12'",
     "requests>=2.31.0",
-    "scikit-learn-intelex>=2023.2.1; platform_machine == 'x86_64' or platform_machine == 'AMD64'",
+    "scikit-learn-intelex>=2023.2.1; platform_system != 'Darwin' and (platform_machine == 'x86_64' or platform_machine == 'AMD64')",
     "schemdraw>=0.16",
     "statsforecast>=1.6.0",
     "sweetviz>=2.3.1",

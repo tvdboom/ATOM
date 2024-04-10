@@ -5,7 +5,7 @@
 groups = ["default", "doc", "full", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:0e9f8f19bc9d02ff126ce4748c535a2ccc2cbd61f97da0d0e2249983895912bc"
+content_hash = "sha256:1596f796c20e32a60c13f42ed41da1fe07d316353fa4c6bf223c3c5036f204cb"
 
 [[package]]
 name = "absl-py"
@@ -1024,7 +1024,7 @@ name = "daal"
 version = "2024.2.0"
 summary = "Intel® oneAPI Data Analytics Library"
 groups = ["full"]
-marker = "platform_machine == \"x86_64\" or platform_machine == \"AMD64\""
+marker = "(platform_machine == \"x86_64\" or platform_machine == \"AMD64\") and platform_system != \"Darwin\""
 dependencies = [
     "tbb==2021.*",
 ]
@@ -1039,7 +1039,7 @@ version = "2024.2.0"
 requires_python = ">=3.7"
 summary = "Intel® oneAPI Data Analytics Library"
 groups = ["full"]
-marker = "platform_machine == \"x86_64\" or platform_machine == \"AMD64\""
+marker = "(platform_machine == \"x86_64\" or platform_machine == \"AMD64\") and platform_system != \"Darwin\""
 dependencies = [
     "daal==2024.2.0",
     "numpy>=1.19",
@@ -5841,7 +5841,7 @@ version = "2024.2.0"
 requires_python = ">=3.7"
 summary = "Intel(R) Extension for Scikit-learn is a seamless way to speed up your Scikit-learn application."
 groups = ["full"]
-marker = "platform_machine == \"x86_64\" or platform_machine == \"AMD64\""
+marker = "(platform_machine == \"x86_64\" or platform_machine == \"AMD64\") and platform_system != \"Darwin\""
 dependencies = [
     "daal4py==2024.2.0",
     "scikit-learn>=0.22",
@@ -6330,7 +6330,7 @@ name = "tbb"
 version = "2021.12.0"
 summary = "Intel® oneAPI Threading Building Blocks"
 groups = ["full"]
-marker = "platform_machine == \"x86_64\" or platform_machine == \"AMD64\""
+marker = "(platform_machine == \"x86_64\" or platform_machine == \"AMD64\") and platform_system != \"Darwin\""
 files = [
     {file = "tbb-2021.12.0-py2.py3-none-manylinux1_i686.whl", hash = "sha256:f2cc9a7f8ababaa506cbff796ce97c3bf91062ba521e15054394f773375d81d8"},
     {file = "tbb-2021.12.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:a925e9a7c77d3a46ae31c34b0bb7f801c4118e857d137b68f68a8e458fcf2bd7"},

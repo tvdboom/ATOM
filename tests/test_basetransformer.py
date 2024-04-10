@@ -9,7 +9,7 @@ import multiprocessing
 import os
 from logging import Logger
 from pathlib import Path
-from platform import machine
+from platform import machine, system
 from random import sample
 from unittest.mock import patch
 
@@ -65,7 +65,7 @@ def test_engine_parameter(engine):
     assert base.engine == EngineTuple()
 
 
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
+@pytest.mark.skipif(system() == "Darwin" or machine() not in ("x86_64", "AMD64"))
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
     BaseTransformer(device="gpu", engine={"estimator": "sklearnex"})
@@ -374,7 +374,7 @@ def test_inherit_sp():
 
 # Test _get_est_class ============================================== >>
 
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
+@pytest.mark.skipif(system() == "Darwin" or machine() not in ("x86_64", "AMD64"))
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
     base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})
