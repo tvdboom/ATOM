@@ -65,7 +65,9 @@ def test_engine_parameter(engine):
     assert base.engine == EngineTuple()
 
 
-@pytest.mark.skipif(system() == "Darwin" or machine() not in ("x86_64", "AMD64"))
+@pytest.mark.skipif(
+    system() == "Darwin" or machine() not in ("x86_64", "AMD64"), reason="No sklearnex"
+)
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
     BaseTransformer(device="gpu", engine={"estimator": "sklearnex"})
@@ -374,7 +376,9 @@ def test_inherit_sp():
 
 # Test _get_est_class ============================================== >>
 
-@pytest.mark.skipif(system() == "Darwin" or machine() not in ("x86_64", "AMD64"))
+@pytest.mark.skipif(
+    system() == "Darwin" or machine() not in ("x86_64", "AMD64"), reason="No sklearnex"
+)
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
     base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})

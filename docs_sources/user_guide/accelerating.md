@@ -125,11 +125,16 @@ engine.
 
 ### cuML
 
-[cuML](https://github.com/rapidsai/cuml) is the machine learning library
-of the [RAPIDS](https://rapids.ai/) project. cuML enables you to run
-traditional tabular ML tasks on GPUs without going into the details of
-CUDA programming. For large datasets, these GPU-based implementations can
-complete 10-50x faster than their CPU equivalents.
+[cuML](https://github.com/rapidsai/cuml) is the machine learning library of the [RAPIDS](https://rapids.ai/) project. cuML
+enables you to run traditional tabular ML tasks on GPUs without going into the
+details of CUDA programming. For large datasets, these GPU-based implementations
+can complete 10-50x faster than their CPU equivalents.
+
+ATOM uses `pandas` pandas (which in turn uses `numpy`) as its [data backend][date-engines].
+This means that the data must move from CPU to GPU memory before it can be used
+by a cuML estimator. To avoid this overhead, consider using [cudf-pandas](https://rapids.ai/cudf-pandas/),
+which accelerates pandas' workflows on GPU, with automatic CPU fallback if needed.
+Remember to load `cudf.pandas` **before** importing ATOM.
 
 !!! warning
     * cuML estimators don't support [multioutput tasks][].
@@ -164,7 +169,7 @@ complete 10-50x faster than their CPU equivalents.
 * Drivers:
     - CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
 * Libraries:
-    - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=23.08
+    - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=24.04
 
 #### Supported estimators
 

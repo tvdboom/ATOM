@@ -162,7 +162,9 @@ def test_multivariate_forecast_custom_seasonality():
     )
 
 
-@pytest.mark.skipif(system() == "Darwin" or machine() not in ("x86_64", "AMD64"))
+@pytest.mark.skipif(
+    system() == "Darwin" or machine() not in ("x86_64", "AMD64"), reason="No sklearnex"
+)
 @pytest.mark.parametrize("device", ["cpu", "gpu"])
 def test_models_sklearnex_classification(device):
     """Assert the sklearnex engine works for classification tasks."""
