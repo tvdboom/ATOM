@@ -43,15 +43,17 @@ from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import Bunch, _print_elapsed_time
+from sklearn.utils import Bunch
+from sklearn.utils._user_interface import _print_elapsed_time
 from sklearn.utils.validation import _check_response_method, _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
     Int, IntLargerEqualZero, MetricFunction, Model, Pandas, PandasConvertible,
-    Predictor, Scalar, Scorer, Segment, Sequence, Transformer, Verbose,
-    XConstructor, XReturn, YConstructor, YReturn, int_t, segment_t, sequence_t,
+    PosLabel, Predictor, Scalar, Scorer, Segment, Sequence, Transformer,
+    Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t, segment_t,
+    sequence_t,
 )
 
 
@@ -245,6 +247,7 @@ class DataConfig:
     ignore: tuple[str, ...] = ()
     sp: Bunch = field(default_factory=Bunch)
     shuffle: Bool = False
+    pos_label: PosLabel = 1
     stratify: Int | str | None = None
     n_rows: Scalar = 1
     test_size: Scalar = 0.2
@@ -2112,7 +2115,7 @@ def check_is_fitted(
     return is_fitted
 
 
-def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
+def get_custom_scorer(metric: str | MetricFunction | Scorer, pos_label: PosLabel = 1) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -2123,6 +2126,9 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
         Name, function or scorer to get the scorer from. If it's a
         function, the scorer is created using the default parameters
         of sklearn's `make_scorer`.
+
+    pos_label: bool, int, float or str, default=1
+        Positive label for binary/multilabel classification.
 
     Returns
     -------
@@ -2196,6 +2202,9 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
         scorer.name = scorer._score_func.__name__
     if not hasattr(scorer, "fullname"):
         scorer.fullname = scorer._score_func.__name__
+
+    if "pos_label" in sign(scorer._score_func):
+        scorer._kwargs["pos_label"] = pos_label
 
     return scorer
 

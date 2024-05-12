@@ -54,7 +54,7 @@ from atom.utils.types import (
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
     IntLargerZero, MetadataDict, MetricConstructor, ModelsConstructor, NItems,
-    NJobs, NormalizerStrats, NumericalStrats, Operators, Predictor,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, PosLabel, Predictor,
     PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
     SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
     XReturn, XSelector, YReturn, YSelector, sequence_t,
@@ -274,6 +274,22 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             f"Branch {current} successfully deleted. "
             f"Switched to branch {self.branch.name}.", 1,
         )
+
+    @property
+    def pos_label(self) -> PosLabel:
+        """Positive label for binary/multilabel classification tasks."""
+        return self._config.pos_label
+
+    @pos_label.setter
+    @beartype
+    def pos_label(self, value: PosLabel):
+        if not self.task.is_binary:
+            raise ValueError(
+                "The pos_label property can only be set "
+                "for binary/multilabel classification tasks."
+            )
+
+        self._config.pos_label = value
 
     @property
     def metadata(self) -> Bunch:
@@ -970,7 +986,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             if dense2sparse and name not in lst(self.target):  # Skip target cols
                 # Select the most frequent value to fill the sparse array
-                fill_value = column.mode(dropna=False)[0]
+                fill_value = column.mode()[0]
 
                 # Convert first to a sparse array, else fails for nullable pd types
                 sparse_col = pd.arrays.SparseArray(column, fill_value=fill_value)
@@ -983,7 +999,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         t2 = (pd.UInt8Dtype, pd.UInt16Dtype, pd.UInt32Dtype, pd.UInt64Dtype)
         t3 = (pd.Float32Dtype, pd.Float64Dtype)
 
-        types: dict[str, list] = {
+        types = {
             "int": [(x.name, np.iinfo(x.type).min, np.iinfo(x.type).max) for x in t1],
             "uint": [(x.name, np.iinfo(x.type).min, np.iinfo(x.type).max) for x in t2],
             "float": [(x.name, np.finfo(x.type).min, np.finfo(x.type).max) for x in t3],
@@ -1632,6 +1648,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         cleaner = self._add_transformer(cleaner, columns=columns)
         self.branch._mapping.update(cleaner.mapping_)
 
+        if self.task.is_binary and encode_target:
+            self.pos_label = 1
+
     @composed(crash, method_to_log)
     def decompose(
         self,
@@ -1885,7 +1904,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             strategy=strategy,
             include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
-        ).set_fit_request(sample_weights=self._config.get_sample_weight() is not None)
+        ).set_fit_request(sample_weight=self._config.get_sample_weight() is not None)
 
         self._add_transformer(scaler, columns=columns)
 

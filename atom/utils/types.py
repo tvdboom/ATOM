@@ -401,6 +401,7 @@ XDatasets: TypeAlias = Literal[
     "X_holdout",
 ]
 YDatasets: TypeAlias = Literal["y", "y_train", "y_test", "y_holdout"]
+PosLabel: TypeAlias = bool | Scalar | str
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
 SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
 FeatureNamesOut: TypeAlias = (

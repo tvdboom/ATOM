@@ -137,8 +137,8 @@ def test_experiment_creation(mlflow):
 @patch("dagshub.init")
 def test_experiment_dagshub(dagshub, request, token):
     """Assert that the experiment can be stored in dagshub."""
+    request.return_value.json.return_value.__getitem__.return_value = "user"
     token.return_value = "token"
-    request.return_value.text = {"username": "user1"}
 
     BaseTransformer(experiment="dagshub:test")
     dagshub.assert_called_once()

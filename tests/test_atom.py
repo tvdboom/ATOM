@@ -164,6 +164,21 @@ def test_branch_from_valid():
     assert atom.n_nans > 0
 
 
+def test_pos_label():
+    """Assert that the pos_label property is set for all metrics."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pos_label = 0
+    atom.run("LR")
+    assert atom._metric[0]._kwargs["pos_label"] == 0
+
+
+def test_pos_label_invalid_task():
+    """Assert that the pos_label property is set for all metrics."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    with pytest.raises(ValueError, match=".*pos_label property can only be set.*"):
+        atom.pos_label = 0
+
+
 def test_missing():
     """Assert that the missing property returns the values considered 'missing'."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -39,10 +39,10 @@ from optuna.trial import FrozenTrial, Trial, TrialState
 from pandas.io.formats.style import Styler
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
-    BaseCrossValidator, GroupKFold, GroupShuffleSplit, KFold, ShuffleSplit,
-    StratifiedGroupKFold, StratifiedKFold, StratifiedShuffleSplit,
+    BaseCrossValidator, FixedThresholdClassifier, GroupKFold,
+    GroupShuffleSplit, KFold, ShuffleSplit, StratifiedGroupKFold,
+    StratifiedKFold, StratifiedShuffleSplit, TunedThresholdClassifierCV,
 )
 from sklearn.model_selection._validation import cross_validate
 from sklearn.multioutput import (
@@ -65,16 +65,16 @@ from atom.plots import RunnerPlot
 from atom.utils.constants import COLOR_SCHEME, DF_ATTRS
 from atom.utils.patches import fit_and_score
 from atom.utils.types import (
-    HT, Backend, Bool, Engine, Float, FloatZeroToOneExc, Int,
-    IntLargerEqualZero, MetricConstructor, MetricFunction, NJobs, Pandas,
-    PredictionMethods, PredictionMethodsTS, Predictor, RowSelector, Scalar,
-    Scorer, Sequence, Stages, TargetSelector, Verbose, Warnings, XReturn,
-    XSelector, YConstructor, YReturn, YSelector, float_t, int_t,
+    HT, Backend, Bool, Engine, Float, Int, IntLargerEqualZero,
+    MetricConstructor, MetricFunction, NJobs, Pandas, PredictionMethods,
+    PredictionMethodsTS, Predictor, RowSelector, Scalar, Scorer, Sequence,
+    Stages, TargetSelector, Verbose, Warnings, XReturn, XSelector,
+    YConstructor, YReturn, YSelector, int_t,
 )
 from atom.utils.utils import (
     ClassMap, DataConfig, Goal, PlotCallback, ShapExplanation, Task,
     TrialsCallback, adjust, cache, check_dependency, check_empty, composed,
-    crash, estimator_has_attr, flt, get_cols, get_custom_scorer, has_task,
+    crash, estimator_has_attr, get_cols, get_custom_scorer, has_task,
     is_sparse, it, lst, merge, method_to_log, rnd, sign, time_to_str, to_df,
     to_series, to_tabular,
 )
@@ -245,6 +245,8 @@ class BaseModel(RunnerPlot):
             self._run = mlflow.start_run(run_name=self.name)
             mlflow.end_run()
 
+        self._threshold: Float = 0.5
+
         self._group = self._name  # sh and ts models belong to the same group
         self._evals: dict[str, list[Float]] = defaultdict(list)
         self._shap_explanation: ShapExplanation | None = None
@@ -331,6 +333,33 @@ class BaseModel(RunnerPlot):
     def fullname(self) -> str:
         """Return the model's class name."""
         return self.__class__.__name__
+
+    @property
+    def threshold(self) -> Float:
+        """Binary or multilabel classification threshold."""
+        return self._threshold
+
+    @threshold.setter
+    @beartype
+    def threshold(self, value: Float | None):
+        """Set the threshold."""
+        if not self.task.is_binary:
+            raise ValueError(
+                "The threshold property can only be set for "
+                "binary or multilabel classification tasks."
+            )
+        elif value is None:
+            self._threshold = 0.5
+        elif not 0 < value < 1:
+            raise ValueError("The threshold must lie between 0 and 1.")
+        else:
+            self._threshold = value
+
+        self._estimator = FixedThresholdClassifier(
+            self.estimator,
+            threshold=self._threshold,
+            pos_label=self._config.pos_label,
+        )
 
     @cached_property
     def _est_class(self) -> type[Predictor]:
@@ -582,7 +611,16 @@ class BaseModel(RunnerPlot):
                 elif self.task.is_regression:
                     estimator = MultiOutputRegressor(estimator)
 
-        return self._inherit(estimator, fixed=fixed)
+        estimator = self._inherit(estimator, fixed=fixed)
+
+        if self.threshold != 0.5:
+            estimator = FixedThresholdClassifier(
+                estimator=estimator,
+                threshold=self.threshold,
+                pos_label=self._config.pos_label,
+            )
+
+        return estimator
 
     def _fit_estimator(
         self,
@@ -915,12 +953,7 @@ class BaseModel(RunnerPlot):
         else:
             return scorer._sign * func(y_true, y_pred)
 
-    def _get_score(
-        self,
-        scorer: Scorer,
-        rows: RowSelector,
-        threshold: Sequence[FloatZeroToOneExc] | None = None,
-    ) -> Scalar:
+    def _get_score(self, scorer: Scorer, rows: RowSelector) -> Scalar:
         """Calculate a metric score.
 
         Parameters
@@ -933,39 +966,14 @@ class BaseModel(RunnerPlot):
             [Selection of rows][row-and-column-selection] on which to
             calculate the metric.
 
-        threshold: sequence or None, default=None
-            Thresholds between 0 and 1 to convert predicted probabilities
-            to class labels for every target column. Only used when:
-
-            - The parameter is not None.
-            - The task is binary or multilabel classification.
-            - The model has a `predict_proba` method.
-            - The metric evaluates predicted target values.
-
         Returns
         -------
         int or float
             Metric score on the selected data set.
 
         """
-        if (
-            scorer._response_method == "predict"
-            and threshold
-            and self.task.is_binary
-            and hasattr(self.estimator, "predict_proba")
-        ):
-            y_true, y_pred = self._get_pred(rows, method="predict_proba")
-            if isinstance(y_pred, pd.DataFrame):
-                # Update every target column with its corresponding threshold
-                for i, value in enumerate(threshold):
-                    y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
-            else:
-                y_pred = (y_pred > threshold[0]).astype("int")
-        else:
-            y_true, y_pred = self._get_pred(rows, method=scorer._response_method)
-
+        y_true, y_pred = self._get_pred(rows, method=scorer._response_method)
         result = rnd(self._score_from_pred(scorer, y_true, y_pred))
-
         # Log metric to mlflow run for predictions on data sets
         if self.experiment and isinstance(rows, str):
             MlflowClient().log_metric(
@@ -1836,13 +1844,17 @@ class BaseModel(RunnerPlot):
         `[model_name]_calibrate`. Since the estimator changed, the
         model is cleared. Only for classifiers.
 
+        !!! note
+            By default, the calibration is optimized using the training
+            set. This approach is subject to undesired overfitting. It's
+            preferred to use `cv="prefit"`, which uses the test set for
+            calibration, but only use this if you have another,
+            independent set for testing ([holdout set][data-sets]).
+
         Parameters
         ----------
         **kwargs
-            Additional keyword arguments for sklearn's CCV. Using
-            cv="prefit" will use the trained model and use the test
-            set for calibration. Use this only if you have another,
-            independent set for testing ([holdout set][data-sets]).
+            Additional keyword arguments for [CalibratedClassifierCV][].
 
         """
         calibrator = CalibratedClassifierCV(
@@ -2086,7 +2098,7 @@ class BaseModel(RunnerPlot):
 
         # Assign scoring from atom if not specified
         if kwargs.get("scoring"):
-            scorer = get_custom_scorer(kwargs.pop("scoring"))
+            scorer = get_custom_scorer(kwargs.pop("scoring"), pos_label=self._config.pos_label)
             scoring = {scorer.name: scorer}
         else:
             scoring = dict(self._metric)
@@ -2151,19 +2163,13 @@ class BaseModel(RunnerPlot):
         )
 
     @composed(crash, beartype)
-    def evaluate(
-        self,
-        metric: MetricConstructor = None,
-        rows: RowSelector = "test",
-        *,
-        threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-    ) -> pd.Series:
+    def evaluate(self, metric: MetricConstructor = None, rows: RowSelector = "test") -> pd.Series:
         """Get the model's scores for the provided metrics.
 
         !!! tip
             Use the [get_best_threshold][self-get_best_threshold] or
             [plot_threshold][] method to determine a suitable value for
-            the `threshold` parameter.
+            the [`threshold`][self-threshold] attribute.
 
         Parameters
         ----------
@@ -2175,36 +2181,12 @@ class BaseModel(RunnerPlot):
             [Selection of rows][row-and-column-selection] to calculate
             metric on.
 
-        threshold: float or sequence, default=0.5
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only used when:
-
-            - The task is binary or [multilabel][] classification.
-            - The model has a `predict_proba` method.
-            - The metric evaluates predicted probabilities.
-
-            For multilabel classification tasks, it's possible to provide
-            a sequence of thresholds (one per target column, as returned
-            by the [get_best_threshold][self-get_best_threshold] method).
-            If float, the same threshold is applied to all target columns.
-
         Returns
         -------
         pd.Series
             Scores of the model.
 
         """
-        if isinstance(threshold, float_t):
-            threshold_c = [threshold] * self.branch._data.n_targets  # Length=n_targets
-        elif len(threshold) != self.branch._data.n_targets:
-            raise ValueError(
-                "Invalid value for the threshold parameter. The length of the list "
-                f"list should be equal to the number of target columns, got len(target)"
-                f"={self.branch._data.n_targets} and len(threshold)={len(threshold)}."
-            )
-        else:
-            threshold_c = list(threshold)
-
         # Predefined metrics to show
         if metric is None:
             if self.task.is_classification:
@@ -2245,8 +2227,8 @@ class BaseModel(RunnerPlot):
 
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
-            scorer = get_custom_scorer(met)
-            scores[scorer.name] = self._get_score(scorer, rows=rows, threshold=threshold_c)
+            scorer = get_custom_scorer(met, pos_label=self._config.pos_label)
+            scores[scorer.name] = self._get_score(scorer, rows=rows)
 
         return scores
 
@@ -2310,35 +2292,58 @@ class BaseModel(RunnerPlot):
 
         self.fit(X, y)
 
-    @available_if(has_task("binary"))
-    @available_if(estimator_has_attr("predict_proba"))
+    @available_if(lambda self: self.task is Task.binary_classification)
     @composed(crash, beartype)
-    def get_best_threshold(self, rows: RowSelector = "train") -> Float | list[Float]:
-        """Get the threshold that maximizes the [ROC][] curve.
+    def get_best_threshold(self, metric: int | str | None = None, **kwargs) -> Float:
+        """Get the threshold that maximizes a metric.
 
-        Only available for models with a `predict_proba` method in a
-        binary or [multilabel][] classification task.
+        Post-tune the decision threshold (cut-off point) that is used
+        for converting posterior probability estimates (i.e., output of
+        `predict_proba`) or decision scores (i.e., output of
+        `decision_function`) into a class label. The tuning is done by
+        optimizing one of atom's metrics. Only available for models in
+        a binary classification task.
+
+        !!! note
+            By default, the threshold is optimized using the training
+            set. This approach is subject to undesired overfitting. It's
+            preferred to use `cv="prefit"`, which uses the test set for
+            calibration, but only use this if you have another,
+            independent set for testing ([holdout set][data-sets]).
 
         Parameters
         ----------
-        rows: hashable, segment, sequence or dataframe
-            [Selection of rows][row-and-column-selection] on which to
-            calculate the threshold.
+        metric: int, str or None, default=None
+            Metric to optimize on. If None, the main metric is used.
+
+        **kwargs
+            Additional keyword arguments for [TunedThresholdClassifierCV][].
 
         Returns
         -------
-        float or list
-            The best threshold or list of thresholds for multilabel tasks.
+        float
+            Optimized threshold value.
 
         """
-        results = []
-        for target in lst(self.target):
-            y_true, y_pred = self._get_pred(rows, target, method="predict_proba")
-            fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+        if metric is None:
+            scorer = self._metric[0]
+        else:
+            scorer = self._metric[self._get_metric(metric)[0]]
 
-            results.append(thresholds[np.argmax(tpr - fpr)])
+        estimator = TunedThresholdClassifierCV(
+            estimator=self.estimator,
+            scoring=scorer,
+            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
+            random_state=kwargs.pop("random_state", self.random_state),
+            **kwargs,
+        )
 
-        return flt(results)
+        if kwargs.get("cv") != "prefit":
+            estimator.fit(self.X_train, self.y_train)
+        else:
+            estimator.fit(self.X_test, self.y_test)
+
+        return estimator.best_threshold_
 
     @composed(crash, method_to_log, beartype)
     def inverse_transform(
@@ -2464,7 +2469,7 @@ class BaseModel(RunnerPlot):
         self._log(f"{self.fullname} estimator successfully saved.", 1)
 
     @composed(crash, method_to_log, beartype)
-    def serve(self, method: str = "predict", host: str = "127.0.0.1", port: Int = 8000):
+    def serve(self, method: str = "predict"):
         """Serve the model as rest API endpoint for inference.
 
         The complete pipeline is served with the model. The inference
@@ -2481,13 +2486,6 @@ class BaseModel(RunnerPlot):
         ----------
         method: str, default="predict"
             Estimator's method to do inference on.
-
-        host: str, default="127.0.0.1"
-            Host for HTTP servers to listen on. To expose serve
-            publicly, you probably want to set this to "0.0.0.0".
-
-        port: int, default=8000
-            Port for HTTP server.
 
         """
         check_dependency("ray")
@@ -2533,9 +2531,9 @@ class BaseModel(RunnerPlot):
         if not ray.is_initialized():
             ray.init(log_to_driver=False)
 
-        run(ServeModel.bind(pipeline=self.export_pipeline(), method=method), host=host, port=port)
+        run(ServeModel.bind(pipeline=self.export_pipeline(), method=method))
 
-        self._log(f"Serving model {self.fullname} on {host}:{port}...", 1)
+        self._log(f"Serving model {self.fullname}...", 1)
 
     @composed(crash, method_to_log, beartype)
     def transform(
@@ -2789,7 +2787,7 @@ class ClassRegModel(BaseModel):
             if metric is None:
                 scorer = self._metric[0]
             else:
-                scorer = get_custom_scorer(metric)
+                scorer = get_custom_scorer(metric, pos_label=self._config.pos_label)
 
             return self._score_from_est(
                 scorer=scorer,
@@ -3190,7 +3188,7 @@ class ForecastModel(BaseModel):
             if metric is None:
                 scorer = self._metric[0]
             else:
-                scorer = get_custom_scorer(metric)
+                scorer = get_custom_scorer(metric, pos_label=self._config.pos_label)
 
             return self._score_from_est(scorer, self.estimator, Xt, yt, **kwargs)  # type: ignore[arg-type]
 

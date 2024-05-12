@@ -34,12 +34,12 @@ dependencies = [
     "nltk>=3.8.1",
     "numpy>=1.23.0",
     "optuna>=3.6.0",
-    "pandas>=2.1.2",
+    "pandas>=2.2.2",
     "plotly>=5.18.0",
     "scikit-learn>=1.4.2",
     "scipy>=1.10.1",
     "shap>=0.43.0",
-    "sktime[forecasting]>=0.26.0",
+    "sktime[forecasting]>=0.29.0",
     "statsmodels>=0.14.1",
     "zoofs>=0.1.25",  # Keep at 0.1.25 because it's the max conda version
 ]

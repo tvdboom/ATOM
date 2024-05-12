@@ -447,7 +447,7 @@ def test_best_trial_property():
     atom.tree.best_trial = 4
     assert atom.tree.best_trial.number == 4
     atom.tree.best_trial = None
-    assert atom.tree.best_trial.number == 1
+    assert atom.tree.best_trial.number == 2
 
 
 def test_best_trial_property_invalid():
@@ -861,18 +861,12 @@ def test_full_train_new_mlflow_run():
     assert atom.gnb._run is not run
 
 
-def test_get_best_threshold_binary():
-    """Assert that the get_best_threshold method works for binary tasks."""
+def test_get_best_threshold():
+    """Assert that the get_best_threshold method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert 0 < atom.lr.get_best_threshold() < 1
-
-
-def test_get_best_threshold_multilabel():
-    """Assert that the get_best_threshold method works for multilabel tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
-    atom.run("LR")
-    assert len(atom.lr.get_best_threshold()) == len(atom.target)
+    atom.run("LR", metric=["f1", "auc"], errors='raise')
+    assert 0 < atom.lr.get_best_threshold(metric=None, cv="prefit", refit=False) < 1
+    assert 0 < atom.lr.get_best_threshold(metric=1) < 1
 
 
 def test_inverse_transform():

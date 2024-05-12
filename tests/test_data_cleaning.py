@@ -549,6 +549,14 @@ def test_imputing_numeric_drop():
     assert X.isna().sum().sum() == 0
 
 
+@pytest.mark.parametrize("strat_num", NumericalStrats.__args__)
+def test_imputing_numeric(strat_num):
+    """Assert that imputing numerical columns works."""
+    imputer = Imputer(strat_num=strat_num)
+    X, _ = imputer.fit_transform(X10_nan, y10)
+    assert X.isna().sum().sum() == 0
+
+
 def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
     imputer = Imputer(strat_num=3.2)
@@ -557,11 +565,11 @@ def test_imputing_numeric_number():
     assert X.isna().sum().sum() == 0
 
 
-@pytest.mark.parametrize("strat_num", NumericalStrats.__args__)
-def test_imputing_numeric(strat_num):
-    """Assert that imputing numerical columns works."""
-    imputer = Imputer(strat_num=strat_num)
+def test_imputing_numeric_callable():
+    """Assert that imputing numerical values with a callable works."""
+    imputer = Imputer(strat_num=lambda _: 3)
     X, _ = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == 3
     assert X.isna().sum().sum() == 0
 
 

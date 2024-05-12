@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from typing import Any, Literal, TypeVar, overload
 
 import numpy as np
@@ -420,10 +420,6 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
         self.strategy = strategy
         self.kwargs = kwargs
 
-    def _more_tags(self):
-        """Overwrite some default sklearn tags."""
-        return {"requires_y": True, "X_types": ["2darray", "sparse"]}
-
     def _log_changes(self, y: pd.Series):
         """Print the changes per target class.
 
@@ -783,10 +779,6 @@ class Cleaner(TransformerMixin):
         self.drop_duplicates = drop_duplicates
         self.drop_missing_target = drop_missing_target
         self.encode_target = encode_target
-
-    def _more_tags(self):
-        """Overwrite some default sklearn tags."""
-        return {"X_types": ["2darray", "sparse"]}
 
     def fit(self, X: XConstructor | None = None, y: YConstructor | None = None) -> Self:
         """Fit to data.
@@ -2041,7 +2033,7 @@ class Imputer(TransformerMixin):
 
     Parameters
     ----------
-    strat_num: str, int or float, default="mean"
+    strat_num: int, float, str or callable, default="mean"
         Imputing strategy for numerical columns. Choose from:
 
         - "drop": Drop rows containing missing values.
@@ -2060,6 +2052,9 @@ class Imputer(TransformerMixin):
         - "random": Impute with random values between the min and max
            of column.
         - int or float: Impute with provided numerical value.
+        - callable: Replace missing values using the scalar statistic
+          returned by running the callable over a dense 1d array
+          containing non-missing values of each column.
 
     strat_cat: str, default="most_frequent"
         Imputing strategy for categorical columns. Choose from:
@@ -2175,7 +2170,7 @@ class Imputer(TransformerMixin):
 
     def __init__(
         self,
-        strat_num: Scalar | NumericalStrats = "mean",
+        strat_num: Scalar | NumericalStrats | Callable[[Sequence[Scalar]], Scalar] = "mean",
         strat_cat: str | CategoricalStrats = "most_frequent",
         *,
         max_nan_rows: FloatLargerZero | None = None,
@@ -2274,6 +2269,8 @@ class Imputer(TransformerMixin):
                     missing_values=[pd.NA],
                     random_state=self.random_state,
                 )
+        elif callable(self.strat_num):
+            num_imputer = SimpleImputer(missing_values=pd.NA, strategy=self.strat_num)
         else:
             num_imputer = SimpleImputer(
                 missing_values=pd.NA,

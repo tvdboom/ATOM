@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from abc import ABCMeta
 from collections import defaultdict
-from functools import reduce
+from functools import partial, reduce
 from itertools import chain
 from pathlib import Path
 from typing import Any, Literal
@@ -43,7 +43,7 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     Task, adjust, check_canvas, check_dependency, check_predict_proba, crash,
-    divide, get_cols, get_custom_scorer, has_task, lst, rnd,
+    divide, get_cols, get_custom_scorer, has_task, lst, rnd, sign,
 )
 
 
@@ -2412,7 +2412,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             for i, (ax, fxs, pred) in enumerate(zip(axes, cols, predictions)):  # noqa: B905
                 # Draw line or contour plot
-                if len(pred["values"]) == 1:
+                if len(pred["grid_values"]) == 1:
                     # For both average and individual: draw ticks on the horizontal axis
                     for line in deciles[fxs[0]]:
                         fig.add_shape(
@@ -2431,7 +2431,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     # Draw the mean of the individual lines
                     if "average" in kind:
                         fig.add_scatter(
-                            x=pred["values"][0],
+                            x=pred["grid_values"][0],
                             y=pred["average"][target_c].ravel(),
                             mode="lines",
                             line={"width": 2, "color": color},
@@ -2452,7 +2452,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         )
                         for sample in pred["individual"][target_c, idx, :]:
                             fig.add_scatter(
-                                x=pred["values"][0],
+                                x=pred["grid_values"][0],
                                 y=sample,
                                 mode="lines",
                                 line={"width": 0.5, "color": color},
@@ -2466,8 +2466,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 else:
                     colorscale = PALETTE.get(BasePlot._fig.get_elem(m.name), "Teal")
                     fig.add_contour(
-                        x=pred["values"][0],
-                        y=pred["values"][1],
+                        x=pred["grid_values"][0],
+                        y=pred["grid_values"][1],
                         z=pred["average"][target_c],
                         contours={
                             "showlabels": True,
@@ -3505,7 +3505,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     metric_c.extend(m.split("+"))
                 else:
                     metric_c.append(m)
-            metric_c = [m if "time" in str(m) else get_custom_scorer(m) for m in metric_c]
+            metric_c = [
+                m if "time" in str(m) else get_custom_scorer(m, pos_label=self._config.pos_label)
+                for m in metric_c
+            ]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -3962,6 +3965,9 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             y_true, y_pred = m._get_pred(rows, target, method="predict_proba")
             for met in metric_c:
+                if "pos_label" in sign(met):
+                    met = partial(met, pos_label=self._config.pos_label)
+
                 self._draw_line(
                     x=(x := np.linspace(0, 1, steps)),
                     y=[met(y_true, y_pred >= step) for step in x],

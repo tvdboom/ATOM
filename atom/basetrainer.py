@@ -127,19 +127,22 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
             if self.task.is_classification:
                 if self.task is Task.binary_classification:
                     # Binary classification
-                    self._metric = ClassMap(get_custom_scorer("f1"))
+                    scorer = get_custom_scorer("f1", pos_label=self._config.pos_label)
                 elif self.task.is_multiclass:
                     # Multiclass, multiclass-multioutput classification
-                    self._metric = ClassMap(get_custom_scorer("f1_weighted"))
+                    scorer = get_custom_scorer("f1_weighted", pos_label=self._config.pos_label)
                 elif self.task is Task.multilabel_classification:
                     # Multilabel classification
-                    self._metric = ClassMap(get_custom_scorer("ap"))
+                    scorer = get_custom_scorer("ap", pos_label=self._config.pos_label)
             elif self.task.is_regression:
                 # Regression, multioutput regression
-                self._metric = ClassMap(get_custom_scorer("r2"))
+                scorer = get_custom_scorer("r2", pos_label=self._config.pos_label)
             elif self.task.is_forecast:
                 # Forecasting
-                self._metric = ClassMap(get_custom_scorer("mape"))
+                scorer = get_custom_scorer("mape", pos_label=self._config.pos_label)
+
+            self._metric = ClassMap(scorer)
+
         elif not isinstance(self._metric, ClassMap):
             metrics = []
             for m in lst(self._metric):
@@ -148,7 +151,9 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
                 else:
                     metrics.append(m)
 
-            self._metric = ClassMap(get_custom_scorer(m) for m in metrics)
+            self._metric = ClassMap(
+                get_custom_scorer(m, pos_label=self._config.pos_label) for m in metrics
+            )
 
         # Define models ============================================ >>
 

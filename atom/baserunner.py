@@ -370,7 +370,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             """
             if isinstance(sp, str):
                 if offset := to_offset(sp):  # Convert to pandas' DateOffset
-                    name, period = offset.name.split("-")[0], offset.n
+                    name, period = offset.name.split("-")[0][0], offset.n
 
                 if name not in SeasonalPeriod.__members__:
                     raise ValueError(

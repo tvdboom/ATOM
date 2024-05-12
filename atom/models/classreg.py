@@ -154,7 +154,7 @@ class AutomaticRelevanceDetermination(ClassRegModel):
 
         """
         return {
-            "n_iter": Int(100, 1000, step=10),
+            "max_iter": Int(100, 1000, step=10),
             "alpha_1": Float(1e-4, 1, log=True),
             "alpha_2": Float(1e-4, 1, log=True),
             "lambda_1": Float(1e-4, 1, log=True),
@@ -290,7 +290,7 @@ class BayesianRidge(ClassRegModel):
 
         """
         return {
-            "n_iter": Int(100, 1000, step=10),
+            "max_iter": Int(100, 1000, step=10),
             "alpha_1": Float(1e-4, 1, log=True),
             "alpha_2": Float(1e-4, 1, log=True),
             "lambda_1": Float(1e-4, 1, log=True),
