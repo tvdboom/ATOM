@@ -39,9 +39,9 @@ from atom.models import MODELS, create_stacking_model, create_voting_model
 from atom.pipeline import Pipeline
 from atom.utils.constants import COLOR_SCHEME, DF_ATTRS
 from atom.utils.types import (
-    Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
-    IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
-    Pandas, RowSelector, Scalar, Seasonality, Segment, Sequence, SPDict,
+    Bool, HarmonicsSelector, IndexSelector, Int, IntLargerOne,
+    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
+    RowSelector, Scalar, Seasonality, Segment, Sequence, SPDict,
     TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
@@ -1081,13 +1081,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             self._log(f" --> Model {m.name} successfully deleted.", 1)
 
     @composed(crash, beartype)
-    def evaluate(
-        self,
-        metric: MetricConstructor = None,
-        rows: RowSelector = "test",
-        *,
-        threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-    ) -> Styler:
+    def evaluate(self, metric: MetricConstructor = None, rows: RowSelector = "test") -> Styler:
         """Get all models' scores for the provided metrics.
 
         !!! tip
@@ -1105,19 +1099,6 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             [Selection of rows][row-and-column-selection] to calculate
             metric on.
 
-        threshold: float or sequence, default=0.5
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only used when:
-
-            - The task is binary or [multilabel][] classification.
-            - The model has a `predict_proba` method.
-            - The metric evaluates predicted probabilities.
-
-            For multilabel classification tasks, it's possible to
-            provide a sequence of thresholds (one per target column).
-            The same threshold per target column is applied to all
-            models.
-
         Returns
         -------
         [Styler][]
@@ -1126,7 +1107,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         check_is_fitted(self)
 
-        df = pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
+        df = pd.DataFrame([m.evaluate(metric, rows) for m in self._models])
 
         return df.style.highlight_max(props=COLOR_SCHEME)
 

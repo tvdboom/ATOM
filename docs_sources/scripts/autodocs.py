@@ -64,7 +64,8 @@ CUSTOM_URLS = dict(
     normal="https://github.com/sktime/sktime/blob/b29e147b54959a53cc96e5be9c3f819717aa38e7/sktime/proba/normal.py#L13",
     forecastinghorizon="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.base.ForecastingHorizon.html#sktime.forecasting.base.ForecastingHorizon",
     calibratedclassifiercv="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html",
-    tunedthresholdclassifiercv="https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.TunedThresholdClassifierCV.html",
+    plattsmethod="https://en.wikipedia.org/wiki/Platt_scaling",
+    tunedthresholdclassifiercv="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TunedThresholdClassifierCV.html",
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
     sklearncrossvalidate="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html",
@@ -1033,7 +1034,7 @@ def custom_autorefs(markdown: str, autodocs: AutoDocs | None = None) -> str:
             text = match.group()
             if not link:
                 # Only adapt when has form [anchor][]
-                link = anchor.replace(" ", "-").replace(".", "").lower()
+                link = anchor.replace(" ", "-").replace(".", "").replace("'", "").lower()
                 text = f"[{anchor}][{link}]"
             if link in CUSTOM_URLS:
                 # Replace keyword with custom url

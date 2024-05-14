@@ -245,8 +245,6 @@ class BaseModel(RunnerPlot):
             self._run = mlflow.start_run(run_name=self.name)
             mlflow.end_run()
 
-        self._threshold: Float = 0.5
-
         self._group = self._name  # sh and ts models belong to the same group
         self._evals: dict[str, list[Float]] = defaultdict(list)
         self._shap_explanation: ShapExplanation | None = None
@@ -333,33 +331,6 @@ class BaseModel(RunnerPlot):
     def fullname(self) -> str:
         """Return the model's class name."""
         return self.__class__.__name__
-
-    @property
-    def threshold(self) -> Float:
-        """Binary or multilabel classification threshold."""
-        return self._threshold
-
-    @threshold.setter
-    @beartype
-    def threshold(self, value: Float | None):
-        """Set the threshold."""
-        if not self.task.is_binary:
-            raise ValueError(
-                "The threshold property can only be set for "
-                "binary or multilabel classification tasks."
-            )
-        elif value is None:
-            self._threshold = 0.5
-        elif not 0 < value < 1:
-            raise ValueError("The threshold must lie between 0 and 1.")
-        else:
-            self._threshold = value
-
-        self._estimator = FixedThresholdClassifier(
-            self.estimator,
-            threshold=self._threshold,
-            pos_label=self._config.pos_label,
-        )
 
     @cached_property
     def _est_class(self) -> type[Predictor]:
@@ -611,16 +582,7 @@ class BaseModel(RunnerPlot):
                 elif self.task.is_regression:
                     estimator = MultiOutputRegressor(estimator)
 
-        estimator = self._inherit(estimator, fixed=fixed)
-
-        if self.threshold != 0.5:
-            estimator = FixedThresholdClassifier(
-                estimator=estimator,
-                threshold=self.threshold,
-                pos_label=self._config.pos_label,
-            )
-
-        return estimator
+        return self._inherit(estimator, fixed=fixed)
 
     def _fit_estimator(
         self,
@@ -1833,47 +1795,114 @@ class BaseModel(RunnerPlot):
 
     @available_if(has_task("classification"))
     @composed(crash, method_to_log)
-    def calibrate(self, **kwargs):
-        """Calibrate the model.
+    def calibrate(
+        self,
+        method: Literal["sigmoid", "isotonic"] = "sigmoid",
+        *,
+        train_on_test: bool = False,
+    ):
+        """Calibrate and retrain the model.
 
-        Applies probability calibration on the model. The estimator
-        is trained via cross-validation on a subset of the training
-        data, using the rest to fit the calibrator. The new classifier
-        will replace the `estimator` attribute. If there is an active
-        mlflow experiment, a new run is started using the name
-        `[model_name]_calibrate`. Since the estimator changed, the
-        model is cleared. Only for classifiers.
+        Uses sklearn's [CalibratedClassifierCV][] to apply probability
+        calibration on the model. The new classifier replaces the
+        `estimator` attribute. If there is an active mlflow experiment,
+        a new run is started using the name `[model_name]_calibrate`.
+        Since the estimator changed, the model is [cleared][self-clear].
+        Only for classifiers.
 
         !!! note
             By default, the calibration is optimized using the training
-            set. This approach is subject to undesired overfitting. It's
-            preferred to use `cv="prefit"`, which uses the test set for
-            calibration, but only use this if you have another,
-            independent set for testing ([holdout set][data-sets]).
+            set (which is already used for the initial training). This
+            approach is subject to undesired overfitting. It's preferred
+            to use `train_on_test=True`, which uses the test set for
+            calibration, but only if there is another, independent set
+            for testing ([holdout set][data-sets]).
 
         Parameters
         ----------
-        **kwargs
-            Additional keyword arguments for [CalibratedClassifierCV][].
+        method: str, default="sigmoid"
+            The method to use for calibration. Choose from:
+
+            - "sigmoid": Corresponds to [Platt's method][] (i.e., a
+              logistic regression model).
+            - "isotonic": Non-parametric approach. It's not advised
+              to use this calibration method with too few samples (<1000)
+              since it tends to overfit.
+
+        train_on_test: bool, default=False
+            Whether to train the calibrator on the test set.
 
         """
-        calibrator = CalibratedClassifierCV(
+        self._estimator = CalibratedClassifierCV(
             estimator=self.estimator,
-            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-            **kwargs,
+            method=method,
+            cv="prefit",
+            n_jobs=self.n_jobs,
         )
-
-        if kwargs.get("cv") != "prefit":
-            self._estimator = calibrator.fit(self.X_train, self.y_train)
-        else:
-            self._estimator = calibrator.fit(self.X_test, self.y_test)
 
         # Assign a mlflow run to the new estimator
         if self.experiment:
             self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
             mlflow.end_run()
 
-        self.fit()
+        if not train_on_test:
+            self.fit(self.X_train, self.y_train)
+        else:
+            self.fit(self.X_test, self.y_test)
+
+    @available_if(lambda self: self.task is Task.binary_classification)
+    @composed(crash, method_to_log)
+    def change_threshold(self, threshold: Float, *, train_on_test: bool = False):
+        """Change the binary threshold of the estimator.
+
+        A new classifier using the new threshold replaces the `estimator`
+        attribute. If there is an active mlflow experiment, a new run is
+        started using the name `[model_name]_threshold_X`. Since the
+        estimator changed, the model is [cleared][self-clear]. Only for
+        binary classifiers.
+
+        !!! note
+            By default, the model is retrained with the new threshold on
+            the training set (which is already used for the initial
+            training). This approach is subject to undesired overfitting.
+            It's preferred to use `train_on_test=True`, which uses the
+            test set for retraining, but only if there is another,
+            independent set for testing ([holdout set][data-sets]).
+
+        !!! tip
+            Use the [get_best_threshold][self-get_best_threshold] method
+            to find the optimal threshold for a specific metric.
+
+        Parameters
+        ----------
+        threshold: float
+            Binary threshold to classify the positive class.
+
+        train_on_test: bool, default=False
+            Whether to train the calibrator on the test set.
+
+        """
+        if not 0 < threshold < 1:
+            raise ValueError(
+                "Invalid value for the threshold parameter. The value "
+                f"should lie between 0 and 1, got {threshold}."
+            )
+
+        self._estimator = FixedThresholdClassifier(
+            estimator=self.estimator,
+            threshold=threshold,
+            pos_label=self._config.pos_label,
+        )
+
+        # Assign a mlflow run to the new estimator
+        if self.experiment:
+            self._run = mlflow.start_run(run_name=f"{self.name}_threshold_{threshold}")
+            mlflow.end_run()
+
+        if not train_on_test:
+            self.fit(self.X_train, self.y_train)
+        else:
+            self.fit(self.X_test, self.y_test)
 
     @composed(crash, method_to_log)
     def clear(self):
@@ -2294,30 +2323,41 @@ class BaseModel(RunnerPlot):
 
     @available_if(lambda self: self.task is Task.binary_classification)
     @composed(crash, beartype)
-    def get_best_threshold(self, metric: int | str | None = None, **kwargs) -> Float:
+    def get_best_threshold(
+        self,
+        metric: int | str | None = None,
+        *,
+        train_on_test: bool = False,
+    ) -> Float:
         """Get the threshold that maximizes a metric.
 
-        Post-tune the decision threshold (cut-off point) that is used
-        for converting posterior probability estimates (i.e., output of
-        `predict_proba`) or decision scores (i.e., output of
-        `decision_function`) into a class label. The tuning is done by
-        optimizing one of atom's metrics. Only available for models in
-        a binary classification task.
+        Uses sklearn's [TunedThresholdClassifierCV][] to post-tune the
+        decision threshold (cut-off point) that is used for converting
+        posterior probability estimates (i.e., output of `predict_proba`)
+        or decision scores (i.e., output of `decision_function`) into a
+        class label. The tuning is done by optimizing one of atom's
+        metrics. The tuning estimator is stored under the `tuned_threshold`
+        attribute. Only available for binary classifiers.
 
         !!! note
             By default, the threshold is optimized using the training
-            set. This approach is subject to undesired overfitting. It's
-            preferred to use `cv="prefit"`, which uses the test set for
-            calibration, but only use this if you have another,
-            independent set for testing ([holdout set][data-sets]).
+            set (which is already used for the initial training). This
+            approach is subject to undesired overfitting. It's preferred
+            to use `train_on_test=True`, which uses the test set for
+            tuning, but only if there is another, independent set for
+            testing ([holdout set][data-sets]).
+
+        !!! tip
+            Use the [plot_threshold][] method to visualize the effect
+            of different thresholds on a metric.
 
         Parameters
         ----------
         metric: int, str or None, default=None
             Metric to optimize on. If None, the main metric is used.
 
-        **kwargs
-            Additional keyword arguments for [TunedThresholdClassifierCV][].
+        train_on_test: bool, default=False
+            Whether to train the calibrator on the test set.
 
         Returns
         -------
@@ -2330,20 +2370,19 @@ class BaseModel(RunnerPlot):
         else:
             scorer = self._metric[self._get_metric(metric)[0]]
 
-        estimator = TunedThresholdClassifierCV(
+        self.tuned_threshold = TunedThresholdClassifierCV(
             estimator=self.estimator,
             scoring=scorer,
-            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-            random_state=kwargs.pop("random_state", self.random_state),
-            **kwargs,
+            n_jobs=self.n_jobs,
+            random_state=self.random_state,
         )
 
-        if kwargs.get("cv") != "prefit":
-            estimator.fit(self.X_train, self.y_train)
+        if not train_on_test:
+            self.tuned_threshold.fit(self.X_train, self.y_train)
         else:
-            estimator.fit(self.X_test, self.y_test)
+            self.tuned_threshold.fit(self.X_test, self.y_test)
 
-        return estimator.best_threshold_
+        return self.tuned_threshold.best_threshold_
 
     @composed(crash, method_to_log, beartype)
     def inverse_transform(

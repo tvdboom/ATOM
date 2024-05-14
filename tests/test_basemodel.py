@@ -26,7 +26,7 @@ from sklearn.metrics import (
     f1_score, mean_absolute_error, mean_absolute_percentage_error, r2_score,
     recall_score,
 )
-from sklearn.model_selection import KFold
+from sklearn.model_selection import FixedThresholdClassifier, KFold
 from sklearn.multioutput import ClassifierChain
 from sklearn.tree import DecisionTreeClassifier
 from sktime.forecasting.base import ForecastingHorizon
@@ -668,24 +668,53 @@ def test_calibrate():
     """Assert that calibrate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.mnb.calibrate(cv=3)
+    atom.mnb.calibrate()
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
-def test_calibrate_prefit():
-    """Assert that calibrate method works as intended when cv="prefit"."""
+def test_calibrate_train_on_test():
+    """Assert that the calibrate method works when train_on_test=True."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.mnb.calibrate(cv="prefit")
+    atom.mnb.calibrate(train_on_test=True)
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
 def test_calibrate_new_mlflow_run():
-    """Assert that a new mlflow run is created."""
+    """Assert that calibrate creates a new mlflow run is created."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
     run = atom.gnb._run
     atom.gnb.calibrate()
+    assert atom.gnb._run is not run
+
+
+def test_change_threshold():
+    """Assert that the change_threshold method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+
+    with pytest.raises(ValueError, match=".*should lie between 0 and 1.*"):
+        atom.mnb.change_threshold(threshold=1.5)
+
+    atom.mnb.change_threshold(threshold=0.2)
+    assert isinstance(atom.mnb.estimator, FixedThresholdClassifier)
+
+
+def test_change_threshold_train_on_test():
+    """Assert that the change_threshold method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    atom.mnb.change_threshold(threshold=0.2, train_on_test=True)
+    assert isinstance(atom.mnb.estimator, FixedThresholdClassifier)
+
+
+def test_change_threshold_new_mlflow_run():
+    """Assert that change_threshold creates a new mlflow run is created."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    run = atom.gnb._run
+    atom.gnb.change_threshold(threshold=0.2)
     assert atom.gnb._run is not run
 
 
@@ -766,14 +795,6 @@ def test_cross_validate_ts():
     assert isinstance(atom.nf.cross_validate(scoring="mae"), Styler)
 
 
-def test_evaluate_invalid_threshold_length():
-    """Assert that an error is raised when the threshold is invalid."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
-    atom.run("MNB")
-    with pytest.raises(ValueError, match=".*should be equal to the number of target.*"):
-        atom.mnb.evaluate(threshold=[0.5, 0.6])
-
-
 def test_evaluate_metric_None():
     """Assert that the evaluate method works when metric is empty."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
@@ -802,22 +823,6 @@ def test_evaluate_custom_metric():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     assert isinstance(atom.mnb.evaluate("roc_auc_ovo"), pd.Series)
-
-
-def test_evaluate_threshold():
-    """Assert that the threshold parameter changes the predictions."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("RF", est_params={"n_estimators": 5})
-    pred_1 = atom.rf.evaluate(threshold=0.01)
-    pred_2 = atom.rf.evaluate(threshold=0.99)
-    assert not pred_1.equals(pred_2)
-
-
-def test_evaluate_threshold_multilabel():
-    """Assert that the threshold parameter accepts a list as threshold."""
-    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
-    atom.run("Tree")
-    assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8, 0.9]), pd.Series)
 
 
 def test_export_pipeline():
@@ -864,9 +869,10 @@ def test_full_train_new_mlflow_run():
 def test_get_best_threshold():
     """Assert that the get_best_threshold method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", metric=["f1", "auc"], errors='raise')
-    assert 0 < atom.lr.get_best_threshold(metric=None, cv="prefit", refit=False) < 1
+    atom.run("LR", metric=["f1", "auc"], errors="raise")
+    assert 0 < atom.lr.get_best_threshold(metric=None, train_on_test=True) < 1
     assert 0 < atom.lr.get_best_threshold(metric=1) < 1
+    assert hasattr(atom.lr, "tuned_threshold")
 
 
 def test_inverse_transform():

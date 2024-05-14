@@ -166,10 +166,12 @@ def test_branch_from_valid():
 
 def test_pos_label():
     """Assert that the pos_label property is set for all metrics."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pos_label = 0
+    atom = ATOMClassifier(X_bin, y=[2 if i else 3 for i in y_bin], random_state=1)
+    assert atom.pos_label == 3
+
+    atom.pos_label = 2
     atom.run("LR")
-    assert atom._metric[0]._kwargs["pos_label"] == 0
+    assert atom._metric[0]._kwargs["pos_label"] == 2
 
 
 def test_pos_label_invalid_task():

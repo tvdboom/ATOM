@@ -144,6 +144,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self.ignore = ignore  # type: ignore[assignment]
         self.sp = sp  # type: ignore[assignment]
 
+        if self.task.is_binary:
+            self.pos_label = self.branch.dataset[lst(self.branch.target)[0]].max()
+
         self.missing = DEFAULT_MISSING
 
         self._models = ClassMap()
