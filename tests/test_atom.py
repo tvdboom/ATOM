@@ -34,9 +34,9 @@ from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_ex, X_label, X_pa, X_reg, X_sparse, X_text, y10, y10_label,
-    y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc, y_label,
-    y_multiclass, y_multireg, y_reg,
+    X_class, X_ex, X_label, X_pa, X_reg, X_sparse, X_text, bin_sample_weight,
+    y10, y10_label, y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc,
+    y_label, y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -179,6 +179,14 @@ def test_pos_label_invalid_task():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     with pytest.raises(ValueError, match=".*pos_label property can only be set.*"):
         atom.pos_label = 0
+
+
+def test_metadata():
+    """Assert that the metadata property works."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not atom.metadata
+    atom.metadata = {"sample_weights": range(len(X_bin))}
+    assert "sample_weights" in atom.metadata
 
 
 def test_missing():
@@ -799,8 +807,15 @@ def test_add_wrap_get_feature_names_out_callable():
     assert list(atom.pipeline[0].get_feature_names_out()) == ["test"]
 
 
+def test_add_with_sample_weights():
+    """Assert that sample weights are passed to the method."""
+    atom = ATOMClassifier(X_bin, y=y_bin, metadata=bin_sample_weight, random_state=1)
+    atom.scale()
+    assert atom.pipeline[0].get_metadata_routing()._serialize()["fit"]["sample_weight"]
+
+
 def test_add_pipeline():
-    """Assert that adding a pipeline adds every individual step."""
+    """Assert that adding a pipeline adds every step."""
     pipeline = Pipeline(
         steps=[
             ("scaler", StandardScaler()),
@@ -842,6 +857,13 @@ def test_balance_wrong_task():
     # For multioutput tasks
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
     with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.balance()
+
+
+def test_balance_with_sample_weight():
+    """Assert that an error is raised when sample weights are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_sample_weight, random_state=1)
+    with pytest.raises(PermissionError, match=".*not support sample weights.*"):
         atom.balance()
 
 

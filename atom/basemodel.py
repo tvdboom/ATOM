@@ -484,7 +484,7 @@ class BaseModel(RunnerPlot):
                     )
             else:
                 if cv == 1:
-                    if self._config.metadata.get("groups"):
+                    if self._config.metadata.get("groups") is not None:
                         return GroupShuffleSplit(
                             n_splits=cv,
                             test_size=self._config.test_size,
@@ -515,11 +515,7 @@ class BaseModel(RunnerPlot):
                             )
                     else:
                         if self._config.stratify is None:
-                            return GroupKFold(
-                                n_splits=cv,
-                                shuffle=self._config.shuffle,
-                                random_state=rs,
-                            )
+                            return GroupKFold(n_splits=cv)
                         else:
                             return StratifiedGroupKFold(
                                 n_splits=cv,
@@ -619,6 +615,15 @@ class BaseModel(RunnerPlot):
             Fitted instance.
 
         """
+        kwargs: dict[str, Any] = {}
+        if (sample_weight := self._config.get_sample_weight(data[0])) is not None:
+            if "sample_weight" in sign(estimator.fit):
+                kwargs["sample_weight"] = sample_weight
+            if hasattr(estimator, "set_fit_request"):
+                estimator.set_fit_request(sample_weight=True)
+            if hasattr(estimator, "set_partial_fit_request"):
+                estimator.set_partial_fit_request(sample_weight=True)
+
         if getattr(self, "validation", False) and hasattr(estimator, "partial_fit") and validation:
             # Loop over first parameter in estimator
             try:
@@ -627,17 +632,16 @@ class BaseModel(RunnerPlot):
                 # For meta-estimators like multioutput
                 steps = estimator.get_params()[f"estimator__{self.validation}"]
 
-            for step in range(steps):
-                kwargs = {}
-                if self.task.is_classification:
-                    if self.task.is_multioutput:
-                        if self.native_multilabel:
-                            kwargs["classes"] = list(range(self.y.shape[1]))
-                        else:
-                            kwargs["classes"] = [np.unique(y) for y in get_cols(self.y)]
+            if self.task.is_classification:
+                if self.task.is_multioutput:
+                    if self.native_multilabel:
+                        kwargs["classes"] = list(range(self.y.shape[1]))
                     else:
-                        kwargs["classes"] = list(np.unique(self.y))
+                        kwargs["classes"] = [np.unique(y) for y in get_cols(self.y)]
+                else:
+                    kwargs["classes"] = list(np.unique(self.y))
 
+            for step in range(steps):
                 estimator.partial_fit(*data, **self._est_params_fit, **kwargs)
 
                 if not trial:
@@ -666,14 +670,13 @@ class BaseModel(RunnerPlot):
 
         else:
             if isinstance(estimator, BaseForecaster):
-                ts_kwargs = {}
                 if estimator.get_tag("requires-fh-in-fit") and "fh" not in self._est_params_fit:
                     # Add the forecasting horizon to sktime estimators when required
-                    ts_kwargs["fh"] = self.test.index
+                    kwargs["fh"] = self.test.index
 
-                estimator.fit(data[1], X=check_empty(data[0]), **self._est_params_fit, **ts_kwargs)
+                estimator.fit(data[1], X=check_empty(data[0]), **self._est_params_fit, **kwargs)
             else:
-                estimator.fit(*data, **self._est_params_fit)
+                estimator.fit(*data, **self._est_params_fit, **kwargs)
 
         return estimator
 
@@ -826,7 +829,7 @@ class BaseModel(RunnerPlot):
         estimator: Predictor,
         X: pd.DataFrame,
         y: Pandas,
-        **kwargs,
+        sample_weight: Sequence[Scalar] | None = None,
     ) -> Float:
         """Calculate the metric score from an estimator.
 
@@ -844,8 +847,8 @@ class BaseModel(RunnerPlot):
         y: pd.Series or pd.DataFrame
             Target column(s) corresponding to `X`.
 
-        **kwargs
-            Additional keyword arguments for the score function.
+        sample_weight: sequence or None, default=None
+            Sample weights for the `score` method.
 
         Returns
         -------
@@ -863,9 +866,15 @@ class BaseModel(RunnerPlot):
             if isinstance(y_pred, pd.DataFrame) and self.task is Task.binary_classification:
                 y_pred = y_pred.iloc[:, 1]  # Return probability of the positive class
 
-        return self._score_from_pred(scorer, y, y_pred, **kwargs)
+        return self._score_from_pred(scorer, y, y_pred, sample_weight=sample_weight)
 
-    def _score_from_pred(self, scorer: Scorer, y_true: Pandas, y_pred: Pandas, **kwargs) -> Float:
+    def _score_from_pred(
+        self,
+        scorer: Scorer,
+        y_true: Pandas,
+        y_pred: Pandas,
+        sample_weight: Sequence[Scalar] | None = None,
+    ) -> Float:
         """Calculate the metric score from predicted values.
 
         Since sklearn metrics don't support multiclass-multioutput
@@ -883,8 +892,9 @@ class BaseModel(RunnerPlot):
         y_pred: pd.Series or pd.DataFrame
             Predicted values corresponding to y_true.
 
-        **kwargs
-            Additional keyword arguments for the score function.
+        sample_weight: sequence or None, default=None
+            Sample weights for the `score` method. If not provided but available
+            in the metadata, use those.
 
         Returns
         -------
@@ -892,6 +902,15 @@ class BaseModel(RunnerPlot):
             Calculated score.
 
         """
+        kwargs: dict[str, Any] = {}
+        if "sample_weight" in sign(scorer._score_func):
+            if sample_weight is not None:
+                kwargs = {"sample_weight": sample_weight}
+            elif (sw := self._config.get_sample_weight(y_true)) is not None:
+                kwargs = {"sample_weight": sw}
+                if hasattr(scorer, "set_score_request"):
+                    scorer.set_score_request(sample_weight=True)
+
         func = lambda y1, y2: scorer._score_func(y1, y2, **scorer._kwargs, **kwargs)
 
         # Forecasting models can have NaN predictions, for example, when
@@ -1204,7 +1223,7 @@ class BaseModel(RunnerPlot):
         self._log(f"Time elapsed: {time_to_str(self.trials.iat[-1, -2])}", 1)
 
     @composed(crash, method_to_log, beartype)
-    def fit(self, X: pd.DataFrame | None = None, y: Pandas | None = None):
+    def fit(self, X: pd.DataFrame | None = None, y: Pandas | None = None, *, prefit: bool = False):
         """Fit and validate the model.
 
         The estimator is fitted using the best hyperparameters found
@@ -1221,6 +1240,10 @@ class BaseModel(RunnerPlot):
         y: pd.Series, pd.DataFrame or None
             Target column(s) corresponding to `X`. If None, `self.y_train`
             is used.
+
+        prefit: bool, default=False
+            Whether the estimator is already fitted. If True, only evaluate
+            the model.
 
         """
         t_init = dt.now()
@@ -1241,11 +1264,12 @@ class BaseModel(RunnerPlot):
             self._check_est_params()
             self._estimator = self._get_est(self._est_params | self.best_params)
 
-        self._estimator = self._fit_estimator(
-            estimator=self.estimator,
-            data=(X, y),
-            validation=(self.X_test, self.y_test),
-        )
+        if not prefit:
+            self._estimator = self._fit_estimator(
+                estimator=self.estimator,
+                data=(X, y),
+                validation=(self.X_test, self.y_test),
+            )
 
         for ds in ("train", "test"):
             out = [f"{met.name}: {self._get_score(met, ds)}" for met in self._metric]
@@ -1843,60 +1867,6 @@ class BaseModel(RunnerPlot):
         # Assign a mlflow run to the new estimator
         if self.experiment:
             self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
-            mlflow.end_run()
-
-        if not train_on_test:
-            self.fit(self.X_train, self.y_train)
-        else:
-            self.fit(self.X_test, self.y_test)
-
-    @available_if(lambda self: self.task is Task.binary_classification)
-    @composed(crash, method_to_log)
-    def change_threshold(self, threshold: Float, *, train_on_test: bool = False):
-        """Change the binary threshold of the estimator.
-
-        A new classifier using the new threshold replaces the `estimator`
-        attribute. If there is an active mlflow experiment, a new run is
-        started using the name `[model_name]_threshold_X`. Since the
-        estimator changed, the model is [cleared][self-clear]. Only for
-        binary classifiers.
-
-        !!! note
-            By default, the model is retrained with the new threshold on
-            the training set (which is already used for the initial
-            training). This approach is subject to undesired overfitting.
-            It's preferred to use `train_on_test=True`, which uses the
-            test set for retraining, but only if there is another,
-            independent set for testing ([holdout set][data-sets]).
-
-        !!! tip
-            Use the [get_best_threshold][self-get_best_threshold] method
-            to find the optimal threshold for a specific metric.
-
-        Parameters
-        ----------
-        threshold: float
-            Binary threshold to classify the positive class.
-
-        train_on_test: bool, default=False
-            Whether to train the calibrator on the test set.
-
-        """
-        if not 0 < threshold < 1:
-            raise ValueError(
-                "Invalid value for the threshold parameter. The value "
-                f"should lie between 0 and 1, got {threshold}."
-            )
-
-        self._estimator = FixedThresholdClassifier(
-            estimator=self.estimator,
-            threshold=threshold,
-            pos_label=self._config.pos_label,
-        )
-
-        # Assign a mlflow run to the new estimator
-        if self.experiment:
-            self._run = mlflow.start_run(run_name=f"{self.name}_threshold_{threshold}")
             mlflow.end_run()
 
         if not train_on_test:
@@ -2573,6 +2543,49 @@ class BaseModel(RunnerPlot):
         run(ServeModel.bind(pipeline=self.export_pipeline(), method=method))
 
         self._log(f"Serving model {self.fullname}...", 1)
+
+    @available_if(lambda self: self.task is Task.binary_classification)
+    @composed(crash, method_to_log)
+    def set_threshold(self, threshold: Float):
+        """Set the binary threshold of the estimator.
+
+        A new classifier using the new threshold replaces the `estimator`
+        attribute. If there is an active mlflow experiment, a new run is
+        started using the name `[model_name]_threshold_X`. Since the
+        estimator changed, the model is [cleared][self-clear]. Only for
+        binary classifiers.
+
+        !!! tip
+            Use the [get_best_threshold][self-get_best_threshold] method
+            to find the optimal threshold for a specific metric.
+
+        Parameters
+        ----------
+        threshold: float
+            Binary threshold to classify the positive class.
+
+        """
+        if not 0 < threshold < 1:
+            raise ValueError(
+                "Invalid value for the threshold parameter. The value "
+                f"should lie between 0 and 1, got {threshold}."
+            )
+
+        self._estimator = FixedThresholdClassifier(
+            estimator=(est := deepcopy(self.estimator)),
+            threshold=threshold,
+            pos_label=self._config.pos_label,
+        )
+
+        # Add fitted estimator manually to avoid refitting
+        self._estimator.estimator_ = est  # type: ignore[union-attr]
+
+        # Assign a mlflow run to the new estimator
+        if self.experiment:
+            self._run = mlflow.start_run(run_name=f"{self.name}_threshold_{threshold}")
+            mlflow.end_run()
+
+        self.fit(self.X_train, self.y_train, prefit=True)
 
     @composed(crash, method_to_log, beartype)
     def transform(

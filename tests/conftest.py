@@ -350,5 +350,6 @@ reg_train, reg_test = get_train_test(X_reg, y_reg)
 label_train, label_test = get_train_test(X_label, y_label)
 fc_train, fc_test = get_train_test(None, y_fc)
 
-# Groups
-bin_groups = choices(["A", "B", "C", "D"], k=X_bin.shape[0])
+# Metadata
+bin_groups = {"groups": choices(["A", "B", "C", "D"], k=X_bin.shape[0])}
+bin_sample_weight = {"sample_weight": range(len(X_bin))}

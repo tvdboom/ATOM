@@ -3965,6 +3965,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             y_true, y_pred = m._get_pred(rows, target, method="predict_proba")
             for met in metric_c:
+                name = met.__name__
                 if "pos_label" in sign(met):
                     met = partial(met, pos_label=self._config.pos_label)
 
@@ -3972,7 +3973,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     x=(x := np.linspace(0, 1, steps)),
                     y=[met(y_true, y_pred >= step) for step in x],
                     parent=m.name,
-                    child=met.__name__,
+                    child=name,
                     legend=legend,
                     xaxis=xaxis,
                     yaxis=yaxis,

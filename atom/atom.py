@@ -60,7 +60,7 @@ from atom.utils.types import (
     XReturn, XSelector, YReturn, YSelector, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,
+    ClassMap, DataConfig, DataContainer, Goal, Task, adjust, check_dependency,
     composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
     is_sparse, lst, make_sklearn, merge, method_to_log, n_cols,
     replace_missing, sign, to_series,
@@ -129,7 +129,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         self._config = DataConfig(
             index=index is not False,
-            metadata=Bunch(**{k: to_series(v, name=k) for k, v in (metadata or {}).items()}),  # type: ignore[call-overload]
+            metadata=Bunch(
+                **{
+                    k: to_series(v, name=k, index=getattr(arrays[0], "index", None))  # type: ignore[call-overload]
+                    for k, v in (metadata or {}).items()
+                }
+            ),
             shuffle=shuffle,
             stratify=stratify if shuffle else None,
             n_rows=n_rows,
@@ -144,7 +149,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         self.ignore = ignore  # type: ignore[assignment]
         self.sp = sp  # type: ignore[assignment]
 
-        if self.task.is_binary:
+        if self.task is Task.binary_classification:
             self.pos_label = self.branch.dataset[lst(self.branch.target)[0]].max()
 
         self.missing = DEFAULT_MISSING
@@ -1311,6 +1316,13 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             # Memoize the fitted transformer_c for repeated instantiations of atom
             fit = self.memory.cache(fit_one)
+
+            if (sample_weight := self._config.get_sample_weight(self.branch.X_train)) is not None:
+                if "sample_weight" in sign(transformer_c.fit):
+                    fit_params["sample_weight"] = sample_weight
+                if hasattr(transformer_c, "set_fit_request"):
+                    transformer_c.set_fit_request(sample_weight=sample_weight is not None)
+
             kwargs = {
                 "estimator": transformer_c,
                 "X": self.branch.X_train,
@@ -1588,7 +1600,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         if self._config.get_sample_weight() is not None:
             raise PermissionError(
-                "The balance method does not support sample_weights "
+                "The balance method does not support sample weights "
                 "passed through metadata routing."
             )
 
@@ -1907,7 +1919,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             strategy=strategy,
             include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
-        ).set_fit_request(sample_weight=self._config.get_sample_weight() is not None)
+        )
 
         self._add_transformer(scaler, columns=columns)
 

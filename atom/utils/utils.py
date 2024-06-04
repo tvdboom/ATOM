@@ -1749,11 +1749,11 @@ def adjust(
     *,
     transform: EngineDataOptions | None = None,
     verbose: Verbose | None = None,
-):
+) -> Iterator[Estimator]:
     """Temporarily adjust output parameters of an estimator.
 
     The estimator's data engine and verbosity are temporarily changed
-    to the provided values.
+    to the provided values. Results in a no-op for non-ATOM estimators.
 
     Parameters
     ----------
@@ -1769,19 +1769,22 @@ def adjust(
         its original verbosity.
 
     """
-    try:
-        if transform is not None and hasattr(estimator, "set_output"):
-            output = getattr(estimator, "_engine", EngineTuple())
-            estimator.set_output(transform=transform)
-        if verbose is not None and hasattr(estimator, "verbose"):
-            verbosity = estimator.verbose
-            estimator.verbose = verbose
+    if "atom" in estimator.__module__:
+        try:
+            if transform is not None and hasattr(estimator, "set_output"):
+                output = getattr(estimator, "_engine", EngineTuple())
+                estimator.set_output(transform=transform)
+            if verbose is not None and hasattr(estimator, "verbose"):
+                verbosity = estimator.verbose
+                estimator.verbose = verbose
+            yield estimator
+        finally:
+            if transform is not None and hasattr(estimator, "set_output"):
+                estimator._engine = output  # type: ignore[union-attr]
+            if verbose is not None and hasattr(estimator, "verbose"):
+                estimator.verbose = verbosity
+    else:
         yield estimator
-    finally:
-        if transform is not None and hasattr(estimator, "set_output"):
-            estimator._engine = output  # type: ignore[union-attr]
-        if verbose is not None and hasattr(estimator, "verbose"):
-            estimator.verbose = verbosity
 
 
 def get_versions(models: ClassMap) -> dict[str, str]:

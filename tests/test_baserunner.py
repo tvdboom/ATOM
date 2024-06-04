@@ -7,6 +7,7 @@ Description: Unit tests for baserunner.py
 
 import glob
 import sys
+from random import choices
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -25,8 +26,8 @@ from atom.training import DirectClassifier, DirectForecaster
 from atom.utils.utils import NotFittedError, merge
 
 from .conftest import (
-    X10, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, fc_test, fc_train,
-    y10, y_bin, y_class, y_fc, y_idx, y_multiclass, y_reg,
+    X10, X_bin, X_class, X_idx, X_reg, bin_groups, bin_test, bin_train,
+    fc_test, fc_train, y10, y_bin, y_class, y_fc, y_idx, y_multiclass, y_reg,
 )
 
 
@@ -336,6 +337,12 @@ def test_results_property_train_sizing():
 
 # Test _get_data =================================================== >>
 
+def test_groups_with_forecast():
+    """Assert that an error is raised when groups are provided in a forecast task."""
+    with pytest.raises(ValueError, match=".*'groups' is unavailable for forecast.*"):
+        ATOMForecaster(y_fc, metadata={"groups": choices(["A", "B"], k=len(y_fc))}, random_state=1)
+
+
 def test_index_is_true():
     """Assert that the indices are left as is when index=True."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, shuffle=False, random_state=1)
@@ -495,6 +502,12 @@ def test_input_is_X_with_holdout(holdout_size):
     """Assert that input X can be combined with a holdout set."""
     atom = ATOMRegressor(X_bin, holdout_size=holdout_size, random_state=1)
     assert isinstance(atom.holdout, pd.DataFrame)
+
+
+def test_input_holdout_with_groups():
+    """Assert that the holdout size is determined based on groups."""
+    atom = ATOMRegressor(X_bin, holdout_size=0.2, metadata=bin_groups, random_state=1)
+    assert len(atom.holdout) in atom.metadata["groups"].value_counts().to_numpy()
 
 
 @pytest.mark.parametrize("shuffle", [True, False])

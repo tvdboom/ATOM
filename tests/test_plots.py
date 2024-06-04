@@ -315,7 +315,7 @@ def test_plot_correlation():
 
 def test_plot_data_splits():
     """Assert that the plot_data_splits method works."""
-    atom = ATOMClassifier(X_bin, y_bin, metadata={"groups": bin_groups}, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_groups, random_state=1)
     atom.plot_data_splits(display=False)
 
     atom = ATOMForecaster(y_fc, random_state=1)
@@ -589,16 +589,16 @@ def test_plot_confusion_matrix():
 
 def test_plot_cv_splits():
     """Assert that the plot_cv_splits method works."""
-    atom = ATOMClassifier(X_bin, y_bin, metadata={"groups": bin_groups}, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_groups, random_state=1)
     atom.run("Dummy")
     with pytest.raises(ValueError, match=".*ran cross-validation.*"):
         atom.plot_cv_splits(display=False)
     atom.dummy.cross_validate(cv=2)
     atom.plot_cv_splits(display=False)
 
-    atom = ATOMForecaster(y_fc, random_state=1)
+    atom = ATOMForecaster(y_fc, holdout_size=0.1, random_state=1)
     atom.run("NF")
-    atom.nf.cross_validate(cv=2)
+    atom.nf.cross_validate(cv=2, include_holdout=True)
     atom.plot_cv_splits(display=False)
 
 

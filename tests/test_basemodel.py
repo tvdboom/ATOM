@@ -36,8 +36,9 @@ from atom import ATOMClassifier, ATOMForecaster, ATOMModel, ATOMRegressor
 from atom.utils.utils import check_is_fitted, check_scaling
 
 from .conftest import (
-    X10_str, X_bin, X_class, X_ex, X_idx, X_label, X_reg, y10, y10_str, y_bin,
-    y_class, y_ex, y_fc, y_idx, y_label, y_multiclass, y_multireg, y_reg,
+    X10_str, X_bin, X_class, X_ex, X_idx, X_label, X_reg, bin_groups,
+    bin_sample_weight, y10, y10_str, y_bin, y_class, y_ex, y_fc, y_idx,
+    y_label, y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -230,11 +231,25 @@ def test_empty_study(func):
     assert not hasattr(atom.tree, "study")
 
 
+def test_ht_with_groups():
+    """Assert that the hyperparameter tuning works with groups."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_groups, random_state=1)
+    atom.run("lr", n_trials=1, ht_params={"cv": 1})
+    assert hasattr(atom.lr, "trials")
+
+    atom.run("lr_2", n_trials=1, ht_params={"cv": 2})
+    assert hasattr(atom.lr_2, "trials")
+
+    atom = ATOMClassifier(X_bin, y_bin, stratify=None, metadata=bin_groups, random_state=1)
+    atom.run("lr", n_trials=1, ht_params={"cv": 2}, errors="raise")
+    assert hasattr(atom.lr, "trials")
+
+
 def test_ht_with_pipeline():
     """Assert that the hyperparameter tuning works with a transformer pipeline."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, stratify=None, random_state=1)
     atom.encode()
-    atom.run("lr", n_trials=1)
+    atom.run("lr", n_trials=1, ht_params={"cv": 2})
     assert hasattr(atom.lr, "trials")
 
 
@@ -348,6 +363,20 @@ def test_run_log_pipeline_to_mlflow(mlflow):
     atom.log_pipeline = True
     atom.run("GNB")
     assert mlflow.call_count == 2  # Model + Pipeline
+
+
+def test_fit_with_sample_weight():
+    """Assert that sample weights are passed to the estimator and scorer."""
+    atom = ATOMClassifier(X_bin, y=y_bin, metadata=bin_sample_weight, random_state=1)
+    atom.run("SGD", est_params={"max_iter": 5})
+
+    routing = atom.sgd.estimator.get_metadata_routing()._serialize()
+    assert routing["fit"]["sample_weight"]
+    assert routing["partial_fit"]["sample_weight"]
+
+    routing = atom._metric[0].get_metadata_routing()._serialize()
+    assert routing["score"]["sample_weight"]
+    assert routing["score"]["sample_weight"]
 
 
 def test_continued_hyperparameter_tuning():
@@ -689,33 +718,18 @@ def test_calibrate_new_mlflow_run():
     assert atom.gnb._run is not run
 
 
-def test_change_threshold():
-    """Assert that the change_threshold method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+def test_set_threshold():
+    """Assert that the set_threshold method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("MNB")
+    run = atom.mnb._run
 
     with pytest.raises(ValueError, match=".*should lie between 0 and 1.*"):
-        atom.mnb.change_threshold(threshold=1.5)
+        atom.mnb.set_threshold(threshold=1.5)
 
-    atom.mnb.change_threshold(threshold=0.2)
+    atom.mnb.set_threshold(threshold=0.2)
     assert isinstance(atom.mnb.estimator, FixedThresholdClassifier)
-
-
-def test_change_threshold_train_on_test():
-    """Assert that the change_threshold method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    atom.mnb.change_threshold(threshold=0.2, train_on_test=True)
-    assert isinstance(atom.mnb.estimator, FixedThresholdClassifier)
-
-
-def test_change_threshold_new_mlflow_run():
-    """Assert that change_threshold creates a new mlflow run is created."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.run("GNB")
-    run = atom.gnb._run
-    atom.gnb.change_threshold(threshold=0.2)
-    assert atom.gnb._run is not run
+    assert atom.mnb._run is not run
 
 
 def test_clear():
@@ -777,6 +791,14 @@ def test_create_dashboard_regression(func):
     atom.run("Tree")
     atom.tree.create_dashboard(dataset="both")
     func.assert_called_once()
+
+
+def test_cross_validate_groups():
+    """Assert that an error is raised when groups are passed directly."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    with pytest.raises(ValueError, match=".*groups can not be passed directly.*"):
+        atom.lr.cross_validate(groups=bin_groups)
 
 
 def test_cross_validate():
@@ -869,7 +891,7 @@ def test_full_train_new_mlflow_run():
 def test_get_best_threshold():
     """Assert that the get_best_threshold method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", metric=["f1", "auc"], errors="raise")
+    atom.run("LR", metric=["f1", "auc"])
     assert 0 < atom.lr.get_best_threshold(metric=None, train_on_test=True) < 1
     assert 0 < atom.lr.get_best_threshold(metric=1) < 1
     assert hasattr(atom.lr, "tuned_threshold")

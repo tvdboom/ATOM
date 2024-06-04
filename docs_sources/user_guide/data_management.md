@@ -108,23 +108,49 @@ Click [here][example-nlp] to see an example that uses sparse data.
 
 ## Metadata
 
-
-Read more about metadata routing in sklearn's [user guide][metadata_routing].
+Metadata is data that an estimator, scorer, or CV splitter takes into account
+if the user explicitly passes it as a parameter (besides `X` and `y`). ATOM
+offers native integration with sklearn's [metadata routing][] system. Use
+the [`metadata`][atomclassifier-metadata] parameter to pass metadata to atom.
+This metadata is then automatically propagated to all relevant estimators,
+scorers, and CV splitters. The parameter accepts a dictionary with keys
+'groups' and/or 'sample_weight'. See the [metadata example][example-metadata]
+for a quick tutorial.
 
 **groups**
 
-Groups are unavailable for [forecast][time-series] tasks.
+Groups are used primarily in cross-validation techniques that need to account
+for grouped data. The `groups` parameter is particularly important in situations
+where the data is not independent, such as when there are multiple measurements
+from the same subject or when the data is organized in clusters that should not
+be split across different folds.
 
 !!! warning
-    A group can only be present in one [data set][data-sets], thus a group
-    present in the training set is not validated upon, and a group present
-    in the test set is not used for training. It's highly recommended to use
-    a model's [cross_validate][adaboost-cross_validate] method to validate
-    on all groups and so avoid potential biases.
+    * Groups are unavailable for [forecast][time-series] tasks.
+    * A group can only be present in one [data set][data-sets], thus a group
+      present in the training set is not validated upon, and a group present
+      in the test set is not used for training. It's highly recommended to use
+      a model's [cross_validate][adaboost-cross_validate] method to validate
+      on all groups and so avoid potential biases.
 
 
 **sample_weight**
 
+Sample weights are numerical values assigned to individual data points in a dataset.
+They indicate the relative importance or frequency of each data point. Sample weights
+are used to:
+
+- Handle imbalanced datasets: In classification problems, certain classes may be
+  underrepresented. Sample weights can give more importance to these minority
+  classes during model training.
+- Correct for sampling bias: If the data collected does not represent the population
+  well, weights can adjust the influence of different samples to better reflect the
+  actual distribution.
+- Emphasize certain samples: In cases where some samples are more reliable or
+  significant than others, weights can be used to give more prominence to these
+  samples in the analysis.
+- Aggregation and averaging: When computing statistics, weighted averages can be
+  calculated to account for the varying importance of samples.
 
 <br>
 

@@ -384,9 +384,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return int(sp)
 
-        if sp is None:
-            return None
-        elif sp == "infer":
+        if sp == "infer":
             return self.get_seasonal_period()
         elif sp == "index":
             if not hasattr(self.dataset.index, "freqstr"):
