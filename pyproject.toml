@@ -79,8 +79,8 @@ test = [
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.12.0",
     "pytest-xdist>=3.5.0",
-    "scikeras>=0.11.0; python_version < '3.12'",
-    "tensorflow>=2.13.0; python_version < '3.12'",
+    "scikeras>=0.13.0; python_version < '3.12'",
+    "tensorflow>=2.16.1; python_version < '3.12'",
 ]
 doc = [
     "jupyter-contrib-nbextensions>=0.7.0",
@@ -92,8 +92,9 @@ doc = [
     "mkdocs-git-revision-date-localized-plugin>=1.2.4",
     "mkdocs-jupyter>=0.24.6",
     "mkdocs-material>=9.5.13",
-    "mkdocs-material-extensions>=1.1.3",
+    "mkdocs-material-extensions>=1.3.1",
     "mkdocs-simple-hooks>=0.1.5",
+    "notebook==6.4.12",  # Older versions fail with plugins
     "pymdown-extensions>=10.7.1",
     "pyyaml>=6.0.1",
 ]

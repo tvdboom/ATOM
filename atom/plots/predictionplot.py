@@ -134,7 +134,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -317,7 +317,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -482,7 +482,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -666,7 +666,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier, ATOMForecaster
         from random import choices
         from sklearn.datasets import load_breast_cancer
@@ -919,7 +919,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -1042,7 +1042,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMRegressor
         from sklearn.datasets import load_diabetes
 
@@ -1172,7 +1172,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -1289,7 +1289,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1454,7 +1454,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMForecaster
         from sktime.datasets import load_airline
         from sktime.forecasting.base import ForecastingHorizon
@@ -1689,7 +1689,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -1805,7 +1805,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -1963,7 +1963,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -2103,7 +2103,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2319,7 +2319,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2574,7 +2574,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -2707,7 +2707,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -3028,7 +3028,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -3162,7 +3162,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -3316,7 +3316,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMRegressor
         from sklearn.datasets import load_diabetes
 
@@ -3471,7 +3471,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -3647,7 +3647,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 
@@ -3764,7 +3764,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -3932,7 +3932,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import make_classification
 

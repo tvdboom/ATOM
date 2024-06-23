@@ -92,7 +92,7 @@ def ATOMModel(
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor, ATOMModel
     from sklearn.datasets import load_diabetes
     from sklearn.linear_model import RANSACRegressor
@@ -341,7 +341,7 @@ class ATOMClassifier(ATOM):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -625,7 +625,7 @@ class ATOMForecaster(ATOM):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMForecaster
     from sktime.datasets import load_airline
 
@@ -894,7 +894,7 @@ class ATOMRegressor(ATOM):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMRegressor
     from sklearn.datasets import load_diabetes
 

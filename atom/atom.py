@@ -404,7 +404,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @property
     def categorical(self) -> pd.Index:
         """Names of the categorical features in the dataset."""
-        return self.branch.X.select_dtypes(include=CAT_TYPES).columns
+        return self.branch.X.select_dtypes(include=CAT_TYPES).columns  # type: ignore[arg-type]
 
     @property
     def n_categorical(self) -> int:
@@ -514,7 +514,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         pd.DataFrame
             Statistic results with multiindex levels:
 
-            - **test**: Acronym of the test 'adf', 'kpss' or 'lb').
+            - **test**: Acronym of the test ('adf', 'kpss' or 'lb').
             - **stat:** Statistic results:
 
                 - **score:** KS-test score.

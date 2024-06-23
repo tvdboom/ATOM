@@ -122,7 +122,7 @@ class Pipeline(SkPipeline):
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 

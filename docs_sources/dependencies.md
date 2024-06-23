@@ -97,8 +97,8 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=4.1.0)
 * **[pytest-mock](https://github.com/pytest-dev/pytest-mock/)** (>=3.12.0)
 * **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.5.0)
-* **[scikeras](https://github.com/adriangb/scikeras)** (>=0.11.0)
-* **[tensorflow](https://www.tensorflow.org/learn)** (>=2.13.0)
+* **[scikeras](https://github.com/adriangb/scikeras)** (>=0.13.0)
+* **[tensorflow](https://www.tensorflow.org/learn)** (>=2.16.1)
 
 **Documentation**
 
@@ -111,6 +111,8 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 * **[mkdocs-git-revision-date-localized-plugin](https://github.com/timvink/mkdocs-git-revision-date-localized-plugin)** (>=1.2.4)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.24.6)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.5.13)
+* **[mkdocs-material-extensions](https://pypi.org/project/mkdocs-material-extensions/)** (>=1.3.1)
 * **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
+* **[notebook](https://pypi.org/project/notebook/) (==6.4.12)**
 * **[pymdown-extensions](https://github.com/facelessuser/pymdown-extensions)** (>=10.7.1)
 * **[pyyaml](https://pyyaml.org/)** (>=6.0.1)

@@ -117,7 +117,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -231,7 +231,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -347,7 +347,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -469,7 +469,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -604,7 +604,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -721,7 +721,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -857,7 +857,7 @@ class ShapPlot(BasePlot, metaclass=ABCMeta):
 
         Examples
         --------
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 

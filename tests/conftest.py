@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pytest
+from numpy.random import Generator
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -110,7 +111,7 @@ def _mock_mlflow_log_model(mocker):
 
 
 @pytest.fixture()
-def random():
+def random() -> Generator:
     """Return numpy's default random number generator."""
     return np.random.default_rng()
 

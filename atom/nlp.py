@@ -113,7 +113,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         import numpy as np
         from atom import ATOMClassifier
         from sklearn.datasets import fetch_20newsgroups
@@ -135,7 +135,7 @@ class TextCleaner(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         import numpy as np
         from atom.nlp import TextCleaner
         from sklearn.datasets import fetch_20newsgroups
@@ -375,7 +375,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
 
         X = [
@@ -399,7 +399,7 @@ class TextNormalizer(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.nlp import TextNormalizer
 
         X = [
@@ -605,7 +605,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
 
         X = [
@@ -629,7 +629,7 @@ class Tokenizer(TransformerMixin, OneToOneFeatureMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.nlp import Tokenizer
 
         X = [
@@ -834,7 +834,7 @@ class Vectorizer(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
 
         X = [
@@ -858,7 +858,7 @@ class Vectorizer(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.nlp import Vectorizer
 
         X = [

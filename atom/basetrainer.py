@@ -354,7 +354,7 @@ class BaseTrainer(BaseRunner, RunnerPlot, metaclass=ABCMeta):
 
                 return m
 
-            except Exception as ex:  # noqa: BLE001
+            except Exception as ex:
                 self._log(f"\nException encountered while running the {m.name} model.", 1)
                 self._log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
                 self._log(f"{ex.__class__.__name__}: {ex}", 1)

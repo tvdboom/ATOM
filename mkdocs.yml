@@ -106,8 +106,8 @@ markdown_extensions:
     - pymdownx.superfences:
         preserve_tabs: true
         custom_fences:
-            - name: python
-              class: python
+            - name: pycon
+              class: pycon
               format: !!python/name:docs_sources.scripts.formatter
     - pymdownx.arithmatex:  # Allows for rendering of equations
           generic: true

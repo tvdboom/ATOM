@@ -118,7 +118,7 @@ class FeatureExtractor(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         import pandas as pd
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
@@ -136,7 +136,7 @@ class FeatureExtractor(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         import pandas as pd
         from atom.feature_engineering import FeatureExtractor
         from sklearn.datasets import load_breast_cancer
@@ -374,7 +374,7 @@ class FeatureGenerator(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -388,7 +388,7 @@ class FeatureGenerator(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.feature_engineering import FeatureGenerator
         from sklearn.datasets import load_breast_cancer
 
@@ -634,7 +634,7 @@ class FeatureGrouper(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -647,7 +647,7 @@ class FeatureGrouper(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.feature_engineering import FeatureGrouper
         from sklearn.datasets import load_breast_cancer
 
@@ -947,7 +947,7 @@ class FeatureSelector(TransformerMixin):
     Examples
     --------
     === "atom"
-        ```python
+        ```pycon
         from atom import ATOMClassifier
         from sklearn.datasets import load_breast_cancer
 
@@ -961,7 +961,7 @@ class FeatureSelector(TransformerMixin):
         ```
 
     === "stand-alone"
-        ```python
+        ```pycon
         from atom.feature_engineering import FeatureSelector
         from sklearn.datasets import load_breast_cancer
 

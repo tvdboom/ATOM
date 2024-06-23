@@ -75,7 +75,7 @@ class Branch:
 
     Examples
     --------
-    ```python
+    ```pycon
     from atom import ATOMClassifier
     from sklearn.datasets import load_breast_cancer
 
@@ -648,7 +648,7 @@ class Branch:
                         else:
                             # Find columns by type
                             try:
-                                array.extend(df.select_dtypes(c).columns)
+                                array.extend(df.select_dtypes(c).columns)  # type: ignore[call-overload]
                             except TypeError:
                                 raise ValueError(
                                     "Invalid column selection. Could "
