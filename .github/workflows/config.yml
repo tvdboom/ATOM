@@ -182,7 +182,9 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm sync -G full -G doc
+        run: |
+          pdm sync -G full -G doc
+          pip install cmdstanpy==0.9.5
       - name: Build documentation
         run: |
           export PYTHONPATH="${PYTHONPATH}:$(pwd)"
