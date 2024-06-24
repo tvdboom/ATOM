@@ -5485,13 +5485,13 @@ covariance matrix.</p>
 <span class="linenos" data-linenos="16 "></span><span class="go">Fit ---------------------------------------------</span>
 <span class="linenos" data-linenos="17 "></span><span class="go">Train evaluation --&gt; f1: 0.9809</span>
 <span class="linenos" data-linenos="18 "></span><span class="go">Test evaluation --&gt; f1: 0.9504</span>
-<span class="linenos" data-linenos="19 "></span><span class="go">Time elapsed: 0.028s</span>
+<span class="linenos" data-linenos="19 "></span><span class="go">Time elapsed: 0.034s</span>
 <span class="linenos" data-linenos="20 "></span><span class="go">-------------------------------------------------</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">Time: 0.028s</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">Time: 0.034s</span>
 <span class="linenos" data-linenos="22 "></span>
 <span class="linenos" data-linenos="23 "></span>
 <span class="linenos" data-linenos="24 "></span><span class="go">Final results ==================== &gt;&gt;</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">Total time: 0.032s</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">Total time: 0.039s</span>
 <span class="linenos" data-linenos="26 "></span><span class="go">-------------------------------------</span>
 <span class="linenos" data-linenos="27 "></span><span class="go">QuadraticDiscriminantAnalysis --&gt; f1: 0.9504</span>
 </code></pre></div>
@@ -5674,7 +5674,7 @@ for testing (<a class="autorefs autorefs-internal" href="../../../user_guide/dat
 <strong>method: str, default="sigmoid"</strong><br><div markdown class='param'>
 The method to use for calibration. Choose from:</p>
 <ul>
-<li>"sigmoid": Corresponds to [Platt's method][platts-method] (i.e., a
+<li>"sigmoid": Corresponds to [Platt's method][plattmethod] (i.e., a
   logistic regression model).</li>
 <li>"isotonic": Non-parametric approach. It's not advised
   to use this calibration method with too few samples (&lt;1000)
@@ -5882,8 +5882,8 @@ multiclass classification tasks.
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="#quadraticdiscriminantanalysis-get_best_threshold">get_best_threshold</a> or
-<a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a> method to determine a suitable value for
-the [<code>threshold</code>][quadraticdiscriminantanalysis-threshold] attribute.</p>
+<a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a> method to determine a suitable threshold
+for a binary classifier.</p>
 </div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a href="" id="evaluate-metric"></a>
@@ -6171,7 +6171,7 @@ moved to the "Archived" stage. Only valid when <code>stage</code> is
 </table>
 <p><br><br></p>
 <p><a href="" id="quadraticdiscriminantanalysis-reset_aesthetics"></a></p>
-<div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L817>[source]</a></span></div>
+<div class='sign'><em>classmethod</em> atom.plots.baseplot.<strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L817>[source]</a></span></div>
 <p>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
 <p><a href="" id="quadraticdiscriminantanalysis-save_estimator"></a></p>
@@ -6314,7 +6314,7 @@ Transformed target column. Only returned if provided.
 </table>
 <p><br><br></p>
 <p><a href="" id="quadraticdiscriminantanalysis-update_layout"></a></p>
-<div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L831>[source]</a></span></div>
+<div class='sign'><em>classmethod</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_layout</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L831>[source]</a></span></div>
 <p>Update the properties of the plot's layout.</p>
 <p>Recursively update the structure of the original layout with
 the values in the arguments.</p>
@@ -6326,7 +6326,7 @@ Keyword arguments for the figure's <a href="https://plotly.com/python-api-refere
 </table>
 <p><br><br></p>
 <p><a href="" id="quadraticdiscriminantanalysis-update_traces"></a></p>
-<div class='sign'><em>function</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L846>[source]</a></span></div>
+<div class='sign'><em>classmethod</em> atom.plots.baseplot.<strong style='color:#008AB8'>update_traces</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots/baseplot.py#L846>[source]</a></span></div>
 <p>Update the properties of the plot's traces.</p>
 <p>Recursively update the structure of the original traces with
 the values in the arguments.</p>

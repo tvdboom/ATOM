@@ -79,8 +79,8 @@ test = [
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.12.0",
     "pytest-xdist>=3.5.0",
-    "scikeras>=0.13.0; python_version < '3.12'",
-    "tensorflow>=2.16.1; python_version < '3.12'",
+    "scikeras>=0.12.0; python_version < '3.12'",
+    "tensorflow>=2.15.1; python_version < '3.12'",
 ]
 doc = [
     "jupyter-contrib-nbextensions>=0.7.0",

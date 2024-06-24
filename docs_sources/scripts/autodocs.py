@@ -34,7 +34,7 @@ ATOM_URL = "https://github.com/tvdboom/ATOM/blob/master/"
 CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
-    metadata_routing="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
+    metadatarouting="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
     metadatarouter="https://scikit-learn.org/stable/modules/generated/sklearn.utils.metadata_routing.MetadataRouter.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     pathlibpath="https://docs.python.org/3/library/pathlib.html#pathlib.Path",

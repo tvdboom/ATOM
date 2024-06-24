@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import importlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
+from enum import Enum
 from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     ismethod, isroutine, signature,
 )
+from types import MethodType
 from typing import Any
 
 import regex as re
@@ -32,7 +34,7 @@ ATOM_URL = "https://github.com/tvdboom/ATOM/blob/master/"
 CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
-    metadata_routing="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
+    metadatarouting="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
     metadatarouter="https://scikit-learn.org/stable/modules/generated/sklearn.utils.metadata_routing.MetadataRouter.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     pathlibpath="https://docs.python.org/3/library/pathlib.html#pathlib.Path",
@@ -457,31 +459,44 @@ class AutoDocs:
             Object's signature.
 
         """
-        # Assign an object type
         params = signature(self.obj).parameters
-        if isclass(self.obj):
-            obj = "class"
-        elif any(p in params for p in ("cls", "self")):
+
+        # Assign an object type
+        if is_dataclass(self.obj):
+            obj = "dataclass"
+        elif isclass(self.obj):
+            if issubclass(self.obj, Enum):
+                obj = "enum"
+            else:
+                obj = "class"
+        elif isinstance(self.obj, MethodType):
+            obj = "classmethod"
+        elif "self" in params:
             obj = "method"
         else:
             obj = "function"
 
-        # Get signature without self, cls and type hints
-        sign = []
-        for k, v in params.items():
-            if k not in ("cls", "self") and not k.startswith("_"):
-                if v.default == Parameter.empty:
-                    if "**" in str(v):
-                        sign.append(f"**{k}")  # Add ** to kwargs
-                    elif "*" in str(v):
-                        sign.append(f"*{k}")  # Add * to args
+        if obj not in ("enum", "dataclass"):
+            # Get signature without self, cls and type hints
+            sign = []
+            for k, v in params.items():
+                if k not in ("cls", "self") and not k.startswith("_"):
+                    if v.default == Parameter.empty:
+                        if "**" in str(v):
+                            sign.append(f"**{k}")  # Add ** to kwargs
+                        elif "*" in str(v):
+                            sign.append(f"*{k}")  # Add * to args
+                        else:
+                            sign.append(k)
                     else:
-                        sign.append(k)
-                else:
-                    if isinstance(v.default, str):
-                        sign.append(f'{k}="{v.default}"')
-                    else:
-                        sign.append(f"{k}={v.default}")
+                        if isinstance(v.default, str):
+                            sign.append(f'{k}="{v.default}"')
+                        else:
+                            sign.append(f"{k}={v.default}")
+
+            parameters = f"({', '.join(sign)})"
+        else:
+            parameters = ""
 
         f = self.obj.__module__.replace(".", "/")  # Module and filename sep by /
         if "atom" in self.obj.__module__:
@@ -500,7 +515,7 @@ class AutoDocs:
             url = f"<span style='float:right'><a href={url}#L{line}>[source]</a></span>"
 
         # \n\n in front of signature to break potential lists in markdown
-        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}({', '.join(sign)}){url}</div>"
+        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}{parameters}{url}</div>"
 
     def get_summary(self) -> str:
         """Return the object's summary.
@@ -530,7 +545,12 @@ class AutoDocs:
         """
         pattern = f".*?(?={'|'.join(self.blocks)})"
         match = re.match(pattern, self.doc[len(self.get_summary()):], re.S)
-        return match.group() if match else ""
+        description = match.group() if match else ""
+
+        if isclass(self.obj) and issubclass(self.obj, Enum):
+            description += "\n\n" + "\n".join(f"- {k}" for k in self.obj.__members__)
+
+        return description
 
     def get_see_also(self) -> str:
         """Return the object's See Also block.

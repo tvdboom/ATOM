@@ -5460,7 +5460,7 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="linenos" data-linenos="18 "></span><span class="go">-------------------------------------</span>
 <span class="linenos" data-linenos="19 "></span><span class="go">Memory: 138.97 kB</span>
 <span class="linenos" data-linenos="20 "></span><span class="go">Scaled: False</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">Outlier values: 156 (1.1%)</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">Outlier values: 164 (1.2%)</span>
 <span class="linenos" data-linenos="22 "></span>
 <span class="linenos" data-linenos="23 "></span>
 <span class="linenos" data-linenos="24 "></span>
@@ -5480,14 +5480,14 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="linenos" data-linenos="38 "></span><span class="go">Fitting FeatureSelector...</span>
 <span class="linenos" data-linenos="39 "></span><span class="go">Performing feature selection ...</span>
 <span class="linenos" data-linenos="40 "></span><span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">   --&gt; Dropping feature mean perimeter (rank 5).</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">   --&gt; Dropping feature mean smoothness (rank 2).</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">   --&gt; Dropping feature mean fractal dimension (rank 4).</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">   --&gt; Dropping feature texture error (rank 9).</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">   --&gt; Dropping feature smoothness error (rank 8).</span>
-<span class="linenos" data-linenos="46 "></span><span class="go">   --&gt; Dropping feature symmetry error (rank 7).</span>
-<span class="linenos" data-linenos="47 "></span><span class="go">   --&gt; Dropping feature worst compactness (rank 6).</span>
-<span class="linenos" data-linenos="48 "></span><span class="go">   --&gt; Dropping feature worst fractal dimension (rank 3).</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">   --&gt; Dropping feature mean radius (rank 3).</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">   --&gt; Dropping feature mean smoothness (rank 8).</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">   --&gt; Dropping feature mean compactness (rank 4).</span>
+<span class="linenos" data-linenos="44 "></span><span class="go">   --&gt; Dropping feature mean symmetry (rank 9).</span>
+<span class="linenos" data-linenos="45 "></span><span class="go">   --&gt; Dropping feature texture error (rank 6).</span>
+<span class="linenos" data-linenos="46 "></span><span class="go">   --&gt; Dropping feature smoothness error (rank 2).</span>
+<span class="linenos" data-linenos="47 "></span><span class="go">   --&gt; Dropping feature concavity error (rank 5).</span>
+<span class="linenos" data-linenos="48 "></span><span class="go">   --&gt; Dropping feature worst compactness (rank 7).</span>
 <span class="linenos" data-linenos="49 "></span>
 <span class="linenos" data-linenos="50 "></span>
 <span class="linenos" data-linenos="51 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
@@ -5501,17 +5501,17 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="linenos" data-linenos="59 "></span>
 <span class="linenos" data-linenos="60 "></span><span class="go">Results for LogisticRegression:</span>
 <span class="linenos" data-linenos="61 "></span><span class="go">Fit ---------------------------------------------</span>
-<span class="linenos" data-linenos="62 "></span><span class="go">Train evaluation --&gt; f1: 0.9756</span>
-<span class="linenos" data-linenos="63 "></span><span class="go">Test evaluation --&gt; f1: 0.993</span>
+<span class="linenos" data-linenos="62 "></span><span class="go">Train evaluation --&gt; f1: 0.9826</span>
+<span class="linenos" data-linenos="63 "></span><span class="go">Test evaluation --&gt; f1: 0.9787</span>
 <span class="linenos" data-linenos="64 "></span><span class="go">Time elapsed: 0.032s</span>
 <span class="linenos" data-linenos="65 "></span><span class="go">-------------------------------------------------</span>
 <span class="linenos" data-linenos="66 "></span><span class="go">Time: 0.032s</span>
 <span class="linenos" data-linenos="67 "></span>
 <span class="linenos" data-linenos="68 "></span>
 <span class="linenos" data-linenos="69 "></span><span class="go">Final results ==================== &gt;&gt;</span>
-<span class="linenos" data-linenos="70 "></span><span class="go">Total time: 0.035s</span>
+<span class="linenos" data-linenos="70 "></span><span class="go">Total time: 0.036s</span>
 <span class="linenos" data-linenos="71 "></span><span class="go">-------------------------------------</span>
-<span class="linenos" data-linenos="72 "></span><span class="go">LogisticRegression --&gt; f1: 0.993</span>
+<span class="linenos" data-linenos="72 "></span><span class="go">LogisticRegression --&gt; f1: 0.9787</span>
 <span class="linenos" data-linenos="73 "></span>
 <span class="linenos" data-linenos="74 "></span>
 <span class="linenos" data-linenos="75 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the pipeline object</span>
@@ -5627,7 +5627,7 @@ Transformed feature names.
 <p><a href="" id="pipeline-get_metadata_routing"></a></p>
 <div class='sign'><em>method</em> <strong style='color:#008AB8'>get_metadata_routing</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L376>[source]</a></span></div>
 <p>Get metadata routing of this object.</p>
-<p>Check <a href="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing">sklearn's documentation</a> on how the
+<p>Check [sklearn's documentation][metadata_routing] on how the
 routing mechanism works.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a href="" id="get_metadata_routing-MetadataRouter"></a>

@@ -111,6 +111,7 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 * **[mkdocs-git-revision-date-localized-plugin](https://github.com/timvink/mkdocs-git-revision-date-localized-plugin)** (>=1.2.4)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.24.6)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.5.13)
+* **[mkdocs-material-extensions](https://pypi.org/project/mkdocs-material-extensions/)** (>=1.3.1)
 * **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
 * **[notebook](https://pypi.org/project/notebook/) (==6.4.12)**
 * **[pymdown-extensions](https://github.com/facelessuser/pymdown-extensions)** (>=10.7.1)

@@ -376,7 +376,7 @@ class Pipeline(SkPipeline):
     def get_metadata_routing(self):
         """Get metadata routing of this object.
 
-        Check [sklearn's documentation][metadata_routing] on how the
+        Check [sklearn's documentation][metadatarouting] on how the
         routing mechanism works.
 
         Returns

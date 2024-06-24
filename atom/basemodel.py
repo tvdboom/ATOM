@@ -1847,8 +1847,8 @@ class BaseModel(RunnerPlot):
         method: str, default="sigmoid"
             The method to use for calibration. Choose from:
 
-            - "sigmoid": Corresponds to [Platt's method][] (i.e., a
-              logistic regression model).
+            - "sigmoid": Corresponds to [Platt's method][plattsmethod]
+              (i.e., a logistic regression model).
             - "isotonic": Non-parametric approach. It's not advised
               to use this calibration method with too few samples (<1000)
               since it tends to overfit.
@@ -2167,8 +2167,8 @@ class BaseModel(RunnerPlot):
 
         !!! tip
             Use the [get_best_threshold][self-get_best_threshold] or
-            [plot_threshold][] method to determine a suitable value for
-            the [`threshold`][self-threshold] attribute.
+            [plot_threshold][] method to determine a suitable threshold
+            for a binary classifier.
 
         Parameters
         ----------

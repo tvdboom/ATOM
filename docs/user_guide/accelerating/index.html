@@ -5668,7 +5668,7 @@ engine.</p>
 enables you to run traditional tabular ML tasks on GPUs without going into the
 details of CUDA programming. For large datasets, these GPU-based implementations
 can complete 10-50x faster than their CPU equivalents.</p>
-<p>ATOM uses <code>pandas</code> pandas (which in turn uses <code>numpy</code>) as its [data backend][date-engines].
+<p>ATOM uses <code>pandas</code> pandas (which in turn uses <code>numpy</code>) as its <a class="autorefs autorefs-internal" href="../data_management/#data-engines">data backend</a>.
 This means that the data must move from CPU to GPU memory before it can be used
 by a cuML estimator. To avoid this overhead, consider using <a href="https://rapids.ai/cudf-pandas/">cudf-pandas</a>,
 which accelerates pandas' workflows on GPU, with automatic CPU fallback if needed.

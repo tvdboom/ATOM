@@ -130,7 +130,7 @@ enables you to run traditional tabular ML tasks on GPUs without going into the
 details of CUDA programming. For large datasets, these GPU-based implementations
 can complete 10-50x faster than their CPU equivalents.
 
-ATOM uses `pandas` pandas (which in turn uses `numpy`) as its [data backend][date-engines].
+ATOM uses `pandas` pandas (which in turn uses `numpy`) as its [data backend][data-engines].
 This means that the data must move from CPU to GPU memory before it can be used
 by a cuML estimator. To avoid this overhead, consider using [cudf-pandas](https://rapids.ai/cudf-pandas/),
 which accelerates pandas' workflows on GPU, with automatic CPU fallback if needed.
