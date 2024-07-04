@@ -62,7 +62,8 @@ full = [
     "requests>=2.31.0",
     "scikit-learn-intelex>=2023.2.1; platform_system != 'Darwin' and (platform_machine == 'x86_64' or platform_machine == 'AMD64')",
     "schemdraw>=0.16",
-    "statsforecast>=1.6.0",
+    "statsforecast>=1.7.3",
+    "supersmoother>=0.4",  # Required by MSTL (within statsforecast)
     "sweetviz>=2.3.1",
     "wordcloud>=1.9.2",
     "xgboost>=2.0.0",

@@ -5,7 +5,7 @@
 groups = ["default", "doc", "full", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:98a5c2f2b6ca857e7b11786705489826d20c0e45774bd4183044222e3a431278"
+content_hash = "sha256:0992a6455e0f5ecc67e56965161f1593037bb43a81f63c1b43c0eeaae961742c"
 
 [[package]]
 name = "absl-py"
@@ -5993,6 +5993,15 @@ files = [
     {file = "statsmodels-0.14.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:c008e16096f24f0514e53907890ccac6589a16ad6c81c218f2ee6752fdada555"},
     {file = "statsmodels-0.14.1-cp312-cp312-win_amd64.whl", hash = "sha256:bc0351d279c4e080f0ce638a3d886d312aa29eade96042e3ba0a73771b1abdfb"},
     {file = "statsmodels-0.14.1.tar.gz", hash = "sha256:2260efdc1ef89f39c670a0bd8151b1d0843567781bcafec6cda0534eb47a94f6"},
+]
+
+[[package]]
+name = "supersmoother"
+version = "0.4"
+summary = "Python implementation of Friedman's Supersmoother"
+groups = ["full"]
+files = [
+    {file = "supersmoother-0.4.tar.gz", hash = "sha256:aeef4e1b00c32316d624ea7e3ac87c244bf2e59abbb6c042e7791f69ae0669cb"},
 ]
 
 [[package]]
