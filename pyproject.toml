@@ -89,7 +89,6 @@ doc = [
     "mike>=2.0.0",  # For versioning
     "mkdocs>=1.5.3",
     "mkdocs-autorefs>=1.0.1",
-    "mkdocs-git-committers-plugin-2>=2.3.0",
     "mkdocs-git-revision-date-localized-plugin>=1.2.4",
     "mkdocs-jupyter>=0.24.6",
     "mkdocs-material>=9.5.13",

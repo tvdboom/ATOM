@@ -89,10 +89,6 @@ plugins:
           enable_creation_date: true
           fallback_to_build_date: true
           enabled: !ENV [CI, false]
-    - git-committers:
-          repository: tvdboom/ATOM
-          branch: master
-          token: ${{ secrets.GITHUB_TOKEN }}
 
 markdown_extensions:
     - admonition

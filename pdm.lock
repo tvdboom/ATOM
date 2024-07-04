@@ -5,7 +5,7 @@
 groups = ["default", "doc", "full", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:0992a6455e0f5ecc67e56965161f1593037bb43a81f63c1b43c0eeaae961742c"
+content_hash = "sha256:ac39d7c581b13a401dacfc9cecc67f9ba7bc350a59cd54c3149b977844050234"
 
 [[package]]
 name = "absl-py"
@@ -3213,22 +3213,6 @@ dependencies = [
 files = [
     {file = "mkdocs_autorefs-1.0.1-py3-none-any.whl", hash = "sha256:aacdfae1ab197780fb7a2dac92ad8a3d8f7ca8049a9cbe56a4218cd52e8da570"},
     {file = "mkdocs_autorefs-1.0.1.tar.gz", hash = "sha256:f684edf847eced40b570b57846b15f0bf57fb93ac2c510450775dcf16accb971"},
-]
-
-[[package]]
-name = "mkdocs-git-committers-plugin-2"
-version = "2.3.0"
-requires_python = ">=3.8,<4"
-summary = "An MkDocs plugin to create a list of contributors on the page. The git-committers plugin will seed the template context with a list of GitHub or GitLab committers and other useful GIT info such as last modified date"
-groups = ["doc"]
-dependencies = [
-    "gitpython",
-    "mkdocs>=1.0.3",
-    "requests",
-]
-files = [
-    {file = "mkdocs-git-committers-plugin-2-2.3.0.tar.gz", hash = "sha256:d6baca1ae04db8120640038eda8142f2d081c27b53f3b566c83c75717e4ed81a"},
-    {file = "mkdocs_git_committers_plugin_2-2.3.0-py3-none-any.whl", hash = "sha256:7b3434af3be525c12858eb3b44b4c6b695b7c7b7760482ea8de1c6e292e84f0f"},
 ]
 
 [[package]]

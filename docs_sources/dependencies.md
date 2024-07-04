@@ -108,7 +108,6 @@ running `pdm install --dev` (remember to install [pdm](https://pdm-project.org/l
 * **[mike](https://github.com/jimporter/mike)** (>=2.0.0)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.5.3)
 * **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=1.0.1)
-* **[mkdocs-git-committers-plugin-2](https://github.com/ojacques/mkdocs-git-committers-plugin-2/)** (>=2.3.0)
 * **[mkdocs-git-revision-date-localized-plugin](https://github.com/timvink/mkdocs-git-revision-date-localized-plugin)** (>=1.2.4)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.24.6)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=9.5.13)
