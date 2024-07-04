@@ -5489,13 +5489,13 @@ time series exhibits daily, and yearly patterns simultaneously.</p>
 <span class="linenos" data-linenos="16 "></span><span class="go">Fit ---------------------------------------------</span>
 <span class="linenos" data-linenos="17 "></span><span class="go">Train evaluation --&gt; mape: -2.3487</span>
 <span class="linenos" data-linenos="18 "></span><span class="go">Test evaluation --&gt; mape: -0.3284</span>
-<span class="linenos" data-linenos="19 "></span><span class="go">Time elapsed: 21.361s</span>
+<span class="linenos" data-linenos="19 "></span><span class="go">Time elapsed: 16.664s</span>
 <span class="linenos" data-linenos="20 "></span><span class="go">-------------------------------------------------</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">Time: 21.361s</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">Time: 16.664s</span>
 <span class="linenos" data-linenos="22 "></span>
 <span class="linenos" data-linenos="23 "></span>
 <span class="linenos" data-linenos="24 "></span><span class="go">Final results ==================== &gt;&gt;</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">Total time: 21.363s</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">Total time: 16.667s</span>
 <span class="linenos" data-linenos="26 "></span><span class="go">-------------------------------------</span>
 <span class="linenos" data-linenos="27 "></span><span class="go">MSTL --&gt; mape: -0.3284</span>
 </code></pre></div>
@@ -5681,8 +5681,8 @@ for testing (<a class="autorefs autorefs-internal" href="../../../user_guide/dat
 <strong>method: str, default="sigmoid"</strong><br><div markdown class='param'>
 The method to use for calibration. Choose from:</p>
 <ul>
-<li>"sigmoid": Corresponds to [Platt's method][plattmethod] (i.e., a
-  logistic regression model).</li>
+<li>"sigmoid": Corresponds to <a href="https://en.wikipedia.org/wiki/Platt_scaling">Platt's method</a>
+  (i.e., a logistic regression model).</li>
 <li>"isotonic": Non-parametric approach. It's not advised
   to use this calibration method with too few samples (&lt;1000)
   since it tends to overfit.</li>

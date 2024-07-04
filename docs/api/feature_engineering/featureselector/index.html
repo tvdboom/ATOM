@@ -5623,26 +5623,25 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="11 "></span><span class="go"> --&gt; Applying Principal Component Analysis...</span>
 <span class="linenos" data-linenos="12 "></span><span class="go">   --&gt; Scaling features...</span>
 <span class="linenos" data-linenos="13 "></span><span class="go">   --&gt; Keeping 12 components.</span>
-<span class="linenos" data-linenos="14 "></span><span class="go">   --&gt; Explained variance ratio: 0.972</span>
+<span class="linenos" data-linenos="14 "></span><span class="go">   --&gt; Explained variance ratio: 0.971</span>
 <span class="linenos" data-linenos="15 "></span>
-<span class="linenos" data-linenos="16 "></span>
-<span class="linenos" data-linenos="17 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the column names changed</span>
-<span class="linenos" data-linenos="18 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-<span class="linenos" data-linenos="19 "></span>
-<span class="linenos" data-linenos="20 "></span><span class="go">          pca0      pca1      pca2      pca3      pca4      pca5      pca6      pca7      pca8      pca9     pca10     pca11  target</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">0    -4.095941 -0.394878 -1.306288 -2.391418 -0.092122  1.802011 -0.483879 -0.098110  0.058379  0.055393  0.142889  0.126997       1</span>
-<span class="linenos" data-linenos="22 "></span><span class="go">1     6.765977 -1.680853  0.885135  1.507136 -0.675442 -0.250472 -1.440037  0.025855 -0.322187  0.739741 -0.988339  0.736718       0</span>
-<span class="linenos" data-linenos="23 "></span><span class="go">2     2.953423  3.968248 -2.962786  0.430504  0.530071  1.342366 -1.876367 -0.697527  0.544455 -0.763781  0.619957 -0.045552       0</span>
-<span class="linenos" data-linenos="24 "></span><span class="go">3    -4.364790 -0.968292  0.736850 -0.435244 -0.897608 -0.098633 -0.337883  0.026278 -0.193040 -0.818146  0.066620  0.349727       1</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">4    -5.485270  0.922215  0.133268 -1.112096  1.053380  0.155291 -1.347604  0.145778 -0.384031  0.385039  0.014812  0.050822       1</span>
-<span class="linenos" data-linenos="26 "></span><span class="go">..         ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...     ...</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">564  10.706628  1.877167 -1.592130  2.258890 -0.373588  0.610093  0.058241 -0.374597 -0.574286  0.142523 -0.191776  1.161842       0</span>
-<span class="linenos" data-linenos="28 "></span><span class="go">565  -5.463209 -0.795630  1.591104  2.444118 -0.013044  1.476232 -2.062847  0.480366  0.407592 -0.057449 -0.147843  0.481279       1</span>
-<span class="linenos" data-linenos="29 "></span><span class="go">566   7.200987 -5.925848  1.453947  2.938235  1.436414 -1.214888 -2.783330 -0.741856  0.870260  0.093764  0.643765 -0.645541       0</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">567  -5.122519  0.413272 -0.997667 -1.944866  1.016093  0.944619 -1.276135 -0.328835  0.118985  0.463256  0.472516 -0.124917       1</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">568  -4.759411 -1.914531  0.245891 -1.531405 -0.344720  0.797302 -0.166549  0.134787  0.199205  0.191509 -0.006885  0.334235       1</span>
-<span class="linenos" data-linenos="32 "></span>
-<span class="linenos" data-linenos="33 "></span><span class="go">[569 rows x 13 columns]</span>
+<span class="linenos" data-linenos="16 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the column names changed</span>
+<span class="linenos" data-linenos="17 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+<span class="linenos" data-linenos="18 "></span>
+<span class="linenos" data-linenos="19 "></span><span class="go">         pca0      pca1      pca2      pca3      pca4      pca5      pca6      pca7      pca8      pca9     pca10     pca11  target</span>
+<span class="linenos" data-linenos="20 "></span><span class="go">0    0.157034 -0.356211 -0.521818  1.559976  0.714772  1.159572 -0.149378 -0.348364 -0.305342  0.358117  0.338316  0.203035       1</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">1   -3.399510  1.772235  2.804824 -1.238371 -0.597012 -1.350909  1.008500  1.292483 -0.741615 -0.160936  0.120921 -0.067551       1</span>
+<span class="linenos" data-linenos="22 "></span><span class="go">2    7.017787  0.525834 -1.439163 -0.576849  1.754453 -1.900627 -0.456520  1.167905  0.200883  0.409157 -0.266654  0.227527       0</span>
+<span class="linenos" data-linenos="23 "></span><span class="go">3   -3.007760  0.356666  1.946988 -1.349284  2.040600  1.659369 -0.583334  0.029524  0.340997 -0.472668  0.260905 -0.297187       1</span>
+<span class="linenos" data-linenos="24 "></span><span class="go">4    2.224699  1.966635 -2.283977  0.199578 -0.624570 -0.180463 -0.280147 -1.011427  0.260268 -0.161184  0.087563 -0.231315       0</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">..        ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...     ...</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">564 -1.580126  1.822360  0.527701  1.328475 -2.072935 -1.478955 -0.038331 -0.328073 -0.294023  0.398227 -0.655287  0.349868       1</span>
+<span class="linenos" data-linenos="27 "></span><span class="go">565 -0.975479 -1.595597 -0.368372  0.533457 -0.440136 -0.381475 -0.054379 -0.072204  0.872134 -0.154100 -0.579652  0.047674       0</span>
+<span class="linenos" data-linenos="28 "></span><span class="go">566  1.243350  1.052192 -0.077111 -1.965173  0.436043  0.824687  0.241632 -0.776207 -0.190069 -0.259039  0.673760 -0.284783       1</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">567 -4.781227 -1.918501  3.417506  5.194876 -1.093597 -1.273946 -0.306588  0.132329 -1.660810 -1.004873 -1.386782  1.619238       1</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">568 -0.280863  2.266897 -0.050190  0.669196  1.878442 -1.258246  0.097148  0.424342  0.688460 -0.890576  0.025269  0.917368       1</span>
+<span class="linenos" data-linenos="31 "></span>
+<span class="linenos" data-linenos="32 "></span><span class="go">[569 rows x 13 columns]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5661,24 +5660,23 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="13 "></span><span class="go">   --&gt; Keeping 12 components.</span>
 <span class="linenos" data-linenos="14 "></span><span class="go">   --&gt; Explained variance ratio: 0.97</span>
 <span class="linenos" data-linenos="15 "></span>
-<span class="linenos" data-linenos="16 "></span>
-<span class="linenos" data-linenos="17 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the column names changed</span>
-<span class="linenos" data-linenos="18 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="linenos" data-linenos="19 "></span>
-<span class="linenos" data-linenos="20 "></span><span class="go">          pca0       pca1      pca2      pca3      pca4      pca5      pca6      pca7      pca8      pca9     pca10     pca11</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">0     9.192837   1.948583 -1.123166 -3.633731  1.195110  1.411424  2.159370 -0.398407 -0.157118 -0.877402  0.262955  0.859014</span>
-<span class="linenos" data-linenos="22 "></span><span class="go">1     2.387802  -3.768172 -0.529293 -1.118264 -0.621775  0.028656  0.013358  0.240988 -0.711905  1.106995  0.813120 -0.157923</span>
-<span class="linenos" data-linenos="23 "></span><span class="go">2     5.733896  -1.075174 -0.551748 -0.912083  0.177086  0.541452 -0.668166  0.097374  0.024066  0.454275 -0.605604 -0.124387</span>
-<span class="linenos" data-linenos="24 "></span><span class="go">3     7.122953  10.275589 -3.232790 -0.152547  2.960878  3.053422  1.429911  1.059565 -1.405440 -1.116975 -1.151514 -1.011316</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">4     3.935302  -1.948072  1.389767 -2.940639 -0.546747 -1.226495 -0.936213  0.636376 -0.263805  0.377704  0.651360  0.110515</span>
-<span class="linenos" data-linenos="26 "></span><span class="go">..         ...        ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">564   6.439315  -3.576817  2.459487 -1.177314  0.074824 -2.375193 -0.596130 -0.035471  0.987929  0.256989 -0.062651 -0.123342</span>
-<span class="linenos" data-linenos="28 "></span><span class="go">565   3.793382  -3.584048  2.088476  2.506028  0.510723 -0.246710 -0.716326 -1.113360 -0.105207 -0.108632  0.244804 -0.222753</span>
-<span class="linenos" data-linenos="29 "></span><span class="go">566   1.256179  -1.902297  0.562731  2.089227 -1.809991 -0.534447 -0.192758  0.341887  0.393917  0.520877 -0.840512 -0.096473</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">567  10.374794   1.672010 -1.877029  2.356031  0.033742  0.567936  0.223082 -0.280239 -0.542035 -0.089296 -0.178628  0.697461</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">568  -5.475243  -0.670637  1.490443  2.299157  0.184703  1.617837  1.698952  1.046354  0.374101 -0.047726 -0.144094  0.179496</span>
-<span class="linenos" data-linenos="32 "></span>
-<span class="linenos" data-linenos="33 "></span><span class="go">[569 rows x 12 columns]</span>
+<span class="linenos" data-linenos="16 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note that the column names changed</span>
+<span class="linenos" data-linenos="17 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="linenos" data-linenos="18 "></span>
+<span class="linenos" data-linenos="19 "></span><span class="go">          pca0       pca1      pca2      pca3      pca4      pca5      pca6      pca7      pca8      pca9     pca10     pca11</span>
+<span class="linenos" data-linenos="20 "></span><span class="go">0     9.192837   1.948583 -1.123166 -3.633731  1.195110  1.411424  2.159370 -0.398407 -0.157118 -0.877402  0.262955  0.859014</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">1     2.387802  -3.768172 -0.529293 -1.118264 -0.621775  0.028656  0.013358  0.240988 -0.711905  1.106995  0.813120 -0.157923</span>
+<span class="linenos" data-linenos="22 "></span><span class="go">2     5.733896  -1.075174 -0.551748 -0.912083  0.177086  0.541452 -0.668166  0.097374  0.024066  0.454275 -0.605604 -0.124387</span>
+<span class="linenos" data-linenos="23 "></span><span class="go">3     7.122953  10.275589 -3.232790 -0.152547  2.960878  3.053422  1.429911  1.059565 -1.405440 -1.116975 -1.151514 -1.011316</span>
+<span class="linenos" data-linenos="24 "></span><span class="go">4     3.935302  -1.948072  1.389767 -2.940639 -0.546747 -1.226495 -0.936213  0.636376 -0.263805  0.377704  0.651360  0.110515</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">..         ...        ...       ...       ...       ...       ...       ...       ...       ...       ...       ...       ...</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">564   6.439315  -3.576817  2.459487 -1.177314  0.074824 -2.375193 -0.596130 -0.035471  0.987929  0.256989 -0.062651 -0.123342</span>
+<span class="linenos" data-linenos="27 "></span><span class="go">565   3.793382  -3.584048  2.088476  2.506028  0.510723 -0.246710 -0.716326 -1.113360 -0.105207 -0.108632  0.244804 -0.222753</span>
+<span class="linenos" data-linenos="28 "></span><span class="go">566   1.256179  -1.902297  0.562731  2.089227 -1.809991 -0.534447 -0.192758  0.341887  0.393917  0.520877 -0.840512 -0.096473</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">567  10.374794   1.672010 -1.877029  2.356031  0.033742  0.567936  0.223082 -0.280239 -0.542035 -0.089296 -0.178628  0.697461</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">568  -5.475243  -0.670637  1.490443  2.299157  0.184703  1.617837  1.698952  1.046354  0.374101 -0.047726 -0.144094  0.179496</span>
+<span class="linenos" data-linenos="31 "></span>
+<span class="linenos" data-linenos="32 "></span><span class="go">[569 rows x 12 columns]</span>
 </code></pre></div>
 </div>
 </div>

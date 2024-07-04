@@ -5473,37 +5473,35 @@ Verbosity level of the class. Choose from:</p>
 <span class="linenos" data-linenos="28 "></span>
 <span class="linenos" data-linenos="29 "></span><span class="go">[1667 rows x 2 columns]</span>
 <span class="linenos" data-linenos="30 "></span>
-<span class="linenos" data-linenos="31 "></span>
-<span class="linenos" data-linenos="32 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">textclean</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="linenos" data-linenos="33 "></span>
-<span class="linenos" data-linenos="34 "></span><span class="go">Fitting TextCleaner...</span>
-<span class="linenos" data-linenos="35 "></span><span class="go">Cleaning the corpus...</span>
-<span class="linenos" data-linenos="36 "></span><span class="go"> --&gt; Decoding unicode characters to ascii.</span>
-<span class="linenos" data-linenos="37 "></span><span class="go"> --&gt; Converting text to lower case.</span>
-<span class="linenos" data-linenos="38 "></span><span class="go"> --&gt; Dropping emails from documents.</span>
-<span class="linenos" data-linenos="39 "></span><span class="go"> --&gt; Dropping URL links from documents.</span>
-<span class="linenos" data-linenos="40 "></span><span class="go"> --&gt; Dropping HTML tags from documents.</span>
-<span class="linenos" data-linenos="41 "></span><span class="go"> --&gt; Dropping emojis from documents.</span>
-<span class="linenos" data-linenos="42 "></span><span class="go"> --&gt; Dropping numbers from documents.</span>
-<span class="linenos" data-linenos="43 "></span><span class="go"> --&gt; Dropping punctuation from the text.</span>
-<span class="linenos" data-linenos="44 "></span>
+<span class="linenos" data-linenos="31 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">textclean</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos" data-linenos="32 "></span>
+<span class="linenos" data-linenos="33 "></span><span class="go">Fitting TextCleaner...</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">Cleaning the corpus...</span>
+<span class="linenos" data-linenos="35 "></span><span class="go"> --&gt; Decoding unicode characters to ascii.</span>
+<span class="linenos" data-linenos="36 "></span><span class="go"> --&gt; Converting text to lower case.</span>
+<span class="linenos" data-linenos="37 "></span><span class="go"> --&gt; Dropping emails from documents.</span>
+<span class="linenos" data-linenos="38 "></span><span class="go"> --&gt; Dropping URL links from documents.</span>
+<span class="linenos" data-linenos="39 "></span><span class="go"> --&gt; Dropping HTML tags from documents.</span>
+<span class="linenos" data-linenos="40 "></span><span class="go"> --&gt; Dropping emojis from documents.</span>
+<span class="linenos" data-linenos="41 "></span><span class="go"> --&gt; Dropping numbers from documents.</span>
+<span class="linenos" data-linenos="42 "></span><span class="go"> --&gt; Dropping punctuation from the text.</span>
+<span class="linenos" data-linenos="43 "></span>
+<span class="linenos" data-linenos="44 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 <span class="linenos" data-linenos="45 "></span>
-<span class="linenos" data-linenos="46 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-<span class="linenos" data-linenos="47 "></span>
-<span class="linenos" data-linenos="48 "></span><span class="go">                                                 corpus  target</span>
-<span class="linenos" data-linenos="49 "></span><span class="go">0     from  fabian hoppe\nsubject searching cadsoftw...       1</span>
-<span class="linenos" data-linenos="50 "></span><span class="go">1     from  david nye\nsubject re after  years can w...       0</span>
-<span class="linenos" data-linenos="51 "></span><span class="go">2     from  unmesh rathi\nsubject motif and intervie...       1</span>
-<span class="linenos" data-linenos="52 "></span><span class="go">3     from  inoue takeshi\nsubject how to see charac...       1</span>
-<span class="linenos" data-linenos="53 "></span><span class="go">4     from  kent sandvik\nsubject re slavery was re ...       0</span>
-<span class="linenos" data-linenos="54 "></span><span class="go">...                                                 ...     ...</span>
-<span class="linenos" data-linenos="55 "></span><span class="go">1662  from  kutluk ozguven\nsubject re jewish settle...       0</span>
-<span class="linenos" data-linenos="56 "></span><span class="go">1663  from  dmprocida\nsubject re homeopathy a respe...       2</span>
-<span class="linenos" data-linenos="57 "></span><span class="go">1664  from  thomas dunbar\nsubject re x toolkits\nsu...       1</span>
-<span class="linenos" data-linenos="58 "></span><span class="go">1665  from  donna m paino\nsubject psoriatic arthrit...       2</span>
-<span class="linenos" data-linenos="59 "></span><span class="go">1666  from  dale cook\nsubject re morbus meniere  is...       2</span>
-<span class="linenos" data-linenos="60 "></span>
-<span class="linenos" data-linenos="61 "></span><span class="go">[1667 rows x 2 columns]</span>
+<span class="linenos" data-linenos="46 "></span><span class="go">                                                 corpus  target</span>
+<span class="linenos" data-linenos="47 "></span><span class="go">0     from  fabian hoppe\nsubject searching cadsoftw...       1</span>
+<span class="linenos" data-linenos="48 "></span><span class="go">1     from  david nye\nsubject re after  years can w...       0</span>
+<span class="linenos" data-linenos="49 "></span><span class="go">2     from  unmesh rathi\nsubject motif and intervie...       1</span>
+<span class="linenos" data-linenos="50 "></span><span class="go">3     from  inoue takeshi\nsubject how to see charac...       1</span>
+<span class="linenos" data-linenos="51 "></span><span class="go">4     from  kent sandvik\nsubject re slavery was re ...       0</span>
+<span class="linenos" data-linenos="52 "></span><span class="go">...                                                 ...     ...</span>
+<span class="linenos" data-linenos="53 "></span><span class="go">1662  from  kutluk ozguven\nsubject re jewish settle...       0</span>
+<span class="linenos" data-linenos="54 "></span><span class="go">1663  from  dmprocida\nsubject re homeopathy a respe...       2</span>
+<span class="linenos" data-linenos="55 "></span><span class="go">1664  from  thomas dunbar\nsubject re x toolkits\nsu...       1</span>
+<span class="linenos" data-linenos="56 "></span><span class="go">1665  from  donna m paino\nsubject psoriatic arthrit...       2</span>
+<span class="linenos" data-linenos="57 "></span><span class="go">1666  from  dale cook\nsubject re morbus meniere  is...       2</span>
+<span class="linenos" data-linenos="58 "></span>
+<span class="linenos" data-linenos="59 "></span><span class="go">[1667 rows x 2 columns]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5532,23 +5530,22 @@ Verbosity level of the class. Choose from:</p>
 <span class="linenos" data-linenos="23 "></span><span class="go"> --&gt; Dropping numbers from documents.</span>
 <span class="linenos" data-linenos="24 "></span><span class="go"> --&gt; Dropping punctuation from the text.</span>
 <span class="linenos" data-linenos="25 "></span>
-<span class="linenos" data-linenos="26 "></span>
-<span class="linenos" data-linenos="27 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="linenos" data-linenos="28 "></span>
-<span class="linenos" data-linenos="29 "></span><span class="go">                                                 corpus</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">0     from  mark a deloura\nsubject looking for x wi...</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">1     from  der mouse\nsubject re creating  bit wind...</span>
-<span class="linenos" data-linenos="32 "></span><span class="go">2     from  keith m ryan\nsubject re where are they ...</span>
-<span class="linenos" data-linenos="33 "></span><span class="go">3     from  steven grimm\nsubject re opinions on all...</span>
-<span class="linenos" data-linenos="34 "></span><span class="go">4     from  peter kaminski\nsubject re krillean phot...</span>
-<span class="linenos" data-linenos="35 "></span><span class="go">...                                                 ...</span>
-<span class="linenos" data-linenos="36 "></span><span class="go">1662  from donald mackie \nsubject re seeking advice...</span>
-<span class="linenos" data-linenos="37 "></span><span class="go">1663  from  gordon banks\nsubject re update help was...</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">1664  from  keith m ryan\nsubject re political athei...</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">1665  from  benedikt rosenau\nsubject re biblical ra...</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">1666  from derrick j brashear \nsubject mouseless op...</span>
-<span class="linenos" data-linenos="41 "></span>
-<span class="linenos" data-linenos="42 "></span><span class="go">[1667 rows x 1 columns]</span>
+<span class="linenos" data-linenos="26 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="linenos" data-linenos="27 "></span>
+<span class="linenos" data-linenos="28 "></span><span class="go">                                                 corpus</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">0     from  mark a deloura\nsubject looking for x wi...</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">1     from  der mouse\nsubject re creating  bit wind...</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">2     from  keith m ryan\nsubject re where are they ...</span>
+<span class="linenos" data-linenos="32 "></span><span class="go">3     from  steven grimm\nsubject re opinions on all...</span>
+<span class="linenos" data-linenos="33 "></span><span class="go">4     from  peter kaminski\nsubject re krillean phot...</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">...                                                 ...</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">1662  from donald mackie \nsubject re seeking advice...</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">1663  from  gordon banks\nsubject re update help was...</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">1664  from  keith m ryan\nsubject re political athei...</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">1665  from  benedikt rosenau\nsubject re biblical ra...</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">1666  from derrick j brashear \nsubject mouseless op...</span>
+<span class="linenos" data-linenos="40 "></span>
+<span class="linenos" data-linenos="41 "></span><span class="go">[1667 rows x 1 columns]</span>
 </code></pre></div>
 </div>
 </div>

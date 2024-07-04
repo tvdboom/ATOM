@@ -5480,28 +5480,26 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="20 "></span><span class="go">1960-12    432.0</span>
 <span class="linenos" data-linenos="21 "></span><span class="go">Freq: M, Name: Number of airline passengers, Length: 144, dtype: float64</span>
 <span class="linenos" data-linenos="22 "></span>
-<span class="linenos" data-linenos="23 "></span>
-<span class="linenos" data-linenos="24 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">decompose</span><span class="p">(</span><span class="n">columns</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="linenos" data-linenos="25 "></span>
-<span class="linenos" data-linenos="26 "></span><span class="go">Fitting Decomposer...</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">Decomposing the data...</span>
-<span class="linenos" data-linenos="28 "></span>
+<span class="linenos" data-linenos="23 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">decompose</span><span class="p">(</span><span class="n">columns</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos" data-linenos="24 "></span>
+<span class="linenos" data-linenos="25 "></span><span class="go">Fitting Decomposer...</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">Decomposing the data...</span>
+<span class="linenos" data-linenos="27 "></span>
+<span class="linenos" data-linenos="28 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
 <span class="linenos" data-linenos="29 "></span>
-<span class="linenos" data-linenos="30 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-<span class="linenos" data-linenos="31 "></span>
-<span class="linenos" data-linenos="32 "></span><span class="go">Period</span>
-<span class="linenos" data-linenos="33 "></span><span class="go">1949-01     17.329355</span>
-<span class="linenos" data-linenos="34 "></span><span class="go">1949-02     20.763057</span>
-<span class="linenos" data-linenos="35 "></span><span class="go">1949-03     32.196759</span>
-<span class="linenos" data-linenos="36 "></span><span class="go">1949-04     26.630462</span>
-<span class="linenos" data-linenos="37 "></span><span class="go">1949-05     16.064164</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">              ...    </span>
-<span class="linenos" data-linenos="39 "></span><span class="go">1960-08    154.613985</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">1960-09     54.047688</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">1960-10      4.481390</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">1960-11    -69.084908</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">1960-12    -29.651205</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">Freq: M, Name: Number of airline passengers, Length: 144, dtype: float64</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">Period</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">1949-01     17.329355</span>
+<span class="linenos" data-linenos="32 "></span><span class="go">1949-02     20.763057</span>
+<span class="linenos" data-linenos="33 "></span><span class="go">1949-03     32.196759</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">1949-04     26.630462</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">1949-05     16.064164</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">              ...    </span>
+<span class="linenos" data-linenos="37 "></span><span class="go">1960-08    154.613985</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">1960-09     54.047688</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">1960-10      4.481390</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">1960-11    -69.084908</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">1960-12    -29.651205</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">Freq: M, Name: Number of airline passengers, Length: 144, dtype: float64</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5516,27 +5514,26 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos=" 9 "></span><span class="go">Fitting Decomposer...</span>
 <span class="linenos" data-linenos="10 "></span><span class="go">Decomposing the data...</span>
 <span class="linenos" data-linenos="11 "></span>
-<span class="linenos" data-linenos="12 "></span>
-<span class="linenos" data-linenos="13 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="linenos" data-linenos="14 "></span>
-<span class="linenos" data-linenos="15 "></span><span class="go">             TOTEMP</span>
-<span class="linenos" data-linenos="16 "></span><span class="go">Period             </span>
-<span class="linenos" data-linenos="17 "></span><span class="go">1947     379.838235</span>
-<span class="linenos" data-linenos="18 "></span><span class="go">1948     462.326471</span>
-<span class="linenos" data-linenos="19 "></span><span class="go">1949   -1205.185294</span>
-<span class="linenos" data-linenos="20 "></span><span class="go">1950    -905.697059</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">1951     411.791176</span>
-<span class="linenos" data-linenos="22 "></span><span class="go">1952     113.279412</span>
-<span class="linenos" data-linenos="23 "></span><span class="go">1953     746.767647</span>
-<span class="linenos" data-linenos="24 "></span><span class="go">1954   -1197.744118</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">1955     343.744118</span>
-<span class="linenos" data-linenos="26 "></span><span class="go">1956    1465.232353</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">1957    1060.720588</span>
-<span class="linenos" data-linenos="28 "></span><span class="go">1958   -1311.791176</span>
-<span class="linenos" data-linenos="29 "></span><span class="go">1959     113.697059</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">1960     306.185294</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">1961    -643.326471</span>
-<span class="linenos" data-linenos="32 "></span><span class="go">1962    -139.838235</span>
+<span class="linenos" data-linenos="12 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="linenos" data-linenos="13 "></span>
+<span class="linenos" data-linenos="14 "></span><span class="go">             TOTEMP</span>
+<span class="linenos" data-linenos="15 "></span><span class="go">Period             </span>
+<span class="linenos" data-linenos="16 "></span><span class="go">1947     379.838235</span>
+<span class="linenos" data-linenos="17 "></span><span class="go">1948     462.326471</span>
+<span class="linenos" data-linenos="18 "></span><span class="go">1949   -1205.185294</span>
+<span class="linenos" data-linenos="19 "></span><span class="go">1950    -905.697059</span>
+<span class="linenos" data-linenos="20 "></span><span class="go">1951     411.791176</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">1952     113.279412</span>
+<span class="linenos" data-linenos="22 "></span><span class="go">1953     746.767647</span>
+<span class="linenos" data-linenos="23 "></span><span class="go">1954   -1197.744118</span>
+<span class="linenos" data-linenos="24 "></span><span class="go">1955     343.744118</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">1956    1465.232353</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">1957    1060.720588</span>
+<span class="linenos" data-linenos="27 "></span><span class="go">1958   -1311.791176</span>
+<span class="linenos" data-linenos="28 "></span><span class="go">1959     113.697059</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">1960     306.185294</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">1961    -643.326471</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">1962    -139.838235</span>
 </code></pre></div>
 </div>
 </div>

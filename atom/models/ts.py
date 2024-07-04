@@ -765,7 +765,7 @@ class MSTL(ForecastModel):
     y = load_airline()
 
     atom = ATOMForecaster(y, random_state=1)
-    atom.run(models="MSTL", verbose=2)
+    atom.run(models="MSTL", errors='raise', verbose=2)
     ```
 
     """

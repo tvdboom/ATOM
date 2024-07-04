@@ -33,36 +33,6 @@ os.mkdir(DIR_EXAMPLES)
 cached_last_value = None
 
 
-class StreamOut:
-    """Override stdout to fetch the code's output."""
-
-    def __init__(self):
-        self.old = sys.stdout
-        self.stdout = StringIO()
-        sys.stdout = self.stdout
-
-    def read(self):
-        """Read the stringIO buffer."""
-        value = ""
-        if self.stdout is not None:
-            self.stdout.flush()
-            value = self.stdout.getvalue()
-            self.stdout = StringIO()
-            sys.stdout = self.stdout
-
-        return value
-
-    def __enter__(self):
-        """Enter the context manager."""
-        return self
-
-    def __exit__(self, type, value, traceback):
-        """Exit the context manager."""
-        sys.stdout = self.old
-        self.old = None
-        self.stdout = None
-
-
 def execute(src: str) -> tuple[list[list[str]], list[str]]:
     """Get the code with output.
 
@@ -133,7 +103,7 @@ def execute(src: str) -> tuple[list[list[str]], list[str]]:
             # Get complete code block
             block = lines[node.lineno - 1: end_line]
 
-            if "# hide" not in line:
+            if not line.endswith("# hide"):
                 output[-1].extend([draw(code) for code in block])
 
             # Add filename parameter to plot call to save the figure
@@ -157,19 +127,20 @@ def execute(src: str) -> tuple[list[list[str]], list[str]]:
 
             if code is None:
                 raise ValueError("Code block is incomplete.")
-            else:
-                try:
-                    # Capture anything sent to stdout
-                    with StreamOut() as stream:
-                        exec(code, ipy.locals)  # type: ignore[arg-type]
 
-                        if text := stream.read():
-                            # Omit plot's output
-                            if not text.startswith(("{'application/pdf'", "<pandas.io.formats")):
-                                output[-1].append(f"\n{text}")
-                except Exception:
-                    ipy.showtraceback()
-                    raise
+            sys.stdout = StringIO()
+            try:
+                exec(code, ipy.locals)  # type: ignore[arg-type]
+            except Exception:
+                ipy.showtraceback()
+                raise
+            finally:
+                if text := sys.stdout.getvalue():
+                    # Omit plot's output
+                    if not text.startswith(("{'application/pdf'", "<pandas.io.formats")):
+                        output[-1].append(f"\n{text[:-1]}")  # Remove last newline
+
+                sys.stdout = sys.__stdout__
 
             value = ipy.locals["__builtins__"].get("_")
             if cached_last_value is not value and isinstance(value, Styler):

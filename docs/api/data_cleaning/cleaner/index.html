@@ -5485,28 +5485,26 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="20 "></span><span class="go">568    b</span>
 <span class="linenos" data-linenos="21 "></span><span class="go">Name: target, Length: 569, dtype: object</span>
 <span class="linenos" data-linenos="22 "></span>
-<span class="linenos" data-linenos="23 "></span>
-<span class="linenos" data-linenos="24 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="linenos" data-linenos="25 "></span>
-<span class="linenos" data-linenos="26 "></span><span class="go">Fitting Cleaner...</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">Cleaning the data...</span>
-<span class="linenos" data-linenos="28 "></span><span class="go"> --&gt; Label-encoding column target.</span>
-<span class="linenos" data-linenos="29 "></span>
+<span class="linenos" data-linenos="23 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos" data-linenos="24 "></span>
+<span class="linenos" data-linenos="25 "></span><span class="go">Fitting Cleaner...</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">Cleaning the data...</span>
+<span class="linenos" data-linenos="27 "></span><span class="go"> --&gt; Label-encoding column target.</span>
+<span class="linenos" data-linenos="28 "></span>
+<span class="linenos" data-linenos="29 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
 <span class="linenos" data-linenos="30 "></span>
-<span class="linenos" data-linenos="31 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-<span class="linenos" data-linenos="32 "></span>
-<span class="linenos" data-linenos="33 "></span><span class="go">0      0</span>
-<span class="linenos" data-linenos="34 "></span><span class="go">1      0</span>
-<span class="linenos" data-linenos="35 "></span><span class="go">2      0</span>
-<span class="linenos" data-linenos="36 "></span><span class="go">3      0</span>
-<span class="linenos" data-linenos="37 "></span><span class="go">4      0</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">      ..</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">564    0</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">565    0</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">566    0</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">567    0</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">568    1</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">Name: target, Length: 569, dtype: Int64</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">0      0</span>
+<span class="linenos" data-linenos="32 "></span><span class="go">1      0</span>
+<span class="linenos" data-linenos="33 "></span><span class="go">2      0</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">3      0</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">4      0</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">      ..</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">564    0</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">565    0</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">566    0</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">567    0</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">568    1</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">Name: target, Length: 569, dtype: Int64</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5522,47 +5520,46 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="10 "></span><span class="go">Cleaning the data...</span>
 <span class="linenos" data-linenos="11 "></span><span class="go"> --&gt; Label-encoding column target.</span>
 <span class="linenos" data-linenos="12 "></span>
-<span class="linenos" data-linenos="13 "></span>
-<span class="linenos" data-linenos="14 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-<span class="linenos" data-linenos="15 "></span>
-<span class="linenos" data-linenos="16 "></span><span class="go">0     1</span>
-<span class="linenos" data-linenos="17 "></span><span class="go">1     0</span>
-<span class="linenos" data-linenos="18 "></span><span class="go">2     0</span>
-<span class="linenos" data-linenos="19 "></span><span class="go">3     0</span>
-<span class="linenos" data-linenos="20 "></span><span class="go">4     0</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">5     0</span>
-<span class="linenos" data-linenos="22 "></span><span class="go">6     0</span>
-<span class="linenos" data-linenos="23 "></span><span class="go">7     0</span>
-<span class="linenos" data-linenos="24 "></span><span class="go">8     0</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">9     0</span>
-<span class="linenos" data-linenos="26 "></span><span class="go">10    0</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">11    0</span>
-<span class="linenos" data-linenos="28 "></span><span class="go">12    0</span>
-<span class="linenos" data-linenos="29 "></span><span class="go">13    0</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">14    0</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">15    0</span>
-<span class="linenos" data-linenos="32 "></span><span class="go">16    0</span>
-<span class="linenos" data-linenos="33 "></span><span class="go">17    0</span>
-<span class="linenos" data-linenos="34 "></span><span class="go">18    0</span>
-<span class="linenos" data-linenos="35 "></span><span class="go">19    0</span>
-<span class="linenos" data-linenos="36 "></span><span class="go">20    0</span>
-<span class="linenos" data-linenos="37 "></span><span class="go">21    0</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">22    0</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">23    0</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">24    0</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">25    0</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">26    0</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">27    0</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">28    0</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">29    0</span>
-<span class="linenos" data-linenos="46 "></span><span class="go">30    0</span>
-<span class="linenos" data-linenos="47 "></span><span class="go">31    0</span>
-<span class="linenos" data-linenos="48 "></span><span class="go">32    0</span>
-<span class="linenos" data-linenos="49 "></span><span class="go">33    0</span>
-<span class="linenos" data-linenos="50 "></span><span class="go">34    0</span>
-<span class="linenos" data-linenos="51 "></span><span class="go">35    0</span>
-<span class="linenos" data-linenos="52 "></span><span class="go">36    0</span>
-<span class="linenos" data-linenos="53 "></span><span class="go">Name: target, dtype: Int64</span>
+<span class="linenos" data-linenos="13 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="linenos" data-linenos="14 "></span>
+<span class="linenos" data-linenos="15 "></span><span class="go">0     1</span>
+<span class="linenos" data-linenos="16 "></span><span class="go">1     0</span>
+<span class="linenos" data-linenos="17 "></span><span class="go">2     0</span>
+<span class="linenos" data-linenos="18 "></span><span class="go">3     0</span>
+<span class="linenos" data-linenos="19 "></span><span class="go">4     0</span>
+<span class="linenos" data-linenos="20 "></span><span class="go">5     0</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">6     0</span>
+<span class="linenos" data-linenos="22 "></span><span class="go">7     0</span>
+<span class="linenos" data-linenos="23 "></span><span class="go">8     0</span>
+<span class="linenos" data-linenos="24 "></span><span class="go">9     0</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">10    0</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">11    0</span>
+<span class="linenos" data-linenos="27 "></span><span class="go">12    0</span>
+<span class="linenos" data-linenos="28 "></span><span class="go">13    0</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">14    0</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">15    0</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">16    0</span>
+<span class="linenos" data-linenos="32 "></span><span class="go">17    0</span>
+<span class="linenos" data-linenos="33 "></span><span class="go">18    0</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">19    0</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">20    0</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">21    0</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">22    0</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">23    0</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">24    0</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">25    0</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">26    0</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">27    0</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">28    0</span>
+<span class="linenos" data-linenos="44 "></span><span class="go">29    0</span>
+<span class="linenos" data-linenos="45 "></span><span class="go">30    0</span>
+<span class="linenos" data-linenos="46 "></span><span class="go">31    0</span>
+<span class="linenos" data-linenos="47 "></span><span class="go">32    0</span>
+<span class="linenos" data-linenos="48 "></span><span class="go">33    0</span>
+<span class="linenos" data-linenos="49 "></span><span class="go">34    0</span>
+<span class="linenos" data-linenos="50 "></span><span class="go">35    0</span>
+<span class="linenos" data-linenos="51 "></span><span class="go">36    0</span>
+<span class="linenos" data-linenos="52 "></span><span class="go">Name: target, dtype: Int64</span>
 </code></pre></div>
 </div>
 </div>

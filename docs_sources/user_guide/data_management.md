@@ -110,9 +110,9 @@ Click [here][example-nlp] to see an example that uses sparse data.
 
 Metadata is data that an estimator, scorer, or CV splitter takes into account
 if the user explicitly passes it as a parameter (besides `X` and `y`). ATOM
-offers native integration with sklearn's [metadata routing][] system. Use
-the [`metadata`][atomclassifier-metadata] parameter to pass metadata to atom.
-This metadata is then automatically propagated to all relevant estimators,
+offers native integration with sklearn's [metadata routing][metadatarouting]
+system. Use the [`metadata`][atomclassifier-metadata] parameter to pass metadata
+to atom. This metadata is then automatically propagated to all relevant estimators,
 scorers, and CV splitters. The parameter accepts a dictionary with keys
 'groups' and/or 'sample_weight'. See the [metadata example][example-metadata]
 for a quick tutorial.

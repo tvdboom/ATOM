@@ -5461,24 +5461,22 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="25 "></span><span class="go">6                      this is a test       0</span>
 <span class="linenos" data-linenos="26 "></span><span class="go">7            hi there this is a test!       1</span>
 <span class="linenos" data-linenos="27 "></span>
-<span class="linenos" data-linenos="28 "></span>
-<span class="linenos" data-linenos="29 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="linenos" data-linenos="30 "></span>
-<span class="linenos" data-linenos="31 "></span><span class="go">Fitting Tokenizer...</span>
-<span class="linenos" data-linenos="32 "></span><span class="go">Tokenizing the corpus...</span>
-<span class="linenos" data-linenos="33 "></span>
+<span class="linenos" data-linenos="28 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos" data-linenos="29 "></span>
+<span class="linenos" data-linenos="30 "></span><span class="go">Fitting Tokenizer...</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">Tokenizing the corpus...</span>
+<span class="linenos" data-linenos="32 "></span>
+<span class="linenos" data-linenos="33 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
 <span class="linenos" data-linenos="34 "></span>
-<span class="linenos" data-linenos="35 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-<span class="linenos" data-linenos="36 "></span>
-<span class="linenos" data-linenos="37 "></span><span class="go">                                      corpus  target</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">0                                [new, york]       0</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">1                       [another, line, ...]       1</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">2                      [New, york, is, nice]       0</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">3  [new, york, is, larger, than, washington]       1</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">4                       [running, the, test]       0</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">5                [I, àm, in, ne, &#39;, w, york]       1</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">6                        [this, is, a, test]       0</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">7          [hi, there, this, is, a, test, !]       1</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">                                      corpus  target</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">0                                [new, york]       0</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">1                       [another, line, ...]       1</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">2                      [New, york, is, nice]       0</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">3  [new, york, is, larger, than, washington]       1</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">4                       [running, the, test]       0</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">5                [I, àm, in, ne, &#39;, w, york]       1</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">6                        [this, is, a, test]       0</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">7          [hi, there, this, is, a, test, !]       1</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5501,18 +5499,17 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="17 "></span><span class="go">Tokenizing the corpus...</span>
 <span class="linenos" data-linenos="18 "></span><span class="go"> --&gt; Creating 5 bigrams on 10 locations.</span>
 <span class="linenos" data-linenos="19 "></span>
-<span class="linenos" data-linenos="20 "></span>
-<span class="linenos" data-linenos="21 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="linenos" data-linenos="22 "></span>
-<span class="linenos" data-linenos="23 "></span><span class="go">                                     corpus</span>
-<span class="linenos" data-linenos="24 "></span><span class="go">0               [I, àm, in, ne, &#39;, w, york]</span>
-<span class="linenos" data-linenos="25 "></span><span class="go">1                      [New, york_is, nice]</span>
-<span class="linenos" data-linenos="26 "></span><span class="go">2                                [new_york]</span>
-<span class="linenos" data-linenos="27 "></span><span class="go">3           [hi, there, this_is, a_test, !]</span>
-<span class="linenos" data-linenos="28 "></span><span class="go">4                      [another, line, ...]</span>
-<span class="linenos" data-linenos="29 "></span><span class="go">5  [new, york_is, larger, than, washington]</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">6                      [running, the, test]</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">7                         [this_is, a_test]</span>
+<span class="linenos" data-linenos="20 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="linenos" data-linenos="21 "></span>
+<span class="linenos" data-linenos="22 "></span><span class="go">                                     corpus</span>
+<span class="linenos" data-linenos="23 "></span><span class="go">0               [I, àm, in, ne, &#39;, w, york]</span>
+<span class="linenos" data-linenos="24 "></span><span class="go">1                      [New, york_is, nice]</span>
+<span class="linenos" data-linenos="25 "></span><span class="go">2                                [new_york]</span>
+<span class="linenos" data-linenos="26 "></span><span class="go">3           [hi, there, this_is, a_test, !]</span>
+<span class="linenos" data-linenos="27 "></span><span class="go">4                      [another, line, ...]</span>
+<span class="linenos" data-linenos="28 "></span><span class="go">5  [new, york_is, larger, than, washington]</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">6                      [running, the, test]</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">7                         [this_is, a_test]</span>
 </code></pre></div>
 </div>
 </div>

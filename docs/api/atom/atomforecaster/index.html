@@ -5815,89 +5815,87 @@ number generator is the <code>RandomState</code> used by <code>np.random</code>.
 <span class="linenos" data-linenos="22 "></span><span class="go">Duplicates: 26 (18.1%)</span>
 <span class="linenos" data-linenos="23 "></span>
 <span class="linenos" data-linenos="24 "></span>
-<span class="linenos" data-linenos="25 "></span>
-<span class="linenos" data-linenos="26 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
-<span class="linenos" data-linenos="27 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NF&quot;</span><span class="p">,</span> <span class="s2">&quot;ES&quot;</span><span class="p">,</span> <span class="s2">&quot;ETS&quot;</span><span class="p">])</span>
+<span class="linenos" data-linenos="25 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
+<span class="linenos" data-linenos="26 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NF&quot;</span><span class="p">,</span> <span class="s2">&quot;ES&quot;</span><span class="p">,</span> <span class="s2">&quot;ETS&quot;</span><span class="p">])</span>
+<span class="linenos" data-linenos="27 "></span>
 <span class="linenos" data-linenos="28 "></span>
-<span class="linenos" data-linenos="29 "></span>
-<span class="linenos" data-linenos="30 "></span><span class="go">Training ========================= &gt;&gt;</span>
-<span class="linenos" data-linenos="31 "></span><span class="go">Models: NF, ES, ETS</span>
-<span class="linenos" data-linenos="32 "></span><span class="go">Metric: mape</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">Training ========================= &gt;&gt;</span>
+<span class="linenos" data-linenos="30 "></span><span class="go">Models: NF, ES, ETS</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">Metric: mape</span>
+<span class="linenos" data-linenos="32 "></span>
 <span class="linenos" data-linenos="33 "></span>
-<span class="linenos" data-linenos="34 "></span>
-<span class="linenos" data-linenos="35 "></span><span class="go">Results for NaiveForecaster:</span>
-<span class="linenos" data-linenos="36 "></span><span class="go">Fit ---------------------------------------------</span>
-<span class="linenos" data-linenos="37 "></span><span class="go">Train evaluation --&gt; mape: -0.0858</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">Test evaluation --&gt; mape: -0.2305</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">Time elapsed: 0.030s</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">-------------------------------------------------</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">Time: 0.030s</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">Results for NaiveForecaster:</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">Fit ---------------------------------------------</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">Train evaluation --&gt; mape: -0.0858</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">Test evaluation --&gt; mape: -0.2305</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">Time elapsed: 0.033s</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">-------------------------------------------------</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">Time: 0.033s</span>
+<span class="linenos" data-linenos="41 "></span>
 <span class="linenos" data-linenos="42 "></span>
-<span class="linenos" data-linenos="43 "></span>
-<span class="linenos" data-linenos="44 "></span><span class="go">Results for ExponentialSmoothing:</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">Fit ---------------------------------------------</span>
-<span class="linenos" data-linenos="46 "></span><span class="go">Train evaluation --&gt; mape: -0.0864</span>
-<span class="linenos" data-linenos="47 "></span><span class="go">Test evaluation --&gt; mape: -0.2303</span>
-<span class="linenos" data-linenos="48 "></span><span class="go">Time elapsed: 0.028s</span>
-<span class="linenos" data-linenos="49 "></span><span class="go">-------------------------------------------------</span>
-<span class="linenos" data-linenos="50 "></span><span class="go">Time: 0.028s</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">Results for ExponentialSmoothing:</span>
+<span class="linenos" data-linenos="44 "></span><span class="go">Fit ---------------------------------------------</span>
+<span class="linenos" data-linenos="45 "></span><span class="go">Train evaluation --&gt; mape: -0.0864</span>
+<span class="linenos" data-linenos="46 "></span><span class="go">Test evaluation --&gt; mape: -0.2303</span>
+<span class="linenos" data-linenos="47 "></span><span class="go">Time elapsed: 0.030s</span>
+<span class="linenos" data-linenos="48 "></span><span class="go">-------------------------------------------------</span>
+<span class="linenos" data-linenos="49 "></span><span class="go">Time: 0.030s</span>
+<span class="linenos" data-linenos="50 "></span>
 <span class="linenos" data-linenos="51 "></span>
-<span class="linenos" data-linenos="52 "></span>
-<span class="linenos" data-linenos="53 "></span><span class="go">Results for ETS:</span>
-<span class="linenos" data-linenos="54 "></span><span class="go">Fit ---------------------------------------------</span>
-<span class="linenos" data-linenos="55 "></span><span class="go">Train evaluation --&gt; mape: -0.0858</span>
-<span class="linenos" data-linenos="56 "></span><span class="go">Test evaluation --&gt; mape: -0.2305</span>
-<span class="linenos" data-linenos="57 "></span><span class="go">Time elapsed: 0.031s</span>
-<span class="linenos" data-linenos="58 "></span><span class="go">-------------------------------------------------</span>
-<span class="linenos" data-linenos="59 "></span><span class="go">Time: 0.031s</span>
+<span class="linenos" data-linenos="52 "></span><span class="go">Results for ETS:</span>
+<span class="linenos" data-linenos="53 "></span><span class="go">Fit ---------------------------------------------</span>
+<span class="linenos" data-linenos="54 "></span><span class="go">Train evaluation --&gt; mape: -0.0858</span>
+<span class="linenos" data-linenos="55 "></span><span class="go">Test evaluation --&gt; mape: -0.2305</span>
+<span class="linenos" data-linenos="56 "></span><span class="go">Time elapsed: 0.030s</span>
+<span class="linenos" data-linenos="57 "></span><span class="go">-------------------------------------------------</span>
+<span class="linenos" data-linenos="58 "></span><span class="go">Time: 0.030s</span>
+<span class="linenos" data-linenos="59 "></span>
 <span class="linenos" data-linenos="60 "></span>
-<span class="linenos" data-linenos="61 "></span>
-<span class="linenos" data-linenos="62 "></span><span class="go">Final results ==================== &gt;&gt;</span>
-<span class="linenos" data-linenos="63 "></span><span class="go">Total time: 0.093s</span>
-<span class="linenos" data-linenos="64 "></span><span class="go">-------------------------------------</span>
-<span class="linenos" data-linenos="65 "></span><span class="go">NaiveForecaster      --&gt; mape: -0.2305</span>
-<span class="linenos" data-linenos="66 "></span><span class="go">ExponentialSmoothing --&gt; mape: -0.2303 !</span>
-<span class="linenos" data-linenos="67 "></span><span class="go">ETS                  --&gt; mape: -0.2305</span>
-<span class="linenos" data-linenos="68 "></span>
-<span class="linenos" data-linenos="69 "></span>
-<span class="linenos" data-linenos="70 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
-<span class="linenos" data-linenos="71 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">results</span>
+<span class="linenos" data-linenos="61 "></span><span class="go">Final results ==================== &gt;&gt;</span>
+<span class="linenos" data-linenos="62 "></span><span class="go">Total time: 0.097s</span>
+<span class="linenos" data-linenos="63 "></span><span class="go">-------------------------------------</span>
+<span class="linenos" data-linenos="64 "></span><span class="go">NaiveForecaster      --&gt; mape: -0.2305</span>
+<span class="linenos" data-linenos="65 "></span><span class="go">ExponentialSmoothing --&gt; mape: -0.2303 !</span>
+<span class="linenos" data-linenos="66 "></span><span class="go">ETS                  --&gt; mape: -0.2305</span>
+<span class="linenos" data-linenos="67 "></span>
+<span class="linenos" data-linenos="68 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
+<span class="linenos" data-linenos="69 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">results</span>
 </code></pre></div><style type="text/css">
-#T_d3432_row0_col0, #T_d3432_row1_col1, #T_d3432_row1_col2, #T_d3432_row1_col3, #T_d3432_row2_col0 {
+#T_3c062_row0_col0, #T_3c062_row1_col1, #T_3c062_row2_col0, #T_3c062_row2_col2, #T_3c062_row2_col3 {
   background-color: lightgreen;
 }
 </style>
-<table id="T_d3432">
+<table id="T_3c062">
   <thead>
     <tr>
       <th class="blank level0" >&nbsp;</th>
-      <th id="T_d3432_level0_col0" class="col_heading level0 col0" >mape_train</th>
-      <th id="T_d3432_level0_col1" class="col_heading level0 col1" >mape_test</th>
-      <th id="T_d3432_level0_col2" class="col_heading level0 col2" >time_fit</th>
-      <th id="T_d3432_level0_col3" class="col_heading level0 col3" >time</th>
+      <th id="T_3c062_level0_col0" class="col_heading level0 col0" >mape_train</th>
+      <th id="T_3c062_level0_col1" class="col_heading level0 col1" >mape_test</th>
+      <th id="T_3c062_level0_col2" class="col_heading level0 col2" >time_fit</th>
+      <th id="T_3c062_level0_col3" class="col_heading level0 col3" >time</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th id="T_d3432_level0_row0" class="row_heading level0 row0" >NF</th>
-      <td id="T_d3432_row0_col0" class="data row0 col0" >-0.085800</td>
-      <td id="T_d3432_row0_col1" class="data row0 col1" >-0.230500</td>
-      <td id="T_d3432_row0_col2" class="data row0 col2" >0.030319</td>
-      <td id="T_d3432_row0_col3" class="data row0 col3" >0.030319</td>
+      <th id="T_3c062_level0_row0" class="row_heading level0 row0" >NF</th>
+      <td id="T_3c062_row0_col0" class="data row0 col0" >-0.085800</td>
+      <td id="T_3c062_row0_col1" class="data row0 col1" >-0.230500</td>
+      <td id="T_3c062_row0_col2" class="data row0 col2" >0.032650</td>
+      <td id="T_3c062_row0_col3" class="data row0 col3" >0.032650</td>
     </tr>
     <tr>
-      <th id="T_d3432_level0_row1" class="row_heading level0 row1" >ES</th>
-      <td id="T_d3432_row1_col0" class="data row1 col0" >-0.086400</td>
-      <td id="T_d3432_row1_col1" class="data row1 col1" >-0.230300</td>
-      <td id="T_d3432_row1_col2" class="data row1 col2" >0.028295</td>
-      <td id="T_d3432_row1_col3" class="data row1 col3" >0.028295</td>
+      <th id="T_3c062_level0_row1" class="row_heading level0 row1" >ES</th>
+      <td id="T_3c062_row1_col0" class="data row1 col0" >-0.086400</td>
+      <td id="T_3c062_row1_col1" class="data row1 col1" >-0.230300</td>
+      <td id="T_3c062_row1_col2" class="data row1 col2" >0.030228</td>
+      <td id="T_3c062_row1_col3" class="data row1 col3" >0.030228</td>
     </tr>
     <tr>
-      <th id="T_d3432_level0_row2" class="row_heading level0 row2" >ETS</th>
-      <td id="T_d3432_row2_col0" class="data row2 col0" >-0.085800</td>
-      <td id="T_d3432_row2_col1" class="data row2 col1" >-0.230500</td>
-      <td id="T_d3432_row2_col2" class="data row2 col2" >0.030720</td>
-      <td id="T_d3432_row2_col3" class="data row2 col3" >0.030720</td>
+      <th id="T_3c062_level0_row2" class="row_heading level0 row2" >ETS</th>
+      <td id="T_3c062_row2_col0" class="data row2 col0" >-0.085800</td>
+      <td id="T_3c062_row2_col1" class="data row2 col1" >-0.230500</td>
+      <td id="T_3c062_row2_col2" class="data row2 col2" >0.030100</td>
+      <td id="T_3c062_row2_col3" class="data row2 col3" >0.030100</td>
     </tr>
   </tbody>
 </table>
@@ -6107,7 +6105,7 @@ of utility methods to handle the data and manage the pipeline.</p>
 </table>
 <p><br></p>
 <p><a href="" id="atomforecaster-add"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, feature_names_out=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1408>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>add</strong>(transformer, columns=None, train_only=False, feature_names_out=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1407>[source]</a></span></div>
 <p>Add a transformer to the pipeline.</p>
 <p>If the transformer is not fitted, it is fitted on the complete
 training set. Afterward, the data set is transformed and the
@@ -6181,7 +6179,7 @@ Additional keyword arguments for the transformer's fit method.
 </table>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-apply"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>apply</strong>(func, inverse_func=None, feature_names_out=None, kw_args=None, inv_kw_args=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1507>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>apply</strong>(func, inverse_func=None, feature_names_out=None, kw_args=None, inv_kw_args=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1506>[source]</a></span></div>
 <p>Apply a function to the dataset.</p>
 <p>This method is useful for stateless transformations such as
 taking the log, doing custom scaling, etc...</p>
@@ -6438,7 +6436,7 @@ Statistic results with multiindex levels:</p>
 </table>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-decompose"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>decompose</strong>(model=None, test_seasonality=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1669>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>decompose</strong>(model=None, test_seasonality=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1668>[source]</a></span></div>
 <p>Detrend and deseasonalize the time series.</p>
 <p>This class does two things:</p>
 <ul>
@@ -6856,13 +6854,13 @@ parameter, e.g., <code>atom.stacking(final_estimator="LR")</code>.</p>
 <p>Display basic information about the dataset.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-status"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>status</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1121>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>status</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1120>[source]</a></span></div>
 <p>Get an overview of the branches and models.</p>
 <p>This method prints the same information as the __repr__ and
 also saves it to the logger.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-transform"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1131>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1130>[source]</a></span></div>
 <p>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -6941,7 +6939,7 @@ help you determine suitable parameters for the data cleaning methods.</p>
 </table>
 <p><br></p>
 <p><a href="" id="atomforecaster-clean"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(convert_dtypes=True, drop_dtypes=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1619>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>clean</strong>(convert_dtypes=True, drop_dtypes=None, drop_chars=None, strip_categorical=True, drop_duplicates=False, drop_missing_target=True, encode_target=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1618>[source]</a></span></div>
 <p>Apply standard data cleaning steps on the dataset.</p>
 <p>Use the parameters to choose which transformations to perform.
 The available steps are:</p>
@@ -6957,7 +6955,7 @@ The available steps are:</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../data_cleaning/cleaner/#cleaner">Cleaner</a> class for a description of the parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-discretize"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>discretize</strong>(strategy="quantile", bins=5, labels=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1712>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>discretize</strong>(strategy="quantile", bins=5, labels=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1711>[source]</a></span></div>
 <p>Bin continuous data into intervals.</p>
 <p>For each feature, the bin edges are computed during fit
 and, together with the number of bins, they will define the
@@ -6970,7 +6968,7 @@ distribution and decide on the bins.</p>
 </div>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-encode"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>encode</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1744>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>encode</strong>(strategy="Target", max_onehot=10, ordinal=None, infrequent_to_value=None, value="infrequent", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1743>[source]</a></span></div>
 <p>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the
 column:</p>
@@ -6997,7 +6995,7 @@ list of the categorical features in the dataset.</p>
 </div>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-impute"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>impute</strong>(strat_num="mean", strat_cat="most_frequent", max_nan_rows=None, max_nan_cols=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1794>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>impute</strong>(strat_num="mean", strat_cat="most_frequent", max_nan_rows=None, max_nan_cols=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1793>[source]</a></span></div>
 <p>Handle missing values in the dataset.</p>
 <p>Impute or remove missing values according to the selected
 strategy. Also removes rows and columns with too many missing
@@ -7014,7 +7012,7 @@ values.</p>
 </div>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-normalize"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>normalize</strong>(strategy="yeojohnson", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1833>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>normalize</strong>(strategy="yeojohnson", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1832>[source]</a></span></div>
 <p>Transform the data to follow a Normal/Gaussian distribution.</p>
 <p>This transformation is useful for modeling issues related
 to heteroscedasticity (non-constant variance), or other
@@ -7029,7 +7027,7 @@ distribution.</p>
 </div>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-prune"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>prune</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1858>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>prune</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1857>[source]</a></span></div>
 <p>Prune outliers from the training set.</p>
 <p>Replace or remove outliers. The definition of outlier depends
 on the selected strategy and can greatly differ from one
@@ -7048,7 +7046,7 @@ number of outliers per column.</p>
 </div>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-scale"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>scale</strong>(strategy="standard", include_binary=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1897>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>scale</strong>(strategy="standard", include_binary=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1896>[source]</a></span></div>
 <p>Scale the data.</p>
 <p>Apply one of sklearn's scaling strategies. Categorical columns
 are ignored.</p>
@@ -7070,7 +7068,7 @@ transformations are applied only on the column in the dataset called
 </table>
 <p><br></p>
 <p><a href="" id="atomforecaster-textclean"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1928>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>textclean</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1927>[source]</a></span></div>
 <p>Apply standard text cleaning to the corpus.</p>
 <p>Transformations include normalizing characters and drop
 noise from the text (emails, HTML tags, URLs, etc...). The
@@ -7081,7 +7079,7 @@ column with that name, an exception is raised.</p>
 parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-textnormalize"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>textnormalize</strong>(stopwords=True, custom_stopwords=None, stem=False, lemmatize=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1979>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>textnormalize</strong>(stopwords=True, custom_stopwords=None, stem=False, lemmatize=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1978>[source]</a></span></div>
 <p>Normalize the corpus.</p>
 <p>Convert words to a more uniform standard. The transformations
 are applied on the column named <code>corpus</code>, in the same order the
@@ -7092,7 +7090,7 @@ words are separated by spaces.</p>
 parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-tokenize"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2012>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>tokenize</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2011>[source]</a></span></div>
 <p>Tokenize the corpus.</p>
 <p>Convert documents into sequences of words. Additionally,
 create n-grams (represented by words united with underscores,
@@ -7102,7 +7100,7 @@ there is no column with that name, an exception is raised.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../nlp/tokenizer/#tokenizer">Tokenizer</a> class for a description of the parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-vectorize"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>vectorize</strong>(strategy="bow", return_sparse=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2041>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>vectorize</strong>(strategy="bow", return_sparse=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2040>[source]</a></span></div>
 <p>Vectorize the corpus.</p>
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If
@@ -7125,7 +7123,7 @@ large, remove features. Read more in the <a class="autorefs autorefs-internal" h
 </table>
 <p><br></p>
 <p><a href="" id="atomforecaster-feature_extraction"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=('day', 'month', 'year'), fmt=None, encoding_type="ordinal", drop_columns=True, from_index=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2075>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_extraction</strong>(features=('day', 'month', 'year'), fmt=None, encoding_type="ordinal", drop_columns=True, from_index=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2074>[source]</a></span></div>
 <p>Extract features from datetime columns.</p>
 <p>Create new features extracting datetime elements (day, month,
 year, etc...) from the provided columns. Columns of dtype
@@ -7136,7 +7134,7 @@ values after conversion) are also used.</p>
 parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-feature_generation"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_generation</strong>(strategy="dfs", n_features=None, operators=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2110>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_generation</strong>(strategy="dfs", n_features=None, operators=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2109>[source]</a></span></div>
 <p>Generate new features.</p>
 <p>Create new combinations of existing features to capture the
 non-linear relations between the original features.</p>
@@ -7144,7 +7142,7 @@ non-linear relations between the original features.</p>
 parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-feature_grouping"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_grouping</strong>(groups, operators=None, drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2138>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_grouping</strong>(groups, operators=None, drop_columns=True, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2137>[source]</a></span></div>
 <p>Extract statistics from similar features.</p>
 <p>Replace groups of features with related characteristics with new
 features that summarize statistical properties of the group. The
@@ -7161,7 +7159,7 @@ to select all features that start with <code>var_</code>.</p>
 </div>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-feature_selection"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_selection</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2177>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>feature_selection</strong>(strategy=None, solver=None, n_features=None, min_repeated=2, max_repeated=1.0, max_correlation=1.0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2176>[source]</a></span></div>
 <p>Reduce the number of features in the data.</p>
 <p>Apply feature selection or dimensionality reduction, either to
 improve the estimators' accuracy or to boost their performance
@@ -7191,7 +7189,7 @@ more in the <a class="autorefs autorefs-internal" href="../../../user_guide/trai
 </table>
 <p><br></p>
 <p><a href="" id="atomforecaster-run"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2307>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2306>[source]</a></span></div>
 <p>Train and evaluate the models in a direct fashion.</p>
 <p>Contrary to <a class="autorefs autorefs-internal" href="#atomforecaster-successive_halving">successive_halving</a> and
 <a class="autorefs autorefs-internal" href="#atomforecaster-train_sizing">train_sizing</a>, the direct approach only
@@ -7210,7 +7208,7 @@ iterates once over the models, using the full dataset.</p>
 description of the parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-successive_halving"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models=None, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2361>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models=None, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2360>[source]</a></span></div>
 <p>Fit the models in a successive halving fashion.</p>
 <p>The successive halving technique is a bandit-based algorithm
 that fits N models to 1/N of the data. The best half are
@@ -7235,7 +7233,7 @@ models.</p>
 class for a description of the parameters.</p>
 <p><br><br></p>
 <p><a href="" id="atomforecaster-train_sizing"></a></p>
-<div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2423>[source]</a></span></div>
+<div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, parallel=False, errors="skip", **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2422>[source]</a></span></div>
 <p>Train and evaluate the models in a train sizing fashion.</p>
 <p>When training models, there is usually a trade-off between
 model performance and computation time; that is regulated by

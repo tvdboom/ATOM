@@ -5460,72 +5460,67 @@ Number of features seen during first step <code>fit</code> method.</p>
 <span class="linenos" data-linenos="18 "></span><span class="go">-------------------------------------</span>
 <span class="linenos" data-linenos="19 "></span><span class="go">Memory: 138.97 kB</span>
 <span class="linenos" data-linenos="20 "></span><span class="go">Scaled: False</span>
-<span class="linenos" data-linenos="21 "></span><span class="go">Outlier values: 164 (1.2%)</span>
+<span class="linenos" data-linenos="21 "></span><span class="go">Outlier values: 181 (1.3%)</span>
 <span class="linenos" data-linenos="22 "></span>
 <span class="linenos" data-linenos="23 "></span>
-<span class="linenos" data-linenos="24 "></span>
-<span class="linenos" data-linenos="25 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Apply data cleaning and feature engineering methods</span>
-<span class="linenos" data-linenos="26 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">()</span>
-<span class="linenos" data-linenos="27 "></span>
-<span class="linenos" data-linenos="28 "></span><span class="go">Fitting Scaler...</span>
-<span class="linenos" data-linenos="29 "></span><span class="go">Scaling features...</span>
+<span class="linenos" data-linenos="24 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Apply data cleaning and feature engineering methods</span>
+<span class="linenos" data-linenos="25 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">()</span>
+<span class="linenos" data-linenos="26 "></span>
+<span class="linenos" data-linenos="27 "></span><span class="go">Fitting Scaler...</span>
+<span class="linenos" data-linenos="28 "></span><span class="go">Scaling features...</span>
+<span class="linenos" data-linenos="29 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">)</span>
 <span class="linenos" data-linenos="30 "></span>
-<span class="linenos" data-linenos="31 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">)</span>
-<span class="linenos" data-linenos="32 "></span>
-<span class="linenos" data-linenos="33 "></span><span class="go">Oversampling with SMOTE...</span>
-<span class="linenos" data-linenos="34 "></span><span class="go"> --&gt; Adding 116 samples to class 0.</span>
-<span class="linenos" data-linenos="35 "></span>
-<span class="linenos" data-linenos="36 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;rfe&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">22</span><span class="p">)</span>
-<span class="linenos" data-linenos="37 "></span>
-<span class="linenos" data-linenos="38 "></span><span class="go">Fitting FeatureSelector...</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">Performing feature selection ...</span>
-<span class="linenos" data-linenos="40 "></span><span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">   --&gt; Dropping feature mean radius (rank 3).</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">   --&gt; Dropping feature mean smoothness (rank 8).</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">   --&gt; Dropping feature mean compactness (rank 4).</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">   --&gt; Dropping feature mean symmetry (rank 9).</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">   --&gt; Dropping feature texture error (rank 6).</span>
-<span class="linenos" data-linenos="46 "></span><span class="go">   --&gt; Dropping feature smoothness error (rank 2).</span>
-<span class="linenos" data-linenos="47 "></span><span class="go">   --&gt; Dropping feature concavity error (rank 5).</span>
-<span class="linenos" data-linenos="48 "></span><span class="go">   --&gt; Dropping feature worst compactness (rank 7).</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">Oversampling with SMOTE...</span>
+<span class="linenos" data-linenos="32 "></span><span class="go"> --&gt; Adding 116 samples to class 0.</span>
+<span class="linenos" data-linenos="33 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;rfe&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">22</span><span class="p">)</span>
+<span class="linenos" data-linenos="34 "></span>
+<span class="linenos" data-linenos="35 "></span><span class="go">Fitting FeatureSelector...</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">Performing feature selection ...</span>
+<span class="linenos" data-linenos="37 "></span><span class="go"> --&gt; rfe selected 22 features from the dataset.</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">   --&gt; Dropping feature mean texture (rank 3).</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">   --&gt; Dropping feature mean smoothness (rank 5).</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">   --&gt; Dropping feature mean symmetry (rank 6).</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">   --&gt; Dropping feature mean fractal dimension (rank 7).</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">   --&gt; Dropping feature concavity error (rank 9).</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">   --&gt; Dropping feature concave points error (rank 2).</span>
+<span class="linenos" data-linenos="44 "></span><span class="go">   --&gt; Dropping feature symmetry error (rank 4).</span>
+<span class="linenos" data-linenos="45 "></span><span class="go">   --&gt; Dropping feature worst compactness (rank 8).</span>
+<span class="linenos" data-linenos="46 "></span>
+<span class="linenos" data-linenos="47 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
+<span class="linenos" data-linenos="48 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">)</span>
 <span class="linenos" data-linenos="49 "></span>
 <span class="linenos" data-linenos="50 "></span>
-<span class="linenos" data-linenos="51 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train models</span>
-<span class="linenos" data-linenos="52 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">)</span>
-<span class="linenos" data-linenos="53 "></span>
+<span class="linenos" data-linenos="51 "></span><span class="go">Training ========================= &gt;&gt;</span>
+<span class="linenos" data-linenos="52 "></span><span class="go">Models: LR</span>
+<span class="linenos" data-linenos="53 "></span><span class="go">Metric: f1</span>
 <span class="linenos" data-linenos="54 "></span>
-<span class="linenos" data-linenos="55 "></span><span class="go">Training ========================= &gt;&gt;</span>
-<span class="linenos" data-linenos="56 "></span><span class="go">Models: LR</span>
-<span class="linenos" data-linenos="57 "></span><span class="go">Metric: f1</span>
-<span class="linenos" data-linenos="58 "></span>
-<span class="linenos" data-linenos="59 "></span>
-<span class="linenos" data-linenos="60 "></span><span class="go">Results for LogisticRegression:</span>
-<span class="linenos" data-linenos="61 "></span><span class="go">Fit ---------------------------------------------</span>
-<span class="linenos" data-linenos="62 "></span><span class="go">Train evaluation --&gt; f1: 0.9826</span>
-<span class="linenos" data-linenos="63 "></span><span class="go">Test evaluation --&gt; f1: 0.9787</span>
-<span class="linenos" data-linenos="64 "></span><span class="go">Time elapsed: 0.032s</span>
-<span class="linenos" data-linenos="65 "></span><span class="go">-------------------------------------------------</span>
-<span class="linenos" data-linenos="66 "></span><span class="go">Time: 0.032s</span>
-<span class="linenos" data-linenos="67 "></span>
-<span class="linenos" data-linenos="68 "></span>
-<span class="linenos" data-linenos="69 "></span><span class="go">Final results ==================== &gt;&gt;</span>
-<span class="linenos" data-linenos="70 "></span><span class="go">Total time: 0.036s</span>
-<span class="linenos" data-linenos="71 "></span><span class="go">-------------------------------------</span>
-<span class="linenos" data-linenos="72 "></span><span class="go">LogisticRegression --&gt; f1: 0.9787</span>
+<span class="linenos" data-linenos="55 "></span>
+<span class="linenos" data-linenos="56 "></span><span class="go">Results for LogisticRegression:</span>
+<span class="linenos" data-linenos="57 "></span><span class="go">Fit ---------------------------------------------</span>
+<span class="linenos" data-linenos="58 "></span><span class="go">Train evaluation --&gt; f1: 0.9878</span>
+<span class="linenos" data-linenos="59 "></span><span class="go">Test evaluation --&gt; f1: 0.9787</span>
+<span class="linenos" data-linenos="60 "></span><span class="go">Time elapsed: 0.031s</span>
+<span class="linenos" data-linenos="61 "></span><span class="go">-------------------------------------------------</span>
+<span class="linenos" data-linenos="62 "></span><span class="go">Time: 0.031s</span>
+<span class="linenos" data-linenos="63 "></span>
+<span class="linenos" data-linenos="64 "></span>
+<span class="linenos" data-linenos="65 "></span><span class="go">Final results ==================== &gt;&gt;</span>
+<span class="linenos" data-linenos="66 "></span><span class="go">Total time: 0.034s</span>
+<span class="linenos" data-linenos="67 "></span><span class="go">-------------------------------------</span>
+<span class="linenos" data-linenos="68 "></span><span class="go">LogisticRegression --&gt; f1: 0.9787</span>
+<span class="linenos" data-linenos="69 "></span>
+<span class="linenos" data-linenos="70 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the pipeline object</span>
+<span class="linenos" data-linenos="71 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">export_pipeline</span><span class="p">()</span>
+<span class="linenos" data-linenos="72 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 <span class="linenos" data-linenos="73 "></span>
-<span class="linenos" data-linenos="74 "></span>
-<span class="linenos" data-linenos="75 "></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the pipeline object</span>
-<span class="linenos" data-linenos="76 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">export_pipeline</span><span class="p">()</span>
-<span class="linenos" data-linenos="77 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
-<span class="linenos" data-linenos="78 "></span>
-<span class="linenos" data-linenos="79 "></span><span class="go">Pipeline(memory=Memory(location=None),</span>
-<span class="linenos" data-linenos="80 "></span><span class="go">         steps=[(&#39;scaler&#39;,</span>
-<span class="linenos" data-linenos="81 "></span><span class="go">                 Scaler(engine={&#39;data&#39;: &#39;pandas&#39;, &#39;estimator&#39;: &#39;sklearn&#39;}, verbose=2)),</span>
-<span class="linenos" data-linenos="82 "></span><span class="go">                (&#39;balancer&#39;, Balancer(strategy=&#39;smote&#39;, verbose=2)),</span>
-<span class="linenos" data-linenos="83 "></span><span class="go">                (&#39;featureselector&#39;,</span>
-<span class="linenos" data-linenos="84 "></span><span class="go">                 FeatureSelector(engine={&#39;data&#39;: &#39;pandas&#39;, &#39;estimator&#39;: &#39;sklearn&#39;}, n_features=22, solver=&#39;lr_class&#39;, strategy=&#39;rfe&#39;, verbose=2)),</span>
-<span class="linenos" data-linenos="85 "></span><span class="go">                (&#39;LogisticRegression&#39;, LogisticRegression(n_jobs=1))],</span>
-<span class="linenos" data-linenos="86 "></span><span class="go">         verbose=False)</span>
+<span class="linenos" data-linenos="74 "></span><span class="go">Pipeline(memory=Memory(location=None),</span>
+<span class="linenos" data-linenos="75 "></span><span class="go">         steps=[(&#39;scaler&#39;,</span>
+<span class="linenos" data-linenos="76 "></span><span class="go">                 Scaler(engine={&#39;data&#39;: &#39;pandas&#39;, &#39;estimator&#39;: &#39;sklearn&#39;}, verbose=2)),</span>
+<span class="linenos" data-linenos="77 "></span><span class="go">                (&#39;balancer&#39;, Balancer(strategy=&#39;smote&#39;, verbose=2)),</span>
+<span class="linenos" data-linenos="78 "></span><span class="go">                (&#39;featureselector&#39;,</span>
+<span class="linenos" data-linenos="79 "></span><span class="go">                 FeatureSelector(engine={&#39;data&#39;: &#39;pandas&#39;, &#39;estimator&#39;: &#39;sklearn&#39;}, n_features=22, solver=&#39;lr_class&#39;, strategy=&#39;rfe&#39;, verbose=2)),</span>
+<span class="linenos" data-linenos="80 "></span><span class="go">                (&#39;LogisticRegression&#39;, LogisticRegression(n_jobs=1))],</span>
+<span class="linenos" data-linenos="81 "></span><span class="go">         verbose=False)</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="methods">Methods</h2>
@@ -5627,7 +5622,7 @@ Transformed feature names.
 <p><a href="" id="pipeline-get_metadata_routing"></a></p>
 <div class='sign'><em>method</em> <strong style='color:#008AB8'>get_metadata_routing</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/pipeline.py#L376>[source]</a></span></div>
 <p>Get metadata routing of this object.</p>
-<p>Check [sklearn's documentation][metadata_routing] on how the
+<p>Check <a href="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing">sklearn's documentation</a> on how the
 routing mechanism works.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a href="" id="get_metadata_routing-MetadataRouter"></a>

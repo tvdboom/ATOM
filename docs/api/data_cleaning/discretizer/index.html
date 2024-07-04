@@ -5486,35 +5486,33 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="19 "></span><span class="go">568    14.80</span>
 <span class="linenos" data-linenos="20 "></span><span class="go">Name: mean radius, Length: 569, dtype: float64</span>
 <span class="linenos" data-linenos="21 "></span>
-<span class="linenos" data-linenos="22 "></span>
-<span class="linenos" data-linenos="23 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">discretize</span><span class="p">(</span>
-<span class="linenos" data-linenos="24 "></span><span class="gp">... </span>    <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span>
-<span class="linenos" data-linenos="25 "></span><span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">],</span>
-<span class="linenos" data-linenos="26 "></span><span class="gp">... </span>    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">],</span>
-<span class="linenos" data-linenos="27 "></span><span class="gp">... </span>    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-<span class="linenos" data-linenos="28 "></span><span class="gp">... </span>    <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;mean radius&quot;</span><span class="p">,</span>
-<span class="linenos" data-linenos="29 "></span><span class="gp">... </span><span class="p">)</span>
-<span class="linenos" data-linenos="30 "></span>
-<span class="linenos" data-linenos="31 "></span><span class="go">Fitting Discretizer...</span>
-<span class="linenos" data-linenos="32 "></span><span class="go">Binning the features...</span>
-<span class="linenos" data-linenos="33 "></span><span class="go"> --&gt; Discretizing feature mean radius in 3 bins.</span>
-<span class="linenos" data-linenos="34 "></span>
+<span class="linenos" data-linenos="22 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">discretize</span><span class="p">(</span>
+<span class="linenos" data-linenos="23 "></span><span class="gp">... </span>    <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span>
+<span class="linenos" data-linenos="24 "></span><span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">],</span>
+<span class="linenos" data-linenos="25 "></span><span class="gp">... </span>    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">],</span>
+<span class="linenos" data-linenos="26 "></span><span class="gp">... </span>    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos" data-linenos="27 "></span><span class="gp">... </span>    <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;mean radius&quot;</span><span class="p">,</span>
+<span class="linenos" data-linenos="28 "></span><span class="gp">... </span><span class="p">)</span>
+<span class="linenos" data-linenos="29 "></span>
+<span class="linenos" data-linenos="30 "></span><span class="go">Fitting Discretizer...</span>
+<span class="linenos" data-linenos="31 "></span><span class="go">Binning the features...</span>
+<span class="linenos" data-linenos="32 "></span><span class="go"> --&gt; Discretizing feature mean radius in 3 bins.</span>
+<span class="linenos" data-linenos="33 "></span>
+<span class="linenos" data-linenos="34 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="p">[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">])</span>
 <span class="linenos" data-linenos="35 "></span>
-<span class="linenos" data-linenos="36 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="p">[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">])</span>
-<span class="linenos" data-linenos="37 "></span>
-<span class="linenos" data-linenos="38 "></span><span class="go">0      medium</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">1       large</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">2      medium</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">3      medium</span>
-<span class="linenos" data-linenos="42 "></span><span class="go">4       small</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">        ...  </span>
-<span class="linenos" data-linenos="44 "></span><span class="go">564    medium</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">565    medium</span>
-<span class="linenos" data-linenos="46 "></span><span class="go">566    medium</span>
-<span class="linenos" data-linenos="47 "></span><span class="go">567    medium</span>
-<span class="linenos" data-linenos="48 "></span><span class="go">568    medium</span>
-<span class="linenos" data-linenos="49 "></span><span class="go">Name: mean radius, Length: 569, dtype: category</span>
-<span class="linenos" data-linenos="50 "></span><span class="go">Categories (3, object): [&#39;small&#39; &lt; &#39;medium&#39; &lt; &#39;large&#39;]</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">0      medium</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">1       large</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">2      medium</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">3      medium</span>
+<span class="linenos" data-linenos="40 "></span><span class="go">4       small</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">        ...  </span>
+<span class="linenos" data-linenos="42 "></span><span class="go">564    medium</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">565    medium</span>
+<span class="linenos" data-linenos="44 "></span><span class="go">566    medium</span>
+<span class="linenos" data-linenos="45 "></span><span class="go">567    medium</span>
+<span class="linenos" data-linenos="46 "></span><span class="go">568    medium</span>
+<span class="linenos" data-linenos="47 "></span><span class="go">Name: mean radius, Length: 569, dtype: category</span>
+<span class="linenos" data-linenos="48 "></span><span class="go">Categories (3, object): [&#39;small&#39; &lt; &#39;medium&#39; &lt; &#39;large&#39;]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5537,35 +5535,33 @@ Number of features seen during <code>fit</code>.</p>
 <span class="linenos" data-linenos="17 "></span><span class="go">568     7.76</span>
 <span class="linenos" data-linenos="18 "></span><span class="go">Name: mean radius, Length: 569, dtype: float64</span>
 <span class="linenos" data-linenos="19 "></span>
-<span class="linenos" data-linenos="20 "></span>
-<span class="linenos" data-linenos="21 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">discretizer</span> <span class="o">=</span> <span class="n">Discretizer</span><span class="p">(</span>
-<span class="linenos" data-linenos="22 "></span><span class="gp">... </span>    <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span>
-<span class="linenos" data-linenos="23 "></span><span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mean radius&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">]},</span>
-<span class="linenos" data-linenos="24 "></span><span class="gp">... </span>    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">],</span>
-<span class="linenos" data-linenos="25 "></span><span class="gp">... </span>    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-<span class="linenos" data-linenos="26 "></span><span class="gp">... </span><span class="p">)</span>
-<span class="linenos" data-linenos="27 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">discretizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="linenos" data-linenos="28 "></span>
-<span class="linenos" data-linenos="29 "></span><span class="go">Fitting Discretizer...</span>
-<span class="linenos" data-linenos="30 "></span><span class="go">Binning the features...</span>
-<span class="linenos" data-linenos="31 "></span><span class="go"> --&gt; Discretizing feature mean radius in 3 bins.</span>
-<span class="linenos" data-linenos="32 "></span>
+<span class="linenos" data-linenos="20 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">discretizer</span> <span class="o">=</span> <span class="n">Discretizer</span><span class="p">(</span>
+<span class="linenos" data-linenos="21 "></span><span class="gp">... </span>    <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span>
+<span class="linenos" data-linenos="22 "></span><span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mean radius&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">]},</span>
+<span class="linenos" data-linenos="23 "></span><span class="gp">... </span>    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">],</span>
+<span class="linenos" data-linenos="24 "></span><span class="gp">... </span>    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos" data-linenos="25 "></span><span class="gp">... </span><span class="p">)</span>
+<span class="linenos" data-linenos="26 "></span><span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">discretizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="linenos" data-linenos="27 "></span>
+<span class="linenos" data-linenos="28 "></span><span class="go">Fitting Discretizer...</span>
+<span class="linenos" data-linenos="29 "></span><span class="go">Binning the features...</span>
+<span class="linenos" data-linenos="30 "></span><span class="go"> --&gt; Discretizing feature mean radius in 3 bins.</span>
+<span class="linenos" data-linenos="31 "></span>
+<span class="linenos" data-linenos="32 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">])</span>
 <span class="linenos" data-linenos="33 "></span>
-<span class="linenos" data-linenos="34 "></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;mean radius&quot;</span><span class="p">])</span>
-<span class="linenos" data-linenos="35 "></span>
-<span class="linenos" data-linenos="36 "></span><span class="go">0      medium</span>
-<span class="linenos" data-linenos="37 "></span><span class="go">1       large</span>
-<span class="linenos" data-linenos="38 "></span><span class="go">2       large</span>
-<span class="linenos" data-linenos="39 "></span><span class="go">3       small</span>
-<span class="linenos" data-linenos="40 "></span><span class="go">4       large</span>
-<span class="linenos" data-linenos="41 "></span><span class="go">        ...  </span>
-<span class="linenos" data-linenos="42 "></span><span class="go">564     large</span>
-<span class="linenos" data-linenos="43 "></span><span class="go">565     large</span>
-<span class="linenos" data-linenos="44 "></span><span class="go">566    medium</span>
-<span class="linenos" data-linenos="45 "></span><span class="go">567     large</span>
-<span class="linenos" data-linenos="46 "></span><span class="go">568     small</span>
-<span class="linenos" data-linenos="47 "></span><span class="go">Name: mean radius, Length: 569, dtype: category</span>
-<span class="linenos" data-linenos="48 "></span><span class="go">Categories (3, object): [&#39;small&#39; &lt; &#39;medium&#39; &lt; &#39;large&#39;]</span>
+<span class="linenos" data-linenos="34 "></span><span class="go">0      medium</span>
+<span class="linenos" data-linenos="35 "></span><span class="go">1       large</span>
+<span class="linenos" data-linenos="36 "></span><span class="go">2       large</span>
+<span class="linenos" data-linenos="37 "></span><span class="go">3       small</span>
+<span class="linenos" data-linenos="38 "></span><span class="go">4       large</span>
+<span class="linenos" data-linenos="39 "></span><span class="go">        ...  </span>
+<span class="linenos" data-linenos="40 "></span><span class="go">564     large</span>
+<span class="linenos" data-linenos="41 "></span><span class="go">565     large</span>
+<span class="linenos" data-linenos="42 "></span><span class="go">566    medium</span>
+<span class="linenos" data-linenos="43 "></span><span class="go">567     large</span>
+<span class="linenos" data-linenos="44 "></span><span class="go">568     small</span>
+<span class="linenos" data-linenos="45 "></span><span class="go">Name: mean radius, Length: 569, dtype: category</span>
+<span class="linenos" data-linenos="46 "></span><span class="go">Categories (3, object): [&#39;small&#39; &lt; &#39;medium&#39; &lt; &#39;large&#39;]</span>
 </code></pre></div>
 </div>
 </div>
