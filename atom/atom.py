@@ -1099,8 +1099,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 duplicates = None
                 self._log(
                     "Unable to calculate the number of duplicate "
-                    "rows because a column is unhashable.",
-                    3,
+                    "rows because a column is unhashable.", 3,
                 )
 
             if not self.branch.X.empty:

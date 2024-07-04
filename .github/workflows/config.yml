@@ -176,6 +176,8 @@ jobs:
           df -h
       - name: Check out source repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:

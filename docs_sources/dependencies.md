@@ -25,7 +25,7 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.18.0)
+* **[beartype](https://beartype.readthedocs.io/en/latest/)** (>=0.18.5)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.6.3)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.6)
 * **[featuretools](https://www.featuretools.com/)** (>=1.28.0)
