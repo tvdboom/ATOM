@@ -1,19 +1,20 @@
 """Automated Tool for Optimized Modeling (ATOM).
 
 Author: Mavs
-Description: Global fixtures and variables for the tests.
+Description: Global fixtures and variables for the test suite.
 
 """
 
 from __future__ import annotations
 
+from random import choices
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pytest
-from ray.util.joblib import register_ray
+from numpy.random import Generator
 from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_wine,
@@ -109,20 +110,8 @@ def _mock_mlflow_log_model(mocker):
     mocker.patch("mlflow.sklearn.log_model")
 
 
-@pytest.fixture(autouse=True)
-def _register_ray():
-    """Register ray as joblib backend.
-
-    Although atom does this internally, it's skipped when ray is
-    mocked. Not registering it fails the call to joblib.parallel_config
-    in basetransformer.py.
-
-    """
-    register_ray()
-
-
 @pytest.fixture()
-def random():
+def random() -> Generator:
     """Return numpy's default random number generator."""
     return np.random.default_rng()
 
@@ -361,3 +350,7 @@ class_train, class_test = get_train_test(X_class, y_class)
 reg_train, reg_test = get_train_test(X_reg, y_reg)
 label_train, label_test = get_train_test(X_label, y_label)
 fc_train, fc_test = get_train_test(None, y_fc)
+
+# Metadata
+bin_groups = {"groups": choices(["A", "B", "C", "D"], k=X_bin.shape[0])}
+bin_sample_weight = {"sample_weight": range(len(X_bin))}

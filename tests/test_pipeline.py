@@ -10,6 +10,8 @@ import pandas as pd
 import pyarrow as pa
 import pytest
 from pandas.testing import assert_frame_equal
+from sklearn.linear_model import LogisticRegression
+from sklearn.multioutput import ClassifierChain
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sktime.proba.normal import Normal
 
@@ -17,7 +19,7 @@ from atom import ATOMClassifier, ATOMForecaster
 from atom.pipeline import Pipeline
 from atom.utils.utils import check_is_fitted
 
-from .conftest import X_bin, y_bin, y_fc
+from .conftest import X_bin, X_label, y_bin, y_fc, y_label
 
 
 @pytest.fixture()
@@ -80,6 +82,12 @@ def test_fit(pipeline):
     assert pl.fit(X_bin, y_bin)
     pl.steps.insert(1, ("passthrough", None))
     assert pl.fit(X_bin, y_bin)
+
+
+def test_fit_with_parameter_Y():
+    """Assert that the pipeline can be fitted when an estimator has parameter Y."""
+    pl = Pipeline([("cc", ClassifierChain(LogisticRegression()))])
+    assert pl.fit(X_label, y_label)
 
 
 def test_internal_attrs_are_saved(pipeline):

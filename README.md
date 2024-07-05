@@ -11,7 +11,7 @@
 
 
 
-📜 Overview 
+📜 Overview
 -----------
 
 <p align="center" style="font-size: 1.4em">
@@ -39,7 +39,7 @@
 
 
 
-💡 Introduction  
+💡 Introduction
 ---------------
 
 During the exploration phase of a machine learning project, a data
@@ -170,7 +170,7 @@ The transformations are applied immediately after calling the method
 (no fit and transform commands necessary).
 
 ```python
-atom.impute(strat_num="median", strat_cat="most_frequent")  
+atom.impute(strat_num="median", strat_cat="most_frequent")
 atom.encode(strategy="target", max_onehot=8)
 ```
 
@@ -187,7 +187,7 @@ atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
 And lastly, analyze the results.
 
 ```python
-print(atom.results)
+atom.results
 
 atom.plot_roc()
 ```
@@ -197,7 +197,7 @@ atom.plot_roc()
 
 <img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=28 width=28 draggable="false" /> Documentation
 ----------------
-  
+
 **Relevant links** | |
 --- | ---
 ⭐ **[About](https://tvdboom.github.io/ATOM/latest/release_history/)** | Learn more about the package.

@@ -22,8 +22,8 @@ from atom.utils.types import Legend
 from atom.utils.utils import NotFittedError
 
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_ex, X_label, X_reg, X_sparse, X_text, y10,
-    y_bin, y_class, y_ex, y_fc, y_label, y_multiclass, y_reg,
+    X10, X10_str, X_bin, X_class, X_ex, X_label, X_reg, X_sparse, X_text,
+    bin_groups, y10, y_bin, y_class, y_ex, y_fc, y_label, y_multiclass, y_reg,
 )
 
 
@@ -313,6 +313,15 @@ def test_plot_correlation():
     atom.plot_correlation(display=False)
 
 
+def test_plot_data_splits():
+    """Assert that the plot_data_splits method works."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_groups, random_state=1)
+    atom.plot_data_splits(display=False)
+
+    atom = ATOMForecaster(y_fc, random_state=1)
+    atom.plot_data_splits(display=False)
+
+
 @pytest.mark.parametrize("columns", [None, -1])
 def test_plot_decomposition(columns):
     """Assert that the plot_decomposition method works."""
@@ -578,6 +587,21 @@ def test_plot_confusion_matrix():
     atom.lgb.plot_confusion_matrix(display=False)
 
 
+def test_plot_cv_splits():
+    """Assert that the plot_cv_splits method works."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_groups, random_state=1)
+    atom.run("Dummy")
+    with pytest.raises(ValueError, match=".*ran cross-validation.*"):
+        atom.plot_cv_splits(display=False)
+    atom.dummy.cross_validate(cv=2)
+    atom.plot_cv_splits(display=False)
+
+    atom = ATOMForecaster(y_fc, holdout_size=0.1, random_state=1)
+    atom.run("NF")
+    atom.nf.cross_validate(cv=2, include_holdout=True)
+    atom.plot_cv_splits(display=False)
+
+
 def test_plot_det():
     """Assert that the plot_det method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -672,7 +696,7 @@ def test_plot_parshap():
 
 def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method works."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("Tree")
     with pytest.raises(PermissionError, match=".*not available for multilabel.*"):
         atom.plot_partial_dependence(display=False)
@@ -758,7 +782,7 @@ def test_plot_probabilities():
 
 def test_plot_probabilities_multioutput():
     """Assert that the plot_probabilities method works for multioutput tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("LR")
     atom.plot_probabilities(display=False)
 
@@ -817,7 +841,7 @@ def test_plot_threshold(metric):
 
 def test_plot_threshold_multilabel():
     """Assert that the plot_threshold method works for multilabel tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run("Tree")
     atom.plot_threshold(display=False)
 
@@ -834,7 +858,7 @@ def test_plot_shap_fail():
 
 def test_plot_shap_multioutput():
     """Assert that the shap plots work with multioutput tasks."""
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.run(["LR", "Tree"])
     atom.lr.plot_shap_bar(display=False)  # Non-native multioutput
     atom.tree.plot_shap_bar(display=False)  # Native multioutput

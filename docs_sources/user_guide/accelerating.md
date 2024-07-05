@@ -9,7 +9,7 @@ pipeline:
  - [Run processes in parallel][parallel-execution]
 
 !!! warning
-    Performance improvements are usually noticeable for datasets larger 
+    Performance improvements are usually noticeable for datasets larger
     than ~5M rows. For smaller datasets, using other values than the
     default can even harm performance!
 
@@ -46,7 +46,7 @@ regardless of the engine parameter.
 
 !!! example
     [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1gbTMqTt5sDuP3kBLy1-_U6Z2uZaSm43O?authuser=0#scrollTo=FEB9_7R7Wq4h&forceEdit=true&sandboxMode=true)
-    
+
     Train a model on a GPU yourself using Google Colab. Just click on the
     badge above and run the notebook! Make sure to choose the GPU runtime
     type.
@@ -125,11 +125,16 @@ engine.
 
 ### cuML
 
-[cuML](https://github.com/rapidsai/cuml) is the machine learning library
-of the [RAPIDS](https://rapids.ai/) project. cuML enables you to run
-traditional tabular ML tasks on GPUs without going into the details of
-CUDA programming. For large datasets, these GPU-based implementations can
-complete 10-50x faster than their CPU equivalents.
+[cuML](https://github.com/rapidsai/cuml) is the machine learning library of the [RAPIDS](https://rapids.ai/) project. cuML
+enables you to run traditional tabular ML tasks on GPUs without going into the
+details of CUDA programming. For large datasets, these GPU-based implementations
+can complete 10-50x faster than their CPU equivalents.
+
+ATOM uses `pandas` pandas (which in turn uses `numpy`) as its [data backend][data-engines].
+This means that the data must move from CPU to GPU memory before it can be used
+by a cuML estimator. To avoid this overhead, consider using [cudf-pandas](https://rapids.ai/cudf-pandas/),
+which accelerates pandas' workflows on GPU, with automatic CPU fallback if needed.
+Remember to load `cudf.pandas` **before** importing ATOM.
 
 !!! warning
     * cuML estimators don't support [multioutput tasks][].
@@ -143,13 +148,13 @@ complete 10-50x faster than their CPU equivalents.
     To use a metric from cuML, insert it directly in the [`run`][atomclassifier-run]
     method:
 
-    ```python
+    ```
     from atom import ATOMClassifier
     from cuml.metrics import accuracy_score
     from sklearn.datasets import make_classification
-    
+
     X, y = make_classification(n_samples=100, random_state=1)
-    
+
     atom = ATOMClassifier(X, y, engine={"estimator": "cuml"}, verbose=2)
     atom.run("LR", metric=accuracy_score)
     ```
@@ -164,7 +169,7 @@ complete 10-50x faster than their CPU equivalents.
 * Drivers:
     - CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
 * Libraries:
-    - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=23.08
+    - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=24.04
 
 #### Supported estimators
 
@@ -204,7 +209,7 @@ parallelization backends.
 * **multiprocessing:** Previous process-based backend based on `multiprocessing.Pool`.
   Less robust than loky.
 * **threading:** Very low-overhead backend but it suffers from the Python Global
-  Interpreter Lock if the called function relies a lot on Python objects. It's 
+  Interpreter Lock if the called function relies a lot on Python objects. It's
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).

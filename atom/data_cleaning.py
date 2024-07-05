@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from typing import Any, Literal, TypeVar, overload
 
 import numpy as np
@@ -514,6 +514,7 @@ class Balancer(TransformerMixin, OneToOneFeatureMixin):
         for key, value in self.mapping_.items():
             self._counts[key] = np.sum(yt == value)
 
+        # Fit only checks input and sampling strategy
         self._estimator = estimator.fit(Xt, yt)
 
         # Add the estimator as attribute to the instance
@@ -1874,7 +1875,7 @@ class Encoder(TransformerMixin):
 
         encoders: dict[str, list[str]] = defaultdict(list)
 
-        for name, column in Xt.select_dtypes(include=CAT_TYPES).items():
+        for name, column in Xt.select_dtypes(include=CAT_TYPES).items():  # type: ignore[arg-type]
             # Replace infrequent classes with the string in `value`
             if self.infrequent_to_value:
                 values = column.value_counts()
@@ -2032,7 +2033,7 @@ class Imputer(TransformerMixin):
 
     Parameters
     ----------
-    strat_num: str, int or float, default="mean"
+    strat_num: int, float, str or callable, default="mean"
         Imputing strategy for numerical columns. Choose from:
 
         - "drop": Drop rows containing missing values.
@@ -2051,6 +2052,9 @@ class Imputer(TransformerMixin):
         - "random": Impute with random values between the min and max
            of column.
         - int or float: Impute with provided numerical value.
+        - callable: Replace missing values using the scalar statistic
+          returned by running the callable over a dense 1d array
+          containing non-missing values of each column.
 
     strat_cat: str, default="most_frequent"
         Imputing strategy for categorical columns. Choose from:
@@ -2166,7 +2170,7 @@ class Imputer(TransformerMixin):
 
     def __init__(
         self,
-        strat_num: Scalar | NumericalStrats = "mean",
+        strat_num: Scalar | NumericalStrats | Callable[[Sequence[Scalar]], Scalar] = "mean",
         strat_cat: str | CategoricalStrats = "most_frequent",
         *,
         max_nan_rows: FloatLargerZero | None = None,
@@ -2265,6 +2269,8 @@ class Imputer(TransformerMixin):
                     missing_values=[pd.NA],
                     random_state=self.random_state,
                 )
+        elif callable(self.strat_num):
+            num_imputer = SimpleImputer(missing_values=pd.NA, strategy=self.strat_num)
         else:
             num_imputer = SimpleImputer(
                 missing_values=pd.NA,
@@ -2289,7 +2295,7 @@ class Imputer(TransformerMixin):
         self._estimator = ColumnTransformer(
             transformers=[
                 ("num_imputer", num_imputer, list(Xt.select_dtypes(include="number"))),
-                ("cat_imputer", cat_imputer, list(Xt.select_dtypes(include=CAT_TYPES))),
+                ("cat_imputer", cat_imputer, list(Xt.select_dtypes(include=CAT_TYPES))),  # type:ignore[arg-type]
             ],
             remainder="passthrough",
             n_jobs=self.n_jobs,
@@ -3095,7 +3101,12 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         self.include_binary = include_binary
         self.kwargs = kwargs
 
-    def fit(self, X: XConstructor, y: YConstructor | None = None) -> Self:
+    def fit(
+        self,
+        X: XConstructor,
+        y: YConstructor | None = None,
+        sample_weight: Sequence[Scalar] | None = None,
+    ) -> Self:
         """Fit to data.
 
         Parameters
@@ -3105,6 +3116,9 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
 
         y: sequence, dataframe-like or None, default=None
             Do nothing. Implemented for continuity of the API.
+
+        sample_weight: sequence or None, default=None
+            Sample weights with shape=(n_samples,).
 
         Returns
         -------
@@ -3127,7 +3141,9 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         num_cols = Xt.select_dtypes(include="number")
 
         if not self.include_binary:
-            num_cols = Xt[[n for n, c in num_cols.items() if ~np.isin(c.unique(), [0, 1]).all()]]
+            num_cols = Xt[
+                [n for n, c in num_cols.items() if ~np.isin(c.dropna().unique(), [0, 1]).all()]
+            ]
 
         if num_cols.empty:
             raise ValueError(
@@ -3139,7 +3155,12 @@ class Scaler(TransformerMixin, OneToOneFeatureMixin):
         self._log("Fitting Scaler...", 1)
 
         estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
-        self._estimator = estimator(**self.kwargs).fit(num_cols)
+        self._estimator = estimator(**self.kwargs)
+
+        if "sample_weight" in sign(estimator.fit):
+            self._estimator.fit(num_cols, sample_weight=sample_weight)
+        else:
+            self._estimator.fit(num_cols)
 
         # Add the estimator as attribute to the instance
         setattr(self, f"{self.strategy}_", self._estimator)

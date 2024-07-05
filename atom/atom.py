@@ -26,6 +26,7 @@ from joblib.memory import Memory
 from pandas._typing import DtypeObj
 from scipy import stats
 from sklearn.pipeline import Pipeline as SkPipeline
+from sklearn.utils import Bunch
 from sklearn.utils.metaestimators import available_if
 
 from atom.baserunner import BaseRunner
@@ -52,17 +53,17 @@ from atom.utils.types import (
     Engine, EngineTuple, Estimator, FeatureNamesOut, FeatureSelectionSolvers,
     FeatureSelectionStrats, FloatLargerEqualZero, FloatLargerZero,
     FloatZeroToOneInc, IndexSelector, Int, IntLargerEqualZero, IntLargerTwo,
-    IntLargerZero, MetricConstructor, ModelsConstructor, NItems, NJobs,
-    NormalizerStrats, NumericalStrats, Operators, Predictor, PrunerStrats,
-    RowSelector, Scalar, ScalerStrats, Seasonality, Sequence, SPDict,
-    TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings, XReturn,
-    XSelector, YReturn, YSelector, sequence_t,
+    IntLargerZero, MetadataDict, MetricConstructor, ModelsConstructor, NItems,
+    NJobs, NormalizerStrats, NumericalStrats, Operators, PosLabel, Predictor,
+    PrunerStrats, RowSelector, Scalar, ScalerStrats, Seasonality, Sequence,
+    SPDict, TargetSelector, Transformer, VectorizerStarts, Verbose, Warnings,
+    XReturn, XSelector, YReturn, YSelector, sequence_t,
 )
 from atom.utils.utils import (
-    ClassMap, DataConfig, DataContainer, Goal, adjust, check_dependency,
+    ClassMap, DataConfig, DataContainer, Goal, Task, adjust, check_dependency,
     composed, crash, fit_one, flt, get_cols, get_custom_scorer, has_task,
     is_sparse, lst, make_sklearn, merge, method_to_log, n_cols,
-    replace_missing, sign,
+    replace_missing, sign, to_series,
 )
 
 
@@ -94,10 +95,11 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         *,
         y: YSelector = -1,
         index: IndexSelector = False,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         sp: Seasonality | SPDict = None,
         shuffle: Bool = True,
-        stratify: IndexSelector = True,
+        stratify: Int | str | None = -1,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -127,8 +129,14 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         self._config = DataConfig(
             index=index is not False,
+            metadata=Bunch(
+                **{
+                    k: to_series(v, name=k, index=getattr(arrays[0], "index", None))  # type: ignore[call-overload]
+                    for k, v in (metadata or {}).items()
+                }
+            ),
             shuffle=shuffle,
-            stratify=stratify,
+            stratify=stratify if shuffle else None,
             n_rows=n_rows,
             test_size=test_size,
             holdout_size=holdout_size,
@@ -140,6 +148,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         self.ignore = ignore  # type: ignore[assignment]
         self.sp = sp  # type: ignore[assignment]
+
+        if self.task is Task.binary_classification:
+            self.pos_label = self.branch.dataset[lst(self.branch.target)[0]].max()
 
         self.missing = DEFAULT_MISSING
 
@@ -273,6 +284,37 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         )
 
     @property
+    def pos_label(self) -> PosLabel:
+        """Positive label for binary/multilabel classification tasks."""
+        return self._config.pos_label
+
+    @pos_label.setter
+    @beartype
+    def pos_label(self, value: PosLabel):
+        if not self.task.is_binary:
+            raise ValueError(
+                "The pos_label property can only be set "
+                "for binary/multilabel classification tasks."
+            )
+
+        self._config.pos_label = value
+
+    @property
+    def metadata(self) -> Bunch:
+        """Metadata of the dataset.
+
+        Read more in the [user guide][metadata].
+
+        """
+        return self._config.metadata
+
+    @metadata.setter
+    def metadata(self, value: MetadataDict | None):
+        self._config.metadata = Bunch(
+            **{k: to_series(v, index=self.y.index, name=k) for k, v in (value or {}).items()}  # type: ignore[call-overload]
+        )
+
+    @property
     def ignore(self) -> tuple[str, ...]:
         """Names of the ignored columns.
 
@@ -362,7 +404,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
     @property
     def categorical(self) -> pd.Index:
         """Names of the categorical features in the dataset."""
-        return self.branch.X.select_dtypes(include=CAT_TYPES).columns
+        return self.branch.X.select_dtypes(include=CAT_TYPES).columns  # type: ignore[arg-type]
 
     @property
     def n_categorical(self) -> int:
@@ -472,7 +514,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         pd.DataFrame
             Statistic results with multiindex levels:
 
-            - **test**: Acronym of the test 'adf', 'kpss' or 'lb').
+            - **test**: Acronym of the test ('adf', 'kpss' or 'lb').
             - **stat:** Statistic results:
 
                 - **score:** KS-test score.
@@ -503,7 +545,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                     # regression='ct' is trend stationarity
                     stat = kpss(X, regression="ct", nlags="auto")
                 elif test == "lb":
-                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.sp)[0])
+                    l_jung = acorr_ljungbox(X, lags=None, period=lst(self.sp.get("sp"))[0])
                     stat = l_jung.loc[l_jung["lb_pvalue"].idxmin()]
 
                 # Add as column to the dataframe
@@ -952,7 +994,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             if dense2sparse and name not in lst(self.target):  # Skip target cols
                 # Select the most frequent value to fill the sparse array
-                fill_value = column.mode(dropna=False)[0]
+                fill_value = column.mode()[0]
 
                 # Convert first to a sparse array, else fails for nullable pd types
                 sparse_col = pd.arrays.SparseArray(column, fill_value=fill_value)
@@ -965,7 +1007,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         t2 = (pd.UInt8Dtype, pd.UInt16Dtype, pd.UInt32Dtype, pd.UInt64Dtype)
         t3 = (pd.Float32Dtype, pd.Float64Dtype)
 
-        types: dict[str, list] = {
+        types = {
             "int": [(x.name, np.iinfo(x.type).min, np.iinfo(x.type).max) for x in t1],
             "uint": [(x.name, np.iinfo(x.type).min, np.iinfo(x.type).max) for x in t2],
             "float": [(x.name, np.finfo(x.type).min, np.finfo(x.type).max) for x in t3],
@@ -1021,7 +1063,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         """
         self._log("Dataset stats " + "=" * 20 + " >>", _vb)
         self._log(f"Shape: {self.branch.shape}", _vb)
-        if self.task.is_forecast and self.sp.sp:
+        if self.task.is_forecast and self.sp.get("sp"):
             self._log(f"Seasonal period: {self.sp.sp}", _vb)
 
         for ds in ("train", "test", "holdout"):
@@ -1057,8 +1099,7 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
                 duplicates = None
                 self._log(
                     "Unable to calculate the number of duplicate "
-                    "rows because a column is unhashable.",
-                    3,
+                    "rows because a column is unhashable.", 3,
                 )
 
             if not self.branch.X.empty:
@@ -1274,6 +1315,13 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
             # Memoize the fitted transformer_c for repeated instantiations of atom
             fit = self.memory.cache(fit_one)
+
+            if (sample_weight := self._config.get_sample_weight(self.branch.X_train)) is not None:
+                if "sample_weight" in sign(transformer_c.fit):
+                    fit_params["sample_weight"] = sample_weight
+                if hasattr(transformer_c, "set_fit_request"):
+                    transformer_c.set_fit_request(sample_weight=sample_weight is not None)
+
             kwargs = {
                 "estimator": transformer_c,
                 "X": self.branch.X_train,
@@ -1538,6 +1586,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         !!! warning
             * The balance method does not support [multioutput tasks][].
+            * The balance method does not support `sample_weights` passed
+              through [metadata][] routing.
             * This transformation is only applied to the training set
               to maintain the original distribution of target classes
               in the test set.
@@ -1547,6 +1597,12 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
             of the target class distribution per data set.
 
         """
+        if self._config.get_sample_weight() is not None:
+            raise PermissionError(
+                "The balance method does not support sample weights "
+                "passed through metadata routing."
+            )
+
         columns = kwargs.pop("columns", None)
         balancer = Balancer(
             strategy=strategy,
@@ -1606,6 +1662,9 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         cleaner = self._add_transformer(cleaner, columns=columns)
         self.branch._mapping.update(cleaner.mapping_)
 
+        if self.task.is_binary and encode_target:
+            self.pos_label = 1
+
     @composed(crash, method_to_log)
     def decompose(
         self,
@@ -1627,9 +1686,8 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
 
         See the [Decomposer][] class for a description of the parameters.
         ATOM automatically injects the `sp`, `trend_model` and
-        `seasonal_model` parameters of the Decomposer class. See the
-        [seasonality][] section in the user guide to learn how to adjust
-        these values.
+        `seasonal_model` parameters of the class. See the [seasonality][]
+        section in the user guide to learn how to adjust these values.
 
         !!! tip
             * Use the `columns` parameter to only decompose the target
@@ -1641,10 +1699,10 @@ class ATOM(BaseRunner, ATOMPlot, metaclass=ABCMeta):
         columns = kwargs.pop("columns", None)
         decomposer = Decomposer(
             model=model,
-            trend_model=self.sp.trend_model,
+            trend_model=self.sp.get("trend_model", "additive"),
             test_seasonality=test_seasonality,
-            sp=lst(self.sp.sp)[0],
-            seasonal_model=self.sp.seasonal_model,
+            sp=lst(self.sp.get("sp"))[0],
+            seasonal_model=self.sp.get("seasonal_model", "additive"),
             **self._prepare_kwargs(kwargs, sign(Decomposer)),
         )
 

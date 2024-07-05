@@ -1,6 +1,9 @@
 # Mlflow
 mlruns/
 
+# PDM
+.pdm-build/
+
 # Log, pickle and figures in root directory
 /*.log
 /*.pkl
@@ -71,5 +74,7 @@ coverage.xml
 
 # Others
 .pylint.d
+.neptune/
 
+# GitHub
 github.com/

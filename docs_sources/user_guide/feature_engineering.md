@@ -5,14 +5,14 @@ Feature engineering is the process of creating new features from the
 existing ones, in order to capture relationships with the target
 column that the first set of features didn't have on their own. This
 process is very important to improve the performance of machine learning
-algorithms. Although feature engineering works best when the data 
+algorithms. Although feature engineering works best when the data
 scientist applies use-case specific transformations, there are ways to
 do this in an automated manner, without prior domain knowledge. One of
 the problems of creating new features without human expert intervention,
 is that many of the newly created features can be useless, i.e., they do
 not help the algorithm to make better predictions. Even worse, having
 useless features can drop your performance. To avoid this, we perform
-feature selection, a process in which we select the relevant features 
+feature selection, a process in which we select the relevant features
 in the dataset. See the [Feature engineering][example-feature-engineering]
 example.
 
@@ -23,7 +23,7 @@ example.
       e.g., `#!python atom.feature_selection("pca", n_features=10, random_state=2)`.
     * Like the [add][atomclassifier-add] method, the feature engineering
       methods accept the `columns` parameter to only transform a subset of the
-      dataset's features, e.g., `#!python atom.feature_selection("pca", 
+      dataset's features, e.g., `#!python atom.feature_selection("pca",
       n_features=10, columns=slice(5, 15))`. Read more in the
       [row and column selection][] section.
 

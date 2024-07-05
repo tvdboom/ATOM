@@ -9,7 +9,7 @@ import multiprocessing
 import os
 from logging import Logger
 from pathlib import Path
-from platform import machine
+from platform import machine, system
 from random import sample
 from unittest.mock import patch
 
@@ -65,7 +65,9 @@ def test_engine_parameter(engine):
     assert base.engine == EngineTuple()
 
 
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
+@pytest.mark.skipif(
+    system() == "Darwin" or machine() not in ("x86_64", "AMD64"), reason="No sklearnex"
+)
 def test_engine_parameter_sklearnex():
     """Assert that sklearnex offloads to the right device."""
     BaseTransformer(device="gpu", engine={"estimator": "sklearnex"})
@@ -135,8 +137,8 @@ def test_experiment_creation(mlflow):
 @patch("dagshub.init")
 def test_experiment_dagshub(dagshub, request, token):
     """Assert that the experiment can be stored in dagshub."""
+    request.return_value.json.return_value.__getitem__.return_value = "user"
     token.return_value = "token"
-    request.return_value.text = {"username": "user1"}
 
     BaseTransformer(experiment="dagshub:test")
     dagshub.assert_called_once()
@@ -145,6 +147,12 @@ def test_experiment_dagshub(dagshub, request, token):
     # Reset to default URI
     BaseTransformer(experiment="test")
     assert "dagshub" not in mlflow.get_tracking_uri()
+
+
+def test_experiment_invalid_integrator():
+    """Assert that an error is raised when the integrator does not exist."""
+    with pytest.raises(ValueError, match=".*preceded by a valid integration.*"):
+        BaseTransformer(experiment="invalid:test")
 
 
 def test_device_id_no_value():
@@ -368,7 +376,9 @@ def test_inherit_sp():
 
 # Test _get_est_class ============================================== >>
 
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support")
+@pytest.mark.skipif(
+    system() == "Darwin" or machine() not in ("x86_64", "AMD64"), reason="No sklearnex"
+)
 def test_get_est_class_from_engine():
     """Assert that the class can be retrieved from an engine."""
     base = BaseTransformer(device="cpu", engine={"estimator": "sklearnex"})

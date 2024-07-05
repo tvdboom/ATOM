@@ -812,6 +812,7 @@ class FeatureSelector(TransformerMixin):
 
                     - "auto" (default)
                     - "full"
+                    - "covariance_eigh"
                     - "arpack"
                     - "randomized"
 
@@ -827,6 +828,7 @@ class FeatureSelector(TransformerMixin):
             - If data is sparse:
 
                 - "randomized" (default)
+                - "covariance_eigh"
                 - "arpack"
 
         - for the remaining strategies:<br>

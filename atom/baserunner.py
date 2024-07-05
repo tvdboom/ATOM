@@ -21,9 +21,11 @@ import dill as pickle
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from pandas.io.formats.style import Styler
 from pandas.tseries.frequencies import to_offset
 from pmdarima.arima.utils import ndiffs
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit, train_test_split
+from sklearn.utils import Bunch
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
 from sktime.datatypes import check_is_mtype
@@ -35,11 +37,11 @@ from atom.basetransformer import BaseTransformer
 from atom.data import Branch
 from atom.models import MODELS, create_stacking_model, create_voting_model
 from atom.pipeline import Pipeline
-from atom.utils.constants import DF_ATTRS
+from atom.utils.constants import COLOR_SCHEME, DF_ATTRS
 from atom.utils.types import (
-    Bool, FloatZeroToOneExc, HarmonicsSelector, IndexSelector, Int,
-    IntLargerOne, MetricConstructor, Model, ModelSelector, ModelsSelector,
-    Pandas, RowSelector, Seasonality, Segment, Sequence, SPDict, SPTuple,
+    Bool, HarmonicsSelector, IndexSelector, Int, IntLargerOne,
+    MetricConstructor, Model, ModelSelector, ModelsSelector, Pandas,
+    RowSelector, Scalar, Seasonality, Segment, Sequence, SPDict,
     TargetSelector, YSelector, bool_t, int_t, pandas_t, segment_t, sequence_t,
 )
 from atom.utils.utils import (
@@ -176,7 +178,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         return self._goal.infer_task(self.branch.y)
 
     @property
-    def sp(self) -> SPTuple:
+    def sp(self) -> Bunch:
         """Seasonality of the time series.
 
         Read more about seasonality in the [user guide][seasonality].
@@ -189,15 +191,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def sp(self, sp: Seasonality | SPDict):
         """Convert seasonality to information container."""
         if sp is None:
-            self._config.sp = SPTuple()
+            self._config.sp = Bunch()
         elif isinstance(sp, dict):
-            self._config.sp = SPTuple(
-                sp=self._get_sp(sp.get("sp", SPTuple().sp)),
-                seasonal_model=sp.get("seasonal_model", SPTuple().seasonal_model),
-                trend_model=sp.get("trend_model", SPTuple().trend_model),
-            )
+            self._config.sp = Bunch(**sp)
         else:
-            self._config.sp = SPTuple(sp=self._get_sp(sp))
+            self._config.sp = Bunch(sp=self._get_sp(sp))
 
     @property
     def og(self) -> Branch:
@@ -276,7 +274,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             self.delete(self.winner.name)
 
     @property
-    def results(self) -> pd.DataFrame:
+    def results(self) -> Styler:
         """Overview of the training results.
 
         All durations are in seconds. Possible values include:
@@ -289,6 +287,11 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         - **[metric]_bootstrap:** Mean score on the bootstrapped samples.
         - **time_bootstrap:** Duration of the bootstrapping.
         - **time:** Total duration of the run.
+
+        !!! tip
+            This attribute returns a pandas' [Styler][] object. Convert
+            the result back to a regular dataframe using its `data`
+            attribute.
 
         """
 
@@ -326,7 +329,12 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                 )
             ).sort_index(level=0, ascending=True)
 
-        return df
+        return (
+            df
+            .style
+            .highlight_max(props=COLOR_SCHEME, subset=[c for c in df if not c.startswith("time")])
+            .highlight_min(props=COLOR_SCHEME, subset=[c for c in df if c.startswith("time")])
+        )
 
     # Utility methods ============================================== >>
 
@@ -362,7 +370,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             """
             if isinstance(sp, str):
                 if offset := to_offset(sp):  # Convert to pandas' DateOffset
-                    name, period = offset.name.split("-")[0], offset.n
+                    name, period = offset.name.split("-")[0][0], offset.n
 
                 if name not in SeasonalPeriod.__members__:
                     raise ValueError(
@@ -376,9 +384,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 return int(sp)
 
-        if sp is None:
-            return None
-        elif sp == "infer":
+        if sp == "infer":
             return self.get_seasonal_period()
         elif sp == "index":
             if not hasattr(self.dataset.index, "freqstr"):
@@ -448,12 +454,59 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             else:
                 n_rows = int(self._config.n_rows)
 
-            if self._config.shuffle:
-                return df.iloc[random.sample(range(len(df)), k=n_rows)]
-            elif self._goal.name == "forecast":
+            if self._goal is Goal.forecast:
                 return df.iloc[-n_rows:]  # For forecasting, select from tail
             else:
-                return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
+                k = random.sample(range(len(df)), k=n_rows)
+
+                if self._config.shuffle:
+                    self._config.reindex_metadata(iloc=pd.Index(k))
+                    return df.iloc[k]
+                else:
+                    self._config.reindex_metadata(iloc=pd.Index(sorted(k)))
+                    return df.iloc[sorted(k)]
+
+        def _split_sets(data: pd.DataFrame, size: Scalar) -> tuple[pd.DataFrame, pd.DataFrame]:
+            """Split the data set into two sets.
+
+            Parameters
+            ----------
+            data: pd.DataFrame
+                Dataset.
+
+            size: int or float
+                Size of the second set.
+
+            Returns
+            -------
+            pd.DataFrame
+                First set.
+
+            pd.DataFrame
+                Second set.
+
+            """
+            if (groups := self._config.get_groups(data)) is None:
+                return train_test_split(
+                    data,
+                    test_size=size,
+                    random_state=self.random_state,
+                    shuffle=self._config.shuffle,
+                    stratify=self._config.get_stratify_column(data),
+                )
+            else:
+                if self._goal is Goal.forecast:
+                    raise ValueError(
+                        "Invalid value for the metadata parameter. The key "
+                        "'groups' is unavailable for forecast tasks."
+                    )
+
+                # We don't take stratification into account since the behavior
+                # would be undefined (hence not implemented in sklearn)
+                gss = GroupShuffleSplit(n_splits=1, test_size=size, random_state=self.random_state)
+                idx1, idx2 = next(gss.split(data, groups=groups))
+
+                return data.iloc[idx1], data.iloc[idx2]
 
         def _set_index(
             df: pd.DataFrame,
@@ -485,6 +538,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             if index is None:
                 index = self._config.index
 
+            # Rearrange the metadata to the current dataset
+            self._config.reindex_metadata(loc=df.index)
+
             if index is True:  # True gets caught by isinstance(int)
                 pass
             elif index is False:
@@ -511,6 +567,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
                     "Invalid value for the index parameter. The index column "
                     f"can not be the same as the target column, got {df.index.name}."
                 )
+
+            # Assign the same indices as the current dataset
+            self._config.reindex_metadata(df.index)
 
             return df
 
@@ -573,62 +632,44 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
 
             # Define test set size
             if self._config.test_size < 1:
-                test_size = max(1, int(self._config.test_size * len(data)))
+                if (groups := self._config.get_groups()) is not None:
+                    test_size = max(1, int(self._config.test_size * groups.nunique()))
+                else:
+                    test_size = max(1, int(self._config.test_size * len(data)))
             else:
                 test_size = self._config.test_size
 
-            try:
-                # Define holdout set size
-                if self._config.holdout_size:
-                    if self._config.holdout_size < 1:
-                        holdout_size = max(1, int(self._config.holdout_size * len(data)))
+            # Define holdout set size
+            if self._config.holdout_size:
+                if self._config.holdout_size < 1:
+                    if (groups := self._config.get_groups()) is not None:
+                        holdout_size = max(1, int(self._config.holdout_size * groups.nunique()))
                     else:
-                        holdout_size = self._config.holdout_size
-
-                    if not 0 <= holdout_size <= len(data) - test_size:
-                        raise ValueError(
-                            "Invalid value for the holdout_size parameter. "
-                            "Value should lie between 0 and len(X) - len(test), "
-                            f"got {self._config.holdout_size}."
-                        )
-
-                    data, holdout = train_test_split(
-                        data,
-                        test_size=holdout_size,
-                        random_state=self.random_state,
-                        shuffle=self._config.shuffle,
-                        stratify=self._config.get_stratify_columns(data, y),
-                    )
+                        holdout_size = max(1, int(self._config.holdout_size * len(data)))
                 else:
-                    holdout = None
+                    holdout_size = self._config.holdout_size
 
-                train, test = train_test_split(
-                    data,
-                    test_size=test_size,
-                    random_state=self.random_state,
-                    shuffle=self._config.shuffle,
-                    stratify=self._config.get_stratify_columns(data, y),
-                )
-
-                complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
-
-                container = DataContainer(
-                    data=(data := complete_set.iloc[: len(data)]),
-                    train_idx=data.index[:-len(test)],
-                    test_idx=data.index[-len(test):],
-                    n_targets=n_cols(y),
-                )
-
-            except ValueError as ex:
-                # Clarify common error with stratification for multioutput tasks
-                if isinstance(y, pd.DataFrame):
+                if not 0 <= holdout_size <= len(data) - test_size:
                     raise ValueError(
-                        "Stratification for multioutput tasks is applied over all target "
-                        "columns. Either select only one column to stratify over, or set "
-                        "the parameter stratify=False."
-                    ) from ex
-                else:
-                    raise ex
+                        "Invalid value for the holdout_size parameter. "
+                        "Value should lie between 0 and len(X) - len(test), "
+                        f"got {self._config.holdout_size}."
+                    )
+
+                data, holdout = _split_sets(data, size=holdout_size)
+            else:
+                holdout = None
+
+            train, test = _split_sets(data, size=test_size)
+
+            complete_set = _set_index(pd.concat([train, test, holdout]), y, index)
+
+            container = DataContainer(
+                data=(data := complete_set.iloc[: len(data)]),
+                train_idx=data.index[:-len(test)],
+                test_idx=data.index[-len(test):],
+                n_targets=n_cols(y),
+            )
 
             if holdout is not None:
                 holdout = complete_set.iloc[len(data):]
@@ -804,7 +845,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         else:
             raise ValueError("Invalid data arrays. See the documentation for the allowed formats.")
 
-        if self._goal.name == "forecast":
+        if self._goal is Goal.forecast:
             # For forecasting, check if index complies with sktime's standard
             valid, msg, _ = check_is_mtype(
                 obj=pd.DataFrame(pd.concat([sets[0].data, sets[1]])),
@@ -1021,9 +1062,9 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
     def delete(self, models: ModelsSelector = None):
         """Delete models.
 
-        If all models are removed, the metric is reset. Use this method
-        to drop unwanted models from the pipeline or to free some memory
-        before [saving][self-save]. Deleted models are not removed from
+        If all models are removed, the metric is reset. Use this
+        method to drop unwanted or to free some memory before
+        [saving][self-save]. Deleted models are not removed from
         any active [mlflow experiment][tracking].
 
         Parameters
@@ -1038,15 +1079,13 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             self._log(f" --> Model {m.name} successfully deleted.", 1)
 
     @composed(crash, beartype)
-    def evaluate(
-        self,
-        metric: MetricConstructor = None,
-        rows: RowSelector = "test",
-        *,
-        threshold: FloatZeroToOneExc | Sequence[FloatZeroToOneExc] = 0.5,
-        as_frame: Bool = False,
-    ) -> Any | pd.DataFrame:
+    def evaluate(self, metric: MetricConstructor = None, rows: RowSelector = "test") -> Styler:
         """Get all models' scores for the provided metrics.
+
+        !!! tip
+            This method returns a pandas' [Styler][] object. Convert
+            the result back to a regular dataframe using its `data`
+            attribute.
 
         Parameters
         ----------
@@ -1058,40 +1097,17 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
             [Selection of rows][row-and-column-selection] to calculate
             metric on.
 
-        threshold: float or sequence, default=0.5
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only used when:
-
-            - The task is binary or [multilabel][] classification.
-            - The model has a `predict_proba` method.
-            - The metric evaluates predicted probabilities.
-
-            For multilabel classification tasks, it's possible to
-            provide a sequence of thresholds (one per target column).
-            The same threshold per target column is applied to all
-            models.
-
-        as_frame: bool, default=False
-            Whether to return the scores as a pd.DataFrame. If False, a
-            `pandas.io.formats.style.Styler` object is returned, which
-            has a `_repr_html_` method defined, so it is rendered
-            automatically in a notebook. The highest score per metric
-            is highlighted.
-
         Returns
         -------
-        [Styler][] or pd.DataFrame
+        [Styler][]
             Scores of the models.
 
         """
         check_is_fitted(self)
 
-        df = pd.DataFrame([m.evaluate(metric, rows, threshold=threshold) for m in self._models])
+        df = pd.DataFrame([m.evaluate(metric, rows) for m in self._models])
 
-        if len(self._models) == 1 or as_frame:
-            return df
-        else:
-            return df.style.highlight_max(props="background-color: lightgreen")
+        return df.style.highlight_max(props=COLOR_SCHEME)
 
     @composed(crash, beartype)
     def export_pipeline(self, model: str | Model | None = None) -> Pipeline:
@@ -1194,7 +1210,7 @@ class BaseRunner(BaseTracker, metaclass=ABCMeta):
         """
         _, y = self.branch._get_rows(rows, return_X_y=True)
         weights = compute_sample_weight("balanced", y=y)
-        return pd.Series(weights, name="sample_weight").round(3)
+        return pd.Series(weights, index=y.index, name="sample_weight").round(3)
 
     @available_if(has_task("forecast"))
     @composed(crash, beartype)

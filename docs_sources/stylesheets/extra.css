@@ -3,6 +3,10 @@
     font-weight: normal;
 }
 
+/*Show line numbers in code blocks*/
+[data-linenos]:before {
+  content: attr(data-linenos);
+}
 
 /* Prevent the selection of and ... in code blocks */
 .language-pycon .gp {
@@ -10,7 +14,7 @@
 }
 
 
-/* Table format for about page*/
+/* Table format for about page and toc methods*/
 .md-typeset__table {
    min-width: 100%;
 }

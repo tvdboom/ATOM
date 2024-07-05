@@ -107,7 +107,7 @@ LightGBM model on the train and test set. We could also draw the lines for
 both models in the same axes, but that would clutter the plot too much.
 Click [here][example-advanced-plotting] for more examples.
 
-```pycon
+```python
 from atom import ATOMClassifier
 from sklearn.datasets import make_classification
 

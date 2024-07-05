@@ -85,14 +85,14 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 If atom is initialized using a scipy sparse matrix, it is converted
 internally to a dataframe of sparse columns. Read more about pandas'
-sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
-The same conversion takes place when a transformer returns a sparse
-matrix, like for example, the [Vectorizer][].
+sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html). The same conversion takes place
+when a transformer returns a sparse matrix, like for example, the
+[Vectorizer][].
 
-Note that ATOM considers a dataset to be sparse if any of the columns
-is sparse. A dataset can only benefit from sparsity when all its
-columns are sparse, hence mixing sparse and non-sparse columns is
-not recommended and can cause estimators to decrease their training
+ATOM considers a dataset to be sparse if **any** of its columns is
+sparse. A dataset can only benefit from sparsity when all its columns
+are sparse, hence mixing sparse and non-sparse columns is not
+recommended and can cause estimators to decrease their training
 speed or even crash. Use the [shrink][atomclassifier-shrink] method
 to convert dense features to sparse and the [available_models]
 [atomclassifier-available_models] method to check which models have
@@ -101,8 +101,56 @@ native support for sparse matrices.
 Click [here][example-nlp] to see an example that uses sparse data.
 
 !!! warning
-    Estimators accelerated using [sklearnex][] don't support sparse 
+    Estimators accelerated using [sklearnex][] don't support sparse
     datasets.
+
+<br>
+
+## Metadata
+
+Metadata is data that an estimator, scorer, or CV splitter takes into account
+if the user explicitly passes it as a parameter (besides `X` and `y`). ATOM
+offers native integration with sklearn's [metadata routing][metadatarouting]
+system. Use the [`metadata`][atomclassifier-metadata] parameter to pass metadata
+to atom. This metadata is then automatically propagated to all relevant estimators,
+scorers, and CV splitters. The parameter accepts a dictionary with keys
+'groups' and/or 'sample_weight'. See the [metadata example][example-metadata]
+for a quick tutorial.
+
+**groups**
+
+Groups are used primarily in cross-validation techniques that need to account
+for grouped data. The `groups` parameter is particularly important in situations
+where the data is not independent, such as when there are multiple measurements
+from the same subject or when the data is organized in clusters that should not
+be split across different folds.
+
+!!! warning
+    * Groups are unavailable for [forecast][time-series] tasks.
+    * A group can only be present in one [data set][data-sets], thus a group
+      present in the training set is not validated upon, and a group present
+      in the test set is not used for training. It's highly recommended to use
+      a model's [cross_validate][adaboost-cross_validate] method to validate
+      on all groups and so avoid potential biases.
+
+
+**sample_weight**
+
+Sample weights are numerical values assigned to individual data points in a dataset.
+They indicate the relative importance or frequency of each data point. Sample weights
+are used to:
+
+- Handle imbalanced datasets: In classification problems, certain classes may be
+  underrepresented. Sample weights can give more importance to these minority
+  classes during model training.
+- Correct for sampling bias: If the data collected does not represent the population
+  well, weights can adjust the influence of different samples to better reflect the
+  actual distribution.
+- Emphasize certain samples: In cases where some samples are more reliable or
+  significant than others, weights can be used to give more prominence to these
+  samples in the analysis.
+- Aggregation and averaging: When computing statistics, weighted averages can be
+  calculated to account for the varying importance of samples.
 
 <br>
 
@@ -388,7 +436,7 @@ The check is performed in the order described hereunder:
    select all rows in the training set, or `#!python rows="test+holdout"` to
    select all rows in the test and holdout sets. Valid data sets are `dataset`,
    `train`, `test` and `holdout`.
-5. By dtype (only for columns), e.g., `#!python columns="number"` to select only 
+5. By dtype (only for columns), e.g., `#!python columns="number"` to select only
    numerical columns. See pandas' [user guide](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.select_dtypes.html).
 6. By regex match, e.g., `#!python columns="mean_.*"` to select all columns
    starting with `mean_`.

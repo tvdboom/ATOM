@@ -5,6 +5,7 @@ Description: Unit tests for the utils module.
 
 """
 
+import sys
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -23,10 +24,11 @@ from .conftest import X_bin, X_bin_array, y_bin, y_bin_array
 
 # Test _show_versions ============================================== >>
 
-@patch.dict("sys.modules", {"sklearn": "1.3.2"}, clear=True)
 def test_show_versions():
     """Assert that the show_versions function runs without errors."""
-    show_versions()
+    with patch.dict("sys.modules"):
+        del sys.modules["polars"]
+        show_versions()
 
 
 # Test utils ======================================================= >>

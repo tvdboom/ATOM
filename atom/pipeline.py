@@ -17,8 +17,9 @@ from joblib import Memory
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.pipeline import _final_estimator_has
-from sklearn.utils import Bunch, _print_elapsed_time
+from sklearn.utils import Bunch
 from sklearn.utils._metadata_requests import MetadataRouter, MethodMapping
+from sklearn.utils._user_interface import _print_elapsed_time
 from sklearn.utils.metadata_routing import _raise_for_params, process_routing
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
@@ -375,7 +376,7 @@ class Pipeline(SkPipeline):
     def get_metadata_routing(self):
         """Get metadata routing of this object.
 
-        Check [sklearn's documentation][metadata_routing] on how the
+        Check [sklearn's documentation][metadatarouting] on how the
         routing mechanism works.
 
         Returns

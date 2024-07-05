@@ -17,14 +17,13 @@ from optuna.distributions import CategoricalDistribution as Cat
 from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
 from optuna.exceptions import TrialPruned
-from optuna.integration import (
-    CatBoostPruningCallback, LightGBMPruningCallback, XGBoostPruningCallback,
-)
 from optuna.trial import Trial
 
 from atom.basemodel import ClassRegModel
 from atom.utils.types import Pandas, Predictor
-from atom.utils.utils import CatBMetric, Goal, LGBMetric, XGBMetric
+from atom.utils.utils import (
+    CatBMetric, Goal, LGBMetric, XGBMetric, check_dependency,
+)
 
 
 class AdaBoost(ClassRegModel):
@@ -155,7 +154,7 @@ class AutomaticRelevanceDetermination(ClassRegModel):
 
         """
         return {
-            "n_iter": Int(100, 1000, step=10),
+            "max_iter": Int(100, 1000, step=10),
             "alpha_1": Float(1e-4, 1, log=True),
             "alpha_2": Float(1e-4, 1, log=True),
             "lambda_1": Float(1e-4, 1, log=True),
@@ -291,7 +290,7 @@ class BayesianRidge(ClassRegModel):
 
         """
         return {
-            "n_iter": Int(100, 1000, step=10),
+            "max_iter": Int(100, 1000, step=10),
             "alpha_1": Float(1e-4, 1, log=True),
             "alpha_2": Float(1e-4, 1, log=True),
             "lambda_1": Float(1e-4, 1, log=True),
@@ -513,6 +512,9 @@ class CatBoost(ClassRegModel):
             Fitted instance.
 
         """
+        check_dependency("optuna_integration")
+        from optuna_integration import CatBoostPruningCallback
+
         params = self._est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
@@ -1703,7 +1705,9 @@ class LightGBM(ClassRegModel):
             Fitted instance.
 
         """
+        check_dependency("optuna_integration")
         from lightgbm.callback import log_evaluation
+        from optuna_integration import LightGBMPruningCallback
 
         m = self._metric[0].name
         params = self._est_params_fit.copy()
@@ -3159,6 +3163,9 @@ class XGBoost(ClassRegModel):
             Fitted instance.
 
         """
+        check_dependency("optuna_integration")
+        from optuna_integration import XGBoostPruningCallback
+
         m = self._metric[0].name
         params = self._est_params_fit.copy()
 

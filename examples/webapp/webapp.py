@@ -1,7 +1,16 @@
+"""Automated Tool for Optimized Modeling (ATOM).
+
+Author: Mavs
+Description: Webb application tutorial.
+See https://medium.com/towards-data-science/from-raw-data-to-web-app-deployment-with-atom-and-streamlit-d8df381aa19f
+
+"""
+
 import pandas as pd
 import streamlit as st
 
 from atom import ATOMClassifier
+
 
 # Expand the web app across the whole screen
 st.set_page_config(layout="wide")
@@ -10,18 +19,18 @@ st.sidebar.title("Pipeline")
 
 # Data cleaning options
 st.sidebar.subheader("Data cleaning")
-scale = st.sidebar.checkbox("Scale", False, "scale")
-encode = st.sidebar.checkbox("Encode", False, "encode")
-impute = st.sidebar.checkbox("Impute", False, "impute")
+scale = st.sidebar.checkbox("Scale", value=False, key="scale")
+encode = st.sidebar.checkbox("Encode", value=False, key="encode")
+impute = st.sidebar.checkbox("Impute", value=False, key="impute")
 
 # Model options
 st.sidebar.subheader("Models")
 models = {
-    "gnb": st.sidebar.checkbox("Gaussian Naive Bayes", True, "gnb"),
-    "rf": st.sidebar.checkbox("Random Forest", True, "rf"),
-    "et": st.sidebar.checkbox("Extra-Trees", False, "et"),
-    "xgb": st.sidebar.checkbox("XGBoost", False, "xgb"),
-    "lgb": st.sidebar.checkbox("LightGBM", False, "lgb"),
+    "gnb": st.sidebar.checkbox("Gaussian Naive Bayes", value=True, key="gnb"),
+    "rf": st.sidebar.checkbox("Random Forest", value=True, key="rf"),
+    "et": st.sidebar.checkbox("Extra-Trees", value=False, key="et"),
+    "xgb": st.sidebar.checkbox("XGBoost", value=False, key="xgb"),
+    "lgb": st.sidebar.checkbox("LightGBM", value=False, key="lgb"),
 }
 
 

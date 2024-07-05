@@ -27,7 +27,7 @@ body:
         that can reproduce the error when running it. Be as succinct as possible,
         **do not depend on external data files**: instead you can generate synthetic
         data using `numpy.random`, [sklearn.datasets.make_regression](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html),
-        [sklearn.datasets.make_classification](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_classification.html) 
+        [sklearn.datasets.make_classification](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_classification.html)
         or a few lines of Python code. Example:
 
         ```python

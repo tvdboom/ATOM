@@ -17,9 +17,9 @@ from sklearn.base import clone
 
 from atom.atom import ATOM
 from atom.utils.types import (
-    Backend, Bool, ColumnSelector, Engine, IndexSelector, IntLargerEqualZero,
-    NJobs, Predictor, Scalar, Seasonality, SPDict, Verbose, Warnings,
-    YSelector,
+    Backend, Bool, ColumnSelector, Engine, IndexSelector, Int,
+    IntLargerEqualZero, MetadataDict, NJobs, Predictor, Scalar, Seasonality,
+    SPDict, Verbose, Warnings, YSelector,
 )
 from atom.utils.utils import Goal
 
@@ -188,6 +188,16 @@ class ATOMClassifier(ATOM):
         - If str: Name of the column to use as index.
         - If sequence: Array with shape=(n_samples,) to use as index.
 
+    metadata: dict or None, default=None
+        [Metadata][] to route to estimators, scorers, and CV splitters.
+        If None, no metadata is used. If dict, the available keys are:
+
+        - groups: sequence of shape=(n_samples,)
+            Group labels for the samples used while splitting the
+            dataset into train and test sets.
+        - sample_weight: sequence of shape=(n_samples,)
+            Individual weights for each sample.
+
     ignore: int, str, sequence or None, default=None
         Features in X to ignore during data transformations and model
         training. The features are still used in the remaining methods.
@@ -199,6 +209,10 @@ class ATOMClassifier(ATOM):
         This parameter is ignored if the test set is provided
         through `arrays`.
 
+        If 'groups' is provided in the `metadata` parameter, `test_size`
+        represents the proportion of groups to include in the test split
+        or the absolute number of test groups.
+
     holdout_size: int, float or None, default=None
         - If None: No holdout data set is kept apart.
         - If <=1: Fraction of the dataset to include in the holdout set.
@@ -208,23 +222,19 @@ class ATOMClassifier(ATOM):
         through `arrays`.
 
     shuffle: bool, default=True
-        Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of target classes over the sets.
+        Whether to shuffle the dataset before splitting the data sets.
 
-    stratify: bool, int, str or sequence, default=True
+    stratify: int, str or None, default=-1
         Handle stratification of the target classes over the data sets.
 
-        - If False: The data is split randomly.
-        - If True: The data is stratified over the target column.
-        - Else: Name or position of the columns to stratify by. The
-          columns can't contain `NaN` values.
+        - If None: No stratification is applied.
+        - If int: Position of the column to use for stratification.
+        - If str: Name of the column to use for stratification.
+
+        The stratification column can't contain `NaN` values.
 
         This parameter is ignored if `shuffle=False` or if the test
         set is provided through `arrays`.
-
-        For [multioutput tasks][], stratification applies to the joint
-        target columns.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
@@ -348,7 +358,7 @@ class ATOMClassifier(ATOM):
     atom.run(models=["LR", "RF", "XGB"])
 
     # Analyze the results
-    print(atom.results)
+    atom.results
     ```
 
     """
@@ -360,9 +370,10 @@ class ATOMClassifier(ATOM):
         *arrays,
         y: YSelector = -1,
         index: IndexSelector = False,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
-        stratify: IndexSelector = True,
+        stratify: Int | str | None = -1,
         n_rows: Scalar = 1,
         test_size: Scalar = 0.2,
         holdout_size: Scalar | None = None,
@@ -381,6 +392,7 @@ class ATOMClassifier(ATOM):
             arrays=arrays,
             y=y,
             index=index,
+            metadata=metadata,
             ignore=ignore,
             test_size=test_size,
             holdout_size=holdout_size,
@@ -455,6 +467,13 @@ class ATOMForecaster(ATOM):
 
         This parameter is ignored if the time series is provided
         through `arrays`.
+
+    metadata: dict or None, default=None
+        [Metadata][] to route to estimators, scorers, and CV splitters.
+        If None, no metadata is used. If dict, the available keys are:
+
+        - sample_weight: sequence of shape=(n_samples,)
+            Individual weights for each sample.
 
     ignore: int, str, sequence or None, default=None
         Exogenous features in X to ignore during data transformations
@@ -619,7 +638,7 @@ class ATOMForecaster(ATOM):
     atom.run(models=["NF", "ES", "ETS"])
 
     # Analyze the results
-    print(atom.results)
+    atom.results
     ```
 
     """
@@ -630,6 +649,7 @@ class ATOMForecaster(ATOM):
         self,
         *arrays,
         y: YSelector = -1,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         sp: Seasonality | SPDict = None,
         n_rows: Scalar = 1,
@@ -650,12 +670,13 @@ class ATOMForecaster(ATOM):
             arrays=arrays,
             y=y,
             index=True,
+            metadata=metadata,
             ignore=ignore,
             sp=sp,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=False,
-            stratify=False,
+            stratify=None,
             n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,
@@ -732,6 +753,16 @@ class ATOMRegressor(ATOM):
         - If str: Name of the column to use as index.
         - If sequence: Array with shape=(n_samples,) to use as index.
 
+    metadata: dict or None, default=None
+        [Metadata][] to route to estimators, scorers, and CV splitters.
+        If None, no metadata is used. If dict, the available keys are:
+
+        - groups: sequence of shape=(n_samples,)
+            Group labels for the samples used while splitting the
+            dataset into train and test sets.
+        - sample_weight: sequence of shape=(n_samples,)
+            Individual weights for each sample.
+
     ignore: int, str, sequence or None, default=None
         Features in X to ignore during data transformations and model
         training. The features are still used in the remaining methods.
@@ -743,6 +774,10 @@ class ATOMRegressor(ATOM):
         This parameter is ignored if the test set is provided
         through `arrays`.
 
+        If 'groups' is provided in the `metadata` parameter, `test_size`
+        represents the proportion of groups to include in the test split
+        or the absolute number of test groups.
+
     holdout_size: int, float or None, default=None
         - If None: No holdout data set is kept apart.
         - If <=1: Fraction of the dataset to include in the holdout set.
@@ -752,9 +787,7 @@ class ATOMRegressor(ATOM):
         through `arrays`.
 
     shuffle: bool, default=True
-        Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of target classes over the sets.
+        Whether to shuffle the dataset before splitting the data sets.
 
     n_rows: int or float, default=1
         Random subsample of the dataset to use. The default value selects
@@ -878,7 +911,7 @@ class ATOMRegressor(ATOM):
     atom.run(models=["OLS", "RF", "XGB"])
 
     # Analyze the results
-    print(atom.results)
+    atom.results
     ```
 
     """
@@ -890,6 +923,7 @@ class ATOMRegressor(ATOM):
         *arrays,
         y: YSelector = -1,
         index: IndexSelector = False,
+        metadata: MetadataDict | None = None,
         ignore: ColumnSelector | None = None,
         shuffle: Bool = True,
         n_rows: Scalar = 1,
@@ -911,10 +945,11 @@ class ATOMRegressor(ATOM):
             y=y,
             index=index,
             ignore=ignore,
+            metadata=metadata,
             test_size=test_size,
             holdout_size=holdout_size,
             shuffle=shuffle,
-            stratify=False,
+            stratify=None,
             n_rows=n_rows,
             n_jobs=n_jobs,
             device=device,

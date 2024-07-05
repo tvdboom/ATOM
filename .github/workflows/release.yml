@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all commits/branches
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          pip install -U pdm pdm-backend
-          pdm install --dev
+          pip install -U pdm
+          pdm install -G full -G doc
       - name: Update documentation
         run: |
           echo "Deploying documentation for release ATOM ${GITHUB_REF_NAME::-2}"
@@ -26,20 +26,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out source repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up Python environment
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Install dependencies
       run: |
-        python -m pip install -U pip setuptools
+        python -m pip install -U pip
         pip install -U pdm pdm-backend
     - name: Build
       run: |
         rm -rf dist/*
         pdm build
-    - name: Release to PyPI
+    - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_PWD }}

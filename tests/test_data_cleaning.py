@@ -24,8 +24,9 @@ from atom.utils.types import NumericalStrats
 from atom.utils.utils import NotFittedError, check_scaling, to_df
 
 from .conftest import (
-    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_ex, X_idx, y10,
-    y10_label, y10_nan, y10_str, y_bin, y_class, y_idx, y_multiclass,
+    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_ex, X_idx,
+    X_sparse, y10, y10_label, y10_nan, y10_str, y_bin, y_class, y_idx,
+    y_multiclass,
 )
 
 
@@ -196,7 +197,7 @@ def test_cleaner_remove_characters_from_column_names():
     """Assert that specified chars are removed from column names."""
     cleaner = Cleaner(drop_chars="[^A-Za-z0-9]+")
 
-    X, y = X_bin.copy(), y_bin.copy()
+    X, y = X_sparse.copy(), pd.Series(y10)
     X.columns = ["test##", *X.columns[1:]]
     y.name = "::test"
     X, y = cleaner.fit_transform(X, y)
@@ -548,6 +549,14 @@ def test_imputing_numeric_drop():
     assert X.isna().sum().sum() == 0
 
 
+@pytest.mark.parametrize("strat_num", NumericalStrats.__args__)
+def test_imputing_numeric(strat_num):
+    """Assert that imputing numerical columns works."""
+    imputer = Imputer(strat_num=strat_num)
+    X, _ = imputer.fit_transform(X10_nan, y10)
+    assert X.isna().sum().sum() == 0
+
+
 def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
     imputer = Imputer(strat_num=3.2)
@@ -556,11 +565,11 @@ def test_imputing_numeric_number():
     assert X.isna().sum().sum() == 0
 
 
-@pytest.mark.parametrize("strat_num", NumericalStrats.__args__)
-def test_imputing_numeric(strat_num):
-    """Assert that imputing numerical columns works."""
-    imputer = Imputer(strat_num=strat_num)
+def test_imputing_numeric_callable():
+    """Assert that imputing numerical values with a callable works."""
+    imputer = Imputer(strat_num=lambda _: 3)
     X, _ = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == 3
     assert X.isna().sum().sum() == 0
 
 

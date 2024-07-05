@@ -5,6 +5,7 @@ Description: Unit tests for basetrainer.py
 
 """
 
+from importlib.util import find_spec
 from unittest.mock import MagicMock, patch
 
 import mlflow
@@ -375,6 +376,7 @@ def test_errors_keep():
     assert trainer._models == [trainer.lda]
 
 
+@pytest.mark.skipif(not find_spec("ray"), reason="Ray is not installed.")
 def test_parallel_with_ray():
     """Assert that parallel runs successfully with ray backend."""
     trainer = DirectClassifier(

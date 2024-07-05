@@ -14,50 +14,26 @@ from code import InteractiveInterpreter
 from io import StringIO
 from uuid import uuid4
 
-import matplotlib
+import matplotlib as mpl
 import plotly.io as pio
 from markdown import Markdown
+from pandas.io.formats.style import Styler
 from pymdownx.superfences import SuperFencesException
 
 
 # Avoid plot rendering
-matplotlib.use("Agg")
+mpl.use("Agg")
 pio.renderers.default = "pdf"
 
 # Directory in which to store all plots from the examples
 shutil.rmtree(DIR_EXAMPLES := "docs_sources/img/examples/", ignore_errors=True)
 os.mkdir(DIR_EXAMPLES)
 
-
-class StreamOut:
-    """Override stdout to fetch the code's output."""
-
-    def __init__(self):
-        self.old = sys.stdout
-        self.stdout = StringIO()
-        sys.stdout = self.stdout
-
-    def read(self):
-        """Read the stringIO buffer."""
-        value = ""
-        if self.stdout is not None:
-            self.stdout.flush()
-            value = self.stdout.getvalue()
-            self.stdout = StringIO()
-            sys.stdout = self.stdout
-
-        return value
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        sys.stdout = self.old
-        self.old = None
-        self.stdout = None
+# Cached output (same across code blocks)
+cached_last_value = None
 
 
-def execute(src: str) -> tuple[list[str], list[str]]:
+def execute(src: str) -> tuple[list[list[str]], list[str]]:
     """Get the code with output.
 
     Parameters
@@ -67,10 +43,10 @@ def execute(src: str) -> tuple[list[str], list[str]]:
 
     Returns
     -------
-    list of str
+    list
         Blocks of formatted code with output.
 
-    list of str
+    list
         Figures corresponding to every code block (can be empty).
 
     """
@@ -96,7 +72,7 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         else:
             return f"... {code}"
 
-    def latest_file() -> str | None:
+    def get_latest_file() -> str | None:
         """Get the most recent file from the plots directory.
 
         Returns
@@ -107,6 +83,10 @@ def execute(src: str) -> tuple[list[str], list[str]]:
         """
         if files := [os.path.join(DIR_EXAMPLES, f) for f in os.listdir(DIR_EXAMPLES)]:
             return os.path.basename(max(files, key=os.path.getmtime))
+        else:
+            return None
+
+    global cached_last_value
 
     ipy = InteractiveInterpreter()
 
@@ -114,15 +94,16 @@ def execute(src: str) -> tuple[list[str], list[str]]:
     tree = {x.lineno: x for x in ast.parse(src).body}
 
     end_line = 0
-    output, figures = [[]], []
+    output: list[list[str]] = [[]]
+    figures: list[str] = []
     for i, line in enumerate(lines, start=1):
         if node := tree.get(i):
-            end_line = node.end_lineno
+            end_line = node.end_lineno or 99999
 
             # Get complete code block
-            block = lines[node.lineno - 1 : end_line]
+            block = lines[node.lineno - 1: end_line]
 
-            if "# hide" not in line:
+            if not line.endswith("# hide"):
                 output[-1].extend([draw(code) for code in block])
 
             # Add filename parameter to plot call to save the figure
@@ -136,29 +117,55 @@ def execute(src: str) -> tuple[list[str], list[str]]:
                     args, close = arguments.rsplit(")", 1)
                     block[0] = f'{f}({args}, filename="{DIR_EXAMPLES}{uuid4()}"){close}'
 
-            # Capture anything sent to stdout
-            with StreamOut() as stream:
+            # First check for syntax errors
+            try:
                 # Add \n at end to exit contextmanagers
-                ipy.runsource("\n".join(block) + "\n")
+                code = ipy.compile("\n".join(block) + "\n")
+            except (OverflowError, SyntaxError, ValueError):
+                ipy.showsyntaxerror()
+                raise
 
-                if text := stream.read():
+            if code is None:
+                raise ValueError("Code block is incomplete.")
+
+            sys.stdout = StringIO()
+            try:
+                exec(code, ipy.locals)  # type: ignore[arg-type]
+            except Exception:
+                ipy.showtraceback()
+                raise
+            finally:
+                if text := sys.stdout.getvalue():
                     # Omit plot's output
-                    if not text.startswith("{'application/pdf'"):
-                        output[-1].append(f"\n{text}")
+                    if not text.startswith(("{'application/pdf'", "<pandas.io.formats")):
+                        output[-1].append(f"\n{text[:-1]}")  # Remove last newline
+
+                sys.stdout = sys.__stdout__
+
+            value = ipy.locals["__builtins__"].get("_")
+            if cached_last_value is not value and isinstance(value, Styler):
+                cached_last_value = value
+
+                if end_line < len(lines):
+                    output.append([])  # Add new code block
+
+                figures.append(value._repr_html_())
 
             if ".plot_" in line or ".canvas(" in line:
                 if end_line < len(lines):
                     output.append([])  # Add new code block
 
-                if (f := latest_file()).endswith(".html"):
-                    with open(f"{DIR_EXAMPLES}{f}", encoding="utf-8") as file:
-                        figures.append(file.read())
-                else:
-                    with open(f"{DIR_EXAMPLES}{f}", "rb") as file:
-                        img = b64encode(file.read()).decode("utf-8")
-                    figures.append(
-                        f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"
-                    )
+                if latest_file := get_latest_file():
+                    if latest_file.endswith(".html"):
+                        with open(f"{DIR_EXAMPLES}{latest_file}", encoding="utf-8") as pio_f:
+                            figures.append(pio_f.read())
+                    else:
+                        with open(f"{DIR_EXAMPLES}{latest_file}", mode="rb") as mpl_f:
+                            img = b64encode(mpl_f.read()).decode("utf-8")  # type: ignore[[arg-type]
+
+                        figures.append(
+                            f"<img src='data:image/png;base64,{img}' alt='{f}' draggable='false'>"
+                        )
 
         elif i > end_line:
             output[-1].append(draw(line))
@@ -202,32 +209,10 @@ def formatter(
         Source formatted to HTML.
 
     """
+    to_html = md.preprocessors["fenced_code_block"].extension.superfences[0]["formatter"]
 
-    def to_html(code: list[str]) -> str:
-        """Convert a code block to html.
-
-        Parameters
-        ----------
-        code: list of str
-            List of commands.
-
-        Returns
-        -------
-        str
-            Clean representation of the code.
-
-        """
-        return md.preprocessors["fenced_code_block"].extension.superfences[0]["formatter"](
-            src="\n".join(code),
-            class_name=css_class,
-            language=language,
-            md=md,
-            options=options,
-            **kwargs,
-        )
-
-    # First line of markdown page
-    print(md.lines[0])
+    # Show title of page for debugging purposes
+    print(md.lines[0])  # noqa: T201
 
     try:
         output, figures = execute(src.strip())
@@ -236,8 +221,15 @@ def formatter(
         for i in range(max(len(output), len(figures))):
             source = ""
             if i < len(output):
-                source += to_html(output[i])
-            if i < len(figures):
+                source += to_html(
+                    src="\n".join(output[i]),
+                    class_name=css_class,
+                    language=language,
+                    md=md,
+                    options=options,
+                    **kwargs,
+                )
+            if i < len(figures):  # Add figures after code
                 source += figures[i]
 
             render.append(source)

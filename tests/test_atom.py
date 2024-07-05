@@ -34,9 +34,9 @@ from atom.utils.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_ex, X_label, X_pa, X_reg, X_sparse, X_text, y10, y10_label,
-    y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc, y_label,
-    y_multiclass, y_multireg, y_reg,
+    X_class, X_ex, X_label, X_pa, X_reg, X_sparse, X_text, bin_sample_weight,
+    y10, y10_label, y10_label2, y10_sn, y10_str, y_bin, y_class, y_ex, y_fc,
+    y_label, y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -50,13 +50,13 @@ def test_task_assignment():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     assert atom.task.name == "multiclass_classification"
 
-    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
-    atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y=y10_label, stratify=None, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
-    atom = ATOMClassifier(X10, y=y10_label2, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y=y10_label2, random_state=1)
     assert atom.task.name == "multilabel_classification"
 
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
@@ -162,6 +162,31 @@ def test_branch_from_valid():
     atom.branch = "b3_from_main"
     assert atom.branch.name == "b3"
     assert atom.n_nans > 0
+
+
+def test_pos_label():
+    """Assert that the pos_label property is set for all metrics."""
+    atom = ATOMClassifier(X_bin, y=[2 if i else 3 for i in y_bin], random_state=1)
+    assert atom.pos_label == 3
+
+    atom.pos_label = 2
+    atom.run("LR")
+    assert atom._metric[0]._kwargs["pos_label"] == 2
+
+
+def test_pos_label_invalid_task():
+    """Assert that the pos_label property is set for all metrics."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    with pytest.raises(ValueError, match=".*pos_label property can only be set.*"):
+        atom.pos_label = 0
+
+
+def test_metadata():
+    """Assert that the metadata property works."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not atom.metadata
+    atom.metadata = {"sample_weights": range(len(X_bin))}
+    assert "sample_weights" in atom.metadata
 
 
 def test_missing():
@@ -709,11 +734,11 @@ def test_add_derivative_columns_keep_position():
 
 def test_multioutput_y_return():
     """Assert that y returns a dataframe when multioutput."""
-    atom = ATOMClassifier(X10, y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y10_label, stratify=None, random_state=1)
     atom.add(Cleaner())
     assert isinstance(atom.y, pd.DataFrame)
 
-    atom = ATOMClassifier(X10, y10_label, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y10_label, stratify=None, random_state=1)
     atom.add(MultiLabelBinarizer())
     assert isinstance(atom.y, pd.DataFrame)
 
@@ -782,8 +807,15 @@ def test_add_wrap_get_feature_names_out_callable():
     assert list(atom.pipeline[0].get_feature_names_out()) == ["test"]
 
 
+def test_add_with_sample_weights():
+    """Assert that sample weights are passed to the method."""
+    atom = ATOMClassifier(X_bin, y=y_bin, metadata=bin_sample_weight, random_state=1)
+    atom.scale()
+    assert atom.pipeline[0].get_metadata_routing()._serialize()["fit"]["sample_weight"]
+
+
 def test_add_pipeline():
-    """Assert that adding a pipeline adds every individual step."""
+    """Assert that adding a pipeline adds every step."""
     pipeline = Pipeline(
         steps=[
             ("scaler", StandardScaler()),
@@ -828,6 +860,13 @@ def test_balance_wrong_task():
         atom.balance()
 
 
+def test_balance_with_sample_weight():
+    """Assert that an error is raised when sample weights are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, metadata=bin_sample_weight, random_state=1)
+    with pytest.raises(PermissionError, match=".*not support sample weights.*"):
+        atom.balance()
+
+
 def test_balance():
     """Assert that the balance method balances the training set."""
     atom = ATOMClassifier(X10, y10_str, random_state=1)
@@ -838,7 +877,7 @@ def test_balance():
 
 def test_clean():
     """Assert that the clean method cleans the dataset."""
-    atom = ATOMClassifier(X10, y10_sn, stratify=False, random_state=1)
+    atom = ATOMClassifier(X10, y10_sn, stratify=None, random_state=1)
     atom.clean()
     assert len(atom.dataset) == 9
     assert atom.mapping == {"target": {"n": 0, "y": 1}}

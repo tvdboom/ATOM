@@ -7,25 +7,27 @@ Description: Unit tests for baserunner.py
 
 import glob
 import sys
+from random import choices
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.io.formats.style import Styler
 from pandas.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal,
 )
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.utils import Bunch
 
 from atom import ATOMClassifier, ATOMForecaster, ATOMRegressor
 from atom.data import Branch
 from atom.training import DirectClassifier, DirectForecaster
-from atom.utils.types import SPTuple
 from atom.utils.utils import NotFittedError, merge
 
 from .conftest import (
-    X10, X_bin, X_class, X_idx, X_label, X_reg, bin_test, bin_train, fc_test,
-    fc_train, y10, y_bin, y_class, y_fc, y_idx, y_label, y_multiclass, y_reg,
+    X10, X_bin, X_class, X_idx, X_reg, bin_groups, bin_test, bin_train,
+    fc_test, fc_train, y10, y_bin, y_class, y_fc, y_idx, y_multiclass, y_reg,
 )
 
 
@@ -184,7 +186,7 @@ def test_getitem_list():
 def test_sp_property_none():
     """Assert that the sp property can be set up correctly."""
     atom = ATOMForecaster(y_fc, sp=None, random_state=1)
-    assert atom.sp == atom._config.sp == SPTuple()
+    assert atom.sp == atom._config.sp == Bunch()
 
 
 def test_sp_property_invalid_index():
@@ -226,13 +228,13 @@ def test_sp_property_int():
 def test_sp_property_sequence():
     """Assert that the sp property can be set up correctly."""
     atom = ATOMForecaster(y_fc, sp=(12, 24), random_state=1)
-    assert atom.sp == SPTuple(sp=[12, 24])
+    assert atom.sp == Bunch(sp=[12, 24])
 
 
 def test_sp_property_dict():
     """Assert that the sp property can be set up correctly."""
-    atom = ATOMForecaster(y_fc, sp={"sp": None, "seasonal_model": "multiplicative"})
-    assert atom.sp == SPTuple(sp=None, seasonal_model="multiplicative")
+    atom = ATOMForecaster(y_fc, sp={"seasonal_model": "multiplicative"})
+    assert atom.sp == Bunch(seasonal_model="multiplicative")
 
 
 def test_branch_property():
@@ -307,33 +309,39 @@ def test_results_property():
     """Assert that the results property returns an overview of the results."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert atom.results.shape == (1, 4)
+    assert atom.results.data.shape == (1, 4)
 
 
 def test_results_property_dropna():
     """Assert that the results property doesn't return columns with NaNs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert "mean_bootstrap" not in atom.results
+    assert "mean_bootstrap" not in atom.results.data
 
 
 def test_results_property_successive_halving():
     """Assert that the results property works for successive halving runs."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.successive_halving(["OLS", "Tree"])
-    assert atom.results.shape == (3, 4)
-    assert list(atom.results.index.get_level_values(0)) == [0.5, 0.5, 1.0]
+    assert atom.results.data.shape == (3, 4)
+    assert list(atom.results.data.index.get_level_values(0)) == [0.5, 0.5, 1.0]
 
 
 def test_results_property_train_sizing():
     """Assert that the results property works for train sizing runs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.train_sizing("LR")
-    assert atom.results.shape == (5, 4)
-    assert list(atom.results.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
+    assert atom.results.data.shape == (5, 4)
+    assert list(atom.results.data.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
 
 
 # Test _get_data =================================================== >>
+
+def test_groups_with_forecast():
+    """Assert that an error is raised when groups are provided in a forecast task."""
+    with pytest.raises(ValueError, match=".*'groups' is unavailable for forecast.*"):
+        ATOMForecaster(y_fc, metadata={"groups": choices(["A", "B"], k=len(y_fc))}, random_state=1)
+
 
 def test_index_is_true():
     """Assert that the indices are left as is when index=True."""
@@ -414,7 +422,7 @@ def test_index_is_sequence_has_data_sets():
     assert atom.holdout.index[0] == "index_569"
 
 
-@pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
+@pytest.mark.parametrize("stratify", [-1, "target"])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
     atom = ATOMClassifier(X_bin, y_bin, stratify=stratify, random_state=1)
@@ -423,9 +431,9 @@ def test_stratify_options(stratify):
     np.testing.assert_almost_equal(train_balance, test_balance, decimal=2)
 
 
-def test_stratify_is_False():
-    """Assert that the data is not stratified when stratify=False."""
-    atom = ATOMClassifier(X_bin, y_bin, stratify=False, random_state=1)
+def test_stratify_is_None():
+    """Assert that the data is not stratified when stratify=None."""
+    atom = ATOMClassifier(X_bin, y_bin, stratify=None, random_state=1)
     train_balance = atom.classes["train"][0] / atom.classes["train"][1]
     test_balance = atom.classes["test"][0] / atom.classes["test"][1]
     assert abs(train_balance - test_balance) > 0.05
@@ -496,6 +504,12 @@ def test_input_is_X_with_holdout(holdout_size):
     assert isinstance(atom.holdout, pd.DataFrame)
 
 
+def test_input_holdout_with_groups():
+    """Assert that the holdout size is determined based on groups."""
+    atom = ATOMRegressor(X_bin, holdout_size=0.2, metadata=bin_groups, random_state=1)
+    assert len(atom.holdout) in atom.metadata["groups"].value_counts().to_numpy()
+
+
 @pytest.mark.parametrize("shuffle", [True, False])
 def test_input_is_train_test_with_holdout(shuffle):
     """Assert that input train and test can be combined with a holdout set."""
@@ -560,12 +574,6 @@ def test_test_size_int():
     atom = ATOMClassifier(X_bin, y_bin, test_size=100, random_state=1)
     assert len(atom.test) == 100
     assert len(atom.train) == len(X_bin) - 100
-
-
-def test_error_message_impossible_stratification():
-    """Assert that the correct error is shown when stratification fails."""
-    with pytest.raises(ValueError, match=".*stratify=False.*"):
-        ATOMClassifier(X_label[:30], y=y_label[:30], stratify=True, random_state=1)
 
 
 def test_input_is_X_y():
@@ -866,7 +874,7 @@ def test_delete_default():
     atom.delete()  # All models
     assert not atom.models
     assert not atom.metric
-    assert atom.results.empty
+    assert atom.results.data.empty
 
 
 @pytest.mark.parametrize("metric", ["ap", "f1"])
@@ -875,14 +883,7 @@ def test_evaluate(metric):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.evaluate)
     atom.run("Tree")
-    assert isinstance(atom.evaluate(metric, as_frame=True), pd.DataFrame)
-
-
-def test_evaluate_returns_styler():
-    """Assert that the evaluate method returns a pandas styler."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LR"])
-    assert isinstance(atom.evaluate(), pd.io.formats.style.Styler)
+    assert isinstance(atom.evaluate(metric), Styler)
 
 
 def test_export_pipeline_same_transformer():

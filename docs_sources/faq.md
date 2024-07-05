@@ -4,7 +4,7 @@
 Here we try to give answers to some questions that have popped up
 regularly. If you have any other questions, don't hesitate to create
 a new [discussion](https://github.com/tvdboom/ATOM/discussions) or post
-them on the [Slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)! 
+them on the [Slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)!
 
 ??? faq Is this package related to the Atom text editor?"
     There is, indeed, a text editor with the same name and a similar logo as

@@ -14,11 +14,10 @@ from collections import deque
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 from functools import cached_property, wraps
 from importlib import import_module
-from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from types import GeneratorType, MappingProxyType
@@ -35,7 +34,7 @@ from IPython.display import display
 from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from pandas._libs.missing import NAType
-from pandas._typing import Axes, Dtype
+from pandas._typing import Axes, DtypeObj
 from pandas.api.types import is_numeric_dtype
 from shap import Explainer
 from sklearn.base import BaseEstimator
@@ -44,16 +43,17 @@ from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import _print_elapsed_time
+from sklearn.utils import Bunch
+from sklearn.utils._user_interface import _print_elapsed_time
 from sklearn.utils.validation import _check_response_method, _is_fitted
 
 from atom.utils.constants import CAT_TYPES, __version__
 from atom.utils.types import (
     Bool, EngineDataOptions, EngineTuple, Estimator, FeatureNamesOut, Float,
-    IndexSelector, Int, IntLargerEqualZero, MetricFunction, Model, Pandas,
-    PandasConvertible, Predictor, Scalar, Scorer, Segment, Sequence, SPTuple,
-    Transformer, Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t,
-    segment_t, sequence_t,
+    Int, IntLargerEqualZero, MetricFunction, Model, Pandas, PandasConvertible,
+    PosLabel, Predictor, Scalar, Scorer, Segment, Sequence, Transformer,
+    Verbose, XConstructor, XReturn, YConstructor, YReturn, int_t, segment_t,
+    sequence_t,
 )
 
 
@@ -236,67 +236,159 @@ class Aesthetics:
 class DataConfig:
     """Stores the data configuration.
 
-    This is a utility class to store the data configuration in one
-    attribute and pass it down to the models. The default values are
-    the ones adopted by trainers.
+    Utility class to store the data configuration in one attribute
+    and pass it down to the models. The default values are the ones
+    adopted by trainers.
 
     """
 
     index: bool = False
+    metadata: Bunch = field(default_factory=Bunch)
     ignore: tuple[str, ...] = ()
-    sp: SPTuple = SPTuple()  # noqa: RUF009
+    sp: Bunch = field(default_factory=Bunch)
     shuffle: Bool = False
-    stratify: IndexSelector = True
+    pos_label: PosLabel = 1
+    stratify: Int | str | None = None
     n_rows: Scalar = 1
     test_size: Scalar = 0.2
     holdout_size: Scalar | None = None
 
-    def get_stratify_columns(self, df: pd.DataFrame, y: Pandas) -> pd.DataFrame | None:
-        """Get columns to stratify by.
+    def reindex_metadata(
+        self,
+        new_index: pd.Index | None = None,
+        loc: pd.Index | None = None,
+        iloc: pd.Index | None = None,
+    ):
+        """Reindex the 'groups' and 'sample_weight' keys in metadata.
+
+        Parameters
+        ----------
+        new_index: pd.Index or None, default=None
+            New index to replace the current one. The rows remain in
+            the same order.
+
+        loc: pd.Index or None, default=None
+            New order to reindex the metadata based on current names.
+
+        iloc: pd.Index or None, default=None
+            New order to reindex the metadata based on positions.
+
+        """
+        for key, value in self.metadata.items():
+            if new_index is not None:
+                self.metadata[key].index = new_index
+            elif loc is not None:
+                self.metadata[key] = value.loc[loc]
+            elif iloc is not None:
+                self.metadata[key] = value.iloc[iloc]
+
+    def get_groups(self, data: Pandas | None = None) -> pd.Series | None:
+        """Get the metadata groups.
+
+        Only the indices of the metadata that match those provided
+        are returned.
+
+        Parameters
+        ----------
+        data: pd.Series, pd.DataFrame or None, default=None
+            Data corresponding to get the metadata from. If None, all
+            groups are returned.
+
+        Returns
+        -------
+        pd.Series or None
+            Metadata parameters.
+
+        """
+        if "groups" in self.metadata:
+            if data is None:
+                return self.metadata.groups
+            else:
+                return self.metadata.groups.loc[data.index]
+        else:
+            return None
+
+    def get_sample_weight(self, data: Pandas | None = None) -> pd.Series | None:
+        """Get the metadata sample weights.
+
+        Only the indices of the metadata that match those provided
+        are returned.
+
+        Parameters
+        ----------
+        data: pd.Series, pd.DataFrame or None, default=None
+            Data corresponding to get the metadata from. If None, all
+            sample weights are returned.
+
+        Returns
+        -------
+        pd.Series or None
+            Metadata parameters.
+
+        """
+        if "sample_weight" in self.metadata:
+            if data is None:
+                return self.metadata.sample_weight
+            else:
+                return self.metadata.sample_weight.loc[data.index]
+        else:
+            return None
+
+    def get_metadata(self, data: Pandas | None = None) -> dict[str, Any]:
+        """Get all metadata.
+
+        Only the indices of the metadata that match those provided
+        are returned.
+
+        Parameters
+        ----------
+        data: pd.Series, pd.DataFrame or None, default=None
+            Data corresponding to get the metadata from. If None, all
+            metadata is returned.
+
+        Returns
+        -------
+        dict
+            Metadata for the requested indices.
+
+        """
+        return {k: getattr(self, f"get_{k}")(data) for k, v in self.metadata.items()}
+
+    def get_stratify_column(self, df: pd.DataFrame) -> pd.Series | None:
+        """Get the column to stratify over.
 
         Parameters
         ----------
         df: pd.DataFrame
-            Dataset from which to get the columns.
-
-        y: pd.Series or pd.DataFrame
-            Target column(s).
+            Dataset from which to get the column.
 
         Returns
         -------
-        pd.DataFrame or None
-            Dataset with subselection of columns. Returns None if
-            there's no stratification.
+        pd.Series or None
+            Stratification column. Returns None if there's no
+            stratification.
 
         """
         # Stratification is not possible when the data cannot change order
-        if self.stratify is False:
+        if self.stratify is None or self.shuffle is False:
             return None
-        elif self.shuffle is False:
-            return None
-        elif self.stratify is True:
-            return df[[c.name for c in get_cols(y)]]
-        else:
-            inc = []
-            for col in lst(self.stratify):
-                if isinstance(col, int_t):
-                    if -df.shape[1] <= col <= df.shape[1]:
-                        inc.append(df.columns[int(col)])
-                    else:
-                        raise ValueError(
-                            f"Invalid value for the stratify parameter. Value {col} "
-                            f"is out of range for a dataset with {df.shape[1]} columns."
-                        )
-                elif isinstance(col, str):
-                    if col in df:
-                        inc.append(col)
-                    else:
-                        raise ValueError(
-                            "Invalid value for the stratify parameter. "
-                            f"Column {col} not found in the dataset."
-                        )
 
-            return df[inc]
+        if isinstance(self.stratify, int_t):
+            if -df.shape[1] <= self.stratify <= df.shape[1]:
+                return df[df.columns[int(self.stratify)]]
+            else:
+                raise ValueError(
+                    f"Invalid value for the stratify parameter. Value {self.stratify} "
+                    f"is out of range for a dataset with {df.shape[1]} columns."
+                )
+        elif isinstance(self.stratify, str):
+            if self.stratify in df:
+                return df[self.stratify]
+            else:
+                raise ValueError(
+                    "Invalid value for the stratify parameter. "
+                    f"Column {self.stratify} not found in the dataset."
+                )
 
 
 class CatBMetric:
@@ -1317,7 +1409,8 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
     """Replace all values considered 'missing' in a dataset.
 
     This method replaces the missing values in columns with pandas'
-    nullable dtypes with `pd.NA`, else with `np.NaN`.
+    nullable dtypes with `pd.NA`, else with `np.NaN`. Sparse datasets
+    are ignored since sparse columns don't support item assignment.
 
     Parameters
     ----------
@@ -1334,36 +1427,25 @@ def replace_missing(X: T_Pandas, missing_values: list[Any] | None = None) -> T_P
         Data set without missing values.
 
     """
-
-    def get_nan(dtype: Dtype) -> float | NAType:
-        """Get NaN type depending on a column's type.
-
-        Parameters
-        ----------
-        dtype: Dtype
-            Type of the column.
-
-        Returns
-        -------
-        np.NaN or pd.NA
-            Missing value indicator.
-
-        """
-        return np.nan if isinstance(dtype, np.dtype) else pd.NA
-
     # Always convert these values
     default_values = [None, pd.NA, pd.NaT, np.nan, np.inf, -np.inf]
 
-    if isinstance(X, pd.DataFrame):
-        return X.replace(
-            to_replace={c: (missing_values or []) + default_values for c in X.columns},
-            value={c: get_nan(d) for c, d in X.dtypes.items()},
-        )
+    if not is_sparse(X):
+        get_nan: Callable[[DtypeObj], float | NAType] = \
+            lambda dtype: np.nan if isinstance(dtype, np.dtype) else pd.NA
+
+        if isinstance(X, pd.DataFrame):
+            return X.replace(
+                to_replace={c: (missing_values or []) + default_values for c in X.columns},
+                value={c: get_nan(d) for c, d in X.dtypes.items()},
+            )
+        else:
+            return X.replace(
+                to_replace=(missing_values or []) + default_values,
+                value=get_nan(X.dtype),
+            )
     else:
-        return X.replace(
-            to_replace=(missing_values or []) + default_values,
-            value=get_nan(X.dtype),
-        )
+        return X
 
 
 def n_cols(obj: YConstructor | None) -> int:
@@ -1530,7 +1612,7 @@ def check_empty(obj: Pandas | None) -> Pandas | None:
     return obj if isinstance(obj, pd.DataFrame) and not obj.empty else None
 
 
-def check_dependency(name: str):
+def check_dependency(name: str, pypi_name: str | None = None):
     """Check an optional dependency.
 
     Raise an error if the package is not installed.
@@ -1540,13 +1622,18 @@ def check_dependency(name: str):
     name: str
         Name of the package to check.
 
+    pypi_name: str or None, default=None
+        Name of the package on PyPI. If None, it's the same as `name`.
+
     """
-    if not find_spec(name):
+    try:
+        import_module(name)
+    except ModuleNotFoundError:
         raise ModuleNotFoundError(
             f"Unable to import the {name} package. Install it using "
-            f"`pip install {name}` or install all of atom's optional "
-            "dependencies with `pip install atom-ml[full]`."
-        )
+            f"`pip install {pypi_name or name.replace('_', '-')}` or "
+            "install all of atom's optional dependencies with `pip install atom-ml[full]`."
+        ) from None
 
 
 def check_nltk_module(module: str, *, quiet: bool):
@@ -1662,11 +1749,11 @@ def adjust(
     *,
     transform: EngineDataOptions | None = None,
     verbose: Verbose | None = None,
-):
+) -> Iterator[Estimator]:
     """Temporarily adjust output parameters of an estimator.
 
     The estimator's data engine and verbosity are temporarily changed
-    to the provided values.
+    to the provided values. Results in a no-op for non-ATOM estimators.
 
     Parameters
     ----------
@@ -1682,19 +1769,22 @@ def adjust(
         its original verbosity.
 
     """
-    try:
-        if transform is not None and hasattr(estimator, "set_output"):
-            output = getattr(estimator, "_engine", EngineTuple())
-            estimator.set_output(transform=transform)
-        if verbose is not None and hasattr(estimator, "verbose"):
-            verbosity = estimator.verbose
-            estimator.verbose = verbose
+    if "atom" in estimator.__module__:
+        try:
+            if transform is not None and hasattr(estimator, "set_output"):
+                output = getattr(estimator, "_engine", EngineTuple())
+                estimator.set_output(transform=transform)
+            if verbose is not None and hasattr(estimator, "verbose"):
+                verbosity = estimator.verbose
+                estimator.verbose = verbose
+            yield estimator
+        finally:
+            if transform is not None and hasattr(estimator, "set_output"):
+                estimator._engine = output  # type: ignore[union-attr]
+            if verbose is not None and hasattr(estimator, "verbose"):
+                estimator.verbose = verbosity
+    else:
         yield estimator
-    finally:
-        if transform is not None and hasattr(estimator, "set_output"):
-            estimator._engine = output  # type: ignore[union-attr]
-        if verbose is not None and hasattr(estimator, "verbose"):
-            estimator.verbose = verbosity
 
 
 def get_versions(models: ClassMap) -> dict[str, str]:
@@ -2028,7 +2118,7 @@ def check_is_fitted(
     return is_fitted
 
 
-def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
+def get_custom_scorer(metric: str | MetricFunction | Scorer, pos_label: PosLabel = 1) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -2039,6 +2129,9 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
         Name, function or scorer to get the scorer from. If it's a
         function, the scorer is created using the default parameters
         of sklearn's `make_scorer`.
+
+    pos_label: bool, int, float or str, default=1
+        Positive label for binary/multilabel classification.
 
     Returns
     -------
@@ -2112,6 +2205,9 @@ def get_custom_scorer(metric: str | MetricFunction | Scorer) -> Scorer:
         scorer.name = scorer._score_func.__name__
     if not hasattr(scorer, "fullname"):
         scorer.fullname = scorer._score_func.__name__
+
+    if "pos_label" in sign(scorer._score_func):
+        scorer._kwargs["pos_label"] = pos_label
 
     return scorer
 
@@ -2348,8 +2444,11 @@ def fit_one(
                             "target column, e.g., atom.decompose(columns=-1)."
                         )
 
-            if "y" in params and y is not None:
-                kwargs["y"] = y
+            if y is not None:
+                if "y" in params:
+                    kwargs["y"] = y
+                if "Y" in params:  # Some estimators like ClassifierChain use Y
+                    kwargs["Y"] = y
 
             # Keep custom attrs since some transformers reset during fit
             with keep_attrs(estimator):

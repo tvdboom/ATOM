@@ -144,7 +144,7 @@ When modeling, it is important to clean the data sample to ensure that
 the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
-learning modeling and model skill in general can be improved by 
+learning modeling and model skill in general can be improved by
 understanding and even removing these outlier samples. The [Pruner][]
 class offers 7 different strategies to detect outliers (described
 hereunder). It can be accessed from atom through the [prune][atomclassifier-prune]
@@ -224,7 +224,7 @@ learning estimators; they might behave badly if the individual features
 do not more or less look like standard normally distributed data (e.g.
 Gaussian with zero mean and unit variance). The [Scaler][] class let you
 quickly scale atom's dataset using one of sklearn's scalers. It can be
-accessed from atom through the [scale][atomclassifier-scale] method. 
+accessed from atom through the [scale][atomclassifier-scale] method.
 
 !!! info
     All strategies can utilize GPU speed-up. Click [here][estimator-acceleration]

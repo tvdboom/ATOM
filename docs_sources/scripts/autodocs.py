@@ -9,20 +9,14 @@ from __future__ import annotations
 
 import importlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
+from enum import Enum
 from inspect import (
-    Parameter,
-    getdoc,
-    getmembers,
-    getsourcelines,
-    isclass,
-    isfunction,
-    ismethod,
-    isroutine,
-    signature,
+    Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
+    ismethod, isroutine, signature,
 )
-from typing import Any, Optional
-from collections.abc import Callable
+from types import MethodType
+from typing import Any
 
 import regex as re
 import yaml
@@ -33,12 +27,14 @@ from atom.utils.utils import Goal
 
 # Variables ======================================================== >>
 
+ATOM_URL = "https://github.com/tvdboom/ATOM/blob/master/"
+
 # Mapping of keywords to urls
 # Usage in docs: [anchor][key] or [key][] -> [anchor][value]
 CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
-    metadata_routing="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
+    metadatarouting="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing",
     metadatarouter="https://scikit-learn.org/stable/modules/generated/sklearn.utils.metadata_routing.MetadataRouter.html",
     sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     pathlibpath="https://docs.python.org/3/library/pathlib.html#pathlib.Path",
@@ -60,6 +56,7 @@ CUSTOM_URLS = dict(
     report="https://github.com/fbdesignpro/sweetviz/blob/master/sweetviz/dataframe_report.py#L23",
     to_csv="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html",
     # BaseModel
+    styler="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.io.formats.style.Styler.html",
     mlflowrun="https://mlflow.org/docs/latest/python_api/mlflow.entities.html#mlflow.entities.Run",
     make_reduction="https://sktime-backup.readthedocs.io/en/v0.13.0/api_reference/auto_generated/sktime.forecasting.compose.make_reduction.html",
     study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
@@ -68,6 +65,9 @@ CUSTOM_URLS = dict(
     frozentrial="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.FrozenTrial.html",
     normal="https://github.com/sktime/sktime/blob/b29e147b54959a53cc96e5be9c3f819717aa38e7/sktime/proba/normal.py#L13",
     forecastinghorizon="https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.base.ForecastingHorizon.html#sktime.forecasting.base.ForecastingHorizon",
+    calibratedclassifiercv="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html",
+    plattsmethod="https://en.wikipedia.org/wiki/Platt_scaling",
+    tunedthresholdclassifiercv="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TunedThresholdClassifierCV.html",
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
     sklearncrossvalidate="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html",
@@ -77,7 +77,6 @@ CUSTOM_URLS = dict(
     registry="https://www.mlflow.org/docs/latest/model-registry.html",
     ray="https://docs.ray.io/en/latest/cluster/getting-started.html",
     # BaseRunner
-    styler="https://pandas.pydata.org/docs/reference/api/pandas.io.formats.style.Styler.html",
     stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
     stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
     stackingforecaster="https://www.sktime.net/en/latest/api_reference/auto_generated/sktime.forecasting.compose.StackingForecaster.html",
@@ -309,11 +308,11 @@ class AutoDocs:
 
     Parameters
     ----------
-    obj: callable
+    obj: object
         Class, method or function to parse.
 
-    method: callable or None
-        Method of the obj to parse.
+    method: str or None
+        Method of `obj` to parse.
 
     References
     ----------
@@ -335,18 +334,19 @@ class AutoDocs:
         r"\Z",
     )
 
-    def __init__(self, obj: Callable, method: Callable | None = None):
+    def __init__(self, obj: type[object], method: str | None = None):
         if method:
             self.obj = getattr(obj, method)
-            self.method = method
-            self._parent_anchor = obj.__name__.lower() + "-"
+            self._parent_anchor = f"{obj.__name__.lower()}-"
         else:
             self.obj = obj
-            self.method = method
             self._parent_anchor = ""
 
         self.method = method
-        self.doc = getdoc(self.obj)
+        if not (doc := getdoc(self.obj)):
+            raise ValueError(f"Object {self.obj} has no docstring.")
+        else:
+            self.doc = doc
 
     @staticmethod
     def get_obj(command: str) -> AutoDocs:
@@ -396,7 +396,7 @@ class AutoDocs:
         if body.lstrip().startswith(("- ", "* ", "+ ")):
             text += "\n"
 
-        text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
+        text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(keepends=True)])
 
         return text + "\n"
 
@@ -459,43 +459,54 @@ class AutoDocs:
             Object's signature.
 
         """
-        # Assign an object type
         params = signature(self.obj).parameters
-        if isclass(self.obj):
-            obj = "class"
-        elif any(p in params for p in ("cls", "self")):
+
+        # Assign an object type
+        if is_dataclass(self.obj):
+            obj = "dataclass"
+        elif isclass(self.obj):
+            if issubclass(self.obj, Enum):
+                obj = "enum"
+            else:
+                obj = "class"
+        elif isinstance(self.obj, MethodType):
+            obj = "classmethod"
+        elif "self" in params:
             obj = "method"
         else:
             obj = "function"
 
-        # Get signature without self, cls and type hints
-        sign = []
-        for k, v in params.items():
-            if k not in ("cls", "self") and not k.startswith("_"):
-                if v.default == Parameter.empty:
-                    if "**" in str(v):
-                        sign.append(f"**{k}")  # Add ** to kwargs
-                    elif "*" in str(v):
-                        sign.append(f"*{k}")  # Add * to args
+        if obj not in ("enum", "dataclass"):
+            # Get signature without self, cls and type hints
+            sign = []
+            for k, v in params.items():
+                if k not in ("cls", "self") and not k.startswith("_"):
+                    if v.default == Parameter.empty:
+                        if "**" in str(v):
+                            sign.append(f"**{k}")  # Add ** to kwargs
+                        elif "*" in str(v):
+                            sign.append(f"*{k}")  # Add * to args
+                        else:
+                            sign.append(k)
                     else:
-                        sign.append(k)
-                else:
-                    if isinstance(v.default, str):
-                        sign.append(f'{k}="{v.default}"')
-                    else:
-                        sign.append(f"{k}={v.default}")
+                        if isinstance(v.default, str):
+                            sign.append(f'{k}="{v.default}"')
+                        else:
+                            sign.append(f"{k}={v.default}")
 
-        sign = f"({', '.join(sign)})"
+            parameters = f"({', '.join(sign)})"
+        else:
+            parameters = ""
 
         f = self.obj.__module__.replace(".", "/")  # Module and filename sep by /
         if "atom" in self.obj.__module__:
-            url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
+            url = f"{ATOM_URL}{f}.py"
         elif "sklearn" in self.obj.__module__:
             url = f"https://github.com/scikit-learn/scikit-learn/blob/main/{f}.py"
         else:
             url = ""
 
-        anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
+        anchor = f"[](){{#{self._parent_anchor}{self.obj.__name__}}}\n"
         module = self.obj.__module__ + "." if obj != "method" else ""
         obj = f"<em>{obj}</em>"
         name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
@@ -504,7 +515,7 @@ class AutoDocs:
             url = f"<span style='float:right'><a href={url}#L{line}>[source]</a></span>"
 
         # \n\n in front of signature to break potential lists in markdown
-        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}{sign}{url}</div>"
+        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}{parameters}{url}</div>"
 
     def get_summary(self) -> str:
         """Return the object's summary.
@@ -534,7 +545,12 @@ class AutoDocs:
         """
         pattern = f".*?(?={'|'.join(self.blocks)})"
         match = re.match(pattern, self.doc[len(self.get_summary()):], re.S)
-        return match.group() if match else ""
+        description = match.group() if match else ""
+
+        if isclass(self.obj) and issubclass(self.obj, Enum):
+            description += "\n\n" + "\n".join(f"- {k}" for k in self.obj.__members__)
+
+        return description
 
     def get_see_also(self) -> str:
         """Return the object's See Also block.
@@ -555,7 +571,7 @@ class AutoDocs:
 
                 # If it's a class, refer to the page, else to the anchor
                 if cls._parent_anchor:
-                    link = f"{cls._parent_anchor}-{cls.obj.__name__}"
+                    link = f"{cls._parent_anchor}{cls.obj.__name__}"
                 else:
                     link = ""
 
@@ -634,7 +650,7 @@ class AutoDocs:
                     header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}\n</div>"
 
-                    anchor = f"<a id='{self.obj.__name__.lower()}-{obj.__name__}'></a>"
+                    anchor = f"[](){{#{self.obj.__name__.lower()}-{obj.__name__}}}\n"
                     content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             elif match := self.get_block(name):
@@ -655,9 +671,9 @@ class AutoDocs:
 
                             if default != str(real.default):
                                 raise ValueError(
-                                    f"Default value {default} of parameter {param} "
+                                    f"Default value {real.default} of parameter {param} "
                                     f"of object {self.obj} doesn't match the value "
-                                    f"in the docstring: {real.default}."
+                                    f"in the docstring: {default}."
                                 )
                         except KeyError:
                             pass
@@ -670,7 +686,7 @@ class AutoDocs:
                     text = f"<div markdown class='param'>{self.parse_body(body)}</div>"
 
                     obj_name = header.split(":")[0]
-                    anchor = f"<a id='{self.obj.__name__.lower()}-{obj_name}'></a>"
+                    anchor = f"[](){{#{self.obj.__name__.lower()}-{obj_name}}}\n"
                     content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             if content:
@@ -716,7 +732,7 @@ class AutoDocs:
 
             text = ""
             for name, dist in model._get_distributions().items():
-                anchor = f"<a id='{self.obj.__name__.lower()}-{name}'></a>"
+                anchor = f"[](){{#{self.obj.__name__.lower()}-{name}}}\n"
                 text += f"{anchor}<strong>{name}</strong><br>"
                 text += f"<div markdown class='param'>{dist}</div>"
 
@@ -778,14 +794,12 @@ class AutoDocs:
         include = config.get("include", [])
         exclude = config.get("exclude", [])
 
-        predicate = lambda f: ismethod(f) or isfunction(f)
-
         if include:
             methods = include
         else:
             methods = [
                 m
-                for m, _ in getmembers(self.obj, predicate=predicate)
+                for m, _ in getmembers(self.obj, predicate=lambda f: ismethod(f) or isfunction(f))
                 if not m.startswith("_") and not any(re.fullmatch(p, m) for p in exclude)
             ]
 
@@ -811,9 +825,11 @@ class AutoDocs:
                 if func.obj.__module__.startswith("atom"):
                     if description := func.get_description():
                         blocks += "\n\n" + description + "\n"
+                if example := func.get_block("Examples"):
+                    blocks += "!!! example" + "\n    ".join(example.split("\n")) + "\n\n"
                 if table := func.get_table(["Parameters", "Returns", "Yields"]):
                     blocks += table + "<br>"
-                else:
+                if not table and not example:
                     # \n to exit markdown and <br> to insert space
                     blocks += "\n" + "<br>"
 
@@ -858,41 +874,40 @@ def render(markdown: str, **kwargs) -> str:
             else:
                 command = {command: None}  # Has no options specified
 
-        if "toc" in command:
-            text = autodocs.get_toc()
-        elif "tags" in command:
-            text = autodocs.get_tags()
-        elif "signature" in command:
-            text = autodocs.get_signature()
-        elif "head" in command:
-            text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
-        elif "summary" in command:
-            text = autodocs.get_summary()
-        elif "description" in command:
-            text = autodocs.get_description()
-        elif "table" in command:
-            text = autodocs.get_table(command["table"])
-        elif "see also" in command:
-            text = autodocs.get_see_also()
-        elif "notes" in command:
-            text = autodocs.get_block("Notes")
-        elif "references" in command:
-            text = autodocs.get_block("References")
-        elif "examples" in command:
-            text = autodocs.get_block("Examples")
-        elif "hyperparameters" in command:
-            text = autodocs.get_hyperparameters()
-        elif "methods" in command:
-            text = autodocs.get_methods(command["methods"] or {})
-        elif "insert" in command:
-            text = insert(command["insert"] or {})
-        else:
-            text = ""
+        if autodocs:
+            if "toc" in command:
+                text = autodocs.get_toc()
+            elif "tags" in command:
+                text = autodocs.get_tags()
+            elif "signature" in command:
+                text = autodocs.get_signature()
+            elif "head" in command:
+                text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
+            elif "summary" in command:
+                text = autodocs.get_summary()
+            elif "description" in command:
+                text = autodocs.get_description()
+            elif "table" in command:
+                text = autodocs.get_table(command["table"])
+            elif "see also" in command:
+                text = autodocs.get_see_also()
+            elif "notes" in command:
+                text = autodocs.get_block("Notes")
+            elif "references" in command:
+                text = autodocs.get_block("References")
+            elif "examples" in command:
+                text = autodocs.get_block("Examples")
+            elif "hyperparameters" in command:
+                text = autodocs.get_hyperparameters()
+            elif "methods" in command:
+                text = autodocs.get_methods(command["methods"] or {})
+            else:
+                text = ""
 
-        markdown = markdown[:match.start()] + text + markdown[match.end():]
+            markdown = markdown[:match.start()] + text + markdown[match.end():]
 
-        # Change the custom autorefs now to use [self-...][]
-        markdown = custom_autorefs(markdown, autodocs)
+            # Change the custom autorefs now to use [...][self-...]
+            markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
 
@@ -916,6 +931,7 @@ def types_conversion(dtype: str) -> str:
         "'>": "",
         "typing.": "",  # For typing.Any
         "atom.pipeline.": "",  # To transform later both class and str
+        "sklearn.utils._bunch.": "",  # To transform later both class and str
         "Study": "[Study][]",
         "FrozenTrial": "[FrozenTrial][]",
         "Model": "[model][models]",
@@ -924,6 +940,8 @@ def types_conversion(dtype: str) -> str:
         "pandas.core.series.Series": "pd.Series",
         "pandas.core.frame.DataFrame": "pd.DataFrame",
         "atom.data.branch.Branch": "[Branch][]",
+        "Styler": "[Styler][]",
+        "Bunch": "[Bunch][]",
         "Pipeline": "[Pipeline][]",
         "collections.abc.Hashable": "str",
         "Scalar": "int | float",
@@ -999,8 +1017,8 @@ def clean_search(config: MkDocsConfig):
         json.dump(search, f)
 
 
-def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
-    """Custom handling of autorefs links.
+def custom_autorefs(markdown: str, autodocs: AutoDocs | None = None) -> str:
+    """Handle autorefs links.
 
     ATOM's documentation accepts some custom formatting for autorefs
     links in order to make the documentation cleaner and easier to
@@ -1036,7 +1054,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
             text = match.group()
             if not link:
                 # Only adapt when has form [anchor][]
-                link = anchor.replace(" ", "-").replace(".", "").lower()
+                link = anchor.replace(" ", "-").replace(".", "").replace("'", "").lower()
                 text = f"[{anchor}][{link}]"
             if link in CUSTOM_URLS:
                 # Replace keyword with custom url

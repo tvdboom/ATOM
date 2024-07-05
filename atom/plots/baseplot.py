@@ -143,9 +143,9 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
     def _get_plot_index(obj: Pandas) -> pd.Index:
         """Return the dataset's index in a plottable format.
 
-        Plotly does not accept all index formats (e.g., pd.Period),
-        thus use this utility method to convert to timestamp those
-        indices that can. Else, return as is.
+        Plotly only accepts JSON deserializable formats for the axes.
+        Use this utility method to convert to timestamp those indices
+        that can (e.g., pd.Period). Else, return as is.
 
         Parameters
         ----------
@@ -155,7 +155,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
         Returns
         -------
         pd.Index
-            Index in an acceptable format.
+            Index in a JSON deserializable format.
 
         """
         if hasattr(obj.index, "to_timestamp"):
@@ -589,7 +589,7 @@ class BasePlot(BaseTransformer, BaseTracker, metaclass=ABCMeta):
                     else:
                         title = {"text": title, **default_title}
 
-                    fig.update_layout({"annotations": (*fig.layout.annotations, title)})
+                    fig.update_layout(annotations=(*fig.layout.annotations, title))
 
             if not BasePlot._fig.is_canvas and kwargs.get("plotname"):
                 default_title = {

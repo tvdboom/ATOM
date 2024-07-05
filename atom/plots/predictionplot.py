@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from abc import ABCMeta
 from collections import defaultdict
-from functools import reduce
+from functools import partial, reduce
 from itertools import chain
 from pathlib import Path
 from typing import Any, Literal
@@ -43,7 +43,7 @@ from atom.utils.types import (
 )
 from atom.utils.utils import (
     Task, adjust, check_canvas, check_dependency, check_predict_proba, crash,
-    divide, get_custom_scorer, has_task, lst, rnd,
+    divide, get_cols, get_custom_scorer, has_task, lst, rnd, sign,
 )
 
 
@@ -546,11 +546,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     texttemplate="%{text}<br>(%{z:.2f}%)",
                     textfont={"size": self.label_fontsize},
                     hovertemplate=(
-                        "%{customdata}<extra></extra>"
-                        if self.task.is_binary
-                        else ""
-                        "Predicted label:%{x}<br>True label:%{y}<br>Percentage:%{z}"
-                        "<extra></extra>"
+                        "%{customdata}<extra></extra>" if self.task.is_binary else ""
+                        "Predicted label:%{x}<br>True label:%{y}<br>Percentage:%{z}<extra></extra>"
                     ),
                     showlegend=False,
                     xaxis=xaxis,
@@ -594,6 +591,255 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             legend=legend,
             figsize=figsize or ((800, 800) if len(models_c) == 1 else (900, 600)),
             plotname="plot_confusion_matrix",
+            filename=filename,
+            display=display,
+        )
+
+    @crash
+    def plot_cv_splits(
+        self,
+        models: ModelsSelector = None,
+        *,
+        title: str | dict[str, Any] | None = None,
+        legend: Legend | dict[str, Any] | None = "upper right",
+        figsize: tuple[IntLargerZero, IntLargerZero] = (900, 600),
+        filename: str | Path | None = None,
+        display: Bool | None = True,
+    ) -> go.Figure | None:
+        """Visualize the cross-validation splits.
+
+        Plots the train and test splits for each cross-validation
+        iteration of the `cv` object. The x-axis shows the number of
+        rows, where every point corresponds to the n-th sample. The top
+        bar shows the original train/test split. Additionally, class
+        labels and [groups][metadata] are plotted when relevant.
+
+        !!! warning
+            This plot is only available for models that ran cross-validation
+            using the [cross_validate][adaboost-cross_validate] method.
+
+        Parameters
+        ----------
+        models: int, str, Model, segment, sequence or None, default=None
+            Model to plot. If None, all models are selected. Note that
+            leaving the default option could raise an exception if there
+            are multiple models. To avoid this, call the plot directly
+            from a model, e.g., `atom.lr.plot_cv_splits()`.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Position to display the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str, Path or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_data_splits
+        atom.plots:DataPlot.plot_decomposition
+        atom.plots:DataPlot.plot_relationships
+
+        Examples
+        --------
+        ```pycon
+        from atom import ATOMClassifier, ATOMForecaster
+        from random import choices
+        from sklearn.datasets import load_breast_cancer
+        from sktime.datasets import load_airline
+
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        # Without groups
+        atom = ATOMClassifier(X, y, shuffle=False, n_rows=0.2, random_state=1)
+        atom.run("LR", metric=["f1", "auc"])
+        atom.lr.cross_validate(cv=4)
+        atom.plot_cv_splits()
+
+        # With groups
+        groups = choices(["A", "B", "C", "D"], k=X.shape[0])
+        atom = ATOMClassifier(X, y, metadata={"groups": groups}, n_rows=0.2, random_state=1)
+        atom.run("LR", metric=["f1", "auc"])
+        atom.lr.cross_validate(cv=4)
+        atom.plot_cv_splits()
+
+        # For forecast models
+        y = load_airline()
+
+        atom = ATOMForecaster(y, random_state=1)
+        atom.run("Croston", metric=["mape", "mse", "mae"])
+        atom.croston.cross_validate(cv=4)
+        atom.plot_cv_splits()
+        ```
+
+        """
+        models_c = self._get_plot_models(models, max_one=True)[0]
+
+        fig = self._get_figure()
+        xaxis, yaxis = BasePlot._fig.get_axes()
+
+        if not hasattr(models_c, "cv"):
+            raise ValueError(
+                "The plot_splits method is only available for models that ran "
+                "cross-validation through the cross_validate method. Use the "
+                "plot_data_splits method to show the train/test split."
+            )
+        elif self.task.is_forecast:
+            data = {
+                "train": models_c.cv["y_train"].to_numpy(),
+                "test": models_c.cv["y_test"].to_numpy(),
+            }
+        else:
+            data = {
+                "train": models_c.cv["indices"]["train"],
+                "test": models_c.cv["indices"]["test"],
+            }
+
+        # Determine if the holdout set was used for training
+        if len(data["train"][-1]) + len(data["test"][-1]) == len(self.og.X):
+            y = models_c.y
+            sets = ["train", "test"]
+        else:
+            y = models_c._all[models_c.branch.target]
+            sets = ["train", "test", "holdout"]
+
+        all_reset = self.branch._all.reset_index()
+        for ds in sets:
+            if self.task.is_forecast:
+                x = self._get_plot_index(getattr(models_c, ds))
+            else:
+                x = all_reset[all_reset["index"].isin(getattr(models_c, ds).index)].index
+
+            self._draw_line(
+                x=x,
+                y=["data"] * len(x),
+                parent=ds,
+                mode="markers",
+                marker={
+                    "symbol": "line-ns",
+                    "size": 25,
+                    "line": {
+                        "width": self.marker_size,
+                        "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
+                    },
+                },
+                hovertemplate=f"%{{y}}: {ds}<extra></extra>",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        for ds in ("train", "test"):
+            for i in range(len(models_c.cv["fit_time"])):
+                if self.task.is_forecast:
+                    x = self._get_plot_index(models_c.cv[f"y_{ds}"][i])
+                else:
+                    x = models_c.cv["indices"][ds][i]
+
+                self._draw_line(
+                    x=x,
+                    y=[str(i)] * len(x),
+                    parent=ds,
+                    mode="markers",
+                    marker={
+                        "symbol": "line-ns",
+                        "size": 25,
+                        "line": {
+                            "width": self.marker_size,
+                            "color": f"rgba({BasePlot._fig.get_elem(ds)[4:-1]}, 1)",
+                        },
+                    },
+                    hovertemplate=f"%{{y}}: {ds}<extra></extra>",
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+        if self.task.is_classification:
+            for col in get_cols(y):
+                mapping = models_c.branch.mapping.get(col.name, {k: k for k in np.unique(col)})
+                inverse_mapping = {v: k for k, v in mapping.items()}
+
+                self._draw_line(
+                    x=(x2 := list(range(y.shape[0]))),
+                    y=[col.name] * len(x2),
+                    parent=str(col.name),
+                    mode="markers",
+                    marker={
+                        "symbol": "line-ns",
+                        "size": 25,
+                        "line": {
+                            "width": self.marker_size,
+                            "color": [f"rgba({BasePlot._fig.get_elem(i)[4:-1]}, 1)" for i in col],
+                        },
+                    },
+                    customdata=[inverse_mapping[i] for i in y],
+                    hovertemplate=f"{col.name}: %{{customdata}}<extra></extra>",
+                    legend=legend,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+
+        if (groups := self._config.get_groups(y)) is not None:
+            self._draw_line(
+                x=(x3 := list(range(y.shape[0]))),
+                y=["group"] * len(x3),
+                parent="group",
+                mode="markers",
+                marker={
+                    "symbol": "line-ns",
+                    "size": 25,
+                    "line": {
+                        "width": self.marker_size,
+                        "color": [
+                            f"rgba({BasePlot._fig.get_elem(f'g{i}')[4:-1]}, 1)" for i in groups
+                        ],
+                    },
+                },
+                customdata=groups,
+                hovertemplate="group: %{customdata}<extra></extra>",
+                legend=legend,
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+
+        fig.update_yaxes(autorange="reversed")
+        fig.update_layout(hovermode="x unified")
+
+        BasePlot._fig.used_models.append(models_c)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            xlabel="Rows",
+            ylabel="CV Iterations",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_cv_splits",
             filename=filename,
             display=display,
         )
@@ -1339,6 +1585,12 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             yaxis=yaxis,
         )
 
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel=self.branch.dataset.index.name or "index",
+            ylabel="Residual",
+        )
+
         fig.update_layout(
             {
                 f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}",
@@ -1347,12 +1599,6 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     "zerolinewidth": 1,
                 },
             }
-        )
-
-        self._plot(
-            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
-            xlabel=self.branch.dataset.index.name or "index",
-            ylabel="Residual",
         )
 
         BasePlot._fig.used_models.extend(models_c)
@@ -2166,7 +2412,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
 
             for i, (ax, fxs, pred) in enumerate(zip(axes, cols, predictions)):  # noqa: B905
                 # Draw line or contour plot
-                if len(pred["values"]) == 1:
+                if len(pred["grid_values"]) == 1:
                     # For both average and individual: draw ticks on the horizontal axis
                     for line in deciles[fxs[0]]:
                         fig.add_shape(
@@ -2185,7 +2431,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     # Draw the mean of the individual lines
                     if "average" in kind:
                         fig.add_scatter(
-                            x=pred["values"][0],
+                            x=pred["grid_values"][0],
                             y=pred["average"][target_c].ravel(),
                             mode="lines",
                             line={"width": 2, "color": color},
@@ -2206,7 +2452,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                         )
                         for sample in pred["individual"][target_c, idx, :]:
                             fig.add_scatter(
-                                x=pred["values"][0],
+                                x=pred["grid_values"][0],
                                 y=sample,
                                 mode="lines",
                                 line={"width": 0.5, "color": color},
@@ -2220,8 +2466,8 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                 else:
                     colorscale = PALETTE.get(BasePlot._fig.get_elem(m.name), "Teal")
                     fig.add_contour(
-                        x=pred["values"][0],
-                        y=pred["values"][1],
+                        x=pred["grid_values"][0],
+                        y=pred["grid_values"][1],
                         z=pred["average"][target_c],
                         contours={
                             "showlabels": True,
@@ -3259,7 +3505,10 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
                     metric_c.extend(m.split("+"))
                 else:
                     metric_c.append(m)
-            metric_c = [m if "time" in str(m) else get_custom_scorer(m) for m in metric_c]
+            metric_c = [
+                m if "time" in str(m) else get_custom_scorer(m, pos_label=self._config.pos_label)
+                for m in metric_c
+            ]
 
         fig = self._get_figure()
         xaxis, yaxis = BasePlot._fig.get_axes()
@@ -3716,11 +3965,15 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
         for m in models_c:
             y_true, y_pred = m._get_pred(rows, target, method="predict_proba")
             for met in metric_c:
+                name = met.__name__
+                if "pos_label" in sign(met):
+                    met = partial(met, pos_label=self._config.pos_label)
+
                 self._draw_line(
                     x=(x := np.linspace(0, 1, steps)),
                     y=[met(y_true, y_pred >= step) for step in x],
                     parent=m.name,
-                    child=met.__name__,
+                    child=name,
                     legend=legend,
                     xaxis=xaxis,
                     yaxis=yaxis,

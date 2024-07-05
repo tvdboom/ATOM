@@ -74,6 +74,13 @@ class Sequence(Protocol[_T]):
         ]
 
 
+class MetadataDict(TypedDict, total=False):
+    """Dictionary type for the `metadata` parameter."""
+
+    groups: Sequence[Hashable]
+    sample_weight: Sequence[Scalar]
+
+
 class SPDict(TypedDict, total=False):
     """Dictionary type for the `sp` parameter."""
 
@@ -128,14 +135,6 @@ class EngineTuple(NamedTuple):
         from atom.data import DATA_ENGINES
 
         return DATA_ENGINES[self.data]()
-
-
-class SPTuple(NamedTuple):
-    """Return type of the `sp` parameter."""
-
-    sp: int | list[int] | None = None
-    seasonal_model: SeasonalityModels = "additive"
-    trend_model: SeasonalityModels = "additive"
 
 
 @runtime_checkable
@@ -402,6 +401,7 @@ XDatasets: TypeAlias = Literal[
     "X_holdout",
 ]
 YDatasets: TypeAlias = Literal["y", "y_train", "y_test", "y_holdout"]
+PosLabel: TypeAlias = bool | Scalar | str
 Seasonality: TypeAlias = IntLargerOne | str | Sequence[IntLargerOne | str] | None
 SeasonalityModels: TypeAlias = Literal["additive", "multiplicative"]
 FeatureNamesOut: TypeAlias = (
