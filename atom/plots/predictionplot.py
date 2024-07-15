@@ -2939,7 +2939,7 @@ class PredictionPlot(BasePlot, metaclass=ABCMeta):
             dpi, bbox = fig.get_dpi(), d.get_bbox()
             figsize = (dpi * bbox.xmax // 4, (dpi / 2) * (bbox.ymax - bbox.ymin))
 
-        d.draw(canvas=plt.gca(), showframe=False, show=False)
+        d.draw(canvas=plt.gca(), show=False)
         plt.axis("off")
 
         BasePlot._fig.used_models.extend(models_c)

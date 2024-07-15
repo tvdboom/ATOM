@@ -5,7 +5,6 @@ Description: Unit tests for the models module.
 
 """
 
-from platform import machine, system
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -162,12 +161,11 @@ def test_multivariate_forecast_custom_seasonality():
     )
 
 
-@pytest.mark.skipif(
-    system() == "Darwin" or machine() not in ("x86_64", "AMD64"), reason="No sklearnex"
-)
 @pytest.mark.parametrize("device", ["cpu", "gpu"])
 def test_models_sklearnex_classification(device):
     """Assert the sklearnex engine works for classification tasks."""
+    pytest.importorskip("sklearnex")
+
     atom = ATOMClassifier(X_bin, y_bin, device=device, engine="sklearnex", random_state=1)
     atom.run(
         models=["KNN", "LR", "RF", "SVM"],
@@ -177,10 +175,11 @@ def test_models_sklearnex_classification(device):
     assert all(m.estimator.__module__.startswith(("daal4py", "sklearnex")) for m in atom._models)
 
 
-@pytest.mark.skipif(machine() not in ("x86_64", "AMD64"), reason="Only x86 support.")
 @pytest.mark.parametrize("device", ["cpu", "gpu"])
 def test_models_sklearnex_regression(device):
     """Assert the sklearnex engine works for regression tasks."""
+    pytest.importorskip("sklearnex")
+
     atom = ATOMRegressor(X_reg, y_reg, device=device, engine="sklearnex", random_state=1)
     atom.run(
         models=["EN", "KNN", "Lasso", "OLS", "RF", "Ridge", "SVM"],

@@ -5,7 +5,7 @@
 groups = ["default", "doc", "full", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:ac39d7c581b13a401dacfc9cecc67f9ba7bc350a59cd54c3149b977844050234"
+content_hash = "sha256:43d16667a10c58288a0699df9012b64c8e9a1e52cd748bf6cefa6fe939569120"
 
 [[package]]
 name = "absl-py"
@@ -5473,13 +5473,13 @@ files = [
 
 [[package]]
 name = "schemdraw"
-version = "0.18"
+version = "0.19"
 requires_python = ">=3.8"
 summary = "Electrical circuit schematic drawing"
 groups = ["full"]
 files = [
-    {file = "schemdraw-0.18-py3-none-any.whl", hash = "sha256:9f1957015f46118d2dfeac9d7b221032d373ac2088c8ce5ea5be726880467444"},
-    {file = "schemdraw-0.18.tar.gz", hash = "sha256:d5886c2343cf332b5f48bffac74220fe929c70a2a60483e751d167524a7162ce"},
+    {file = "schemdraw-0.19-py3-none-any.whl", hash = "sha256:a5bc8a6af02dd8dc8225864508aca2d7950159fe2f35c8b0c0ac6bc40e3c8ba9"},
+    {file = "schemdraw-0.19.tar.gz", hash = "sha256:f39183f3090e607c7dbc41ebd3dddf2ae0ef1c81dcbab6c6e2429599559bd7e3"},
 ]
 
 [[package]]

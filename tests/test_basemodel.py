@@ -6,7 +6,6 @@ Description: Unit tests for basemodel.py
 """
 
 import glob
-from importlib.util import find_spec
 from unittest.mock import patch
 
 import numpy as np
@@ -919,17 +918,16 @@ def test_save_estimator():
     assert glob.glob("MultinomialNB.pkl")
 
 
-@pytest.mark.skipif(not find_spec("ray"), reason="Ray is not installed.")
 def test_serve():
     """Assert that the serve method deploys a reachable endpoint."""
-    from ray import serve
+    ray = pytest.importorskip("ray")
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     atom.mnb.serve()
     response = requests.get("http://127.0.0.1:8000/", json=X_bin.to_json(), timeout=5)
     assert response.status_code == 200
-    serve.shutdown()
+    ray.serve.shutdown()
 
 
 def test_register_no_experiment():

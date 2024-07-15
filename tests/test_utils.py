@@ -9,9 +9,7 @@ import sys
 from datetime import timedelta
 from unittest.mock import patch
 
-import modin.pandas as md
 import pandas as pd
-import polars as pl
 import pytest
 
 from atom import show_versions
@@ -69,11 +67,13 @@ def test_to_df_numpy():
 
 def test_to_df_polars():
     """Assert that polars are converted to pandas objects."""
+    pl = pytest.importorskip("polars")
     assert isinstance(to_df(pl.from_pandas(X_bin)), pd.DataFrame)
 
 
 def test_to_df_interchange():
     """Assert that interchange protocol objects are converted to pandas objects."""
+    md = pytest.importorskip("modin.pandas")
     assert isinstance(to_df(md.DataFrame(X_bin)), pd.DataFrame)
 
 
@@ -89,6 +89,7 @@ def test_to_series_numpy():
 
 def test_to_series_polars():
     """Assert that polars are converted to series objects."""
+    pl = pytest.importorskip("polars")
     assert isinstance(to_series(pl.from_pandas(y_bin)), pd.Series)
 
 

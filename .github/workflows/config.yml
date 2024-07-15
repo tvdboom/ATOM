@@ -19,7 +19,7 @@ jobs:
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: pdm sync -G lint --no-default
@@ -34,7 +34,7 @@ jobs:
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: pdm sync -G lint --no-default
@@ -49,7 +49,7 @@ jobs:
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: pdm sync -G lint --no-default
@@ -72,7 +72,7 @@ jobs:
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: pdm sync -G lint --no-default
@@ -87,7 +87,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Code quality analysis with CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -98,7 +98,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - name: Free disk space windows
         shell: bash
@@ -127,7 +127,7 @@ jobs:
           pdm run pytest -n=auto --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' }}
         with:
           files: ./coverage.xml
 
@@ -147,7 +147,7 @@ jobs:
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: pdm sync -G full -G test
@@ -181,7 +181,7 @@ jobs:
       - name: Set up pdm
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: |

@@ -71,7 +71,7 @@ additional libraries. You can install all the optional dependencies using
 * **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.9.1)
 * **[requests](https://requests.readthedocs.io/en/latest/)** (>=2.31.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2023.2.1)
-* **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.16)
+* **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.19)
 * **[statsforecast](https://github.com/Nixtla/statsforecast/)** (>=1.7.3)
 * **[supersmoother](https://github.com/jakevdp/supersmoother)** (>=0.4)
 * **[sweetviz](https://github.com/fbdesignpro/sweetviz)** (>=2.3.1)
